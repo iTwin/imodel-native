@@ -4000,16 +4000,20 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 GraphicParams  graphicParams;
 
                 context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
-                graphicParams.SetWidth(graphicParams.GetWidth()+2); // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
+                graphicParams.SetWidth(graphicParams.GetWidth()+2);
+                graphicParams.SetLineTransparency(25);
 
-                graphic = context.CreateSceneGraphic();
-                graphic->ActivateGraphicParams(graphicParams);
+                bool isSnap = (hit.GetHitType() >= HitDetailType::Snap);
+                bool doSegmentFlash = false;
 
-                bool doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
-
-                if (!doSegmentFlash)
+                if (isSnap)
                     {
-                    switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
+                    SnapDetailCR snap = static_cast<SnapDetailCR>(hit);
+                    
+                    if (!snap.IsHot())
+                        graphicParams.SetLineTransparency(150);
+
+                    switch (snap.GetSnapMode())
                         {
                         case SnapMode::Center:
                         case SnapMode::Origin:
@@ -4021,6 +4025,9 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                             break;
                         }
                     }
+
+                graphic = context.CreateSceneGraphic();
+                graphic->ActivateGraphicParams(graphicParams);
 
                 DSegment3d      segment;
                 CurveVectorPtr  curve;

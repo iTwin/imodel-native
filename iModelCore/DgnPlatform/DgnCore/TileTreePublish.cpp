@@ -36,24 +36,8 @@ struct Texture : Render::Texture
     Render::TileTextureImagePtr CreateTileTexture() const { return TileTextureImage::Create(ImageSource(m_imageSource), !m_createParams.m_isTileSection); }
 };  // Texture
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  12/15
-+===============+===============+===============+===============+===============+======*/
-struct Clipper : PolyfaceQuery::IClipToPlaneSetOutput
-{
-bool m_unclipped;
-bvector<PolyfaceHeaderPtr> m_output;
+static double    calculateTolerance(TileTree::TileCR inputTile) { return (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6 : inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();  }   // off by factor two??  
 
-Clipper() : m_unclipped(false) {}
-StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
-StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
-bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip, bool triangulate) {clip.ClipPolyface(mesh, *this, triangulate); return m_output;}
-bool IsUnclipped() {return m_unclipped;}
-
-}; // Clipper
-
-static double    calculateTolerance(TileTree::TileCR inputTile) { return (0.0 == inputTile._GetMaximumSize() || inputTile.GetRange().IsNull()) ? 1.0E6 : inputTile.GetRange().DiagonalDistance() / inputTile._GetMaximumSize();  }   // off by factor two??      
- 
 //=======================================================================================
 // @bsiclass                                                     Ray.Bentley     04/2017
 //=======================================================================================
@@ -70,7 +54,6 @@ protected:
     virtual WString _GetFileExtension() const override { return L"b3dm"; }
     void _ClearGeometry() override { m_geometry = PublishableTileGeometry(); }
     virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doInstancing, ITileGenerationFilterCP filter) const override {return std::move(m_geometry);}
-    void ClipTriMesh(TriMeshArgsCR triMesh, TransformCR transformFromDgn, ClipVectorCP clip);
 
 public:
     bool    GeometryExists() const { return !m_geometry.IsEmpty(); }
@@ -87,7 +70,7 @@ static  TilePtr Create(DgnModelCR model, TileTree::TileCR inputTile, TransformCR
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddTriMesh(TriMeshArgsCR triMesh, TransformCR transformFromDgn, ClipVectorCP clip)
+void AddTriMesh(TriMeshArgsCR triMesh, TransformCR transformFromDgn)
     {
     TextureP                texture = dynamic_cast <TextureP> (triMesh.m_texture.get());
     TileDisplayParamsCPtr   displayParams;
@@ -106,16 +89,9 @@ void AddTriMesh(TriMeshArgsCR triMesh, TransformCR transformFromDgn, ClipVectorC
         displayParams = foundParams->second;
         }
 
-    if (nullptr != clip)
-        {
-        ClipTriMesh(triMesh, transformFromDgn, clip);
-        }
-    else
-        {
-        auto mesh = TileMesh::Create(*displayParams);
-        mesh->AddTriMesh(triMesh, transformFromDgn, nullptr != texture && Image::BottomUp::Yes == texture->m_bottomUp);
-        m_geometry.Meshes().push_back(mesh);
-        }
+    auto mesh = TileMesh::Create(*displayParams);
+    mesh->AddTriMesh(triMesh, transformFromDgn, nullptr != texture && Image::BottomUp::Yes == texture->m_bottomUp);
+    m_geometry.Meshes().push_back(mesh);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -126,69 +102,6 @@ void AddPointCloud(PointCloudArgsCR pointCloudArgs, TransformCR transformFromDgn
     }
 
 };  // Tile
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Mark.Schlosser  11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::ClipTriMesh(TriMeshArgsCR triMeshArgs, TransformCR transformFromDgn, ClipVectorCP clip)
-    { // pulled from SimplifyGraphic::ClipAndProcessTriMesh() and altered for tile tree publishing
-    Clipper clipper;
-    PolyfaceHeaderPtr polyface = triMeshArgs.ToPolyface();
-    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = clipper.ClipPolyface(*polyface, *clip, true);
-    if (clipper.IsUnclipped())
-        {
-        AddTriMesh(triMeshArgs, transformFromDgn, nullptr);
-        }
-    else
-        {
-        for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
-            {
-            if (!clippedPolyface->IsTriangulated())
-                clippedPolyface->Triangulate();
-
-            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) || 
-                (0 != clippedPolyface->GetNormalCount() && clippedPolyface->GetNormalCount() != clippedPolyface->GetPointCount()))
-                clippedPolyface = PolyfaceHeader::CreateUnifiedIndexMesh(*clippedPolyface);
-
-            size_t                    numPoints = clippedPolyface->GetPointCount();
-            bvector<uint32_t>         indices;
-            bvector<QPoint3d>         points(numPoints);
-            bvector<OctEncodedNormal> normals(nullptr == clippedPolyface->GetNormalCP() ? 0 : numPoints);
-            bvector<FPoint2d>         params(nullptr == clippedPolyface->GetParamCP() ? 0 : numPoints);
-
-            for (size_t i=0; i<numPoints; i++)
-                {
-                QPoint3d qPoint(clippedPolyface->GetPointCP()[i], triMeshArgs.m_pointParams);
-                points[i] = qPoint;
-                if (nullptr != clippedPolyface->GetNormalCP())
-                    normals[i] = OctEncodedNormal::From(clippedPolyface->GetNormalCP()[i]);
-
-                if (nullptr != clippedPolyface->GetParamCP())
-                    bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
-                }
-            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*clippedPolyface, true);
-            for (visitor->Reset(); visitor->AdvanceToNextFace();)
-                {   
-                indices.push_back(visitor->GetClientPointIndexCP()[0]);
-                indices.push_back(visitor->GetClientPointIndexCP()[1]);
-                indices.push_back(visitor->GetClientPointIndexCP()[2]);
-                }
-
-            TriMeshArgs clippedTriMeshArgs;
-
-            clippedTriMeshArgs.m_numIndices = 3 * clippedPolyface->GetNumFacet();
-            clippedTriMeshArgs.m_numPoints = numPoints;
-            clippedTriMeshArgs.m_vertIndex = &indices.front();
-            clippedTriMeshArgs.m_points  = &points.front();
-            clippedTriMeshArgs.m_normals = normals.empty() ? nullptr : &normals.front();
-            clippedTriMeshArgs.m_textureUV = params.empty() ? nullptr : &params.front();
-            clippedTriMeshArgs.m_texture = triMeshArgs.m_texture;
-            clippedTriMeshArgs.m_pointParams = triMeshArgs.m_pointParams;
-
-            AddTriMesh(clippedTriMeshArgs, transformFromDgn, nullptr);
-            }
-        }
-    }
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
@@ -204,11 +117,11 @@ struct Context
     ClipVectorCP                    m_clip;
     std::shared_ptr<BeFolly::LimitingTaskQueue<BentleyStatus>> m_requestTileQueue;
 
-    Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, TransformCR transformFromDgn, ClipVectorCP clip, TileGenerator::ITileCollector* collector, double leafTolerance, GeometricModelP model, std::shared_ptr<BeFolly::LimitingTaskQueue<BentleyStatus>> requestTileQueue) :
-            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_clip(clip), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model), m_requestTileQueue(requestTileQueue) { }
+    Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, TransformCR transformFromDgn, TileGenerator::ITileCollector* collector, double leafTolerance, GeometricModelP model, std::shared_ptr<BeFolly::LimitingTaskQueue<BentleyStatus>> requestTileQueue) :
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model), m_requestTileQueue(requestTileQueue) { }
 
     Context(TileP outputTile, TileTree::TileP inputTile, Context const& inContext) :
-            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_clip(inContext.m_clip), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model), m_requestTileQueue(inContext.m_requestTileQueue) { }
+            m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model), m_requestTileQueue(inContext.m_requestTileQueue) { }
 
 };
 
@@ -272,7 +185,7 @@ virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const
 virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const override 
     {
     if (m_context.m_outputTile.IsValid())
-        m_context.m_outputTile->AddTriMesh(args, m_context.m_transformFromDgn, m_context.m_clip);
+        m_context.m_outputTile->AddTriMesh(args, m_context.m_transformFromDgn);
     return  nullptr;
     }
 
@@ -381,10 +294,9 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
     TilePtr                     unusedOutputTilePtr;
     TileTree::TilePtr           unusedInputTilePtr;
     auto                        requestTileQueue = std::make_shared<BeFolly::LimitingTaskQueue<BentleyStatus>>(BeFolly::ThreadPool::GetIoPool(), 20);
-    Context                     context(unusedOutputTilePtr, unusedInputTilePtr, Transform::FromIdentity(), nullptr, collector, leafTolerance, model, requestTileQueue);
+    Context                     context(unusedOutputTilePtr, unusedInputTilePtr, Transform::FromIdentity(), collector, leafTolerance, model, requestTileQueue);
     auto                        renderSystem = std::make_shared<RenderSystem>(context);
     TileTree::RootCPtr          tileRoot = model->GetTileTree(renderSystem.get());
-    ClipVectorCP                clip = tileRoot->GetClipVector();
 
     if (!tileRoot.IsValid())
         return folly::makeFuture(TileGeneratorStatus::NoGeometry);
@@ -401,7 +313,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
         Transform           transformFromDgn = Transform::FromProduct(GetTransformFromDgn(*model), tileRoot->GetLocation());
         TilePtr             outputTile = Tile::Create(*model, *tileRoot->GetRootTile(), transformFromDgn, 0, 0, nullptr);
         TileTree::TilePtr   inputTile = tileRoot->GetRootTile();
-        Context             context(outputTile, inputTile, transformFromDgn, clip, collector, leafTolerance, model, requestTileQueue);
+        Context             context(outputTile, inputTile, transformFromDgn, collector, leafTolerance, model, requestTileQueue);
 
         return generateParentTile(context).then([=](GenerateTileResult result) { return generateChildTiles(result.m_status, context); });
         })
