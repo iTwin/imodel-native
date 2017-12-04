@@ -79,7 +79,9 @@ def doCopy(outputpackagedir, inputProductdir, nodeVersionCode, nodeOS, nodeCPU, 
 
     shutil.copyfile(srcpackagefile, dstpackagefile)
 
-    nodeEngines = None
+    # The node addon is specific to a version of node.
+    # *** NEEDS WORK: We don't inject this constraint for Electron addons -- not sure how to specify electron engines.
+    nodeEngines = ' '
     if (nodeVersionCode.lower().startswith('n_')):
         nodeEngineVersion = nodeVersionCode[2:].replace('_', '.')
         nodeEngines = '"engines": "' + nodeEngineVersion + '",'
