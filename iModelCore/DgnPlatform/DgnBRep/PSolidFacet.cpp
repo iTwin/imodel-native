@@ -113,7 +113,7 @@ struct CompareParams { bool operator() (DPoint2dCR param1, DPoint2dCR param2) { 
 typedef bmap <DPoint2d, int32_t, CompareParams>                 T_ParamIndexMap; // Untoleranced parameter to index map used to reindex parameters within a single face.
 typedef bmap <int32_t, int32_t>                                 T_IndexRemap;
 typedef bmap <int32_t, int32_t>                                 T_FinToEdgeMap;
-typedef bmap <CurveTopologyId, bvector<PolyfaceEdge>>               T_EdgeIdToPolyfaceEdgeMap;
+typedef bmap <CurveTopologyId, bvector<PolyfaceEdge>>           T_EdgeIdToPolyfaceEdgeMap;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2012

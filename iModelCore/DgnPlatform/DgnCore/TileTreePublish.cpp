@@ -297,7 +297,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
     Context                     context(unusedOutputTilePtr, unusedInputTilePtr, Transform::FromIdentity(), collector, leafTolerance, model, requestTileQueue);
     auto                        renderSystem = std::make_shared<RenderSystem>(context);
     TileTree::RootCPtr          tileRoot = model->GetTileTree(renderSystem.get());
-    ClipVectorCP                clip = tileRoot->GetClipVector();
 
     if (!tileRoot.IsValid())
         return folly::makeFuture(TileGeneratorStatus::NoGeometry);

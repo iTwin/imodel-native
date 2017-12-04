@@ -1835,6 +1835,18 @@ double Tile::_GetMaximumSize() const
     return m_displayable ? s_tileScreenSize * m_zoomFactor : 0.0;
     }
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     12/2017
++===============+===============+===============+===============+===============+======*/
+struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
+{
+    bvector<PolyfaceHeaderPtr>  m_clipped;
+    bvector<PolyfaceQueryCP>    m_output;
+
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
+};
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -1861,6 +1873,7 @@ private:
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
     void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained) { AddPolyface(polyfaces, geom, geom.GetDisplayParams(), rangePixels, isContained); }
     void AddPolyface(Polyface& polyface, GeometryR, DisplayParamsCR ,double rangePixels, bool isContained);
+    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
@@ -2031,20 +2044,11 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
         return;
 
-    DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
-    bool hasTexture = displayParams.IsTextured();
-
-    MeshBuilderMap::Key key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
-    MeshBuilderR builder = GetMeshBuilder(key);
-
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
-
-    bool                    anyContributed = false;
-    uint32_t                fillColor = displayParams.GetFillColor();
 
 #if defined(DISABLE_EDGE_GENERATION)
     auto edgeOptions = MeshEdgeCreationOptions::NoEdges;
@@ -2052,16 +2056,48 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     auto edgeOptions = tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
 #endif
 
-    builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(edgeOptions));
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+    // NB: You might think we wouldn't need to clip the root tile - but geometry can end up outside the project extents so...
+
+    DgnElementId            elemId = GetElementId(geom);
+    MeshEdgeCreationOptions edges(edgeOptions);
+    bool                    isPlanar = tilePolyface.m_isPlanar;
+
+    if (isContained)
         {
-        if (isContained || GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-            {
-            anyContributed = true;
-            DgnElementId elemId = GetElementId(geom);
-            builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
-            m_contentRange.Extend(visitor->Point());
-            }
+        AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
+        }
+    else
+        {
+        TileRangeClipOutput     clipOutput;
+
+        polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
+
+        for (auto& clipped : clipOutput.m_output)
+            AddClippedPolyface(*clipped, elemId, displayParams, edges, isPlanar, doVertexCluster);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar, bool doVertexCluster)
+    {
+    bool hasTexture = displayParams.IsTextured();
+    bool anyContributed = false;
+    uint32_t fillColor = displayParams.GetFillColor();
+    DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
+
+    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar);
+    MeshBuilderR builder = GetMeshBuilder(key);
+
+    builder.BeginPolyface(polyface, edgeOptions);
+
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
+        {
+        BeAssert(GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))));
+        anyContributed = true;
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+        m_contentRange.Extend(visitor->Point());
         }
 
     builder.EndPolyface();
