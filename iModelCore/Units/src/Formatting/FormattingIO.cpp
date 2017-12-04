@@ -216,6 +216,10 @@ size_t StdFormatSet::CustomInit()
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":4, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real4u\", \"SpecName\" : \"Real4U\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"formatTraits\":{\"AppendUnitName\":\"true\"}, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"real6u\", \"SpecName\" : \"Real6U\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2u\", \"SpecName\" : \"Stop100-2u\", \"SpecType\" : \"numeric\"}");
+
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}");
+
+
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4u\", \"SpecName\" : \"Stop100-2-4u\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4u\", \"SpecName\" : \"Stop1000-2-4u\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2u\", \"SpecName\" : \"Stop1000-2u\", \"SpecType\" : \"numeric\"}");

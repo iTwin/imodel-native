@@ -766,7 +766,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
         memcpy(buf, locBuf, ind);
         POP_MSVC_IGNORE
-        }
+        } // end fractional
     else if (stops) // we assume that stopping value is always positive 
         {
         int denom = (m_presentationType == PresentationType::Stop100) ? 100 : 1000;
@@ -805,6 +805,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
                 while (aft > 0)
                     {
                     locBuf[k++] = '0';
+                    aft--;
                     }
                 }
             else if(IsKeepDecimalPoint())
@@ -843,7 +844,7 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
     if(nullptr == useUnit)
         return Utf8String(buf);
-    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetName(), space);
+    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel(), space);
     return txt;
     }
 
@@ -887,7 +888,7 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int p
 //    NumericFormatSpecP fmtP = (nullptr == namF)? nullptr: namF->GetNumericSpec();
 //    bool composite = (nullptr == namF) ? false : namF->HasComposite();
 //    BEU::Quantity temp = qty.ConvertTo(useUnit); 
-//    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()): useLabel;
+//    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetName()): useLabel;
 //    Utf8String majT, midT, minT, subT;
 //
 //
@@ -970,7 +971,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
     bool composite = nfs.HasComposite();
     BEU::Quantity temp = qty.ConvertTo(useUnit);
-    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()) : useLabel;
+    Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
 
@@ -1030,7 +1031,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
             return "";
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
         if(fmtP->IsAppendUnit())
-           majT = Utils::AppendUnitName(majT.c_str(), uomName, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
+           majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
         /*if (nullptr != uomName)
         {
         if (!Utils::IsNameNullOrEmpty(space))
@@ -1504,18 +1505,20 @@ bool StdFormatSet::AreSetsIdentical()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
+NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name, bool IncludeCustom)
     {
-    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
+    NamedFormatSpecCP fmtP = FindFormatSpec(name, IncludeCustom); //  *Set()->m_formatSet.begin();
+    if(nullptr == fmtP)
+        return nullptr;
+    return fmtP->GetNumericSpec();
+   /* for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
         {
         fmtP = *itr;
         if (fmtP->HasName(name) || fmtP->HasAlias(name))
             {
             return fmtP->GetNumericSpec();
             }
-        }
-    return nullptr;
+        }*/
     }
 
 NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name, bool IncludeCustom)

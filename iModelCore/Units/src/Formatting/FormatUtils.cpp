@@ -8,8 +8,68 @@
 #include <UnitsPCH.h>
 #include <map>
 #include <Formatting/FormattingApi.h>
+#include "../../Localization/xliffs/Units.xliff.h"
+#include <BeSQLite/L10N.h>
+
+USING_NAMESPACE_BENTLEY_UNITS
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  11/2017
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableDecimalPercisions()
+    {
+    UIList decPercisionList;
+
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision0, UNITSL10N_GETSTRING(DecimalPrecision_0).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision1, UNITSL10N_GETSTRING(DecimalPrecision_1).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision2, UNITSL10N_GETSTRING(DecimalPrecision_2).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision3, UNITSL10N_GETSTRING(DecimalPrecision_3).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision4, UNITSL10N_GETSTRING(DecimalPrecision_4).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision5, UNITSL10N_GETSTRING(DecimalPrecision_5).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision6, UNITSL10N_GETSTRING(DecimalPrecision_6).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision7, UNITSL10N_GETSTRING(DecimalPrecision_7).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision8, UNITSL10N_GETSTRING(DecimalPrecision_8).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision9, UNITSL10N_GETSTRING(DecimalPrecision_9).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision10, UNITSL10N_GETSTRING(DecimalPrecision_10).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision11, UNITSL10N_GETSTRING(DecimalPrecision_11).c_str()));
+    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision12, UNITSL10N_GETSTRING(DecimalPrecision_12).c_str()));
+
+    return decPercisionList;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  11/2017
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableFractionalPercisions()
+    {
+    UIList fracPercisionList;
+
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Whole,     UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Half,      UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Quarter,   UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Eighth,    UNITSL10N_GETSTRING(FractionalPrecision_Eighth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Sixteenth, UNITSL10N_GETSTRING(FractionalPrecision_Sixteenth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_32,   UNITSL10N_GETSTRING(FractionalPrecision_Over_32).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
+    return fracPercisionList;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  11/2017
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableSignOption()
+    {
+    UIList signOptions;
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NoSign,              UNITSL10N_GETSTRING(ShowSignOption_NoSign).c_str(), FormatConstant::FPN_NoSign().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::OnlyNegative,        UNITSL10N_GETSTRING(ShowSignOption_OnlyNegative).c_str(), FormatConstant::FPN_OnlyNegative().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str(), FormatConstant::FPN_SignAlways().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str(), FormatConstant::FPN_NegativeParenths().c_str()));
+    return signOptions;
+    }
 
 //===================================================
 //
@@ -130,12 +190,13 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     if (strcmp("NUNUNU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
     if (strcmp("NUNUNFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNFU;
     if (strcmp("NUNUFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
-    if (strcmp("NCNCN", name) == 0) return FormatSpecialCodes::SignatureNCNCN;
-    if (strcmp("NCCN", name) == 0) return FormatSpecialCodes::SignatureNCCN;
-    if (strcmp("NCC", name) == 0) return FormatSpecialCodes::SignatureNCC;
-    if (strcmp("CNCN", name) == 0) return FormatSpecialCodes::SignatureCNCN;
-    if (strcmp("CNC", name) == 0) return FormatSpecialCodes::SignatureCNC;
-    if (strcmp("CCN", name) == 0) return FormatSpecialCodes::SignatureCCN;
+    if (strcmp("NCNCN", name) == 0) return FormatSpecialCodes::SignatureNCNCN;  // 0:0:0
+    if (strcmp("NCCN", name) == 0) return FormatSpecialCodes::SignatureNCCN;    // 0::0
+    if (strcmp("NCC", name) == 0) return FormatSpecialCodes::SignatureNCC;      // 0::
+    if (strcmp("CNCN", name) == 0) return FormatSpecialCodes::SignatureCNCN;    // :0:0
+    if (strcmp("CNC", name) == 0) return FormatSpecialCodes::SignatureCNC;      // :0:
+    if (strcmp("CCN", name) == 0) return FormatSpecialCodes::SignatureCCN;      // ::0
+    if (strcmp("NCNC", name) == 0) return FormatSpecialCodes::SignatureNCNC;      // 0:0:
     return FormatSpecialCodes::SignatureInvalid;
     }
 
@@ -1360,6 +1421,30 @@ bool FormatUnitGroup::IsIdentical(FormatUnitGroupCR other) const
     if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) return false;
     return true;
     }
+
+
+BEU::T_UnitSynonymVector* FormatUnitGroup::GetSynonymVector() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? nullptr : php->GetSynonymVector();
+    }
+
+size_t FormatUnitGroup::GetSynonymCount() const
+    {
+    BEU::PhenomenonCP php = GetPhenomenon();
+    return (nullptr == php) ? 0 : php->GetSynonymCount();
+    }
+
+BEU::PhenomenonCP FormatUnitGroup::GetPhenomenon() const
+    {
+    Formatting::FormatUnitSet fus = GetPersistenceFUS();
+    BEU::UnitCP un = fus.GetUnit();
+    BEU::PhenomenonCP php = (nullptr == un) ? nullptr : un->GetPhenomenon();
+    return php;
+    }
+
+
+
 
 FormattingDividers::FormattingDividers(Utf8CP div)
     {
