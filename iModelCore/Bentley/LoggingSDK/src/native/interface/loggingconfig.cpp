@@ -8,7 +8,7 @@
 #include "bsilogprivate.h"
 #include <Bentley/BeFileName.h>
 
-#if defined (__APPLE__) || defined (ANDROID)
+#if defined (BENTLEYCONFIG_OS_APPLE_IOS) || defined (BENTLEYCONFIG_OS_ANDROID)
 #include <bentleylog4cxx/log4cxx.h>
 #endif
 
@@ -133,7 +133,7 @@ LoggingProviderType type
             pProvider = createConsoleLogger();
             break;
             }
-#elif defined (__APPLE__) || defined (ANDROID)
+#elif defined (BENTLEYCONFIG_OS_APPLE_IOS) || defined (BENTLEYCONFIG_OS_ANDROID)
         case (LOG4CXX_LOGGING_PROVIDER) :
             {
             pProvider = new Provider::Log4cxxProvider();
