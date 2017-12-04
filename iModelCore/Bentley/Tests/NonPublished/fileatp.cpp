@@ -29,134 +29,134 @@ BeFileName& getlogfilename ( WCharCP name )
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, configSUCCESS)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"configSUCCESS" ) ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"configSUCCESS" ) ) );
 
     ASSERT_TRUE ( SUCCESS == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, configFAILURE)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( ERROR == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
+    ASSERT_TRUE ( ERROR == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetOptionSUCCESS)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_FATAL ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_ERROR ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_INFO ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_DEBUG ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_TRACE ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_FATAL ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_ERROR ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_INFO ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_DEBUG ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_TRACE ) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetOptionSUCCESS" ) ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetOptionSUCCESS" ) ) );
 
     ASSERT_TRUE ( SUCCESS == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetOptionFAILURE)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, L"SOMEINVALIDVALUE" ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( L"SOMEINVALIDOPTION", L"SOMEVALUE" ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_DEFAULT_SEVERITY, L"SOMEINVALIDVALUE" ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( L"SOMEINVALIDOPTION", L"SOMEVALUE" ) );
 
-        ASSERT_TRUE ( ERROR == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
+    ASSERT_TRUE ( ERROR == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetSeveritySUCCESS)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetSeveritySUCCESS" ) ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetSeveritySUCCESS" ) ) );
 
     ASSERT_TRUE ( SUCCESS == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_FATAL ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_ERROR ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_WARNING ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_INFO ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_DEBUG ) );
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_TRACE ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_FATAL ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_ERROR ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_WARNING ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_INFO ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_DEBUG ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetSeverity( L"", LOG_TRACE ) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetSeverityFAILURE)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetSeverityFAILURE" ) ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetSeverityFAILURE" ) ) );
 
     ASSERT_TRUE ( SUCCESS == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
-        ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( NULL, LOG_FATAL ) );
+    ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( NULL, LOG_FATAL ) );
 
     ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( L"", (SEVERITY)(LOG_FATAL+1) ) );
-        ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( L"", (SEVERITY)(LOG_TRACE-1) ) );
+    ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( L"", (SEVERITY)(LOG_TRACE-1) ) );
 
-        ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( L"", (SEVERITY)(45) ) );
-        ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( L"", (SEVERITY)(-35) ) );
+    ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( L"", (SEVERITY)(45) ) );
+    ASSERT_TRUE ( ERROR == LoggingConfig::SetSeverity( L"", (SEVERITY)(-35) ) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetMaxMessageSize)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetMaxMessageSize" ) ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"SetMaxMessageSize" ) ) );
 
     ASSERT_TRUE ( SUCCESS == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
-        LoggingConfig::SetMaxMessageSize( 0 );
-        ASSERT_TRUE ( 0 == LoggingConfig::SetMaxMessageSize( 256 ) );
-        ASSERT_TRUE ( 256 == LoggingConfig::SetMaxMessageSize( 1024 ) );
-        ASSERT_TRUE ( 1024 == LoggingConfig::SetMaxMessageSize( DEFAULT_MESSAGE_SIZE ) );
+    LoggingConfig::SetMaxMessageSize( 0 );
+    ASSERT_TRUE ( 0 == LoggingConfig::SetMaxMessageSize( 256 ) );
+    ASSERT_TRUE ( 256 == LoggingConfig::SetMaxMessageSize( 1024 ) );
+    ASSERT_TRUE ( 1024 == LoggingConfig::SetMaxMessageSize( DEFAULT_MESSAGE_SIZE ) );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Sam.Wilson                    4/13
 //---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, FatalMessage)
-        {
-        ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
+    {
+    ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"FatalMessage" ) ) );
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::SetOption( CONFIG_OPTION_OUTPUT_FILE, getlogfilename(L"FatalMessage" ) ) );
 
     ASSERT_TRUE ( SUCCESS == LoggingConfig::ActivateProvider(SIMPLEFILE_LOGGING_PROVIDER) );
 
@@ -166,8 +166,7 @@ TEST (SimpleFileLogger, FatalMessage)
 
     pLogger->fatal ( L"Some Message" );
 
-        ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
-        }
-
+    ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
+    }
 
 #endif // defined (WIP_INTERFERES_WITH_LOGGING_BY_TESTS)
