@@ -45,15 +45,20 @@
     <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
 
-  <!-- Note - In the addon-creation parts below, the ProductSubDirectory name contains the version of nodejs that the addon requires.
-      This encoded version number information drives a lot of downstream processing.
-      Keep this consistent , including the logic in makePackages.mke/py and imodeljs-core/nodeaddon/NodeAddon.ts.
-      -->
+  <!-- 
+            *** ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="<version>" ***
+      
+            *** Keep this consistent with makePackages.mke/py and imodeljs-core/nodeaddon/NodeAddon.ts. ***
+      
+      In the addon-creation parts below, the ProductSubDirectory name contains the version of nodejs that the addon requires.
+      Downstream consumers expect the major_minor[_patch] formatting of the name.
+      
+  -->
   <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
@@ -81,7 +86,7 @@
     <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
@@ -94,7 +99,7 @@
     <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">

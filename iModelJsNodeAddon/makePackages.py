@@ -154,7 +154,7 @@ if __name__ == '__main__':
     for versionsubdir in os.listdir(addonDir):    
 
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
-        if (re.match(r'^([A-Z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([A-Z])_(\d+)_(\d+)$', versionsubdir) is None):
+        if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None):
             print '*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.';
             continue
 
