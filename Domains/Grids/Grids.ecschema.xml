@@ -148,10 +148,10 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="DefaultMinExtentX" displayLabel="DefaultMinExtentX" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="DefaultMaxExtentX" displayLabel="DefaultMaxExtentX" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultMinExtentY" displayLabel="DefaultMinExtentY" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultMaxExtentY" displayLabel="DefaultMaxExtentY" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultStartExtentX" displayLabel="DefaultStartExtentX" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
+      <ECProperty propertyName="DefaultEndExtentX" displayLabel="DefaultEndExtentX" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultStartExtentY" displayLabel="DefaultStartExtentY" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultEndExtentY" displayLabel="DefaultEndExtentY" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="RadialGrid" description="A RadialGrid consists either of arcsurfaces in radial axis or planarsurfaces in circular axis">
@@ -159,10 +159,10 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="DefaultMinAngle" displayLabel="DefaultMinAngle" typeName="double" kindOfQuantity="Angle" description="Origin of the surface"/>
-      <ECProperty propertyName="DefaultMaxAngle" displayLabel="DefaultMaxAngle" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="DefaultMinExtent" displayLabel="DefaultMinExtent" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultMaxExtent" displayLabel="DefaultMaxExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultStartAngle" displayLabel="DefaultStartAngle" typeName="double" kindOfQuantity="Angle" description="Origin of the surface"/>
+      <ECProperty propertyName="DefaultEndAngle" displayLabel="DefaultEndAngle" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="DefaultStartExtent" displayLabel="DefaultStartExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultEndExtent" displayLabel="DefaultEndExtent" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="SketchGrid" description="A SketchGrid contains surfaces whose positions are not constrained (other than being swept to the grid normal)">
@@ -206,8 +206,8 @@
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Coordinate" displayLabel="Coordinate" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="MinExtent" displayLabel="MinExtent" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="MaxExtent" displayLabel="MaxExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="StartExtent" displayLabel="StartExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="EndExtent" displayLabel="EndExtent" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="PlanRadialGridSurface" description="A planar grid surface element.">
@@ -216,8 +216,8 @@
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Angle" displayLabel="Angle" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="MinRadius" displayLabel="MinRadius" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="MaxRadius" displayLabel="MaxRadius" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="StartRadius" displayLabel="StartRadius" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="EndRadius" displayLabel="EndRadius" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="SketchLineGridSurface" description="An extruded line gridsurface element.">
@@ -238,8 +238,8 @@
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Radius" displayLabel="Radius" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="MinAngle" displayLabel="MinAngle" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="MaxAngle" displayLabel="MaxAngle" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="StartnAngle" displayLabel="StartAngle" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="EndAngle" displayLabel="EndAngle" typeName="double" kindOfQuantity="Angle"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="SketchArcGridSurface" description="An extruded spline gridsurface element.">
