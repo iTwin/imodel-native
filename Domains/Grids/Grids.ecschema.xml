@@ -186,7 +186,7 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="IPlanGridSurface" modifier="Abstract" displayLabel="PlanGrid Surface" description="An interface that indicates that this Surface is suitable to be placed in PlanGrid ">
+    <ECEntityClass typeName="IPlanGridSurface" modifier="Abstract" displayLabel="PlanGrid Surface" description="An interface that indicates that this Surface is suitable to be placed in PlanGrid" >
       <ECCustomAttributes>
         <IsMixin xmlns="CoreCustomAttributes.1.0">
           <!-- Only subclasses of grids:GridSurface can implement the IPlanGridSurface interface -->
@@ -195,7 +195,7 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PlanGridPlanarSurface" modifier="Abstract" description="A planar plangrid surface element.">
+    <ECEntityClass typeName="PlanGridPlanarSurface" description="A planar plangrid surface element.">
       <BaseClass>GridPlanarSurface</BaseClass>
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
@@ -227,7 +227,7 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PlanGridArcSurface" modifier="Abstract" description="An arc plangrid surface element.">
+    <ECEntityClass typeName="PlanGridArcSurface" description="An arc plangrid surface element.">
       <BaseClass>GridArcSurface</BaseClass>
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
@@ -249,7 +249,7 @@
       </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECEntityClass typeName="PlanGridSplineSurface" modifier="Abstract" description="An arc plangrid surface element.">
+    <ECEntityClass typeName="PlanGridSplineSurface" description="An arc plangrid surface element.">
       <BaseClass>GridSplineSurface</BaseClass>
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>

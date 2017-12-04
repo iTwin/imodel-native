@@ -136,7 +136,6 @@ void GridsTestFixture::TearDown()
 OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrained()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     return OrthogonalGrid::StandardCreateParams(m_model.get(),
@@ -147,7 +146,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
                                                        10, /*vertical interval*/
                                                        50, /*length*/
                                                        70, /*height*/
-                                                       normal,
                                                        horizExtTrans,
                                                        vertExtTrans,
                                                        false, /*create dimensions*/
@@ -161,7 +159,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
 OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrained()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     return OrthogonalGrid::StandardCreateParams(m_model.get(),
@@ -172,7 +169,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
                                                        10, /*vertical interval*/
                                                        50, /*length*/
                                                        70, /*height*/
-                                                       normal,
                                                        horizExtTrans,
                                                        vertExtTrans,
                                                        true, /*create dimensions*/
@@ -187,7 +183,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
 OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 1.0, 0.0);
     return OrthogonalGrid::StandardCreateParams(m_model.get(),
@@ -198,7 +193,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
                                                        10, /*vertical interval*/
                                                        50, /*length*/
                                                        70, /*height*/
-                                                       normal,
                                                        horizExtTrans,
                                                        vertExtTrans,
                                                        false, /*create dimensions*/
@@ -212,7 +206,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
 OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 1.0, 0.0);
     return OrthogonalGrid::StandardCreateParams(m_model.get(),
@@ -223,7 +216,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
                                                        10, /*vertical interval*/
                                                        50, /*length*/
                                                        70, /*height*/
-                                                       normal,
                                                        horizExtTrans,
                                                        vertExtTrans,
                                                        true, /*create dimensions*/
@@ -237,7 +229,6 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
 RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGrid()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d normal = DVec3d::From(0.0, 0.0, 1.0);
     return RadialGrid::CreateParams(m_model.get(),
                                            db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                            7, /*plane count*/
@@ -247,8 +238,7 @@ RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGr
                                            70, /*length*/
                                            50, /*height*/
                                            "Radial Grid",
-                                           false, /*extend heihgt*/
-                                           normal);
+                                           false /*extend heihgt*/);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2031,7 +2021,7 @@ TEST_F(GridsTestFixture, SketchGrid_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
+    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), "Sketch Grid");
 
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
@@ -2213,9 +2203,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
 
-    DVec3d normal = DVec3d::From (1.0, 0.0, 0.0);
-
-    SketchGridPtr grid = SketchGrid::Create (*m_model, normal, "SketchGrid-1");
+    SketchGridPtr grid = SketchGrid::Create (*m_model, "SketchGrid-1");
     grid->Insert ();
     GridAxisPtr axis1 = GridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
 
@@ -2398,7 +2386,6 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
                                                                                            bvector<CurveVectorPtr>(),
                                                                                            OrthogonalGrid::CreateParams(m_model.get(),
                                                                                                                                db.Elements().GetRootSubject()->GetElementId(),
-                                                                                                                               DVec3d::From(0.0, 0.0, 1.0),
                                                                                                                                true,
                                                                                                                                "Floor-Grid"));
     db.SaveChanges();
@@ -2439,7 +2426,6 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     // Create orthogonal grid
     /////////////////////////////////////////////////////////////
-    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
     OrthogonalGrid::StandardCreateParams orthogonalParams = OrthogonalGrid::StandardCreateParams(m_model.get(),
@@ -2450,7 +2436,6 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
                                                                                                                10, /*vertical interval*/
                                                                                                                50, /*length*/
                                                                                                                30, /*height*/
-                                                                                                               normal,
                                                                                                                horizExtTrans,
                                                                                                                vertExtTrans,
                                                                                                                true, /*create dimensions*/
@@ -2526,7 +2511,6 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                                            bvector<CurveVectorPtr>(),
                                                                                            OrthogonalGrid::CreateParams(m_model.get(),
                                                                                                                                db.Elements().GetRootSubject()->GetElementId(),
-                                                                                                                               DVec3d::From(0.0, 0.0, 1.0),
                                                                                                                                true,
                                                                                                                                "Floor-Grid"));
     db.SaveChanges();
@@ -2567,7 +2551,6 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     // Create radial grid
     /////////////////////////////////////////////////////////////
-    DVec3d normal = DVec3d::From(1.0, 0.0, 0.0);
     RadialGrid::CreateParams radialParams = RadialGrid::CreateParams(m_model.get(),
                                                                                    db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                                                    2, /*plane count*/
@@ -2577,8 +2560,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                                    50, /*length*/
                                                                                    30, /*height*/
                                                                                    "Radial Grid",
-                                                                                   true, /*extend height*/
-                                                                                   normal);
+                                                                                   true /*extend height*/);
 
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(radialParams);
     ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
@@ -2657,7 +2639,6 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
                                                                                            bvector<CurveVectorPtr>(),
                                                                                            OrthogonalGrid::CreateParams(m_model.get(),
                                                                                                                                db.Elements().GetRootSubject()->GetElementId(),
-                                                                                                                               DVec3d::From(0.0, 0.0, 1.0),
                                                                                                                                true,
                                                                                                                                "Floor-Grid"));
     db.SaveChanges();
@@ -2698,7 +2679,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     // Create sketch grid
     /////////////////////////////////////////////////////////////
-    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Sketch Grid");
+    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), "Sketch Grid");
     ASSERT_TRUE(sketchGrid.IsValid()) << "Failed to create sketch grid";
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();
