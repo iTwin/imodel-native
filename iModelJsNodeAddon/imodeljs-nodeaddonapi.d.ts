@@ -1,14 +1,14 @@
 /*---------------------------------------------------------------------------------------------
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
-import { BentleyReturn, BentleyError } from "@bentley/bentleyjs-core/lib/Bentley";
+import { IModelStatus, StatusCodeWithMessage } from "@bentley/bentleyjs-core/lib/BentleyError";
 import { DbResult } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 /* import { IModelStatus } from "@bentley/bentleyjs-core/lib/Bentley"; */
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data 
 returned in a successful outcome. */
-interface iModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
+interface IModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
   /**
    * The signature of a callback.
    * @param error A description of th error, in case of failure.
@@ -18,12 +18,22 @@ interface iModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
 }
 
 /* The signature of a callback that expects a single argument, a status code. */
-interface iModelJsNodeAddonStatusOnlyCallback<STATUS_TYPE> {
+interface IModelJsNodeAddonStatusOnlyCallback<STATUS_TYPE> {
   /**
    * The signature of a callback.
    * @param error A description of th error, in case of failure.
    */
   (error: STATUS_TYPE): void;
+}
+
+
+/** The return type of synchronous functions that may return an error or a successful result. */
+interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
+    /** Error from the operation. This property is defined if and only if the operation failed. */
+    error?: StatusCodeWithMessage<ErrorCodeType>;
+
+    /** Result of the operation. This property is defined if the operation completed successfully */
+    result?: ResultType;
 }
 
 /* The NodeAddonDgnDb class that is projected by the iModelJs node addon. */
@@ -34,7 +44,7 @@ declare class NodeAddonDgnDb {
    * TBD
    * @param cachePath TBD
    */
-  getCachedBriefcaseInfosSync(cachePath: string): BentleyReturn<DbResult, string>;
+  getCachedBriefcaseInfosSync(cachePath: string): ErrorStatusOrResult<DbResult, string>;
  
   /**
    * Open a local BIM file.
@@ -42,7 +52,7 @@ declare class NodeAddonDgnDb {
    * @param mode The open mode
    * @param callback Invoked when the operation completes. The only argument is a status code indicating sucess or failure.
    */
-  openDgnDb(dbname: string, mode: OpenMode, callback: iModelJsNodeAddonStatusOnlyCallback<DbResult>): void;
+  openDgnDb(dbname: string, mode: OpenMode, callback: IModelJsNodeAddonStatusOnlyCallback<DbResult>): void;
 
   /**
    * Open a local BIM file.
@@ -86,42 +96,42 @@ declare class NodeAddonDgnDb {
    * @param opts Identifies the element
    * @param  callback Invoked when the operation completes. The 'result' argument is the element's properties in stringified JSON format.
    */
-  getElement(opts: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
+  getElement(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
 
   /**
    * Get a model's properties
    * @param opts Identifies the model
    * @param  callback Invoked when the operation completes. The 'result' argument is the model's properties in stringified JSON format.
    */
-  getModel(opts: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void
+  getModel(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void
 
   /**
    * Insert an element.
    * @param elemProps The element's properties, in stringified JSON format.
    * @return non-zero error status if the operation failed.
    */
-  insertElementSync(elemProps: string): BentleyReturn</*IModelStatus*/number, string>;
+  insertElementSync(elemProps: string): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Update an element.
    * @param elemProps The element's properties, in stringified JSON format.
    * @return non-zero error status if the operation failed.
    */
-  updateElementSync(elemProps: string): /*IModelStatus*/number;
+  updateElementSync(elemProps: string): IModelStatus;
 
   /**
    * Insert an element.
    * @param elemIdJson The element's ID, in stringified JSON format
    * @return non-zero error status if the operation failed.
    */
-  deleteElementSync(elemIdJson: string): /*IModelStatus*/number;
+  deleteElementSync(elemIdJson: string): IModelStatus;
 
   /**
    * Format an element's properties, suitable for display to the user.
    * @param id The element's ID, in stringified JSON format
    * @param callback Invoked when the operation completes. The 'result' argument is an object containing the object's properties, in stringified JSON format.
    */
-  getElementPropertiesForDisplay(id: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
+  getElementPropertiesForDisplay(id: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
 
   /**
    * Get information about an ECClass
@@ -129,7 +139,7 @@ declare class NodeAddonDgnDb {
    * @param className The name of the ECClass
    * @param callback Invoked when the operation completes. The 'result' argument is an object containing the properties of the class, in stringified JSON format.
    */
-  getECClassMetaData(schema: string, className: string, callback: iModelJsNodeAddonCallback<BentleyError</*IModelStatus*/number>, string>): void;
+  getECClassMetaData(schema: string, className: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
 
  /**
    * Get information about an ECClass
@@ -137,7 +147,7 @@ declare class NodeAddonDgnDb {
    * @param className The name of the ECClass
    * @return An object containing the properties of the class, in stringified JSON format.
    */
-  getECClassMetaDataSync(schema: string, className: string): BentleyReturn</*IModelStatus*/number, string>;
+  getECClassMetaDataSync(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Execute a statement repeatedly until all rows are found.
@@ -145,7 +155,7 @@ declare class NodeAddonDgnDb {
    * @param bindings The bindings to the statement. Pass null if there are no bindings.
    * @param callback Invoked when the operation completes. The 'result' argument is an array or rows in stringified JSON format.
    */
-  executeQuery(ecsql: string, bindings: string, callback: iModelJsNodeAddonCallback<BentleyError<DbResult>, string>): void;
+  executeQuery(ecsql: string, bindings: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<DbResult>, string>): void;
 
 }
 
@@ -159,7 +169,7 @@ declare class NodeAddonECSqlStatement {
      * @param ecSql The statement to prepare
      * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
-    prepare(db: NodeAddonDgnDb, ecSql: string): BentleyError<DbResult>;
+    prepare(db: NodeAddonDgnDb, ecSql: string): StatusCodeWithMessage<DbResult>;
 
     /** Reset the statement to just before the first row.
      * @return non-zero error status in case of failure.
@@ -179,7 +189,7 @@ declare class NodeAddonECSqlStatement {
      * @param valuesJson The values to bind in stringified JSON format. The values must be an array if the placeholders are positional, or an any object with properties if the placeholders are named.
      * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
-    bindValues(valuesJson: string): BentleyError<DbResult>;
+    bindValues(valuesJson: string): StatusCodeWithMessage<DbResult>;
 
     /** Step this statement to move to the next row.  
      * @return BE_SQLITE_ROW if the step moved to a new row. BE_SQLITE_DONE if the step failed because there is no next row. Another non-zero error status if step failed because of an error.
@@ -194,7 +204,6 @@ declare class NodeAddonECSqlStatement {
 
 }
 
-/* The NodeAddonECDb class that is projected by the iModelJs node addon. */
 declare class NodeAddonECDb {
     constructor();
 

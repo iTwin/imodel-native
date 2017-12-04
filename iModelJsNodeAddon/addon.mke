@@ -38,7 +38,7 @@ always:
 PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 
 always:
-    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljsnode_addon_package_version.h $(o)imodeljsnode_addon_package_version.h
+    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljs-nodeaddonapi.package.version.h $(o)imodeljs-nodeaddonapi.package.version.h
  
 cIncs + -I$(o)
 
@@ -148,7 +148,6 @@ $(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENT
 #----------------------------------------------------------------------
 always:
     ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/package.json=$(baseDir)/package.json"
-    ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/iModelJsNodeAddon.d.ts=$(baseDir)/iModelJsNodeAddon.d.ts"
     
 #----------------------------------------------------------------------
 # Deliver Presentation Rules
