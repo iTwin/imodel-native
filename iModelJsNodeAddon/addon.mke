@@ -8,7 +8,11 @@
 CLANG_ALLOW_UNDEFINED=1
 %include mdl.mki
 
-appName     = imodeljs_$(NODE_GYP_VER)
+%if !defined(ADDON_FLAVOR)
+    %error ADDON_FLAVOR must defined to Node or Electron
+%endif
+
+appName     = imodeljs_$(ADDON_FLAVOR)
 
 # I get the impression that node addons names should be all lower case. At least, that's what I see out there.
 
@@ -27,7 +31,7 @@ cDefs + -DBUILDING_NODE_EXTENSION
   cDefs + -D_DARWIN_USE_64_BIT_INODE=1
 %endif
 
-o = $(OutputRootDir)Build/iModelJsNodeAddon_$(NODE_GYP_VER)/
+o = $(OutputRootDir)Build/iModelJsNodeAddon_$(ADDON_FLAVOR)/
 always:
     !~@mkdir $(o)
 
@@ -139,15 +143,9 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(
 #----------------------------------------------------------------------
 #   Deliver the shared library using the .node extension
 #----------------------------------------------------------------------
-$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+$(BuildContext)Delivery/iModelJsNodeAddon/$(ADDON_FLAVOR)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
     $(LinkFirstDepToFirstTarget)
 	
-#----------------------------------------------------------------------
-# Deliver package.json. That contains the package version number.
-#----------------------------------------------------------------------
-always:
-    ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/package.json=$(baseDir)/package.json"
-    
 #----------------------------------------------------------------------
 # Deliver Presentation Rules
 #----------------------------------------------------------------------

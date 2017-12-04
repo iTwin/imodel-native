@@ -15,7 +15,7 @@ import sys
 import re
 import shutil
 
-def setMacros(packagefile, NODE_VERSION_CODE = None, PLATFORM = None, PACKAGE_VERSION = None, DECL_FILE_NAME = None):
+def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSION = None, DECL_FILE_NAME = None, NODE_ENGINES = None):
     str = ''
     with open(packagefile, 'r') as pf:
         str = pf.read()
@@ -23,8 +23,12 @@ def setMacros(packagefile, NODE_VERSION_CODE = None, PLATFORM = None, PACKAGE_VE
     with open(packagefile, 'w') as pf:
         if (NODE_VERSION_CODE):
             str = str.replace(r'${NODE_VERSION_CODE}', NODE_VERSION_CODE.lower())
-        if (PLATFORM):
-            str = str.replace(r'${PLATFORM}', PLATFORM.lower())
+        if (NODE_OS):
+            str = str.replace(r'${NODE_OS}', NODE_OS.lower())
+        if (NODE_CPU):
+            str = str.replace(r'${NODE_CPU}', NODE_CPU.lower())
+        if (NODE_ENGINES):
+            str = str.replace(r'${NODE_ENGINES}', NODE_ENGINES.lower())
         if (PACKAGE_VERSION):
             str = str.replace(r'${PACKAGE_VERSION}', PACKAGE_VERSION.lower())
         if (DECL_FILE_NAME):
@@ -41,16 +45,18 @@ def filterOutUnwantedFiles(dirname, files):
 # @param outputpackagedir The path to the output directory in which the package should be generated
 # @param inputProductdir The path to the Product that contains the ingredients, e.g., D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows
 # @param nodeVersionCode The node version that this addon is for.  E.g., N_8_2
-# @param platformandarch The target platform and achitecture. E.g., WinX64 or LinuxX64
+# @param nodeOS The target platform (using Node terminology)
+# @param nodeCPU The target CPU (using Node terminology)
 # @param packageVersion The semantic version number for the generated package
-def doCopy(outputpackagedir, inputProductdir, nodeVersionCode, platformandarch, packageVersion):
+# @param sourceDir The source directory, i.e., %SrcRoot%iModelJsNodeAddon
+def doCopy(outputpackagedir, inputProductdir, nodeVersionCode, nodeOS, nodeCPU, packageVersion, sourceDir):
     # The input product's directory structure should look like this:
     # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Addon\N_8_2\imodeljs.node
     # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Support
 
     srcsupportdir = os.path.join(inputProductdir, "Support");
     srcnodefile = os.path.join(os.path.join(os.path.join(inputProductdir, "Addon"), nodeVersionCode), "imodeljs.node")
-    srcpackagefile = os.path.join(os.path.join(os.path.join(inputProductdir, "Addon"), nodeVersionCode), "package.json")
+    srcpackagefile = os.path.join(sourceDir, "package.json.template")
 
     if not os.path.exists(srcnodefile) or not os.path.exists(srcsupportdir) or not os.path.exists(srcpackagefile):
         print '***'
@@ -59,8 +65,6 @@ def doCopy(outputpackagedir, inputProductdir, nodeVersionCode, platformandarch, 
             print ' ***   not found: ' + srcnodefile 
         if not os.path.exists(srcsupportdir):
             print ' ***   not found: ' + srcsupportdir 
-        if not os.path.exists(srcpackagefile):
-            print ' ***   not found: ' + srcpackagefile
         print('***')
         exit(1)
 
@@ -75,24 +79,35 @@ def doCopy(outputpackagedir, inputProductdir, nodeVersionCode, platformandarch, 
 
     shutil.copyfile(srcpackagefile, dstpackagefile)
 
-    setMacros(dstpackagefile, nodeVersionCode, platformandarch, packageVersion)
+    # The node addon is specific to a version of node.
+    # *** NEEDS WORK: We don't inject this constraint for Electron addons -- not sure how to specify electron engines.
+    nodeEngines = ' '
+    if (nodeVersionCode.lower().startswith('n_')):
+        nodeEngineVersion = nodeVersionCode[2:].replace('_', '.')
+        nodeEngines = '"engines": "' + nodeEngineVersion + '",'
+
+    setMacros(dstpackagefile, NODE_VERSION_CODE = nodeVersionCode, NODE_OS = nodeOS, NODE_CPU = nodeCPU, PACKAGE_VERSION = packageVersion, NODE_ENGINES = nodeEngines)
 
 # Generate the package that defines the API implemented by all platform-specific packages
 # @param outputpackagedir The path to the output directory in which the package should be generated
-# @param productdir The path to the Product.  E.g., D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows
+# @param sourceDir The source directory, i.e., %SrcRoot%iModelJsNodeAddon
 # @param packageVersion The semantic version number for the generated package
 def generateApiPackage(outputpackagedir, sourceDir, packageVersion):
 
-    declFileName = 'imodeljs-nodeaddonapi.d.ts'
+    os.makedirs(outputpackagedir);
 
+    declFileName = 'imodeljs-nodeaddonapi.d.ts'
+    packageTemplateFileName = 'imodeljs-nodeaddonapi.package.json.template'
+
+    # Copy some files into place without modifying them.
     filesToCopy = [declFileName, 'README.md']
 
-    os.makedirs(outputpackagedir);
     for fileToCopy in filesToCopy:
         shutil.copyfile(os.path.join(sourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
 
+    # Generate the package.json file
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
-    shutil.copyfile(os.path.join(sourceDir, 'imodeljs-nodeaddonapi.package.json'), dstpackagefile);
+    shutil.copyfile(os.path.join(sourceDir, packageTemplateFileName), dstpackagefile);
 
     setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, DECL_FILE_NAME = declFileName)
 
@@ -100,15 +115,16 @@ def generateApiPackage(outputpackagedir, sourceDir, packageVersion):
 #   main
 #
 if __name__ == '__main__':
-    if len(sys.argv) < 6:
-        print "Syntax: ", sys.argv[0], " inputproductdir outputpackageparentdir platformandarch packageversionfilename sourceDir"
+    if len(sys.argv) < 7:
+        print "Syntax: ", sys.argv[0], " inputproductdir outputpackageparentdir nodeOS nodeCPU packageversionfilename sourceDir"
         exit(1)
 
     productdir = sys.argv[1]
     outdirParent = sys.argv[2]
-    platformandarch = sys.argv[3]
-    packageVersionFileName = sys.argv[4]
-    sourceDir = sys.argv[5]
+    nodeOS = sys.argv[3].lower();
+    nodeCPU = sys.argv[4].lower();
+    packageVersionFileName = sys.argv[5]
+    sourceDir = sys.argv[6]
 
     if outdirParent.endswith ('/') or outdirParent.endswith ('\\'):
         outdirParent = outdirParent[0:len(outdirParent)-1]
@@ -142,16 +158,18 @@ if __name__ == '__main__':
             print '*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.';
             continue
 
+        versionsubdir = versionsubdir.lower();
+
         # Compute the name of a directory that we can use to stage this package. This is just a temporary name.
         # The real name of the package is inside the package.json file.
-        outputpackagename = 'imodeljs-' + versionsubdir + '-' + platformandarch
+        outputpackagename = 'imodeljs-' + versionsubdir + '-' + nodeOS + '-' + nodeCPU
 
         outputpackagedir = os.path.join(outdirParent, outputpackagename)
 
         if os.path.exists(outputpackagedir):
             shutil.rmtree(outputpackagedir)
 
-        doCopy(outputpackagedir, productdir, versionsubdir, platformandarch, packageVersion)
+        doCopy(outputpackagedir, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir)
 
         print 'npm publish ' + outputpackagedir;
 
