@@ -2170,20 +2170,6 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
 
     {
     // create new definition model
-    OrthogonalGridHandler& handler = OrthogonalGridHandler::GetHandler ();
-    DgnClassId classId = db.Domains ().GetClassId (handler);
-    DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
-
-    GeometricElement3dPtr element = dynamic_cast<GeometricElement3d*>(handler.Create (params).get ());
-
-    element->SetCategoryId (categoryId);
-    element->Insert ();
-
-    ASSERT_TRUE (!element->GetElementId ().IsValid ()) << "should fail to insert portion created via handler";
-    }
-
-    {
-    // create new definition model
     GridAxisHandler& handler = GridAxisHandler::GetHandler ();
     DgnClassId classId = db.Domains ().GetClassId (handler);
     DgnElement::CreateParams params (db, m_model->GetModelId (), classId);

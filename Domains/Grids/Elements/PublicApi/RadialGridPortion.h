@@ -68,6 +68,13 @@ public:
             : T_Super(params) { }
         };
 
+private:
+
+    BE_PROP_NAME (DefaultStartAngle)
+    BE_PROP_NAME (DefaultEndAngle)
+    BE_PROP_NAME (DefaultStartRadius)
+    BE_PROP_NAME (DefaultEndRadius)
+
 protected:
     explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params);
 
@@ -92,6 +99,37 @@ public:
     //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsert (CreateParams params);
 
+    //! Gets default start angle of this RadialGrid
+    //! @return DefaultStartAngle of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartAngle () const { return GetPropertyValueDouble (prop_DefaultStartAngle ()); }
+
+    //! Sets default start angle of this RadialGrid
+    //! @param[in]  staAngle   new DefaultStartAngle for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartAngle (double staAngle) { SetPropertyValue (prop_DefaultStartAngle (), staAngle); };
+
+    //! Gets default end angle of this RadialGrid
+    //! @return DefaultEndAngle of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndAngle () const { return GetPropertyValueDouble (prop_DefaultEndAngle ()); }
+
+    //! Sets default end angle of this RadialGrid
+    //! @param[in]  endAngle   new DefaultEndAngle for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndAngle (double endAngle) { SetPropertyValue (prop_DefaultEndAngle (), endAngle); };
+
+    //! Gets default start radius of this RadialGrid
+    //! @return DefaultStartRadius of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartRadius () const { return GetPropertyValueDouble (prop_DefaultStartRadius ()); }
+
+    //! Sets default start radius of this RadialGrid
+    //! @param[in]  staRadius   new DefaultStartRadius for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartRadius (double staRadius) { SetPropertyValue (prop_DefaultStartRadius (), staRadius); };
+
+    //! Gets default end radius of this RadialGrid
+    //! @return DefaultEndRadius of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndRadius () const { return GetPropertyValueDouble (prop_DefaultEndRadius ()); }
+
+    //! Sets default end radius of this RadialGrid
+    //! @param[in]  endRadius   new DefaultEndRadius for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndRadius (double endRadius) { SetPropertyValue (prop_DefaultEndRadius (), endRadius); };
 };
 
 END_GRIDS_NAMESPACE

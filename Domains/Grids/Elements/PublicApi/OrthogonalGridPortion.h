@@ -107,6 +107,11 @@ public:     //public - non-exported
         };
 private:
 
+    BE_PROP_NAME (DefaultStartExtentX)
+    BE_PROP_NAME (DefaultEndExtentX)
+    BE_PROP_NAME (DefaultStartExtentY)
+    BE_PROP_NAME (DefaultEndExtentY)
+
     static BentleyStatus            ValidateBySurfacesParams (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
     static bool                     AreSurfacesCoplanar (bvector<CurveVectorPtr> const& surfaces);
 
@@ -166,6 +171,39 @@ public:
     //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
     //! @return                     Dgn::RepositoryStatus::Success if no error has occured when rotating the grid
     GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta, bool updateDimensions = false);
+
+    //! Gets Default X start extent of this OrthogonalGrid
+    //! @return DefaultStartExtentX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartExtentX () const { return GetPropertyValueDouble (prop_DefaultStartExtentX ()); }
+
+    //! Sets Default X start extent of this OrthogonalGrid
+    //! @param[in]  staExtentX   new DefaultStartExtentX for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartExtentX (double staExtentX) { SetPropertyValue (prop_DefaultStartExtentX (), staExtentX); };
+
+    //! Gets Default X end extent of this OrthogonalGrid
+    //! @return DefaultEndExtentX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndExtentX () const { return GetPropertyValueDouble (prop_DefaultEndExtentX ()); }
+
+    //! Sets Default X end extent of this OrthogonalGrid
+    //! @param[in]  endExtentX   new DefaultEndExtentX for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndExtentX (double endExtentX) { SetPropertyValue (prop_DefaultEndExtentX (), endExtentX); };
+
+    //! Gets Default Y start extent of this OrthogonalGrid
+    //! @return DefaultStartExtentY of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartExtentY () const { return GetPropertyValueDouble (prop_DefaultStartExtentY ()); }
+
+    //! Sets Default Y start extent of this OrthogonalGrid
+    //! @param[in]  staExtentY   new DefaultStartExtentY for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartExtentY (double staExtentY) { SetPropertyValue (prop_DefaultStartExtentY (), staExtentY); };
+
+    //! Gets Default Y end extent of this OrthogonalGrid
+    //! @return DefaultEndExtentY of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndExtentY () const { return GetPropertyValueDouble (prop_DefaultEndExtentY ()); }
+
+    //! Sets Default Y end extent of this OrthogonalGrid
+    //! @param[in]  endExtentY   new DefaultEndExtentY for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndExtentY (double endExtentY) { SetPropertyValue (prop_DefaultEndExtentY (), endExtentY); };
+
 };
 
 END_GRIDS_NAMESPACE
