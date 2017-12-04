@@ -141,6 +141,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
         //! Load the bridge library and resolve its T_iModelBridge_getInstance function.
         T_iModelBridge_getInstance* LoadBridge();
+
+        T_iModelBridge_releaseInstance* ReleaseBridge();
         };
 
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
@@ -228,6 +230,7 @@ protected:
     int RunExclusive(int argc, WCharCP argv[]);
     int UpdateExistingBim();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
+    BentleyStatus ReleaseBridge();
     BentleyStatus LoadBridge();
     BentleyStatus InitBridge();
     int ProcessSchemaChange();
