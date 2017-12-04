@@ -19,4 +19,6 @@ baseDir  = $(_MakeFilePath)
 
 $(OutputRootDir)build/Units/Xliffs/UnitLabels_en.xliff: $(baseDir)xliffs/UnitLabels_en.xliff
     $(copyCmd) $(baseDir)xliffs/UnitLabels_en.xliff $(OutputRootDir)build/Units/Xliffs/UnitLabels_en.xliff
+
+always:    
     @CreateSymLinks.py -i -f"$(BuildContext)Delivery/xliffs/UnitLabels_en.xliff=$(OutputRootDir)build/Units/Xliffs/UnitLabels_en.xliff"
