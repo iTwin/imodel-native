@@ -1319,6 +1319,8 @@ void RealityDataConsole::Details()
         DisplayInfo(Utf8PrintfString(" Modified timestamp : %s\n", entity->GetModifiedDateTime().ToString()));
         DisplayInfo(Utf8PrintfString(" Created timestamp  : %s\n", entity->GetCreationDateTime().ToString()));
         DisplayInfo(Utf8PrintfString(" OwnedBy            : %s\n", entity->GetOwner()));
+        DisplayInfo(Utf8PrintfString(" Hidden             : %s\n", entity->IsHidden() ? "true" : "false"));
+        DisplayInfo(Utf8PrintfString(" DelegatePermissions: %s\n", entity->HasDelegatePermissions() ? "true" : "false"));
         }
     }
 

@@ -161,7 +161,7 @@ TEST(RealityDataFilterCreator, FilterRelationshipByRealityDataId)
 TEST(RealityDataFilterCreator, FilterRelationshipByProjectId)
 	{
 	RDSFilter filter = RealityDataFilterCreator::FilterRelationshipByProjectId("MyProjectID");
-	EXPECT_STREQ(filter.ToString().c_str(), "ProjectId+eq+'MyProjectID'");
+	EXPECT_STREQ(filter.ToString().c_str(), "RelatedId+eq+'MyProjectID'");
 	}
 
 //=====================================================================================
@@ -173,7 +173,7 @@ TEST(RealityDataFilterCreator, GroupFiltersAND)
 	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByRealityDataId("MyRealityDataID"));
 	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByProjectId("MyProjectID"));
 	auto filter = RealityDataFilterCreator::GroupFiltersAND(filtersVector);
-	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'+and+ProjectId+eq+'MyProjectID'");
+	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'+and+RelatedId+eq+'MyProjectID'");
 	}
 
 //=====================================================================================
@@ -185,7 +185,7 @@ TEST(RealityDataFilterCreator, GroupFiltersOR)
 	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByRealityDataId("MyRealityDataID"));
 	filtersVector.emplace_back(RealityDataFilterCreator::FilterRelationshipByProjectId("MyProjectID"));
 	auto filter = RealityDataFilterCreator::GroupFiltersOR(filtersVector);
-	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'+or+ProjectId+eq+'MyProjectID'");
+	EXPECT_STREQ(filter.ToString().c_str(), "RealityDataId+eq+'MyRealityDataID'+or+RelatedId+eq+'MyProjectID'");
 	}
 
 //=====================================================================================

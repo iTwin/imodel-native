@@ -339,7 +339,7 @@ void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
 void RealityDataRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=ProjectId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelatedId+eq+'%s'", m_encodedId));
     }
 
 //=====================================================================================
@@ -575,7 +575,7 @@ RDSFilter RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8String
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterRelationshipByProjectId(Utf8String projectId)
     {
-    return RDSFilter(Utf8PrintfString("ProjectId+eq+'%s'", BeStringUtilities::UriEncode(projectId.c_str())));
+    return RDSFilter(Utf8PrintfString("RelatedId+eq+'%s'", BeStringUtilities::UriEncode(projectId.c_str())));
     }
 
 //=====================================================================================

@@ -772,6 +772,12 @@ void RealityData::SetOwner(Utf8CP owner) { m_owner = owner; }
 uint64_t RealityData::GetTotalSize() const { return m_totalSize; }
 void RealityData::SetTotalSize(uint64_t totalSize) { m_totalSize = totalSize; }
 
+bool RealityData::IsHidden() const { return m_hidden; }
+void RealityData::SetHidden(bool hidden) { m_hidden = hidden; }
+
+bool RealityData::HasDelegatePermissions() const { return m_delegatePermissions; }
+void RealityData::SetDelegatePermissions(bool dp) { m_delegatePermissions = dp; }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
 //-------------------------------------------------------------------------------------
@@ -780,7 +786,37 @@ RealityData::RealityData()
     m_streamed = true;
     m_listable = true;
     m_totalSize = 0;
+    m_hidden = false;
+    m_delegatePermissions = false;
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                Spencer.Mason         	         12/2017
+//-------------------------------------------------------------------------------------
+RealityDataExtendedPtr RealityDataExtended::Create()
+    {
+    return new RealityDataExtended();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                Spencer.Mason         	         12/2017
+//-------------------------------------------------------------------------------------
+Utf8StringCR RealityDataExtended::GetOriginService() const { return m_originService; }
+void RealityDataExtended::SetOriginService(Utf8CP originService) { m_originService = originService; }
+
+Utf8StringCR RealityDataExtended::GetUsePermissionOverride() const { return m_usePermissionOverride; }
+void RealityDataExtended::SetUsePermissionOverride(Utf8CP usePermissionOverride) { m_usePermissionOverride = usePermissionOverride; }
+
+Utf8StringCR RealityDataExtended::GetManagePermissionOverride() const { return m_managePermissionOverride; }
+void RealityDataExtended::SetManagePermissionOverride(Utf8CP managePermissionOverride) { m_managePermissionOverride = managePermissionOverride; }
+
+Utf8StringCR RealityDataExtended::GetAssignPermissionOverride() const { return m_assignPermissionOverride; }
+void RealityDataExtended::SetAssignPermissionOverride(Utf8CP assignPermissionOverride) { m_assignPermissionOverride = assignPermissionOverride; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                Spencer.Mason         	         12/2017
+//-------------------------------------------------------------------------------------
+RealityDataExtended::RealityDataExtended() : RealityData() {}
 
 RealityDataEnterpriseStat::RealityDataEnterpriseStat(): m_totalSizeKB(0), m_nbRealityData(0){}
 

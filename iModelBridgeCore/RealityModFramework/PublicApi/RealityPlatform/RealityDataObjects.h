@@ -486,33 +486,73 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetGroup(Utf8CP group);
 
     REALITYDATAPLATFORM_EXPORT Utf8String GetFootprintString() const override;
+    
+    //! Indicates if the data is hidden.
+    REALITYDATAPLATFORM_EXPORT bool IsHidden() const;
+    REALITYDATAPLATFORM_EXPORT void SetHidden(bool hidden);
+
+    //! Indicates if the data has delegated permissions.
+    REALITYDATAPLATFORM_EXPORT bool HasDelegatePermissions() const;
+    REALITYDATAPLATFORM_EXPORT void SetDelegatePermissions(bool dp);
 
 protected:
     REALITYDATAPLATFORM_EXPORT RealityData();
 
-    Utf8String m_realityDataType;
-    bool     m_streamed;
-    DateTime m_creationDate;
-    DateTime m_modifiedDate;
+    Utf8String  m_realityDataType;
+    bool        m_streamed;
+    DateTime    m_creationDate;
+    DateTime    m_modifiedDate;
 
-    Utf8String m_thumbnailDocument;
+    Utf8String  m_thumbnailDocument;
 
-    Utf8String m_organizationId;
-    Utf8String m_containerName;
-    Utf8String m_dataLocationGuid;
-    Utf8String m_rootDocument;
-    Utf8String m_metadataUrl;
-    Utf8String m_ultimateId;
-    Utf8String m_ultimateSite;
-    Utf8String m_copyright;
-    Utf8String m_termsOfUse;
+    Utf8String  m_organizationId;
+    Utf8String  m_containerName;
+    Utf8String  m_dataLocationGuid;
+    Utf8String  m_rootDocument;
+    Utf8String  m_metadataUrl;
+    Utf8String  m_ultimateId;
+    Utf8String  m_ultimateSite;
+    Utf8String  m_copyright;
+    Utf8String  m_termsOfUse;
 
-    bool m_listable;
+    bool        m_listable;
 
-    Utf8String m_owner;
-    Utf8String m_group;
-    uint64_t m_totalSize;
+    Utf8String  m_owner;
+    Utf8String  m_group;
+    uint64_t    m_totalSize;
 
+    bool        m_hidden;
+    bool        m_delegatePermissions;
+    };
+
+struct RealityDataExtended: public RealityData
+    {
+public:
+    //! Create invalid data.
+    REALITYDATAPLATFORM_EXPORT static RealityDataExtendedPtr Create();
+
+    //! OriginService
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOriginService() const;
+    REALITYDATAPLATFORM_EXPORT void SetOriginService(Utf8CP originService);
+
+    //! PermissionOverride
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUsePermissionOverride() const;
+    REALITYDATAPLATFORM_EXPORT void SetUsePermissionOverride(Utf8CP usePermissionOverride);
+
+    //! ManagePermissionOverride
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetManagePermissionOverride() const;
+    REALITYDATAPLATFORM_EXPORT void SetManagePermissionOverride(Utf8CP managePermissionOverride);
+
+    //! AssignPermissionOverride
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetAssignPermissionOverride() const;
+    REALITYDATAPLATFORM_EXPORT void SetAssignPermissionOverride(Utf8CP assignPermissionOverride);
+protected:
+    REALITYDATAPLATFORM_EXPORT RealityDataExtended();
+
+    Utf8String  m_originService;
+    Utf8String  m_usePermissionOverride;
+    Utf8String  m_managePermissionOverride;
+    Utf8String  m_assignPermissionOverride;
     };
 
 struct RealityDataEnterpriseStat

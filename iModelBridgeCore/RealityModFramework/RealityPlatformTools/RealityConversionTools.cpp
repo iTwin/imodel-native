@@ -403,6 +403,14 @@ RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
     if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
         data->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
 
+    // Listable
+    if (properties.isMember("Hidden") && !properties["Hidden"].isNull())
+        data->SetHidden(properties["Hidden"].asBool());
+
+    // Listable
+    if (properties.isMember("DelegatePermissions") && !properties["DelegatePermissions"].isNull())
+        data->SetDelegatePermissions(properties["DelegatePermissions"].asBool());
+
     return data;
     }
 

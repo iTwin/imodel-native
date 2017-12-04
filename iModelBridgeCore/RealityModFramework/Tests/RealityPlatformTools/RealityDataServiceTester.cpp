@@ -67,10 +67,10 @@ TEST_F(RealityDataServiceFixture, RealityDataUrl)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              05/2017
 //=====================================================================================
-TEST_F(RealityDataServiceFixture, RealityDataRelationshipByProjectIdRequest)
+TEST_F(RealityDataServiceFixture, RealityDataRelationshipByRelatedIdRequest)
 	{
 	RealityDataRelationshipByProjectIdRequest dataRequest("myIdentifierID");
-	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=ProjectId+eq+'myIdentifierID'");
+	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RelatedId+eq+'myIdentifierID'");
 	}
 
 //=====================================================================================
