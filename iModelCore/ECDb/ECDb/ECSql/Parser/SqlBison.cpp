@@ -4983,7 +4983,7 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (3)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (3)].pParseNode) = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (3)].pParseNode));
         }
     break;
@@ -4993,9 +4993,9 @@ yyreduce:
     {
             (yyval.pParseNode) = SQL_NEW_RULE;
             (yyval.pParseNode)->append((yyvsp[(1) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(2) - (5)].pParseNode) = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(3) - (5)].pParseNode));
-            (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode) = CREATE_NODE(context->getFieldName(), SQL_NODE_PUNCTUATION));
+            (yyval.pParseNode)->append((yyvsp[(4) - (5)].pParseNode) = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
             (yyval.pParseNode)->append((yyvsp[(5) - (5)].pParseNode));
         }
     break;
