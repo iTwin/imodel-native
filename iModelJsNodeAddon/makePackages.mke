@@ -13,13 +13,16 @@ baseDir = $(_MakeFilePath)
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     Platform=Windows
-    PlatformAndArch=WinX64
+    NodeOS=win32
+    NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
     Platform=Linux
-    PlatformAndArch=LinuxX64
+    NodeOS=linux
+    NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
-    Platform=MacOS
-    PlatformAndArch=DarwinX64
+    Platform=Darwin
+    NodeOS=darwin
+    NodeCPU=X64
 %else
     %error iModelJsNodeAddon is not available for this platform
 %endif
@@ -34,6 +37,6 @@ baseDir = $(_MakeFilePath)
 %endif
 
 always:
-    | -- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
+    |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch) $(baseDir)package_version.txt $(baseDir)
+    python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir)

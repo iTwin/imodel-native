@@ -54,8 +54,7 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
-        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_8_9_0/package.json
+        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -70,8 +69,7 @@
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
-        Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node,
-        Delivery/iModelJsNodeAddon/E_1_6_11/package.json
+        Delivery/iModelJsNodeAddon/E_1_6_11/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -84,8 +82,7 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
-        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_8_9_0/package.json
+        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
@@ -98,8 +95,7 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_8_9">
-        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node,
-        Delivery/iModelJsNodeAddon/N_8_9_0/package.json
+        Delivery/iModelJsNodeAddon/N_8_9_0/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
