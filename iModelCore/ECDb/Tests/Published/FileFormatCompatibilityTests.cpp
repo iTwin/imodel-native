@@ -72,7 +72,8 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
         enum class CompareOptions
             {
             None = 0,
-            DoNotComparePk = 1
+            DoNotComparePk = 1,
+            IgnoreDescriptions = 2
             };
 
     private:
@@ -1010,8 +1011,13 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
         benchmarkDdlLookupStmt.BindText(1, actualName, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == benchmarkDdlLookupStmt.Step())
             {
-            Utf8CP benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
-            EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in actual file has different DDL than in benchmark file: " << actualName;
+            if (BeStringUtilities::StricmpAscii(actualName,"bis_Element_CurrentTimeStamp") == 0)
+                EXPECT_STREQ("CREATE TRIGGER [bis_Element_CurrentTimeStamp] AFTER UPDATE ON [bis_Element] WHEN old.[LastMod]=new.[LastMod] AND old.[LastMod]!=julianday('now') BEGIN UPDATE [bis_Element] SET [LastMod]=julianday('now') WHERE [Id]=new.[Id]; END", actualDdl) << "DB object in actual file has different DDL than in benchmark file: " << actualName;
+            else
+                {
+                Utf8CP benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
+                EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in actual file has different DDL than in benchmark file: " << actualName;
+                }
             }
         else
             EXPECT_TRUE(false) << "DB object in benchmark file not found: " << actualName;
@@ -1077,7 +1083,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(21, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     
@@ -1117,11 +1123,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
         {
         benchmarkRowCount++;
         Utf8CP benchmarkName = benchmarkDdlLookupStmt.GetValueText(0);
-        Utf8CP benchmarkDdl = nullptr;
-        /*if (BeStringUtilities::StricmpAscii(benchmarkName, "ec_Table") == 0)
-            benchmarkDdl = "CREATE TABLE ec_Table(Id INTEGER PRIMARY KEY,ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,Type INTEGER NOT NULL,ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,UpdatableViewName TEXT, TableSpaceId INTEGER REFERENCES ec_TableSpace(Id) ON DELETE CASCADE)";
-        else*/
-            benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(1);
+        Utf8CP benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(1);
 
         actualDdlStmt.BindText(1, benchmarkName, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == actualDdlStmt.Step())
@@ -1140,9 +1142,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    //In upgraded file, we have one more table (ec_TableSpace) and three more indexes (ec_Table(TableSpaceId),ec_Table(Type), 
-    //ec_TableSpace(Id))
-    ASSERT_EQ(benchmarkMasterTableRowCount + 4, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
+    ASSERT_EQ(benchmarkMasterTableRowCount, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1162,13 +1162,13 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(21, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     //schema profile tables
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Schema", PROFILETABLE_SELECT_Schema));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_SchemaReference", PROFILETABLE_SELECT_SchemaReference));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Class", PROFILETABLE_SELECT_Class));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Class", PROFILETABLE_SELECT_Class, CompareOptions::IgnoreDescriptions));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassHasBaseClasses", PROFILETABLE_SELECT_ClassHasBaseClasses));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Enumeration", PROFILETABLE_SELECT_Enumeration));
     EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_KindOfQuantity", PROFILETABLE_SELECT_KindOfQunatity));
@@ -1820,7 +1820,23 @@ bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualF
 
             const DbValueType benchmarkColType = benchmarkTableStmt.GetColumnType(i);
             const DbValueType actualColType = actualTableStmt.GetColumnType(i);
-            EXPECT_EQ(benchmarkColType, actualColType) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+            if (options == CompareOptions::IgnoreDescriptions && BeStringUtilities::StricmpAscii("description", colName) == 0)
+                {
+                //if col types differ only by one being null the other being text, the test will ignore and continue.
+                //if the col types differ otherwise, it is still considered a major difference and false is returned.
+                if (benchmarkColType != actualColType)
+                    {
+                    if ((benchmarkColType == DbValueType::NullVal || benchmarkColType == DbValueType::TextVal) &&
+                        (actualColType == DbValueType::NullVal || actualColType == DbValueType::TextVal))
+                        continue;
+                    }
+                }
+
+            if (benchmarkColType != actualColType)
+                {
+                EXPECT_EQ(benchmarkColType, actualColType) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+                return false;
+                }
 
             if (options == CompareOptions::DoNotComparePk && pkName.EqualsIAscii(colName))
                 continue;
