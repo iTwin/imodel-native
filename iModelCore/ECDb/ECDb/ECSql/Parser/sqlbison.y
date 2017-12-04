@@ -165,12 +165,11 @@ using namespace connectivity;
 %left ')'
 %right '='
 %right '.'
+%right ':'
 %right '('
 
 
 %token <pParseNode> SQL_TOKEN_INVALIDSYMBOL
-
-/*%type <pParseNode> sql_single_statement */
 
 %type <pParseNode> sql
 %type <pParseNode> column_commalist opt_column_array_idx property_path_entry property_path
@@ -188,7 +187,7 @@ using namespace connectivity;
 %type <pParseNode> like_predicate opt_escape test_for_null null_predicate_part_2 in_predicate in_predicate_part_2 character_like_predicate_part_2 other_like_predicate_part_2
 %type <pParseNode> all_or_any_predicate any_all_some existence_test subquery quantified_comparison_predicate_part_2
 %type <pParseNode> scalar_exp_commalist parameter_ref literal
-%type <pParseNode> column_ref column parameter range_variable opt_member_func_call
+%type <pParseNode> column_ref column parameter range_variable
 /* neue Regeln bei OJ */
 %type <pParseNode> derived_column as_clause num_primary term num_value_exp
 %type <pParseNode> value_exp_primary num_value_fct unsigned_value_spec cast_spec fct_spec  scalar_subquery
@@ -208,7 +207,8 @@ using namespace connectivity;
 %type <pParseNode> all sql_not for_length upper_lower comparison cross_union
 %type <pParseNode> select_statement
 %type <pParseNode> function_args_commalist function_arg
-%type <pParseNode> table_node table_node_separator table_node_mf function_name table_primary_as_range_column opt_as
+%type <pParseNode> table_node tablespace_qualified_class_name qualified_class_name class_name function_name table_primary_as_range_column opt_as
+%type <pParseNode> table_node_with_opt_member_func_call member_function_call table_node_path table_node_path_entry
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
 %type <pParseNode> when_operand_list when_operand case_operand
 %type <pParseNode> searched_when_clause_list simple_when_clause_list opt_collate_clause
@@ -231,12 +231,6 @@ using namespace connectivity;
  * (der Zugriff ueber yyval nach Aufruf des Parsers scheitert,
  *
  */
-sql_single_statement:
-        sql
-        { context->setParseTree( $1 ); }
-    |    sql ';'
-        { context->setParseTree( $1 ); }
-    ;
 
     /* schema definition language */
     /* Note: other ``sql:sal_Char() rules appear later in the grammar */
@@ -619,7 +613,7 @@ opt_only:
 
 
 table_ref:
-        opt_only table_node_mf table_primary_as_range_column
+        opt_only table_node_with_opt_member_func_call table_primary_as_range_column
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1801,7 +1795,7 @@ qualified_join:
 
 /*ECSQL extension*/
 ecrelationship_join:
-        table_ref join_type SQL_TOKEN_JOIN table_ref SQL_TOKEN_USING table_node_mf op_relationship_direction
+        table_ref join_type SQL_TOKEN_JOIN table_ref SQL_TOKEN_USING table_node_with_opt_member_func_call op_relationship_direction
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -2328,51 +2322,100 @@ derived_column:
         }
     ;
 
-table_node_separator:
-      '.' 
-    | ':'
-    ;
 
 table_node:
-        SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME 
+        qualified_class_name
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
-            $$->append($3);
         }
-    |  SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME table_node_separator SQL_TOKEN_NAME 
+    |   tablespace_qualified_class_name
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
-            $$->append($3);
-            $$->append($4 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
-            $$->append($5);
         };
         
-
-table_node_mf:
-        table_node opt_member_func_call
+tablespace_qualified_class_name:
+        SQL_TOKEN_NAME '.' qualified_class_name 
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
-            $$->append($2);
+            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
+            $$->append($3);
         };
 
-
-opt_member_func_call:
-		{$$ = SQL_NEW_RULE;}
-     |  '.' function_name '(' function_args_commalist ')'
+qualified_class_name:
+        SQL_TOKEN_NAME '.' class_name 
         {
-            $$ = SQL_NEW_RULE;            
-            $$->append($1 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
-            $$->append($2);
-            $$->append($3 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
-            $$->append($4);
-            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE(".", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        }
+        |
+        SQL_TOKEN_NAME ':' class_name 
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+        };
+
+class_name:
+        SQL_TOKEN_NAME 
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
         }
 ;
+
+table_node_with_opt_member_func_call:
+    table_node_path
+            {
+            $$ = SQL_NEW_RULE;            
+            $$->append($1);
+            };
+    
+
+table_node_path:
+        table_node_path_entry
+            {
+            $$ = SQL_NEW_DOTLISTRULE;
+            $$->append($1);
+            }
+    |   table_node_path '.' table_node_path_entry
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    |   table_node_path ':' table_node_path_entry
+            {
+            $1->append($3);
+            $$ = $1;
+            }
+    ;
+
+table_node_path_entry:
+        SQL_TOKEN_NAME
+        {
+            $$ = SQL_NEW_RULE;            
+            $$->append($1);
+        }
+    |   member_function_call
+        {
+            $$ = SQL_NEW_RULE;            
+            $$->append($1);
+        };
+
+member_function_call:
+    function_name '(' function_args_commalist ')'
+        {
+            $$ = SQL_NEW_RULE;            
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+         };
 
 opt_column_array_idx:
 		{$$ = SQL_NEW_RULE;}
@@ -2564,13 +2607,6 @@ parameter:
             $$ = SQL_NEW_RULE; // test
             $$->append($1 = CREATE_NODE("?", SQL_NODE_PUNCTUATION));
         }
-    |    '?' SQL_TOKEN_INTNUM
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1 = CREATE_NODE("?", SQL_NODE_PUNCTUATION));
-            $$->append($2);
-        }
-
     ;
 
 range_variable: 

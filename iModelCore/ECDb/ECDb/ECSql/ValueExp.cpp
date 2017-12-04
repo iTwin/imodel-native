@@ -352,13 +352,13 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
         FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());
         if (!funcSig)
             {
-            ctx.Issues().Report("Unknow member funtion '%s'", m_functionName.c_str());
+            ctx.Issues().Report("Unknown member function '%s'", m_functionName.c_str());
             return Exp::FinalizeParseStatus::Error;
             }
         
         if (funcSig->SetParameterType(GetChildrenR()) != SUCCESS)
             {
-            ctx.Issues().Report("Error in funtion call '%s' - Varying argument cannot be parameterize.", m_functionName.c_str());
+            ctx.Issues().Report("Error in function call '%s' - Varying argument list cannot be parameterized.", m_functionName.c_str());
             return Exp::FinalizeParseStatus::Error;
             }
 
@@ -1251,7 +1251,7 @@ Utf8String UnaryValueExp::_ToString() const
     return str;
     }
 
-//****************************** FuntionSigatureSet *****************************************
+//****************************** FunctionSignatureSet *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1260,13 +1260,13 @@ void FunctionSignatureSet::Declare(Utf8CP signature, Utf8CP description)
     std::unique_ptr<FunctionSignature> sig = FunctionSignature::Parse(signature, description);
     if (sig == nullptr)
         {
-        BeAssert(false && "Fail to parse funtion signature");
+        BeAssert(false && "Fail to parse FunctionSignature");
         return;
         }
 
     if (Find(sig->Name().c_str()) != nullptr)
         {
-        BeAssert(false && "Funtion with same name already exist");
+        BeAssert(false && "Function with same name already exist");
         return;
         }
 
@@ -1307,8 +1307,7 @@ FunctionSignatureSet& FunctionSignatureSet::GetInstance()
 void FunctionSignatureSet::LoadDefinitions()
     {
     //scoped funtion
-    Declare("::ChangeSummary(changesetId:integer, operation:any):resultset");
-    //SELECT * FROM stco.Foo.Changes(changsetId?
+    Declare("::" ECSQLFUNC_Changes "(changesetId:integer, operation:any):resultset");
     ////global funtion
     Declare("abs(value:numeric):numeric");
     Declare("hex(value:blob):string");
@@ -1328,7 +1327,7 @@ void FunctionSignatureSet::LoadDefinitions()
     }
 
 
-//****************************** FuntionSigature *****************************************
+//****************************** FunctionSignature *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2017
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -159,7 +159,7 @@ private:
     BentleyStatus ParseDatetimeValueFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseECRelationshipJoin(std::unique_ptr<ECRelationshipJoinExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseECSqlOption(std::unique_ptr<OptionExp>&, connectivity::OSQLParseNode const*) const;
 
@@ -214,7 +214,8 @@ private:
     BentleyStatus ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSubquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const*, ECSqlType, bool isPolymorphic) const;
+    BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const& tableNode, ECSqlType) const;
+    BentleyStatus ParseTableNodeWithOptMemberCall(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const&, ECSqlType, bool isPolymorphic) const;
     BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*, ECSqlType ecsqlType) const;
     BentleyStatus ParseTerm(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseTruthValue(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const* node) const { return ParseValueExp(exp, node); }
@@ -229,7 +230,7 @@ private:
     BentleyStatus ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
 
-    IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
+    IssueReporter const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
     static void ResolveEnumerators(Exp& exp, ECDbCR ecdb);
     static bool IsPredicate(connectivity::OSQLParseNode const&);
     static Utf8CP SqlDataTypeKeywordToString(sal_uInt32 sqlKeywordId);

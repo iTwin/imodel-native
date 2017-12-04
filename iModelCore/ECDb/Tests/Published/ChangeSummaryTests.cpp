@@ -448,7 +448,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryCacheMode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
+TEST_F(ChangeSummaryTestFixture, CacheAttachedNotAttached)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?> 
@@ -468,8 +468,6 @@ TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
 
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('hello',123)"));
 
-    TestChangeSet revision1;
-    ASSERT_EQ(BE_SQLITE_OK, revision1.FromChangeTrack(tracker));
 
     ASSERT_FALSE(m_ecdb.IsChangeSummaryCacheAttached());
     ASSERT_FALSE(m_ecdb.Schemas().ContainsSchema("ECDbChangeSummaries"));
@@ -480,6 +478,8 @@ TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
     ASSERT_TRUE(m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode", SchemaLookupMode::ByName, "changesummaries") == nullptr);
 
 
+    TestChangeSet revision1;
+    ASSERT_EQ(BE_SQLITE_OK, revision1.FromChangeTrack(tracker));
     ECInstanceKey summaryKey;
     ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(summaryKey, revision1));
 
@@ -488,8 +488,63 @@ TEST_F(ChangeSummaryTestFixture, CacheNotAttached)
     ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')"));
+    stmt.Finalize();
+
+    //now attach
+    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_TRUE(m_ecdb.IsChangeSummaryCacheAttached());
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("ECDbChangeSummaries"));
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("ECDbChangeSummaries", SchemaLookupMode::ByName, "changesummaries"));
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChangeSummaries", "ChangeSummary") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChangeSummaries", "ChangeSummary", SchemaLookupMode::ByName, "changesummaries") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode", SchemaLookupMode::ByName, "changesummaries") != nullptr);
+
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, revision1));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ChangedValue(%s,'S','AfterInsert','Hello World') FROM ts.Foo1", summaryKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT * FROM ts.Foo1.Changes(%s,'AfterInsert')", summaryKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    stmt.Finalize();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CloseClearCacheDestroyWithAttachedCache.ecdb"));
+    BeFileName ecdbPath(m_ecdb.GetDbFileName());
+    BeFileName cachePath = m_ecdb.GetChangeSummaryCachePath();
+
+    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChangeSummaries", "InstanceChange") != nullptr);
+    m_ecdb.CloseDb();
+    ASSERT_EQ(BeFileNameStatus::Success, ecdbPath.BeDeleteFile());
+    ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
+    ASSERT_EQ(SUCCESS, ecdb.AttachChangeSummaryCache());
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChangeSummaries", "InstanceChange") != nullptr);
+    }
+    ASSERT_EQ(BeFileNameStatus::Success, ecdbPath.BeDeleteFile());
+    ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
+    ASSERT_EQ(SUCCESS, ecdb.AttachChangeSummaryCache());
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChangeSummaries", "InstanceChange") != nullptr);
+    ecdb.ClearECDbCache();
+    }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
