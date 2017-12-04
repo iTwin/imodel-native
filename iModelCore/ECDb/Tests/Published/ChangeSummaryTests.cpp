@@ -56,7 +56,7 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
         int GetPropertyValueChangeCount(ECInstanceId instanceChangeId = ECInstanceId()) const
             {
             Utf8CP ecsql = instanceChangeId.IsValid() ? "SELECT count(*) FROM change.PropertyValueChange WHERE InstanceChange.Id=?" :
-                                                        "SELECT count(*) FROM change.PropertyValueChange";
+                "SELECT count(*) FROM change.PropertyValueChange";
             ECSqlStatement stmt;
             if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
                 return -1;
@@ -165,6 +165,133 @@ struct ChangeSummaryTestFixture : public ECDbTestFixture
             }
 #endif
         }
+
+    static DbResult ChangeSetToJson(Json::Value& json, Db const& db, IChangeSet& changeSet)
+        {
+        json = Json::ValueType::arrayValue;
+
+        bmap<Utf8String, Json::Value> changedValuesPerTableMap;
+        std::vector<Utf8String> tablesAsOrderedInChangeset;
+
+        for (Changes::Change change : changeSet.GetChanges())
+            {
+            Utf8CP tableName = nullptr;
+            DbOpcode opCode;
+            int nCols = -1;
+            int indirect = -1;
+            DbResult rc = change.GetOperation(&tableName, &nCols, &opCode, &indirect);
+            if (rc != BE_SQLITE_OK)
+                return rc;
+
+            bvector<Utf8String> cols;
+            if (!db.GetColumns(cols, tableName))
+                return BE_SQLITE_ERROR;
+
+            Utf8String tblName(tableName);
+            auto valueItor = changedValuesPerTableMap.find(tblName);
+            if (valueItor == changedValuesPerTableMap.end())
+                {
+                valueItor = changedValuesPerTableMap.insert(make_bpair(tblName, Json::Value(Json::ValueType::objectValue))).first;
+                valueItor->second["table"] = Json::Value(tblName);
+                tablesAsOrderedInChangeset.push_back(tableName);
+
+                Byte* pkCols;
+                int pkColCount;
+                rc = change.GetPrimaryKeyColumns(&pkCols, &pkColCount);
+                if (rc != BE_SQLITE_OK)
+                    return rc;
+
+                Json::Value pkColumns(Json::ValueType::arrayValue);
+                for (size_t i = 0; i < pkColCount; i++)
+                    {
+                    if (pkCols[i] == 1)
+                        {
+                        Utf8StringCR col = cols.at(i);
+                        pkColumns.append(Json::Value(col.c_str()));
+                        }
+                    }
+
+                valueItor->second["pk"] = pkColumns;
+                valueItor->second["rows"] = Json::Value(Json::ValueType::arrayValue);
+                }
+
+            Json::Value rowChange = Json::Value(Json::ValueType::objectValue);
+            if (opCode == DbOpcode::Delete)
+                rowChange["op"] = Json::Value("delete");
+            else if (opCode == DbOpcode::Insert)
+                rowChange["op"] = Json::Value("insert");
+            else
+                rowChange["op"] = Json::Value("update");
+
+            rowChange["indirect"] = Json::Value(indirect != 0);
+            rowChange["values"] = Json::Value(Json::ValueType::arrayValue);
+            for (int i = 0; i < nCols; i++)
+                {
+                Utf8StringCR col = cols.at((size_t) i);
+                Json::Value changedColValues(Json::ValueType::objectValue);
+                Json::Value colValueChange(Json::ValueType::objectValue);
+                if (DbOpcode::Insert == opCode)
+                    colValueChange["after"] = DbValueToJson(change.GetValue(i, Changes::Change::Stage::New));
+                else if (DbOpcode::Delete == opCode)
+                    colValueChange["before"] = DbValueToJson(change.GetValue(i, Changes::Change::Stage::Old));
+                else
+                    {
+                    DbValue oldValue = change.GetOldValue(i);
+                    DbValue newValue = change.GetNewValue(i);
+                    if (oldValue.IsValid())
+                        colValueChange["before"] = DbValueToJson(oldValue);
+
+                    if (newValue.IsValid())
+                        colValueChange["after"] = DbValueToJson(newValue);
+                    }
+
+                if (!colValueChange.empty())
+                    {
+                    changedColValues[col.c_str()] = colValueChange;
+                    rowChange["values"].append(changedColValues);
+                    }
+                }
+
+            valueItor->second["rows"].append(rowChange);
+            }
+
+        for (Utf8StringCR tableName : tablesAsOrderedInChangeset)
+            {
+            auto it = changedValuesPerTableMap.find(tableName);
+            if (it == changedValuesPerTableMap.end())
+                return BE_SQLITE_ERROR;
+
+            json.append(it->second);
+            }
+
+        return BE_SQLITE_OK;
+        }
+
+    static Json::Value DbValueToJson(DbValue const& v)
+        {
+        switch (v.GetValueType())
+            {
+                case DbValueType::BlobVal:
+                {
+                Utf8String base64Str;
+                Base64Utilities::Encode(base64Str, (Byte const*) v.GetValueBlob(), (size_t) v.GetValueBytes());
+                return Json::Value(base64Str);
+                }
+
+                case DbValueType::FloatVal:
+                    return Json::Value(v.GetValueDouble());
+                case DbValueType::IntegerVal:
+                    return Json::Value(v.GetValueInt64());
+                case DbValueType::TextVal:
+                    return Json::Value(v.GetValueText());
+                case DbValueType::NullVal:
+                    return Json::Value(Json::ValueType::nullValue);
+
+                default:
+                    BeAssert(false && "Unhandled DbValueType value");
+                    return Json::Value(Json::ValueType::nullValue);
+            }
+        };
 
     static Utf8CP ChangedOpCodeToString(ChangeOpCode opCode)
         {
@@ -1349,6 +1476,114 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
     DumpChangeSummary(changeSummaryKey, "OverflowTables");
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(20, GetPropertyValueChangeCount());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                       11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ChangeSummaryTestFixture, AttachFileIsNotTrackingByChangeTracking)
+    {
+    BeFileName primaryFilePath = ECDbTestFixture::BuildECDbPath("pri.db");
+    BeFileName attachedFilePath = ECDbTestFixture::BuildECDbPath("sec.db");
+
+    Db primaryDb, attachedDb;
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.CreateNewDb(primaryFilePath));
+    ASSERT_EQ(BE_SQLITE_OK, attachedDb.CreateNewDb(attachedFilePath));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("create table FooP(id integer primary key, prop text)"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("create table Goo(id integer primary key, city text, pop int)"));
+    ASSERT_EQ(BE_SQLITE_OK, attachedDb.ExecuteSql("create table FooS(id integer primary key, prop text)"));
+    primaryDb.CloseDb();
+    attachedDb.CloseDb();
+
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.OpenBeSQLiteDb(primaryFilePath, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
+    primaryDb.AttachDb(attachedFilePath.GetNameUtf8().c_str(), "sec");
+
+    TestChangeTracker tracker(primaryDb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into fooP(id,prop) values(1, 'cat')"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into fooP(id,prop) values(2, 'bird')"));
+
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into Goo(id,city,pop) values(20, 'boston', 200000)"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into Goo(id,city,pop) values(30, 'paris', 300000)"));
+
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into fooS(id,prop) values(101, 'dino')"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into fooS(id,prop) values(102, 'zibra')"));
+
+    //----------------------------------------------------------------------------------
+    TestChangeSet rev0;
+    rev0.FromChangeTrack(tracker, IChangeSet::SetType::Full);
+    tracker.Restart();
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into fooP(id,prop) values(3, 'dog')"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("update fooP set prop='crow' where id =2"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("delete from fooP where id=1"));
+
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into Goo(id,city,pop) values(10, 'london', 100000)"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("update Goo set city='peshawar', pop=400000 where id =30"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("delete from Goo where id=20"));
+
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("insert into fooS(id,prop) values(100, 'cow')"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("update fooS set prop='tiger' where id =101"));
+    ASSERT_EQ(BE_SQLITE_OK, primaryDb.ExecuteSql("delete from fooS where id=102"));
+
+    //----------------------------------------------------------------------------------
+    TestChangeSet rev1;
+    rev1.FromChangeTrack(tracker, IChangeSet::SetType::Full);
+    tracker.EnableTracking(false);
+
+    //Verify
+    //----------------------------------------------------------------------------------
+    Json::Value expectedChangeset0Json, expectedChangeset1Json;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedChangeset0Json, R"json(
+        [{"pk":["id"],"rows":
+            [{"indirect":false,"op":"insert",
+                "values":[{"id":{"after": 1}},
+                          {"prop":{"after": "cat"}}]},
+             {"indirect":false,"op":"insert",
+                "values":[{"id":{"after": 2}},
+                          {"prop":{"after": "bird"}}]}
+              ], "table":"FooP"},
+            {"pk":["id"],"rows":
+            [{"indirect":false,"op":"insert",
+               "values":[{"id": {"after": 30}},
+                        {"city":{"after": "paris"}},
+                        {"pop":{"after": 300000}}]},
+            {"indirect":false,"op":"insert",
+                "values":[{"id":{"after": 20}},
+                          {"city":{"after": "boston"}},
+                          {"pop":{"after": 200000}}]}
+            ],
+            "table":"Goo"}])json"));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedChangeset1Json, R"json(
+        [{"pk":["id"],
+        "rows": [{"indirect":false,"op":"delete",
+                    "values": [{"id":{"before":1}}, {"prop":{"before":"cat"}}]},
+                {"indirect":false,"op":"update",
+                    "values": [{"id":{"before":2}}, {"prop":{"before":"bird","after":"crow"}}]},
+                {"indirect":false,"op":"insert",
+                    "values": [{"id":{"after":3}}, {"prop":{"after":"dog"}}]}],
+         "table":"FooP"},
+        {"pk":["id"],
+         "rows": [{"indirect":false,"op":"insert",
+                      "values": [{"id":{"after": 10}}, {"city":{"after": "london"}}, {"pop":{"after": 100000}}]},
+                  {"indirect":false,"op":"update",
+                      "values": [{"id":{"before": 30}}, {"city":{"before": "paris","after": "peshawar"}}, {"pop":{"before": 300000, "after": 400000}}]},
+                 {"indirect":false,"op":"delete",
+                     "values": [{"id":{"before":20}}, {"city":{"before":"boston"}}, {"pop":{"before":200000}}]}],
+         "table":"Goo"}])json"));
+
+    Json::Value actualChangeset0Json, actualChangeset1Json;
+    ASSERT_EQ(BE_SQLITE_OK, ChangeSetToJson(actualChangeset0Json, primaryDb, rev0));
+    ASSERT_EQ(BE_SQLITE_OK, ChangeSetToJson(actualChangeset1Json, primaryDb, rev1));
+    primaryDb.AbandonChanges();
+
+    ASSERT_EQ(ComparableJsonCppValue(expectedChangeset0Json), ComparableJsonCppValue(actualChangeset0Json));
+    ASSERT_EQ(ComparableJsonCppValue(expectedChangeset1Json), ComparableJsonCppValue(actualChangeset1Json));
+
+    //But transaction does cover multiple files and canceling will loose change across multiple files
+    ASSERT_EQ(BE_SQLITE_DONE, primaryDb.GetCachedStatement("select 1 from FooP")->Step());
+    ASSERT_EQ(BE_SQLITE_DONE, primaryDb.GetCachedStatement("select 1 from Goo")->Step());
+    ASSERT_EQ(BE_SQLITE_DONE, primaryDb.GetCachedStatement("select 1 from FooS")->Step());
     }
 
 
