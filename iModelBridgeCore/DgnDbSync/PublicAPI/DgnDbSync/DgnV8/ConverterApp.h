@@ -119,4 +119,5 @@ extern "C"
     {
     EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
     EXPORT_ATTRIBUTE T_iModelBridge_getInstance iModelBridge_getInstance;
+    EXPORT_ATTRIBUTE T_iModelBridge_releaseInstance iModelBridge_releaseInstance;
     }
