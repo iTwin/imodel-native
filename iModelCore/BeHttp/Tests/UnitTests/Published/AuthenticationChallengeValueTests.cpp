@@ -13,6 +13,9 @@ USING_NAMESPACE_BENTLEY_HTTP
 
 struct AuthenticationChallengeValueTests : public ::testing::Test {};
 
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AuthenticationChallengeValueTests, Parse_NullValue_ErrorAndTypeAndRealmEmpty)
     {
     AuthenticationChallengeValue value;
@@ -21,6 +24,9 @@ TEST_F(AuthenticationChallengeValueTests, Parse_NullValue_ErrorAndTypeAndRealmEm
     EXPECT_EQ("", value.GetRealm());
     }
 
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AuthenticationChallengeValueTests, Parse_NoValue_ErrorAndTypeAndRealmEmpty)
     {
     AuthenticationChallengeValue value;
@@ -29,6 +35,9 @@ TEST_F(AuthenticationChallengeValueTests, Parse_NoValue_ErrorAndTypeAndRealmEmpt
     EXPECT_EQ("", value.GetRealm());
     }
 
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AuthenticationChallengeValueTests, Parse_InvalidValue_ErrorAndTypeAndRealmEmpty)
     {
     AuthenticationChallengeValue value;
@@ -37,6 +46,9 @@ TEST_F(AuthenticationChallengeValueTests, Parse_InvalidValue_ErrorAndTypeAndReal
     EXPECT_EQ("", value.GetRealm());
     }
 
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AuthenticationChallengeValueTests, Parse_RealmOnly_ErrorAndTypeAndRealmEmpty)
     {
     AuthenticationChallengeValue value;
@@ -45,6 +57,9 @@ TEST_F(AuthenticationChallengeValueTests, Parse_RealmOnly_ErrorAndTypeAndRealmEm
     EXPECT_EQ("", value.GetRealm());
     }
 
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AuthenticationChallengeValueTests, Parse_TypeOnly_TypeSetAndRealmEmpty)
     {
     AuthenticationChallengeValue value;
@@ -53,6 +68,9 @@ TEST_F(AuthenticationChallengeValueTests, Parse_TypeOnly_TypeSetAndRealmEmpty)
     EXPECT_EQ("", value.GetRealm());
     }
 
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AuthenticationChallengeValueTests, Parse_TypeAndRealm_TypeAndRealmSet)
     {
     AuthenticationChallengeValue value;

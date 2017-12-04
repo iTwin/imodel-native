@@ -13,6 +13,9 @@ USING_NAMESPACE_BENTLEY_HTTP
 
 struct HttpResponseTests : public ::testing::Test {};
 
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpResponseTests, ToStatusString_AllConnectionStatusValues_NotEmpty)
     {
     for (int i = (int) ConnectionStatus::None; i <= (int) ConnectionStatus::UnknownError; i++)
