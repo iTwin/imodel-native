@@ -42,6 +42,8 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+
     virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const { return false; };
     //! Sets gridsurface axis Id
