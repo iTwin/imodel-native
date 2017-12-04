@@ -234,15 +234,15 @@ void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
 
-    if (m_schemaManager != nullptr)
-        m_schemaManager->ClearCache();
-
-    const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
-
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {
         m_ecdb.DropAppData(*appDataKey);
         }
+
+    if (m_schemaManager != nullptr)
+        m_schemaManager->ClearCache();
+
+    const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
