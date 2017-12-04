@@ -16,8 +16,13 @@
 
 #pragma once
 
-#include <climits>
+#if defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
+    namespace folly {
+        class Executor {};
+    };
+#else
 
+#include <climits>
 #include <folly/Function.h>
 
 namespace folly {
@@ -58,3 +63,5 @@ class Executor {
 };
 
 } // folly
+
+#endif //BENTLEY_CONFIG_NO_THREAD_SUPPORT
