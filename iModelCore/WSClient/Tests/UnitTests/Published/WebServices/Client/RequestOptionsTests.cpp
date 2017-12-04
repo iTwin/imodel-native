@@ -15,6 +15,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 class RequestOptionsTests : public WSClientBaseTest
     {};
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RequestOptionsTests, ToJson_DefaultCtor_CorrectJson)
     {
     RequestOptions options;
@@ -31,6 +34,9 @@ TEST_F(RequestOptionsTests, ToJson_DefaultCtor_CorrectJson)
     EXPECT_EQ(expected, json);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RequestOptionsTests, ToJson_FailureStrategyValues_CorrectJson)
     {
     Json::Value json;
@@ -49,6 +55,9 @@ TEST_F(RequestOptionsTests, ToJson_FailureStrategyValues_CorrectJson)
     EXPECT_EQ("Stop", json["FailureStrategy"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RequestOptionsTests, ToJson_ResponseContentValues_CorrectJson)
     {
     Json::Value json;
@@ -71,6 +80,9 @@ TEST_F(RequestOptionsTests, ToJson_ResponseContentValues_CorrectJson)
     EXPECT_EQ("FullInstance", json["ResponseContent"].asString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RequestOptionsTests, ToJson_ShouldRefreshInstancesValues_CorrectJson)
     {
     Json::Value json;

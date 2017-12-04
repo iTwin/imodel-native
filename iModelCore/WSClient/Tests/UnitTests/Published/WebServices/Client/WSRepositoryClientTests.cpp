@@ -66,6 +66,9 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsPassed_SendsSameCredenti
     client->VerifyAccess()->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, VerifyAccess_CredentialsAndAutheTypeWindowsPassed_SendsSameCredentialsWithAuthType)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
