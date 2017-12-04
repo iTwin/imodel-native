@@ -2836,6 +2836,18 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     return publishedTileGeometry;
     }
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     12/2017
++===============+===============+===============+===============+===============+======*/
+struct MeshTileClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
+{
+    bvector<PolyfaceHeaderPtr>  m_clipped;
+    bvector<PolyfaceQueryCP>    m_output;
+
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2866,7 +2878,6 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
-        bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
         FeatureAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
@@ -2904,13 +2915,14 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 if (doDecimate)
                     polyface->DecimateByEdgeCollapse (tolerance, 0.0);
 
-                for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                    {
-                    if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-                        {
+                
+                MeshTileClipOutput     clipOutput;
+
+                polyface->ClipToRange(myTileRange, clipOutput, false);
+
+                for (auto& outputPolyface : clipOutput.m_output)
+                    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*outputPolyface); visitor->AdvanceToNextFace(); /**/)
                         meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
-                        }
-                    }
                 }
             }
 
