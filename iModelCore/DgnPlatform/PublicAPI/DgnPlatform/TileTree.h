@@ -857,6 +857,7 @@ struct TriMesh : RefCountedBase, NonCopyableClass
 
         Render::QPoint3dList QuantizePoints() const;
         Render::OctEncodedNormalList QuantizeNormals() const;
+        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
 protected:
     Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
@@ -882,6 +883,8 @@ public:
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriMesh);
 DEFINE_REF_COUNTED_PTR(TriMesh);
 
+typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
+
 //=======================================================================================
 //! The root of a TriMeshTree
 // @bsistruct                                                   Paul.Connelly   07/17
@@ -893,7 +896,9 @@ struct Root : TileTree::Root
 protected:
     Root(DgnDbR db, TransformCR location, Utf8CP sceneFile, Render::SystemP system) : T_Super(db, location, sceneFile, system) { }
 
-    virtual TriMeshPtr _CreateGeometry(TriMesh::CreateParams const& args, Render::SystemP system) {return new TriMesh(args, *this, system);}
+    void ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
+
+    DGNPLATFORM_EXPORT void _CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
     virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
 };
 
@@ -904,7 +909,6 @@ protected:
 struct Tile : TileTree::Tile
 {
     DEFINE_T_SUPER(TileTree::Tile);
-    typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
 
 protected:
     double m_maxDiameter;

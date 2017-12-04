@@ -1643,6 +1643,55 @@ Render::OctEncodedNormalList TriMeshTree::TriMesh::CreateParams::QuantizeNormals
     return oens;
     }
 
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
+    {
+    for (double* pEnd = pDouble + n; pDouble < pEnd; )
+        *pDouble++ = *pFloat++;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr TriMeshTree::TriMesh::CreateParams::ToPolyface() const
+    {
+    PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
+
+    BlockedVectorIntR pointIndex = polyFace->PointIndex();
+    pointIndex.resize(m_numIndices);
+    uint32_t const* pIndex = (uint32_t const*)m_vertIndex;
+    uint32_t const* pEnd = pIndex + m_numIndices;
+    int* pOut = &pointIndex.front();
+
+    for (; pIndex < pEnd; )
+        *pOut++ = 1 + *pIndex++;
+
+    if (nullptr != m_points)
+        {
+        polyFace->Point().resize(m_numPoints);
+        for (int i = 0; i < m_numPoints; i++)
+            polyFace->Point()[i] = DVec3d::From(m_points[i].x, m_points[i].y, m_points[i].z);
+        }
+
+    if (nullptr != m_normals)
+        {
+        polyFace->Normal().resize(m_numPoints);
+        for (int i = 0; i < m_numPoints; i++)
+            polyFace->Normal()[i] = DVec3d::From(m_normals[i].x, m_normals[i].y, m_normals[i].z);
+        }
+
+    if (nullptr != m_textureUV)
+        {
+        polyFace->Param().resize(m_numPoints);
+        floatToDouble(&polyFace->Param().front().x, &m_textureUV->x, 2 * m_numPoints);
+        polyFace->ParamIndex() = pointIndex;
+        }
+
+    return polyFace;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1722,6 +1771,93 @@ void TriMeshTree::TriMesh::Pick(PickArgsR args)
 
     auto graphic = args.m_context.CreateSceneGraphic(args.m_location);
     graphic->AddPolyface(*GetPolyface());
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/15
++===============+===============+===============+===============+===============+======*/
+struct Clipper : PolyfaceQuery::IClipToPlaneSetOutput
+{
+    bool m_unclipped;
+    bvector<PolyfaceHeaderPtr> m_output;
+
+    Clipper() : m_unclipped(false) {}
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
+    bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip, bool triangulate) {clip.ClipPolyface(mesh, *this, triangulate); return m_output;}
+    bool IsUnclipped() {return m_unclipped;}
+}; // Clipper
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Root::ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys)
+    {
+    Clipper clipper;
+    PolyfaceHeaderPtr polyface = geomParams.ToPolyface();
+    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = clipper.ClipPolyface(*polyface, *GetClipVector(), true);
+    if (clipper.IsUnclipped())
+        {
+        triMeshList.push_front(new TriMesh(geomParams, *this, renderSys));
+        }
+    else
+        {
+        for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
+            {
+            if (!clippedPolyface->IsTriangulated())
+                clippedPolyface->Triangulate();
+
+            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) || 
+                (0 != clippedPolyface->GetNormalCount() && clippedPolyface->GetNormalCount() != clippedPolyface->GetPointCount()))
+                clippedPolyface = PolyfaceHeader::CreateUnifiedIndexMesh(*clippedPolyface);
+
+            size_t              numPoints = clippedPolyface->GetPointCount();
+            bvector<int32_t>    indices;
+            bvector<FPoint3d>   points(numPoints), normals(nullptr == clippedPolyface->GetNormalCP() ? 0 : numPoints);
+            bvector<FPoint2d>   params(nullptr == clippedPolyface->GetParamCP() ? 0 : numPoints);
+
+            for (size_t i=0; i<numPoints; i++)
+                {
+                bsiFPoint3d_initFromDPoint3d(&points[i], &clippedPolyface->GetPointCP()[i]);
+                if (nullptr != clippedPolyface->GetNormalCP())
+                    bsiFPoint3d_initFromDPoint3d(&normals[i], &clippedPolyface->GetNormalCP()[i]);
+
+                if (nullptr != clippedPolyface->GetParamCP())
+                    bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
+                }
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*clippedPolyface, true);
+            for (visitor->Reset(); visitor->AdvanceToNextFace();)
+                {   
+                indices.push_back(visitor->GetClientPointIndexCP()[0]);
+                indices.push_back(visitor->GetClientPointIndexCP()[1]);
+                indices.push_back(visitor->GetClientPointIndexCP()[2]);
+                }
+
+            Dgn::TileTree::TriMeshTree::TriMesh::CreateParams clippedGeomParams;
+            clippedGeomParams.m_numIndices = indices.size();
+            clippedGeomParams.m_vertIndex  = &indices.front();
+            clippedGeomParams.m_numPoints  = numPoints;
+            clippedGeomParams.m_points     = &points.front();
+            clippedGeomParams.m_normals    = normals.empty() ? nullptr : &normals.front();
+            clippedGeomParams.m_textureUV  = params.empty() ? nullptr : &params.front();
+            clippedGeomParams.m_texture    = geomParams.m_texture;
+
+            triMeshList.push_front(new TriMesh(clippedGeomParams, *this, renderSys));
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mark.Schlosser   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Root::_CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys)
+    {
+    if (nullptr != GetClipVector())
+        {
+        ClipTriMesh(triMeshList, geomParams, renderSys);
+        }
+    else
+        triMeshList.push_front(new TriMesh(geomParams, *this, renderSys));
     }
 
 /*---------------------------------------------------------------------------------**//**
