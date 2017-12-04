@@ -95,6 +95,21 @@ T_iModelBridge_getInstance* iModelBridgeFwk::JobDefArgs::LoadBridge()
     return getInstance;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      10/17
+//---------------------------------------------------------------------------------------
+T_iModelBridge_releaseInstance* iModelBridgeFwk::JobDefArgs::ReleaseBridge()
+    {
+    auto getInstance = (T_iModelBridge_releaseInstance*) GetBridgeFunction(m_bridgeLibraryName, "iModelBridge_releaseInstance");
+    if (!getInstance)
+        {
+        LOG.errorv(L"%ls: Does not export a function called 'iModelBridge_releaseInstance'", m_bridgeLibraryName.c_str());
+        return nullptr;
+        }
+
+    return getInstance;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -986,6 +1001,26 @@ BentleyStatus iModelBridgeFwk::LoadBridge()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::ReleaseBridge()
+    {
+    if (nullptr == m_bridge)
+        return BentleyStatus::SUCCESS;
+
+    auto releaseFunc = m_jobEnvArgs.ReleaseBridge();
+    if (nullptr == releaseFunc)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    BentleyStatus status = releaseFunc(m_bridge);
+    m_bridge = NULL;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::InitBridge()
@@ -1192,6 +1227,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
         m_briefcaseDgnDb = nullptr;
         }
+
+    //We are done processing the dgn db file. Release the bridge
+    if (SUCCESS != ReleaseBridge())
+        LOG.errorv(L"%s - Memory leak. This bridge was not released properly.", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
 
     return status;
     }
@@ -1639,3 +1678,4 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         }
     return *m_registry;
     }
+
