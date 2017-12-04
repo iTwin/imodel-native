@@ -209,7 +209,7 @@ Utf8CP  Grid::GetName() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnDbStatus      Grid::Validate
+Dgn::DgnDbStatus      Grid::_Validate
 (
 ) const
     {
@@ -226,7 +226,7 @@ Dgn::DgnDbStatus      Grid::_OnInsert
     Dgn::DgnDbStatus status = T_Super::_OnInsert ();
     if (status == Dgn::DgnDbStatus::Success)
         {
-        return Validate ();
+        return _Validate ();
         }
     return status;
     }
@@ -242,7 +242,7 @@ Dgn::DgnDbStatus      Grid::_OnUpdate
     Dgn::DgnDbStatus status = T_Super::_OnUpdate (original);
     if (status == Dgn::DgnDbStatus::Success)
         {
-        return Validate ();
+        return _Validate ();
         }
     return status;
     }

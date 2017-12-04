@@ -35,7 +35,10 @@ protected:
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
-    Dgn::DgnDbStatus Validate () const;
+    //! Called when an element is about to be inserted or updated in the DgnDb.
+    //! @return DgnDbStatus::Success to allow the operation, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_Validate, forwarding its status.
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _Validate () const;
 
     //! Called when an element is about to be inserted into the DgnDb.
     //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
