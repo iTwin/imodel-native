@@ -73,7 +73,7 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="E_1_6_11">
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_1_6_11">
         Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
