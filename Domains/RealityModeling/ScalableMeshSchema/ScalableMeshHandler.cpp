@@ -984,6 +984,16 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshModel::SetClip(Dgn::ClipVectorCP clip)
+    {
+    m_clip = clip;
+    if (m_root.IsValid())
+        static_cast<SMSceneP>(m_root.get())->SetClip(clip);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
@@ -1056,6 +1066,7 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
     if (SUCCESS != scene->LoadScene())
         return nullptr;
 
+    scene->SetClip(m_clip.get());
     return scene.get();
     }
 
@@ -1570,7 +1581,7 @@ void ScalableMeshModel::GetClipSetIds(bvector<uint64_t>& allShownIds)
         m_smPtr->GetAllClipIds(allShownIds);
     }
 
-IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile, ModelSpatialClassifiersCP classifiers)
+IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile, ClipVectorCP clip, ModelSpatialClassifiersCP classifiers)
     {
     /*
           BeFileName smtFileName;
@@ -1590,9 +1601,12 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 
     RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, modeledElement.GetElementId())));
 
+    if (nullptr != clip)
+        model->SetClip(ClipVector::CreateCopy(*clip).get());
+
     if (nullptr != classifiers)
         model->SetClassifiers(*classifiers);
-    
+
     if (openFile)
         {
         model->OpenFile(smFilename, db);
@@ -1666,6 +1680,9 @@ void ScalableMeshModel::_OnSaveJsonProperties()
 
     m_properties.ToJson(val);
 
+    if (m_clip.IsValid())
+        val[json_clip()] = m_clip->ToJson();
+
     if (!m_classifiers.empty())
         val[json_classifiers()] = m_classifiers.ToJson();
 
@@ -1682,6 +1699,9 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     Json::Value val(GetJsonProperties(json_scalablemesh()));
 
     m_properties.FromJson(val);
+
+    if (val.isMember(json_clip()))
+        m_clip = ClipVector::FromJson(val[json_clip()]);
 
     if (val.isMember(json_classifiers()))
         m_classifiers.FromJson(val[json_classifiers()]);

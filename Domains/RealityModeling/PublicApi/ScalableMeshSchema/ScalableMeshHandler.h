@@ -161,8 +161,10 @@ private:
     Transform        m_toFloatTransform; 
 
     //SceneInfo   m_sceneInfo;
+    Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
     Utf8CP _GetName() const override { return "3SM"; }
+    Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 
 public:
     SMScene(Dgn::DgnDbR db, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super(db, location, sceneFile, system), m_smPtr(smPtr), m_toFloatTransform(toFloatTransform) {}
@@ -172,6 +174,7 @@ public:
     //SceneInfo const& GetSceneInfo() const { return m_sceneInfo; }
     BentleyStatus LoadNodeSynchronous(SMNodeR);
     BentleyStatus LoadScene(); // synchronous
+    void SetClip(Dgn::ClipVectorCP clip) { m_clip = clip; }
 
     Transform GetToFloatTransform() { return m_toFloatTransform;}
 
@@ -186,6 +189,7 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublis
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
     BE_JSON_NAME(scalablemesh)
+    BE_JSON_NAME(clip)
     BE_JSON_NAME(classifiers)
         
 private:
@@ -207,6 +211,7 @@ private:
     Utf8String                              m_path;
     bool                                    m_isProgressiveDisplayOn;
     bool                                    m_isInsertingClips;
+    mutable Dgn::ClipVectorCPtr             m_clip;
     ModelSpatialClassifiers                 m_classifiers;
 
     IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
@@ -260,6 +265,8 @@ public:
 
     Utf8String GetPath() const { return m_path; }
 
+    SCALABLEMESH_SCHEMA_EXPORT void SetClip(Dgn::ClipVectorCP clip);
+
     void SetClassifiers(Dgn::ModelSpatialClassifiersCR classifiers) { m_classifiers = classifiers; }
 
     //! A DgnDb can have only one terrain.
@@ -291,6 +298,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     MODELHANDLER_DECLARE_MEMBERS("ScalableMeshModel", ScalableMeshModel, ScalableMeshModelHandler, Dgn::dgn_ModelHandler::Spatial, SCALABLEMESH_SCHEMA_EXPORT)
 public :
     //NEEDS_WORK_SM : Currently for testing only
-    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true, ModelSpatialClassifiersCP classifiers = nullptr);
+    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true, Dgn::ClipVectorCP clip = nullptr, ModelSpatialClassifiersCP classifiers = nullptr);
 };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
