@@ -2045,14 +2045,11 @@ double Tile::_GetMaximumSize() const
 +===============+===============+===============+===============+===============+======*/
 struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
 {
-    bvector<PolyfaceHeaderPtr>  m_output;
-    bool                        m_unclipped = false;
+    bvector<PolyfaceHeaderPtr>  m_clipped;
+    bvector<PolyfaceQueryCP>    m_output;
 
-    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override { m_unclipped = true; return SUCCESS; }
-    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); return SUCCESS; }
-
-    bool IsUnclipped() const { return m_unclipped; }
-    bvector<PolyfaceHeaderPtr>& GetClippedPolyfaces() { return m_output; }
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
 };
 
 //=======================================================================================
@@ -2081,7 +2078,7 @@ private:
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
     void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained) { AddPolyface(polyfaces, geom, geom.GetDisplayParams(), rangePixels, isContained); }
     void AddPolyface(Polyface& polyface, GeometryR, DisplayParamsCR ,double rangePixels, bool isContained);
-    void AddClippedPolyface(PolyfaceHeaderR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
+    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
@@ -2269,53 +2266,26 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     DgnElementId            elemId = GetElementId(geom);
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
-    static bool             s_noClip = false;
 
-    if (s_noClip || isContained)
+    if (isContained)
         {
         AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
         }
     else
         {
         TileRangeClipOutput     clipOutput;
-        DRange3d                testRange = m_tile.GetRange();
-
-        testRange.Extend(1.0E-8);
 
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
-        if (clipOutput.IsUnclipped())
-            {
-            DRange3d        range = DRange3d::From(polyface->GetPointCP(), polyface->GetPointCount());
-            if (!range.IsContained(testRange))
-                {
-                BeAssert(false);
-                polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
-                }
-
-            AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
-            }
-        else
-            {
-            for (auto& clipped : clipOutput.GetClippedPolyfaces())
-                {
-                DRange3d        range = DRange3d::From(clipped->GetPointCP(), clipped->GetPointCount());
-
-                if (!range.IsContained(testRange))
-                    {
-                    BeAssert(false);
-                    polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
-                    }
-                AddClippedPolyface(*clipped, elemId, displayParams, edges, isPlanar, doVertexCluster);
-                }
-            }
+        for (auto& clipped : clipOutput.m_output)
+            AddClippedPolyface(*clipped, elemId, displayParams, edges, isPlanar, doVertexCluster);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddClippedPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar, bool doVertexCluster)
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar, bool doVertexCluster)
     {
     bool hasTexture = displayParams.IsTextured();
     bool anyContributed = false;
