@@ -2096,7 +2096,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
         {
         BeAssert(GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))));
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface.GetNormalCP());
         m_contentRange.Extend(visitor->Point());
         }
 
