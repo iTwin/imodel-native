@@ -41,8 +41,10 @@ always:
 #
 PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 
-always:
-    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljs-nodeaddonapi.package.version.h $(o)imodeljs-nodeaddonapi.package.version.h
+$(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.package.version.h
+    $(msg)
+    $(copyCmd) "$<" $@
+    python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
  
 cIncs + -I$(o)
 
