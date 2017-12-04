@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClipToPlaneSets.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -11,6 +11,14 @@
 #include  <Bentley/bmap.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+enum    ClipStatus
+    {
+    ClipStatus_ClipRequired,
+    ClipStatus_TrivialReject,
+    ClipStatus_TrivialAccept
+    };
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      12/2011
@@ -189,10 +197,7 @@ OutputChain (PolyfaceEdgeChain const& edgeChain, T_EdgeIndexMap& indexMap, Polyf
         DRay3d              ray;
 
         if (indices[i] <= 0 || indices[i+1] <= 0)
-            {
-            BeAssert (false);
-            continue;
-            }
+            continue;                            // This indicates a break.  
 
         ray.origin = facets.GetPointCP()[indices[i]-1];
         ray.direction.NormalizedDifference (facets.GetPointCP()[indices[i+1]-1], ray.origin);
@@ -292,6 +297,55 @@ void    AddClippedEdgeChains (PolyfaceHeaderR facets)
 
 };
 
+
+/*=================================================================================**//**
+* @bsiclass                                                     RayBentley      12/2017
++===============+===============+===============+===============+===============+======*/
+struct  ClipRangeAxis
+{
+    size_t      m_xyzIndex;
+    bool        m_greaterThan;
+    double      m_value;
+
+    ClipRangeAxis() {}
+    ClipRangeAxis(size_t xyzIndex, bool greaterThan, double value) : m_xyzIndex(xyzIndex), m_greaterThan(greaterThan), m_value(value) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipStatus     TestPoints(bvector<DPoint3d> const& points) const                  
+    {
+    bool            allInside = true, anyInside = false;
+
+    for (auto& curr : points)
+        {
+        double const& pointValue = *(&curr.x + m_xyzIndex);
+        bool    inside = m_greaterThan ? (pointValue > m_value) : (pointValue < m_value);
+
+        if (inside)
+            anyInside = true;
+        else
+            allInside = false;
+        }
+    if (allInside)
+        return ClipStatus_TrivialAccept;
+    else
+        return anyInside ? ClipStatus_ClipRequired : ClipStatus_TrivialReject;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+double  EvaluatePoint(DPoint3dCR point) const
+    {
+    double  difference = *(&point.x + m_xyzIndex) - m_value;
+
+    return m_greaterThan ? difference : -difference;
+    }
+
+};  // ClipRangeAxis
+
+
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      03/2011
 *
@@ -305,17 +359,16 @@ struct PolyfaceClipFacet
     bvector <DPoint2d>                  m_params;
     bvector <bool>                      m_visibility;
     bvector <OutputChainEdge*>          m_chainEdges;
-    T_ClipPlaneSets const&              m_planeSets;
     mutable  size_t                     m_index;
                                 
-PolyfaceClipFacet (T_ClipPlaneSets const& planeSets, size_t index) : m_planeSets (planeSets), m_index (index) { }
+PolyfaceClipFacet (size_t index) : m_index (index) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2012
 *
 *  Constructor for a facet clipped to a plane from unclipped facet and plane
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipPlaneCR plane, bool hideCutGeometry) : m_planeSets (unclipped.m_planeSets), m_index (unclipped.m_index)
+PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipPlaneCR plane, bool hideCutGeometry) : m_index (unclipped.m_index)
     {
     size_t          nPoints = unclipped.m_points.size();
     DPoint3dCP      points  = &unclipped.m_points.front();
@@ -344,6 +397,43 @@ PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipPlaneCR plane, bool h
             AddPoint (unclipped, iNext, unclipped.m_visibility[iNext], unclipped.m_chainEdges[iNext]);
         }
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      12/2017
+*
+*  Constructor for a facet clipped to a plane from unclipped facet and plane
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipRangeAxis const& rangeAxis) 
+    {
+    size_t          nPoints = unclipped.m_points.size();
+    DPoint3dCP      points  = &unclipped.m_points.front();
+
+    // Combination of inside and outside, clip required.
+    bool            thisInside, nextInside;
+    double          thisDistance, nextDistance;
+
+    nextDistance  = rangeAxis.EvaluatePoint (*points);
+    nextInside    = nextDistance > 0.0;
+
+    for (size_t i=0; i<nPoints; i++)
+        {
+        size_t         iNext = (i == nPoints - 1) ? 0 : (i + 1);
+
+        thisDistance = nextDistance;
+        thisInside   = nextInside;
+
+        nextDistance  = rangeAxis.EvaluatePoint (points[iNext]);
+        nextInside    = nextDistance > 0.0;
+
+        if (nextInside != thisInside)
+            AddInterpolatedPoint (unclipped, i, iNext, thisDistance / (thisDistance - nextDistance), (nextInside ? unclipped.m_visibility[i] : false), (nextInside ? unclipped.m_chainEdges[i] : NULL));
+
+        if (nextInside)
+            AddPoint (unclipped, iNext, unclipped.m_visibility[iNext], unclipped.m_chainEdges[iNext]);
+        }
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2012
@@ -457,25 +547,21 @@ void   AddToPolyface  (IPolyfaceConstructionR builder, OutputChainMap& outputCha
 
 }; // PolyfaceClipFacet
 
-enum    ClipStatus
-    {
-    ClipStatus_ClipRequired,
-    ClipStatus_TrivialReject,
-    ClipStatus_TrivialAccept
-    };
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      03/2011
 +===============+===============+===============+===============+===============+======*/
-struct PolyfaceClipContext
+struct PolyfaceClipToPlaneSetContext
 {
-    IPolyfaceConstructionR      m_builder;
-    bool                        m_triangulate;
-    double                      m_tolerance;
-    double                      m_areaTolerance;
-    OutputChainMap&             m_outputChainMap;
+    IPolyfaceConstructionR              m_builder;
+    bool                                m_triangulate;
+    double                              m_tolerance;
+    double                              m_areaTolerance;
+    OutputChainMap&                     m_outputChainMap;
+    T_ClipPlaneSets const&              m_planeSets;
 
-    PolyfaceClipContext (IPolyfaceConstructionR output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+    PolyfaceClipToPlaneSetContext (T_ClipPlaneSets const& planeSets, IPolyfaceConstructionR output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+                        m_planeSets(planeSets),
                         m_builder (output), 
                         m_outputChainMap (chainMap), 
                         m_tolerance (tolerance), 
@@ -587,13 +673,13 @@ void  ClipPolyfaceFacetToPlanes (PolyfaceClipFacet const& facet, ClipPlaneCP pla
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   ClipPolyfaceFacet (PolyfaceClipFacet const& facet)
     {
-    if (facet.m_index == facet.m_planeSets.size())
+    if (facet.m_index == m_planeSets.size())
         {
         facet.AddToPolyface (m_builder, m_outputChainMap, m_areaTolerance);
         return;
         }
 
-    switch  (PointSetSingleClipStatus (&facet.m_points.front(), facet.m_points.size(), facet.m_planeSets[facet.m_index], m_tolerance))
+    switch  (PointSetSingleClipStatus (&facet.m_points.front(), facet.m_points.size(), m_planeSets[facet.m_index], m_tolerance))
         {
         case ClipStatus_TrivialAccept:
             facet.m_index++;
@@ -604,14 +690,35 @@ void   ClipPolyfaceFacet (PolyfaceClipFacet const& facet)
             return;
         }
 
-    ClipPlaneSetCR   planeSet = facet.m_planeSets[facet.m_index];
+    ClipPlaneSetCR   planeSet = m_planeSets[facet.m_index];
     
-    if (facet.m_index++ < facet.m_planeSets.size())
+    if (facet.m_index++ < m_planeSets.size())
         for (ConvexClipPlaneSetCR convexSet: planeSet)
             ClipPolyfaceFacetToPlanes (facet, &convexSet.front(), &convexSet.front() + convexSet.size());
     }
 
-};  // PolyfaceClipContext
+};  // PolyfaceClipToPlaneSetContext
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   finishClipping (IPolyfaceConstructionR outputBuilder,  OutputChainMap& outputChainMap, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput)
+    {
+    PolyfaceHeaderR     clippedMesh = outputBuilder.GetClientMeshR();
+
+    if (0 == clippedMesh.GetPointIndexCount())
+        return SUCCESS;
+
+    BeAssert (clippedMesh.GetPointCount() >= 3);		
+
+    outputChainMap.AddClippedEdgeChains (clippedMesh);
+
+    if (triangulateOutput)
+        clippedMesh.Triangulate();
+
+    return output._ProcessClippedPolyface (clippedMesh);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
@@ -630,7 +737,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
     
     for (index = 0; index < planeSets.size() && !doClip; index++)
         {
-        switch  (PolyfaceClipContext::PointSetSingleClipStatus (GetPointCP(), GetPointCount(), planeSets[index], distanceTolerance))
+        switch  (PolyfaceClipToPlaneSetContext::PointSetSingleClipStatus (GetPointCP(), GetPointCount(), planeSets[index], distanceTolerance))
             {
             case ClipStatus_TrivialReject:
                 return SUCCESS;
@@ -648,12 +755,12 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
     facetOptions->SetNormalsRequired (0 != GetNormalCount());
     facetOptions->SetParamsRequired (0 != GetParamCount());
 
-    IPolyfaceConstructionPtr    outputBuilder = IPolyfaceConstruction::New (*facetOptions);
-    PolyfaceClipFacet           facet (planeSets, index);
-    OutputChainMap              outputChainMap (*this);
-    PolyfaceClipContext         polyfaceClipContext (*outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
-    size_t                      currentFaceIndex = 0, thisFaceIndex;
-    FacetFaceData               faceData;
+    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions);
+    PolyfaceClipFacet               facet (index);
+    OutputChainMap                  outputChainMap (*this);
+    PolyfaceClipToPlaneSetContext   clipContext (planeSets, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
+    size_t                          currentFaceIndex = 0, thisFaceIndex;
+    FacetFaceData                   faceData;
                                                                        
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
@@ -667,24 +774,124 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
                 }
             }
         facet.Init (*visitor, outputChainMap);
-        polyfaceClipContext.ClipPolyfaceFacet (facet);
+        clipContext.ClipPolyfaceFacet (facet);
         }
     outputBuilder->SetFaceData (faceData);
     outputBuilder->EndFace();
 
-    PolyfaceHeaderR     clippedMesh = outputBuilder->GetClientMeshR();
+    return finishClipping(*outputBuilder, outputChainMap, output, triangulateOutput);
+    }
 
-    if (0 == clippedMesh.GetPointIndexCount())
-        return SUCCESS;
 
-    BeAssert (clippedMesh.GetPointCount() >= 3);		
+/*=================================================================================**//**
+* @bsiclass                                                     RayBentley      12/2017
++===============+===============+===============+===============+===============+======*/
+struct PolyfaceClipToRangeContext
+{
+    IPolyfaceConstructionR              m_builder;
+    bool                                m_triangulate;
+    double                              m_areaTolerance;
+    OutputChainMap&                     m_outputChainMap;
+    DRange3d                            m_range;
+    ClipRangeAxis                       m_axes[6];
 
-    outputChainMap.AddClippedEdgeChains (clippedMesh);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceClipToRangeContext (DRange3dCR range, IPolyfaceConstructionR output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+    m_range(range), m_builder (output), m_outputChainMap (chainMap), m_areaTolerance (tolerance * tolerance), m_triangulate (triangulate) 
+    {
+    m_axes[0] = ClipRangeAxis(0, true,  range.low.x);
+    m_axes[1] = ClipRangeAxis(0, false, range.high.x);
+    m_axes[2] = ClipRangeAxis(1, true,  range.low.y);
+    m_axes[3] = ClipRangeAxis(1, false, range.high.y);
+    m_axes[4] = ClipRangeAxis(2, true,  range.low.z);
+    m_axes[5] = ClipRangeAxis(2, false, range.high.z);
+    }
 
-    if (triangulateOutput)
-        clippedMesh.Triangulate();
 
-    return output._ProcessClippedPolyface (clippedMesh);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void  ClipPolyfaceFacetToRangeAxis (PolyfaceClipFacet const& facet, size_t axisIndex)
+    {
+    if (facet.m_points.empty())
+        return;
+
+    if (6 == axisIndex)
+        {
+        facet.AddToPolyface (m_builder, m_outputChainMap, m_areaTolerance);
+        return;
+        }
+
+    ClipRangeAxis& axis = m_axes[axisIndex];
+
+    switch  (axis.TestPoints(facet.m_points))
+        {
+        case ClipStatus_TrivialReject:
+            return;
+
+        case ClipStatus_TrivialAccept:
+            ClipPolyfaceFacetToRangeAxis (facet, ++axisIndex);
+            return;
+
+        case ClipStatus_ClipRequired:
+            ClipPolyfaceFacetToRangeAxis (PolyfaceClipFacet (facet, axis), ++axisIndex);
+            return;
+        }
+    }
+
+
+};  // PolyfaceClipToRangeContext
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput) const
+    {
+    DRange3d                range;
+    static double           s_relativeTolerance = 1.0E-6;
+
+    range.InitFrom (GetPointCP(), (int) GetPointCount());
+
+    if (!range.IntersectsWith(clipRange))
+        return SUCCESS;     // No intersection - no output.
+
+    if (range.IsContained(clipRange))
+        return output._ProcessUnclippedPolyface (*this);
+         
+    double                      distanceTolerance = s_relativeTolerance * range.low.Distance (range.high); 
+    IFacetOptionsPtr            facetOptions = IFacetOptions::New();
+
+    facetOptions->SetNormalsRequired (0 != GetNormalCount());
+    facetOptions->SetParamsRequired (0 != GetParamCount());
+
+    IPolyfaceConstructionPtr        outputBuilder = IPolyfaceConstruction::New (*facetOptions);
+    PolyfaceClipFacet               facet (0);
+    OutputChainMap                  outputChainMap (*this);
+    PolyfaceClipToRangeContext      clipContext(clipRange, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
+    size_t                          currentFaceIndex = 0, thisFaceIndex;
+    FacetFaceData                   faceData;
+                                                                       
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
+        {
+        if (TryGetFacetFaceDataAtReadIndex (visitor->GetReadIndex(), faceData, thisFaceIndex))
+            {
+            if (thisFaceIndex != currentFaceIndex)
+                {
+                outputBuilder->EndFace ();
+                outputBuilder->SetFaceData (faceData);
+                currentFaceIndex = thisFaceIndex;
+                }
+            }
+        facet.Init (*visitor, outputChainMap);
+        clipContext.ClipPolyfaceFacetToRangeAxis (facet, 0);
+        }
+    outputBuilder->SetFaceData (faceData);
+    outputBuilder->EndFace();
+
+    return finishClipping(*outputBuilder, outputChainMap, output, triangulateOutput);
     }
 
 

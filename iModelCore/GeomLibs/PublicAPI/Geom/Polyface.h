@@ -1111,6 +1111,9 @@ GEOMAPI_VIRTUAL StatusInt   _ProcessClippedPolyface (PolyfaceHeaderR polyfaceHea
  //! @description Clip polyface to intersection of an array of plane sets.
 GEOMDLLIMPEXP StatusInt   ClipToPlaneSetIntersection (T_ClipPlaneSets const& planeSets, IClipToPlaneSetOutput& output, bool triangulateOutput) const;
 
+ //! @description Clip polyface to range.
+GEOMDLLIMPEXP StatusInt   ClipToRange (DRange3dCR clipRange, PolyfaceQuery::IClipToPlaneSetOutput& output, bool triangulateOutput) const;
+
 //! @description add all facets to a TaggedPolygonVectorR.
 //! indexB is set to the read index in the PolyfaceQuery
 //! @param [out] polygons growing polygon collection.
