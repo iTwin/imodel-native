@@ -802,21 +802,22 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     if (!doSync)
         return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), callback, cancellationToken);
 
-    auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
-    if (!seedFileInfoResult->IsSuccess())
-        {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFileInfoResult->GetError().GetMessage().c_str());
-        return StatusResult::Error(seedFileInfoResult->GetError());
-        }
+    // TODO. All commented out code in this method is related to this defect: TFS#788691:Parallel download of Briefcase and ChangeSet files are not working
+    //auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
+    //if (!seedFileInfoResult->IsSuccess())
+    //    {
+    //    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFileInfoResult->GetError().GetMessage().c_str());
+    //    return StatusResult::Error(seedFileInfoResult->GetError());
+    //    }
 
     MultiProgressCallbackHandler handler(callback);
     Http::Request::ProgressCallback changeSetsCallback, briefcaseCallback;
     handler.AddCallback(changeSetsCallback, 20.0f);
     handler.AddCallback(briefcaseCallback, 80.0f);
     
-    Utf8String mergedChangeSetId = seedFileInfoResult->GetValue()->GetMergedChangeSetId();
-    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), changeSetsCallback, 
-                                                                                 cancellationToken);
+    //Utf8String mergedChangeSetId = seedFileInfoResult->GetValue()->GetMergedChangeSetId();
+    //ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), changeSetsCallback, 
+    //                                                                             cancellationToken);
 
     StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), 
                                                                      briefcaseCallback, cancellationToken);
@@ -836,6 +837,12 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return result;
         }
 
+    // This part should be removed with the fix for TFS#788691
+    //-----------------------------------------------------------------------------
+    Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
+    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), changeSetsCallback, cancellationToken);
+    //-----------------------------------------------------------------------------
+
     ChangeSetsResult pullChangeSetsResult = pullChangeSetsTask->GetResult();
     if (!pullChangeSetsResult.IsSuccess())
         {
@@ -843,28 +850,28 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return StatusResult::Error(pullChangeSetsResult.GetError());
         }
 
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", 
-                   fileInfo.GetMergedChangeSetId().c_str());
+    //LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", 
+    //               fileInfo.GetMergedChangeSetId().c_str());
 
     // If seedFile and briefacase id's do not match, query new changeset's
-    Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
-    if (!parentRevisionId.Equals(mergedChangeSetId))
-        {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Latest seedFile's ChangeSetId did not match briefcase's.");
-        pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), callback, cancellationToken);
-        pullChangeSetsResult = pullChangeSetsTask->GetResult();
-        if (!pullChangeSetsResult.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
-            return StatusResult::Error(pullChangeSetsResult.GetError());
-            }
-        }
+    //Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
+    //if (!parentRevisionId.Equals(mergedChangeSetId))
+    //    {
+    //    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Latest seedFile's ChangeSetId did not match briefcase's.");
+    //    pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), changeSetsCallback, cancellationToken);
+    //    pullChangeSetsResult = pullChangeSetsTask->GetResult();
+    //    if (!pullChangeSetsResult.IsSuccess())
+    //        {
+    //        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
+    //        return StatusResult::Error(pullChangeSetsResult.GetError());
+    //        }
+    //    }
 
     db->Txns().EnableTracking(true);
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
-    ChangeSets changeSets = pullChangeSetsTask->GetResult().GetValue();
+    ChangeSets changeSets = pullChangeSetsResult.GetValue();
     handler.SetFinished();
 
     return MergeChangeSetsIntoDgnDb(db, changeSets, filePath);

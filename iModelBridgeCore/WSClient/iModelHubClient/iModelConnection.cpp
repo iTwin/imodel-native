@@ -1829,8 +1829,9 @@ ICancellationTokenPtr cancellationToken
             (EventReponseResult::Error(Error::Id::NotSubscribedToEventService));
         }
 
+    EventReponseResultPtr finalResult = std::make_shared<EventReponseResult>();
     return m_eventServiceClient->MakeReceiveDeleteRequest(longpolling)
-        ->Then<EventReponseResult>([=](const EventServiceResult& result)
+        ->Then([=](const EventServiceResult& result)
         {
         if (result.IsSuccess())
             {
@@ -1838,10 +1839,12 @@ ICancellationTokenPtr cancellationToken
             if (response.GetHttpStatus() != HttpStatus::OK)
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                return EventReponseResult::Error(Error(result.GetError()));
+                finalResult->SetError(result.GetError());
+                return;
                 }
 
-            return EventReponseResult::Success(response);
+            finalResult->SetSuccess(response);
+            return;
             }
         else
             {
@@ -1849,22 +1852,44 @@ ICancellationTokenPtr cancellationToken
             if (status == HttpStatus::NoContent || status == HttpStatus::None)
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
-                return EventReponseResult::Error(Error::Id::NoEventsFound);
+                finalResult->SetError(Error::Id::NoEventsFound);
+                return;
                 }
             else if (status == HttpStatus::Unauthorized && numOfRetries > 0)
                 {
-                if (SetEventSASToken())
+                SetEventSASToken(cancellationToken)->Then([=](StatusResultCR setResult)
+                    {
+                    if (!setResult.IsSuccess())
+                        {
+                        finalResult->SetError(setResult.GetError());
+                        return;
+                        }
+
                     m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
-                int nextLoopValue = numOfRetries - 1;
-                return GetEventServiceResponse(nextLoopValue, longpolling, cancellationToken)->GetResult();
+
+                    int nextLoopValue = numOfRetries - 1;
+                    auto currentResult = GetEventServiceResponse(nextLoopValue, longpolling, cancellationToken)->GetResult();
+                    if (!currentResult.IsSuccess())
+                        {
+                        finalResult->SetError(currentResult.GetError());
+                        return;
+                        }
+
+                    finalResult->SetSuccess(currentResult.GetValue());
+                    return;
+                    });
                 }
             else
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                return EventReponseResult::Error(Error(result.GetError()));
+                finalResult->SetError(result.GetError());
+                return;
                 }
             }
-        });
+        })->Then<EventReponseResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
