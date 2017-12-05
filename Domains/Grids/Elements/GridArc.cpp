@@ -52,4 +52,12 @@ void            GridArc::_CopyFrom(Dgn::DgnElementCR source)
     T_Super::_CopyFrom(source);
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+bool GridArc::_ValidateGeometry(ICurvePrimitivePtr curve) const
+    {
+    return nullptr != curve->GetArcCP();
+    }
+
 END_GRIDS_NAMESPACE

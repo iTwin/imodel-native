@@ -52,4 +52,13 @@ void            GridSpline::_CopyFrom(Dgn::DgnElementCR source)
     T_Super::_CopyFrom(source);
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+--------
+bool GridSpline::_ValidateGeometry(ICurvePrimitivePtr curve) const
+    {
+    return nullptr != curve->GetBsplineCurveCP() ||
+        nullptr != curve->GetInterpolationCurveCP();
+    }
+
 END_GRIDS_NAMESPACE

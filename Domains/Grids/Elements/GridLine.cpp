@@ -52,4 +52,14 @@ void            GridLine::_CopyFrom(Dgn::DgnElementCR source)
     T_Super::_CopyFrom(source);
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+bool GridLine::_ValidateGeometry(ICurvePrimitivePtr curve) const
+    {
+    return nullptr != curve->GetLineStringCP() ||
+        nullptr != curve->GetPointStringCP() ||
+        nullptr != curve->GetLineCP();
+    }
+
 END_GRIDS_NAMESPACE
