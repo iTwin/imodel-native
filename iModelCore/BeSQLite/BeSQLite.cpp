@@ -2310,6 +2310,7 @@ void Db::DoCloseDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::CloseDb()
     {
+    m_appData.Clear();
     _OnDbClose();
     DoCloseDb();
     }
