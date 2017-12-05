@@ -902,7 +902,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipC
         }
 
     DbTable const* otherEndTable = nullptr;
-    if (SUCCESS != ForeignKeyPartitionView::TryGetOtherEndTable(otherEndTable, GetECDb(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy()))
+    if (SUCCESS != ForeignKeyPartitionView::TryGetOtherEndTable(otherEndTable, GetSchemaManager(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy()))
         {
         Issues().Report("The class map for the foreign key type ECRelationshipClass '%s' maps to more than one table on the %s constraint.",
                         relMap.GetClass().GetFullName(), relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target");

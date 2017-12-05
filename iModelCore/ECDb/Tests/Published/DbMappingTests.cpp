@@ -2798,7 +2798,7 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablecatests.ecdb"));
     Utf8CP tempTableDdl = "CREATE TEMP TABLE SessionSetting(Id INTEGER PRIMARY KEY, FooId INTEGER, Name TEXT, Val)";
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(tempTableDdl));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -2824,28 +2824,7 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
                   <Class class="SessionSetting" />
               </Target>
            </ECRelationshipClass>
-        </ECSchema>)xml")));
-
-    ECInstanceKey fooKey;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
-    m_ecdb.SaveChanges();
-
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SessionSetting")) << "temp table does not exist in new session";
-
-    //readd temp table
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(tempTableDdl));
-
-    //insert test instance in temp table
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteDdl(Utf8PrintfString("INSERT INTO temp.SessionSetting(FooId,Name,Val) VALUES(%s,'Logging',1)", fooKey.GetInstanceId().ToString().c_str()).c_str()));
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Foo.Id,Name,Val FROM ts.SessionSetting")) << "temp table expected to exist";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(fooKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
-    ASSERT_STREQ("Logging", stmt.GetValueText(1));
-    ASSERT_TRUE(stmt.GetValueBoolean(2));
+        </ECSchema>)xml"))) << "Mapping to temp tables is not supported";
     }
 
     {
@@ -3276,14 +3255,11 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace_PhysicalForeignKey)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace_PhysicalForeignKey.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, attachSettingsFile());
     ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
-
-    ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
     ASSERT_EQ(0, getRelCount());
 
     ECInstanceKey fooKey, settingKey;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Logging1',true)",
-                                                                                            fooKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(ECInstanceId,Name) VALUES(100,'Foo 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, "INSERT INTO ts.SessionSetting(ECInstanceId,Foo.Id,Name,Val) VALUES(200,100,'Logging1',true)"));
 
     ASSERT_EQ(1, getRelCount()) << "After one insert";
     m_ecdb.SaveChanges();

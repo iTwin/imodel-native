@@ -310,7 +310,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
-        std::unique_ptr<ForeignKeyPartitionView> fkView = ForeignKeyPartitionView::CreateReadonly(classMap.GetSchemaManager().GetECDb(), relClassMap.GetRelationshipClass());
+        std::unique_ptr<ForeignKeyPartitionView> fkView = ForeignKeyPartitionView::CreateReadonly(classMap.GetSchemaManager(), relClassMap.GetRelationshipClass());
         if (fkView == nullptr)
             {
             BeAssert(false);

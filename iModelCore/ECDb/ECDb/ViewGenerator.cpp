@@ -720,7 +720,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         };
 
     const ECClassId classId = relationMap.GetClass().GetId();
-    std::unique_ptr<ForeignKeyPartitionView> view = ForeignKeyPartitionView::CreateReadonly(ctx.GetECDb(), relationMap.GetRelationshipClass());
+    std::unique_ptr<ForeignKeyPartitionView> view = ForeignKeyPartitionView::CreateReadonly(ctx.GetSchemaManager(), relationMap.GetRelationshipClass());
     for (ForeignKeyPartitionView::Partition const* partition : view->GetPartitions(true, true))
         {
         const bool isSelf = partition->GetSourceECClassIdColumn()->GetId() == partition->GetTargetECClassIdColumn()->GetId();

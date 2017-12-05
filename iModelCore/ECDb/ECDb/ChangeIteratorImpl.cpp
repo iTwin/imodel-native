@@ -544,7 +544,7 @@ DbColumn const* ChangeIterator::TableClassMap::EndTableRelationshipMap::GetForei
     if (it != m_foreignEndClassIdColumnMap.end())
         return it->second;
 
-    auto fkView = ForeignKeyPartitionView::CreateReadonly(ecdb, relationshipClass);
+    auto fkView = ForeignKeyPartitionView::CreateReadonly(ecdb.Schemas().Main(), relationshipClass);
     ForeignKeyPartitionView::Partition const* firstPartition = fkView->GetPartitions(true, true).front();
     if (!firstPartition)
         return nullptr;
