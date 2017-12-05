@@ -896,6 +896,18 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     return true;
     }
 
+//=======================================================================================
+// @bsimethod                                                 Elenie.Godzaridis 09/17
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::RemoveNonDisplayPoolData()
+{
+	if (GetBlockID().IsValid())
+	{
+		SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
+		m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+	}
+}
+
 
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
     {
@@ -931,9 +943,9 @@ template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMP
             {
             return const_cast<SMPointIndexNode<POINT,EXTENT>*>(this);
             }
-        if (m_apSubNodes.size() > 0 && m_apSubNodes[0] != NULL && m_nodeHeader.m_level <= level)
+        if (m_apSubNodes.size() > 0 && /*m_apSubNodes[0] != NULL &&*/ m_nodeHeader.m_level <= level)
             {
-            for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit; i++)
+            for (size_t i = 0; i < m_apSubNodes.size(); i++)
                 if (m_apSubNodes[i] != nullptr && ExtentOp<EXTENT>::OutterOverlap(ext, m_apSubNodes[i]->m_nodeHeader.m_nodeExtent))
                     {
                     auto node = m_apSubNodes[i]->FindNode(ext, level);
@@ -3910,7 +3922,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
         
         if (needStoreHeader && IsLoaded())
             {
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
+            //RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
             
             //NEEDS_WORK_SM : During partial update some synchro problem can occur.
             //NEEDS_WORK_SM : Should not be required now that ID is attributed during node creation.
@@ -5028,7 +5040,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
             ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
             }
        
-        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex, are3dPoints, isRegularGrid);
+        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex - startPointIndex, are3dPoints, isRegularGrid);
 
 
         if (endPointIndex < countPoints)
@@ -6917,6 +6929,13 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
     if (!IsLoaded())
         Load();
 
+    static std::atomic<uint64_t> currentIter = 0;
+
+    if (progress != nullptr && this->m_nodeHeader.m_level == 0)
+        {
+        currentIter = 0;
+        }
+
     pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
     
     if (!m_nodeHeader.m_IsLeaf)
@@ -6969,7 +6988,6 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
     // Report progress
     if (progress != nullptr)
         {
-        static std::atomic<uint64_t> currentIter = 0;
         static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++currentIter);
         }
     return true;

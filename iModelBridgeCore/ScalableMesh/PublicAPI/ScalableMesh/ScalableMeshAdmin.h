@@ -41,6 +41,11 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
             return false;
             }
 
+        virtual bool _ProvideImageppAuthentication() const
+            {
+            return true;
+            }
+
         virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator () 
             {
             return m_textureGeneratorPtr;            

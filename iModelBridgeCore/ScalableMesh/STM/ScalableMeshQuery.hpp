@@ -1393,7 +1393,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
     return meshP;    
     }
 
-template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clipId, bool isClipBoundary) const
+template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const
     {
     LOAD_NODE
 
@@ -1506,11 +1506,11 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 if (m_meshNode->m_nbClips > 0)
                     {
                     m_meshNode->ComputeMergedClips();
-                    if (clipId == 0 || m_meshNode->HasClip(clipId))
+                    if (coverageID == 0 || m_meshNode->HasClip(coverageID))
                         {
                         for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
                             {
-                            if (diffSet.clientID == clipId)
+                            if (diffSet.clientID == coverageID)
                                 {
                                 anythingToApply = true;
                                 clipDiffSet = &diffSet;
@@ -1550,10 +1550,41 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 }
 
             int status = meshPtr->AppendMesh(toLoadNbPoints, toLoadPoints, 0, 0, 0, 0, 0, 0, 0, 0);
+            BeAssert(status == SUCCESS);
 
             if (ptIndices.IsValid() && ptIndices->size() > 0)
                 {
                 status = meshPtr->AppendMesh(0, 0, toLoadNbFaceIndexes, toLoadFaceIndexes, 0, 0, 0, toLoadUvCount, toLoadUv, toLoadUvIndex);
+                BeAssert(status == SUCCESS);
+                }
+
+            if (clips != nullptr)
+                {
+                static std::mutex mtx;
+                std::lock_guard<std::mutex> lock(mtx);
+                bvector<DPoint3d> clearedPts;
+                bvector<int32_t> clearedIndices;
+                bvector<int32_t> newUvsIndices;
+                bvector<DPoint2d> newUvs;
+                bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
+                map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
+                GetRegionsFromClipVector3D(polyfaces, clips.get(), meshPtr->GetPolyfaceQuery());
+
+                // Clear mesh
+                meshPtr = ScalableMeshMesh::Create();
+
+                // Reconstruct mesh with new polyface
+                auto polyface = polyfaces[1].empty() ? nullptr : polyfaces[1][0];
+                if (polyface != nullptr)
+                    {
+                    status = meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
+                                                 polyface->PointIndex().size(), polyface->PointIndex().data(),
+                                                 0, 0, 0,
+                                                 polyface->Param().size(), polyface->Param().data(),
+                                                 polyface->ParamIndex().data());
+                    BeAssert(status == SUCCESS);
+                    }
+
                 }
 
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())
@@ -2361,22 +2392,38 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                     int width, height;
                     memcpy(&width, texPtr->GetData(), sizeof(int));
                     memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
+
+                    size_t usedMemInBytes;
+                    bool isStoredOnGpu;
+
                     SmCachedDisplayTexture* cachedDisplayTexture;
 
                     displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                                                                 usedMemInBytes,
+                                                                 isStoredOnGpu,
                                                                  width,
                                                                  height,
                                                                  false,
                                                                  QV_RGB_FORMAT,
                                                                  texPtr->GetData() + 3 * sizeof(int));
 
+                    //Default heuristic
+                    if (usedMemInBytes == 0)
+                        usedMemInBytes = width * height * 6;
+                    
                     SmCachedDisplayTextureData* data = new SmCachedDisplayTextureData(cachedDisplayTexture,
                                                                                       meshNode->GetSingleTextureID(),
                                                                                       displayCacheManagerPtr,
-                                                                                      width*height * 6
+                                                                                      usedMemInBytes
                                                                                       );
 
-                    displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
+                    if (isStoredOnGpu)
+                        {
+                        assert(displayCacheManagerPtr->_IsUsingVideoMemory());
+                        data->SetIsInVRAM(true);
+                        }
+
+                    displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID(), isStoredOnGpu);
 
                     TRACEPOINT(THREAD_ID(), EventType::LOAD_TEX_CREATE_0, meshNode->GetBlockID().m_integerID,-1, data->GetTextureID(), -1,-1, displayTextureDataPtr->GetRefCount())
                     }
@@ -2647,8 +2694,8 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                             newPoints.push_back(toLoadPoints[pointInd]);
                             FloatXY uv = toLoadUv[uvInd];
 #ifndef WIP_MESH_IMPORT
-                            assert(uv.x <= 1.f && uv.x >= 0.f);
-                            assert(uv.y <= 1.f && uv.y >= 0.f);
+                            assert(uv.x <= 1.f && uv.x >= 0.0);
+                            assert(uv.y <= 1.f && uv.y >= 0.0);
 #endif
                             newUVs.push_back({ uv.x, uv.y <= 1.f ? 1.f - uv.y : uv.y }); // Different convention in QV (or ScalableMesh bug?)
                             }
@@ -2672,25 +2719,32 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 SmCachedDisplayMesh* cachedDisplayMesh = 0;
 
+                size_t usedMemInBytes = 0;
+                bool isStoredOnGpu = false;
+
                 if (s_deactivateTexture || !meshNode->IsTextured())
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
-                                                                    finalPointNb,
-                                                                    &centroid,
-                                                                    finalPointPtr,
-                                                                    0,
-                                                                    (int)finalIndexNb / 3,
-                                                                    finalIndexPtr,
-                                                                    0,
-                                                                    0,
-                                                                    meshNode->GetBlockID().m_integerID,
-                                                                   (uint64_t)m_scalableMeshP);
+                                                                                     usedMemInBytes,
+                                                                                     isStoredOnGpu,
+                                                                                     finalPointNb,
+                                                                                     &centroid,
+                                                                                     finalPointPtr,
+                                                                                     0,
+                                                                                     (int)finalIndexNb / 3,
+                                                                                     finalIndexPtr,
+                                                                                     0,
+                                                                                     0,
+                                                                                     meshNode->GetBlockID().m_integerID,
+                                                                                     (uint64_t)m_scalableMeshP);
 
                     assert(status == SUCCESS);
                     }
                 else
                     {
                     BentleyStatus status = displayCacheManagerPtr->_CreateCachedMesh(cachedDisplayMesh,
+                                                                                        usedMemInBytes,
+                                                                                        isStoredOnGpu,
                                                                                         finalPointNb,
                                                                                         &centroid,
                                                                                         finalPointPtr,
@@ -2705,18 +2759,25 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                     assert(status == SUCCESS);
                     }
 
-                size_t qvMemorySizeEstimate = finalPointNb * sizeof(float) * 3 + finalIndexNb * sizeof(int32_t) + sizeof(float) * 2 * finalPointNb;
+                //Use some global heuristic
+                if (usedMemInBytes == 0)
+                    usedMemInBytes = finalPointNb * sizeof(float) * 3 + finalIndexNb * sizeof(int32_t) + sizeof(float) * 2 * finalPointNb;
 
                 SmCachedDisplayMeshData* displayMeshData(new SmCachedDisplayMeshData(cachedDisplayMesh,
                     displayCacheManagerPtr,
                     textureID,
                     !s_deactivateTexture && meshNode->IsTextured() && textureIDs[part / 2].first,
-                    qvMemorySizeEstimate,
+                    usedMemInBytes,
                     appliedClips));
 
-
+                if (isStoredOnGpu)
+                    {
+                    assert(displayCacheManagerPtr->_IsUsingVideoMemory());
+                    displayMeshData->SetIsInVRAM(true);
+                    }                
+                
                 if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
-                if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->AddDisplayMesh(displayMeshData, sizeToReserve);
+                if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->AddDisplayMesh(displayMeshData, sizeToReserve, isStoredOnGpu);
                 else m_cachedDisplayMeshData->push_back(*displayMeshData);
 
                 TRACEPOINT(THREAD_ID(), EventType::LOAD_MESH_CREATE_0, meshNode->GetBlockID().m_integerID, (uint64_t)cachedDisplayMesh, textureID, -1, -1, m_cachedDisplayMeshData->GetRefCount())
@@ -3105,6 +3166,11 @@ template <class POINT> bool ScalableMeshNode<POINT>::_DeleteClip(uint64_t id, bo
     return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->DeleteClip(id,isVisible);
     }
 
+template <class POINT> void ScalableMeshNode<POINT>::_ClearCachedData()
+{
+	m_node->RemoveNonDisplayPoolData();
+}
+
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());    
@@ -3167,7 +3233,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     pointsPtr->clear();
 
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    m_meshNode->m_nodeHeader.m_arePoints3d = true;
+    //m_meshNode->m_nodeHeader.m_arePoints3d = true;
     m_meshNode->m_nodeHeader.m_isTextured = true;
 
     if (texID != -1)
@@ -3362,6 +3428,7 @@ template <class POINT> bvector<IScalableMeshNodeEditPtr> ScalableMeshNodeEdit<PO
     else
         for (size_t i = 0; i < m_node->m_apSubNodes.size(); i++)
         {
+            assert(m_node->m_apSubNodes[i] != NULL);
             children.push_back(new ScalableMeshNodeEdit<POINT>(m_node->m_apSubNodes[i]));
         }
 

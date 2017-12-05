@@ -74,7 +74,11 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
         StatusInt                           ApplyEditsFromSources(HFCPtr<MeshIndexType>& pIndex);
 
-        StatusInt                           GetRasterSources(HFCPtr<HIMMosaic>& pMosaicP);
+        StatusInt                           GetRasterSources(bvector<IDTMSource*>& filteredSources);
+
+        StatusInt                           GetLocalSourceTextureProvider(ITextureProviderPtr& textureProviderPtr, bvector<IDTMSource*>& filteredSources);
+        
+        StatusInt                           GetTextureProvider(ITextureProviderPtr& textureProviderPtr);
 
         StatusInt                           ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex);
 

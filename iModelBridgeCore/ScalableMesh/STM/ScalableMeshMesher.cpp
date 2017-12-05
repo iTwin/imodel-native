@@ -455,7 +455,6 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 			if (&poly == &poly2) continue;
 			if (poly2.empty()) continue;
 			if (used[&poly2 - &polygons[0]]) continue;
-			VuPolygonClassifier vu(1e-8, 0);
 
 			bvector<DPoint3d> poly2_2d = poly2;
 			for (auto&pt : poly2_2d) pt.z = 0;

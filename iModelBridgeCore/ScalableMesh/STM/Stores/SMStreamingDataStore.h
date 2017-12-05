@@ -150,6 +150,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         SMNodeGroupPtr m_CesiumGroup;
 
+		IClipDefinitionDataProviderPtr m_clipProvider;
+
     protected : 
 
 
@@ -179,9 +181,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             {
             return new SMStreamingStore(path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
             }
-        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings)
+        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
             {
-            return new SMStreamingStore(settings);
+            return new SMStreamingStore(settings, smRDSProvider);
             }
 #endif
 
@@ -228,12 +230,20 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
 
         virtual void CancelPreloadData() override;
+        
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
 
         virtual bool IsTextureAvailable() override;        
 
         virtual void Register(const uint64_t& smID) override;
 
         virtual void Unregister(const uint64_t& smID) override;
+
+		virtual bool DoesClipFileExist() const override;
+
+		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
+
+		virtual void WriteClipDataToProjectFilePath() override;
         
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
                 

@@ -29,7 +29,7 @@ need be.
 #ifndef VANCOUVER_API
 #include <TilePublisher\MeshTile.h>
 #endif
-
+#include <ScalableMesh/IClipDefinitionDataProvider.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.
 USING_NAMESPACE_IMAGEPP
@@ -246,12 +246,17 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         /**----------------------------------------------------------------------------
         Preload data that will be required
         -----------------------------------------------------------------------------*/
-        virtual void PreloadData(const bvector<DRange3d>& tileRanges) = 0;
+        virtual void PreloadData(const bvector<DRange3d>& tileRanges) = 0;        
      
         /**----------------------------------------------------------------------------
         Preload data that will be required
         -----------------------------------------------------------------------------*/
         virtual void CancelPreloadData() = 0;
+
+        /**----------------------------------------------------------------------------
+        Compute raster tiles
+        -----------------------------------------------------------------------------*/
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) = 0;
 
         /**----------------------------------------------------------------------------
         Is texture data is available. Should always return true but for streamed 
@@ -268,6 +273,15 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         Unregister a scalable mesh from the store (useful for streaming type store).
         -----------------------------------------------------------------------------*/
         virtual void Unregister(const uint64_t& smID) {};
+
+		virtual bool DoesClipFileExist() const = 0;
+
+		/**----------------------------------------------------------------------------
+		Accept a way for the application to register its own callback for the clip polygons, instead of using file storage.
+		-----------------------------------------------------------------------------*/
+		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) {};
+
+		virtual void WriteClipDataToProjectFilePath() = 0;
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.

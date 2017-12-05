@@ -29,7 +29,8 @@ struct SMVolumeSegment {
 
 struct ISMProgressReport
     {
-    double  m_workDone; //between 0-1
+    double  m_workDone;     // work advancement between 0-1
+    float   m_timeDelay;    // delay in sec for reports
     bool    m_processCanceled;
     };
 
@@ -46,46 +47,21 @@ struct ISMAnalysisProgressListener
 class ISMGridVolume
     {
     public:
-        BENTLEY_SM_EXPORT ISMGridVolume() { 
-            m_direction = DVec3d::From(0, 0, 1); // fixed to Z for now
-            m_resolution = 1.0; // 1 meter
-            m_gridSizeLimit = 5000;
-            m_totalVolume = m_cutVolume = m_fillVolume = 0;
-            m_VolSegments = NULL;
-            m_bInitialised = false;
-            };
+        BENTLEY_SM_EXPORT ISMGridVolume();
         
-        BENTLEY_SM_EXPORT virtual ~ISMGridVolume() {
-            delete[] m_VolSegments;
-            m_VolSegments = NULL;
-            };
+        BENTLEY_SM_EXPORT virtual ~ISMGridVolume();
 
-        BENTLEY_SM_EXPORT bool GetGridSize(int &_xSize, int &_ySize)
-            {
-            if (!m_bInitialised)
-                return false;
-            _xSize = m_xSize;
-            _ySize = m_ySize;
-            return true;
-            }
+        // Get effective grid size in both direction
+        BENTLEY_SM_EXPORT bool GetGridSize(int &_xSize, int &_ySize);
 
-        BENTLEY_SM_EXPORT bool InitGrid(int _xSize, int _ySize)
-            {
-            m_xSize = _xSize;
-            m_ySize = _ySize;
-            // reserve memory for segments
-            m_VolSegments = new SMVolumeSegment[m_xSize*m_ySize];
-            if (m_VolSegments == nullptr)
-                m_bInitialised = false; // failed allocating memory for the grid
-            else
-                m_bInitialised = true;
-            return m_bInitialised;
-            }
+        // Initialize a Grid of Volume Segments _xSize*_ySize and allocates memory for it
+        BENTLEY_SM_EXPORT bool InitGrid(int _xSize, int _ySize);
 
+        // input data
         DVec3d m_direction;     // the projection direction
         double m_resolution;    // the grid resolution wanted
         DPoint3d m_center;      // the 3SM center
-        int m_gridSizeLimit;    // used to clamp grid size
+        int m_gridSizeLimit;    // size limit used to clamp grid size
 
         // output data ------------------------------------------------
         double m_totalVolume;
@@ -93,13 +69,14 @@ class ISMGridVolume
         double m_fillVolume;
         SMVolumeSegment* m_VolSegments; // table of segments ; one per grid element
         DRange3d m_range;               // range of the 3D grid volume
+        DPoint3d m_gridOrigin;     // the grid origin (lower left corner) in world
+
+        bool m_isWorld;     // The grid values are in World coordinates (not in 3SM coords)
+        bool m_isEcef;      // The grid values are in Ecef coordinates
 
     protected:
         int m_xSize;        // Size of the Grid in X
         int m_ySize;        // Size of the Grid in Y
-
-        double m_xStep;     // resolution on X
-        double m_yStep;     // resolution on Y
 
         bool m_bInitialised;
     };
@@ -115,33 +92,21 @@ class IScalableMeshAnalysis abstract : public RefCountedBase
     public:
         // Compute Volume between the 3SM and a given polygon
         // returns different values (fill, cut, per grid node values) in the ISMGridVolume object
-        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, 
-                                                            double resolution, 
-                                                            ISMGridVolume& grid, 
-                                                            ISMAnalysisProgressListener* pProgressListener=NULL) 
-            {
-            return _ComputeDiscreteVolume(polygon, resolution, grid, pProgressListener);
-            }
+        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon,
+            double resolution,
+            ISMGridVolume& grid,
+            ISMAnalysisProgressListener* pProgressListener = NULL);
 
         // Compute Volume difference with another 3SM in a polygon restriction
         // returns different values (fill, cut, per grid node values) in the ISMGridVolume object
-        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon, 
-                                                            IScalableMesh* anotherMesh, 
-                                                            double resolution, ISMGridVolume& grid, 
-                                                            ISMAnalysisProgressListener* pProgressListener=NULL) 
-            {
-            return _ComputeDiscreteVolume(polygon, anotherMesh, resolution, grid, pProgressListener);
-            }
+        BENTLEY_SM_EXPORT DTMStatusInt ComputeDiscreteVolume(const bvector<DPoint3d>& polygon,
+            IScalableMesh* anotherMesh,
+            double resolution, ISMGridVolume& grid,
+            ISMAnalysisProgressListener* pProgressListener = NULL);
 
-        BENTLEY_SM_EXPORT void SetMaxThreadNumber(int num)
-            {
-            return _SetMaxThreadNumber(num);
-            }
+        BENTLEY_SM_EXPORT void SetMaxThreadNumber(int num);
 
-        BENTLEY_SM_EXPORT void SetUnitToMeter(double val)
-            {
-            return _SetUnitToMeter(val);
-            }
+        BENTLEY_SM_EXPORT void SetUnitToMeter(double val);
     };
 
 typedef RefCountedPtr<IScalableMeshAnalysis>                          IScalableMeshAnalysisPtr;

@@ -22,6 +22,7 @@
 #include <ImagePP\all\h\HCDException.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
 #include "ScalableMesh\ScalableMeshLib.h"
+#include "SMExternalProviderDataStore.h"
 
 USING_NAMESPACE_IMAGEPP
 
@@ -139,6 +140,8 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStrea
     {
     m_transform.InitIdentity();
 
+	m_clipProvider = nullptr;
+
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
@@ -216,8 +219,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             return m_smRDSProvider->GetToken().c_str();
             }));
 
-        BeFileName url(m_smRDSProvider->GetAzureURLAddress());
-        m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
+        WString url(m_smRDSProvider->GetAzureURLAddress().c_str(), BentleyCharEncoding::Utf8);
+        m_masterFileName = BeFileName(m_smRDSProvider->GetRootDocument());
         account_prefix = DataSourceURL(settings->GetGUID().c_str());
         auto firstSeparatorPos = url.find(L".");
         account_identifier = DataSourceAccount::AccountIdentifier(url.substr(8, firstSeparatorPos - 8).c_str());
@@ -1118,10 +1121,82 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     // assert(!"No implemented yet");
     }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges)
+    {    
+    assert(!"Only for streaming texture (e.g. BingMap), which are not supported by the streaming store.");
+    }
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::IsTextureAvailable()
     {    
     return true;
     }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::DoesClipFileExist() const
+{
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+}
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+   {
+	m_clipProvider = provider;
+   }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::WriteClipDataToProjectFilePath()
+{
+	CopyClipSisterFile(SMStoreDataType::DiffSet);
+	SMIndexNodeHeader<EXTENT>* nodeHeader = nullptr;
+	if (m_clipProvider.IsValid())
+	{
+		ISM3DPtDataStorePtr dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, m_clipProvider.get());
+
+		SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::ClipDefinition, true, false);
+
+		if (!sqlFilePtr.IsValid())
+			return;
+
+		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr);
+		IClipDefinitionExtOpsPtr extOps, extOpsTarget;
+		dataStore->GetClipDefinitionExtOps(extOps);
+		dataStoreTarget->GetClipDefinitionExtOps(extOpsTarget);
+		if (!extOps.IsValid() || !extOpsTarget.IsValid())
+			return;
+		bvector<uint64_t> existingIds;
+
+		extOps->GetAllIDs(existingIds);
+		for (auto& id : existingIds)
+		{
+			bool isActive;
+			bvector<DPoint3d> clipData;
+			SMClipGeometryType geom;
+			SMNonDestructiveClipType type;
+			extOps->LoadClipWithParameters(clipData, id, geom, type, isActive);
+			extOpsTarget->StoreClipWithParameters(clipData, id, geom, type, isActive);
+		}
+		existingIds.clear();
+		extOps->GetAllCoverageIDs(existingIds);
+
+		ISMCoverageNameDataStorePtr coverageNameSource = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+
+		for (auto& id : existingIds)
+		{
+			size_t count = coverageNameSource->GetBlockDataCount(HPMBlockID(id));
+			bvector<Utf8String> coverages(count);
+			if (count != 0)
+			{
+				coverageNameSource->LoadBlock(coverages.data(), count, HPMBlockID(id));
+				coverageNameTarget->StoreBlock(coverages.data(), count, HPMBlockID(id));
+			}
+		}
+	}
+	else
+	{
+		CopyClipSisterFile(SMStoreDataType::ClipDefinition);
+	}
+}
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
     {
@@ -1656,6 +1731,13 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {
+
+	if (m_clipProvider.IsValid())
+	{
+		dataStore = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		return true;
+	}
+
     SMSQLiteFilePtr sqlFilePtr;
 
     sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
@@ -1671,6 +1753,12 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
     {
     assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+	if (m_clipProvider.IsValid() && (dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon))
+	{
+		dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_clipProvider.get());
+		return true;
+	}
 
     SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
 
@@ -2449,7 +2537,6 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
         m_tileData.numUvs = uv_buffer_pointer.count;
         m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
-        auto& uvDecodeMatrixJson = uvAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
 
         this->resize(m_tileData.numIndices * sizeof(int32_t) + m_tileData.numPoints * sizeof(DPoint3d) + m_tileData.numUvs * sizeof(DPoint2d) + m_tileData.textureSize);
 
@@ -2457,8 +2544,16 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             {
             m_tileData.uvOffset = 0; // m_tileData.pointOffset + m_tileData.numPoints * sizeof(DPoint3d);
             m_tileData.m_uvData = reinterpret_cast<DPoint2d *>(this->data() + m_tileData.uvOffset);
+
             if (uvs_are_quantized)
                 {
+                auto& uvQuantizedAttr = uvAccessor["extensions"]["WEB3D_quantized_attributes"];
+                auto& uvDecodeMatrixJson = uvQuantizedAttr["decodeMatrix"];
+                auto& uvDecodeMin = uvQuantizedAttr["decodedMin"];
+                auto& uvDecodeMax = uvQuantizedAttr["decodedMax"];
+                DPoint2d decMin = { uvDecodeMin[0].asFloat(), uvDecodeMin[1].asFloat() };
+                DPoint2d decMax = { uvDecodeMax[0].asFloat(), uvDecodeMax[1].asFloat() };
+
                 const FPoint3d scale = { uvDecodeMatrixJson[0].asFloat(), uvDecodeMatrixJson[4].asFloat() };
                 const FPoint3d translate = { uvDecodeMatrixJson[6].asFloat(), uvDecodeMatrixJson[7].asFloat() };
                 //const DPoint3d scale = { uvDecodeMatrixJson[0].asDouble(), uvDecodeMatrixJson[4].asDouble() };
@@ -2467,7 +2562,14 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
                 auto uv_array = (uint16_t*)(buffer + uv_buffer_pointer.offset);
                 for (uint32_t i = 0; i < m_tileData.numUvs; i++)
                     {
-                    m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y));
+                    m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y);
+                    auto& x = m_tileData.m_uvData[i].x;
+                    auto& y = m_tileData.m_uvData[i].y;
+                    if (x < decMin.x) x = decMin.x;
+                    if (y < decMin.y) y = decMin.y;
+                    if (x > decMax.x) x = decMax.x;
+                    if (y > decMax.y) y = decMax.y;
+                    m_tileData.m_uvData[i].y = 1.0f - m_tileData.m_uvData[i].y;
                     }
 
                 }

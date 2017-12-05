@@ -28,7 +28,21 @@ int ScalableMeshEdit::_RemoveWithin(ClipVectorCP clipPlaneSet, const bvector<ISc
     if (m_smIndex == nullptr) return SMStatus::S_ERROR;
 
     DRange3d range;
-    clipPlaneSet->GetRange(range, nullptr);
+	range.Init();
+
+	for (ClipPrimitivePtr const& primitive : *clipPlaneSet)
+	{
+		DRange3d        thisRange;
+
+		if (primitive->GetRange(thisRange, nullptr, true))
+		{
+			if (range.IsEmpty())
+				range = thisRange;
+			else
+				range.IntersectionOf(range, thisRange);
+		}
+	}
+
     if (!range.IntersectsWith(m_smIndex->GetContentExtent())) return SMStatus::S_ERROR;
     
     return m_smIndex->RemoveWithin(clipPlaneSet, priorityNodes);

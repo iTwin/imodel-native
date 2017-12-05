@@ -184,6 +184,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void Unload() override;
 
+	virtual void RemoveNonDisplayPoolData() override;
+
     virtual bool InvalidateFilteringMeshing(bool becauseDataRemoved = false) override;
 
     virtual bool IsGraphLoaded() const;
@@ -764,7 +766,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return SMMemoryPool::GetInstance();
         }               
 
-    bool         Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, const uint64_t& clipID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress);
+    bool         Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, TransformCR transform, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress, bool outputTexture);
 
     void         ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue);
 
@@ -881,6 +883,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     std::mutex m_displayMeshLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
     mutable SMMemoryPoolItemId m_smMeshPoolItemId;
+
     private:
 
 		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity());
@@ -948,7 +951,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
                         
-        StatusInt           Publish3DTiles(const WString& path, const uint64_t& clipID, const GeoCoordinates::BaseGCSCPtr sourceGCS);
+        StatusInt           Publish3DTiles(const WString& path, TransformCR transform, ClipVectorPtr clips, const uint64_t& clipID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture);
 
         StatusInt           SaveMeshToCloud(const WString& path, const bool& pi_pCompress);
 
@@ -1008,6 +1011,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         int64_t  AddTexture(int width, int height, int nOfChannels, const byte* texData, size_t nOfBytes);
 
         bool m_isInsertingClips;
+
+		bool m_canUseBcLibClips;
 
         void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
         SMMeshIndex<POINT, EXTENT>* GetSMTerrain();

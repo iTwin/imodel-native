@@ -11,10 +11,10 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshRDSProvider.h"
-#include <ConnectClientWrapperNative\ConnectClientWrapper.h>
+
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
-
+#include    <CCApi\CCPublic.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -44,6 +44,14 @@ Utf8String IScalableMeshRDSProvider::GetRDSURLAddress()
 Utf8String IScalableMeshRDSProvider::GetToken()
     {
     return _GetToken();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IScalableMeshRDSProvider::GetRootDocument()
+    {
+    return _GetRootDocument();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,6 +124,14 @@ Utf8String ScalableMeshRDSProvider::_GetToken()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ScalableMeshRDSProvider::_GetRootDocument()
+    {
+    return GetRootDocumentName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshRDSProvider::InitializeRealityDataService()
     {
     //if (RealityDataService::AreParametersSet()) return SUCCESS;
@@ -126,11 +142,15 @@ void ScalableMeshRDSProvider::InitializeRealityDataService()
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
 
     if (!proxyInfo.m_serverUrl.empty())
-        {        
+        {       
+#ifndef VANCOUVER_API
         Utf8String proxyCreds = proxyInfo.m_user;
         proxyCreds.append(":");
         proxyCreds.append(proxyInfo.m_password);
         RealityDataService::SetProxyInfo(proxyInfo.m_serverUrl, proxyCreds);
+#else 
+        assert(!"RealityDataService::SetProxyInfo not yet available");
+#endif
         }    
     }
 
@@ -186,19 +206,23 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
-    WString serverUrl;
-
-    try {
-        Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-        std::wstring buddiUrl;
-        connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
-        serverUrl.assign(buddiUrl.c_str());
-        }
-    catch (...)
-        {
-        BeAssert(!"Could not retrieve buddi url from Connect Client");
-        }
-
+	WString serverUrl;
+	UINT32 bufLen;
+	CallStatus status = APIERR_SUCCESS;
+	try
+		{
+		CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+		wchar_t* buffer;
+		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
+		bufLen++;
+		buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
+		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
+		serverUrl.assign(buffer);
+		CCApi_FreeApi(api);
+		}
+	catch (...)
+		{
+		}
     return Utf8String(serverUrl.c_str());
     }
 

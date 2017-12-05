@@ -21,6 +21,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     : SMSQLiteSisterFile(database)
     {
     m_smSQLiteFile = database;   
+	m_clipProvider = nullptr;
 
     SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
     m_smSQLiteFile->LoadSources(*sourcesData);
@@ -207,12 +208,12 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::CompactProjectFiles()
 }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
-    {        
+{
     if (m_raster == nullptr)
-        return;     
+        return;
 
     for (auto& tileRange : tileRanges)
-        {         
+        {
         HFCMatrix<3, 3> transfoMatrix;
         transfoMatrix[0][0] = (tileRange.high.x - tileRange.low.x) / 256;
         transfoMatrix[0][1] = 0;
@@ -229,9 +230,9 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
         HFCPtr<HGF2DTransfoModel> pSimplifiedModel = pTransfoModel->CreateSimplifiedModel();
 
         if (pSimplifiedModel != 0)
-        {
+            {
             pTransfoModel = pSimplifiedModel;
-        }
+            }
 
         DPoint2d lowInPixels;
         DPoint2d highInPixels;
@@ -252,56 +253,86 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
         m_raster->SetLookAhead(shape, consumerID);
         m_preloadMutex.unlock();
         }
-
-#if 0 
-    DRange3d total3dRange(DRange3d::NullRange());
+    }
     
-    for (auto& range : tileRanges)
-        { 
-        total3dRange.Extend(range);
-        }        
-
-    HFCMatrix<3, 3> transfoMatrix;
-    transfoMatrix[0][0] = (tileRanges[0].high.x - tileRanges[0].low.x) / 256;
-    transfoMatrix[0][1] = 0;
-    transfoMatrix[0][2] = total3dRange.low.x;
-    transfoMatrix[1][0] = 0;
-    transfoMatrix[1][1] = -(tileRanges[0].high.y - tileRanges[0].low.y) / 256;
-    transfoMatrix[1][2] = total3dRange.high.y;
-    transfoMatrix[2][0] = 0;
-    transfoMatrix[2][1] = 0;
-    transfoMatrix[2][2] = 1;    
-
-    HFCPtr<HGF2DTransfoModel> pTransfoModel((HGF2DTransfoModel*)new HGF2DProjective(transfoMatrix));
-
-    HFCPtr<HGF2DTransfoModel> pSimplifiedModel = pTransfoModel->CreateSimplifiedModel();
-
-    if (pSimplifiedModel != 0)
+template <class EXTENT> void SMSQLiteStore<EXTENT>::ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges)
     {
-        pTransfoModel = pSimplifiedModel;
+    if (m_raster == nullptr)
+        return;
+
+    assert(m_streamingRasterFile != nullptr);
+      
+    for (auto& tileRange : tileRanges)
+        {
+        bvector<TileIdListInfo> tileIdListInfoList;
+
+        HFCMatrix<3, 3> transfoMatrix;
+        transfoMatrix[0][0] = (tileRange.high.x - tileRange.low.x) / 256;
+        transfoMatrix[0][1] = 0;
+        transfoMatrix[0][2] = tileRange.low.x;
+        transfoMatrix[1][0] = 0;
+        transfoMatrix[1][1] = -(tileRange.high.y - tileRange.low.y) / 256;
+        transfoMatrix[1][2] = tileRange.high.y;
+        transfoMatrix[2][0] = 0;
+        transfoMatrix[2][1] = 0;
+        transfoMatrix[2][2] = 1;
+
+        HFCPtr<HGF2DTransfoModel> pTransfoModel((HGF2DTransfoModel*)new HGF2DProjective(transfoMatrix));
+
+        HFCPtr<HGF2DTransfoModel> pSimplifiedModel = pTransfoModel->CreateSimplifiedModel();
+
+        if (pSimplifiedModel != 0)
+            {
+            pTransfoModel = pSimplifiedModel;
+            }
+
+        DPoint2d lowInPixels;
+        DPoint2d highInPixels;
+
+        pTransfoModel->ConvertInverse(tileRange.low.x, tileRange.low.y, &lowInPixels.x, &lowInPixels.y);
+        pTransfoModel->ConvertInverse(tileRange.high.x, tileRange.high.y, &highInPixels.x, &highInPixels.y);
+
+        HFCPtr<HGF2DCoordSys> coordSys(new HGF2DCoordSys(*pTransfoModel, m_raster->GetCoordSys()));
+
+        HVEShape shape(lowInPixels.x, highInPixels.y, highInPixels.x, lowInPixels.y, coordSys);
+
+        //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, coordSys);
+
+        //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
+
+        //uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
+        //m_preloadMutex.lock();
+                
+        m_raster->GetRasterTileIDList(tileIdListInfoList, shape);
+        //m_preloadMutex.unlock();
+
+        SMRasterTile rasterTile; 
+
+        rasterTile.m_sizeX = 256;
+        rasterTile.m_sizeY = 256;
+                       
+        for (auto& tileIdListInfo : tileIdListInfoList)
+            { 
+            for (auto& tileId : tileIdListInfo.m_tileIDList)
+                {
+                UShort resolution = (UShort)HRFRasterFile::s_TileDescriptor.GetLevel(tileId);
+
+                const HFCPtr<HRFResolutionDescriptor>&  pResDescriptor(m_streamingRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(resolution));
+                
+                HGFTileIDDescriptor tileIdDescriptor(HGFTileIDDescriptor(pResDescriptor->GetWidth(),
+                                                                         pResDescriptor->GetHeight(),
+                                                                         pResDescriptor->GetBlockWidth(),
+                                                                         pResDescriptor->GetBlockHeight()));
+
+
+                tileIdDescriptor.GetPositionFromID(tileId, &rasterTile.m_posX, &rasterTile.m_posY);
+                rasterTile.m_resolutionInd = tileIdDescriptor.GetLevel(tileId);
+                rasterTiles.push_back(rasterTile);
+                } 
+            }           
+        }    
     }
 
-    DPoint2d lowInPixels; 
-    DPoint2d highInPixels;
-
-    pTransfoModel->ConvertInverse(total3dRange.low.x, total3dRange.low.y, &lowInPixels.x, &lowInPixels.y);
-    pTransfoModel->ConvertInverse(total3dRange.high.x, total3dRange.high.y, &highInPixels.x, &highInPixels.y);
-
-    HFCPtr<HGF2DCoordSys> coordSys(new HGF2DCoordSys(*pTransfoModel, m_raster->GetCoordSys()));
-
-    HVEShape shape(lowInPixels.x, highInPixels.y, highInPixels.x, lowInPixels.y, coordSys);
-
-    //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, coordSys);
-            
-    //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
-
-
-    
-
-    uint32_t consumerID = 1;
-    m_raster->SetLookAhead(shape, consumerID);
-#endif
-    }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
     {    
@@ -322,6 +353,73 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
 
     return true;
     }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::DoesClipFileExist() const
+   {
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+   }
+
+template <class EXTENT> void SMSQLiteStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+{
+	m_clipProvider = provider;
+}
+
+template <class EXTENT> void SMSQLiteStore<EXTENT>::WriteClipDataToProjectFilePath()
+{
+	CopyClipSisterFile(SMStoreDataType::DiffSet);
+	SMIndexNodeHeader<EXTENT>* nodeHeader = nullptr;
+	if (m_clipProvider.IsValid())
+	{
+		ISM3DPtDataStorePtr dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, m_clipProvider.get());
+
+		SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::ClipDefinition, true, false);
+
+		if (!sqlFilePtr.IsValid())
+			return;
+
+		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr);
+		IClipDefinitionExtOpsPtr extOps, extOpsTarget;
+		dataStore->GetClipDefinitionExtOps(extOps);
+		dataStoreTarget->GetClipDefinitionExtOps(extOpsTarget);
+		if (!extOps.IsValid() || !extOpsTarget.IsValid())
+			return;
+		bvector<uint64_t> existingIds;
+
+		extOps->GetAllIDs(existingIds);
+		for (auto& id : existingIds)
+		{
+			bool isActive;
+			bvector<DPoint3d> clipData;
+			SMClipGeometryType geom;
+			SMNonDestructiveClipType type;
+			extOps->LoadClipWithParameters(clipData, id,geom,type, isActive);
+			extOpsTarget->StoreClipWithParameters(clipData, id, geom, type, isActive);
+		}
+		existingIds.clear();
+		extOps->GetAllCoverageIDs(existingIds);
+
+		ISMCoverageNameDataStorePtr coverageNameSource = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+	
+		for (auto& id : existingIds)
+		{
+			size_t count = coverageNameSource->GetBlockDataCount(HPMBlockID(id));
+			bvector<Utf8String> coverages(count);
+			if (count != 0)
+			{
+				coverageNameSource->LoadBlock(coverages.data(), count, HPMBlockID(id));
+				coverageNameTarget->StoreBlock(coverages.data(), count, HPMBlockID(id));
+			}
+		}
+	}
+	else
+	{
+		CopyClipSisterFile(SMStoreDataType::ClipDefinition);
+	}
+}
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
@@ -432,6 +530,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMCesium3D
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     { 
+
+	if (m_clipProvider.IsValid())
+	{
+		dataStore = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		return true;
+	}
+
     SMSQLiteFilePtr sqlFilePtr;
     
     sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
@@ -447,6 +552,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCo
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
     {
     assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+
+	if (m_clipProvider.IsValid() && (dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon))
+	{
+		dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_clipProvider.get());
+		return true;
+	}
 
     SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
 

@@ -518,14 +518,14 @@ Transform                          ScalableMeshGroup::_GetReprojectionTransform(
     return m_members.front()->GetReprojectionTransform();
     }
 
-BentleyStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
+SMStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
     {
     for (auto& member : m_members)
         {
         if (!member->IsTerrain()) return member->DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution);
         }
 
-    return SUCCESS;
+    return SMStatus::S_SUCCESS;
     }
 
 BentleyStatus                   ScalableMeshGroup::_CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
@@ -568,6 +568,7 @@ BentleyStatus                      ScalableMeshGroup::_DeleteCoverage(uint64_t i
 
     return SUCCESS;
     }
+
 
 void ScalableMeshGroup::_SetGroupSelectionFromPoint(DPoint3d firstPoint)
 {

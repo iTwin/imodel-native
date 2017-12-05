@@ -17,7 +17,7 @@
 
   <Part Name="ScalableMeshRDSDependencies" >
     <SubPart PartName="RealityPlatform"                             PartFile="RealityModFramework"                      Repository="RealityModFramework"/>
-    <SubPart PartName="ConnectClientWrapperNative.VC120"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
+    <SubPart PartName="ClientAPI"            PartFile="BentleyDesktopClient"                     Repository="BentleyDesktopClient"/>
   </Part>
 
   <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="G" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
@@ -112,7 +112,10 @@
         <ProductDirectory   Name="ECSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory   Name="ECServicesManagedAssemblies"  Deliver="true" Path="Dlls"/>
         <ProductDirectory   Name="BentleyDesktopClientApi_Native"  Deliver="true" Path="Dlls"/>
-	<ProductDirectory   Name="CGALAssemblies" Path="Dlls"/>
+        <ProductDirectory   Name="CGALAssemblies" Path="Dlls"/>
+        <ProductDirectory   Name="GeoTiffAssemblies" Path="Dlls"/>
+        <ProductDirectory   Name="TbbAssemblies" Path="Dlls"/>
+        <ProductDirectory   Name="CesiumApps" Path="Dlls"/>
         <ProductDirectory   Name="ecobjectsnativeassemblies"                Path="Dlls"                              />
         <ProductDirectory   Name="ecschemas"                                Path="Dlls"                              />
         <ProductDirectory   Name="DGNIndexerECSchemas"                      Path="Dlls"                              />
@@ -201,6 +204,7 @@
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
         <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
+        <SubPart PartName="ScalableMesh-Tested" PartFile="ScalableMeshCoreUnitTests" Repository="ScalableMesh"/>
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />     
         <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <SubPart PartName="PublishedApi"   PartFile="geomlibs"    Repository="GeomLibs"/>

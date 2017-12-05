@@ -5,11 +5,14 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& tranform, bvector<Byte>& outData)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& tranform, bvector<Byte>& outData, bool outputTexture)
     {
     size_t siblingIndex = 0;
     TileNodeP parent = nullptr;
-    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), tranform/*Transform::FromIdentity()*/, siblingIndex, parent, -1, false);
+    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), tranform/*Transform::FromIdentity()*/, siblingIndex, parent, nullptr, -1, false, outputTexture);
     auto meshes = tileNode->GenerateMeshes();
     if (!meshes.empty())
         {
@@ -18,11 +21,14 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& 
         }
     }
 
-void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const uint64_t& clipID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture)
     {
     size_t siblingIndex = 0;
     TileNodeP parent = nullptr;
-    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent, clipID, isClipBoundary);
+    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent, clips, coverageID, isClipBoundary, outputTexture);
     TilePublisher publisher(*tileNode, sourceGCS, destinationGCS);
     publisher.Publish(outData);
     }

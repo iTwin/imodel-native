@@ -94,11 +94,16 @@ IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  f
 
 	using namespace ISMStore;
 	BeFileName fileName = BeFileName(filePath);
-	if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
-	{
+
+#ifdef VANCOUVER_API
+    if (fileName.IsUrl() || (!BeFileName::DoesPathExist(fileName.c_str()) && !canCreateFile(filePath)))
+#else
+    if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
+#endif	
+	    {
 		status = BSIERROR;
 		return 0;
-	}
+	    }
 
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 
@@ -231,7 +236,7 @@ DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* f
 
 int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
-    int status = BSISUCCESS;
+    int status = SMStatus::S_SUCCESS;
 
     //MS : Some cleanup needs to be done here.
     try
@@ -239,7 +244,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         if (m_scmPtr != 0)
             {
             if (SCM_STATE_UP_TO_DATE == m_scmPtr->GetState())
-                return BSIERROR;
+                return SMStatus::S_ERROR;
 
             // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
             }
@@ -248,7 +253,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         SetupFileForCreation(doPartialUpdate);
 
         if (!m_smSQLitePtr.IsValid() || !m_smSQLitePtr->IsOpen())
-            return BSIERROR;
+            return SMStatus::S_ERROR;
 
 
         // Sync only when there are sources with which to sync
@@ -258,9 +263,8 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         m_smSQLitePtr->SetSingleFile(isSingleFile);
 
         if (0 < m_sources.GetCount() &&
-            BSISUCCESS != SyncWithSources(restrictLevelForPropagation))
-            return BSIERROR;
-
+            S_SUCCESS != SyncWithSources(restrictLevelForPropagation))
+            status = SMStatus::S_ERROR;
 
         // Update last synchronization time
         m_lastSyncTime = Time::CreateActual();
@@ -269,12 +273,15 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
         if (BSISUCCESS != UpdateLastModified() ||
             (isSingleFile && BSISUCCESS != SaveSources(m_smSQLitePtr)) ||
             BSISUCCESS != SaveGCS())
-            status = BSIERROR;
+            status = SMStatus::S_ERROR;
+
+		if (GetProgress()->IsCanceled())
+			return SMStatus::S_ERROR_CANCELED_BY_USER;
 
         }
     catch (...)
         {
-        return BSIERROR;
+        return SMStatus::S_ERROR;
         }
 
     return status;
@@ -401,11 +408,10 @@ double IScalableMeshSourceCreator::GetLastStitchingDuration()
     }
 
 void IScalableMeshSourceCreator::ImportRastersTo(const IScalableMeshPtr& scmPtr)
-    {
-    HFCPtr<HIMMosaic> pMosaic;
-    int status = dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->GetRasterSources(pMosaic);
-    ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(pMosaic.GetPtr());
-    scmPtr->TextureFromRaster(mosaicPtr);
+    {    
+    ITextureProviderPtr textureProviderPtr;
+    int status = dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->GetTextureProvider(textureProviderPtr);
+    scmPtr->TextureFromRaster(textureProviderPtr);
     assert(BSISUCCESS == status);
     }
 #endif
@@ -875,7 +881,67 @@ int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<MeshIndexType
     return status;
     }
 
-int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosaicP)
+
+StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextureProviderPtr& textureProviderPtr, bvector<IDTMSource*>& filteredSources)
+    {       
+    HFCPtr<HIMMosaic> pMosaicP(new HIMMosaic(HFCPtr<HGF2DCoordSys>(RasterUtilities::GetWorldCluster()->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr())));
+    HIMMosaic::RasterList rasterList;
+
+    for (auto& source : filteredSources)
+    {
+        WString path;
+
+        assert(BeFileName::IsUrl(source->GetPath().c_str()) == false);
+                
+        path = WString(L"file://") + source->GetPath();
+        
+
+
+            // HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
+            //HFCPtr<HRSObjectStore> pObjectStore;
+            //HFCPtr<HRFRasterFile>  pRasterFile;
+            HFCPtr<HRARaster>      pRaster;
+        // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
+        /*
+        #ifdef MAPBOX_PROTOTYPE
+        HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
+
+        if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+        {
+        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        }
+        else
+        #endif
+        {
+        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+        }
+
+        pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+
+        pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
+        pObjectStore = new HRSObjectStore(s_rasterMemPool,
+        pRasterFile,
+        0,
+        pLogicalCoordSys);
+
+        // Get the raster from the store
+        pRaster = pObjectStore->LoadRaster();*/
+        pRaster = RasterUtilities::LoadRaster(path);
+
+        HASSERT(pRaster != NULL);
+        //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
+        rasterList.push_back(pRaster.GetPtr());
+        pRaster = 0;
+    }
+    pMosaicP->Add(rasterList);
+    rasterList.clear();
+
+    textureProviderPtr = new MosaicTextureProvider(pMosaicP);
+
+    return SUCCESS;
+    }
+
+StatusInt IScalableMeshSourceCreator::Impl::GetRasterSources(bvector<IDTMSource*>& filteredSources)
     {
     const GCS& fileGCS = GetGCS();
     const ScalableMeshData& targetScalableMeshData = ScalableMeshData::GetNull();
@@ -883,79 +949,60 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
     HFCPtr<HVEClipShape>  resultingClipShapePtr(new HVEClipShape(new HGF2DCoordSys()));
 
     int status = BSISUCCESS;
-    bvector<IDTMSource*> filteredSources;
+
     status = TraverseSourceCollectionRasters(filteredSources,
                                              m_sources,
                                              resultingClipShapePtr,
                                              fileGCS,
                                              targetScalableMeshData);
-    if (filteredSources.empty()) return BSISUCCESS;
-            
-    pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(RasterUtilities::GetWorldCluster()->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
-    HIMMosaic::RasterList rasterList;
-    
-    for (auto& source : filteredSources)
-        {
-        WString path;
-        
-        if (source->GetPath().StartsWith(L"http://"))
-            {
-            path = source->GetPath();
-            }
-        else
-            {
-            path = WString(L"file://") + source->GetPath();
-            }
-            
-            
-       // HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
-        //HFCPtr<HRSObjectStore> pObjectStore;
-//HFCPtr<HRFRasterFile>  pRasterFile;
-        HFCPtr<HRARaster>      pRaster;
-        // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
-        /*
-#ifdef MAPBOX_PROTOTYPE
-        HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
 
-        if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-            {
-            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
-            }
-        else
-#endif
-            {
-            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
-            }
-
-        pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);        
-                                                                                                                            
-        pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
-        pObjectStore = new HRSObjectStore(s_rasterMemPool,
-                                          pRasterFile,
-                                          0,
-                                          pLogicalCoordSys);
-
-        // Get the raster from the store
-        pRaster = pObjectStore->LoadRaster();*/
-        pRaster = RasterUtilities::LoadRaster(path);
-       
-        HASSERT(pRaster != NULL);
-        //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
-        rasterList.push_back(pRaster.GetPtr());
-        pRaster = 0;
-        }
-    pMosaicP->Add(rasterList);    
-    rasterList.clear();
     return status;
+
+    }
+
+StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderPtr& textureProviderPtr)
+    {
+    bvector<IDTMSource*> filteredSources;
+
+    StatusInt status;
+
+    if (SUCCESS != (status = IScalableMeshSourceCreator::Impl::GetRasterSources(filteredSources)))
+        return status;
+
+    if (filteredSources.empty())
+        return SUCCESS;
+
+    bool containtStreamingSource = false;
+
+    for (auto& source : filteredSources)
+    {
+        WString path;
+
+        if (BeFileName::IsUrl(source->GetPath().c_str()))
+        {
+            containtStreamingSource = true;
+            assert(filteredSources.size() == 1); //Currently only support one streaming source (BingMap).
+            break;
+        }
+    }
+
+    if (containtStreamingSource)
+    {             
+        return GetStreamedTextureProvider(textureProviderPtr, filteredSources[0]->GetPath());
+    }
+    
+    return GetLocalSourceTextureProvider(textureProviderPtr, filteredSources);
     }
 
 int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType>& pIndex)
     {
-    HFCPtr<HIMMosaic> pMosaic;
-    StatusInt status = GetRasterSources(pMosaic);
+
+    ITextureProviderPtr textureProviderPtr;
+
+    StatusInt status = GetTextureProvider(textureProviderPtr);
+
     if (BSISUCCESS != status) return BSIERROR;
-    if (pMosaic == nullptr) return BSISUCCESS;
-    ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(pMosaic.GetPtr());
+    if (textureProviderPtr == nullptr) return BSISUCCESS;    
     
     //Image++ is always in meters, so ensure 3SM data are transformed to meter
     Transform unitTransform;
@@ -964,7 +1011,7 @@ int IScalableMeshSourceCreator::Impl::ImportRasterSourcesTo(HFCPtr<MeshIndexType
                                     0, m_gcs.GetUnit().GetRatioToBase(), 0, 0,
                                     0, 0, m_gcs.GetUnit().GetRatioToBase(), 0);
             
-    pIndex->TextureFromRaster(mosaicPtr, unitTransform);
+    pIndex->TextureFromRaster(textureProviderPtr, unitTransform);
     return BSISUCCESS;
     }
 

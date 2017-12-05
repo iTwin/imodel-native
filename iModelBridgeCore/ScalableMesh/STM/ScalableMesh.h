@@ -26,6 +26,7 @@
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh\IScalableMeshRDSProvider.h>
 #include "ScalableMeshDraping.h"
+#include "ScalableMeshClippingOptions.h"
 
 /*----------------------------------------------------------------------+
 | This template class must be exported, so we instanciate and export it |
@@ -137,6 +138,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     IDTMVolume* m_dtmVolume;
     TerrainModel::BcDTMPtr m_dtm; //Maximum 5M points bcDtm representation of a ScalableMesh
     bool                   m_tryCreateDtm; 
+	bool m_useBcLibDrape;
 
 
     protected:
@@ -177,6 +179,8 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
             }
 
         void SetStorageToUors(DMatrix4d& storageToUors);
+
+		void SetUseBcLibForDraping(bool useBcLib);
     };
 /*----------------------------------------------------------------------------+
 |Class ScalableMesh
@@ -214,6 +218,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         IScalableMeshRDSProviderPtr   m_smRDSProvider = nullptr;
 
+		IScalableMeshClippingOptionsPtr m_clippingOptions;
+
 
 
         explicit                        ScalableMesh(SMSQLiteFilePtr& smSQLiteFile,const WString&             path);
@@ -238,10 +244,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
                                                             HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> nodePtr,
                                                             const unsigned __int64& maxNumberCountedPoints) const;
 
-        unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;
-
-
-        static DRange3d                 ComputeTotalExtentFor          (const MeshIndexType*           pointIndexP);
+        unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;        
 
         bool                            AreDataCompressed              ();
 
@@ -336,10 +339,13 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
 		virtual void                               _CompactExtraFiles() override;
 
+		virtual void                               _WriteExtraFiles() override;
+
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
-        virtual int                                _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t coverageId) const override;
+        virtual int                                _SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress) override;
+        virtual int                                _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const override;
         virtual void                               _ImportTerrainSM(WString terrainPath) override;
         virtual IScalableMeshPtr                    _GetTerrainSM() override;
 
@@ -349,12 +355,14 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
-        virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution) override;
+        virtual SMStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution) override;
         virtual BentleyStatus                      _CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override;
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;        
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
         virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
+
+		virtual IScalableMeshClippingOptions&      _EditClippingOptions() override;
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
@@ -414,8 +422,32 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         void SetMainIndexP(HFCPtr<MeshIndexType> newIndex) { m_scmIndexPtr = newIndex; }
 
         void SetNeedsNeighbors(bool needsNeighbors) { m_needsNeighbors = needsNeighbors; }
+
+        static DRange3d ComputeTotalExtentFor(const MeshIndexType*           pointIndexP);
                                     
     };
+
+template <class POINT>
+DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor(const MeshIndexType*   pointIndexP)
+    {
+    typedef ExtentOp<Extent3dType>         PtExtentOpType;
+
+    DRange3d totalExtent;
+    memset(&totalExtent, 0, sizeof(totalExtent));
+
+    if ((pointIndexP != 0) && (!pointIndexP->IsEmpty()))
+        {
+        Extent3dType ExtentPoints = pointIndexP->GetContentExtent();
+        totalExtent.low.x = PtExtentOpType::GetXMin(ExtentPoints);
+        totalExtent.high.x = PtExtentOpType::GetXMax(ExtentPoints);
+        totalExtent.low.y = PtExtentOpType::GetYMin(ExtentPoints);
+        totalExtent.high.y = PtExtentOpType::GetYMax(ExtentPoints);
+        totalExtent.low.z = PtExtentOpType::GetZMin(ExtentPoints);
+        totalExtent.high.z = PtExtentOpType::GetZMax(ExtentPoints);
+        }
+
+    return totalExtent;
+    }
 
 
 /*__PUBLISH_SECTION_END__*/
@@ -432,6 +464,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
         int                                             m_resolutionIndex;
         GeoCoords::GCS                                  m_sourceGCS;
+		ScalableMeshClippingOptions m_options;
         
     protected : 
 
@@ -526,6 +559,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             }
 		virtual void                               _CompactExtraFiles() override {}
 
+		virtual void                               _WriteExtraFiles() override {}
+
         virtual bool                               _ShouldInvertClips() override { return false; }
 
         virtual void                               _SetInvertClip(bool invertClips) override {}
@@ -546,7 +581,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override { assert(!"Should not be called"); }
         
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
-        virtual int                    _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t coverageId) const override { return ERROR; }
+        virtual int                                _SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress) override { return ERROR; }
+        virtual int                    _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {};
         virtual IScalableMeshPtr                    _GetTerrainSM() override
             {
@@ -569,9 +605,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return ERROR;
             }
 #endif
-        virtual BentleyStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution) override
+        virtual SMStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution) override
             {
-            return ERROR;
+            return SMStatus::S_ERROR;
             }
 
         virtual BentleyStatus                   _CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName) override { return ERROR; };
@@ -579,7 +615,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override {};
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override { return SUCCESS; };        
         virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override { assert(false); };
-        virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
+		virtual IScalableMeshClippingOptions&      _EditClippingOptions() override { assert(false); return m_options; };
+		virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual Utf8String                         _GetEditFilesBasePath() override { assert(false); return Utf8String(); };
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {
