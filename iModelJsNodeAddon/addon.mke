@@ -118,6 +118,7 @@ DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
 %ifdef __apple
 # OSX Specific library
 LINKER_LIBRARIES  + -framework CoreFoundation
+LINKER_LIBRARIES  + -framework CFNetwork
 # This is a hack, Mac is not set up with the various context definitions like linux
 BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
 %endif
