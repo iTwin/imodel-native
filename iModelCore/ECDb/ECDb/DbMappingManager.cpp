@@ -830,7 +830,11 @@ RefCountedPtr<StructPropertyMap> DbMappingManager::Classes::MapStructProperty(Co
 
         if (propertyMap == nullptr)
             {
-            BeAssert(false && "Failed to created property map");
+            if (ctx.GetMode() != Context::Mode::Loading)
+                {
+                BeAssert(false && "Failed to created property map");
+                }
+
             return nullptr;
             }
 
