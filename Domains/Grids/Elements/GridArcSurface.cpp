@@ -28,9 +28,8 @@ CreateParams const& params
 GridArcSurface::GridArcSurface
 (
 CreateParams const& params,
-GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
-) : T_Super(params, gridAxis, surface) 
+) : T_Super(params, surface) 
     {
     }
 
@@ -60,7 +59,7 @@ GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
-    GridArcSurfacePtr gridSurface =  new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridArcSurfacePtr gridSurface =  new GridArcSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
     if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
         return nullptr;
 

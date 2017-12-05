@@ -25,7 +25,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GridSplineSurface : GridSurface
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridSplineSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridSplineSurface (CreateParams const& params, GridAxisCR gridAxis, ISolidPrimitivePtr surface);
+    explicit GRIDELEMENTS_EXPORT GridSplineSurface (CreateParams const& params, ISolidPrimitivePtr surface);
     friend struct GridSplineSurfaceHandler;
 
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const override;

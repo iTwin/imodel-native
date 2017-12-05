@@ -21,10 +21,32 @@ BEGIN_GRIDS_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE GridSurface : Dgn::SpatialLocationElement
 {
     DEFINE_T_SUPER (Dgn::SpatialLocationElement);
+
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER (GridSurface::T_Super::CreateParams);
+        Dgn::DgnElementId m_gridAxisId;
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId, Dgn::DgnElementId gridAxisId) :
+            T_Super::CreateParams (model.GetDgnDb (), model.GetModelId (), classId, Dgn::SpatialCategory::QueryCategoryId (model.GetDgnDb ().GetDictionaryModel (), GRIDS_CATEGORY_CODE_GridSurface)), m_gridAxisId (gridAxisId)
+            {
+            }
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit CreateParams (Dgn::DgnElement::CreateParams const& params)
+            : T_Super (params), m_gridAxisId (Dgn::DgnElementId())
+            {
+            }
+        };
 protected:
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCR gridAxis, CurveVectorPtr surfaceVector);
-    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCR gridAxis, ISolidPrimitivePtr surface);
+    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, CurveVectorPtr surfaceVector);
+    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, ISolidPrimitivePtr surface);
 
     BE_PROP_NAME(Axis)
         
@@ -50,7 +72,7 @@ protected:
     //! @param[in] axisId to set
     void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces)); };
 
-    static GRIDELEMENTS_EXPORT Dgn::GeometricElement3d::CreateParams        CreateParamsFromModel (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId);
+    static GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModelAxisClassId (Dgn::SpatialLocationModelCR model, GridAxisCR axis, Dgn::DgnClassId classId);
 
 protected:
 
@@ -119,5 +141,51 @@ public:
     //! @return     ElementIterator over this grid surface's grid curves
     GRIDELEMENTS_EXPORT Dgn::ElementIterator MakeCreatedCurvesIterator() const;
 };
+
+//=======================================================================================
+//! an IPlanGridSurface mixin - this is limited to GridSurface subclasses
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE IPlanGridSurface //inherit nothing here (multi-inheritance, base class handled by actual class)
+    {
+public:
+    struct CreateParams //inherit nothing here (multi-inheritance, base class handled by actual class)
+        {
+        DEFINE_T_SUPER (GridSurface::CreateParams);
+        double m_startElevation;
+        double m_endElevation;
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams (double staElevation, double endElevation) :
+            m_startElevation(staElevation), m_endElevation(endElevation)
+            {}
+        };
+private:
+    Dgn::DgnElementR m_thisElem;
+protected:
+
+    BE_PROP_NAME (StartElevation)
+    BE_PROP_NAME (EndElevation)
+
+    //! initialized this mixin with element reference (pass *this)
+    IPlanGridSurface (Dgn::DgnElementR thisElem, CreateParams const& params);
+public:
+
+    //! Gets start elevation of this IPlanGridSurface
+    //! @return StartElevation of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetStartElevation () const { return m_thisElem.GetPropertyValueDouble (prop_StartElevation ()); }
+
+    //! Sets start elevation of this IPlanGridSurface
+    //! @param[in]  staElevation   new StartElevation for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetStartElevation (double staElevation) { m_thisElem.SetPropertyValue (prop_StartElevation (), staElevation); };
+
+    //! Gets end elevation of this IPlanGridSurface
+    //! @return EndElevation of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetEndElevation () const { return m_thisElem.GetPropertyValueDouble (prop_EndElevation ()); }
+
+    //! Sets end elevation of this IPlanGridSurface
+    //! @param[in]  endElevation   new EndElevation for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetEndElevation (double endElevation) { m_thisElem.SetPropertyValue (prop_EndElevation (), endElevation); };
+    };
 
 END_GRIDS_NAMESPACE

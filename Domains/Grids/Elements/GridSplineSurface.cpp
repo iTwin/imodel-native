@@ -28,9 +28,8 @@ CreateParams const& params
 GridSplineSurface::GridSplineSurface
 (
 CreateParams const& params,
-GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
-) : T_Super(params, gridAxis, surface) 
+) : T_Super(params, surface) 
     {
     }
 
@@ -62,7 +61,7 @@ GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
-    GridSplineSurfacePtr gridSurface = new GridSplineSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridSplineSurfacePtr gridSurface = new GridSplineSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
     if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
         return nullptr;
 

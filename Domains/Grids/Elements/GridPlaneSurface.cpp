@@ -9,6 +9,7 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridPlanarSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -16,7 +17,7 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
 GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params
-) : T_Super(params) 
+) : T_Super(params)
     {
 
     }
@@ -27,9 +28,8 @@ CreateParams const& params
 GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params,
-GridAxisCR gridAxis,
 CurveVectorPtr  surfaceVector
-) : T_Super(params, gridAxis, surfaceVector) 
+) : T_Super(params, surfaceVector) 
     {
     }
 
@@ -39,9 +39,8 @@ CurveVectorPtr  surfaceVector
 GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params,
-GridAxisCR gridAxis,
 ISolidPrimitivePtr surface
-) : T_Super(params, gridAxis, surface) 
+) : T_Super(params, surface) 
     {
     }
 
@@ -74,7 +73,7 @@ GridAxisCR gridAxis,
 CurveVectorPtr  surfaceVector
 )
     {
-    GridPlanarSurfacePtr surface = new GridPlanarSurface(CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surfaceVector);
+    GridPlanarSurfacePtr surface = new GridPlanarSurface(CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surfaceVector);
 
     if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
         return nullptr;
@@ -92,7 +91,7 @@ GridAxisCR gridAxis,
 ISolidPrimitivePtr surface
 )
     {
-    GridPlanarSurfacePtr gridSurface = new GridPlanarSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridPlanarSurfacePtr gridSurface = new GridPlanarSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
 
     if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
         return nullptr;
@@ -103,7 +102,7 @@ ISolidPrimitivePtr surface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPlane3d                        GridPlanarSurface::GetPlane
+DPlane3d                        GridPlanarSurface::_GetPlane
 (
 ) const
     {
@@ -247,6 +246,95 @@ DgnDbStatus      GridPlanarSurface::_Validate
             return DgnDbStatus::ValidationFailed;
         }
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanGridPlanarSurface::PlanGridPlanarSurface
+(
+CreateParams const& params,
+DgnExtrusionDetailCR extDetail
+) : T_Super(params, ISolidPrimitive::CreateDgnExtrusion (extDetail)), IPlanGridSurface(*this, params)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanGridPlanarSurface::PlanGridPlanarSurface
+(
+CreateParams const& params
+) : T_Super(params), IPlanGridSurface(*this, params)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DPlane3d                        PlanGridPlanarSurface::_GetPlane
+(
+) const
+    {
+    GeometryCollection geomData = *ToGeometrySource ();
+
+    if (geomData.begin () == geomData.end ())
+        return DPlane3d ();
+
+    ISolidPrimitivePtr solidPrimitive = (*geomData.begin ()).GetGeometryPtr ()->GetAsISolidPrimitive ();
+    if (!solidPrimitive.IsValid ())
+        {
+        return DPlane3d ();
+        }
+
+    DgnExtrusionDetail extDetail;
+    solidPrimitive->TransformInPlace ((*geomData.begin ()).GetGeometryToWorld ());
+    if (!solidPrimitive->TryGetDgnExtrusionDetail (extDetail))
+        {
+        return DPlane3d ();
+        }
+
+    bvector<bvector<DPoint3d>> baseShapePoints;
+    extDetail.m_baseCurve->CollectLinearGeometry (baseShapePoints);
+    if (baseShapePoints.size () != 1 || baseShapePoints[0].size () != 2)
+        {
+        return DPlane3d ();
+        }
+
+    DPoint3d point3 = DPoint3d::FromSumOf (baseShapePoints[0][0], extDetail.m_extrusionVector);
+    return DPlane3d::From3Points (baseShapePoints[0][0], baseShapePoints[0][1], point3);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCartesianGridSurface::PlanCartesianGridSurface
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    SetCoordinate (params.m_coordinate);
+    SetStartExtent (params.m_startExtent);
+    SetEndExtent (params.m_endExtent);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCartesianGridSurfacePtr             PlanCartesianGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    PlanCartesianGridSurfacePtr gridSurface = new PlanCartesianGridSurface (params);
+
+    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
+        return nullptr;
+
+    return gridSurface;
     }
 
 END_GRIDS_NAMESPACE
