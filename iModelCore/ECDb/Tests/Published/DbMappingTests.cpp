@@ -2922,30 +2922,16 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
 
     ECDb settingsDb;
     ASSERT_EQ(BE_SQLITE_OK, settingsDb.CreateNewDb(settingsDbPath));
-    settingsDb.CloseDb();
 
-    }
-
-    auto attachSettingsDb = [this, &settingsDbPath] ()
-        {
-        return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings");
-        };
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, attachSettingsDb());
-
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(SUCCESS, TestHelper(settingsDb).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.01">
-                        <TableSpace>settings</TableSpace>
-                    </ClassMap>
-                    <DbIndexList xmlns="ECDbMap.02.01">
+                    <DbIndexList xmlns="ECDbMap.02.00">
                        <Indexes>
                            <DbIndex>
                                 <Name>uix_sessionsetting_name</Name>
@@ -2977,10 +2963,7 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
            </ECRelationshipClass>
            <ECRelationshipClass typeName="LinkTableRel" strength="Referencing" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.01">
-                       <TableSpace>settings</TableSpace>
-                     </ClassMap>
-                    <LinkTableRelationshipMap xmlns="ECDbMap.02.01">
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                         <CreateForeignKeyConstraints>false</CreateForeignKeyConstraints>
                     </LinkTableRelationshipMap>
                 </ECCustomAttributes>
@@ -2992,6 +2975,19 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
               </Target>
            </ECRelationshipClass>
         </ECSchema>)xml")));
+
+    settingsDb.CloseDb();
+    }
+
+    auto attachSettingsDb = [this, &settingsDbPath] ()
+        {
+        return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings");
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, attachSettingsDb());
+
+    
 
     ECInstanceKey fooKey, settingKey, linkTableRel;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
@@ -3088,10 +3084,10 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace_PhysicalForeignKey)
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.01" alias="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.01">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <TableSpace>settings</TableSpace>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -3099,13 +3095,13 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace_PhysicalForeignKey)
             </ECEntityClass>
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.01">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <TableSpace>settings</TableSpace>
                     </ClassMap>
                 </ECCustomAttributes>
               <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
                 <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.02.01">
+                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                         <OnDeleteAction>Cascade</OnDeleteAction>
                     </ForeignKeyConstraint>
                 </ECCustomAttributes>
