@@ -147,7 +147,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         {
             case DbTable::Type::Existing:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().Report("DbTable '%s' is of type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
@@ -164,7 +164,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Joined:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().Report("DbTable '%s' is if type 'Joined' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
@@ -194,7 +194,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Overflow:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().Report("DbTable '%s' is if type 'Overflow' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
@@ -225,7 +225,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Primary:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().Report("DbTable '%s' is if type 'Primary' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;

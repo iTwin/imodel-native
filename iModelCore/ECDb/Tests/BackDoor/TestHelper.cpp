@@ -362,11 +362,8 @@ std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName
         sql.Sprintf("SELECT name FROM [%s].sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE", dbSchemaName);
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
-        {
-        BeAssert(false && "Preparation failed");
-        return indexNames;
-        }
+    if (BE_SQLITE_OK != stmt.TryPrepare(m_ecdb, sql.c_str()))
+        return indexNames; //e.g. if table space is not attached
 
     if (BE_SQLITE_OK != stmt.BindText(1, tableName, Statement::MakeCopy::No))
         {

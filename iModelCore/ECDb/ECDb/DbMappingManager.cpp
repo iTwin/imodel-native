@@ -2011,6 +2011,13 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
  //---------------------------------------------------------------------------------------
   DbTable* DbMappingManager::Tables::CreateTableForOtherStrategies(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR tableName, DbTable::Type tableType, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
      {
+      if (DbUtilities::TableExists(ctx.GetECDb(), tableName.c_str(), TABLESPACE_Main))
+          {
+          ctx.Issues().Report("Failed to map ECClass '%s'. It would be mapped to table '%s' which exists already and was not created by ECDb. Mapping classes to pre-existing tables requires the MapStrategy 'ExistingTable'.",
+                              classMap.GetClass().GetFullName(), tableName.c_str());
+          return nullptr;
+          }
+
      DbTable* table = nullptr;
      if (primaryTable != nullptr)
         table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(tableName, tableType, exclusiveRootClassId, *primaryTable);

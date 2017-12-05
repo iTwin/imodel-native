@@ -194,12 +194,6 @@ DbResult ProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDb
         return BE_SQLITE_OK;
         }
 
-    if (ecdb.TableExists("ec_Schema"))
-        {
-        profileVersion = ProfileVersion(1, 0, 0, 0);
-        return BE_SQLITE_OK;
-        }
-
     //File is no ECDb file
     return BE_SQLITE_ERROR_InvalidProfileVersion;
     }

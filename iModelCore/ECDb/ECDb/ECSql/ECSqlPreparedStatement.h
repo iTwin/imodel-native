@@ -366,6 +366,7 @@ private:
             private:
                 ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr;
                 Mode m_mode = Mode::NotUserProvided;
+                DbTableSpace const* m_tableSpace = nullptr;
                 ECN::ECClassId m_classId;
                 ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr; //in case user specified parametrized id expression
                 mutable ECInstanceId m_generatedECInstanceId;
@@ -391,6 +392,7 @@ private:
                 ECN::ECClassId GetClassId() const { return m_classId; }
                 bool IsEndTableRelationshipInsert() const { return *m_sysPropInfo != ECSqlSystemPropertyInfo::ECInstanceId(); }
                 bool MustGenerateECInstanceId() const;
+                DbTableSpace const& GetTableSpace() const { BeAssert(m_tableSpace != nullptr); return *m_tableSpace; }
                 //Is not null in case user specified parametrized id expression
                 ProxyECInstanceIdECSqlBinder* GetIdProxyBinder() const { return m_idProxyBinder; }
                 Mode GetMode() const { return m_mode; }

@@ -2904,14 +2904,177 @@ TEST_F(DbMappingTestFixture, ExistingTableMapStrategy)
     }
     }
 
-
-
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  11/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, AttachedTableSpace)
     {
+    BeFileName attachedECDbPath;
+
+    {
+    //attach file
+    BeTest::GetHost().GetOutputRoot(attachedECDbPath);
+    attachedECDbPath.AppendToPath(L"AttachedTableSpace.ecdb.attached");
+    if (attachedECDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, attachedECDbPath.BeDeleteFile());
+
+    ECDb attached;
+    ASSERT_EQ(BE_SQLITE_OK, attached.CreateNewDb(attachedECDbPath));
+
+    TestHelper testHelper(attached);
+    ASSERT_EQ(SUCCESS, testHelper.ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Parent" modifier="None">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" modifier="Sealed">
+                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Parent" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="Child" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey parentKey;
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Child(Parent.Id,Name) VALUES(%s,'Child 1')",
+                                                                       parentKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ASSERT_EQ(BE_SQLITE_OK, attached.SaveChanges());
+    attached.CloseDb();
+    }
+
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace.ecdb"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM main.ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent"));
+
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ts.Parent(Name) VALUES('Parent 2')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO main.ts.Parent(Name) VALUES('Parent 2')"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Parent(Name) VALUES('Parent 3')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Parent(ECInstanceId,Name) VALUES(100,'Parent 2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Parent(ECInstanceId,Name) VALUES(101,'Parent 2')"));
+
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ts.Child(Name) VALUES('Child 2')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO main.ts.Child(Name) VALUES('Child 2')"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Child(Name) VALUES('Child 3')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Child(ECInstanceId,Name) VALUES(200,'Child 2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Child(ECInstanceId,Name) VALUES(201,'Child 2')"));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
+    ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO attached.ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ECDbAndNonECDbAttachedTableSpace)
+    {
+    BeFileName attachedECDbPath, attachedDbPath;
+
+    {
+    //attach Db
+    BeTest::GetHost().GetOutputRoot(attachedDbPath);
+    attachedDbPath.AppendToPath(L"attachedtablespace_attached.db");
+    if (attachedDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, attachedDbPath.BeDeleteFile());
+
+    Db attachedDb;
+    ASSERT_EQ(BE_SQLITE_OK, attachedDb.CreateNewDb(attachedDbPath));
+    ASSERT_EQ(BE_SQLITE_OK, attachedDb.SaveChanges());
+    attachedDb.CloseDb();
+
+    //attach ECDb 
+    BeTest::GetHost().GetOutputRoot(attachedECDbPath);
+    attachedECDbPath.AppendToPath(L"attachedtablespace_attached.ecdb");
+    if (attachedECDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, attachedECDbPath.BeDeleteFile());
+
+    ECDb attached;
+    ASSERT_EQ(BE_SQLITE_OK, attached.CreateNewDb(attachedECDbPath));
+
+    TestHelper testHelper(attached);
+    ASSERT_EQ(SUCCESS, testHelper.ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Parent" modifier="None">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" modifier="Sealed">
+                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Parent" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="Child" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey parentKey;
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Child(Parent.Id,Name) VALUES(%s,'Child 1')",
+                                                                       parentKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ASSERT_EQ(BE_SQLITE_OK, attached.SaveChanges());
+    attached.CloseDb();
+    }
+
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace_primary.ecdb"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedDbPath.GetNameUtf8().c_str(), "attacheddb"));
+
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM main.ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent"));
+
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ts.Parent(Name) VALUES('Parent 2')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO main.ts.Parent(Name) VALUES('Parent 2')"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Parent(Name) VALUES('Parent 3')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Parent(ECInstanceId,Name) VALUES(100,'Parent 2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Parent(ECInstanceId,Name) VALUES(101,'Parent 2')"));
+
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ts.Child(Name) VALUES('Child 2')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO main.ts.Child(Name) VALUES('Child 2')"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Child(Name) VALUES('Child 3')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Child(ECInstanceId,Name) VALUES(200,'Child 2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO attached.ts.Child(ECInstanceId,Name) VALUES(201,'Child 2')"));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedDbPath.GetNameUtf8().c_str(), "attacheddb"));
+    ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
+    ASSERT_EQ(ECSqlStatus::Error, GetHelper().PrepareECSql("INSERT INTO attached.ts.Parent(Name) VALUES('Parent 2')")) << "file opened read-only which applies to attached file as well";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, AttachedTableSpace_IndexesAndRels)
+    {
     BeFileName settingsDbPath;
+
+    ECInstanceKey fooKey, settingKey, linkTableRel;
 
     {
     //attach settings file
@@ -2923,7 +3086,8 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
     ECDb settingsDb;
     ASSERT_EQ(BE_SQLITE_OK, settingsDb.CreateNewDb(settingsDbPath));
 
-    ASSERT_EQ(SUCCESS, TestHelper(settingsDb).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    TestHelper testHelper(settingsDb);
+    ASSERT_EQ(SUCCESS, testHelper.ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="None">
@@ -2976,30 +3140,15 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
            </ECRelationshipClass>
         </ECSchema>)xml")));
 
-    settingsDb.CloseDb();
-    }
-
-    auto attachSettingsDb = [this, &settingsDbPath] ()
-        {
-        return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings");
-        };
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, attachSettingsDb());
-
-    
-
-    ECInstanceKey fooKey, settingKey, linkTableRel;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Logging1',true)",
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Logging1',true)",
                                                                                           fooKey.GetInstanceId().ToString().c_str()).c_str()));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
                                                                                             fooKey.GetInstanceId().ToString().c_str(), settingKey.GetInstanceId().ToString().c_str()).c_str()));
 
-    EXPECT_TRUE(GetHelper().GetIndexNamesForTable("ts_Foo").empty());
-    EXPECT_EQ(std::vector<Utf8String>({"ix_sessionsetting_val", "uix_sessionsetting_name"}), GetHelper().GetIndexNamesForTable("ts_SessionSetting", "settings"));
-
-    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, settingsDb.SaveChanges());
+    settingsDb.CloseDb();
+    }
 
     auto assertSelectSettings = [this, &fooKey] (int expectedRowCount)
         {
@@ -3027,21 +3176,41 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
         ASSERT_EQ(expectedRowCount, stmt.GetValueInt(0)) << stmt.GetECSql() << assertMessage;
         };
 
-    //expected to fail prepare as file is not attached yet
+
+    auto assertIndexes = [this] (bool expectedToExist)
+        {
+        ASSERT_TRUE(GetHelper().GetIndexNamesForTable("ts_Foo", "settings").empty()) << "Indexes on ts_Foo are never expected";
+        if (expectedToExist)
+            ASSERT_EQ(std::vector<Utf8String>({"ix_sessionsetting_val", "uix_sessionsetting_name"}), GetHelper().GetIndexNamesForTable("ts_SessionSetting", "settings"));
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace.ecdb"));
+
+    assertSelectSettings(-1);
+    assertSelectLinkTable(-1);
+    assertIndexes(false);
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings"));
+    assertSelectSettings(1);
+    assertSelectLinkTable(1);
+    assertIndexes(true);
+    
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
     assertSelectSettings(-1);
     assertSelectLinkTable(-1);
+    assertIndexes(false);
 
 
-    ASSERT_EQ(BE_SQLITE_OK, attachSettingsDb());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings"));
     assertSelectSettings(1);
     assertSelectLinkTable(1);
+    assertIndexes(true);
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Debugging',false)",
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("INSERT INTO ts.SessionSetting(ECInstanceId,Foo.Id,Name,Val) VALUES(1000,%s,'Debugging',false)",
                                                                                           fooKey.GetInstanceId().ToString().c_str()).c_str()));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(SourceECInstanceId,TargetECInstanceId) VALUES(%s,%s)",
-                                                                                            fooKey.GetInstanceId().ToString().c_str(), settingKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(linkTableRel, Utf8PrintfString("INSERT INTO ts.LinkTableRel(ECInstanceId,SourceECInstanceId,TargetECInstanceId) VALUES(2000,%s,1000)",
+                                                                                            fooKey.GetInstanceId().ToString().c_str()).c_str()));
 
     assertSelectSettings(2);
     assertSelectLinkTable(2);
@@ -3061,44 +3230,16 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace_PhysicalForeignKey)
         if (settingsDbPath.DoesPathExist())
             ASSERT_EQ(BeFileNameStatus::Success, settingsDbPath.BeDeleteFile());
 
-        Db settingsDb;
+        ECDb settingsDb;
         ASSERT_EQ(BE_SQLITE_OK, settingsDb.CreateNewDb(settingsDbPath));
-        settingsDb.CloseDb();
 
-        }
-
-    auto attachSettingsFile = [this, &settingsDbPath] () { return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings"); };
-
-    auto getRelCount = [this] ()
-        {
-        ECSqlStatement stmt;
-        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT count(*) FROM ts.Rel") || BE_SQLITE_ROW != stmt.Step())
-            return -1;
-
-        return stmt.GetValueInt(0);
-        };
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace_PhysicalForeignKey.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, attachSettingsFile());
-    ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
-
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        ASSERT_EQ(SUCCESS, TestHelper(settingsDb).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
-                <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <TableSpace>settings</TableSpace>
-                    </ClassMap>
-                </ECCustomAttributes>
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
             <ECEntityClass typeName="SessionSetting" modifier="Sealed">
-                <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.02.00">
-                        <TableSpace>settings</TableSpace>
-                    </ClassMap>
-                </ECCustomAttributes>
               <ECNavigationProperty propertyName="Foo" relationshipName="Rel" direction="Backward">
                 <ECCustomAttributes>
                     <ForeignKeyConstraint xmlns="ECDbMap.02.00">
@@ -3118,9 +3259,26 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace_PhysicalForeignKey)
               </Target>
            </ECRelationshipClass>
         </ECSchema>)xml")));
+        settingsDb.CloseDb();
+        }
+
+    auto attachSettingsFile = [this, &settingsDbPath] () { return m_ecdb.AttachDb(settingsDbPath.GetNameUtf8().c_str(), "settings"); };
+
+    auto getRelCount = [this] ()
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT count(*) FROM ts.Rel") || BE_SQLITE_ROW != stmt.Step())
+            return -1;
+
+        return stmt.GetValueInt(0);
+        };
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("AttachedTableSpace_PhysicalForeignKey.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, attachSettingsFile());
+    ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
 
     ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
-    ASSERT_EQ(0, getRelCount()) << "After schema import";
+    ASSERT_EQ(0, getRelCount());
 
     ECInstanceKey fooKey, settingKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(fooKey, "INSERT INTO ts.Foo(Name) VALUES('Foo 1')"));
@@ -3138,7 +3296,7 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace_PhysicalForeignKey)
    ASSERT_TRUE(GetHelper().TableSpaceExists("settings"));
    ASSERT_EQ(1, getRelCount()) << "After reattaching and reopening";
 
-   ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(Foo.Id,Name,Val) VALUES(%s,'Debugging',false)",
+   ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(settingKey, Utf8PrintfString("INSERT INTO ts.SessionSetting(ECInstanceId,Foo.Id,Name,Val) VALUES(1000,%s,'Debugging',false)",
                                                                                               fooKey.GetInstanceId().ToString().c_str()).c_str()));
    ASSERT_EQ(2, getRelCount()) << "After second insert";
    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
