@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ArchitecturalPhysical" alias="ArchPhys" version="01.00.00" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
+    <!--ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/-->
     <ECSchemaReference name="AecUnits" version="01.00.00" alias="AECU"/>
 
     <ECEntityClass typeName="Casework">

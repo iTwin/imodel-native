@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="BuildingCommon" alias="bldcom" version="01.00.00" description="This schema contains Classes the span the building schemas" displayLabel="Building Common" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
-            <SchemaFullNameAtEditingStart>BuildingCommon.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
     <ECEntityClass typeName="ABDIFCOerrides" displayLabel="ABD IFC Oerrides">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="Ifc4Override" typeName="string" displayLabel="Ifc 2x4 Override"/>
