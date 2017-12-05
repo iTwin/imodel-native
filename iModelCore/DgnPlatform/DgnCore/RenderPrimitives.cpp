@@ -1599,7 +1599,9 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
     PolyfaceList tilePolyfaces;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
+#if defined(WIP_PMARKS)
     PSolidThreadUtil::WorkerThreadInnerMark innerMark;
+#endif
 
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
@@ -1812,7 +1814,7 @@ bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayPara
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
     {
-#if defined(BENTLEYCONFIG_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
     PSolidThreadUtil::WorkerThreadInnerMark innerMark;
 #endif
 

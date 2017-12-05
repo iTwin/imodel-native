@@ -53,6 +53,8 @@ struct TileContext;
 // Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
 // #define SHARE_GEOMETRY_PARTS
 
+// #define DISABLE_CLIPPING
+
 // Uncomment to record and output statistics on # of cached tiles, time spent reading them, etc
 #define TILECACHE_DEBUG
 
@@ -796,7 +798,7 @@ static TileCacheStatistics       s_statistics;
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
     {
-#if defined (BENTLEYCONFIG_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
     PSolidThreadUtil::WorkerThreadOuterMark outerMark;
 #endif
 
@@ -1131,7 +1133,7 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     m_cache = model.GetDgnDb().ElementTileCache();
     }
 
-#if defined(BENTLEYCONFIG_PARASOLID)
+#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 #endif
 
@@ -1180,8 +1182,10 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
 #if defined (BENTLEYCONFIG_PARASOLID)
     PSolidKernelManager::StartSession();
 
+#if defined(WIP_PMARKS)
     if (s_psolidMainThreadMark.IsNull())
         s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
+#endif
 #endif
 
     RootPtr root = new Root(model, transform, system);
@@ -1421,7 +1425,7 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
     // Only cache geometry which occupies a significant portion of the model's range, since it will appear in many tiles
     constexpr double rangeRatio = 0.25;
     DRange3d range = ComputeRange();
-    double diag = range.low.DistanceSquared(range.high); // ###TODO: Cache this.
+    double diag = range.low.DistanceSquared(range.high);
     if (0.0 == diag)
         return false;
 
@@ -2062,6 +2066,10 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
 
+#if defined(DISABLE_CLIPPING)
+    isContained = true;
+#endif
+
     if (isContained)
         {
         AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
@@ -2094,7 +2102,12 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
+#if defined(DISABLE_CLIPPING)
+        if (!GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+            continue;
+#else
         BeAssert(GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))));
+#endif
         anyContributed = true;
         builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface.GetNormalCP());
         m_contentRange.Extend(visitor->Point());
@@ -2766,7 +2779,7 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings 09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
 static bool hasPartOrBRep(GeometrySourceCR source)
     {
     Dgn::GeometryCollection collection(source);
@@ -2787,7 +2800,7 @@ static bool hasPartOrBRep(GeometrySourceCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
     PSolidThreadUtil::WorkerThreadInnerMarkPtr innerMark;
     if (hasPartOrBRep(source))
         innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
