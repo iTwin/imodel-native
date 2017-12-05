@@ -315,7 +315,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::ComputeRasterTiles(bvector<S
             { 
             for (auto& tileId : tileIdListInfo.m_tileIDList)
                 {
-                UShort resolution = (UShort)HRFRasterFile::s_TileDescriptor.GetLevel(tileId);
+                uint16_t resolution = (uint16_t)HRFRasterFile::s_TileDescriptor.GetLevel(tileId);
 
                 const HFCPtr<HRFResolutionDescriptor>&  pResDescriptor(m_streamingRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(resolution));
                 

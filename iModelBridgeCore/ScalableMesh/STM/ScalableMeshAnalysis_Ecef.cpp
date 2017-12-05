@@ -14,7 +14,7 @@ struct Ellipsoid
     Ellipsoid(double _a, double _invf);
     double a, invf, b, e, eprime;
 
-    DMatrix3d m_rot;
+    RotMatrix m_rot;
     DPoint3d m_center;
 
     // Convert geodetic latitude,longitude,height (in radians) to/from cartesian coordinates in the Earth-centered Earth-fixed cartesian referential
@@ -67,7 +67,7 @@ DPoint3d Ellipsoid::LLH2ECEF(const DPoint3d& llh) const
     );
     }
 
-DMatrix3d EastNorthUp(double lat, double lon)
+RotMatrix EastNorthUp(double lat, double lon)
     {
     const double
         cos_phi = cos(lat),
@@ -75,7 +75,7 @@ DMatrix3d EastNorthUp(double lat, double lon)
         cos_lambda = cos(lon),
         sin_lambda = sin(lon);
 
-    RotMatrix R; R.zero();
+    RotMatrix R; R.Zero();
     R.form3d[0][0] = -sin_lambda;
     R.form3d[0][1] = cos_lambda;
     R.form3d[1][0] = -sin_phi * cos_lambda;
@@ -85,17 +85,17 @@ DMatrix3d EastNorthUp(double lat, double lon)
     R.form3d[2][1] = cos_phi * sin_lambda;
     R.form3d[2][2] = sin_phi;
 
-    DMatrix3d M;
-    M.initFromRotMatrix(&R);
-    M.transpose();
-    return M;
+    //DMatrix3d M;
+    //M.initFromRotMatrix(&R);
+    //M.transpose();
+    return R;
     }
 
 // From ECEF to local ENU referential and inverse
 void Ellipsoid::ECEF2ENU(double latitude, double longitude, double alt)
     {
     m_rot = EastNorthUp(latitude, longitude);
-    m_rot.transpose();
+    //m_rot.transpose();
     DPoint3d lla = DPoint3d::From(latitude, longitude, alt);
     m_center = LLH2ECEF(lla);
     }
@@ -103,14 +103,14 @@ void Ellipsoid::ECEF2ENU(double latitude, double longitude, double alt)
 DPoint3d Ellipsoid::ecef2enu(const DPoint3d &p)
     {
     DPoint3d M = p - m_center;
-    m_rot.multiply(&M);
+    m_rot.Multiply(M);
     return M;
     }
 
 DPoint3d Ellipsoid::enu2ecef(const DPoint3d &p)
     {
     DPoint3d M = p;// -m_center;
-    m_rot.multiplyTranspose(&M);
+    m_rot.MultiplyTranspose(M);
     M = M + DVec3d::From(m_center);
     return M;
     }
@@ -145,7 +145,7 @@ double degree2radian(double deg)
 Ellipsoid GetEllipsoidFromWorldLocation(IScalableMesh* m_scmPtr, DPoint3d smCenter, DVec3d &dir_ecef)
     {
     Ellipsoid ewgs84 = Ellipsoid::WGS84();
-    GeoCoordinates::BaseGCSPtr myBase = m_scmPtr->GetBaseGCS();
+    auto myBase = m_scmPtr->GetBaseGCS();
     GeoPoint latlong; // get the latlong from mesh center
     myBase->LatLongFromXYZ(latlong, smCenter);
     // Init the converter from given latlong
@@ -183,8 +183,8 @@ void DumpGrid(std::string filename, ISMGridVolume& grid)
 // Converts a 3sm range into a World Range
 DRange3d ScalableMeshAnalysis::_ConvertToWorldRange(IScalableMesh *scmPtr, DRange3d& range3sm)
     {
-        DRange3d rangeW;
-        rangeW.initFrom(0, 0);
+        DRange3d rangeW = DRange3d::NullRange();
+
         DPoint3d Corners[8];
         range3sm.Get8Corners(Corners);
         for (int k = 0; k < 8; k++)
