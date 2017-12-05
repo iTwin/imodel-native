@@ -32,7 +32,7 @@ iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridge)
+BentleyApi::BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridge)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (DgnDbApi::PSolidKernelManager::IsSessionStarted())
@@ -40,7 +40,7 @@ BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridge)
 #endif
 
     delete bridge;
-    return SUCCESS;
+    return BentleyApi::BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
