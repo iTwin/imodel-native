@@ -1909,7 +1909,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
             const IDTMSource& source = *sourceIt;
             if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
                 {                
-                HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
+                HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(Utf8String(source.GetPath().c_str())));
 
                 if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
                     {

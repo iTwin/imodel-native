@@ -86,6 +86,7 @@ bool canCreateFile(const WChar* fileName)
 	return true;
 }
 
+
 //static HPMPool* s_rasterMemPool = nullptr;
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  filePath,
 	StatusInt&      status)
@@ -94,7 +95,7 @@ IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  f
 
 	using namespace ISMStore;
 	BeFileName fileName = BeFileName(filePath);
-	if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
+	if (IsUrl(fileName.c_str()) || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
 	{
 		status = BSIERROR;
 		return 0;

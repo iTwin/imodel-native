@@ -44,6 +44,8 @@ class BingMapLogoRetriever
             if (0 != URLDownloadToCacheFileW(NULL, pURI, localFilename, MAX_PATH, 0, NULL))
                 return false;
 
+            assert(!"Not yet supporter on Bim02");
+#if 0 
             ImageUtilities::RgbImageInfo info;
             BeFile pngFile;
 
@@ -61,7 +63,7 @@ class BingMapLogoRetriever
 
             size.x = info.width;
             size.y = info.height;
-
+#endif
             return true;
             }
 

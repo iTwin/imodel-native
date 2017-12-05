@@ -130,7 +130,11 @@ void ScalableMeshRDSProvider::InitializeRealityDataService()
         Utf8String proxyCreds = proxyInfo.m_user;
         proxyCreds.append(":");
         proxyCreds.append(proxyInfo.m_password);
+
+        assert(!"RealityDataService::SetProxyInfo not supported");
+#if 0 
         RealityDataService::SetProxyInfo(proxyInfo.m_serverUrl, proxyCreds);
+#endif
         }    
     }
 

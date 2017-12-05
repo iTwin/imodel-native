@@ -319,8 +319,9 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
-    }
 #endif
+    }
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
     {
     if (m_masterHeader.m_textured == SMTextureType::Streaming && m_raster == nullptr)

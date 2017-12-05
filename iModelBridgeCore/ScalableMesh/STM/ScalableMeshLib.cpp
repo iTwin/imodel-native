@@ -29,8 +29,9 @@
 #include <ImagePP/all/h/ImageppLib.h>
 
 #include <DgnPlatform\DgnPlatformLib.h>
+#include <curl\curl.h>
 
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+
 
 
 
@@ -149,10 +150,13 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
         }
-        
+    
+    assert(!"CurlConstructor not available on BIM02 - Refactor might be required");
+/*
     CurlConstructor curlConstructor;
     
     headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
+*/
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
    
@@ -215,6 +219,9 @@ CURLcode PerformCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebServiceKey GetBingKey()
     {    
+
+    assert(!"SM_BIM02_REFACTOR");
+#if 0
     Utf8String readBuffer;    
             
     Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
@@ -259,7 +266,7 @@ WebServiceKey GetBingKey()
         DateTime::FromString(expiration, packageInfos["instances"][0]["properties"]["expirationDate"].asCString());
         return WebServiceKey(packageInfos["instances"][0]["properties"]["key"].asString(), expiration);
         }
-    
+#endif    
     return WebServiceKey();
     }
 
@@ -294,17 +301,19 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
     if (pAuth != nullptr)
         {
 
-        if (nullptr == pAuth || !pAuth->GetServer().ContainsI(L"bing"))
+        if (nullptr == pAuth || !pAuth->GetServer().ContainsI("bing"))
             return false;
 
-        WString key = L"";
+        Utf8String key = "";
         if (!m_bingKey.IsValid() || m_bingKey.IsExpired())
             {
             m_bingKey = GetBingKey();
             }
 
         if (m_bingKey.IsValid() && !m_bingKey.IsExpired())
-            key.AssignUtf8(m_bingKey.GetKey().c_str());
+            { 
+            key = Utf8String(m_bingKey.GetKey().c_str());
+            }
 
         pAuth->SetPassword(key);
         return !key.empty();
@@ -320,9 +329,9 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
         
         if (!proxyInfo.m_serverUrl.empty())
             {
-            pProxyAuth->SetUser(WString(proxyInfo.m_user.c_str(), true));
-            pProxyAuth->SetPassword(WString(proxyInfo.m_password.c_str(), true));
-            pProxyAuth->SetServer(WString(proxyInfo.m_serverUrl.c_str(), true));
+            pProxyAuth->SetUser(proxyInfo.m_user.c_str());
+            pProxyAuth->SetPassword(proxyInfo.m_password.c_str());
+            pProxyAuth->SetServer(proxyInfo.m_serverUrl.c_str());
             return true;
             }
 
@@ -341,7 +350,7 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
 
         if (!pemFileName.empty())
             {
-            pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
+            pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
             return true;
             }
 
