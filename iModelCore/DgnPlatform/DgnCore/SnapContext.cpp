@@ -1035,13 +1035,27 @@ void _OutputGraphics(ViewContextR context) override
     GeometryCollection collection(*source);
     Render::GraphicBuilderPtr graphic;
 
+    GeometryStreamEntryId snapElemEntryId = snap->GetGeomDetail().GetGeometryStreamEntryId();
+    GeometryStreamEntryId snapPartEntryId = snap->GetGeomDetail().GetGeometryStreamEntryId(true);
+
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...
-        if (snap->GetGeomDetail().GetGeometryStreamEntryId() != iter.GetGeometryStreamEntryId())
+        if (snapElemEntryId != iter.GetGeometryStreamEntryId())
             continue;
 
-        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom;
+
+        if (nullptr != source && GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
+            {
+            IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, snapElemEntryId);
+
+            if (entity.IsValid())
+                geom = GeometricPrimitive::Create(entity);
+            }
+
+        if (!geom.IsValid())
+            geom = iter.GetGeometryPtr();
 
         if (geom.IsValid())
             {
@@ -1067,10 +1081,21 @@ void _OutputGraphics(ViewContextR context) override
         for (auto partIter : partCollection)
             {
             // Quick exclude of part geometry that didn't generate the hit...pass true to compare part geometry index...
-            if (snap->GetGeomDetail().GetGeometryStreamEntryId(true) != partIter.GetGeometryStreamEntryId())
+            if (snapPartEntryId != partIter.GetGeometryStreamEntryId())
                 continue;
 
-            GeometricPrimitivePtr partGeom = partIter.GetGeometryPtr();
+            GeometricPrimitivePtr partGeom;
+
+            if (GeometryCollection::Iterator::EntryType::BRepEntity == partIter.GetEntryType())
+                {
+                IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*geomPart, snapPartEntryId);
+
+                if (entity.IsValid())
+                    partGeom = GeometricPrimitive::Create(entity);
+                }
+
+            if (!partGeom.IsValid())
+                partGeom = partIter.GetGeometryPtr();                
 
             if (!partGeom.IsValid())
                 continue;

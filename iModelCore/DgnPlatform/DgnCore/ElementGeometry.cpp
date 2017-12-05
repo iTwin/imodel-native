@@ -3183,31 +3183,6 @@ void GeometryStreamIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& 
     }
 
 /*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  04/2016
-+===============+===============+===============+===============+===============+======*/
-struct BRepCache : DgnElement::AppData
-{
-static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
-typedef bmap<uint16_t, IBRepEntityPtr> IndexedGeomMap;
-IndexedGeomMap m_map;
-
-virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
-virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
-virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
-virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
-
-static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
-    {
-    BRepCache* cache = dynamic_cast<BRepCache*>(elem.FindAppData(GetKey()));
-
-    if (nullptr == cache && addIfNotFound)
-        elem.AddAppData(GetKey(), cache = new BRepCache);
-
-    return cache;
-    }
-};
-
-/*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/2015
 +===============+===============+===============+===============+===============+======*/
 struct DrawHelper
@@ -3301,48 +3276,6 @@ static bool IsFillVisible(ViewContextR context, Render::GeometryParamsCR geomPar
         default:
             return true;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IBRepEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
-    {
-    // Only use for auto-locate, display has Render::Graphic, and other callers of Stroke should be ok reading again...thread-safety issues otherwise...
-    if (nullptr == context.GetIPickGeom())
-        return nullptr;
-
-    if (nullptr == element)
-        return nullptr;
-
-    BRepCache* cache = BRepCache::Get(*element, false);
-
-    if (nullptr == cache)
-        return nullptr;
-
-    BRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex());
-
-    if (found == cache->m_map.end())
-        return nullptr;
-
-    return found->second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity)
-    {
-    // Only save for auto-locate, display has Render::Graphic, and other callers of Stroke should be ok reading again...
-    if (nullptr == context.GetIPickGeom())
-        return;
-
-    if (nullptr == element)
-        return;
-
-    BRepCache* cache = BRepCache::Get(*element, true);
-
-    cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = &entity;
     }
 
 }; // DrawHelper
@@ -3799,26 +3732,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
-                IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
+                // NOTE: Only use cache for auto-locate/snapping. Other callers of Stroke should be ok reading again, thread-safety issues otherwise...
+                bool useBRepCache = (nullptr != element && nullptr != context.GetIPickGeom());
+                IBRepEntityPtr entityPtr;
+
+                if (useBRepCache)
+                    entityPtr = BRepDataCache::FindCachedBRepEntity(*element, entryId);
 
                 if (!entityPtr.IsValid())
                     {
-                    if (!reader.Get(egOp, entityPtr) ||
-                        !entityPtr.IsValid())
+                    if (!reader.Get(egOp, entityPtr) || !entityPtr.IsValid())
                         break;
 
-                    // Resolve/Cook face attachments...need to do this even when output isn't QVis because it's going to be cached...
-                    IFaceMaterialAttachmentsCP attachments = entityPtr->GetFaceMaterialAttachments();
-
-                    if (nullptr != attachments)
-                        {
-                        T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
-
-                        for (FaceAttachment const& attachment : faceAttachmentsVec)
-                            attachment.CookFaceAttachment(context, geomParams);
-                        }
-
-                    DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
+                    if (useBRepCache)
+                        BRepDataCache::AddCachedBRepEntity(*element, entryId, *entityPtr);
                     }
 
                 usePreBakedBody = currGraphic->WantPreBakedBody(*entityPtr);
