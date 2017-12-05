@@ -825,7 +825,6 @@ bvector<DPoint3d> AlignmentPair::GetStrokedAlignment(double maxEdgeLength) const
 
     bvector<DPoint3d> strokes;
 
-    const CurveVectorWithXIndexPtr zIdx = VerticalXIndexVector();
     if (!VerticalXIndexVector().IsValid())
         {
         m_horizontalCurveVector->AddStrokePoints(strokes, *options);
@@ -834,7 +833,7 @@ bvector<DPoint3d> AlignmentPair::GetStrokedAlignment(double maxEdgeLength) const
     else
         {
         bvector<PathLocationDetailPair> locationPairs;
-        CurveVectorWithDistanceIndex::StrokeHorizontalAndVerticalCurves(*options, *options, *HorizontalIndexVector(), *zIdx, locationPairs);
+        CurveVectorWithDistanceIndex::StrokeHorizontalAndVerticalCurves(*options, *options, *HorizontalIndexVector(), *VerticalXIndexVector(), locationPairs);
         PathLocationDetailPair::Merge(locationPairs, &strokes, nullptr);
         }
 

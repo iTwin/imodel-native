@@ -51,10 +51,10 @@ protected:
 protected:
     virtual ~AlignmentPair() {}
     AlignmentPair() {}
-    AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
-    virtual AlignmentPairPtr _Clone() const;
-    virtual void _UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment);
-    virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
+    ROADRAILALIGNMENT_EXPORT AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr _Clone() const;
+    ROADRAILALIGNMENT_EXPORT virtual void _UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment);
+    ROADRAILALIGNMENT_EXPORT virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
 
 public:
     //! Allocate an AlignmentPair object.
