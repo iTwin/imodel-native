@@ -36,7 +36,9 @@ uint32_t s_regionsId[3] = {
     0       // No region for PROD - use BUDDI non-regional URLs
     };
 
-// Managed urls
+// Managed urls.
+// Got to buddi.bentley.com to add these URLs there so they could be configured or contact Marcus K. for more info.
+// Will log errors if buddi.bentley.com does not have required URL. See s_regionsId for using proper region for URL.
 bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
@@ -246,10 +248,6 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsPassiveAuthUrl(
     "https://ims.bentley.com/Account/LoginK",
     &s_urlRegistry
     );
-
-
-
-
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
