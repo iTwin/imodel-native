@@ -336,7 +336,7 @@ AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
         Utf8String url = result.GetValue();
         if (!result.IsSuccess() || url.empty())
             {
-            LOG.errorv("URL '%s' is not configured", urlName.c_str());
+            LOG.errorv("URL '%s' is not configured on buddi service. Will use fallback URL.", urlName.c_str());
             return url;
             }
         Json::Value record;
