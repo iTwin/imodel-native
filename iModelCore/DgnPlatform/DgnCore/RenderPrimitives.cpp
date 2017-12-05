@@ -1219,7 +1219,7 @@ void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::AddPolyline(MeshPolylineCR polyline) 
-    { 
+    {
     BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); 
     
     if (PrimitiveType::Polyline == GetType() && polyline.GetIndices().size() < 2)
@@ -1230,6 +1230,15 @@ void Mesh::AddPolyline(MeshPolylineCR polyline)
         
 
     m_polylines.push_back(polyline);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::Close()
+    {
+    BeAssert(m_verts.IsFullyQuantized());
+    m_verts.Requantize();
     }
 
 /*---------------------------------------------------------------------------------**//**

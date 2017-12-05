@@ -502,7 +502,7 @@ public:
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
 
-    void Close() { m_verts.Requantize(); }
+    void Close();
 
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
