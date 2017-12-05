@@ -2221,7 +2221,7 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();
 
-    GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Sketch Grid");
+    GridPtr thisGrid = Grid::TryGet(db, m_model->GetModeledElementId(), "Sketch Grid");
     ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
     ASSERT_EQ(sketchGrid->GetElementId(), thisGrid->GetElementId()) << "Loaded grid's element id is incorrect";
 
