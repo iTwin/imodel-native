@@ -62,7 +62,7 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     if (m_smPtr.IsValid())
 		{
         m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
-		m_smPtr->GetReprojectionTransform().Multiply(range, range);
+		m_smPtr->GetReprojectionTransform().Multiply(m_range, m_range);
 		}
 
     return m_range;
@@ -243,23 +243,14 @@ static double s_maxPixelErrorStreamingTexture = 2.5;
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
     // Check context render mode
-    switch (viewContext.GetViewFlags()->GetRenderMode())
-        {
-        case DgnRenderMode::ConstantShade:
-        case DgnRenderMode::SmoothShade:
-        case DgnRenderMode::Phong:
-        case DgnRenderMode::RayTrace:
-        case DgnRenderMode::Radiosity:
-        case DgnRenderMode::ParticleTrace:
-        case DgnRenderMode::RenderLuxology:
+    switch (viewContext.GetViewFlags().GetRenderMode())
+        {        
+        case RenderMode::SmoothShade:        
             return false;
                        
-        case DgnRenderMode::Wireframe:
-        case DgnRenderMode::CrossSection:
-        case DgnRenderMode::Wiremesh:
-        case DgnRenderMode::HiddenLine:
-        case DgnRenderMode::SolidFill:
-        case DgnRenderMode::RenderWireframe:
+        case RenderMode::Wireframe:        
+        case RenderMode::HiddenLine:
+        case RenderMode::SolidFill:
             return true;
         }
         BeAssert(!"Unknown render mode");
@@ -430,22 +421,18 @@ bool ShouldDrawInContext (ViewContextR context)
     return true;
     }
 	
-	static bool s_waitQueryComplete = false;
-
 
 
 void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
     {
-    DPoint3d lowRect;
-    DPoint3d highRect;
-    context.GetViewport()->GetViewCorners(lowRect, highRect);    
+    DRange3d viewCorner(context.GetViewport()->GetViewCorners());
 
     DPoint2d nonPrintableMargin = { 0,0 };
     
     // CorrectedViewToView transform: adjust for swapped y and non-printable margin.
-    if (lowRect.y > highRect.y)
+    if (viewCorner.low.y > viewCorner.high.y)
         {
-        correctedViewToView.InitFrom(nonPrintableMargin.x, lowRect.y - nonPrintableMargin.y, 0);
+        correctedViewToView.InitFrom(nonPrintableMargin.x, viewCorner.low.y - nonPrintableMargin.y, 0);
         correctedViewToView.form3d[1][1] = -1;
         }
     else
@@ -484,6 +471,11 @@ void ScalableMeshModel::DrawBingLogo(ViewContextR context, Byte const* pBitmapRG
 
     correctedViewToView.Multiply(bitmapInView, 4);
 
+
+    assert(!"ViewToLocal not available on Bim02");
+
+#if 0
+
     DPoint3d bitmapInLocal[4];
     context.ViewToLocal(bitmapInLocal, bitmapInView, 4);
 
@@ -504,6 +496,8 @@ void ScalableMeshModel::DrawBingLogo(ViewContextR context, Byte const* pBitmapRG
 
     // SetToViewCoords is only valid during overlay mode aka DecorateScreen
     //m_viewContext.GetViewport ()->GetIViewOutput ()->SetToViewCoords (false);
+
+#endif
     }
 
 static bool s_loadTexture = true;
@@ -1153,7 +1147,7 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
     {
     if (m_progressiveQueryEngine == nullptr)
         {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager(GetDgnDb());
+        m_displayNodesCache = new ScalableMeshDisplayCacheManager();
         if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
             {
             return nullptr;
@@ -1171,6 +1165,9 @@ void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
     {
     assert(DrawPurpose::Pick == viewContext.GetDrawPurpose());
     
+    assert(!"PushTransform not available on Bim02");
+
+#if 0 
         {
         viewContext.PushTransform(smToDgnUorTransform);
         IPickGeomP  pickGeom = viewContext.GetIPickGeom();
@@ -1243,6 +1240,7 @@ void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
         viewContext.PopTransformClip();        
         return;
         }
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -1666,9 +1664,9 @@ BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnD
         clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
         }
         
-    WChar modelIdStr[1000];
+    Utf8Char modelIdStr[1000];
     BeStringUtilities::FormatUInt64(modelIdStr, GetModelId().GetValue());    
-    clipFileBase.AppendToPath(modelIdStr);
+    clipFileBase.AppendToPath(WString(modelIdStr, true).c_str());
     return clipFileBase;
     }
 
@@ -1865,7 +1863,8 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     // NEEDS_WORK_SM
     BeFileName dbFileName(dgnProject.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
-    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, m_path, basePath);
+    //T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, m_path, basePath);
+    m_properties.m_fileId = Utf8String(m_path);
   
     StatusInt result = m_smPtr->GetTextureInfo(m_textureInfo);
 
@@ -1915,7 +1914,8 @@ BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     
     BeFileName dbFileName(m_dgndb.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
-    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, newFilename, basePath);
+    //T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, newFilename, basePath);
+    m_properties.m_fileId = Utf8String(newFilename);
     OpenFile(newFilename, GetDgnDb());
     m_tryOpen = true;
 
@@ -1994,10 +1994,17 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
 //----------------------------------------------------------------------------------------
 ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb, WString terrainName, BeFileName terrainPath)
     {
-    DgnClassId classId(dgnDb.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
+    DgnClassId classId(dgnDb.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
     BeAssert(classId.IsValid());
 
-    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, DgnModel::CreateModelCode(Utf8String(terrainName.c_str()).c_str())));
+    Utf8String linkName = Utf8String(terrainName); /*/BeFileName(rootUrl).GetFileNameWithoutExtension());*/    
+    Utf8String terrainPathUtf8 = Utf8String(terrainPath);
+
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*dgnDb.GetRealityDataSourcesModel(), terrainPathUtf8.c_str(), linkName.c_str());
+    if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
+        return nullptr;
+
+    ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, repositoryLink->GetElementId()));
 
     model->Insert();
     model->OpenFile(terrainPath, dgnDb);
@@ -2029,12 +2036,6 @@ Transform ScalableMeshModel::GetUorsToStorage()
 IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)
     {
     return ScalableMeshTerrainModelAppData::Get(dgnDb)->GetModel(dgnDb);
-    }
-
-
-BeFileName ScalableMeshModel::GetPath()
-    {
-    return m_path;
     }
 
 //----------------------------------------------------------------------------------------
@@ -2348,15 +2349,15 @@ bool ScalableMeshModel::HasQueuedTerrainRegions()
     return !m_queuedRegions.empty();
     }
 
-void LoadAllScalableMeshModels(DgnDbCR database, Utf8CP label)
+void LoadAllScalableMeshModels(DgnDbCR database)
     {
-    DgnClassId classId(database.Schemas().GetECClassId("ScalableMesh", "ScalableMeshModel"));
-    auto modelList = database.Models().MakeIterator();
+    DgnClassId classId(database.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
+    auto modelList = database.Models().MakeIterator("ScalableMeshModel");
 
     bvector<DgnModelId> modelsToLoad;
     for (auto& model : modelList)
         {
-        if (model.GetClassId() == classId && model.GetLabel() != label)
+        if (model.GetClassId() == classId)
             {
             modelsToLoad.push_back(model.GetModelId());
             }
@@ -2370,7 +2371,7 @@ void LoadAllScalableMeshModels(DgnDbCR database, Utf8CP label)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SyncTerrainRegions(bvector<uint64_t>& newModelIds)
     {
-    LoadAllScalableMeshModels(GetDgnDb(), GetLabel());
+    LoadAllScalableMeshModels(GetDgnDb());
     for (auto& reg : m_queuedRegions)
         {
         if (reg.regionData.empty())
@@ -2630,10 +2631,12 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
         }
     //else
         {
+/*      SetCode doesn't exist on Bim02
         nameToSet = Utf8String(smFilename.GetFileNameWithoutExtension().c_str());
         DgnCode newModelCode(model->GetCode().GetAuthority(), nameToSet, NULL);
         model->SetCode(newModelCode);
         model->Update();
+*/
         }
 
     db.SaveChanges();
@@ -2733,6 +2736,14 @@ void ScalableMeshModel::_OnSaveJsonProperties()
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  12/2017
+//----------------------------------------------------------------------------------------
+bool IsUrl(WCharCP filename)
+    {
+    return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  03/2016
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::_OnLoadedJsonProperties()
@@ -2754,7 +2765,7 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         //BeFileName smFileName;
 
         //NEEDS_WORK_SM : Doesn't work with URL
-        if (BeFileName::DoesPathExist(m_path.c_str()) || BeFileName::IsUrl(m_path.c_str()))
+        if (BeFileName::DoesPathExist(m_path.c_str()) || IsUrl(m_path.c_str()))
             {
             OpenFile(smFileName, GetDgnDb());
             }

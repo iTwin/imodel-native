@@ -226,6 +226,9 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublis
     BE_JSON_NAME(classifiers)
         
 private:
+
+    static IScalableMeshLocationProviderPtr m_locationProviderPtr;
+
     SMSceneP Load(Dgn::Render::SystemP) const;
     //NEEDS_WORK_MS : Modify remove mutable
     mutable IScalableMeshPtr                m_smPtr;
@@ -242,7 +245,7 @@ private:
     mutable bool m_forceRedraw;
     mutable bset<uint64_t>                          m_activeClips;
     mutable bset<uint64_t>                          m_notActiveClips;
-    Utf8String                              m_path;
+    BeFileName                              m_path;
     bool                                    m_isProgressiveDisplayOn;
     bool                                    m_isInsertingClips;
     int                                     m_startClipCount;
@@ -330,7 +333,7 @@ public:
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateFilename(BeFileNameCR newFilename);
 
         SCALABLEMESH_SCHEMA_EXPORT BentleyStatus UpdateExtractedTerrainLocation(BeFileNameCR oldLocation, BeFileNameCR newLocation);
-    Utf8String GetPath() const { return m_path; }
+        BeFileName GetPath() const { return m_path; }
 
 		SCALABLEMESH_SCHEMA_EXPORT void ClearExtraFiles();
     void SetClassifiers(Dgn::ModelSpatialClassifiersCR classifiers) { m_classifiers = classifiers; }
