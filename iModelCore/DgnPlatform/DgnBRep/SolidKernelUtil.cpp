@@ -10,6 +10,71 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  04/2016
++===============+===============+===============+===============+===============+======*/
+struct BRepCache : DgnElement::AppData
+{
+static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
+typedef bmap<uint16_t, IBRepEntityPtr> IndexedGeomMap;
+IndexedGeomMap m_map;
+
+virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
+virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
+virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
+
+static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
+    {
+    BRepCache* cache = dynamic_cast<BRepCache*>(elem.FindAppData(GetKey()));
+
+    if (nullptr == cache && addIfNotFound)
+        elem.AddAppData(GetKey(), cache = new BRepCache);
+
+    return cache;
+    }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IBRepEntityPtr BRepDataCache::FindCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId)
+    {
+    BRepCache* cache = BRepCache::Get(element, false);
+
+    if (nullptr == cache)
+        return nullptr;
+
+    BRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex());
+
+    if (found == cache->m_map.end())
+        return nullptr;
+
+    IBRepEntityPtr entity = found->second;
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    // Make sure entity tag is still valid...
+    PK_LOGICAL_t isEntity = PK_LOGICAL_false;
+    if (PK_ERROR_no_errors != PK_ENTITY_is(PSolidUtil::GetEntityTag(*entity), &isEntity) || !isEntity)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+#endif
+
+    return entity;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void BRepDataCache::AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity)
+    {
+    BRepCache* cache = BRepCache::Get(element, true);
+
+    cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = &entity;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
