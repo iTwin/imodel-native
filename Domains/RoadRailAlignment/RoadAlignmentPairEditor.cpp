@@ -13,6 +13,7 @@
 #define DIVIDED_ALIGNMENT_EDITOR_SMALL_ANGLE 0.1 //! in degrees
 #define DIVIDED_ALIGNMENT_EDITOR_SMALL_LENGTH 0.01 //! in m
 
+#if 0 //&&AG WIP REFACTOR AlignmentPairEditor
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
@@ -508,3 +509,4 @@ AlignmentPairEditorPtr DividedRoadAlignmentPairEditor::LeftSplitAlignment ()
     return m_leftAlignment;
     }
 
+#endif

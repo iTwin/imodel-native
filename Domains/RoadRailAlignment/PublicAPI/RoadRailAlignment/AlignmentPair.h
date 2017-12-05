@@ -25,7 +25,6 @@ private:
     static constexpr const double MetersToEnglishFeet = 3.28083989501;
     static constexpr const double MetersToEnglishSurveyFeet = 3.2808333333465;
     static constexpr const double DefaultMaxStrokeLength = 0.03;
-    enum class CurveVectorType { Horizontal, Vertical };
 
     CurveVectorPtr m_horizontalCurveVector;
     CurveVectorPtr m_verticalCurveVector;
@@ -45,13 +44,17 @@ protected:
 
     //! Returns the distance along the alignment to the referencePoint
     double DistanceAlongFromStart(CurveLocationDetailCR location) const;
+
+    enum class CurveVectorType { Horizontal, Vertical };
     CurveVectorPtr GetPartialAlignment(CurveVectorType type, double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
 protected:
     virtual ~AlignmentPair() {}
     AlignmentPair() {}
-    AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
-    virtual AlignmentPairPtr _Clone() const;
+    ROADRAILALIGNMENT_EXPORT AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr _Clone() const;
+    ROADRAILALIGNMENT_EXPORT virtual void _UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment);
+    ROADRAILALIGNMENT_EXPORT virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
 
 public:
     //! Allocate an AlignmentPair object.

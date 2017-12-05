@@ -12,6 +12,38 @@
 #define METERS_TO_ENGLISH_SURVEY_FEET 3.2808333333465
 
 //---------------------------------------------------------------------------------------
+// Deserialize helper
+//---------------------------------------------------------------------------------------
+CurveVectorPtr deserializeCurve(Utf8CP data)
+    {
+    bvector<IGeometryPtr> geometries;
+    if (!BentleyGeometryJson::TryJsonStringToGeometry(data, geometries))
+        return nullptr;
+
+    if (1 != geometries.size() || !geometries.front().IsValid() || IGeometry::GeometryType::CurveVector != geometries.front()->GetGeometryType())
+        return nullptr;
+
+    return geometries.front()->GetAsCurveVector();
+    }
+//---------------------------------------------------------------------------------------
+// Serialized test case
+//---------------------------------------------------------------------------------------
+CurveVectorPtr loadHorizontalWith3Arcs()
+    {
+    char* data = R"({"DgnCurveVector":{"Member":[{"LineSegment":{"endPoint":[468527.09628635721,2259195.8327451251,0.0],"startPoint":[468467.05241349683,2259133.0569764804,0.0]}},{"CircularArc":{"placement":{"origin":[468660.06504850514,2259068.6505596871,0.0],"vectorX":[-0.72265631602204794,0.69120752955493914,0.0],"vectorZ":[0.0,0.0,-1.0]},"radius":183.99999999983672,"startAngle":0.0,"sweepAngle":53.716150749835080}},{"LineSegment":{"endPoint":[468810.71412946295,2259234.5356240273,0.0],"startPoint":[468683.89693985571,2259251.1006650710,0.0]}},{"CircularArc":{"placement":{"origin":[468834.54602081364,2259416.9857294112,0.0],"vectorX":[-0.12952114864504249,-0.99157665969589504,0.0],"vectorZ":[0.0,0.0,1.0]},"radius":183.99999999994705,"startAngle":0.0,"sweepAngle":44.478811234937702}},{"LineSegment":{"endPoint":[469012.89954726340,2259321.0600332650,0.0],"startPoint":[468945.37457296526,2259270.1081204033,0.0]}},{"CircularArc":{"placement":{"origin":[469123.72809941485,2259174.1824242566,0.0],"vectorX":[-0.6023290877793640,0.79824787504563977,0.0],"vectorZ":[0.0,0.0,-1.0]},"radius":184.00000000007492,"startAngle":0.0,"sweepAngle":27.666984995263061}},{"LineSegment":{"endPoint":[469321.36029021174,2259393.2817337015,0.0],"startPoint":[469093.77147908445,2259355.7274624659,0.0]}}],"boundaryType":1}})";
+    return deserializeCurve(data);
+    }
+//---------------------------------------------------------------------------------------
+// Serialized test case
+//---------------------------------------------------------------------------------------
+CurveVectorPtr loadHorizontalWith3Spirals()
+    {
+    char* data = R"({"DgnCurveVector":{"Member":[{"LineSegment":{"endPoint":[468561.57954157837,2258790.8192921854,0.0],"startPoint":[468480.62028229458,2258647.4757073857,0.0]}},{"TransitionSpiral":{"ActiveEndFraction":1.0,"ActiveStartFraction":0.0,"EndBearing":57.664927528731255,"EndRadius":-667.0,"SpiralType":"Clothoid","StartBearing":60.542601612221894,"StartRadius":0.0,"placement":{"origin":[468561.57954157837,2258790.8192921854,0.0],"vectorX":[1.0,0.0,0.0],"vectorZ":[0.0,0.0,1.0]}}},{"CircularArc":{"placement":{"origin":[469159.06811088009,2258491.8333408381,0.0],"vectorX":[-0.84493458172406199,0.53486965945619358,0.0],"vectorZ":[0.0,0.0,-1.0]},"radius":666.99999999985437,"startAngle":0.0,"sweepAngle":24.139401076219713}},{"TransitionSpiral":{"ActiveEndFraction":1.0,"ActiveStartFraction":0.0,"EndBearing":30.647852369032059,"EndRadius":0.0,"SpiralType":"Clothoid","StartBearing":33.525526452522698,"StartRadius":-667.0,"placement":{"origin":[468790.67837881838,2259047.8711141152,0.0],"vectorX":[1.0,0.0,0.0],"vectorZ":[0.0,0.0,1.0]}}},{"LineSegment":{"endPoint":[468988.41144292668,2259166.3367093648,0.0],"startPoint":[468847.73336211150,2259082.9812612082,0.0]}},{"TransitionSpiral":{"ActiveEndFraction":1.0,"ActiveStartFraction":0.0,"EndBearing":33.525526452501545,"EndRadius":667.0,"SpiralType":"Clothoid","StartBearing":30.647852369010899,"StartRadius":0.0,"placement":{"origin":[468988.41144292668,2259166.3367093648,0.0],"vectorX":[1.0,0.0,0.0],"vectorZ":[0.0,0.0,1.0]}}},{"CircularArc":{"placement":{"origin":[468677.07669415820,2259757.4846297354,0.0],"vectorX":[0.55230844387049549,-0.83363983999647706,0.0],"vectorZ":[0.0,0.0,1.0]},"radius":666.99999999995248,"startAngle":0.0,"sweepAngle":8.9699916153508799}},{"TransitionSpiral":{"ActiveEndFraction":1.0,"ActiveStartFraction":0.0,"EndBearing":45.373192151325881,"EndRadius":0.0,"SpiralType":"Clothoid","StartBearing":42.495518067835242,"StartRadius":667.0,"placement":{"origin":[469127.65689328074,2259265.685398180,0.0],"vectorX":[1.0,0.0,0.0],"vectorZ":[0.0,0.0,1.0]}}},{"LineSegment":{"endPoint":[469275.47792368190,2259413.8482709471,0.0],"startPoint":[469175.50975162716,2259312.5692706262,0.0]}},{"TransitionSpiral":{"ActiveEndFraction":1.0,"ActiveStartFraction":0.0,"EndBearing":42.495518067802706,"EndRadius":-667.0,"SpiralType":"Clothoid","StartBearing":45.373192151293345,"StartRadius":0.0,"placement":{"origin":[469275.47792368190,2259413.8482709471,0.0],"vectorX":[1.0,0.0,0.0],"vectorZ":[0.0,0.0,1.0]}}},{"CircularArc":{"placement":{"origin":[469773.91098115058,2258968.9329118370,0.0],"vectorX":[-0.67553253241685018,0.73733018224298774,0.0],"vectorZ":[0.0,0.0,-1.0]},"radius":667.00000000023249,"startAngle":0.0,"sweepAngle":6.2975135781208698}},{"TransitionSpiral":{"ActiveEndFraction":1.0,"ActiveStartFraction":0.0,"EndBearing":33.320330406195502,"EndRadius":0.0,"SpiralType":"Clothoid","StartBearing":36.198004489686149,"StartRadius":-667.0,"placement":{"origin":[469379.99574711901,2259507.1891597323,0.0],"vectorX":[1.0,0.0,0.0],"vectorZ":[0.0,0.0,1.0]}}},{"LineSegment":{"endPoint":[469577.74622473511,2259638.5295264777,0.0],"startPoint":[469435.35160885868,2259544.9214021587,0.0]}}],"boundaryType":1}})";
+    return deserializeCurve(data);
+    }
+
+
+//---------------------------------------------------------------------------------------
 // toleranced asserts
 //---------------------------------------------------------------------------------------
 void expectEqualCurves(CurveVectorCR expected, CurveVectorCR actual)
@@ -131,6 +163,11 @@ void AlignmentPair_Create()
     AlignmentPairPtr pair8 = AlignmentPair::Create(*hz, vt.get());
     EXPECT_TRUE(pair8.IsValid());
     EXPECT_EQ(CurveVector::BOUNDARY_TYPE_Open, pair8->GetVerticalCurveVector()->GetBoundaryType());
+
+    // Make sure the helper methods return valid results!
+    ASSERT_TRUE(createLinearPair().IsValid());
+    ASSERT_TRUE(createLinearPairWithLongerVt().IsValid());
+    ASSERT_TRUE(createLinearPairWithShorterVt().IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -922,6 +959,453 @@ void AlignmentPair_ComputeMinimumRadius()
     }
 
 
+
+//=======================================================================================
+// AlignmentPairEditor tests
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_Create()
+    {
+    AlignmentPairPtr pair = createLinearPair();
+
+    AlignmentPairEditorPtr editor1 = AlignmentPairEditor::Create(pair->GetHorizontalCurveVector(), pair->GetVerticalCurveVector());
+    ASSERT_TRUE(editor1.IsValid());
+
+    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::Create(*pair);
+    ASSERT_TRUE(editor2.IsValid());
+
+    expectEqualCurves(pair->GetHorizontalCurveVector(), editor1->GetHorizontalCurveVector());
+    expectEqualCurves(pair->GetHorizontalCurveVector(), editor2->GetHorizontalCurveVector());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_GetPIs()
+    {
+// Test with 'Line' curve
+    AlignmentPairPtr pair1 = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*pair1);
+    ASSERT_TRUE(editor.IsValid());
+
+    bvector<AlignmentPI> pis = editor->GetPIs();
+    ASSERT_EQ(2, pis.size());
+    EXPECT_EQ(AlignmentPI::TYPE_NoCurve, pis[0].GetType());
+    EXPECT_EQ(AlignmentPI::TYPE_NoCurve, pis[1].GetType());
+
+
+// Test with 'Line-Arc-Line-Arc-Line-Arc-Line' curve
+    CurveVectorPtr hzWith3Arcs = loadHorizontalWith3Arcs();
+    ASSERT_TRUE(hzWith3Arcs.IsValid());
+
+    editor = AlignmentPairEditor::Create(*hzWith3Arcs, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    pis = editor->GetPIs();
+    ASSERT_EQ(5, pis.size());
+
+    ASSERT_EQ(AlignmentPI::TYPE_NoCurve, pis[0].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468467.05241349683, 2259133.0569764804), pis[0].GetNoCurve()->piPoint);
+
+    ASSERT_EQ(AlignmentPI::TYPE_Arc, pis[1].GetType());
+    EXPECT_EQ_DOUBLE(184.0, pis[1].GetArc()->arc.radius);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468660.06504850514, 2259068.6505596871), pis[1].GetArc()->arc.centerPoint);
+    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[1].GetArc()->arc.orientation);
+
+    ASSERT_EQ(AlignmentPI::TYPE_Arc, pis[2].GetType());
+    EXPECT_EQ_DOUBLE(184.0, pis[2].GetArc()->arc.radius);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468834.54602081364, 2259416.9857294112), pis[2].GetArc()->arc.centerPoint);
+    EXPECT_EQ(AlignmentPI::ORIENTATION_CCW, pis[2].GetArc()->arc.orientation);
+
+    ASSERT_EQ(AlignmentPI::TYPE_Arc, pis[3].GetType());
+    EXPECT_EQ_DOUBLE(184.0, pis[3].GetArc()->arc.radius);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469123.72809941485, 2259174.1824242566), pis[3].GetArc()->arc.centerPoint);
+    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[3].GetArc()->arc.orientation);
+
+    ASSERT_EQ(AlignmentPI::TYPE_NoCurve, pis[4].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469321.36029021174, 2259393.2817337015), pis[4].GetNoCurve()->piPoint);
+
+
+// Test with 'Line-SCS-Line-SCS-Line-SCS-Line
+    CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
+    ASSERT_TRUE(hzWith3Spirals.IsValid());
+
+    editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    pis = editor->GetPIs();
+    ASSERT_EQ(5, pis.size());
+
+    ASSERT_EQ(AlignmentPI::TYPE_NoCurve, pis[0].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468480.62028229458, 2258647.4757073857), pis[0].GetNoCurve()->piPoint);
+
+    ASSERT_EQ(AlignmentPI::TYPE_SCS, pis[1].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468561.57954157837, 2258790.8192921854), pis[1].GetSCS()->spiral1.startPoint);
+    EXPECT_EQ_DOUBLE(667.0, pis[1].GetSCS()->arc.radius);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469159.06811088009, 2258491.8333408381), pis[1].GetSCS()->arc.centerPoint);
+    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[1].GetSCS()->arc.orientation);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468790.67837881838, 2259047.8711141152), pis[1].GetSCS()->spiral2.startPoint);
+
+    ASSERT_EQ(AlignmentPI::TYPE_SCS, pis[2].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468988.41144292668, 2259166.3367093648), pis[2].GetSCS()->spiral1.startPoint);
+    EXPECT_EQ_DOUBLE(667.0, pis[2].GetSCS()->arc.radius);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(468677.07669415820, 2259757.4846297354), pis[2].GetSCS()->arc.centerPoint);
+    EXPECT_EQ(AlignmentPI::ORIENTATION_CCW, pis[2].GetSCS()->arc.orientation);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469127.65689328074, 2259265.685398180), pis[2].GetSCS()->spiral2.startPoint)
+    
+    ASSERT_EQ(AlignmentPI::TYPE_SCS, pis[3].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469275.47792368190, 2259413.8482709471), pis[3].GetSCS()->spiral1.startPoint);
+    EXPECT_EQ_DOUBLE(667.0, pis[3].GetSCS()->arc.radius);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469773.91098115058, 2258968.9329118370), pis[3].GetSCS()->arc.centerPoint);
+    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[3].GetSCS()->arc.orientation);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469379.99574711901, 2259507.1891597323), pis[3].GetSCS()->spiral2.startPoint)
+
+    ASSERT_EQ(AlignmentPI::TYPE_NoCurve, pis[4].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(469577.74622473511, 2259638.5295264777), pis[4].GetNoCurve()->piPoint);
+    }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_InsertPI()
+    {
+    // Straight line from (0,0,0) to (100,0,0)
+    CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0))));
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    AlignmentPI newPI;
+    EXPECT_FALSE(newPI.IsInitialized());
+
+    // Uninitialized
+    CurveVectorPtr result = editor->InsertPI(newPI);
+    EXPECT_FALSE(result.IsValid()) << "InsertPI with an unitialized PI should fail";
+
+    // Grade Break
+    newPI.InitNoCurve(DPoint3d::FromZero());
+    result = editor->InsertPI(newPI);
+    EXPECT_FALSE(result.IsValid()) << "Inserting a PI overlapping StartPI should fail";
+
+    newPI.InitNoCurve(DPoint3d::From(100, 0, 0));
+    result = editor->InsertPI(newPI);
+    EXPECT_FALSE(result.IsValid()) << "Inserting a PI overlapping EndPI should fail";
+
+    newPI.InitNoCurve(DPoint3d::From(50, 25));
+    result = editor->InsertPI(newPI);
+    EXPECT_TRUE(result.IsValid());
+    EXPECT_EQ(2, result->size());
+
+    AlignmentPairEditorPtr resultEditor = AlignmentPairEditor::Create(*result, nullptr);
+    ASSERT_TRUE(resultEditor.IsValid());
+    newPI.InitNoCurve(DPoint3d::From(50, 25));
+    result = resultEditor->InsertPI(newPI);
+    EXPECT_FALSE(result.IsValid()) << "Inserting a PI overlapping an existing PI should fail";
+    newPI.InitNoCurve(DPoint3d::From(75, 30));
+    result = resultEditor->InsertPI(newPI);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(3, result->size());
+
+    // Arc
+    newPI.InitArc(DPoint3d::From(50, 50), 0.0);
+    result = editor->InsertPI(newPI);
+    EXPECT_FALSE(result.IsValid()) << "Inserting a Arc PI with a null radius should fail";
+
+    newPI.InitArc(DPoint3d::From(50, 50), 12.0);
+    result = editor->InsertPI(newPI);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(3, result->size()); // Line-Arc-Line
+    
+    // Spiral-Curve-Spiral
+    newPI.InitSCS(DPoint3d::From(50, 50), 12.0, 0.0, 15.0);
+    result = editor->InsertPI(newPI);
+    EXPECT_FALSE(result.IsValid()) << "Inserting a SCS PI with null spiral1 length should fail";
+
+    newPI.InitSCS(DPoint3d::From(50, 50), 12.0, 15.0, 0.0);
+    result = editor->InsertPI(newPI);
+    EXPECT_FALSE(result.IsValid()) << "Inserting a SCS PI with null spiral2 length should fail";
+
+    newPI.InitSCS(DPoint3d::From(50, 50), 12.0, 15.0, 15.0);
+    result = editor->InsertPI(newPI);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(5, result->size()); // Line-Spiral-Arc-Spiral-Line
+
+    // Spiral-Spiral
+    newPI.InitSS(DPoint3d::From(50, 50), 15.0);
+    result = editor->InsertPI(newPI);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(4, result->size()); // Line-Spiral-Spiral-Line
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_DeletePI()
+    {
+    // Straight line from (0,0,0) to (100,0,0)
+    CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0))));
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    CurveVectorPtr result = editor->DeletePI(0);
+    EXPECT_FALSE(result.IsValid()) << "Deleting First PI should fail when it's a TYPE_NoCurve";
+    
+    result = editor->DeletePI(1);
+    EXPECT_FALSE(result.IsValid()) << "Deleting Last PI should fail when it's a TYPE_NoCurve";
+
+    result = editor->DeletePI(2);
+    EXPECT_FALSE(result.IsValid()) << "Deleting PI with index out of bounds";
+
+    result = editor->DeletePI(DPoint3d::FromZero());
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->DeletePI(DPoint3d::From(100, 0, 0));
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->DeletePI(DPoint3d::From(50.0, 0, 0));
+    EXPECT_FALSE(result.IsValid());
+    
+    // Add a pi and try to delete it
+    AlignmentPI pi;
+    pi.InitNoCurve(DPoint3d::From(50.0, 5, 0));
+    hz = editor->InsertPI(pi);
+    ASSERT_TRUE(hz.IsValid());
+    editor->UpdateHorizontalCurveVector(*hz);
+
+    result = editor->DeletePI(DPoint3d::From(50.0, 5, 0));
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(1, result->size());
+
+    result = editor->DeletePI(1);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(1, result->size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_MovePI()
+    {
+    // Straight line from (0,0,0) to (100,0,0)
+    CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(200, 0, 0))));
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    CurveVectorPtr result = editor->MovePI(0, DPoint3d::From(200, 0, 0));
+    EXPECT_FALSE(result.IsValid()) << "Move PI over another PI should fail";
+
+    result = editor->MovePI(0, DPoint3d::FromZero());
+    EXPECT_TRUE(result.IsValid()) << "Move PI over itself should not fail";
+
+    result = editor->MovePI(0, DPoint3d::From(10.0, 0, 0));
+    EXPECT_TRUE(result.IsValid());
+
+    result = editor->MovePI(2, DPoint3d::From(2, 0, 0));
+    EXPECT_FALSE(result.IsValid()) << "Move PI does not move any PI; it should fail";
+
+    result = editor->MovePI(1, DPoint3d::From(105,0,0));
+    EXPECT_TRUE(result.IsValid());
+
+    // Add a pi and try to move it
+    AlignmentPI pi;
+    pi.InitNoCurve(DPoint3d::From(50.0, 5, 0));
+    hz = editor->InsertPI(pi);
+    ASSERT_TRUE(hz.IsValid());
+    editor->UpdateHorizontalCurveVector(*hz);
+
+    result = editor->MovePI(1, DPoint3d::From(55.0, 25, 0));
+    EXPECT_TRUE(result.IsValid());
+
+    // PI Conversions
+    pi.InitArc(DPoint3d::From(50.0, 5, 0), 12.0);
+    result = editor->MovePI(1, pi);
+    ASSERT_TRUE(result.IsValid());
+    ASSERT_EQ(3, result->size()); // Line-Arc-Line
+
+    pi.InitSS(DPoint3d::From(100.0, 150, 0), 20.0);
+    result = editor->MovePI(1, pi);
+    ASSERT_TRUE(result.IsValid());
+    ASSERT_EQ(4, result->size()); // Line-Spiral-Spiral-Line
+    }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_MovePC_MovePT()
+    {
+    AlignmentPairPtr pair = createLinearPair();
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*pair);
+    ASSERT_TRUE(editor.IsValid());
+
+    AlignmentPI pi;
+    pi.InitArc(DPoint3d::From(50, 50, 0), 20.0);
+
+    CurveVectorPtr hz = editor->InsertPI(pi);
+    ASSERT_TRUE(hz.IsValid());
+    editor->UpdateHorizontalCurveVector(*hz);
+
+    CurveVectorPtr result = editor->MovePC(1, DPoint3d::From(40, 40, 0));
+    ASSERT_TRUE(result.IsValid());
+    double radius;
+    ASSERT_EQ(3, result->size());
+    ASSERT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, result->at(1)->GetCurvePrimitiveType());
+    ASSERT_TRUE(result->at(1)->GetArcCP()->IsCircularXY(radius));
+    EXPECT_EQ_DOUBLE(14.142135623730951, radius);
+
+    result = editor->MovePC(1, DPoint3d::From(100, 0, 0));
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->MovePT(1, DPoint3d::From(60, 60, 0));
+    ASSERT_TRUE(result.IsValid());
+    radius = -1.0;
+    ASSERT_EQ(3, result->size());
+    ASSERT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, result->at(1)->GetCurvePrimitiveType());
+    ASSERT_TRUE(result->at(1)->GetArcCP()->IsCircularXY(radius));
+    EXPECT_EQ_DOUBLE(14.142135623730951, radius);
+
+    result = editor->MovePT(1, DPoint3d::From(0, 0, 0));
+    EXPECT_FALSE(result.IsValid());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_MoveBS_MoveES()
+    {
+    // Test with 'Line-SCS-Line-SCS-Line-SCS-Line
+    CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
+    ASSERT_TRUE(hzWith3Spirals.IsValid());
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    bvector<AlignmentPI> pis = editor->GetPIs();
+    ASSERT_EQ(5, pis.size());
+    AlignmentPI::SCSInfoCP pSCS = pis[1].GetSCS();
+    ASSERT_TRUE(nullptr != pSCS);
+
+    EXPECT_EQ_DOUBLE(67.0, pSCS->spiral1.length); // &&AG PLACEHOLDER
+
+    // Try to move the BS point to make the spiral 25m long
+    DVec3d vec1 = DVec3d::FromStartEndNormalize(pSCS->spiral1.endPoint, pSCS->spiral1.startPoint);
+    vec1.ScaleToLength(25);
+    DPoint3d toPt1 = DPoint3d::FromSumOf(pSCS->spiral1.endPoint, vec1);
+
+    AlignmentPI resultPI;
+    CurveVectorPtr result = editor->MoveBS(1, toPt1, &resultPI);
+    ASSERT_TRUE(result.IsValid());
+    
+    pSCS = resultPI.GetSCS();
+    ASSERT_TRUE(nullptr != pSCS);
+    EXPECT_EQ_DOUBLE(25.00, pSCS->spiral1.length);
+    EXPECT_EQ_DOUBLE(25.00, pSCS->spiral2.length);
+
+    DVec3d vec2 = DVec3d::FromStartEndNormalize(pSCS->spiral2.startPoint, pSCS->spiral2.endPoint);
+    vec2.ScaleToLength(30);
+    DPoint3d toPt2 = DPoint3d::FromSumOf(pSCS->spiral2.startPoint, vec2);
+    resultPI = AlignmentPI();
+
+    result = editor->MoveES(1, toPt2, &resultPI);
+    ASSERT_TRUE(result.IsValid());
+
+    pSCS = resultPI.GetSCS();
+    ASSERT_TRUE(nullptr != pSCS);
+    EXPECT_EQ_DOUBLE(50.934676264190799, pSCS->spiral1.length);
+    EXPECT_EQ_DOUBLE(50.934676264190799, pSCS->spiral2.length);
+
+    vec2.ScaleToLength(300);
+    toPt2 = DPoint3d::FromSumOf(pSCS->spiral2.startPoint, vec2);
+    result = editor->MoveES(1, toPt2);
+    EXPECT_TRUE(result.IsValid());
+    
+    vec2.ScaleToLength(360);
+    toPt2 = DPoint3d::FromSumOf(pSCS->spiral2.startPoint, vec2);
+    result = editor->MoveES(1, toPt2);
+    EXPECT_FALSE(result.IsValid());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_UpdateRadius()
+    {
+    // Test with 'Line-Arc-Line-Arc-Line-Arc-Line' curve
+    CurveVectorPtr hzWith3Arcs = loadHorizontalWith3Arcs();
+    ASSERT_TRUE(hzWith3Arcs.IsValid());
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Arcs, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    bvector<AlignmentPI> pis = editor->GetPIs();
+    ASSERT_EQ(5, pis.size());
+    AlignmentPI pi = pis[1];
+    
+    AlignmentPI::ArcInfoCP pArc = pi.GetArc();
+    ASSERT_TRUE(nullptr != pArc);
+
+    CurveVectorPtr result = editor->UpdateRadius(0, 10);
+    EXPECT_FALSE(result.IsValid());
+    
+    result = editor->UpdateRadius(1, 0.0);
+    EXPECT_FALSE(result.IsValid()) << "Radius must be greater than 0.0";
+
+    result = editor->UpdateRadius(1, 10.0);
+    EXPECT_TRUE(result.IsValid());
+
+    result = editor->UpdateRadius(1, 6000);
+    EXPECT_FALSE(result.IsValid()) << "Radius should not fit in this design";
+    }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_RemoveSpirals_AddSpirals()
+    {
+    // Test with 'Line-SCS-Line-SCS-Line-SCS-Line
+    CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
+    ASSERT_TRUE(hzWith3Spirals.IsValid());
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    CurveVectorPtr result = editor->RemoveSpirals(0);
+    EXPECT_FALSE(result.IsValid()) << "Not a SCS PI. Cannot remove spirals";
+
+    result = editor->RemoveSpirals(1);
+    EXPECT_TRUE(result.IsValid());
+    result = editor->RemoveSpirals(2);
+    EXPECT_TRUE(result.IsValid());
+
+    AlignmentPI pi;
+    result = editor->RemoveSpirals(3, &pi);
+    EXPECT_TRUE(result.IsValid());
+    EXPECT_EQ(AlignmentPI::TYPE_Arc, pi.GetType());
+
+    // Test with 'Line-Arc-Line-Arc-Line-Arc-Line' curve
+    CurveVectorPtr hzWith3Arcs = loadHorizontalWith3Arcs();
+    ASSERT_TRUE(hzWith3Arcs.IsValid());
+
+    editor = AlignmentPairEditor::Create(*hzWith3Arcs, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    result = editor->RemoveSpirals(1);
+    EXPECT_FALSE(result.IsValid());
+
+    pi = AlignmentPI();
+    result = editor->AddSpirals(1, 12.0, &pi);
+    ASSERT_TRUE(result.IsValid());
+    ASSERT_EQ(AlignmentPI::TYPE_SCS, pi.GetType());
+    EXPECT_EQ_DOUBLE(12.0, pi.GetSCS()->spiral1.length);
+    EXPECT_EQ_DOUBLE(12.0, pi.GetSCS()->spiral2.length);
+
+    result = editor->AddSpirals(0, 12.0);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+
+#if 0 //&&AG NEEDSWORK EDITOR
 //=======================================================================================
 //=======================================================================================
 // AlignmentPairEditor starts here
@@ -941,7 +1425,6 @@ AlignmentPairEditorPtr createLinearVtAlignmentXZ(double length, double slope)
 
 
 
-#if 0 //&&AG NEEDSWORK EDITOR
 
 //---------------------------------------------------------------------------------------
 // @betest                              Alexandre.Gagnon                        10/2016
@@ -1640,8 +2123,18 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairTests)
     AlignmentPair_ComputeMinimumRadius();
 
 
-#if 0 //&&AG NEEDSWORK EDITOR
     //! AlignmentPairEditor tests
+    AlignmentPairEditor_Create();
+    AlignmentPairEditor_GetPIs();
+    AlignmentPairEditor_InsertPI();
+    AlignmentPairEditor_DeletePI();
+    AlignmentPairEditor_MovePI();
+    AlignmentPairEditor_MovePC_MovePT();
+    AlignmentPairEditor_MoveBS_MoveES();
+    AlignmentPairEditor_UpdateRadius();
+    AlignmentPairEditor_RemoveSpirals_AddSpirals();
+
+#if 0 //&&AG NEEDSWORK EDITOR
     AlignmentPairEditor_RoadPVITests();
 
     AlignmentPairEditor_Create();

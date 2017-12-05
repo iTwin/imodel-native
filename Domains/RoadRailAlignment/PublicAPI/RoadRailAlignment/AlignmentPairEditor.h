@@ -14,77 +14,135 @@
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct AlignmentSpiral
+//=======================================================================================
+// @bsiclass
+// AlignmentPI
+// Data holder for different PI types stored using a discrimated union
+//=======================================================================================
+struct AlignmentPI
 {
-    AlignmentSpiral ()
-    {
-    entranceRadius = 0.0;
-    exitRadius = 0.0;
-    length = 0.0;
-    }
+public:
+    enum Orientation { ORIENTATION_Unknown, ORIENTATION_CW, ORIENTATION_CCW };
 
-    DPoint3d beginSpiralPt;
-    DPoint3d endSpiralPt;
-    DPoint3d spiralPIPt;
+    //=======================================================================================
+    // @bsiclass
+    // PI definition of an Arc
+    //=======================================================================================
+    struct Arc
+    {
+    DPoint3d startPoint;
+    DPoint3d endPoint;
+    DPoint3d piPoint;
+    DPoint3d centerPoint;
+    double radius;
+    Orientation orientation;
+    };
+    //=======================================================================================
+    // @bsiclass
+    // PI definition of a Spiral
+    //=======================================================================================
+    struct Spiral
+    {
+    DPoint3d startPoint;
+    DPoint3d endPoint;
+    DPoint3d piPoint;
+    double startRadius;
+    double endRadius;
+    double length;
 
     DVec3d startVector;
     DVec3d endVector;
-
-    double entranceRadius;
-    double exitRadius;
-    double length;
-}; // AlignmentSpiral
-
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct AlignmentArc
-{
-    AlignmentArc ()
-    {
-    sweep = radius = 0.0;
-    clockwise = false;
-    }
-
-    DPoint3d startPoint;
-    DPoint3d endPoint;
-    DPoint3d centerPoint;
-    double radius;
-    double sweep;
-    bool clockwise;
-}; // AlignmentArc
-
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct AlignmentPI
-{
-enum HorizontalPIType
-    {
-    ARC = 0,
-    SCS = 1,
-    SS = 2,
-    NONE = 3
     };
 
-    DPoint3d location;
-
-    AlignmentArc arc;
-    AlignmentSpiral spiral1;
-    AlignmentSpiral spiral2;
-
-    HorizontalPIType curveType;
-
-AlignmentPI ()
+public:
+    //=======================================================================================
+    //=======================================================================================
+    struct NoCurveInfo
     {
-    curveType = NONE;
-    }
-
-AlignmentPI (DPoint3d loc) : location (loc)
+    DPoint3d piPoint;
+    };
+    //=======================================================================================
+    //=======================================================================================
+    struct ArcInfo
     {
-    curveType = NONE;
-    }
+    Arc arc;
+    };
+    //=======================================================================================
+    //=======================================================================================
+    struct SCSInfo
+    {
+    DPoint3d overallPI;
+    Spiral spiral1;
+    Arc arc;
+    Spiral spiral2;
+    };
+    //=======================================================================================
+    //=======================================================================================
+    struct SSInfo
+    {
+    DPoint3d overallPI;
+    Spiral spiral1;
+    Spiral spiral2;
+    };
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(NoCurveInfo)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ArcInfo)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(SCSInfo)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(SSInfo)
+
+    // Possible PI types
+    enum Type { TYPE_Uninitialized, TYPE_NoCurve, TYPE_Arc, TYPE_SCS, TYPE_SS };
+
+private:
+    // The variable holding the current type
+    Type m_type;
+
+    // The union storing the data of this PI
+    union
+        {
+        NoCurveInfo m_noCurveInfo;          //< If not a curve (simple PI), holds the NoCurve information
+        ArcInfo m_arcInfo;                  //< If an Arc, holds the arc information
+        SCSInfo m_scsInfo;                  //< If this PI is a Spiral-Curve-Spiral, holds the SCS information
+        SSInfo m_ssInfo;                    //< If this PI is a Spiral-Spiral, holds the SS information
+        };
+
+public:
+    ROADRAILALIGNMENT_EXPORT AlignmentPI();
+    ROADRAILALIGNMENT_EXPORT void InitNoCurve(DPoint3dCR piPoint);
+    ROADRAILALIGNMENT_EXPORT void InitArc(DPoint3dCR piPoint, double radius);
+    ROADRAILALIGNMENT_EXPORT void InitSCS(DPoint3dCR overallPI, double arcRadius, double spiralLength1, double spiralLength2);
+    ROADRAILALIGNMENT_EXPORT void InitSS(DPoint3dCR overallPI, double spiralLength);
+    void InitInvalid(Type piType); //! @private
+
+    // Returns whether this PI is initialized
+    bool IsInitialized() const { return TYPE_Uninitialized != m_type; }
+    // Returns the PI type
+    AlignmentPI::Type GetType() const { return m_type; }
+
+    // Returns the PI location
+    // @remarks for SCS and SS types, returns the 'overallPI'
+    ROADRAILALIGNMENT_EXPORT DPoint3d GetPILocation() const;
+    // Sets the PI location
+    // @remarks for SCS and SS types, sets the 'overallPI'
+    ROADRAILALIGNMENT_EXPORT bool SetPILocation(DPoint3dCR piPoint);
+
+    // Returns the length between the start point of the curve and the PI point.
+    // @remarks only used for basic validations. This is not a civil concept.
+    ROADRAILALIGNMENT_EXPORT double GetPseudoTangentLength() const;
+
+    NoCurveInfoCP GetNoCurve() const    { return (TYPE_NoCurve == m_type) ? &m_noCurveInfo : nullptr; }
+    NoCurveInfoP GetNoCurveP()          { return (TYPE_NoCurve == m_type) ? &m_noCurveInfo : nullptr; }
+    ArcInfoCP GetArc() const            { return (TYPE_Arc == m_type) ? &m_arcInfo : nullptr; }
+    ArcInfoP GetArcP()                  { return (TYPE_Arc == m_type) ? &m_arcInfo : nullptr; }
+    SCSInfoCP GetSCS() const            { return (TYPE_SCS == m_type) ? &m_scsInfo : nullptr; }
+    SCSInfoP GetSCSP()                  { return (TYPE_SCS == m_type) ? &m_scsInfo : nullptr; }
+    SSInfoCP GetSS() const              { return (TYPE_SS == m_type) ? &m_ssInfo : nullptr; }
+    SSInfoP GetSSP()                    { return (TYPE_SS == m_type) ? &m_ssInfo : nullptr; }
 }; // AlignmentPI
+
+typedef AlignmentPI& AlignmentPIR;
+typedef AlignmentPI const& AlignmentPICR;
+
+
 
 enum class ZeroSlopePoints
 {
@@ -145,37 +203,78 @@ struct AlignmentPVI
     ROADRAILALIGNMENT_EXPORT double LengthFromK (const double& kvalue);
 };
 
-typedef struct AlignmentPI& AlignmentPIR;
-typedef struct AlignmentPI const& AlignmentPICR;
-
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass
+// Editing capabilities for alignment geometry
+//=======================================================================================
 struct AlignmentPairEditor : AlignmentPair
 {
 DEFINE_T_SUPER (AlignmentPair)
 
 private:
-    void _GetValidEditRange (bvector<AlignmentPVI> const& pvis, int index, double * from, double *to);
+    mutable bvector<AlignmentPI> m_cachedPIs; //< PIs cached on the first call of GetPIs.
 
 protected:
-    // move help
-    ROADRAILALIGNMENT_EXPORT bool _ValidatePIs (bvector<AlignmentPI> const& pis);
-    ROADRAILALIGNMENT_EXPORT bool _ValidateMove (size_t index, DPoint3d toPt, bvector<AlignmentPI> const& pis);
-        
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt _SolveArcPI (size_t index, bvector<AlignmentPI>& pis);
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt _SolveSpiralPI (size_t index, bvector<AlignmentPI>& pis);
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt _SolveSSPI (size_t index, bvector<AlignmentPI>& pis);
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt _SolvePI (size_t index, bvector<AlignmentPI>& pis);
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt _LoadSpiralData(ICurvePrimitiveCP primitive, AlignmentSpiral& roadSpiral);
-    ROADRAILALIGNMENT_EXPORT bvector<AlignmentPI> _GetPIs();
-        
-    ROADRAILALIGNMENT_EXPORT CurveVectorPtr _BuildVectorFromPIS(bvector<AlignmentPI> const& pvis);
+    ROADRAILALIGNMENT_EXPORT AlignmentPairEditor();
+    ROADRAILALIGNMENT_EXPORT AlignmentPairEditor(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr _Clone() const override;
+    ROADRAILALIGNMENT_EXPORT virtual void _UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment) override;
+    ROADRAILALIGNMENT_EXPORT virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment) override;     //&&AG WIP deal with cached PVIs
 
-    double _FullTangentLength (AlignmentPICR pi);
+protected:
+    //! Compute the PI by intersecting two rays.
+    DPoint3d ComputePIFromPointsAndVectors(DPoint3d pointA, DVec3d vectorA, DPoint3d pointB, DVec3d vectorB) const;
+
+    bool LoadArcData(AlignmentPI::Arc& arc, ICurvePrimitiveCR primitiveArc) const;
+    bool LoadSpiralData(AlignmentPI::Spiral& spiral, ICurvePrimitiveCR primitiveSpiral) const;
+
+    bool GetLinePI(AlignmentPIR pi, size_t index) const;
+    bool GetArcPI(AlignmentPIR pi, size_t index) const;
+    bool GetSCSPI(AlignmentPIR pi, size_t index) const;
+    bool GetSSPI(AlignmentPIR pi, size_t index) const;
+
+    // Creates an arc primitive
+    // @return Arc or invalid primitive
+    ICurvePrimitivePtr BuildArc(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, AlignmentPI::Orientation orientation) const;
+    ICurvePrimitivePtr BuildArc(AlignmentPI::ArcInfoCR info) const;
+    // Creates a SCS curve
+    // @return CurveVector with 3 primitives or invalid curve
+    CurveVectorPtr BuildSCSCurve(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, double spiralLength1, double spiralLength2) const;
+    CurveVectorPtr BuildSCSCurve(AlignmentPI::SCSInfoCR info) const;
+    // Creates a symmetric SS curve
+    // @return CurveVector with 2 primitives and a radius, or an invalid curve and a negative radius
+    CurveVectorPtr BuildSSCurve(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double spiralLength) const;
+    CurveVectorPtr BuildSSCurve(AlignmentPI::SSInfoCR info) const;
+    //! Builds a CurveVector off a vector of PIs
+    //! @remarks caller should make sure all PIs are solved and validated before calling this
+    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr _BuildCurveVectorFromPIs(bvector<AlignmentPI> const& pis) const;
+
+    // Fits the PI using current PI location and arc radius and adjacent PIs
+    // Updates the PI information upon success
+    bool SolveArcPI(bvector<AlignmentPI>& pis, size_t index) const;
+    // Fits the PI using the current overall PI location, arc radius, spiral lengths and adjacent PIs
+    // Updates the PI information upon success
+    bool SolveSCSPI(bvector<AlignmentPI>& pis, size_t index) const;
+    // Fits the PI using the curent overall PI location, spiral length and adjacent PIs
+    // Updates the PI information upon success
+    bool SolveSSPI(bvector<AlignmentPI>& pis, size_t index) const;
+    //! Solve a PI based on its type
+    ROADRAILALIGNMENT_EXPORT virtual bool _SolvePI(bvector<AlignmentPI>& pis, size_t index) const;
+
+    ROADRAILALIGNMENT_EXPORT virtual bool _ValidatePIs(bvector<AlignmentPI> const& pis) const;
+
+public:
+    ROADRAILALIGNMENT_EXPORT static AlignmentPairEditorPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    ROADRAILALIGNMENT_EXPORT static AlignmentPairEditorPtr Create(AlignmentPairCR pair);
+
+#if 0
+private:
+    void _GetValidEditRange(bvector<AlignmentPVI> const& pvis, int index, double * from, double *to);
+
+protected:
+        
+        
     double _GetDesignLength (DPoint3d newPt, bvector<AlignmentPVI> const& pvis, int index, bool useComputedG = false);
-
-    ICurvePrimitivePtr CreateSpiralPrimitive (AlignmentSpiral const& spiral);                       
-    bool AddPrimitivesFromPI (CurveVectorR hvec, const AlignmentPI& pi, DPoint3dR lastPoint);
 
     double _PreviousVerticalCurveStation (bvector<AlignmentPVI> const & pvis, const double& fromStation, VC vc = PVC);
     double _NextVerticalCurveStation (bvector<AlignmentPVI> const & pvis, const double& fromStation, VC vc = PVT);
@@ -198,9 +297,7 @@ protected:
 
 protected:
 
-    ROADRAILALIGNMENT_EXPORT AlignmentPairEditor (CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment);
     ROADRAILALIGNMENT_EXPORT AlignmentPairEditor (CurveVectorCR vertical, bool inXY);
-    ROADRAILALIGNMENT_EXPORT AlignmentPairEditor () { }
 
 public:
     static double _Slope (DPoint3d p1, DPoint3d p2);
@@ -209,48 +306,53 @@ public:
     // this overridden version will "force" the vertical to match the exact station end of the HZ length (no fuzz)
     ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr GetPartialAlignment (double startStation, double endStation) const override;
 
+#endif
     //////////// Horizontal Editing ////////////////////////////
     // Editing Tools
     // Allow the move pi, will return invalid if appropriate
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr MovePI (size_t index, DPoint3d toPt, AlignmentPIR pi, double minRadius = 0.0, bvector<AlignmentPI>* pis = nullptr, AlignmentPI::HorizontalPIType piType = AlignmentPI::ARC);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr MovePI(size_t index, DPoint3dCR toPt, AlignmentPI* pOutPI = nullptr) const;
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr MovePI(size_t index, AlignmentPIR inOutPI) const;
+
+    CurveVectorPtr MovePCorPT(size_t index, DPoint3dCR toPt, bool isPC, AlignmentPI* pOutPI) const;
     // Allow the move pc, will return invalid if appropriate
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr MovePC (size_t index, DPoint3d toPt, AlignmentPIR pi);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr MovePC(size_t index, DPoint3dCR toPt, AlignmentPI* pOutPI = nullptr) const;
     // Allow the move pt, will return invalid if appropriate
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr MovePT (size_t index, DPoint3d toPt, AlignmentPIR pi);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr MovePT(size_t index, DPoint3dCR toPt, AlignmentPI* pOutPI = nullptr) const;
+
+    CurveVectorPtr MoveBSorES(size_t index, DPoint3dCR toPt, bool isBS, AlignmentPI* pOutPI) const;
     // Allow the move beginning of a spiral, will ONLY affect the length, returns null if invalid
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr MoveBS (size_t index, DPoint3d toPt, AlignmentPIR pi);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr MoveBS(size_t index, DPoint3dCR toPt, AlignmentPI* pOutPI = nullptr) const;
     // Allow the move end of a spiral, will ONLY affect the length, returns null if invalid
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr MoveES (size_t index, DPoint3d toPt, AlignmentPIR pi);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr MoveES (size_t index, DPoint3dCR toPt, AlignmentPI* pOutPI = nullptr) const;
+
     // update the radius of a particular PI index.  Will return nullptr if the radius is too large
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr UpdateRadius (size_t index, double radius, AlignmentPIR pi, bool validate = true);
-    // change PI to an arc only, set the spiral length to 0
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr RemoveSpirals (size_t index, AlignmentPIR pi);
-    // change PI to SCS and add the new spiral length, will return nullptr if the resultant curve doesn't work
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr AddSpirals (size_t index, double length, AlignmentPIR pi);
-    // query the index to see for the PI type
-    ROADRAILALIGNMENT_EXPORT AlignmentPI::HorizontalPIType GetHorizontalPIType (size_t index);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr UpdateRadius(size_t index, double radius, AlignmentPI* pOutPI = nullptr, bool validate = true);
+    // change SCS PI to an Arc, set the spiral length to 0
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr RemoveSpirals(size_t index, AlignmentPI* pOutPI = nullptr) const;
+    // change Arc PI to SCS and add the new spiral length, will return nullptr if the resultant curve doesn't work
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr AddSpirals(size_t index, double spiralLength, AlignmentPI* pOutPI = nullptr) const;
+
     // query for the slope at a given station
     ROADRAILALIGNMENT_EXPORT virtual double SlopeAtStation (const double& station);
 
-    // change a curve length
-    //        ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr MovePCorPT (double fromSta, double toSta);
     // insert a pi to a horizontal alignment, this method will insert the pi at a location
     // between the to "nearest" PIs
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr InsertPI (DPoint3d piPt);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr InsertPI(AlignmentPICR pi) const;
     // insert a PI at a given index using the curve information provided
-    ROADRAILALIGNMENT_EXPORT CurveVectorPtr InsertPI (size_t index, AlignmentPIR pi);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr InsertPI(AlignmentPICR pi, size_t index) const;
     // delete a pi on a horizontal alignment
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr DeletePI (DPoint3d pviPt);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr DeletePI(DPoint3dCR piPoint) const;
     // delete a pi on a horizontal alignment
-    ROADRAILALIGNMENT_EXPORT virtual CurveVectorPtr DeletePI (size_t index);
-    // get the PI points
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt GetPIPoints (bvector<DPoint3d>& pts);
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr DeletePI(size_t index) const;
+    // Get the PI Points
+    ROADRAILALIGNMENT_EXPORT bvector<DPoint3d> GetPIPoints() const;
     // get the AlignmentPIs
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt GetAlignmentPIs (bvector<AlignmentPI>& pis);
+    ROADRAILALIGNMENT_EXPORT bvector<AlignmentPI> GetPIs() const;
     // get a specific AlignmentPI
-    ROADRAILALIGNMENT_EXPORT virtual StatusInt GetAlignmentPI (size_t index, AlignmentPI& pi);
+    ROADRAILALIGNMENT_EXPORT bool GetPI(AlignmentPIR pi, size_t index) const;
 
 
+#if 0
     //////////// Vertical Editing /////////////////////////////
     // return a vector of points in X,Z format for high and low points on a profile
     ROADRAILALIGNMENT_EXPORT virtual bvector<DPoint3d> CrestAndSagPointsXZ(ZeroSlopePoints zsType = ZeroSlopePoints::BothSagAndCrest);
@@ -317,6 +419,7 @@ public:
     // special alignment generator which uses a single curve vector to create
     // both a flattened horizontal and a vertical alignment from the z values
     ROADRAILALIGNMENT_EXPORT static AlignmentPairEditorPtr CreateFromSingleCurveVector (CurveVectorCR curveVector);
+#endif
 }; // AlignmentPairEditor
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

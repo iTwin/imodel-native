@@ -15,6 +15,8 @@
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
+#if 0 //&&AG WIP REFACTOR AlignmentPairEditor
+
 /*---------------------------------------------------------------------------------**//**
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RoadAlignmentPairEditor : AlignmentPairEditor
@@ -103,5 +105,7 @@ public:
 public:
     ROADRAILALIGNMENT_EXPORT static DividedRoadAlignmentPairEditorPtr Create (AlignmentPairEditorP primaryRoad);
 }; // DividedRoadAlignmentPairEditor
+
+#endif
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
