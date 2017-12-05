@@ -365,6 +365,7 @@ enum ImagePPClassId
     HGFRGBId_Cube	                            =	1537,
     HGFRGBId_Set	                            =	1538,
     HGFLUVCubeId	                            =	1539,
+    HFCAuthenticationId_CertificateAutorities   =   1544,
     HRPFilterId_ColorReplacer	                =	1545,
     HRPFilterId_CustomMap8	                    =	1546,
     HFCAuthenticationId_Callback	            =	1547,

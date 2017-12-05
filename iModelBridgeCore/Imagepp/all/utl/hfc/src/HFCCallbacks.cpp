@@ -412,6 +412,11 @@ void HFCProxyAuthentication::SetPassword (const Utf8String& pi_Password)
     m_Password = pi_Password;
     }
 
+void HFCProxyAuthentication::SetServer(const Utf8String& pi_Server)
+    {
+    m_Server = pi_Server;
+    }
+
 const Utf8String& HFCProxyAuthentication::GetUser () const
     {
     return m_User;
@@ -420,6 +425,11 @@ const Utf8String& HFCProxyAuthentication::GetUser () const
 const Utf8String& HFCProxyAuthentication::GetPassword () const
     {
     return m_Password;
+    }
+
+const Utf8String& HFCProxyAuthentication::GetServer() const
+    {
+    return m_Server;
     }
 
 //-----------------------------------------------------------------------------
@@ -444,6 +454,40 @@ void HFCProxyAuthentication::SetByString(const Utf8String& pi_rAuthenticationStr
         {
         m_User = pi_rAuthenticationString;
         }
+    }
+
+//-----------------------------------------------------------------------------
+// class HFCCertificateAutoritiesAuthentication
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Public
+// constructor
+//-----------------------------------------------------------------------------
+HFCCertificateAutoritiesAuthentication::HFCCertificateAutoritiesAuthentication()
+: HFCAuthentication(0)
+    {
+    }
+
+//-----------------------------------------------------------------------------
+// Public
+// destructor
+//-----------------------------------------------------------------------------
+HFCCertificateAutoritiesAuthentication::~HFCCertificateAutoritiesAuthentication()
+    {
+    }
+
+//-----------------------------------------------------------------------------
+// Accessors
+//-----------------------------------------------------------------------------
+void HFCCertificateAutoritiesAuthentication::SetCertificateAuthFileUrl(const Utf8String& pi_CertificateAuthFileUrl)
+    {
+    m_CertificateAuthFileUrl = pi_CertificateAuthFileUrl;
+    }
+
+const Utf8String& HFCCertificateAutoritiesAuthentication::GetCertificateAuthFileUrl() const
+    {
+    return m_CertificateAuthFileUrl;
     }
 
 //-----------------------------------------------------------------------------

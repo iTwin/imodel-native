@@ -82,7 +82,7 @@ protected:
     HRFVirtualEarthEditor    (HFCPtr<HRFRasterFile> pi_rpRasterFile, uint32_t pi_Page, uint16_t pi_Resolution, HFCAccessMode pi_AccessMode);
 
     //Request look ahead
-    virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
+    virtual void              RequestLookAhead(const HGFTileIDList& pi_rTileIDList, uint32_t pi_ConsumerID);
 
 private:
     enum class ReadTileStatus

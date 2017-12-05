@@ -44,7 +44,7 @@ struct HFCAuthentication
 public:
     virtual                                 ~HFCAuthentication     ();
 
-    virtual void                     SetByString            (const Utf8String&              pi_rAuthenticationString) = 0;
+    virtual void                            SetByString            (const Utf8String&              pi_rAuthenticationString) = 0;
 
     IMAGEPP_EXPORT bool                            Failed                 () const;
     IMAGEPP_EXPORT size_t                           GetErrorsQty           () const;
@@ -112,7 +112,7 @@ public:
     IMAGEPP_EXPORT const Utf8String&   GetUser                    () const;
     IMAGEPP_EXPORT const Utf8String&   GetPassword                () const;
     IMAGEPP_EXPORT const Utf8String&   GetServer                  () const;
-
+    
 private:
     // authentication's members
     Utf8String         m_User;
@@ -163,16 +163,36 @@ public:
 
     IMAGEPP_EXPORT void             SetUser                    (const Utf8String&          pi_User);
     IMAGEPP_EXPORT void             SetPassword                (const Utf8String&          pi_Password);
+    IMAGEPP_EXPORT void             SetServer                  (const Utf8String&          pi_Server);
 
     IMAGEPP_EXPORT const Utf8String&   GetUser                    () const;
     IMAGEPP_EXPORT const Utf8String&   GetPassword                () const;
-
+    IMAGEPP_EXPORT const Utf8String&   GetServer() const;
+    
 private:
     // authentication's members
     Utf8String         m_User;
     Utf8String         m_Password;
+    Utf8String         m_Server;
     };
 
+struct HFCCertificateAutoritiesAuthentication : HFCAuthentication
+{
+    HDECLARE_CLASS_ID(HFCAuthenticationId_CertificateAutorities, HFCAuthentication)
+
+public:
+    IMAGEPP_EXPORT                  HFCCertificateAutoritiesAuthentication();
+    IMAGEPP_EXPORT virtual          ~HFCCertificateAutoritiesAuthentication();    
+    
+    IMAGEPP_EXPORT void              SetCertificateAuthFileUrl(const Utf8String& pi_CertificateAuthFileUrl);
+    IMAGEPP_EXPORT const Utf8String& GetCertificateAuthFileUrl() const;
+
+    IMAGEPP_EXPORT virtual void      SetByString(const Utf8String& pi_rAuthenticationString) override { SetCertificateAuthFileUrl(pi_rAuthenticationString); }
+    
+private:
+    // authentication's members
+    Utf8String         m_CertificateAuthFileUrl;
+};
 
 struct HFCPDFAuthentication : public HFCAuthentication
     {

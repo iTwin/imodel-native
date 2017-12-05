@@ -1009,6 +1009,7 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
         pi_rTagList.Set(new HRFAttributeVerticalUnitRatioToMeter(verticalUnitRatioToMeter));
         }
 
+
     pPage = new HRFPageDescriptor (GetAccessMode(),
                                    GetCapabilities(),                       // Capabilities,
                                    pResolution,                             // ResolutionDescriptor,

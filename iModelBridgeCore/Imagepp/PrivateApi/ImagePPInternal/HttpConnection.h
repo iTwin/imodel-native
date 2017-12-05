@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/ImagePPInternal/HttpConnection.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -121,7 +121,9 @@ struct HttpRequest
 {
 private:
     Utf8String m_url;
+    Utf8String m_proxyUrl;
     bmap<Utf8String, Utf8String> m_header;
+    Utf8String m_certificateAuthoritiesFileUrl;
 
     Credentials m_credentials;
     Credentials m_proxyCredentials;
@@ -143,13 +145,29 @@ public:
 
     Credentials const&  GetProxyCredentials() const {return m_proxyCredentials;}
     void                SetProxyCredentials(Credentials const& credentials) {m_proxyCredentials = credentials;}
+    
+    Utf8StringCR        GetProxyUrl() const { return m_proxyUrl; }
+    void                SetProxyUrl(Utf8StringCR proxyUrl) { m_proxyUrl = proxyUrl; }
 
+    Utf8StringCR        GetCertificateAuthoritiesFileUrl() const { return m_certificateAuthoritiesFileUrl; }
+    void                SetCertificateAuthoritiesFileUrl(Utf8StringCR certificateAuthoritiesFileUrl) { m_certificateAuthoritiesFileUrl = certificateAuthoritiesFileUrl; }
+    
     uint32_t            GetTimeoutMs() const {return m_timeOutMs;}
     void                SetTimeoutMs(uint32_t timeOutInMs) {m_timeOutMs = timeOutInMs;}
 
     bool                GetConnectOnly() const {return m_connectOnly;}
     void                SetConnectOnly(bool connect) {m_connectOnly= connect;}
 };
+
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                   Mathieu.St-Pierre   10/2017
+//----------------------------------------------------------------------------------------
+void SetProxyInfo(HttpRequest& request);
+
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                   Mathieu.St-Pierre   10/2017
+//----------------------------------------------------------------------------------------
+void SetCertificateAuthoritiesInfo(HttpRequest& request);
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                   Mathieu.Marchand  12/2015

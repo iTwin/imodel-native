@@ -31,9 +31,15 @@
 #include <ImagePP/all/h/ImagePPMessages.xliff.h>
 #include <ImagePP/all/h/HFCURLHTTP.h>
 
+#include <ImagePPInternal/gra/Task.h>
+#include <ImagePPInternal/HttpConnection.h>
+
+
 #define MB_MAP_RESOLUTION       19
 #define MB_MAP_WIDTH            (256 * (1 << MB_MAP_RESOLUTION))
 #define MB_MAP_HEIGHT           (256 * (1 << MB_MAP_RESOLUTION))
+
+#define NB_BLOCK_READER_THREAD 20
 
 //-----------------------------------------------------------------------------//
 //                         Extern - MapBoxTileSystem API                 //
@@ -520,4 +526,106 @@ void HRFMapBoxFile::CreateDescriptors ()
         pPage->SetGeocoding(pBaseGCS.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
+    }
+
+
+//-----------------------------------------------------------------------------
+// Protected
+// Cancel the current look ahead
+//-----------------------------------------------------------------------------
+void HRFMapBoxFile::CancelLookAhead(uint32_t pi_Page)
+    {
+    assert(0);
+    HPRECONDITION(pi_Page == 0);
+
+    // I assumed that HRF is not thread safe and that there will be only one thread that will execute LookAHead request and copyFrom(ReadBlock).
+    m_tileQueryMap.clear();
+    }
+
+
+//-----------------------------------------------------------------------------
+// Indicates that the Virtual Earth file format supports the look ahead by
+// block (i.e. tile).
+//-----------------------------------------------------------------------------
+bool HRFMapBoxFile::HasLookAheadByBlock(uint32_t pi_Page) const
+    {
+    HPRECONDITION(pi_Page < CountPages());
+
+    return true;
+    }
+
+//-----------------------------------------------------------------------------
+// Indicates that the a look ahead can be performed for the Virtual Earth
+// file format.
+//-----------------------------------------------------------------------------
+bool HRFMapBoxFile::CanPerformLookAhead(uint32_t pi_Page) const
+    {
+    HPRECONDITION(pi_Page == 0);
+    return true;
+    }
+
+
+
+//-----------------------------------------------------------------------------
+// Protected
+// Function that is called to request some tiles to be fetch to the server
+// before that are actually read by the application. HRFVirtualEarthFile
+// supports only look ahead by tiles.
+//-----------------------------------------------------------------------------
+void HRFMapBoxFile::RequestLookAhead(uint32_t             pi_Page,
+                                     const HGFTileIDList& pi_rBlocks,
+                                     bool                 pi_Async)
+{
+
+    if (pi_rBlocks.size() == 0)
+        { 
+        m_tileQueryMapMutex.lock();
+        m_tileQueryMap.clear();
+        m_tileQueryMapMutex.unlock();
+        return;
+        }
+
+    HGFTileIDList::const_iterator Itr(pi_rBlocks.begin());
+    if (Itr != pi_rBlocks.end())
+    {
+        unsigned short Resolution = (unsigned short)HRFRasterFile::s_TileDescriptor.GetLevel(*Itr);
+
+        //Find the resolution editor into the ResolutionEditorRegistry
+        ResolutionEditorRegistry::const_iterator ResItr(m_ResolutionEditorRegistry.begin());
+        HRFMapBoxTileEditor* pResEditor = 0;
+        while (pResEditor == 0 && ResItr != m_ResolutionEditorRegistry.end())
+        {
+            if (((*ResItr)->GetPage() == pi_Page) && ((*ResItr)->GetResolutionIndex() == Resolution))
+            {
+                pResEditor = (HRFMapBoxTileEditor*)*ResItr;
+            }
+            else
+            {
+                ResItr++;
+            }
+        }
+        //The editor must exist
+        HASSERT(pResEditor != 0);
+
+        pResEditor->RequestLookAhead(pi_rBlocks);
+    }
+}
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+BEGIN_IMAGEPP_NAMESPACE
+struct ThreadLocalHttp : ThreadLocalStorage<HttpSession> {};
+END_IMAGEPP_NAMESPACE
+
+WorkerPool& HRFMapBoxFile::GetWorkerPool()
+    {
+    if (m_pWorkerPool == nullptr)
+        {
+        m_pWorkerPool.reset(new WorkerPool(NB_BLOCK_READER_THREAD));
+        m_threadLocalHttp.reset(new ThreadLocalHttp()); // must be allocated before threads start querying.
+        }
+
+    return *m_pWorkerPool;
     }

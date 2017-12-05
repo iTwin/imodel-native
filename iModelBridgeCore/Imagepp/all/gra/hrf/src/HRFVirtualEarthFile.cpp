@@ -42,7 +42,7 @@
 // These are the ImagerySet tag that we use when requesting tiles URI. 
 // See Bing map "Get Imagery Metadata": http://msdn.microsoft.com/en-us/library/ff701716.aspx
 // *** DO NOT MODIFY unless bing map API is changing.
-#define BING_MAPS_METADATA_URL    "http://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&incl=ImageryProviders&key={BingMapsKey}"
+#define BING_MAPS_METADATA_URL    "https://dev.virtualearth.net/REST/V1/Imagery/Metadata/{ImagerySet}?o=xml&incl=ImageryProviders&key={BingMapsKey}"
 
 // Tags use to format server request
 #define SUBDOMAIN_TAG   "{subdomain}"
@@ -79,7 +79,7 @@
 #define BING_NORTHLATITUDE_ELEMENT      "NorthLatitude"
 #define BING_EASTLONGITUDE_ELEMENT      "EastLongitude"
 
-#define VE_MAP_RESOLUTION       21
+#define VE_MAP_RESOLUTION       19
 #define VE_MAP_WIDTH            (256 * (1 << VE_MAP_RESOLUTION))
 #define VE_MAP_HEIGHT           (256 * (1 << VE_MAP_RESOLUTION))
 
@@ -184,8 +184,13 @@ void HRFVirtualEarthFile::QueryImageURI(Utf8StringCR bingMapKey)
     ReplaceTagInString(urlRequest, IMAGERYSET_TAG, imagerySetLabel);
     ReplaceTagInString(urlRequest, BINGMAPSKEY_TAG, bingMapKey);
 
+    
     HttpSession session;
     HttpRequest request(urlRequest.c_str());
+
+    SetCertificateAuthoritiesInfo(request);
+    SetProxyInfo(request);
+   
     HttpResponsePtr response;
     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
         throw HFCCannotOpenFileException(GetURL()->GetURL());
@@ -506,10 +511,12 @@ HRFVirtualEarthFile::HRFVirtualEarthFile(const HFCPtr<HFCURL>& pi_rURL,
     : HRFRasterFile(pi_rURL, pi_AccessMode, pi_Offset)
     {
 
+#ifndef BINGMAPS_AUTO_PASSWORD        
     HFCAuthenticationCallback* pCallback = (HFCAuthenticationCallback*)HFCCallbackRegistry::GetInstance()->GetCallback(HFCAuthenticationCallback::CLASS_ID);
 
     if(pCallback == 0)
         throw HFCLoginInformationNotAvailableException();
+#endif
 
     if(!pi_rURL->IsCompatibleWith(HFCURLHTTPBase::CLASS_ID))
         throw HFCCannotOpenFileException(pi_rURL->GetURL());
@@ -824,7 +831,8 @@ uint64_t HRFVirtualEarthFile::GetFileCurrentSize(HFCBinStream* pi_pBinStream) co
 //-----------------------------------------------------------------------------
 void HRFVirtualEarthFile::RequestLookAhead(uint32_t             pi_Page,
                                            const HGFTileIDList& pi_rBlocks,
-                                           bool                pi_Async)
+                                           bool                 pi_Async, 
+                                           uint32_t             pi_ConsumerID)
     {
     HGFTileIDList::const_iterator Itr(pi_rBlocks.begin());
     if (Itr != pi_rBlocks.end())
@@ -848,8 +856,21 @@ void HRFVirtualEarthFile::RequestLookAhead(uint32_t             pi_Page,
         //The editor must exist
         HASSERT(pResEditor != 0);
 
-        pResEditor->RequestLookAhead(pi_rBlocks);
+        pResEditor->RequestLookAhead(pi_rBlocks, pi_ConsumerID);
         }
+    }
+
+//-----------------------------------------------------------------------------
+// Protected
+// Function that is called to request some tiles to be fetch to the server
+// before that are actually read by the application. HRFVirtualEarthFile
+// supports only look ahead by tiles.
+//-----------------------------------------------------------------------------
+void HRFVirtualEarthFile::RequestLookAhead(uint32_t             pi_Page,
+                                           const HGFTileIDList& pi_rBlocks,    
+                                           bool                 pi_Async)
+    {
+    RequestLookAhead(pi_Page, pi_rBlocks, 0, pi_Async);
     }
 
 //-----------------------------------------------------------------------------
@@ -861,7 +882,9 @@ void HRFVirtualEarthFile::CancelLookAhead(uint32_t pi_Page)
     HPRECONDITION(pi_Page == 0);
 
     // I assumed that HRF is not thread safe and that there will be only one thread that will execute LookAHead request and copyFrom(ReadBlock).
+    m_tileQueryMapMutex.lock();
     m_tileQueryMap.clear();
+    m_tileQueryMapMutex.unlock();
     }
 
 //-----------------------------------------------------------------------------
@@ -916,6 +939,20 @@ bool HRFVirtualEarthFile::HasLookAheadByBlock(uint32_t pi_Page) const
 bool HRFVirtualEarthFile::CanPerformLookAhead(uint32_t pi_Page) const
     {
     HPRECONDITION(pi_Page == 0);
+    return true;
+    }
+
+//-----------------------------------------------------------------------------
+// Indicates that the a look ahead is cancel. 
+//-----------------------------------------------------------------------------
+bool HRFVirtualEarthFile::ForceCancelLookAhead(uint32_t pi_Page)
+    {
+    HPRECONDITION(pi_Page == 0);
+
+    m_tileQueryMapMutex.lock();
+    m_tileQueryMap.clear();    
+    m_tileQueryMapMutex.unlock();
+
     return true;
     }
 
