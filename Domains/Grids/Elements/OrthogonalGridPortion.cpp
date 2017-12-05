@@ -58,7 +58,7 @@ StandardCreateParams const& params
     
     if (subModel.IsValid ())
         {
-        if (BentleyStatus::ERROR == CreateAndInsertSurfaces(params, subModel.get(), horizontalAxis, verticalAxis))
+        if (BentleyStatus::ERROR == CreateAndInsertSurfaces(params, subModel.get(), *horizontalAxis, *verticalAxis))
             return nullptr;
         }
     return thisGrid;
@@ -71,7 +71,7 @@ StandardCreateParams const& params
 BentleyStatus                   OrthogonalGrid::CreateCoplanarGridPlanes
 (
 bvector<CurveVectorPtr> const& surfaces,
-GridAxisPtr gridAxis,
+GridAxisCR gridAxis,
 CreateParams const& params
 )
     {
@@ -134,8 +134,8 @@ CreateParams const& params
     GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
     GridAxisPtr verticalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
     
-    if (BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (xSurfaces, horizontalAxis, params) ||
-        BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (ySurfaces, verticalAxis, params))
+    if (BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (xSurfaces, *horizontalAxis, params) ||
+        BentleyStatus::SUCCESS != thisGrid->CreateCoplanarGridPlanes (ySurfaces, *verticalAxis, params))
         BeAssert (!"error inserting gridSurfaces into orthogonal grid.. shouldn't get here..");
     return thisGrid;
     }
@@ -238,7 +238,7 @@ double distance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGrid::CreateSurfaces(bvector<GridSurfacePtr> & allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal)
+BentleyStatus OrthogonalGrid::CreateSurfaces(bvector<GridSurfacePtr> & allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisCR gridAxis, bool isHorizontal)
     {
     for (int i = 0; i < count; ++i)
         {
@@ -263,7 +263,7 @@ BentleyStatus OrthogonalGrid::CreateSurfaces(bvector<GridSurfacePtr> & allSurfac
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGrid::CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis)
+BentleyStatus OrthogonalGrid::CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR horizontalGridAxis, GridAxisCR verticalGridAxis)
     {
     // Adjust grid height
     double height = params.m_height;

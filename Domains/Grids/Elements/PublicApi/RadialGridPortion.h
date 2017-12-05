@@ -79,7 +79,7 @@ protected:
     explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params);
 
 
-    static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis);
+    static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR planeAxis, GridAxisCR arcAxis);
 
     friend struct RadialGridHandler;
 

@@ -28,8 +28,8 @@ private:
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridPlanarSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridPlanarSurface (CreateParams const& params, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
-    explicit GRIDELEMENTS_EXPORT GridPlanarSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr  surface);
+    explicit GRIDELEMENTS_EXPORT GridPlanarSurface (CreateParams const& params, GridAxisCR gridAxis, CurveVectorPtr surfaceVector);
+    explicit GRIDELEMENTS_EXPORT GridPlanarSurface (CreateParams const& params, GridAxisCR gridAxis, ISolidPrimitivePtr  surface);
     friend struct GridPlanarSurfaceHandler;
 
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const override;
@@ -50,21 +50,21 @@ public:
     //! @param[in]  surfaceVector   surface geometry
     //! @return                     gridplane surface
     //! Note: Only planar curve vectors pass as valid geometry
-    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
+    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, CurveVectorPtr surfaceVector);
 
     //! Creates a gridplane surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  surface         surface geometry
     //! @return                     gridplane surface
     //! @Note: Only solid primitives from DgnExtrusionDetails with LineString, PointString or Line as base curve pass as valid geometry
-    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, ISolidPrimitivePtr  surface);
+    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, ISolidPrimitivePtr  surface);
 
     //! Creates a gridplane surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridplane surface
     //! Note: Only DgnExtrusionDetails with LineString, PointString or Line as base curve pass as valid geometry
-    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, DgnExtrusionDetail  extDetail);
+    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, DgnExtrusionDetail  extDetail);
 
     //---------------------------------------------------------------------------------------
     // Getters and setters
@@ -82,5 +82,6 @@ public:
 
     
 };
+
 
 END_GRIDS_NAMESPACE

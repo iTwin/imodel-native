@@ -23,8 +23,8 @@ struct EXPORT_VTABLE_ATTRIBUTE GridSurface : Dgn::SpatialLocationElement
     DEFINE_T_SUPER (Dgn::SpatialLocationElement);
 protected:
     explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, CurveVectorPtr surfaceVector);
-    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
+    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCR gridAxis, CurveVectorPtr surfaceVector);
+    explicit GRIDELEMENTS_EXPORT GridSurface (CreateParams const& params, GridAxisCR gridAxis, ISolidPrimitivePtr surface);
 
     BE_PROP_NAME(Axis)
         

@@ -28,7 +28,7 @@ CreateParams const& params
 GridArcSurface::GridArcSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
 ) : T_Super(params, gridAxis, surface) 
     {
@@ -56,7 +56,7 @@ bool GridArcSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
 GridArcSurfacePtr                 GridArcSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
@@ -73,7 +73,7 @@ ISolidPrimitivePtr  surface
 GridArcSurfacePtr GridArcSurface::Create
 (
 Dgn::SpatialLocationModelCR model, 
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 DgnExtrusionDetail extDetail
 )
     {

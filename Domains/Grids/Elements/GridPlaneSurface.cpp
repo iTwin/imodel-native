@@ -27,7 +27,7 @@ CreateParams const& params
 GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 CurveVectorPtr  surfaceVector
 ) : T_Super(params, gridAxis, surfaceVector) 
     {
@@ -39,7 +39,7 @@ CurveVectorPtr  surfaceVector
 GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 ISolidPrimitivePtr surface
 ) : T_Super(params, gridAxis, surface) 
     {
@@ -70,7 +70,7 @@ bool GridPlanarSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
 GridPlanarSurfacePtr             GridPlanarSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 CurveVectorPtr  surfaceVector
 )
     {
@@ -88,7 +88,7 @@ CurveVectorPtr  surfaceVector
 GridPlanarSurfacePtr             GridPlanarSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 ISolidPrimitivePtr surface
 )
     {
@@ -211,7 +211,7 @@ bool                            GridPlanarSurface::StretchGeomIdToPlane
 GridPlanarSurfacePtr GridPlanarSurface::Create
 (
 Dgn::SpatialLocationModelCR model,
-GridAxisCPtr gridAxis, 
+GridAxisCR gridAxis, 
 DgnExtrusionDetail extDetail
 )
     {

@@ -121,9 +121,9 @@ private:
     //! @param[in] horizontalGridAxis   axis for horizontal elements
     //! @param[in] verticalGridAxis     axis for vertical elements
     //! @return                         BentleyStatus::SUCCESS if no error has occured when creating and inserting elements
-    static BentleyStatus CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr horizontalGridAxis, GridAxisPtr verticalGridAxis);
+    static BentleyStatus CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR horizontalGridAxis, GridAxisCR verticalGridAxis);
 
-    static BentleyStatus CreateSurfaces(bvector<GridSurfacePtr>& allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisPtr gridAxis, bool isHorizontal);
+    static BentleyStatus CreateSurfaces(bvector<GridSurfacePtr>& allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisCR gridAxis, bool isHorizontal);
 
 protected:
     explicit GRIDELEMENTS_EXPORT OrthogonalGrid (T_Super::CreateParams const& params);
@@ -143,7 +143,7 @@ protected:
     //! @param[in] distance distance between elements
     GRIDELEMENTS_EXPORT static void AddDimensionsToOrthogonalGrid(Grids::GridSurfacePtr element1, Grids::GridSurfacePtr element2, double distance);
 
-    BentleyStatus   CreateCoplanarGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisPtr gridAxis, CreateParams const& params);
+    BentleyStatus   CreateCoplanarGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisCR gridAxis, CreateParams const& params);
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid, GRIDELEMENTS_EXPORT)

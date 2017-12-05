@@ -38,7 +38,7 @@ CreateParams const& params
 GridSurface::GridSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
 ) : T_Super(params) 
     {
@@ -82,8 +82,8 @@ ISolidPrimitivePtr  surface
             BeAssert (!"Failed to create DrivingSurface Geometry");
         }
 
-    BeAssert (gridAxis->GetElementId ().IsValid ());
-    SetAxisId (gridAxis->GetElementId ());
+    BeAssert (gridAxis.GetElementId ().IsValid ());
+    SetAxisId (gridAxis.GetElementId ());
     }
 
 
@@ -93,7 +93,7 @@ ISolidPrimitivePtr  surface
 GridSurface::GridSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 CurveVectorPtr  surfaceVector
 ) : T_Super(params) 
     {
@@ -122,8 +122,8 @@ CurveVectorPtr  surfaceVector
             BeAssert (!"Failed to create DrivingSurface Geometry");
         }
 
-    BeAssert (gridAxis->GetElementId ().IsValid ());
-    SetAxisId (gridAxis->GetElementId ());
+    BeAssert (gridAxis.GetElementId ().IsValid ());
+    SetAxisId (gridAxis.GetElementId ());
     }
 
 /*---------------------------------------------------------------------------------**//**
