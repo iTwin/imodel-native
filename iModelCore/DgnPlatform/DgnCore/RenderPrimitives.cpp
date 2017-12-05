@@ -820,7 +820,7 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QVertex3dListCR vertices)
+template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QPoint3dListCR vertices)
     {
     // Don't allocate the indices until we have non-uniform values
     if (table.empty())
@@ -846,11 +846,11 @@ template<typename T, typename U> static void insertVertexAttribute(bvector<uint1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(QVertex3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
+uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
     {
     auto index = static_cast<uint32_t>(m_verts.size());
 
-    m_verts.Add(vert);
+    m_verts.push_back(vert);
     m_features.Add(feature, m_verts.size());
 
     if (nullptr != normal)
@@ -1039,31 +1039,9 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     BeAssert(lhs.m_normalValid == rhs.m_normalValid);
     BeAssert(lhs.m_paramValid == rhs.m_paramValid);
 
-    if (lhs.m_position.IsQuantized())
-        {
-        if (!rhs.m_position.IsQuantized())
-            return false;
-
-        auto const& lpos = lhs.m_position.GetQPoint3d();
-        auto const& rpos = rhs.m_position.GetQPoint3d();
-
-        COMPARE_VALUES(lpos.x, rpos.x);
-        COMPARE_VALUES(lpos.y, rpos.y);
-        COMPARE_VALUES(lpos.z, rpos.z);
-        }
-    else
-        {
-        if (rhs.m_position.IsQuantized())
-            return true;
-
-        auto const& lpos = lhs.m_position.GetFPoint3d();
-        auto const& rpos = rhs.m_position.GetFPoint3d();
-
-        // ###TODO: May want to use a tolerance here; if so must be relative to range...
-        COMPARE_VALUES(lpos.x, rpos.x);
-        COMPARE_VALUES(lpos.y, rpos.y);
-        COMPARE_VALUES(lpos.z, rpos.z);
-        }
+    auto posCmp = memcmp(&lhs.m_position, &rhs.m_position, sizeof(uint16_t)*3);
+    if (0 != posCmp)
+        return posCmp < 0;
 
     COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
@@ -1230,15 +1208,6 @@ void Mesh::AddPolyline(MeshPolylineCR polyline)
         
 
     m_polylines.push_back(polyline);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::Close()
-    {
-    BeAssert(m_verts.IsFullyQuantized());
-    m_verts.Requantize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1864,15 +1833,7 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshBuilderMap GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
     {
-    auto builderMap = ToMeshBuilderMap(options, tolerance, featureTable, context);
-    for (auto& builder : builderMap)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
-            mesh->Close();
-        }
-
-    return builderMap;
+    return ToMeshBuilderMap(options, tolerance, featureTable, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1954,10 +1915,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
         {
         MeshP mesh = builder.second->GetMesh();
         if (!mesh->IsEmpty())
-            {
-            mesh->Close();
             meshes.push_back(mesh);
-            }
         }
 
     return meshes;
@@ -3080,35 +3038,6 @@ GeometryList GeometryList::Slice(size_t startIdx, size_t endIdx) const
 
     return list;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QVertex3dList::Requantize()
-    {
-    if (IsFullyQuantized())
-        return;
-
-    m_qpoints.Requantize(QPoint3d::Params(m_range));
-    m_qpoints.reserve(size());
-
-    for (auto const& fpt : m_fpoints)
-        m_qpoints.Add(DPoint3d::From(fpt));
-
-    m_fpoints.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QVertex3dList::Init(DRange3dCR range, QPoint3dCP qPoints, size_t nPoints)
-    {
-    m_range = range;
-    m_qpoints.resize(nPoints);
-    m_qpoints.SetParams(QPoint3d::Params(range));
-    memcpy (m_qpoints.data(), qPoints, nPoints * sizeof(QPoint3d));
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017

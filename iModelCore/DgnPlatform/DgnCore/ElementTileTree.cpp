@@ -2276,10 +2276,7 @@ MeshList MeshGenerator::GetMeshes()
         {
         MeshP mesh = builder.second->GetMesh();
         if (!mesh->IsEmpty())
-            {
-            mesh->Close();
             meshes.push_back(mesh);
-            }
         }
 
     // Do not allow vertices outside of this tile's range to expand its content range
