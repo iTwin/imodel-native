@@ -2,10 +2,12 @@
 |
 |     $Source: Core/2d/bcdtmDllMain.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
- int  bcdtmInitialise(void) ; 
+#include "bcDTMBaseDef.h"
+#include "dtmevars.h"
+int  bcdtmInitialise(void) ; 
 
  class DTMDll
      {
@@ -13,6 +15,13 @@
                  {
                  bcdtmInitialise() ;
                  }
+             ~DTMDll()
+                 {
+                 if (glbDtmObjBtreeP != nullptr)
+                     {
+                     bcdtmBtree_destroyBtree(&glbDtmObjBtreeP);
+                     }
+                }
      };
 
  DTMDll dllInst;

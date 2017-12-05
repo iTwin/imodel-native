@@ -1242,12 +1242,8 @@ struct DTMPondAppData : BcDTMAppData
     BC_DTM_OBJ* pondDtmP;    // Triangulated DTM With the Ponds Stored As Break Lines
     int         hasPonds;
     protected:
-        DTMPondAppData () : m_dtmCreationTime (0), pondDtmP (nullptr), hasPonds (false)
-            {
-            }
-        virtual ~DTMPondAppData ()
-            {
-            }
+        DTMPondAppData();
+        virtual ~DTMPondAppData();
 
     public:
         static DTMPondAppData* Create ()

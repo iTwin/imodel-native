@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/TerrainModelTests/BuildTerrainModelTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 SrcTerrainModelTest=$(SrcRoot)TerrainModel/Tests/TerrainModelTests/
@@ -34,6 +34,12 @@ dirToSearch     = $(BuildContext)PublicAPI
 dirToSearch     = $(BuildContext)VendorAPI
 %include cincapnd.mki
 
+%ifdef DTM_MEMORY_DEBUG
+
+nameToDefine=DTM_MEMORY_DEBUG
+%include cdefapnd.mki
+
+%endif
 o = $(OutputRootDir)Build/TerrainModel/$(appName)/
 
 DependsOnHeaders = $(baseDir)stdafx.h
@@ -68,6 +74,8 @@ $(o)TerrainModelTest$(oext) : $(baseDir)TerrainModelTest.cpp $(DependsOnHeaders)
 $(o)DrainageTests$(oext) : $(baseDir)DrainageTests.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)FormatTests$(oext) : $(baseDir)FormatTests.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)TMTests$(oext) : $(baseDir)TMTests.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

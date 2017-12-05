@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TerrainModelTests/TerrainModelTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable:4505) // unreferenced local function has been removed [in gtest-port.h]
@@ -14,7 +14,10 @@ StackExaminer* g_stackExaminer = NULL;
 BSIBaseGeomExaminer* g_bsiBaseGeomExaminer = NULL;
 
 WString s_dllPath = L"";
-
+#ifdef DTM_MEMORY_DEBUG
+__declspec(dllimport) void TMMapMemoryReferences();
+__declspec(dllexport) void DHMapMemoryReferences();
+#endif
 static void* getDLLInstance()
     {
     MEMORY_BASIC_INFORMATION    mbi;
@@ -88,7 +91,6 @@ bool TMHelpers::ValidateTM(BcDTMR dtm, const TMHelpers::ValidateParams& params)
     {
     if (dtm.CheckTriangulation() != SUCCESS)
         return false;
-
     if (dtm.GetDTMState() != DTMState::Tin)
         if (dtm.Triangulate() != SUCCESS)
             return false;
@@ -127,11 +129,10 @@ bool TMHelpers::ValidateTM(BcDTMR dtm, const TMHelpers::ValidateParams& params)
     dtm.ComputePlanarPrismoidalVolume(result, 0, nullptr, 0, nullptr, 0);
 
     printf("CutVolume %f FillVolume %f\n", result.cutVolume, result.fillVolume);
-
     return true;
     }
 
-int main(int argc, char **argv)
+int main2(int argc, char **argv)
     {
 #if defined (_DEBUG)
     int dbgFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
@@ -187,6 +188,16 @@ int main(int argc, char **argv)
         BSIBaseGeom::GetNumRealloc(),
         BSIBaseGeom::GetNumFree(),
         BSIBaseGeom::GetAllocationDifference());
+#ifdef DTM_MEMORY_DEBUG
+    TMMapMemoryReferences();
+    printf("BentleyAllocator\n");
+    DHMapMemoryReferences();
+#endif
+    return stat;
+    }
 
+int main(int argc, char **argv)
+    {
+    int stat = main2(argc, argv);
     return stat;
     }

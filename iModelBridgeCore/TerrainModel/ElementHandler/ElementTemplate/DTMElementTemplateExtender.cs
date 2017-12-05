@@ -97,7 +97,49 @@ namespace Bentley.TerrainModel.ElementTemplate
             }
         public void CopyTemplateToFile(XDataTreeNode copiedTemplate, XDataTreeNode dgnLibTemplate)
             {
+            BECO.Instance.IECInstance dtmInstance = null;
+
+            for (int index = 0; index < dgnLibTemplate.ECInstanceList.Count; index++)
+                {
+                BECO.Instance.IECInstance instance = dgnLibTemplate.ECInstanceList[index];
+                if (instance.ClassDefinition.Name == CLASS_NAME)
+                    {
+                    dtmInstance = instance;
+                    break;
+                    }
+                }
+
+            if (null == dtmInstance)
+                return;
+
+
+            BECO.Instance.IECStructValue structValue = dtmInstance[TriangleProperties.PREFIX_TRIANGLES] as BECO.Instance.IECStructValue;
+
+            BECO.Instance.IECStructValue structVal;
+            BECO.Instance.IECPropertyValue property;
+            //string paletteName = null;
+            //string materialName = null;
+
+            structVal = (structValue.ContainedValues[TriangleProperties.PREFIX_TRIANGLES + "_Materials"]) as BECO.Instance.IECStructValue;
+
+            if (null == structVal)
+                return;
+
+            property = structValue.ContainedValues["Value"];
+
+            if (property != null)
+                {
+                string displayStyleName = property.StringValue;
+                if (!string.IsNullOrEmpty(displayStyleName))
+                    {
+                    if (!DisplayStyleManager.DoesDisplayStyleExistInFile(displayStyleName, copiedTemplate.Owner.DgnFile))
+                        {
+                        DisplayStyleManager.CopyDisplayStyleToFile(displayStyleName, dgnLibTemplate.Owner.DgnFile, copiedTemplate.Owner.DgnFile);
+                        }
+                    }
+                }
             }
+
         public unsafe bool OnAddTemplateReference (ustation.Bentley.DgnPlatform.EditElementHandle* element, XDataTreeNode templateDataNode, bool scheduled)
             {
             return false;

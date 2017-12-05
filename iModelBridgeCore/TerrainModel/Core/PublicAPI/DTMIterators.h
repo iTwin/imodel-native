@@ -202,11 +202,7 @@ struct DTMMeshEnumerator : RefCountedBase
             {
             m_polyface = nullptr;
             }
-        virtual ~iterator ()
-            {
-            if (m_polyface)
-                delete m_polyface;
-            }
+        BENTLEYDTM_EXPORT virtual ~iterator();
 
         // these three methods form the basis of an iterator for use with
         // a range-based for loop

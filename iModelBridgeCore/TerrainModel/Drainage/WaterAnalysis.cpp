@@ -4618,11 +4618,84 @@ WaterAnalysis::~WaterAnalysis()
     }
 
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  09/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+double WaterAnalysis::GetPondElevationTolerance() const
+    {
+    if (nullptr != GetDTM().GetTransformHelper())
+        return GetDTM().GetTransformHelper()->convertDistanceFromDTM(m_pondElevationTolerance);
+    return m_pondElevationTolerance;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  09/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void WaterAnalysis::SetPondElevationTolerance(double value)
+    {
+    if (nullptr != GetDTM().GetTransformHelper())
+        m_pondElevationTolerance = GetDTM().GetTransformHelper()->convertDistanceToDTM(value);
+    else
+        m_pondElevationTolerance = value;
+    }
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  09/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+
+double WaterAnalysis::GetPondVolumeTolerance() const
+    {
+    if (nullptr != GetDTM().GetTransformHelper())
+        return GetDTM().GetTransformHelper()->convertVolumeFromDTM(m_pondVolumeTolerance);
+    return m_pondVolumeTolerance;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  09/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void WaterAnalysis::SetPondVolumeTolerance(double value)
+    {
+    if (nullptr != GetDTM().GetTransformHelper())
+        m_pondVolumeTolerance = GetDTM().GetTransformHelper()->convertVolumeToDTM(value);
+    else
+        m_pondVolumeTolerance = value;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  09/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+double WaterAnalysis::GetMinimumDepth() const
+    {
+    if (nullptr != GetDTM().GetTransformHelper())
+        return GetDTM().GetTransformHelper()->convertDistanceFromDTM(m_falseLowDepth);
+    return m_falseLowDepth;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                   Daryl.Holmwood  09/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void WaterAnalysis::SetMinimumDepth(double value)
+    {
+    if (nullptr != GetDTM().GetTransformHelper())
+        m_falseLowDepth = GetDTM().GetTransformHelper()->convertDistanceToDTM(value);
+    else
+        m_falseLowDepth = value;
+    }
+
+//----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 int WaterAnalysis::DoTrace(DPoint3dCR startPt)
     {
-    auto startFeature = TraceStartPoint::Create(*this, startPt);
+    auto transformHelper = GetDTM().GetTransformHelper();
+    TraceStartPointPtr startFeature = nullptr;
+    
+    if (nullptr != transformHelper)
+        {
+        DPoint3d cStartPoint = startPt;
+        transformHelper->convertPointToDTM(cStartPoint);
+        startFeature = TraceStartPoint::Create(*this, cStartPoint);
+        }
+    else
+        startFeature = TraceStartPoint::Create(*this, startPt);
     m_features.push_back(startFeature);
     bvector<TraceFeaturePtr> featuresToProcess;
     featuresToProcess.push_back(startFeature);
@@ -4635,8 +4708,19 @@ int WaterAnalysis::DoTrace(DPoint3dCR startPt)
 // +---------------+---------------+---------------+---------------+---------------+------*
 int WaterAnalysis::AddWaterVolume(DPoint3dCR startPt, double volume)
     {
+    auto transformHelper = GetDTM().GetTransformHelper();
     m_forWater = true;
-    auto startFeature = TraceStartPoint::Create(*this, startPt);
+    TraceStartPointPtr startFeature = nullptr;
+
+    if (nullptr != transformHelper)
+        {
+        DPoint3d cStartPoint = startPt;
+        transformHelper->convertPointToDTM(cStartPoint);
+        startFeature = TraceStartPoint::Create(*this, cStartPoint);
+        volume = transformHelper->convertVolumeToDTM(volume);
+        }
+    else
+        startFeature = TraceStartPoint::Create(*this, startPt);
     m_features.push_back(startFeature);
     bvector<TraceFeaturePtr> featuresToProcess;
     featuresToProcess.push_back(startFeature);
@@ -4779,9 +4863,10 @@ struct QuickFeatureJoiner
     bvector<DPoint3d> m_points;
     DTMFeatureType m_fetaureType = DTMFeatureType::None;
     DTMFeatureCallback m_loadFunctionP;
+    TMTransformHelperP m_transformHelper;
     void* m_userP;
 
-    QuickFeatureJoiner(DTMFeatureCallback loadFunctionP, void* userP) : m_loadFunctionP(loadFunctionP), m_userP(userP)
+    QuickFeatureJoiner(TMTransformHelperP transformHelper, DTMFeatureCallback loadFunctionP, void* userP) : m_loadFunctionP(loadFunctionP), m_userP(userP), m_transformHelper(transformHelper)
         {
         }
     ~QuickFeatureJoiner()
@@ -4794,10 +4879,16 @@ struct QuickFeatureJoiner
         QuickFeatureJoiner* instance = (QuickFeatureJoiner*)userArg;
         return instance->Callback(dtmFeatureType, points, numPoints);
         }
-    int Callback(DTMFeatureType dtmFeatureType, DPoint3d *points, size_t numPoints)
+    int Callback(DTMFeatureType dtmFeatureType, DPoint3d *newPoints, size_t numPoints)
         {
-        if (numPoints == 2 && points[0].DistanceXY(points[1]) < 0.0001)
-            numPoints = numPoints;
+        bvector<DPoint3d> points;
+
+        points.resize(numPoints);
+        memcpy(points.data(), newPoints, sizeof(newPoints[0]) * numPoints);
+
+        if (nullptr != m_transformHelper)
+            m_transformHelper->convertPointsToDTM(points.data(), (int)numPoints);
+
         if (dtmFeatureType == DTMFeatureType::AscentTrace || dtmFeatureType == DTMFeatureType::DescentTrace || dtmFeatureType == DTMFeatureType::SumpLine)
             {
             if (dtmFeatureType == m_fetaureType && !m_points.empty())
@@ -4827,7 +4918,7 @@ struct QuickFeatureJoiner
             m_points.clear();
             m_fetaureType = DTMFeatureType::None;
             }
-        return m_loadFunctionP(dtmFeatureType, 0, 0, points, numPoints, m_userP);
+        return m_loadFunctionP(dtmFeatureType, 0, 0, points.data(), numPoints, m_userP);
         }
 
     };
@@ -4924,7 +5015,7 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
 
     tracer->SetMinimumDepth(falseLowDepth);
     tracer->DoTrace(DPoint3d::From(startX, startY, 0));
-    QuickFeatureJoiner joiner(loadFunctionP, userP);
+    QuickFeatureJoiner joiner(dtm->GetTransformHelper(), loadFunctionP, userP);
     tracer->DoTraceCallback(&QuickFeatureJoiner::callback, &joiner);
     return DTM_SUCCESS;
     }

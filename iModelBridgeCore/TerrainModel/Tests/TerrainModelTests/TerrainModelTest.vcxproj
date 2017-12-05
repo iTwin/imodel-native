@@ -52,6 +52,18 @@
   <ItemGroup>
     <Text Include="readme.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DrainageTests.cpp" />
+    <ClCompile Include="FormatTests.cpp" />
+    <ClCompile Include="StackExaminer.cpp" />
+    <ClCompile Include="StackExaminerGtestHelper.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="TerrainModelTest.cpp" />
+    <ClCompile Include="TMTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTerrainModelTests.mke" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
