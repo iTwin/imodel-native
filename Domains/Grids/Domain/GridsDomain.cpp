@@ -127,9 +127,6 @@ void GridsDomain::InsertDomainAuthorities (DgnDbR db) const
     {
     InsertCodeSpec (db, GRIDS_AUTHORITY_SurfaceSet);
     InsertCodeSpec (db, GRIDS_AUTHORITY_Grid);
-    InsertCodeSpec (db, GRIDS_AUTHORITY_OrthogonalGrid);
-    InsertCodeSpec (db, GRIDS_AUTHORITY_RadialGrid);
-    InsertCodeSpec (db, GRIDS_AUTHORITY_SketchGrid);
     InsertCodeSpec (db, GRIDS_AUTHORITY_GridCurve);
     }
 
@@ -145,18 +142,6 @@ void GridsDomain::EnsureDomainAuthoritiesExist (Dgn::DgnDbR db)
     if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid).IsValid ())
         {
         InsertCodeSpec (db, GRIDS_AUTHORITY_Grid);
-        }
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_OrthogonalGrid).IsValid ())
-        {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_OrthogonalGrid);
-        }
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_RadialGrid).IsValid ())
-        {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_RadialGrid);
-        }
-    if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_SketchGrid).IsValid ())
-        {
-        InsertCodeSpec (db, GRIDS_AUTHORITY_SketchGrid);
         }
     if (!db.CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_GridCurve).IsValid ())
         {
