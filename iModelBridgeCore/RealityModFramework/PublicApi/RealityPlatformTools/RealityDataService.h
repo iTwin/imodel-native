@@ -129,6 +129,25 @@ protected:
 private:
     RealityDataByIdRequest() {}
     };
+
+//=====================================================================================
+//! @bsiclass                                 Spencer.Mason                     12/2017
+//! RealityDataExtendedByIdRequest
+//! This class represents a request for specific RealityDataExtended class object.
+//=====================================================================================
+struct RealityDataExtendedByIdRequest : public RealityDataUrl
+    {
+public:
+    // Only identifier is required to retreive RealityData
+    REALITYDATAPLATFORM_EXPORT RealityDataExtendedByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataExtendedByIdRequest() {}
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataExtendedByIdRequest() {}
+    };
 	
 //=====================================================================================
 //! @bsiclass                                         Alain.Robert              12/2016
@@ -959,6 +978,9 @@ public:
 
     //! Returns the RealityData object requested or null if an error occured
     REALITYDATAPLATFORM_EXPORT static RealityDataPtr Request(const RealityDataByIdRequest& request, RawServerResponse& rawResponse);
+
+    //! Returns the RealityDataExtended object requested or null if an error occured
+    REALITYDATAPLATFORM_EXPORT static RealityDataExtendedPtr Request(const RealityDataExtendedByIdRequest& request, RawServerResponse& rawResponse);
 
     //! Deletes a RealityData object
     REALITYDATAPLATFORM_EXPORT static void Request(const RealityDataDelete& request, RawServerResponse& rawResponse);

@@ -326,6 +326,16 @@ void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
+void RealityDataExtendedByIdRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/RealityDataExtended/");
+    m_httpRequestString.append(m_encodedId);
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
@@ -1740,6 +1750,31 @@ RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request
         return nullptr;
         }
     RealityConversionTools::JsonToRealityData(rawResponse.body.c_str(), &entities);
+
+    return entities[0];
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+RealityDataExtendedPtr RealityDataService::Request(const RealityDataExtendedByIdRequest& request, RawServerResponse& rawResponse)
+    {
+    bvector<RealityDataExtendedPtr> entities = bvector<RealityDataExtendedPtr>();
+
+    if (!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return nullptr;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
+
+    if (rawResponse.status != RequestStatus::OK)
+        {
+        s_errorCallback("RealityDataExtendedByIdRequest failed with response", rawResponse);
+        return nullptr;
+        }
+    RealityConversionTools::JsonToRealityDataExtended(rawResponse.body.c_str(), &entities);
 
     return entities[0];
     }

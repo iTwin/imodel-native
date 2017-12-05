@@ -722,6 +722,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetVisibilityTag().c_str(), "UNDEFINED"); // Default is preset
     EXPECT_TRUE(myRealityData->IsListable());
     EXPECT_STREQ(myRealityData->GetOwner().c_str(), "");
+    EXPECT_FALSE(myRealityData->IsHidden());
+    EXPECT_FALSE(myRealityData->HasDelegatePermissions());
 
     EXPECT_STREQ(myRealityData->GetMetadataUrl().c_str(), "");
     EXPECT_STREQ(myRealityData->GetUltimateId().c_str(), "");

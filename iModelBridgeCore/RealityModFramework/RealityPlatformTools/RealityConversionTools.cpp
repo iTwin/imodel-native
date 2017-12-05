@@ -238,7 +238,8 @@ StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bvector<Reality
 
         const Json::Value properties = instance["properties"];
 
-        RealityDataPtr realityData = JsonToRealityData(properties);
+        RealityDataPtr realityData = RealityData::Create();
+        JsonToRealityData(realityData, properties);
 
         outData->push_back(realityData);
         }
@@ -258,10 +259,45 @@ StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bmap<Utf8String
             break;
 
         const Json::Value properties = instance["properties"];
-
-        RealityDataPtr realityData = JsonToRealityData(properties);
+        
+        RealityDataPtr realityData = RealityData::Create();
+        JsonToRealityData(realityData, properties);
 
         outData->Insert(realityData->GetName(), realityData);
+        }
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            12/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToRealityDataExtended(Utf8CP data, bvector<RealityDataExtendedPtr>* outData)
+    {
+    Json::Value root(Json::objectValue);
+    if (JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        RealityDataExtendedPtr realityData = RealityDataExtended::Create();
+        JsonToRealityData(realityData, properties);
+
+        if (properties.isMember("OriginService") && !properties["OriginService"].isNull())
+            realityData->SetOrganizationId(Utf8CP(properties["OriginService"].asString().c_str()));
+        if (properties.isMember("UsePermissionOverride") && !properties["UsePermissionOverride"].isNull())
+            realityData->SetOrganizationId(Utf8CP(properties["UsePermissionOverride"].asString().c_str()));
+        if (properties.isMember("ManagePermissionOverride") && !properties["ManagePermissionOverride"].isNull())
+            realityData->SetOrganizationId(Utf8CP(properties["ManagePermissionOverride"].asString().c_str()));
+        if (properties.isMember("AssignPermissionOverride") && !properties["AssignPermissionOverride"].isNull())
+            realityData->SetOrganizationId(Utf8CP(properties["AssignPermissionOverride"].asString().c_str()));
+
+        outData->push_back(realityData);
         }
     return SUCCESS;
     }
@@ -270,148 +306,144 @@ StatusInt RealityConversionTools::JsonToRealityData(Utf8CP data, bmap<Utf8String
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            11/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataPtr RealityConversionTools::JsonToRealityData(Json::Value properties)
+void RealityConversionTools::JsonToRealityData(RealityDataPtr realityData, Json::Value properties)
     {
     // Required information to get.
     DateTime date;
 
     Utf8String footprintStr;
 
-    RealityDataPtr data = RealityData::Create();
-
     // Id
     if (properties.isMember("Id") && !properties["Id"].isNull())
-        data->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
+        realityData->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
 
     // Organization
     if (properties.isMember("OrganizationId") && !properties["OrganizationId"].isNull())
-        data->SetOrganizationId(Utf8CP(properties["OrganizationId"].asString().c_str()));
+        realityData->SetOrganizationId(Utf8CP(properties["OrganizationId"].asString().c_str()));
 
     // Container Name
     if (properties.isMember("ContainerName") && !properties["ContainerName"].isNull())
-        data->SetContainerName(Utf8CP(properties["ContainerName"].asString().c_str()));
+        realityData->SetContainerName(Utf8CP(properties["ContainerName"].asString().c_str()));
     
     // Data Location
     if (properties.isMember("DataLocationGuid") && !properties["DataLocationGuid"].isNull())
-        data->SetDataLocationGuid(Utf8CP(properties["DataLocationGuid"].asString().c_str()));
+        realityData->SetDataLocationGuid(Utf8CP(properties["DataLocationGuid"].asString().c_str()));
 
     // Name
     if (properties.isMember("Name") && !properties["Name"].isNull())
-        data->SetName(Utf8CP(properties["Name"].asString().c_str()));
+        realityData->SetName(Utf8CP(properties["Name"].asString().c_str()));
 
     // Dataset
     if (properties.isMember("Dataset") && !properties["Dataset"].isNull())
-        data->SetDataset(Utf8CP(properties["Dataset"].asString().c_str()));
+        realityData->SetDataset(Utf8CP(properties["Dataset"].asString().c_str()));
 
     // Group
     if (properties.isMember("Group") && !properties["Group"].isNull())
-        data->SetGroup(Utf8CP(properties["Group"].asString().c_str()));
+        realityData->SetGroup(Utf8CP(properties["Group"].asString().c_str()));
 
     // Description
     if (properties.isMember("Description") && !properties["Description"].isNull())
-        data->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
+        realityData->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
 
     // RootDocument
     if (properties.isMember("RootDocument") && !properties["RootDocument"].isNull())
-        data->SetRootDocument(Utf8CP(properties["RootDocument"].asString().c_str()));
+        realityData->SetRootDocument(Utf8CP(properties["RootDocument"].asString().c_str()));
 
     // DataType
     if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
-        data->SetRealityDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
+        realityData->SetRealityDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
     else if (properties.isMember("Type") && !properties["Type"].isNull())
-        data->SetRealityDataType(Utf8CP(properties["Type"].asString().c_str()));
+        realityData->SetRealityDataType(Utf8CP(properties["Type"].asString().c_str()));
 
     // Classification
     if (properties.isMember("Classification") && !properties["Classification"].isNull())
-        data->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
+        realityData->SetClassificationByTag(Utf8CP(properties["Classification"].asString().c_str()));
 
     // Streamed
     if (properties.isMember("Streamed") && !properties["Streamed"].isNull())
-        data->SetStreamed(properties["Streamed"].asBool());
+        realityData->SetStreamed(properties["Streamed"].asBool());
 
     // Thumbnail Document
     if (properties.isMember("ThumbnailDocument") && !properties["ThumbnailDocument"].isNull())
-        data->SetThumbnailDocument(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
+        realityData->SetThumbnailDocument(Utf8CP(properties["ThumbnailDocument"].asString().c_str()));
 
     // MetadataUrl
     if (properties.isMember("MetadataUrl") && !properties["MetadataUrl"].isNull())
-        data->SetMetadataUrl(Utf8CP(properties["MetadataUrl"].asString().c_str()));
+        realityData->SetMetadataUrl(Utf8CP(properties["MetadataUrl"].asString().c_str()));
 
     // UltimateId
     if (properties.isMember("UltimateId") && !properties["UltimateId"].isNull())
-        data->SetUltimateId(Utf8CP(properties["UltimateId"].asString().c_str()));
+        realityData->SetUltimateId(Utf8CP(properties["UltimateId"].asString().c_str()));
 
     // UltimateSite
     if (properties.isMember("UltimateSite") && !properties["UltimateSite"].isNull())
-        data->SetUltimateSite(Utf8CP(properties["UltimateSite"].asString().c_str()));
+        realityData->SetUltimateSite(Utf8CP(properties["UltimateSite"].asString().c_str()));
 
     // Copyright
     if (properties.isMember("Copyright") && !properties["Copyright"].isNull())
-        data->SetCopyright(Utf8CP(properties["Copyright"].asString().c_str()));
+        realityData->SetCopyright(Utf8CP(properties["Copyright"].asString().c_str()));
 
     // TermsOfUse
     if (properties.isMember("TermsOfUse") && !properties["TermsOfUse"].isNull())
-        data->SetTermsOfUse(Utf8CP(properties["TermsOfUse"].asString().c_str()));
+        realityData->SetTermsOfUse(Utf8CP(properties["TermsOfUse"].asString().c_str()));
  
     // Accuracy
     if (properties.isMember("AccuracyInMeters") && !properties["AccuracyInMeters"].isNull())
-        data->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
+        realityData->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
 
     // Visibility
     if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
-        data->SetVisibilityByTag(Utf8CP(properties["Visibility"].asString().c_str()));
+        realityData->SetVisibilityByTag(Utf8CP(properties["Visibility"].asString().c_str()));
 
     // Listable
     if (properties.isMember("Listable") && !properties["Listable"].isNull())
-        data->SetListable(properties["Listable"].asBool());
+        realityData->SetListable(properties["Listable"].asBool());
 
     // Date
     if (properties.isMember("Date") && !properties["Date"].isNull())
         {
         DateTime::FromString(date, properties["Date"].asCString());
-        data->SetCreationDateTime(date);
+        realityData->SetCreationDateTime(date);
         }
     else if (properties.isMember("CreatedTimestamp") && !properties["CreatedTimestamp"].isNull())
         {
         DateTime::FromString(date, properties["CreatedTimestamp"].asCString());
-        data->SetCreationDateTime(date);
+        realityData->SetCreationDateTime(date);
         }
 
     // Modified Date
     if (properties.isMember("ModifiedTimestamp") && !properties["ModifiedTimestamp"].isNull())
         {
         DateTime::FromString(date, properties["ModifiedTimestamp"].asCString());
-        data->SetModifiedDateTime(date);
+        realityData->SetModifiedDateTime(date);
         }
     
     //// Approximate file size
     if(properties.isMember("FileSize") && !properties["FileSize"].isNull())
-        data->SetTotalSize(std::stoi(properties["FileSize"].asString().c_str()));
+        realityData->SetTotalSize(std::stoi(properties["FileSize"].asString().c_str()));
     else if (properties.isMember("Size") && !properties["Size"].isNull())
-        data->SetTotalSize(properties["Size"].asInt());
+        realityData->SetTotalSize(properties["Size"].asInt());
 
     // Resolution
     if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())
-        data->SetResolution(Utf8CP(properties["ResolutionInMeters"].asString().c_str()));
+        realityData->SetResolution(Utf8CP(properties["ResolutionInMeters"].asString().c_str()));
 
     // Footprint
     bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
     Utf8String dummy = "";
     if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
-        data->SetFootprint(RealityDataBase::RDSJSONToFootprint(properties["Footprint"], dummy));
+        realityData->SetFootprint(RealityDataBase::RDSJSONToFootprint(properties["Footprint"], dummy));
 
     if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
-        data->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
+        realityData->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
 
     // Listable
     if (properties.isMember("Hidden") && !properties["Hidden"].isNull())
-        data->SetHidden(properties["Hidden"].asBool());
+        realityData->SetHidden(properties["Hidden"].asBool());
 
     // Listable
     if (properties.isMember("DelegatePermissions") && !properties["DelegatePermissions"].isNull())
-        data->SetDelegatePermissions(properties["DelegatePermissions"].asBool());
-
-    return data;
+        realityData->SetDelegatePermissions(properties["DelegatePermissions"].asBool());
     }
 
 
