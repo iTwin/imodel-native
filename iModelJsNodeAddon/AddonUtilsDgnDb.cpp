@@ -302,6 +302,76 @@ DgnDbStatus AddonUtils::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AddonUtils::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
+    {
+    DgnModel::CreateParams params(dgndb, inJson);
+    if (!params.m_classId.IsValid())
+        return DgnDbStatus::WrongClass;
+
+    ModelHandlerP handler = dgn_ModelHandler::Model::FindHandler(dgndb, params.m_classId);
+    if (nullptr == handler)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongClass;
+        }
+
+    DgnModelPtr model = handler->Create(params);
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadArg;
+        }
+
+    model->FromJson(inJson);
+
+    DgnDbStatus status = model->Insert();
+    
+    outJson[json_id()] = model->GetModelId().ToHexStr();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AddonUtils::UpdateModel(DgnDbR dgndb, JsonValueR inJson)
+    {
+    if (!inJson.isMember(DgnModel::json_id()))
+        return DgnDbStatus::BadArg;
+
+    auto idJsonVal = inJson[DgnModel::json_id()];
+    DgnModelId mid(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+    if (!mid.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnModelPtr model = dgndb.Models().GetModel(mid);
+    if (!model.IsValid())
+        return DgnDbStatus::MissingId;
+
+    model->FromJson(inJson);
+
+    return model->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AddonUtils::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr)
+    {
+    DgnModelId mid(BeInt64Id::FromString(midStr.c_str()).GetValue());
+    if (!mid.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnModelPtr model = dgndb.Models().GetModel(mid);
+    if (!model.IsValid())
+        return DgnDbStatus::MissingId;
+
+    return model->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus AddonUtils::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)

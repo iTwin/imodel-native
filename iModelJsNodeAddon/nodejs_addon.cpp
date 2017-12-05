@@ -1025,6 +1025,51 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         }
 
     //=======================================================================================
+    // insert a new Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value InsertModelSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
+        Json::Value elemIdJsonObj;
+        auto status = AddonUtils::InsertModel(elemIdJsonObj, GetDgnDb(), elemProps);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
+        }
+
+    //=======================================================================================
+    // update an existing Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value UpdateModelSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
+        auto status = AddonUtils::UpdateModel(GetDgnDb(), elemProps);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    //=======================================================================================
+    // delete an existing Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value DeleteModelSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, elemIdStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        auto status = AddonUtils::DeleteModel(GetDgnDb(), elemIdStr);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    //=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
@@ -1241,6 +1286,9 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("insertElementSync", &NodeAddonDgnDb::InsertElementSync),
             InstanceMethod("updateElementSync", &NodeAddonDgnDb::UpdateElementSync),
             InstanceMethod("deleteElementSync", &NodeAddonDgnDb::DeleteElementSync),
+            InstanceMethod("insertModelSync", &NodeAddonDgnDb::InsertModelSync),
+            InstanceMethod("updateModelSync", &NodeAddonDgnDb::UpdateModelSync),
+            InstanceMethod("deleteModelSync", &NodeAddonDgnDb::DeleteModelSync),
             InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::StartGetElementPropertiesForDisplayWorker),
             InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::StartGetECClassMetaData),
             InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),

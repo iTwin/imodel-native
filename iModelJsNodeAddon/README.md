@@ -62,22 +62,9 @@ To test changes to the native code before publishing, you must at a minimum inst
 cd <localjsroot>\imodeljs-core
 cd source\backend
 npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
 cd ..\test
+npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
 npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
-```
-
-Here is the same set of commands in the form of a .bat file:
-
-``` bat
-cd <localjsroot>\imodeljs-core
-cd source\backend
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
-cd ..\test
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
 ```
 
 This example is for a Windows node app. Use appropriate paths, as printed by the MakePackages part in your local build.
