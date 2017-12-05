@@ -84,10 +84,9 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_sqliteStatementCache(50), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")),
-        m_changeSummaryManager(ecdb)
-        { 
-        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); 
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb),  m_changeSummaryManager(ecdb), m_sqliteStatementCache(50), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
+        {
+        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
         }
 
     //not copyable
@@ -117,7 +116,6 @@ private:
     DbResult OnDbOpening() const;
     DbResult OnDbOpened(Db::OpenParams const&) const;
     DbResult OnDbCreated() const;
-    void OnDbClose() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     DbResult OnDbDetached(Utf8CP tableSpaceName) const;
 

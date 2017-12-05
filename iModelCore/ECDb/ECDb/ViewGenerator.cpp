@@ -215,7 +215,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     if (!ctx.GetECDb().IsChangeSummaryCacheAttached())
         {
-        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the ChangeSummary ECDb must have been attached before.");
+        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the ChangeSummary cache file must have been attached before.");
         return ERROR;
         }
 
@@ -234,7 +234,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 #define TABLEALIAS_InstanceChange "ic"
 #define TABLE_InstanceChange "change_InstanceChange"
 #define TABLE_InstanceChange_COL_Id "Id"
-#define TABLE_InstanceChange_COL_SummaryId "Summary_Id"
+#define TABLE_InstanceChange_COL_SummaryId "SummaryId"
 #define TABLE_InstanceChange_COL_OpCode "OpCode"
 #define TABLE_InstanceChange_COL_ChangedInstanceId "ChangedInstance_Id"
 #define TABLE_InstanceChange_COL_ChangedInstanceClassId "ChangedInstance_ClassId"

@@ -64,16 +64,6 @@ DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                10/2016
-//---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::OnDbClose() const
-    {
-    ClearECDbCache();
-    m_sqlFunctions.clear();
-    UnregisterBuiltinFunctions();
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const

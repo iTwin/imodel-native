@@ -277,14 +277,10 @@ namespace connectivity
 
                 case general_set_fct:
                 case fct_spec:
-                case position_exp:
-                case extract_exp:
-                case length_exp:
-                case char_value_fct:
                 {
                 // Funktionsname nicht quoten
                 SQLParseNodeParameter aNewParam(rParam);
-                aNewParam.bQuote = (SQL_ISRULE(this, length_exp) || SQL_ISRULE(this, char_value_fct));
+                aNewParam.bQuote = false;
 
                 m_aChildren[0]->impl_parseNodeToString_throw(rString, aNewParam);
                 aNewParam.bQuote = rParam.bQuote;

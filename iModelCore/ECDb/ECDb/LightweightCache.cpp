@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-LightweightCache::LightweightCache(TableSpaceSchemaManager const& manager) : m_schemaManager(manager) { Reset(); }
+LightweightCache::LightweightCache(TableSpaceSchemaManager const& manager) : m_schemaManager(manager) { Clear(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 08/2015
@@ -258,7 +258,7 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void LightweightCache::Reset()
+void LightweightCache::Clear()
     {
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();

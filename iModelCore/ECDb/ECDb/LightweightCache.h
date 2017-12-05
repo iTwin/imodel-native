@@ -74,7 +74,7 @@ struct LightweightCache final
         //For a end table relationship class map, the storage description provides horizontal partitions
         //For the end table's constraint classes - not for the relationship itself.
         StorageDescription const& GetStorageDescription(ClassMap const&)  const;
-        void Reset();
+        void Clear();
     };
 //=======================================================================================
 //! Hold detail about how table partition is described for this class

@@ -763,17 +763,18 @@ ChangeSummaryExtractor::Context::~Context()
 
     if (BE_SQLITE_OK != m_changeSummaryECDb.SaveChanges())
         {
-        Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummaries ECDb %s", m_changeSummaryECDb.GetDbFileName());
+        Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummary cache file %s", m_changeSummaryECDb.GetDbFileName());
         BeAssert(false);
         }
 
+    m_changeSummaryStmtCache.Empty();
     m_changeSummaryECDb.CloseDb();
 
     if (m_wasChangeSummaryFileAttached)
         {
         if (BE_SQLITE_OK != m_manager.AttachChangeSummaryCacheFile(false))
             {
-            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not re-attach ChangeSummaries ECDb to %s", GetPrimaryECDb().GetDbFileName());
+            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not re-attach ChangeSummary cache file  to %s", GetPrimaryECDb().GetDbFileName());
             BeAssert(false);
             }
         }
@@ -789,7 +790,7 @@ DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
         DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ChangeSummaries);
         if (BE_SQLITE_OK != r)
             {
-            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not detach ChangeSummaries cache file from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
+            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
             return r;
             }
         }
@@ -798,7 +799,7 @@ DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
     BeFileName path = GetPrimaryECDb().GetChangeSummaryCachePath();
     if (!path.DoesPathExist())
         {
-        Issues().Report("Failed to extract ChangeSummaries from changeset: ChangeSummaries cache file %s not found.", path.GetNameUtf8().c_str());
+        Issues().Report("Failed to extract ChangeSummaries from changeset: ChangeSummary cache file  %s not found.", path.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR_FileNotFound;
         }
 

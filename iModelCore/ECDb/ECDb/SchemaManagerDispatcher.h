@@ -83,7 +83,7 @@ public:
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
     IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
 
-    void ClearCache() const { m_reader.ClearCache(); m_classMapDictionary.clear(); m_dbSchema.ClearCache(); m_lightweightCache.Reset(); }
+    void ClearCache() const { m_reader.ClearCache(); m_classMapDictionary.clear(); m_dbSchema.ClearCache(); m_lightweightCache.Clear(); }
 
     };
 

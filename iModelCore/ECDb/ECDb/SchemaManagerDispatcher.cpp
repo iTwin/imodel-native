@@ -1405,7 +1405,7 @@ BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(m_ecdb))
         return ERROR;
 
-    m_lightweightCache.Reset();
+    m_lightweightCache.Clear();
     return SUCCESS;
     }
 

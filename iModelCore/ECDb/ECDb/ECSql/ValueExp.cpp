@@ -350,7 +350,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
         {
         FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());
-        if (!funcSig)
+        if (funcSig == nullptr)
             {
             ctx.Issues().Report("Unknown member function '%s'", m_functionName.c_str());
             return Exp::FinalizeParseStatus::Error;
@@ -365,7 +365,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
         Utf8String err;
         if (funcSig->Verify(err, GetChildren()) != SUCCESS)
             {
-            ctx.Issues().Report("Error in funtion call '%s' - %s", m_functionName.c_str(), err.c_str());
+            ctx.Issues().Report("Error in function call '%s' - %s", m_functionName.c_str(), err.c_str());
             return Exp::FinalizeParseStatus::Error;
             }
 
@@ -1681,13 +1681,13 @@ BentleyStatus FunctionSignature::Verify(Utf8StringR err, Exp::Collection const& 
 
     if (args.empty() && !argExps.empty())
         {
-        err = "Funtion take no argument";
+        err = "Function take no argument";
         return ERROR;
         }
 
     if (required > argExps.size())
         {
-        err = "Not engouh argument supplied";
+        err = "Not enough arguments supplied";
         return ERROR;
         }
 

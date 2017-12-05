@@ -161,39 +161,40 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSele
     if (SUCCESS != ParseSelection(selectClauseExp, parseNode->getChild(2)))
         return ERROR;
 
-    OSQLParseNode const* table_exp = parseNode->getChild(3);
-    if (table_exp == nullptr)
+    OSQLParseNode const* tableExpNode = parseNode->getChild(3);
+    if (tableExpNode == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
 
+    BeAssert(tableExpNode->count() == 7);
     std::unique_ptr<FromExp> fromExp = nullptr;
-    if (SUCCESS != ParseFromClause(fromExp, table_exp->getChild(0)))
+    if (SUCCESS != ParseFromClause(fromExp, tableExpNode->getChild(0)))
         return ERROR;
 
     std::unique_ptr<WhereExp> whereExp = nullptr;
-    if (SUCCESS != ParseWhereClause(whereExp, table_exp->getChild(1)))
+    if (SUCCESS != ParseWhereClause(whereExp, tableExpNode->getChild(1)))
         return ERROR;
 
     std::unique_ptr<GroupByExp> groupByExp = nullptr;
-    if (SUCCESS != ParseGroupByClause(groupByExp, table_exp->getChild(2)))
+    if (SUCCESS != ParseGroupByClause(groupByExp, tableExpNode->getChild(2)))
         return ERROR;
 
     std::unique_ptr<HavingExp> havingExp = nullptr;
-    if (SUCCESS != ParseHavingClause(havingExp, table_exp->getChild(3)))
+    if (SUCCESS != ParseHavingClause(havingExp, tableExpNode->getChild(3)))
         return ERROR;
 
     std::unique_ptr<OrderByExp> orderByExp = nullptr;
-    if (SUCCESS != ParseOrderByClause(orderByExp, table_exp->getChild(5)))
+    if (SUCCESS != ParseOrderByClause(orderByExp, tableExpNode->getChild(4)))
         return ERROR;
 
     std::unique_ptr<LimitOffsetExp> limitOffsetExp = nullptr;
-    if (SUCCESS != ParseLimitOffsetClause(limitOffsetExp, table_exp->getChild(6)))
+    if (SUCCESS != ParseLimitOffsetClause(limitOffsetExp, tableExpNode->getChild(5)))
         return ERROR;
 
     std::unique_ptr<OptionsExp> optionsExp = nullptr;
-    if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, table_exp->getChild(7)))
+    if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, tableExpNode->getChild(6)))
         return ERROR;
 
     if (selectClauseExp == nullptr || fromExp == nullptr)
@@ -523,55 +524,7 @@ BentleyStatus ECSqlParser::ParseColumnRefCommalist(std::unique_ptr<PropertyNameL
     return SUCCESS;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseFold(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
-    {
-    if (!SQL_ISRULE(parseNode, fold))
-        {
-        BeAssert(false && "Wrong grammar. Expecting fold");
-        return ERROR;
-        }
 
-    //first node is LOWER | UPPER, second is (, third is arg, fourth is )
-    const size_t childCount = parseNode->count();
-    if (childCount != 4)
-        {
-        BeAssert(false && "fold is expected to have 4 children");
-        return ERROR;
-        }
-
-    const uint32_t functionNameTokenId = parseNode->getChild(0)->getTokenID();
-    Utf8CP functionName = nullptr;
-    switch (functionNameTokenId)
-        {
-            case SQL_TOKEN_LOWER:
-                functionName = "LOWER";
-                break;
-            case SQL_TOKEN_UPPER:
-                functionName = "UPPER";
-                break;
-
-            default:
-            {
-            BeAssert(false && "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
-            Issues().Report("Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
-            return ERROR;
-            }
-        }
-
-    std::unique_ptr<FunctionCallExp> foldExp = std::make_unique<FunctionCallExp>(Utf8String(functionName));
-
-    OSQLParseNode const* argNode = parseNode->getChild(2);
-    std::unique_ptr<ValueExp> valueExp = nullptr;
-    if (SUCCESS != ParseValueExp(valueExp, argNode))
-        return ERROR;
-
-    foldExp->AddArgument(std::move(valueExp));
-    exp = std::move(foldExp);
-    return SUCCESS;
-    }
 
 
 //-----------------------------------------------------------------------------------------
@@ -1159,7 +1112,7 @@ BentleyStatus ECSqlParser::ParseFromClause(std::unique_ptr<FromExp>& exp, OSQLPa
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQLParseNode const* parseNode, ECSqlType ecsqlType) const
     {
-    if (SQL_ISRULE(parseNode, qualified_join) || SQL_ISRULE(parseNode, ecrelationship_join))
+    if (SQL_ISRULE(parseNode, OSQLParseNode::Rule::qualified_join) || SQL_ISRULE(parseNode, OSQLParseNode::Rule::ecrelationship_join))
         {
         std::unique_ptr<JoinExp> joinExp = nullptr;
         if (SUCCESS != ParseJoinedTable(joinExp, parseNode))
@@ -1179,7 +1132,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
     OSQLParseNode const* secondNode = parseNode->getChild(1);
 
     const bool isPolymorphic = !(opt_only->getTokenID() == SQL_TOKEN_ONLY);
-    if (SQL_ISRULE(secondNode, table_node))
+    if (SQL_ISRULE(secondNode, OSQLParseNode::Rule::table_node_with_opt_member_func_call))
         {
         std::unique_ptr<ClassNameExp> classNameExp = nullptr;
         if (SUCCESS != ParseTableNodeWithOptMemberCall(classNameExp, *secondNode, ecsqlType, isPolymorphic))
@@ -1205,7 +1158,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
         return SUCCESS;
         }
 
-    if (SQL_ISRULE(secondNode, subquery))
+    if (SQL_ISRULE(secondNode, OSQLParseNode::Rule::subquery))
         {
         std::unique_ptr<SubqueryExp> subqueryExp = nullptr;
         if (SUCCESS != ParseSubquery(subqueryExp, secondNode))
@@ -1556,14 +1509,14 @@ BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Class
     {
     exp = nullptr;
 
-    if (!SQL_ISRULE(&tableNode, OSQLParseNode::table_node_with_opt_member_func_call))
+    if (!SQL_ISRULE(&tableNode, OSQLParseNode::Rule::table_node_with_opt_member_func_call))
         {
         BeAssert(false && "Wrong grammar. Expecting table_node_with_opt_member_func_call");
         return ERROR;
         }
 
     OSQLParseNode const* pathNode = tableNode.getFirst();
-    if (!SQL_ISRULE(pathNode, OSQLParseNode::table_node_path))
+    if (!SQL_ISRULE(pathNode, OSQLParseNode::Rule::table_node_path))
         {
         BeAssert(false && "Wrong grammar. Expecting table_node_path");
         return ERROR;
@@ -1576,40 +1529,60 @@ BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Class
         return ERROR;
         }
 
-    OSQLParseNode const* lastNode = pathNode->getLast();
+    OSQLParseNode const* memberFunctionNode = nullptr;
+    std::vector<Utf8StringCP> entryNames;
+    entryNames.reserve(pathLength);
 
-    int classNameNodeIx = -1;
-    OSQLParseNode const* memberFunctionCallNode = nullptr;
-    if (lastNode->getNodeType() == SQL_NODE_NAME)
-        classNameNodeIx = (int) pathLength - 1;
-    else
+    for (size_t i = 0; i < pathLength; i++)
         {
-        classNameNodeIx = (int) pathLength - 2;
-        BeAssert(lastNode->count() == 1 && SQL_ISRULE(lastNode->getFirst(), OSQLParseNode::member_function_call));
-        memberFunctionCallNode = lastNode->getFirst();
-        }
+        OSQLParseNode const* entryNode = pathNode->getChild(i);
+        if (!SQL_ISRULE(entryNode, OSQLParseNode::Rule::table_node_path_entry))
+            {
+            BeAssert(false && "Wrong grammar. Expecting table_node_path_entry");
+            return ERROR;
+            }
 
-    BeAssert(classNameNodeIx >= 0 && classNameNodeIx < pathLength);
-    const int schemaNameNodeIx = classNameNodeIx - 1;
-    BeAssert(schemaNameNodeIx == 0  || schemaNameNodeIx == 1);
-    const int tableSpaceNodeIx = classNameNodeIx - 2;
+        OSQLParseNode const* optMemberFunctionNode = entryNode->getChild(1);
+        if (!optMemberFunctionNode->isLeaf())
+            {
+            if (i == pathLength - 1)
+                {
+                memberFunctionNode = entryNode;
+                }
+            else
+                {
+                Issues().Report("Invalid ECSQL class expression. Class member function calls must appear after the class. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+                return ERROR;
+                }
+            }
+
+        entryNames.push_back(&entryNode->getFirst()->getTokenValue());
+        }
+    BeAssert(entryNames.size() == pathLength);
+    BeAssert(pathLength >= 2 && "already checked for above");
+    const size_t classNameNodeIx = memberFunctionNode != nullptr ? pathLength - 2 : pathLength - 1;
+    BeAssert(pathNode->getChild(classNameNodeIx) != nullptr);
+    const int schemaNameNodeIx = (int) classNameNodeIx - 1;
+    const int tableSpaceNodeIx = schemaNameNodeIx - 1;
+    if (schemaNameNodeIx < 0)
+        {
+        Issues().Report("Invalid ECSQL class expression. Cannot specify a class name without schema name or alias. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+        return ERROR;
+        }
     BeAssert(tableSpaceNodeIx <= 0);
 
-    Utf8CP tableSpaceName = nullptr;
-    if (tableSpaceNodeIx >= 0)
-        tableSpaceName = pathNode->getChild((size_t) tableSpaceNodeIx)->getTokenValue().c_str();
-
-    Utf8StringCP schemaName = &pathNode->getChild((size_t) schemaNameNodeIx)->getTokenValue();
-    Utf8StringCP className = &pathNode->getChild((size_t) classNameNodeIx)->getTokenValue();
+    Utf8StringCP className = entryNames[classNameNodeIx];
+    Utf8StringCP schemaName = entryNames[schemaNameNodeIx];
+    Utf8CP tableSpaceName = tableSpaceNodeIx == 0 ? entryNames[tableSpaceNodeIx]->c_str() : nullptr;
 
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
     if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, isPolymorphic))
         return ERROR;
 
     std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
-    if (memberFunctionCallNode != nullptr)
+    if (memberFunctionNode != nullptr)
         {
-        if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *memberFunctionCallNode))
+        if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *memberFunctionNode))
             return ERROR;
         }
 
@@ -1622,19 +1595,31 @@ BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Class
 //+---------------+---------------+---------------+-----------------+---------------+------
 BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>& memberFunCallExp, OSQLParseNode const& parseNode) const
     {
-    if (!SQL_ISRULE(&parseNode, OSQLParseNode::member_function_call))
+    if (!SQL_ISRULE(&parseNode, OSQLParseNode::table_node_path_entry))
         {
-        BeAssert(false && "Wrong grammar. Expecting member_function_call");
+        BeAssert(false && "Wrong grammar. Expecting table_node_path_entry");
         return ERROR;
         }
 
+    BeAssert(parseNode.count() == 2);
+    OSQLParseNode const* argsNode = parseNode.getChild(1);
+    BeAssert(argsNode != nullptr);
+    if (argsNode->isLeaf())
+        {
+        BeAssert(false && "ParseNode passed to ParseMemberFunctionCall is expected to have a non-empty second child node");
+        return ERROR;
+        }
+
+    BeAssert(argsNode->count() == 3);
+
     Utf8StringCR functionName = parseNode.getChild(0)->getTokenValue();
     memberFunCallExp = std::make_unique<MemberFunctionCallExp>(functionName);
-    OSQLParseNode const* argumentsNode = parseNode.getChild(2);
-    for (size_t i = 0; i < argumentsNode->count(); i++)
+    OSQLParseNode const* argListNode = argsNode->getChild(1);
+    BeAssert(SQL_ISRULE(argListNode, OSQLParseNode::Rule::function_args_commalist));
+    for (size_t i = 0; i < argListNode->count(); i++)
         {
         std::unique_ptr<ValueExp> argument_expr = nullptr;
-        if (SUCCESS != ParseFunctionArg(argument_expr, *argumentsNode->getChild(i)))
+        if (SUCCESS != ParseFunctionArg(argument_expr, *argListNode->getChild(i)))
             return ERROR;
 
         Utf8String err;
@@ -2597,8 +2582,6 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseDatetimeValueExp(valueExp, parseNode);
                 case OSQLParseNode::factor:
                     return ParseFactor(valueExp, parseNode);
-                case OSQLParseNode::fold:
-                    return ParseFold(valueExp, parseNode);
                 case OSQLParseNode::general_set_fct:
                     return ParseGeneralSetFct(valueExp, parseNode);
                 case OSQLParseNode::fct_spec:

@@ -2920,7 +2920,7 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
     if (settingsDbPath.DoesPathExist())
         ASSERT_EQ(BeFileNameStatus::Success, settingsDbPath.BeDeleteFile());
 
-    Db settingsDb;
+    ECDb settingsDb;
     ASSERT_EQ(BE_SQLITE_OK, settingsDb.CreateNewDb(settingsDbPath));
     settingsDb.CloseDb();
 

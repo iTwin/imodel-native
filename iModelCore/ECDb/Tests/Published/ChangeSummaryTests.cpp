@@ -414,23 +414,28 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryCacheMode)
     ASSERT_EQ(-1, getChangeSummaryCount(m_ecdb)) << "After creating ECDb, change summary cache is not expected to have been created";
 
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::DoNotAttach)));
-    ASSERT_TRUE(cachePath.DoesPathExist());
+    ASSERT_FALSE(cachePath.DoesPathExist());
     ASSERT_FALSE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::DoNotAttach";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::DoNotAttach";
 
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
-    ASSERT_TRUE(cachePath.DoesPathExist());
-    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
-    ASSERT_EQ(0, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO change.ChangeSummary(ECInstanceId) VALUES(NULL)")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
-    ASSERT_EQ(1, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
-    m_ecdb.SaveChanges();
+    ASSERT_FALSE(cachePath.DoesPathExist());
+    ASSERT_FALSE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(-1, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO change.ChangeSummary(ECInstanceId) VALUES(NULL)")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
 
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
     ASSERT_TRUE(cachePath.DoesPathExist());
     ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
-    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO change.ChangeSummary(ECInstanceId) VALUES(NULL)")) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
     ASSERT_EQ(1, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachAndCreateIfNotExists";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
+    ASSERT_TRUE(cachePath.DoesPathExist());
+    ASSERT_TRUE(GetHelper().TableExists("change_ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(1, getChangeSummaryCount(m_ecdb)) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteECSql("SELECT * FROM change.ChangeSummary")) << "Opening with ChangeSummaryCacheMode::AttachIfExists";
     CloseECDb();
 
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
@@ -487,7 +492,7 @@ TEST_F(ChangeSummaryTestFixture, CacheAttachedNotAttached)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ChangedValue(1,'S','AfterInsert','Hello World') FROM ts.Foo1"));
     ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')"));
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')"));
     stmt.Finalize();
 
     //now attach
