@@ -320,7 +320,10 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
         classNode = classesIterator->second;
         status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, conversionSchema.get(), navigationProperties);
         if (SchemaReadStatus::Success != status)
+            {
+            LOG.errorv("Failed to read class '%s' from schema '%s'", ecClass->GetName().c_str(), schemaOut->GetName().c_str());
             return status;
+            }
         }
 
     for (auto const& navProp : navigationProperties)
