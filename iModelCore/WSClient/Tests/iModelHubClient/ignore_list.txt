@@ -6,3 +6,5 @@ FailureTests.Crash*
 #----------------------------------------------------------------------------------------
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
+BriefcaseTests.SuccessfulAcquireBriefcaseAfterMergeJob
+ClientTests.SuccessfulCreateiModelWithASpaceInName

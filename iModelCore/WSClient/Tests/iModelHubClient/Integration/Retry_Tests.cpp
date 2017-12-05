@@ -244,8 +244,8 @@ TEST_F(RetryTests, CreateChangeSetFails)
             }
         ).ForRequest(3, [=](Http::RequestCR request)
             {
-            // Query changeSet instances
-            return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
+            // Plugins request
+            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
             }
         ).ForRequest(4, [=](Http::RequestCR request)
             {
@@ -290,22 +290,18 @@ TEST_F(RetryTests, UploadFileFails)
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(6)
+        ExpectRequests(5)
         .ForRequest(1, [=](Http::RequestCR request)
-            {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
-            }
-        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Query changeSet instances
             return StubHttpResponse(HttpStatus::OK, "{instances: {}}");
             }
-        ).ForRequest(3, [=](Http::RequestCR request)
+        ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created);
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
             }
-        ).ForRequest(4, [=](Http::RequestCR request)
+        ).ForRequest(3, [=](Http::RequestCR request)
             {
             // Upload file
             return StubHttpResponse(HttpStatus::ReqestTimeout,
@@ -313,12 +309,12 @@ TEST_F(RetryTests, UploadFileFails)
                 "\"errorMessage\" : \"Request timed out\", "
                 "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
             }
-        ).ForRequest(5, [=](Http::RequestCR request)
+        ).ForRequest(4, [=](Http::RequestCR request)
             {
             // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created);
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
             }
-        ).ForRequest(6, [=](Http::RequestCR request)
+        ).ForRequest(5, [=](Http::RequestCR request)
             {
             // Upload file
             BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
@@ -373,7 +369,7 @@ TEST_F(RetryTests, InitializeiModelFails)
         ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created);
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
             }
         ).ForRequest(3, [=](Http::RequestCR request)
             {
@@ -392,7 +388,7 @@ TEST_F(RetryTests, InitializeiModelFails)
         ).ForRequest(6, [=](Http::RequestCR request)
             {
             // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created);
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
             }
         ).ForRequest(7, [=](Http::RequestCR request)
             {
