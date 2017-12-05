@@ -16,3 +16,7 @@ xliffDir = $(SrcRoot)l10n/l10n-Units/$(L10N_LANGUAGE_TAG)/
 $(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/Units_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)Units_$(L10N_LANGUAGE_TAG).xliff
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/UnitLabels_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)UnitLabels_$(L10N_LANGUAGE_TAG).xliff
+    $(LinkFirstDepToFirstTarget)
+
+

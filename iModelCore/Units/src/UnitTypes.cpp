@@ -11,6 +11,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include "../Localization/xliffs/Units.xliff.h"
 #include <BeSQLite/L10N.h>
+#include <Bentley/md5.h>
 
 using namespace std;
 
@@ -115,6 +116,50 @@ ExpressionCR Unit::Evaluate() const
         return m_parent->Evaluate();
 
     return T_Super::Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  11/2017
+//---------------------------------------------------------------------------------------
+Utf8CP Unit::GetLabel() const
+    {
+    if (m_displayLabel.empty())
+        {
+        MD5 md5;
+        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName(), GetName());
+        Utf8PrintfString resname("LABEL_%s", md5(fullUnitName).c_str());
+        m_displayLabel = BeSQLite::L10N::GetString(BeSQLite::L10N::NameSpace("unit_labels"), BeSQLite::L10N::StringId(resname.c_str()));
+
+        if (m_displayLabel.empty())
+            {
+            LOG.errorv("Missing localized label for Unit %s", GetName());
+            m_displayLabel = GetName();
+            }
+        }
+
+    return m_displayLabel.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  11/2017
+//---------------------------------------------------------------------------------------
+Utf8CP Unit::GetDescription() const
+    {
+    if (m_displayDescription.empty())
+        {
+        MD5 md5;
+        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName(), GetName());
+        Utf8PrintfString resname("DESCRIPTION_%s", md5(fullUnitName).c_str());
+        m_displayDescription = BeSQLite::L10N::GetString(BeSQLite::L10N::NameSpace("unit_labels"), BeSQLite::L10N::StringId(resname.c_str()));
+
+        if (m_displayLabel.empty())
+            {
+            LOG.errorv("Missing localized description for Unit %s", GetLabel());
+            m_displayLabel = GetName();
+            }
+        }
+
+    return m_displayDescription.c_str();
     }
 
 double FastIntegerPower(double a, uint32_t n)

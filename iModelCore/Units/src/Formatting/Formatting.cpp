@@ -860,7 +860,7 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
     if(nullptr == useUnit)
         return Utf8String(buf);
-    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetName(), space);
+    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel(), space);
     return txt;
     }
 
@@ -904,7 +904,7 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int p
 //    NumericFormatSpecP fmtP = (nullptr == namF)? nullptr: namF->GetNumericSpec();
 //    bool composite = (nullptr == namF) ? false : namF->HasComposite();
 //    BEU::Quantity temp = qty.ConvertTo(useUnit); 
-//    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()): useLabel;
+//    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetName()): useLabel;
 //    Utf8String majT, midT, minT, subT;
 //
 //
@@ -987,7 +987,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
     bool composite = nfs.HasComposite();
     BEU::Quantity temp = qty.ConvertTo(useUnit);
-    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitName() : useUnit->GetName()) : useLabel;
+    Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
 
@@ -1047,7 +1047,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
             return "";
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
         if(fmtP->IsAppendUnit())
-           majT = Utils::AppendUnitName(majT.c_str(), uomName, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
+           majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
         /*if (nullptr != uomName)
         {
         if (!Utils::IsNameNullOrEmpty(space))
