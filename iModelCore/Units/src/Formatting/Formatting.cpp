@@ -67,7 +67,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
-    m_minWIdth = 0;
+    m_minWidth = 0;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -95,9 +95,25 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
-    m_minWIdth = 0;
+    m_minWidth = 0;
     }
 
+void NumericFormatSpec::CopySpec(NumericFormatSpecCR other)
+    {
+    m_roundFactor = other.m_roundFactor;
+    m_presentationType = other.m_presentationType;
+    m_signOption = other.m_signOption;  
+    m_formatTraits = other.m_formatTraits;
+    m_decPrecision = other.m_decPrecision;     
+    m_fractPrecision = other.m_fractPrecision;
+    m_barType = other.m_barType;
+
+    m_decimalSeparator = other.m_decimalSeparator;
+     m_thousandsSeparator = other.m_thousandsSeparator;
+     m_uomSeparator = other.m_uomSeparator;  
+     m_statSeparator = other.m_statSeparator;
+     m_minWidth = other.m_minWidth;
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -786,7 +802,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
             locBuf[k++] = '0';
         
         locBuf[k++] = GetStopSeparator();
-        Utf8String loS = FormatIntegerToString(loPart, m_minWIdth, false);
+        Utf8String loS = FormatIntegerToString(loPart, m_minWidth, false);
         memcpy(&locBuf[k], loS.c_str(), loS.length());
         k += loS.length();
         if (frPart > 0)
@@ -1230,7 +1246,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
      if (m_thousandsSeparator != other.m_thousandsSeparator) return false;
      if (!m_uomSeparator.Equals(other.m_uomSeparator)) return false;
      if (m_statSeparator != other.m_statSeparator) return false;
-     if (m_minWIdth != other.m_minWIdth) return false;
+     if (m_minWidth != other.m_minWidth) return false;
 
      return true;
      }

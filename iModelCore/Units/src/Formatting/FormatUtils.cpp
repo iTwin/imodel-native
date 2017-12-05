@@ -1500,10 +1500,28 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 //
 //===================================================
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+void NamedFormatSpec::Clone(NamedFormatSpecCR other)
+    {
+    m_name = Utf8String(other.m_name);
+    m_alias = Utf8String(other.m_alias);
+    m_description = Utf8String(other.m_description);
+    m_displayLabel = Utf8String(other.m_displayLabel);
+    m_numericSpec.CopySpec(other.m_numericSpec);
+    m_compositeSpec.Clone(other.m_compositeSpec);
+    m_specType = other.m_specType;
+    m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
+    }
+
  //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
  
  //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
  //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
+ //----------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 02/17
+ //----------------------------------------------------------------------------------------
 NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias)
     {
     m_specType = FormatSpecType::Undefined;
@@ -1517,6 +1535,19 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Compo
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+NamedFormatSpec::NamedFormatSpec()
+    {
+    m_specType = FormatSpecType::Undefined;
+    m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias)
     {
     m_specType = FormatSpecType::Undefined;
@@ -1524,12 +1555,14 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
     m_name = name;
     m_numericSpec = NumericFormatSpec(numSpec);
     m_specType = FormatSpecType::Numeric;
-    m_compositeSpec = CompositeValueSpec();
+    //m_compositeSpec(); // = CompositeValueSpec();
     m_problem = FormatProblemDetail();
     if (Utils::IsNameNullOrEmpty(name))
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
     {
     int cod = 0;
@@ -1547,14 +1580,18 @@ bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
        return true;
     return false;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 bool NamedFormatSpec::HasName(Utf8CP name) const 
     {
     if (Utils::IsNameNullOrEmpty(name))
         return false;
     return (0 == BeStringUtilities::StricmpAscii(name, m_name.c_str())); 
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 bool NamedFormatSpec::HasAlias(Utf8CP name) const
     {
     if (Utils::IsNameNullOrEmpty(name))

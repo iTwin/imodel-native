@@ -321,7 +321,7 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval)
                 }
             else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
                 {
-                m_minWIdth = val.asInt();
+                m_minWidth = val.asInt();
                 }
             else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
                 {
@@ -440,8 +440,8 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_uomSeparator()] = m_uomSeparator;
     if (verbose || m_statSeparator != defSpec.m_statSeparator)
         jNFC[json_statSeparator()] = Utils::CharToString(m_statSeparator);
-    if (verbose || m_minWIdth != defSpec.m_minWIdth)
-        jNFC[json_minWidth()] = m_minWIdth;
+    if (verbose || m_minWidth != defSpec.m_minWidth)
+        jNFC[json_minWidth()] = m_minWidth;
     return jNFC;
     }
 

@@ -262,7 +262,7 @@ private:
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
     Utf8String          m_uomSeparator;          // default separator between the number and UOM
     Utf8Char            m_statSeparator;         // default separator between parts of the stopping format
-    int                 m_minWIdth;              // the minimum width of the field. It will be taken into account
+    int                 m_minWidth;              // the minimum width of the field. It will be taken into account
                                                  // only if the overall length (width) of the text representing integer
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
                                                  // insignificant zeroes. Blanks are not considered because aligning text
@@ -275,8 +275,10 @@ private:
     UNITS_EXPORT double RoundedValue(double dval, double round) const;
     UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index) const;
     UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
+    
 
 public:
+    UNITS_EXPORT void CopySpec(NumericFormatSpecCR other);
     NumericFormatSpec() { DefaultInit( FormatConstant::DefaultDecimalPrecisionIndex()); }
     NumericFormatSpec(size_t precision) { DefaultInit(precision); }
     NumericFormatSpec(NumericFormatSpecCP other) :
@@ -284,13 +286,13 @@ public:
         m_signOption(other->m_signOption), m_formatTraits(other->m_formatTraits), m_decPrecision(other->m_decPrecision),
         m_fractPrecision(other->m_fractPrecision), m_decimalSeparator(other->m_decimalSeparator),
         m_thousandsSeparator(other->m_thousandsSeparator), m_barType(other->m_barType), m_uomSeparator(other->m_uomSeparator),
-        m_statSeparator(other->m_statSeparator), m_minWIdth(other->m_minWIdth){}
+        m_statSeparator(other->m_statSeparator), m_minWidth(other->m_minWidth){}
     NumericFormatSpec(NumericFormatSpecCR other) :
         m_roundFactor(other.m_roundFactor), m_presentationType(other.m_presentationType),
         m_signOption(other.m_signOption), m_formatTraits(other.m_formatTraits), m_decPrecision(other.m_decPrecision),
         m_fractPrecision(other.m_fractPrecision), m_decimalSeparator(other.m_decimalSeparator),
         m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator),
-        m_statSeparator(other.m_statSeparator), m_minWIdth(other.m_minWIdth) {}
+        m_statSeparator(other.m_statSeparator), m_minWidth(other.m_minWidth) {}
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
 
@@ -357,8 +359,8 @@ public:
     void SetPresentationType(PresentationType type) { m_presentationType = type; }
     PresentationType GetPresentationType() const { return m_presentationType; }
     void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
-    int SetMinWidth(int wid) { return m_minWIdth = wid; }
-    int GetMinWidth() { return m_minWIdth; }
+    int SetMinWidth(int wid) { return m_minWidth = wid; }
+    int GetMinWidth() { return m_minWidth; }
     ShowSignOption GetSignOption() const { return m_signOption; }
     Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
     Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
@@ -567,8 +569,10 @@ protected:
         }
     //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit() const;
-public:
+    
 
+public:
+    UNITS_EXPORT void Clone(CompositeValueSpecCR other);
    // UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
     CompositeValueSpec() { Init(); };
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCP other);
@@ -642,7 +646,9 @@ private:
         FormatSpecType     m_specType;
         FormatProblemDetail m_problem;
 
+        void Clone(NamedFormatSpecCR other);
 public:
+        UNITS_EXPORT NamedFormatSpec();
         //UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr, CompositeValueSpecP compSpec = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
@@ -682,6 +688,7 @@ struct FormatUnitSet
         Utf8String  m_unitName;
         BEU::UnitCP m_unit;
         FormatProblemDetail m_problem;
+        NamedFormatSpec m_localCopy;
 
     public:
         FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}

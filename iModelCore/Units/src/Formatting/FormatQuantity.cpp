@@ -186,6 +186,19 @@ bool CompositeValueSpec::SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit, Utf8C
 //    }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//---------------------------------------------------------------------------------------
+void CompositeValueSpec::Clone(CompositeValueSpecCR other)
+    {
+    m_unitProx.Copy(other.m_unitProx);
+    memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
+    m_problem = other.m_problem;
+    m_type = other.m_type;
+    m_includeZero = other.m_includeZero;
+    m_spacer = Utf8String(other.m_spacer);
+    }
+
+//---------------------------------------------------------------------------------------
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
