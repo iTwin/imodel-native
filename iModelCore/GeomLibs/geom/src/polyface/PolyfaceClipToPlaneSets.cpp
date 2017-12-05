@@ -192,6 +192,7 @@ struct  OutputChain
 OutputChain (PolyfaceEdgeChain const& edgeChain, T_EdgeIndexMap& indexMap, PolyfaceQueryCR facets) : m_id (edgeChain.GetId())
     {
     int32_t const*      indices = edgeChain.GetIndexCP();
+    BeAssert(nullptr != indices && 0 < edgeChain.GetIndexCount());
     for (size_t i=0; i<edgeChain.GetIndexCount()-1; i++)
         {
         DRay3d              ray;
@@ -264,7 +265,10 @@ struct  OutputChainMap
 OutputChainMap (PolyfaceQueryCR facets)
     {
     for (PolyfaceEdgeChainCP edgeChain = facets.GetEdgeChainCP(), end = edgeChain + facets.GetEdgeChainCount(); edgeChain < end; edgeChain++)
-        m_outputChains.push_back (new OutputChain (*edgeChain, m_edgeIndexMap, facets));
+        {
+        if (nullptr != edgeChain->GetIndexCP() && 0 < edgeChain->GetIndexCount())
+            m_outputChains.push_back (new OutputChain (*edgeChain, m_edgeIndexMap, facets));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
