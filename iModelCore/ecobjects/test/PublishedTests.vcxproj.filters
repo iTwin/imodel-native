@@ -13,7 +13,10 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="Source Files\CustomAttributeConversion">
+    <Filter Include="Source Files\Schema">
+      <UniqueIdentifier>{8a70bafd-274b-4ae4-bb21-89ee142a4f29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SchemaConverter">
       <UniqueIdentifier>{11adc197-be69-46d3-9656-cb9acd7813ad}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -22,9 +25,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\MemoryLayoutTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\SchemaTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\CustomAttributeTests.cpp">
@@ -63,19 +63,10 @@
     <ClCompile Include="Published\ExtendedTypeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaValidationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\SchemaDeserializationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaElementIdTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\SchemaDeserializationConversionTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\StrictSchemaTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECClassTests.cpp">
@@ -103,10 +94,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\CustomAttributeConversionsTest.cpp">
-      <Filter>Source Files\CustomAttributeConversion</Filter>
+      <Filter>Source Files\SchemaConverter</Filter>
     </ClCompile>
     <ClCompile Include="Published\CustomAttributeUnitsConversionTests.cpp">
-      <Filter>Source Files\CustomAttributeConversion</Filter>
+      <Filter>Source Files\SchemaConverter</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECEnumerationTests.cpp">
       <Filter>Source Files</Filter>
@@ -129,8 +120,14 @@
     <ClCompile Include="Published\ECQuantityFormattingTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaCopyTests.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Published\SchemaTests.cpp">
+      <Filter>Source Files\Schema</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaValidationTests.cpp">
+      <Filter>Source Files\Schema</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\StrictSchemaTests.cpp">
+      <Filter>Source Files\Schema</Filter>
     </ClCompile>
     <ClCompile Include="Published\SchemaSerializationTests.cpp">
       <Filter>Source Files</Filter>
@@ -138,10 +135,13 @@
     <ClCompile Include="Published\InstanceQuantityTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\UnitsCustomAttributesConversionTests.cpp">
+    <ClCompile Include="Published\ECJsonUtilitiesTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECJsonUtilitiesTests.cpp">
+    <ClCompile Include="Published\SchemaCopyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaLocatorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
