@@ -713,7 +713,7 @@ void PublisherContext::_AddBatchTableAttributes(Json::Value& batchTableJson, Fea
 void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part)
     {
     PublishTileData     featureTableData, partData;
-    bvector<uint16_t>   attributeIndices;
+    bvector<uint32_t>   attributeIndices;
     bool                rotationPresent = false;
 
     featureTableData.m_json["INSTANCES_LENGTH"] = part->Instances().size();
