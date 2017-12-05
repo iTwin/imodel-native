@@ -15,7 +15,6 @@
 
 #include <stdio.h>
 #include "../STM/Stores/ISMDataStore.h"
-#include "../STM/Edits/ClipUtilities.h"
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)
     #define TILEPUBLISHER_EXPORT EXPORT_ATTRIBUTE
@@ -46,11 +45,11 @@ public:
     BatchIdMap(TileSource source);
 
     uint16_t GetBatchId(BENTLEY_NAMESPACE_NAME::BeInt64Id entityId);
-#ifndef VANCOUVER_API
-    void ToJson(Json::Value& value, DgnDbP db) const;
-#else
+//#ifndef VANCOUVER_API
+//    void ToJson(Json::Value& value, DgnDbP db) const;
+//#else
     void ToJson(Json::Value& value) const;
-#endif
+//#endif
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
 

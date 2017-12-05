@@ -717,7 +717,7 @@ bool ScalableMeshAnalysis::_GetWorldRange(IScalableMesh *scmPtr, DRange3d& _rang
     DPoint3d Corners[8]; // get the corners in world, and compute the range of them
     range3sm.Get8Corners(Corners);
 
-    _range.initFrom(0, 0); // reset the range
+    _range.InitFrom(0, 0); // reset the range
     for (int i = 0; i < 8; i++)
         {
         _convert3SMToWorld(scmPtr, Corners[i]);

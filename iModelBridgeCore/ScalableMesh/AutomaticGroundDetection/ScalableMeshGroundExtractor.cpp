@@ -398,7 +398,7 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
 
 SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
-	SMStatus status;
+	SMStatus status = SMStatus::S_SUCCESS;
 
     BeFileName terrainPath(m_smTerrainPath.c_str());
     BeFileName directory(BeFileName::GetDirectoryName(terrainPath.c_str()).c_str());
@@ -615,6 +615,7 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
             addtionalSeedPts.push_back(pt);
             }
 
+#ifdef VANCOUVER_API
         WString envVarStr;
 
         if (BSISUCCESS == ConfigurationManager::GetVariable(envVarStr, L"SM_GROUND_MAX_SEEDS_FROM_DRAPED_ROI"))
@@ -640,6 +641,7 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
                     }                
                 }
             }
+#endif
 
         params->AddAdditionalSeedPoints(addtionalSeedPts);        
         }    
@@ -661,6 +663,7 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
     params->SetTriangleEdgeThreshold(0.05);
 //#endif
 
+#ifdef VANCOUVER_API
     WString envVarStr;
 
     if (BSISUCCESS == ConfigurationManager::GetVariable(envVarStr, L"SM_GROUND_TRI_EDGE"))
@@ -670,6 +673,7 @@ SMStatus ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverag
         if (value > 0)
             params->SetTriangleEdgeThreshold(value);
         }
+#endif
 	 
     params->SetAnglePercentileFactor(s_anglePercentile);
     params->SetHeightPercentileFactor(s_heightPercentile);

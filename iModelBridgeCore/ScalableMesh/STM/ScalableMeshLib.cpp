@@ -22,7 +22,11 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
 
+#ifdef VANCOUVER_API
 #include    <CCApi\CCPublic.h>
+#else
+#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+#endif
 
 
 #ifndef VANCOUVER_API
@@ -218,6 +222,8 @@ CURLcode PerformCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 WebServiceKey GetBingKey()
     {
     Utf8String readBuffer;
+
+#ifdef VANCOUVER_API
     WString buddiUrl;
     UINT32 bufLen;
     CallStatus status = APIERR_SUCCESS;
@@ -230,6 +236,12 @@ WebServiceKey GetBingKey()
     status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
     buddiUrl.assign(buffer);
     CCApi_FreeApi(api);
+#else
+    wstring buddiUrl;
+    Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
+    connectClient.GetBuddiUrl(L"ContextServices", buddiUrl);
+#endif
+
     Utf8String contextServiceURL;
     contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());
 
@@ -260,7 +272,7 @@ WebServiceKey GetBingKey()
     BeStringUtilities::WCharToUtf8(productIdStr, prodIdStr);
 #else
     Utf8Char prodIdStr[200];
-    BeStringUtilities::FormatUInt64(productIdStr, productId);
+    BeStringUtilities::FormatUInt64(prodIdStr, productId);
     productIdStr.append(prodIdStr);
 #endif
 

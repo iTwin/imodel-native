@@ -2419,7 +2419,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
 
                     if (isStoredOnGpu)
                         {
-                        assert(displayCacheManagerPtr->_IsUsingVideoMemory());
+                        //assert(displayCacheManagerPtr->_IsUsingVideoMemory());
                         data->SetIsInVRAM(true);
                         }
 
