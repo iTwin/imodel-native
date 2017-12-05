@@ -915,6 +915,6 @@ END_BENTLEY_DGN_NAMESPACE
 extern "C"
     {
     typedef BentleyApi::Dgn::iModelBridge* T_iModelBridge_getInstance(wchar_t const* regSubKey);
-    typedef BentleyStatus T_iModelBridge_releaseInstance(BentleyApi::Dgn::iModelBridge* bridgeInstance);
+    typedef BentleyApi::BentleyStatus T_iModelBridge_releaseInstance(BentleyApi::Dgn::iModelBridge* bridgeInstance);
     };
 
