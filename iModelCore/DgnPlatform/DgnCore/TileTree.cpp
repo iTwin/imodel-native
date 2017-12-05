@@ -1106,13 +1106,12 @@ void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
             }
         }
 
-    // This requests tiles ordered first by distance to camera, then by depth.
     for (auto const& missing : missingNodes)
         {
-        if (missing.GetTile().IsNotLoaded())
+        if (missing->IsNotLoaded())
             {
-            TileLoadStatePtr loads = std::make_shared<TileLoadState>(missing.GetTile(), deadline);
-            _RequestTile(const_cast<TileR>(missing.GetTile()), loads, nullptr, deadline);
+            TileLoadStatePtr loads = std::make_shared<TileLoadState>(*missing, deadline);
+            _RequestTile(const_cast<TileR>(*missing), loads, nullptr, deadline);
             }
         }
 
@@ -1324,16 +1323,9 @@ void OctTree::Tile::_ValidateChildren() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MissingNodes::Insert(TileCR tile, double distance)
+void MissingNodes::Insert(TileCR tile, bool prioritize)
     {
-    MissingNode toInsert(tile, distance);
-    auto inserted = m_set.insert(toInsert);
-    if (!inserted.second && distance < inserted.first->GetDistance())
-        {
-        // replace with closer distance
-        m_set.erase(inserted.first);
-        m_set.insert(toInsert);
-        }
+    m_set.insert(Node(tile, prioritize));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1341,8 +1333,14 @@ void MissingNodes::Insert(TileCR tile, double distance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MissingNodes::Contains(TileCR tile) const
     {
-    // ###TODO: Make this more efficient...
-    return m_set.end() != std::find_if(m_set.begin(), m_set.end(), [&](MissingNodeCR arg) { return &arg.GetTile() == &tile; });
+    bool prioritize = !tile._IsPartial();
+    Node toFind(tile, prioritize);
+    if (m_set.end() != m_set.find(toFind))
+        return true;
+
+    // It's possible the tile was previously partial, then became complete on background thread.
+    toFind.m_prioritize = !prioritize;
+    return m_set.end() != m_set.find(toFind);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1350,7 +1348,8 @@ bool MissingNodes::Contains(TileCR tile) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::InsertMissing(TileCR tile)
     {
-    m_missing.Insert(tile, ComputeTileDistance(tile));
+    // Refine partial tiles with lower-priority than siblings with no graphics at all.
+    m_missing.Insert(tile, !tile._IsPartial());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1583,7 +1582,7 @@ void TileRequests::RequestMissing(BeTimePoint deadline) const
     for (auto const& kvp : m_map)
         {
         for (auto const& missing : kvp.second)
-            if (missing.GetTile().IsNotLoaded())
+            if (*missing.IsNotLoaded())
                 ++nRequested;
         }
 

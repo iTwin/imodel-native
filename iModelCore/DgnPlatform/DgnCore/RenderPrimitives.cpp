@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/RenderPrimitives.h>
+#if defined(BENTLEYCONFIG_PARASOLID)
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
@@ -1126,7 +1129,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
@@ -1163,13 +1166,14 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
-                
-        bool haveNormals = !visitor.Normal().empty();
+
+        if (requireNormals && visitor.Normal().size() < points.size())
+            continue; // TFS#790263: Degenerate triangle - no normals.
 
         for (size_t i = 0; i < 3; i++)
             {
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
-            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
+            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
             newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             if (m_currentPolyface.IsValid())
@@ -1593,7 +1597,12 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
 PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context)
     {
     PolyfaceList tilePolyfaces;
-#if defined (BENTLEYCONFIG_PARASOLID)    
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+#if defined(WIP_PMARKS)
+    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
+#endif
+
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -1805,6 +1814,10 @@ bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayPara
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
     {
+#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
+    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
+#endif
+
     DRange3d range = body.GetEntityRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
@@ -1891,7 +1904,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
 
             meshBuilder.EndPolyface();
             }

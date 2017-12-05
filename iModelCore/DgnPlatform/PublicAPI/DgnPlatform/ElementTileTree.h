@@ -278,9 +278,10 @@ public:
     Utf8String GetDebugId() const { return _GetTileCacheKey(); }
 
     bool _HasBackupGraphics() const override { return m_backupGraphic.IsValid(); }
+    bool _HasGraphics() const override { return m_graphic.IsValid() || _HasBackupGraphics(); }
     void ClearBackupGraphic() { m_backupGraphic = nullptr; }
 
-    bool IsPartial() const { return nullptr != m_generator.get(); }
+    bool _IsPartial() const override { return nullptr != m_generator.get(); }
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 };
 

@@ -532,6 +532,9 @@ public:
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
+protected:
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+public:
     struct CreateParams
     {
         bool m_isTileSection = false;
@@ -646,7 +649,7 @@ protected:
 
     //! Override to perform additional logic when texture mapping is set, if necessary.
     virtual void _MapTexture() { }
-
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 public:
     //! Map a texture to this material
     void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping; _MapTexture();}
