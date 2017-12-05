@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/RenderPrimitives.h>
+#if defined(BENTLEYCONFIG_PARASOLID)
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
@@ -817,7 +820,7 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QVertex3dListCR vertices)
+template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QPoint3dListCR vertices)
     {
     // Don't allocate the indices until we have non-uniform values
     if (table.empty())
@@ -843,11 +846,11 @@ template<typename T, typename U> static void insertVertexAttribute(bvector<uint1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(QVertex3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
+uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
     {
     auto index = static_cast<uint32_t>(m_verts.size());
 
-    m_verts.Add(vert);
+    m_verts.push_back(vert);
     m_features.Add(feature, m_verts.size());
 
     if (nullptr != normal)
@@ -1036,31 +1039,9 @@ bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
     BeAssert(lhs.m_normalValid == rhs.m_normalValid);
     BeAssert(lhs.m_paramValid == rhs.m_paramValid);
 
-    if (lhs.m_position.IsQuantized())
-        {
-        if (!rhs.m_position.IsQuantized())
-            return false;
-
-        auto const& lpos = lhs.m_position.GetQPoint3d();
-        auto const& rpos = rhs.m_position.GetQPoint3d();
-
-        COMPARE_VALUES(lpos.x, rpos.x);
-        COMPARE_VALUES(lpos.y, rpos.y);
-        COMPARE_VALUES(lpos.z, rpos.z);
-        }
-    else
-        {
-        if (rhs.m_position.IsQuantized())
-            return true;
-
-        auto const& lpos = lhs.m_position.GetFPoint3d();
-        auto const& rpos = rhs.m_position.GetFPoint3d();
-
-        // ###TODO: May want to use a tolerance here; if so must be relative to range...
-        COMPARE_VALUES(lpos.x, rpos.x);
-        COMPARE_VALUES(lpos.y, rpos.y);
-        COMPARE_VALUES(lpos.z, rpos.z);
-        }
+    auto posCmp = memcmp(&lhs.m_position, &rhs.m_position, sizeof(uint16_t)*3);
+    if (0 != posCmp)
+        return posCmp < 0;
 
     COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
     COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
@@ -1126,7 +1107,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
@@ -1163,13 +1144,14 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
-                
-        bool haveNormals = !visitor.Normal().empty();
+
+        if (requireNormals && visitor.Normal().size() < points.size())
+            continue; // TFS#790263: Degenerate triangle - no normals.
 
         for (size_t i = 0; i < 3; i++)
             {
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
-            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
+            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
             newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             if (m_currentPolyface.IsValid())
@@ -1215,7 +1197,7 @@ void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::AddPolyline(MeshPolylineCR polyline) 
-    { 
+    {
     BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); 
     
     if (PrimitiveType::Polyline == GetType() && polyline.GetIndices().size() < 2)
@@ -1593,7 +1575,12 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
 PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context)
     {
     PolyfaceList tilePolyfaces;
-#if defined (BENTLEYCONFIG_PARASOLID)    
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+#if defined(WIP_PMARKS)
+    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
+#endif
+
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
@@ -1805,6 +1792,10 @@ bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayPara
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
     {
+#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
+    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
+#endif
+
     DRange3d range = body.GetEntityRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
@@ -1842,15 +1833,7 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshBuilderMap GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
     {
-    auto builderMap = ToMeshBuilderMap(options, tolerance, featureTable, context);
-    for (auto& builder : builderMap)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
-            mesh->Close();
-        }
-
-    return builderMap;
+    return ToMeshBuilderMap(options, tolerance, featureTable, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1891,7 +1874,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
 
             meshBuilder.EndPolyface();
             }
@@ -1932,10 +1915,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
         {
         MeshP mesh = builder.second->GetMesh();
         if (!mesh->IsEmpty())
-            {
-            mesh->Close();
             meshes.push_back(mesh);
-            }
         }
 
     return meshes;
@@ -3058,35 +3038,6 @@ GeometryList GeometryList::Slice(size_t startIdx, size_t endIdx) const
 
     return list;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QVertex3dList::Requantize()
-    {
-    if (IsFullyQuantized())
-        return;
-
-    m_qpoints.Requantize(QPoint3d::Params(m_range));
-    m_qpoints.reserve(size());
-
-    for (auto const& fpt : m_fpoints)
-        m_qpoints.Add(DPoint3d::From(fpt));
-
-    m_fpoints.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QVertex3dList::Init(DRange3dCR range, QPoint3dCP qPoints, size_t nPoints)
-    {
-    m_range = range;
-    m_qpoints.resize(nPoints);
-    m_qpoints.SetParams(QPoint3d::Params(range));
-    memcpy (m_qpoints.data(), qPoints, nPoints * sizeof(QPoint3d));
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017

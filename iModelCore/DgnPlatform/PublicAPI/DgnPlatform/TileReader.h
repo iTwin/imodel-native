@@ -150,7 +150,7 @@ struct GltfReader
 
     BentleyStatus ReadVertexAttributes(bvector<double>& values, Json::Value const& primitiveValue, size_t nComponents, char const* accessorName);
     BentleyStatus ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const& primitiveValue);
-    BentleyStatus ReadVertices(Render::Primitives::QVertex3dListR vertexList, Json::Value const& primitiveValue);
+    BentleyStatus ReadVertices(Render::QPoint3dListR vertexList, Json::Value const& primitiveValue);
 
     BentleyStatus ReadNormalPairs(Render::OctEncodedNormalPairListR pairs, Json::Value const& value, Utf8CP accessorName);
     BentleyStatus ReadNormals(Render::OctEncodedNormalListR normals, Json::Value const& value, Utf8CP accessorName);

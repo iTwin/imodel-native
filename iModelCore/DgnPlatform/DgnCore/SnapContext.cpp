@@ -6,6 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#if defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
@@ -306,12 +309,14 @@ void SnapContext::SetSnapInfo(SnapMode snapMode, ISpriteP sprite, DPoint3dCR sna
         snap->SetCustomKeypoint(nBytes, customKeypointData);
     }
 
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct SnapGraphicsProcessor : IGeometryProcessor
 {
 private:
+
     SnapContextR        m_snapContext;
     CurveLocationDetail m_location;
     bool                m_inProcessFace = false;
@@ -902,15 +907,113 @@ bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyGraphic& 
     return true;
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  11/17
++===============+===============+===============+===============+===============+======*/
+struct BRepFaceHatchProcessor : IParasolidWireOutput
+    {
+    SnapGraphicsProcessor&  m_processor;
+    SimplifyGraphic&        m_graphic;
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    BrienBastings   11/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BentleyStatus _ProcessGoOutput(ICurvePrimitiveCR hatchCurve, PK_ENTITY_t entityTag)
+        {
+        CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, hatchCurve.Clone());
+
+        m_processor.TestCurveLocation(*curve, m_graphic.GetLocalToWorldTransform());
+
+        return (m_processor.m_snapContext.CheckStop() ? ERROR : SUCCESS);
+        }
+
+    BRepFaceHatchProcessor(SnapGraphicsProcessor& processor, SimplifyGraphic& graphic) : m_processor(processor), m_graphic(graphic) {}
+
+    }; // BRepFaceHatchProcessor
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessBody(IBRepEntityCR entity, SimplifyGraphic& graphics) override
+bool _ProcessBody(IBRepEntityCR entity, SimplifyGraphic& graphic) override
     {
-    // NEEDSWORK...Get closest face, resurrect face hatch code using snap divisor, etc.
+    if (IBRepEntity::EntityType::Wire == entity.GetEntityType())
+        return false; // Output edge geometry...
 
-    return false;
+    Transform   localToWorld = graphic.GetLocalToWorldTransform();
+    Transform   worldToLocal;
+    DPoint3d    spacePointLocal;
+
+    worldToLocal.InverseOf(localToWorld);
+    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
+
+    ISubEntityPtr closeEntity = BRepUtil::ClosestSubEntity(entity, spacePointLocal);
+
+    if (!closeEntity.IsValid())
+        return true;
+
+    switch (closeEntity->GetSubEntityType())
+        {
+        case ISubEntity::SubEntityType::Edge:
+        case ISubEntity::SubEntityType::Vertex:
+            {
+            GeometricPrimitiveCPtr geom = closeEntity->GetGeometry();
+
+            if (geom.IsValid() && GeometricPrimitive::GeometryType::CurvePrimitive == geom->GetGeometryType())
+                {
+                CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, geom->GetAsICurvePrimitive());
+
+                TestCurveLocation(*curve, localToWorld);
+                }
+
+            return true;
+            }
+
+        case ISubEntity::SubEntityType::Face:
+            {
+            CurveVectorPtr faceCurves = BRepUtil::Create::PlanarFaceToCurveVector(*closeEntity);
+
+            if (faceCurves.IsValid())
+                {
+                TestCurveLocation(*faceCurves, localToWorld);
+
+                return true;
+                }
+
+            break;
+            }
+        }
+
+    int divisor = m_snapContext.GetSnapDivisor();
+
+    BRepFaceHatchProcessor output(*this, graphic);
+    Transform entityTransform = entity.GetEntityTransform();
+
+    PSolidGoOutput::ProcessFaceHatching(output, divisor, PSolidSubEntity::GetSubEntityTag(*closeEntity), &entityTransform);
+    
+    bvector<ISubEntityPtr> faceEdges;
+
+    if (SUCCESS != BRepUtil::GetFaceEdges(faceEdges, *closeEntity))
+        return true;
+
+    for (ISubEntityPtr& edge : faceEdges)
+        {
+        if (m_snapContext.CheckStop())
+            return true;
+
+        GeometricPrimitiveCPtr geom = edge->GetGeometry();
+
+        if (!geom.IsValid() || GeometricPrimitive::GeometryType::CurvePrimitive != geom->GetGeometryType())
+            continue;
+
+        CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, geom->GetAsICurvePrimitive());
+
+        TestCurveLocation(*curve, localToWorld);
+        }
+
+    return true;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/15
@@ -932,13 +1035,27 @@ void _OutputGraphics(ViewContextR context) override
     GeometryCollection collection(*source);
     Render::GraphicBuilderPtr graphic;
 
+    GeometryStreamEntryId snapElemEntryId = snap->GetGeomDetail().GetGeometryStreamEntryId();
+    GeometryStreamEntryId snapPartEntryId = snap->GetGeomDetail().GetGeometryStreamEntryId(true);
+
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...
-        if (snap->GetGeomDetail().GetGeometryStreamEntryId() != iter.GetGeometryStreamEntryId())
+        if (snapElemEntryId != iter.GetGeometryStreamEntryId())
             continue;
 
-        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom;
+
+        if (nullptr != source && GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
+            {
+            IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, snapElemEntryId);
+
+            if (entity.IsValid())
+                geom = GeometricPrimitive::Create(entity);
+            }
+
+        if (!geom.IsValid())
+            geom = iter.GetGeometryPtr();
 
         if (geom.IsValid())
             {
@@ -964,10 +1081,21 @@ void _OutputGraphics(ViewContextR context) override
         for (auto partIter : partCollection)
             {
             // Quick exclude of part geometry that didn't generate the hit...pass true to compare part geometry index...
-            if (snap->GetGeomDetail().GetGeometryStreamEntryId(true) != partIter.GetGeometryStreamEntryId())
+            if (snapPartEntryId != partIter.GetGeometryStreamEntryId())
                 continue;
 
-            GeometricPrimitivePtr partGeom = partIter.GetGeometryPtr();
+            GeometricPrimitivePtr partGeom;
+
+            if (GeometryCollection::Iterator::EntryType::BRepEntity == partIter.GetEntryType())
+                {
+                IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*geomPart, snapPartEntryId);
+
+                if (entity.IsValid())
+                    partGeom = GeometricPrimitive::Create(entity);
+                }
+
+            if (!partGeom.IsValid())
+                partGeom = partIter.GetGeometryPtr();                
 
             if (!partGeom.IsValid())
                 continue;
@@ -1006,6 +1134,7 @@ static bool DoSnapUsingClosestCurve(SnapContextR snapContext)
     }
 
 }; // SnapEdgeProcessor
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/06
