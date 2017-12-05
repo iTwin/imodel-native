@@ -356,7 +356,8 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<Dg
     //...............................................................................................................................................
     // Create temp table(s) for tracking tags (cheaper than traversing dependency back pointers).
 
-    #define TEMP_TAG_MAP_TABLE "temp.V8TagElementMap"
+    #define TEMP_TAG_MAP_TABLE_NAME "V8TagElementMap"
+    #define TEMP_TAG_MAP_TABLE "temp." TEMP_TAG_MAP_TABLE_NAME
 
     if (DbResult::BE_SQLITE_OK != m_dgndb->CreateTable(TEMP_TAG_MAP_TABLE,
         "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -366,6 +367,9 @@ void Converter::_ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<Dg
         "V8TargetFileId INTEGER NOT NULL,"
         "V8TargetElementId INTEGER NOT NULL"
         ))
+        { BeAssert(false); return; }
+
+    if (DbResult::BE_SQLITE_OK != m_dgndb->ExecuteSql("CREATE INDEX temp.idxTagMapTable ON " TEMP_TAG_MAP_TABLE_NAME "(V8TargetFileId,V8TargetElementId)"))
         { BeAssert(false); return; }
 
     CachedStatementPtr insertTagRecord;
