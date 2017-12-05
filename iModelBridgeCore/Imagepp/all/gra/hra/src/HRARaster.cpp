@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRARaster.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -621,6 +621,16 @@ void HRARaster::SetLookAhead(const HVEShape& pi_rShape,
     {
     HPRECONDITION(HasLookAhead());
     HASSERT(false);
+    }
+
+//-----------------------------------------------------------------------------
+// Public (must be overriden to be used)
+// Get the raster tile ID list for the given shape
+//-----------------------------------------------------------------------------
+void HRARaster::GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo,
+                                    const HVEShape&          pi_rShape)
+    {
+    HASSERT(false);    
     }
 
 //-----------------------------------------------------------------------------

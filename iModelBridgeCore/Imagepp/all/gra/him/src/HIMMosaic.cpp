@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/him/src/HIMMosaic.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1552,6 +1552,40 @@ void HIMMosaic::SetLookAhead(const HVEShape& pi_rShape,
         ++Itr;
         }
     }
+
+
+/** ---------------------------------------------------------------------------
+Set a lookahead shape to the mosaic. It will be given to every image
+that supports the lookahead mechanism.
+---------------------------------------------------------------------------
+*/
+void HIMMosaic::GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo,
+                                    const HVEShape&          pi_rShape)
+    {
+    // Set the lookahead of images that are in the region.
+
+    HAutoPtr< IndexType::IndexableList > pObjects(m_pIndex->QueryIndexables(
+        HIDXSearchCriteria(m_pIndex->GetIndex2(), new HGFSpatialCriteria(pi_rShape.GetExtent())), true));
+    IndexType::IndexableList::const_iterator Itr(pObjects->begin());
+
+    while (Itr != pObjects->end())
+        {                
+        // Calculate the needed visible part of this image
+        HVEShape VisibleShape(pi_rShape);
+        VisibleShape.Intersect(HRARaster::GetShape());
+        VisibleShape.Intersect(*m_pIndex->GetIndex1()->GetVisibleSurfaceOf(*Itr));
+
+        // Send part to the image, if there is one...
+        if (!VisibleShape.IsEmpty())
+            (*Itr)->GetObject()->GetRasterTileIDList(po_rTileIdListInfo, VisibleShape);
+        
+        // Proceed to the next element
+        ++Itr;
+        }
+
+    }
+
+
 
 
 /** ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRATiledRaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -227,6 +227,9 @@ public:
     virtual void    SetLookAhead(const HVEShape& pi_rShape,
                                  uint32_t        pi_ConsumerID,
                                  bool           pi_Async = false);
+    
+    virtual void    GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo,
+                                        const HVEShape&          pi_rShape);    
 
     void            GetMissingTilesInRegion(const HFCPtr<HVEShape>& pi_rpRegion,
                                             HGFTileIDList&          pi_rList,

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRARaster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -12,6 +12,7 @@
 #pragma once
 
 #include "HGFRaster.h"
+#include "HGFTileIDDescriptor.h"
 #include "HFCAccessMode.h"
 #include "HRAIteratorOptions.h"
 #include "HRPChannelType.h"
@@ -37,6 +38,12 @@ class HRAStoredRaster;
 class IHPMMemoryManager;
 class HRPFilter;
 struct HRACopyFromOptions;
+
+struct TileIdListInfo
+    {
+    HFCPtr<HRARaster> m_raster;
+    HGFTileIDList     m_tileIDList;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass
@@ -235,6 +242,8 @@ public:
     IMAGEPP_EXPORT ImagePPStatus CopyFrom(HRARaster& srcRaster, HRACopyFromOptions const& options);
         
     ImagePPStatus BuildCopyToContext(ImageTransformNodeR imageNode, HRACopyToOptionsCR options);
+
+    virtual void    GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo, const HVEShape& pi_rShape);
 
 protected:       
 

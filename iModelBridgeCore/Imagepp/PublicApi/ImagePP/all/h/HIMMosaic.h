@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMMosaic.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -167,6 +167,9 @@ public:
     virtual void    SetLookAhead(const HVEShape& pi_rShape,
                                  uint32_t        pi_ConsumerID,
                                  bool           pi_Async = false);
+
+    virtual void   GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo,
+        const HVEShape&          pi_rShape);
 
     //:> Message Handlers
     bool NotifyEffectiveShapeChanged (const HMGMessage& pi_rMessage);
