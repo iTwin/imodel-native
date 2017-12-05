@@ -24,7 +24,8 @@ baseDir = $(_MakeFilePath)
     NodeOS=darwin
     NodeCPU=X64
 %else
-    %error iModelJsNodeAddon is not available for this platform
+    %warn iModelJsNodeAddon is not available for this platform
+    %return
 %endif
 
 # NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
