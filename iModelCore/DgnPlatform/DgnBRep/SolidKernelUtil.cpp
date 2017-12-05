@@ -50,7 +50,19 @@ IBRepEntityPtr BRepDataCache::FindCachedBRepEntity(DgnElementCR element, Geometr
     if (found == cache->m_map.end())
         return nullptr;
 
-    return found->second;
+    IBRepEntityPtr entity = found->second;
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    // Make sure entity tag is still valid...
+    PK_LOGICAL_t isEntity = PK_LOGICAL_false;
+    if (PK_ERROR_no_errors != PK_ENTITY_is(PSolidUtil::GetEntityTag(*entity), &isEntity) || !isEntity)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+#endif
+
+    return entity;
     }
 
 /*---------------------------------------------------------------------------------**//**
