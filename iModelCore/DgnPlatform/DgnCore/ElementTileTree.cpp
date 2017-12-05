@@ -2138,66 +2138,64 @@ void MeshGenerator::ClipStrokes(StrokesR strokes) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
+* @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Strokes MeshGenerator::ClipSegments(StrokesCR input) const
     {
-    // Might be more efficient to modify input in-place.
     BeAssert(!input.m_disjoint);
 
-    Strokes output(*input.m_displayParams, input.m_disjoint, input.m_isPlanar);
-    enum    State { kInside, kOutside, kCrossedOutside };
-
+    Strokes output(*input.m_displayParams, false, input.m_isPlanar);
     output.m_strokes.reserve(input.m_strokes.size());
 
     for (auto const& inputStroke : input.m_strokes)
         {
-        auto const&     points = inputStroke.m_points;
-        DRange3d        range = DRange3d::From(points);
-        DPoint3d        rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
-
+        auto const& points = inputStroke.m_points;
         if (points.size() <= 1)
             continue;
 
+        DRange3d    range = DRange3d::From(points);
+        DPoint3d    rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
+
         DPoint3d prevPt = points.front();
-        State   prevState = GetTileRange().IsContained(prevPt) ? kInside : kOutside;
-        if (kInside == prevState)
+        bool prevOutside = !GetTileRange().IsContained(prevPt);
+        if (!prevOutside)
             {
             output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance, rangeCenter));
             output.m_strokes.back().m_points.push_back(prevPt);
             }
 
-        double   length = inputStroke.m_startDistance;       // Cumulative length along polyline.
+        double length = inputStroke.m_startDistance;        // Cumulative length along polyline
         for (size_t i = 1; i < points.size(); i++)
             {
             auto nextPt = points[i];
-            bool contained = GetTileRange().IsContained(nextPt);
-            State nextState = contained ? kInside : (kInside == prevState ? kCrossedOutside : kOutside);
-            if (kOutside == nextState && kOutside == prevState)
+            bool nextOutside = !GetTileRange().IsContained(nextPt);
+            DSegment3d clippedSegment;
+            if (prevOutside || nextOutside)
                 {
-                // The endpoints of a segment may lie outside of the range, but intersect it...
-                double unused1, unused2;
-                DSegment3d unused3;
-                DSegment3d segment = DSegment3d::From(prevPt, nextPt);
-                if (GetTileRange().IntersectBounded(unused1, unused2, unused3, segment))
-                    nextState = kCrossedOutside;
-                }
-
-            if (kOutside != nextState)
-                {
-                if (kOutside == prevState)
+                double param0, param1;
+                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
+                if (!GetTileRange().IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
                     {
-                    // back inside - start a new line string...
-                    output.m_strokes.push_back(Strokes::PointList(length, rangeCenter));
-                    output.m_strokes.back().m_points.push_back(prevPt);
+                    // entire segment clipped
+                    BeAssert(prevOutside && nextOutside);
+                    prevPt = nextPt;
+                    continue;
                     }
-
-                BeAssert(!output.m_strokes.empty());
-                output.m_strokes.back().m_points.push_back(nextPt);
                 }
-            length += prevPt.Distance(nextPt);
-            prevState = nextState;
+
+            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
+            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
+
+            if (prevOutside)
+                {
+                output.m_strokes.push_back(Strokes::PointList(length, rangeCenter));
+                output.m_strokes.back().m_points.push_back(startPt);
+                }
+
+            output.m_strokes.back().m_points.push_back(endPt);
+
             prevPt = nextPt;
+            prevOutside = nextOutside;
             }
 
         BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().m_points.size());
@@ -2278,10 +2276,7 @@ MeshList MeshGenerator::GetMeshes()
         {
         MeshP mesh = builder.second->GetMesh();
         if (!mesh->IsEmpty())
-            {
-            mesh->Close();
             meshes.push_back(mesh);
-            }
         }
 
     // Do not allow vertices outside of this tile's range to expand its content range
