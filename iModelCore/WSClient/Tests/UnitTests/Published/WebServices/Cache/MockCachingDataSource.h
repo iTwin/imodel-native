@@ -94,8 +94,8 @@ struct MockCachingDataSource : public ICachingDataSource
             CachedResponseKey(CacheTransactionCR, ECInstanceKeyCR parentKey));
         MOCK_METHOD3(GetNavigationQuery,
             WSQueryPtr(CacheTransactionCR, ObjectIdCR parentId, ISelectProviderPtr selectProvider));
-        MOCK_METHOD3(GetObject,
-            AsyncTaskPtr<ObjectsResult>(ObjectIdCR, DataOrigin, ICancellationTokenPtr));
+        MOCK_METHOD4(GetObject,
+            AsyncTaskPtr<ObjectsResult>(ObjectIdCR, RetrieveOptions, ICancellationTokenPtr));
         MOCK_METHOD5(GetObjects,
             AsyncTaskPtr<ObjectsResult>(CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr ct));
         MOCK_METHOD4(GetObjectsKeys,
