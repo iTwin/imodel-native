@@ -14,6 +14,9 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, StateCtor_Default_ReturnsEmptyValues)
     {
     ICachingDataSource::Progress::State state;
@@ -22,6 +25,9 @@ TEST_F(CachingDataSourceProgressTests, StateCtor_Default_ReturnsEmptyValues)
     EXPECT_EQ(0, state.total);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, StateCtor_ValuesPassed_ReturnsValues)
     {
     double current = 20.5;
@@ -32,6 +38,9 @@ TEST_F(CachingDataSourceProgressTests, StateCtor_ValuesPassed_ReturnsValues)
     EXPECT_EQ(total, state.total);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_Default_ReturnsEmptyValues)
     {
     ICachingDataSource::Progress progress;
@@ -43,6 +52,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_Default_ReturnsEmptyValues)
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesPassed_ReturnsBytesValuesOnly)
     {
     double current = 20.5;
@@ -57,6 +69,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesPassed_ReturnsBytesValues
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesAndLabelPassed_ReturnsBytesValuesAndLabelOnly)
     {
     double current = 20.5;
@@ -72,6 +87,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesAndLabelPassed_ReturnsByt
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesAndLabelAndSyncedPassed_ReturnsBytesValuesAndLabelAndSyncedOnly)
     {
     double current = 20.5;
@@ -88,6 +106,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesAndLabelAndSyncedPassed_R
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesAndLabelPassed_ReturnsBytesValuesAndLabelPtrOnly)
     {
     double current = 20.5;
@@ -104,6 +125,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_BytesValuesAndLabelPassed_ReturnsByt
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndBytesValuesAndLabelAndSyncedPassed_ReturnsInstancesValuesAndBytesValuesAndLabelAndSyncedOnly)
     {
     double current = 20;
@@ -123,6 +147,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndBytesValuesAndLabe
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndLabelAndSyncedPassed_ReturnsInstancesValuesAndLabelAndSyncedOnly)
     {
     auto instances = ICachingDataSource::Progress::State(20, 50);
@@ -139,6 +166,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndLabelAndSyncedPass
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                     Vilius.Kazlauskas               04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndSyncedPassed_ReturnsInstancesValuesAndSyncedOnly)
     {
     auto instances = ICachingDataSource::Progress::State(20, 50);
@@ -153,6 +183,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_InstancesValuesAndSyncedPassed_Retur
     EXPECT_EQ(ECInstanceKey(), progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Petras.Sukys               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, Ctor_BytesAndLabelAndSyncedAndClassIdAndInstanceIdAndFileBytesPassed_ReturnsAllExceptInstances)
     {
     auto state = ICachingDataSource::Progress::State(20, 50);
@@ -170,6 +203,9 @@ TEST_F(CachingDataSourceProgressTests, Ctor_BytesAndLabelAndSyncedAndClassIdAndI
     EXPECT_EQ(ecKey, progress.GetCurrentFileKey());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Petras.Sukys               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, EqualOperator_CompareEqualObjects_ReturnTrue)
     {
     auto state = ICachingDataSource::Progress::State(20, 50);
@@ -179,6 +215,9 @@ TEST_F(CachingDataSourceProgressTests, EqualOperator_CompareEqualObjects_ReturnT
     EXPECT_EQ(progress, progress);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Petras.Sukys               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareDifferentObjects_ReturnTrue)
     {
     auto state1 = ICachingDataSource::Progress::State(20, 50);
@@ -191,6 +230,9 @@ TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareDifferentObjects_
     EXPECT_NE(progress1, progress2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Petras.Sukys               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareSameObjectsExceptClassId_ReturnTrue)
     {
     auto state = ICachingDataSource::Progress::State(20, 50);
@@ -200,6 +242,9 @@ TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareSameObjectsExcept
     EXPECT_NE(progress1, progress2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Petras.Sukys               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareSameObjectsExceptInstanceId_ReturnTrue)
     {
     auto state = ICachingDataSource::Progress::State(20, 50);
@@ -209,6 +254,9 @@ TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareSameObjectsExcept
     EXPECT_NE(progress1, progress2);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Petras.Sukys               05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareSameObjectsExceptCurrentFileBytes_ReturnTrue)
     {
 

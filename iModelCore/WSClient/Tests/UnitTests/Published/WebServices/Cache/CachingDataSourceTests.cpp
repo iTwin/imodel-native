@@ -7262,6 +7262,9 @@ TEST_F(CachingDataSourceTests, SyncCachedData_SkipTokensNotEnabledInitialQueries
     ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector({query}), bvector<IQueryProviderPtr>(), nullptr, nullptr)->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                   Vincas.Razma                      03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedAndServerRespondsWithSkipToken_MultipleRequestsDone)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
