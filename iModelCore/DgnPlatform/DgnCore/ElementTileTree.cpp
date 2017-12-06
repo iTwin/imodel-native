@@ -799,7 +799,9 @@ static TileCacheStatistics       s_statistics;
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
     {
+#if defined (BENTLEYCONFIG_PARASOLID)    
     PSolidThreadUtil::WorkerThreadOuterMark outerMark;
+#endif
 
     auto& tile = GetElementTile();
 
@@ -2063,13 +2065,6 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
 
-#ifndef NDEBUG
-    static DgnElementId             s_debugId; // ((uint64_t) 64);
-
-    if (s_debugId.IsValid() && s_debugId != elemId)
-        return;
-#endif
-
     if (isContained)
         {
         AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
@@ -2697,6 +2692,13 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     {
     try
         {
+#ifndef NDEBUG
+        static DgnElementId             s_debugId;      //((uint64_t) 62);
+
+        if (s_debugId.IsValid() && s_debugId != elemId)
+            return;
+#endif
+
         if (!m_root.GetCachedGeometry(m_geometries, elemId, rangeDiagonalSquared))
             {
             m_curElemId = elemId;

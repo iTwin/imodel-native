@@ -72,15 +72,6 @@ void BRepDataCache::AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntr
     {
     BRepCache* cache = BRepCache::Get(element, true);
 
-#define DEBUG_PARTITIONS
-#ifdef DEBUG_PARTITIONS
-    PK_PARTITION_t          partition;
-    PK_PARTITION_type_t     partitionType;
-    PK_ENTITY_ask_partition(PSolidUtil::GetEntityTag(entity), &partition);
-    PK_PARTITION_ask_type(partition, &partitionType);
-    BeAssert (PK_PARTITION_type_standard_c == partitionType);
-#endif
-
     cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = &entity;
     }
 

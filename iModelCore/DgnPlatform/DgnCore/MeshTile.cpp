@@ -991,7 +991,9 @@ private:
         , m_db(db)
 #endif
         {
+#if defined (BENTLEYCONFIG_PARASOLID)    
         PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+#endif
         }
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
