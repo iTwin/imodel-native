@@ -1213,6 +1213,7 @@ public:
 
 //=======================================================================================
 //! An interface for a ECProperty value formatter.
+//! @note Formatter methods may be called from multiple different threads.
 //! @ingroup GROUP_Presentation_Content
 // @bsiclass                                    Grigas.Petraitis                09/2016
 //=======================================================================================
@@ -1253,6 +1254,7 @@ public:
 
 //=======================================================================================
 //! An interface for a ECProperty value formatter.
+//! @note Formatter methods may be called from multiple different threads.
 //! @ingroup GROUP_Presentation_Content
 // @bsiclass                                    Grigas.Petraitis                06/2017
 //=======================================================================================
@@ -1266,6 +1268,7 @@ protected:
 //=======================================================================================
 //! Interface for a category supplier which is used to determine categories for 
 //! @ref ContentDescriptor::Field.
+//! @note Supplied methods may be called from multiple different threads.
 //! @ingroup GROUP_Presentation_Content
 // @bsiclass                                    Grigas.Petraitis                10/2016
 //=======================================================================================

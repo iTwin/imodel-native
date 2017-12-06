@@ -91,6 +91,10 @@ $(o)PropertyInfoStore$(oext):            $(RulesEngineSourceDirectory)PropertyIn
 
 $(o)RuleSetEmbedder$(oext):              $(RulesEngineSourceDirectory)RuleSetEmbedder.cpp $(RulesEngineDependencies)
 
+$(o)SingleThreadQueueExecutor$(oext):    $(RulesEngineSourceDirectory)SingleThreadQueueExecutor.cpp $(RulesEngineDependencies)
+
+$(o)PresentationManagerImpl$(oext):      $(RulesEngineSourceDirectory)PresentationManagerImpl.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =

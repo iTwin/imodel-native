@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct TestUserSettings : IUserSettings
     {
     Json::Value _GetPresentationInfo() const override {return Json::Value();}
+    void _InitFrom(UserSettingsGroupList const&) override {}
 
     bool _HasSetting(Utf8CP id) const override {return false;}
 
@@ -38,10 +39,12 @@ struct TestUserSettings : IUserSettings
 struct TestUserSettingsManager : IUserSettingsManager
 {
 private:
+    mutable BeMutex m_mutex;
     mutable bmap<Utf8String, TestUserSettings> m_settings;
 protected:
     IUserSettings& _GetSettings(Utf8StringCR id) const override
         {
+        BeMutexHolder lock(m_mutex);
         auto iter = m_settings.find(id);
         if (m_settings.end() == iter)
             iter = m_settings.Insert(id, TestUserSettings()).first;

@@ -19,6 +19,7 @@ struct RulesDrivenECPresentationManagerTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
 
+    TestConnectionManager m_connections;
     RulesDrivenECPresentationManager* m_manager;
     TestRuleSetLocaterPtr m_locater;
     
@@ -28,10 +29,10 @@ struct RulesDrivenECPresentationManagerTests : ::testing::Test
     static void ShutDownTestL10N();
     static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
     
-    void SetUp() override;
-    void TearDown() override;
-
     RulesDrivenECPresentationManagerTests() : m_manager(nullptr) {}
+    virtual void SetUp() override;
+    virtual void TearDown() override;
+
     ECSchemaCP GetSchema();
     ECClassCP GetClass(Utf8CP name);
     ECClassCP GetClass(Utf8CP schemaName, Utf8CP className);

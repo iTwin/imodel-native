@@ -10,6 +10,36 @@
 #include <ECPresentation/IECPresentationManager.h>
 #include "ECDbBasedCache.h"
 
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
+    {
+    NavNodeKeyList list;
+    list.push_back(&key);
+    AddToSelection(ecdb, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
+    {
+    NavNodeKeyList list;
+    list.push_back(&key);
+    RemoveFromSelection(ecdb, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
+    {
+    NavNodeKeyList list;
+    list.push_back(&key);
+    ChangeSelection(ecdb, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
+    }
+
 //=======================================================================================
 // @bsiclass                                     Grigas.Petraitis                08/2016
 //=======================================================================================
@@ -25,7 +55,7 @@ public:
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
     SelectionStorage(NativeLogging::ILogger* logger) : m_logger(logger) {}
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2016
     +---------------+---------------+---------------+---------------+-----------+------*/
@@ -120,27 +150,6 @@ public:
         m_lastSource = source;
         return true;
         }
-
-    /*-----------------------------------------------------------------------------**//**
-    // @bsimethod                                   Grigas.Petraitis            10/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    bmap<uint64_t, uint64_t> RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
-        {
-        bmap<uint64_t, uint64_t> remapped;
-        for (NavNodeKeyCPtr key : m_keys)
-            {
-            auto remappedIter = const_cast<NavNodeKeyP>(key.get())->RemapNodeId(remapInfo);
-            if (remapInfo.end() != remappedIter)
-                remapped[remappedIter->first] = remappedIter->second;
-            }
-        if (!remapped.empty())
-            {
-            // if any of the keys was remapped, need to make sure the set is reindexed
-            NavNodeKeySet keys(m_keys.begin(), m_keys.end());
-            m_keys.swap(keys);
-            }
-        return remapped;
-        }
 };
 
 //=======================================================================================
@@ -150,17 +159,18 @@ struct SelectionManager::ECDbSelection : ECDbBasedCache
 {
 private:
     SelectionManager const& m_manager;
+    ECDbCR m_ecdb;
     SelectionStorage m_selection;
     SelectionStorage m_subSelection;
 
 protected:
-    void _ClearECDbCache(ECDbCR connection) override {m_manager.OnConnectionClosed(connection);}
+    void _ClearECDbCache(ECDbCR ecdb) override {m_manager.OnECDbClosed(m_ecdb);}
 
 public:
-    ECDbSelection(SelectionManager const& mgr, ECDbCR connection, NativeLogging::ILogger& logger) 
-        : ECDbBasedCache(false), m_manager(mgr), m_selection(&logger), m_subSelection(nullptr)
+    ECDbSelection(SelectionManager const& mgr, ECDbCR ecdb, NativeLogging::ILogger& logger) 
+        : ECDbBasedCache(false), m_ecdb(ecdb), m_manager(mgr), m_selection(&logger), m_subSelection(nullptr)
         {
-        OnConnection(connection);
+        OnConnection(ecdb);
         }
     SelectionStorage& GetSelection() {return m_selection;}
     SelectionStorage& GetSubSelection() {return m_subSelection;}
@@ -183,65 +193,44 @@ NativeLogging::ILogger& SelectionManager::GetLogger() const {return *NativeLoggi
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionManager::SelectionStorage& SelectionManager::GetStorage(ECDbCR connection, bool isSubSelection) const
+SelectionManager::SelectionStorage& SelectionManager::GetStorage(IConnectionCR connection, bool isSubSelection) const
     {
-    auto iter = m_selections.find(connection.GetDbGuid());
+    auto iter = m_selections.find(connection.GetId());
     if (m_selections.end() == iter)
-        iter = m_selections.Insert(connection.GetDbGuid(), new ECDbSelection(*this, connection, GetLogger())).first;
+        iter = m_selections.Insert(connection.GetId(), new ECDbSelection(*this, connection.GetDb(), GetLogger())).first;
     return isSubSelection ? iter->second->GetSubSelection() : iter->second->GetSelection();
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::OnConnectionClosed(ECDbCR connection) const
+void SelectionManager::OnECDbClosed(ECDbCR ecdb) const
     {
-    BeGuid guid = connection.GetDbGuid();
-    auto iter = m_selections.find(guid);
+    IConnectionCPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+    
+    BeMutexHolder lock(m_mutex);
+    auto iter = m_selections.find(connection->GetId());
     if (m_selections.end() != iter)
         {
         m_selections.erase(iter);
-        GetLogger().infov("Selection cleared due to connection close: '%s'", guid.ToString().c_str());
+        GetLogger().infov("Selection cleared due to connection close: '%s'", connection->GetId().c_str());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void MergeRemapInfo(bmap<uint64_t, uint64_t>& merged, bmap<uint64_t, uint64_t> const& input)
-    {
-    for (auto pair : input)
-        {
-        BeAssert(merged.end() == merged.find(pair.first) || merged.find(pair.first)->second == pair.second);
-        merged[pair.first] = pair.second;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::RemapNodeIds(bmap<uint64_t, uint64_t> const& remapInfo)
-    {
-    bmap<uint64_t, uint64_t> affected;
-    for (auto selectionsPair : m_selections)
-        {
-        ECDbSelection& selections = *selectionsPair.second;
-        MergeRemapInfo(affected, selections.GetSelection().RemapNodeIds(remapInfo));
-        MergeRemapInfo(affected, selections.GetSubSelection().RemapNodeIds(remapInfo));
-        }
-    for (SelectionSyncHandlerPtr const& syncHandler : m_syncHandlers)
-        syncHandler->_OnSelectedNodesRemapped(affected);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::AddListener(ISelectionChangesListener& listener) {m_listeners.push_back(&listener);}
+void SelectionManager::_AddListener(ISelectionChangesListener& listener) {m_listeners.push_back(&listener);}
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::RemoveListener(ISelectionChangesListener& listener) {m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), &listener));}
+void SelectionManager::_RemoveListener(ISelectionChangesListener& listener) {m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), &listener));}
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
@@ -268,119 +257,148 @@ void  SelectionManager::RemoveSyncHandler(SelectionSyncHandlerR handler)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::BroadcastSelectionChangedEvent(ECDbR db, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData) const
+void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData) const
     {
     // create the selection changed event
-    SelectionChangedEvent evt(db, source, changeType, isSubSelection, keys);
+    SelectionChangedEvent evt(connection, source, changeType, isSubSelection, keys);
     evt.GetExtendedDataR().CopyFrom(extendedData, evt.GetExtendedDataAllocator());
 
     // notify listeners on the work thread
     bvector<ISelectionChangesListener*> listeners = m_listeners;
     for (ISelectionChangesListener* listener : listeners)
-        listener->_OnSelectionChanged(evt);
+        listener->NotifySelectionChanged(evt);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::AddToSelection(ECDbR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
     {
-    if (GetStorage(db, isSubSelection).AddToSelection(source, keys))
+    IConnectionPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+    
+    BeMutexHolder lock(m_mutex);
+    if (GetStorage(*connection, isSubSelection).AddToSelection(source, keys))
         {
         if (!isSubSelection)
             {
-            GetStorage(db, true).ClearSelection(source);
+            GetStorage(*connection, true).ClearSelection(source);
             GetLogger().debug("Sub selection cleared due to main selection change");
             }
-        BroadcastSelectionChangedEvent(db, source, SelectionChangeType::Add, isSubSelection, keys, extendedData);
+        lock.unlock();
+        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Add, isSubSelection, keys, extendedData);
         }
-    }
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::AddToSelection(ECDbR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
-    {
-    NavNodeKeyList list;
-    list.push_back(&key);
-    AddToSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::RemoveFromSelection(ECDbR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
     {
-    if (GetStorage(db, isSubSelection).RemoveFromSelection(source, keys))
+    IConnectionPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+    
+    BeMutexHolder lock(m_mutex);
+    if (GetStorage(*connection, isSubSelection).RemoveFromSelection(source, keys))
         {
         if (!isSubSelection)
             {
-            GetStorage(db, true).ClearSelection(source);
+            GetStorage(*connection, true).ClearSelection(source);
             GetLogger().debug("Sub selection cleared due to main selection change");
             }
-        BroadcastSelectionChangedEvent(db, source, SelectionChangeType::Remove, isSubSelection, keys, extendedData);
+        lock.unlock();
+        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Remove, isSubSelection, keys, extendedData);
         }
-    }
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::RemoveFromSelection(ECDbR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
-    {
-    NavNodeKeyList list;
-    list.push_back(&key);
-    RemoveFromSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::ChangeSelection(ECDbR db, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
+void SelectionManager::_ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, INavNodeKeysContainerCR keys, RapidJsonValueCR extendedData)
     {
-    if (GetStorage(db, isSubSelection).ChangeSelection(source, keys))
+    IConnectionPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+    
+    BeMutexHolder lock(m_mutex);
+    if (GetStorage(*connection, isSubSelection).ChangeSelection(source, keys))
         {
         if (!isSubSelection)
             {
-            GetStorage(db, true).ClearSelection(source);
+            GetStorage(*connection, true).ClearSelection(source);
             GetLogger().debug("Sub selection cleared due to main selection change");
             }
-        BroadcastSelectionChangedEvent(db, source, SelectionChangeType::Replace, isSubSelection, keys, extendedData);
+        lock.unlock();
+        BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Replace, isSubSelection, keys, extendedData);
         }
-    }
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::ChangeSelection(ECDbR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData)
-    {
-    NavNodeKeyList list;
-    list.push_back(&key);
-    ChangeSelection(db, source, isSubSelection, *NavNodeKeyListContainer::Create(&list), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SelectionManager::ClearSelection(ECDbR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData)
+void SelectionManager::_ClearSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData)
     {
-    if (!GetStorage(db, isSubSelection).ClearSelection(source))
+    IConnectionPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+    
+    BeMutexHolder lock(m_mutex);
+    if (!GetStorage(*connection, isSubSelection).ClearSelection(source))
         return;
 
     if (!isSubSelection)
         {
-        GetStorage(db, true).ClearSelection(source);
+        GetStorage(*connection, true).ClearSelection(source);
         GetLogger().debug("Sub selection cleared due to main selection change");
         }
-
-    BroadcastSelectionChangedEvent(db, source, SelectionChangeType::Clear, isSubSelection, *NavNodeKeyListContainer::Create(), extendedData);
+    
+    lock.unlock();
+    BroadcastSelectionChangedEvent(*connection, source, SelectionChangeType::Clear, isSubSelection, *NavNodeKeyListContainer::Create(), extendedData);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr SelectionManager::_GetSelection(ECDbR db) const {return GetStorage(db, false).GetSelection();}
+INavNodeKeysContainerCPtr SelectionManager::_GetSelection(ECDbCR ecdb) const
+    {
+    IConnectionPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return NavNodeKeyListContainer::Create();
+        }
+    BeMutexHolder lock(m_mutex);
+    return GetStorage(*connection, false).GetSelection();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr SelectionManager::_GetSubSelection(ECDbR db) const {return GetStorage(db, true).GetSelection();}
+INavNodeKeysContainerCPtr SelectionManager::_GetSubSelection(ECDbCR ecdb) const
+    {
+    IConnectionPtr connection = m_connections.GetConnection(ecdb);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return NavNodeKeyListContainer::Create();
+        }
+    BeMutexHolder lock(m_mutex);
+    return GetStorage(*connection, true).GetSelection();
+    }
 
 const Utf8CP SelectionChangedEvent::JSON_MEMBER_Source = "Source";
 const Utf8CP SelectionChangedEvent::JSON_MEMBER_ConnectionId = "ConnectionId";
@@ -397,7 +415,7 @@ rapidjson::Document SelectionChangedEvent::AsJson(rapidjson::Document::Allocator
     json.SetObject();
 
     if (nullptr != m_connection)
-        json.AddMember(rapidjson::StringRef(JSON_MEMBER_ConnectionId), rapidjson::Value(m_connection->GetDbGuid().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
+        json.AddMember(rapidjson::StringRef(JSON_MEMBER_ConnectionId), rapidjson::Value(m_connection->GetId().c_str(), json.GetAllocator()), json.GetAllocator());
 
     json.AddMember(rapidjson::StringRef(JSON_MEMBER_Source), rapidjson::StringRef(m_sourceName.c_str()), json.GetAllocator());
     json.AddMember(rapidjson::StringRef(JSON_MEMBER_IsSubSelection), m_isSubSelection, json.GetAllocator());
@@ -423,7 +441,7 @@ SelectionChangedEvent::SelectionChangedEvent(IConnectionCacheCR connectionCache,
 
     BeAssert(json.isMember(JSON_MEMBER_Source) && json[JSON_MEMBER_Source].isString());
     m_sourceName = json[JSON_MEMBER_Source].asCString();
-        
+
     BeAssert(json.isMember(JSON_MEMBER_ChangeType) && json[JSON_MEMBER_ChangeType].isInt());
     m_changeType = (SelectionChangeType)json[JSON_MEMBER_ChangeType].asInt();
 
@@ -495,7 +513,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     // don't handle events fired by itself
     if (nullptr != _GetSelectionSourceName() && evt.GetSourceName().Equals(_GetSelectionSourceName()))
         return;
-    
+
     // create content request options
     Json::Value contentOptions = _CreateContentOptionsForSelection(evt);
     Utf8CP contentDisplayType = _GetContentDisplayType();
@@ -505,7 +523,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection(), contentDisplayType, selection, contentOptions);
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetDb(), contentDisplayType, selection, contentOptions).get();
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);
@@ -517,7 +535,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(evt.GetConnection(), *descriptor, selection, PageOptions(), contentOptions);
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(evt.GetConnection().GetDb(), *descriptor, selection, PageOptions(), contentOptions).get();
     if (content.IsNull())
         {
         _SelectInstances(evt, selectedKeys);
@@ -533,7 +551,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::AddToSelection(BeSQLite::EC::ECDbR db, bool isSubSelection, INavNodeKeysContainerCR keys)
+void SelectionSyncHandler::AddToSelection(ECDbCR ecdb, bool isSubSelection, INavNodeKeysContainerCR keys)
     {
     if (nullptr == m_manager)
         {
@@ -542,52 +560,52 @@ void SelectionSyncHandler::AddToSelection(BeSQLite::EC::ECDbR db, bool isSubSele
         }
 
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->AddToSelection(db, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
+    m_manager->AddToSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::RemoveFromSelection(BeSQLite::EC::ECDbR db, bool isSubSelection, INavNodeKeysContainerCR keys)
+void SelectionSyncHandler::RemoveFromSelection(ECDbCR ecdb, bool isSubSelection, INavNodeKeysContainerCR keys)
     {
     if (nullptr == m_manager)
         {
         BeAssert(false && "SelectionSyncHandler must be registered with the SelectionManager before calling RemoveFromSelection");
         return;
         }
-    
+
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->RemoveFromSelection(db, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
+    m_manager->RemoveFromSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::ChangeSelection(BeSQLite::EC::ECDbR db, bool isSubSelection, INavNodeKeysContainerCR keys)
+void SelectionSyncHandler::ChangeSelection(ECDbCR ecdb, bool isSubSelection, INavNodeKeysContainerCR keys)
     {
     if (nullptr == m_manager)
         {
         BeAssert(false && "SelectionSyncHandler must be registered with the SelectionManager before calling ChangeSelection");
         return;
         }
-    
+
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->ChangeSelection(db, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
+    m_manager->ChangeSelection(ecdb, _GetSelectionSourceName(), isSubSelection, keys, _CreateSelectionEventExtendedData());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::ClearSelection(BeSQLite::EC::ECDbR db, bool isSubSelection)
+void SelectionSyncHandler::ClearSelection(ECDbCR ecdb, bool isSubSelection)
     {
     if (nullptr == m_manager)
         {
         BeAssert(false && "SelectionSyncHandler must be registered with the SelectionManager before calling ClearSelection");
         return;
         }
-    
+
     BeAssert(nullptr != _GetSelectionSourceName() && 0 != *_GetSelectionSourceName());
-    m_manager->ClearSelection(db, _GetSelectionSourceName(), isSubSelection, _CreateSelectionEventExtendedData());
+    m_manager->ClearSelection(ecdb, _GetSelectionSourceName(), isSubSelection, _CreateSelectionEventExtendedData());
     }
 
 //---------------------------------------------------------------------------------------
@@ -599,16 +617,16 @@ void SelectionSyncHandler::HandleSelectionChangeEvent(SelectionChangedEventCR ev
     switch (evt.GetChangeType())
         {
         case SelectionChangeType::Add:
-            AddToSelection(evt.GetConnection(), evt.IsSubSelection(), *container);
+            AddToSelection(evt.GetDb(), evt.IsSubSelection(), *container);
             break;
         case SelectionChangeType::Remove:
-            RemoveFromSelection(evt.GetConnection(), evt.IsSubSelection(), *container);
+            RemoveFromSelection(evt.GetDb(), evt.IsSubSelection(), *container);
             break;
         case SelectionChangeType::Replace:
-            ChangeSelection(evt.GetConnection(), evt.IsSubSelection(), *container);
+            ChangeSelection(evt.GetDb(), evt.IsSubSelection(), *container);
             break;
         case SelectionChangeType::Clear:
-            ClearSelection(evt.GetConnection(), evt.IsSubSelection());
+            ClearSelection(evt.GetDb(), evt.IsSubSelection());
             break;
         default:
             BeAssert(false);

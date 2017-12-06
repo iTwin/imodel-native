@@ -106,7 +106,7 @@ protected:
         return s_empty;
         }
 public:
-    ClassSelectionInfo(ECDbCR connection, NavNodeKeyListCR keys)
+    ClassSelectionInfo(ECDbCR db, NavNodeKeyListCR keys)
         {
         for (NavNodeKeyCPtr const& key : keys)
             {
@@ -116,7 +116,7 @@ public:
                 continue;
                 }
             ECClassId classId = key->AsECInstanceNodeKey()->GetECClassId();
-            ECClassCP ecClass = connection.Schemas().GetClass(classId);
+            ECClassCP ecClass = db.Schemas().GetClass(classId);
             m_classes.push_back(ecClass);
             }
         }
@@ -248,8 +248,7 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> c
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<SelectClassInfo> ContentClassesLocater::Locate(bvector<ECClassCP> const& classes) const
     {
-    ECDbCR connection = m_context.GetSchemaHelper().GetDb();
-    RulesPreprocessor::ContentRuleParameters params(connection, *NavNodeKeyListContainer::Create(GetClassKeys(classes)), 
+    RulesPreprocessor::ContentRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), *NavNodeKeyListContainer::Create(GetClassKeys(classes)), 
         m_context.GetPreferredDisplayType(), "", false, m_context.GetRuleset(), m_context.GetUserSettings(), 
         nullptr, m_context.GetECExpressionsCache(), m_context.GetNodesLocater());
     ContentRuleSpecificationsList ruleSpecs = RulesPreprocessor::GetContentSpecifications(params);
@@ -257,7 +256,7 @@ bvector<SelectClassInfo> ContentClassesLocater::Locate(bvector<ECClassCP> const&
     ContentClassesLocaterImpl locater(m_context);
     for (ContentRuleSpecification const& rule : ruleSpecs)
         {
-        ClassSelectionInfo selection(connection, rule.GetMatchingSelectedNodeKeys());
+        ClassSelectionInfo selection(m_context.GetConnection().GetDb(), rule.GetMatchingSelectedNodeKeys());
         locater.SetCurrentSelection(&selection);
         for (ContentSpecificationCP spec : rule.GetRule().GetSpecifications())
             spec->Accept(locater);

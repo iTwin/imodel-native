@@ -22,7 +22,7 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
     if (m_nodeExpressionContext.IsNull())
         {
         ECExpressionContextsProvider::CustomizationRulesContextParameters params(m_node, m_parentNode, 
-            m_context.GetDb(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener());
+            m_context.GetConnection(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener());
         m_nodeExpressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
         }
     return *m_nodeExpressionContext;
@@ -34,7 +34,7 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
 bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
     {
     bool didOverride = false;
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetDb(), m_node, m_parentNode, 
+    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
         m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
     if (nullptr != labelOverride)
@@ -65,7 +65,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
 bool NavNodeCustomizer::ApplyStyleOverride()
     {
     bool didOverride = false;
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetDb(), m_node, m_parentNode, 
+    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
         m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     StyleOverrideCP styleOverride = RulesPreprocessor::GetStyleOverride(params);
     if (nullptr != styleOverride)
@@ -103,7 +103,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
 bool NavNodeCustomizer::ApplyImageIdOverride()
     {
     bool didOverride = false;
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetDb(), m_node, m_parentNode, 
+    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
         m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     ImageIdOverrideCP imageIdOverride = RulesPreprocessor::GetImageIdOverride(params);
     if (nullptr != imageIdOverride)
@@ -156,7 +156,7 @@ bool NavNodeCustomizer::ApplyLocalization()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool NavNodeCustomizer::ApplyCheckboxRules()
     {
-    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetDb(), m_node, m_parentNode, 
+    RulesPreprocessor::CustomizationRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), m_node, m_parentNode, 
         m_context.GetRuleset(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     CheckBoxRuleCP rule = RulesPreprocessor::GetCheckboxRule(params);
     if (nullptr == rule)
@@ -197,7 +197,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
             isChecked = rule->GetDefaultValue();
         else
             isChecked = rule->GetUseInversedPropertyValue() ? !value.GetBoolean() : value.GetBoolean();
-        isReadOnly = m_context.GetDb().IsReadonly() || boundProperty->GetIsReadOnly() || value.IsReadOnly();
+        isReadOnly = m_context.GetConnection().IsReadOnly() || boundProperty->GetIsReadOnly() || value.IsReadOnly();
 
         m_setter._SetCheckboxBoundInfo(rule->GetPropertyName(), rule->GetUseInversedPropertyValue());
         }
@@ -222,7 +222,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCustomizer::NavNodeCustomizer(RulesDrivenProviderContextCR context, NavNodeCR node, NavNodeCP parentNode, ICustomizablePropertiesSetter const& setter)
+NavNodeCustomizer::NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonNavNodeCR node, JsonNavNodeCP parentNode, ICustomizablePropertiesSetter const& setter)
     : m_context(context), m_node(node), m_parentNode(parentNode), m_setter(setter), m_ecdbSymbolsContext(nullptr)
     {
     if (m_context.IsQueryContext())
@@ -293,7 +293,7 @@ void CustomizationHelper::Customize(NavNodesProviderContextCR context, JsonNavNo
     if (extendedData.IsCustomized())
         return;
 
-    NavNodeCPtr parentNode;
+    JsonNavNodeCPtr parentNode;
     if (extendedData.HasVirtualParentId())
         parentNode = context.GetNodesCache().GetNode(extendedData.GetVirtualParentId());
 
@@ -325,7 +325,7 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
         }
 
     ECInstanceKeyCR itemKey = item.GetKeys().front();
-    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetDb(), itemKey.GetClassId(), itemKey.GetInstanceId(), "");
+    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), itemKey.GetClassId(), itemKey.GetInstanceId(), "");
     ContentSetItemPropertiesSetter setter(item);
     NavNodeCustomizer customizer(context, *node, nullptr, setter);
     customizer.ApplyImageIdOverride();
@@ -336,7 +336,7 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomizationHelper::NotifyCheckedStateChanged(ECDbR db, NavNodeCR node, bool isChecked)
+void CustomizationHelper::NotifyCheckedStateChanged(ECDbR db, JsonNavNodeCR node, bool isChecked)
     {
     NavNodeExtendedData extendedData(node);
     if (extendedData.HasCheckboxBoundPropertyName())
@@ -355,6 +355,7 @@ void CustomizationHelper::NotifyCheckedStateChanged(ECDbR db, NavNodeCR node, bo
         BeAssert(!instance->IsReadOnly());
         BeAssert(!prop->GetIsReadOnly());
         BeAssert(!db.IsReadonly());
+        BeAssert(!db.GetECDbSettings().RequiresECCrudWriteToken());
 
         const_cast<IECInstanceP>(instance.get())->SetValue(prop->GetName().c_str(), ECValue(isChecked));
         

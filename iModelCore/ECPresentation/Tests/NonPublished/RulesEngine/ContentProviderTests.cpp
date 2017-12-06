@@ -10,16 +10,14 @@
 #include "TestHelpers.h"
 
 ECDbTestProject* ContentProviderTests::s_project = nullptr;
-CustomFunctionsInjector* ContentProviderTests::s_customFunctions = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentProviderTests::SetUpTestCase()
     {
-    ContentProviderTests::s_project = new ECDbTestProject();
-    ContentProviderTests::s_project->Create("ContentProviderTests", "RulesEngineTest.01.00.ecschema.xml");
-    ContentProviderTests::s_customFunctions = new CustomFunctionsInjector(ContentProviderTests::s_project->GetECDb());
+    s_project = new ECDbTestProject();
+    s_project->Create("ContentProviderTests", "RulesEngineTest.01.00.ecschema.xml");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,8 +25,7 @@ void ContentProviderTests::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentProviderTests::TearDownTestCase()
     {
-    DELETE_AND_CLEAR(ContentProviderTests::s_project);
-    DELETE_AND_CLEAR(ContentProviderTests::s_customFunctions);
+    DELETE_AND_CLEAR(s_project);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -44,11 +41,13 @@ void ContentProviderTests::SetUp()
     m_gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget");
     m_sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket");
 
+    m_customFunctions = new CustomFunctionsInjector(m_connections, s_project->GetECDb());
+    m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
     m_ruleset = PresentationRuleSet::CreateInstance("ContentProviderTests", 1, 0, false, "", "", "", false);
 
     m_context = ContentProviderContext::Create(*m_ruleset, true, ContentDisplayType::Undefined, m_nodesLocater, m_categorySupplier,
         m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, nullptr);
-    m_context->SetQueryContext(s_project->GetECDb(), m_statementCache, *s_customFunctions);
+    m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,6 +55,7 @@ void ContentProviderTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentProviderTests::TearDown()
     {
+    DELETE_AND_CLEAR(m_customFunctions);
     Localization::Terminate();
     }
 /*---------------------------------------------------------------------------------**//**
@@ -63,8 +63,8 @@ void ContentProviderTests::TearDown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNode)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance1);
 
@@ -93,8 +93,8 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNo
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfTheSameClass)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
@@ -130,8 +130,8 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfDifferentClasses)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
@@ -166,7 +166,7 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, CreatesImageIdWhenSpecified)
     {
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instance));
@@ -197,7 +197,7 @@ TEST_F (ContentProviderTests, CustomizesImageId)
     {
     m_ruleset->AddPresentationRule(*new ImageIdOverride("ThisNode.IsInstanceNode", 1, "\"TestImageId\""));
 
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instance));
@@ -226,7 +226,7 @@ TEST_F (ContentProviderTests, CustomizesImageId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
     {
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test MyID"));});
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test MyID"));});
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instance));
@@ -259,9 +259,9 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, PagingUnsortedData)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
@@ -296,11 +296,11 @@ TEST_F (ContentProviderTests, PagingUnsortedData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, PagingSortedData)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(3));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
     
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
@@ -342,9 +342,9 @@ TEST_F (ContentProviderTests, PagingSortedData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, PageDoesNotExceedPageSize)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
@@ -381,13 +381,13 @@ TEST_F(ContentProviderTests, LoadsNestedContentFields)
     {
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
 
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr sprocket1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [&](IECInstanceR instance)
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr sprocket1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel));
         instance.SetValue("Description", ECValue("One"));
         });
-    IECInstancePtr sprocket2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [&](IECInstanceR instance)
+    IECInstancePtr sprocket2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel));
         instance.SetValue("Description", ECValue("Two"));

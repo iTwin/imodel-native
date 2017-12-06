@@ -12,6 +12,9 @@
 
 ECPRESENTATION_TYPEDEFS(IConnectionCache)
 ECPRESENTATION_TYPEDEFS(IConnectionManager)
+ECPRESENTATION_TYPEDEFS(IConnection)
+ECPRESENTATION_REFCOUNTED_PTR(IConnection)
+
 ECPRESENTATION_TYPEDEFS(IECPresentationManager)
 ECPRESENTATION_TYPEDEFS(IAUIDisplayItem)
 ECPRESENTATION_TYPEDEFS(NavNodeKey)
@@ -35,6 +38,9 @@ ECPRESENTATION_TYPEDEFS(SelectionManager)
 ECPRESENTATION_TYPEDEFS(SelectionChangedEvent)
 ECPRESENTATION_TYPEDEFS(SelectionSyncHandler)
 ECPRESENTATION_REFCOUNTED_PTR(SelectionSyncHandler)
+
+ECPRESENTATION_TYPEDEFS(ICancelationToken)
+ECPRESENTATION_REFCOUNTED_PTR(ICancelationToken)
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -194,5 +200,32 @@ struct IUsedUserSettingsListener
     virtual ~IUsedUserSettingsListener() {}
     virtual void _OnUserSettingUsed(Utf8CP settingId) = 0;
     };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct ICancelationToken : RefCountedBase
+{
+protected:
+    virtual bool _IsCanceled() const = 0;
+public:
+    bool IsCanceled() const {return _IsCanceled();}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct SimpleCancelationToken : ICancelationToken
+{
+private:
+    bool m_isCanceled;
+protected:
+    SimpleCancelationToken() : m_isCanceled(false) {}
+    bool _IsCanceled() const {return m_isCanceled;}
+public:
+    static RefCountedPtr<SimpleCancelationToken> Create() {return new SimpleCancelationToken();}
+    void SetCanceled(bool value) {m_isCanceled = value;}
+};
+typedef RefCountedPtr<SimpleCancelationToken> SimpleCancelationTokenPtr;
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

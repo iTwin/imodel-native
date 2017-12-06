@@ -18,6 +18,7 @@
 #include <UnitTests/BackDoor/ECPresentation/TestConnectionCache.h>
 #include "ECDbTestProject.h"
 #include "TestNavNode.h"
+#include "TestNodesProvider.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -57,16 +58,16 @@ struct RulesEngineTestHelpers
 
     static Utf8String GetDisplayLabel(IECInstanceCR instance);
 
-    static IECInstancePtr InsertInstance(ECDbTestProject& project, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static IECInstancePtr InsertInstance(ECDbTestProject& project, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
+    static IECInstancePtr InsertInstance(ECDbR, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
+    static IECInstancePtr InsertInstance(ECDbR, ECInstanceInserter& inserter, ECClassCR ecClass, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
     static ECInstanceKey InsertRelationship(ECDbR db, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
     static ECInstanceKey InsertRelationship(ECDbTestProject& project, ECRelationshipClassCR relationship, IECInstanceCR source, IECInstanceR target, std::function<void(IECInstanceR)> const& instancePreparer = nullptr);
-    static void DeleteInstances(ECDbTestProject& project, ECClassCR ecClass, bool polymorphic = false);
+    static void DeleteInstances(ECDbR db, ECClassCR ecClass, bool polymorphic = false);
     static void DeleteInstance(ECDbR db, ECInstanceKeyCR key);
     static void DeleteInstance(ECDbR db, IECInstanceCR instance);
     static void DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key);
     static void DeleteInstance(ECDbTestProject& project, IECInstanceCR instance);
-    static IECInstancePtr GetInstance(ECDbTestProject& project, ECClassCR ecClass, ECInstanceId id);
+    static IECInstancePtr GetInstance(ECDbR& project, ECClassCR ecClass, ECInstanceId id);
     static ECInstanceKey GetInstanceKey(IECInstanceCR);
 
     static NavigationQueryPtr CreateECInstanceNodesQueryForClasses(ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
@@ -144,15 +145,32 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct TestECInstanceChangeEventsHandler : ECInstanceChangeEventSource::IEventHandler
+{
+private:
+    std::function<void(ECDbCR, bvector<ECInstanceChangeEventSource::ChangedECInstance>)> m_callback;
+protected:
+    void _OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> changes) override
+        {
+        if (m_callback)
+            m_callback(db, changes);
+        }
+public:
+    void SetCallback(std::function<void(ECDbCR, bvector<ECInstanceChangeEventSource::ChangedECInstance>)> callback) {m_callback = callback;}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2016
 +===============+===============+===============+===============+===============+======*/
 struct TestNodeLocater : INavNodeLocater
 {
 private:
-    bmap<NavNodeKeyCP, NavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
+    bmap<NavNodeKeyCP, JsonNavNodeCPtr, NavNodeKeyPtrComparer> m_nodes;
 
 protected:
-    NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR key) const override
+    JsonNavNodeCPtr _LocateNode(IConnectionCR, NavNodeKeyCR key) const override
         {
         auto iter = m_nodes.find(&key);
         if (m_nodes.end() != iter)
@@ -162,8 +180,8 @@ protected:
 
 public:
     TestNodeLocater() {}
-    TestNodeLocater(NavNodeCR node) {AddNode(node);}
-    void AddNode(NavNodeCR node) {m_nodes[&node.GetKey()] = &node;}
+    TestNodeLocater(JsonNavNodeCR node) {AddNode(node);}
+    void AddNode(JsonNavNodeCR node) {m_nodes[&node.GetKey()] = &node;}
 };
 
 /*=================================================================================**//**
@@ -171,160 +189,201 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct TestNodesCache : IHierarchyCache, INavNodeLocater
 {
-    /*=================================================================================**//**
-    * @bsiclass                                     Grigas.Petraitis                02/2017
-    +===============+===============+===============+===============+===============+======*/
-    struct HierarchyItem
-    {
-    private:
-        JsonNavNodePtr m_node;
-        bool m_isVirtual;
-        NavNodesProviderPtr m_childrenDataSource;
+    typedef std::function<JsonNavNodePtr(uint64_t, NodeVisibility)> GetNodeHandler;
+    typedef std::function<NavNodesProviderPtr(HierarchyLevelInfo const&)> GetHierarchyDataSourceHandler;
+    typedef std::function<NavNodesProviderPtr(DataSourceInfo const&)> GetVirtualDataSourceHandler;
+    typedef std::function<NavNodesProviderPtr(uint64_t)> GetParentNodeDataSourceHandler;
+    typedef std::function<void(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool)> CacheDataSourceHandler;
+    typedef std::function<void(JsonNavNodeR, bool)> CacheNodeHandler;
+    typedef std::function<void(JsonNavNodeCR)> MakePhysicalHandler;
+    typedef std::function<void(JsonNavNodeCR)> MakeVirtualHandler;
+    typedef std::function<void(uint64_t, JsonNavNodeCR)> UpdateNodeHandler;
+    typedef std::function<void(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*)> UpdateDataSourceHandler;
+    typedef std::function<JsonNavNodeCPtr(IConnectionCR, NavNodeKeyCR)> LocateNodeHandler;
 
-    public:
-        HierarchyItem() : m_node(nullptr), m_isVirtual(false) {}
-        HierarchyItem(JsonNavNodeR node, bool isVirtual = false) : m_node(&node), m_isVirtual(isVirtual) {}
-        HierarchyItem(JsonNavNodeR node, NavNodesProviderR source) : m_node(&node), m_isVirtual(false), m_childrenDataSource(&source) {}
-        ~HierarchyItem() {m_childrenDataSource = nullptr; m_node = nullptr;}
-        JsonNavNodeR GetNode() const {return *m_node;}
-        NavNodesProviderPtr GetDataSource() const {return m_childrenDataSource;}
-        bool IsVirtual() const {return m_isVirtual;}
-        void SetIsVirtual(bool value) {m_isVirtual = value;}
-        void SetNode(JsonNavNodeR node) {m_node = &node;}
-        void SetDataSource(NavNodesProviderR source) {m_childrenDataSource = &source;}
-    };
-    
     /*=================================================================================**//**
-    * @bsiclass                                     Grigas.Petraitis                02/2017
+    * @bsiclass                                     Grigas.Petraitis                11/2017
     +===============+===============+===============+===============+===============+======*/
-    struct RootKey
+    struct Savepoint : IHierarchyCache::Savepoint
         {
-        BeGuid m_guid;
-        Utf8String m_rulesetId;
-        RootKey() {}
-        RootKey(ECDbCR db, Utf8String rulesetId) : m_guid(db.GetDbGuid()), m_rulesetId(rulesetId) {}
-        RootKey(BeGuid guid, Utf8String rulesetId) : m_guid(guid), m_rulesetId(rulesetId) {}
-        bool operator<(RootKey const& other) const
+        TestNodesCache& m_cache;
+        bmap<uint64_t, JsonNavNodePtr> m_nodes;
+        bmap<HierarchyLevelInfo, bvector<JsonNavNode*>> m_physicalHierarchy;
+        bmap<DataSourceInfo, bvector<JsonNavNode*>> m_virtualHierarchy;
+        Savepoint(TestNodesCache& cache)
+            : m_cache(cache)
             {
-            return m_guid < other.m_guid || m_guid == other.m_guid && m_rulesetId < other.m_rulesetId;
+            m_nodes = cache.m_nodes;
+            m_physicalHierarchy = cache.m_physicalHierarchy;
+            m_virtualHierarchy = cache.m_virtualHierarchy;
+            }
+        void _Cancel() override
+            {
+            m_cache.m_nodes = m_nodes;
+            m_cache.m_physicalHierarchy = m_physicalHierarchy;
+            m_cache.m_virtualHierarchy = m_virtualHierarchy;
             }
         };
 
 private:
-    bmap<uint64_t, HierarchyItem> m_hierarchy;
-    bmap<NavNodeKeyCP, uint64_t, NavNodeKeyPtrComparer> m_nodeIdsByKey;
-    bmap<RootKey, NavNodesProviderPtr> m_rootDataSources;
-    bool m_inCleanup;
+    uint64_t m_nodeIds;
+    uint64_t m_datasourceIds;
+    bmap<uint64_t, JsonNavNodePtr> m_nodes;
+    bmap<HierarchyLevelInfo, bvector<JsonNavNode*>> m_physicalHierarchy;
+    bmap<DataSourceInfo, bvector<JsonNavNode*>> m_virtualHierarchy;
+
+    INodesProviderContextFactory* m_nodesProviderContextFactory;
+    IConnectionCacheCP m_connections;
+
+    GetNodeHandler m_getNodeHandler;
+    GetHierarchyDataSourceHandler m_getHierarchyDataSourceHandler;
+    GetVirtualDataSourceHandler m_getVirtualDataSourceHandler;
+    GetParentNodeDataSourceHandler m_getParentNodeDataSourceHandler;
+    CacheDataSourceHandler m_cacheDataSourceHandler;
+    CacheNodeHandler m_cacheNodeHandler;
+    MakePhysicalHandler m_makePhysicalHandler;
+    MakeVirtualHandler m_makeVirtualHandler;
+    UpdateNodeHandler m_updateNodeHandler;
+    UpdateDataSourceHandler m_updateDataSourceHandler;
+    LocateNodeHandler m_locateNodeHandler;
 
 private:
-    void Clear()
+    HierarchyLevelInfo GetHierarchyLevelInfo(JsonNavNodeCR node) const
         {
-        m_inCleanup = true;
-        m_nodeIdsByKey.clear();
-        m_hierarchy.clear();
-        m_rootDataSources.clear();
-        m_inCleanup = false;
+        NavNodeExtendedData ex(node);
+        return HierarchyLevelInfo(ex.GetConnectionId(), ex.GetRulesetId(), node.GetParentNodeId());
+        }
+    DataSourceInfo GetDataSourceInfo(JsonNavNodeCR node) const
+        {
+        NavNodeExtendedData ex(node);
+        uint64_t physicalParentId = node.GetParentNodeId();
+        uint64_t virtualParentId = ex.GetVirtualParentId();
+        return DataSourceInfo(ex.GetConnectionId(), ex.GetRulesetId(), &physicalParentId, &virtualParentId);
         }
 
 protected:
     JsonNavNodePtr _GetNode(uint64_t nodeId, NodeVisibility visibility) const override
         {
-        auto iter = m_hierarchy.find(nodeId);
-        if (m_hierarchy.end() == iter)
-            return nullptr;
-        if (iter->second.IsVirtual() && NodeVisibility::Physical == visibility)
-            return nullptr;
-        if (!iter->second.IsVirtual() && NodeVisibility::Virtual == visibility)
-            return nullptr;
-        return &iter->second.GetNode();
+        if (m_getNodeHandler)
+            return m_getNodeHandler(nodeId, visibility);
+
+        auto iter = m_nodes.find(nodeId);
+        return (m_nodes.end() != iter) ? iter->second : nullptr;
         }
     NavNodesProviderPtr _GetDataSource(HierarchyLevelInfo const& info) const override
         {
-        if (nullptr != info.GetPhysicalParentNodeId())
+        if (m_getHierarchyDataSourceHandler)
+            return m_getHierarchyDataSourceHandler(info);
+
+        if (nullptr == m_nodesProviderContextFactory || nullptr == m_connections)
+            return nullptr;
+
+        IConnectionPtr connection = m_connections->GetConnection(info.GetConnectionId().c_str());
+        if (connection.IsNull())
             {
-            auto iter = m_hierarchy.find(*info.GetPhysicalParentNodeId());
-            if (m_hierarchy.end() != iter)
-                return iter->second.GetDataSource();
+            BeAssert(false);
+            return nullptr;
             }
-        else
-            {
-            auto iter = m_rootDataSources.find(RootKey(info.GetConnectionId(), info.GetRulesetId()));
-            if (m_rootDataSources.end() != iter)
-                return iter->second;
-            }
-        return nullptr;
+
+        NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId());
+        auto iter = m_physicalHierarchy.find(info);
+        return (m_physicalHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
         }
     NavNodesProviderPtr _GetDataSource(DataSourceInfo const& info) const override
         {
-        if (nullptr != info.GetVirtualParentNodeId())
+        if (m_getVirtualDataSourceHandler)
+            return m_getVirtualDataSourceHandler(info);
+
+        if (nullptr == m_nodesProviderContextFactory || nullptr == m_connections)
+            return nullptr;
+        
+        IConnectionPtr connection = m_connections->GetConnection(info.GetConnectionId().c_str());
+        if (connection.IsNull())
             {
-            auto iter = m_hierarchy.find(*info.GetVirtualParentNodeId());
-            if (m_hierarchy.end() != iter)
-                return iter->second.GetDataSource();
+            BeAssert(false);
+            return nullptr;
             }
-        else
-            {
-            auto iter = m_rootDataSources.find(RootKey(info.GetConnectionId(), info.GetRulesetId()));
-            if (m_rootDataSources.end() != iter)
-                return iter->second;
-            }
-        return nullptr;
+
+        NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(), info.GetVirtualParentNodeId());
+        auto iter = m_virtualHierarchy.find(info);
+        return (m_virtualHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
         }
     NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const override
         {
-        auto nodeIter = m_hierarchy.find(nodeId);
-        if (m_hierarchy.end() == nodeIter)
-            return nullptr;
+        if (m_getParentNodeDataSourceHandler)
+            return m_getParentNodeDataSourceHandler(nodeId);
 
-        HierarchyItem const& nodeHierarchy = nodeIter->second;
-        NavNodesProviderContextCR context = nodeHierarchy.GetDataSource()->GetContext();    
-        return GetDataSource(HierarchyLevelInfo(context.GetDb().GetDbGuid(), context.GetRuleset().GetRuleSetId(), nodeHierarchy.GetNode().GetParentNodeId()));
+        JsonNavNodePtr node = GetNode(nodeId);
+        DataSourceInfo info = GetDataSourceInfo(*node);
+        return GetDataSource(info);
         }
     
-    void _Cache(DataSourceInfo& info, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool) override
+    void _Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds, bool updatesDisabled) override
         {
+        info.SetDataSourceId(++m_datasourceIds);
+        m_physicalHierarchy[info] = bvector<JsonNavNode*>();
+        m_virtualHierarchy[info] = bvector<JsonNavNode*>();
+
+        if (m_cacheDataSourceHandler)
+            m_cacheDataSourceHandler(info, filter, relatedClassIds, relatedSettingIds, updatesDisabled);
         }
     void _Cache(JsonNavNodeR node, bool isVirtual) override
         {
-        node.SetNodeId(TestNodesHelper::CreateNodeId());
-        m_hierarchy[node.GetNodeId()] = HierarchyItem(node, isVirtual);
-        m_nodeIdsByKey[&node.GetKey()] = node.GetNodeId();
+        uint64_t nodeId = ++m_nodeIds;
+        node.SetNodeId(nodeId);
+        m_nodes[nodeId] = &node;
+        m_physicalHierarchy[GetHierarchyLevelInfo(node)].push_back(&node);
+        m_virtualHierarchy[GetDataSourceInfo(node)].push_back(&node);
+
+        if (m_cacheNodeHandler)
+            m_cacheNodeHandler(node, isVirtual);
         }
 
     void _MakePhysical(JsonNavNodeCR node) override
         {
-        auto iter = m_hierarchy.find(node.GetNodeId());
-        if (m_hierarchy.end() != iter)
-            iter->second.SetIsVirtual(false);
+        if (m_makePhysicalHandler)
+            m_makePhysicalHandler(node);
         }
     void _MakeVirtual(JsonNavNodeCR node) override
         {
-        auto iter = m_hierarchy.find(node.GetNodeId());
-        if (m_hierarchy.end() != iter)
-            iter->second.SetIsVirtual(true);
+        if (m_makeVirtualHandler)
+            return m_makeVirtualHandler(node);
         }
     void _Update(uint64_t id, JsonNavNodeCR node) override
         {
-        JsonNavNodeR tempNode = const_cast<JsonNavNodeR>(node);
-        auto iter = m_hierarchy.find(id);
-        if (m_hierarchy.end() != iter)
-            iter->second.SetNode(tempNode);
+        if (m_updateNodeHandler)
+            return m_updateNodeHandler(id, node);
         }
-    void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*) override
+    void _Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds) override
         {
+        if (m_updateDataSourceHandler)
+            return m_updateDataSourceHandler(info, filter, relatedClassIds, relatedSettingIds);
         }
 
-    NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR key) const override
+    JsonNavNodeCPtr _LocateNode(IConnectionCR connection, NavNodeKeyCR key) const override
         {
-        auto iter = m_nodeIdsByKey.find(&key);
-        if (m_nodeIdsByKey.end() != iter)
-            return GetNode(iter->second, NodeVisibility::Physical);
+        if (m_locateNodeHandler)
+            return m_locateNodeHandler(connection, key);
         return nullptr;
         }
+    
+    IHierarchyCache::SavepointPtr _CreateSavepoint() override {return new Savepoint(*this);}
 
 public:
-    TestNodesCache() : m_inCleanup(false) {}
-    ~TestNodesCache() {Clear();}
+    TestNodesCache(INodesProviderContextFactory* nodesProviderContextFactory = nullptr, IConnectionCacheCP connections = nullptr) 
+        : m_nodesProviderContextFactory(nodesProviderContextFactory), m_connections(connections)
+        {}
+    void SetGetNodeHandler(GetNodeHandler handler) {m_getNodeHandler = handler;}
+    void SetGetHierarchyDataSourceHandler(GetHierarchyDataSourceHandler handler) {m_getHierarchyDataSourceHandler = handler;}
+    void SetGetVirtualDataSourceHandler(GetVirtualDataSourceHandler handler) {m_getVirtualDataSourceHandler = handler;}
+    void SetGetParentNodeDataSourceHandler(GetParentNodeDataSourceHandler handler) {m_getParentNodeDataSourceHandler = handler;}
+    void SetCacheDataSourceHandler(CacheDataSourceHandler handler) {m_cacheDataSourceHandler = handler;}
+    void SetCacheNodeHandler(CacheNodeHandler handler) {m_cacheNodeHandler = handler;}
+    void SetMakePhysicalHandler(MakePhysicalHandler handler) {m_makePhysicalHandler = handler;}
+    void SetMakeVirtualHandler(MakeVirtualHandler handler) {m_makeVirtualHandler = handler;}
+    void SetUpdateNodeHandler(UpdateNodeHandler handler) {m_updateNodeHandler = handler;}
+    void SetUpdateDataSourceHandler(UpdateDataSourceHandler handler) {m_updateDataSourceHandler = handler;}
+    void SetLocateNodeHandler(LocateNodeHandler handler) {m_locateNodeHandler = handler;}
 };
 
 //=======================================================================================
@@ -378,7 +437,7 @@ struct TestUsedClassesListener : IUsedClassesListener
 struct TestECDbUsedClassesListener : IECDbUsedClassesListener
     {
     bmap<ECClassCP, bool> m_usedClasses;
-    void _OnClassUsed(ECDbCR connection, ECN::ECClassCR ecClass, bool polymorphically) override
+    void _OnClassUsed(ECDbCR, ECN::ECClassCR ecClass, bool polymorphically) override
         {
         m_usedClasses[&ecClass] = polymorphically;
         }
@@ -405,6 +464,7 @@ protected:
 
     bool _HasSetting(Utf8CP id) const override {return m_values.isMember(id);}
 
+    void _InitFrom(UserSettingsGroupList const&) override {}
     void _SetSettingValue(Utf8CP id, Utf8CP value) override {m_values[id] = value; NotifySettingChanged(id);}
     void _SetSettingBoolValue(Utf8CP id, bool value) override {m_values[id] = value; NotifySettingChanged(id);}
     void _SetSettingIntValue(Utf8CP id, int64_t value) override {m_values[id] = value; NotifySettingChanged(id);}
@@ -443,19 +503,19 @@ struct TestNodesProviderFactory : INodesProviderFactory
 private:
 
 private:
-    NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, NavNodeCP parent) const
+    NavNodesProviderPtr CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parent) const
         {
         NavNodesProviderPtr provider;
         if (nullptr == parent)
             {
-            RulesPreprocessor::RootNodeRuleParameters params(context.GetDb(), context.GetRuleset(), TargetTree_MainTree,
+            RulesPreprocessor::RootNodeRuleParameters params(context.GetConnections(), context.GetConnection(), context.GetRuleset(), TargetTree_MainTree,
                 context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
             RootNodeRuleSpecificationsList specs = RulesPreprocessor::GetRootNodeSpecifications(params);
             provider = MultiSpecificationNodesProvider::Create(context, specs);
             }
         else
             {
-            RulesPreprocessor::ChildNodeRuleParameters params(context.GetDb(), *parent, context.GetRuleset(), TargetTree_MainTree, 
+            RulesPreprocessor::ChildNodeRuleParameters params(context.GetConnections(), context.GetConnection(), *parent, context.GetRuleset(), TargetTree_MainTree, 
                 context.GetUserSettings(), nullptr, context.GetECExpressionsCache());
             ChildNodeRuleSpecificationsList specs = RulesPreprocessor::GetChildNodeSpecifications(params);
             provider = MultiSpecificationNodesProvider::Create(context, specs, *parent);
@@ -464,11 +524,11 @@ private:
         }
 
 protected:
-    NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR context, NavNodeCP parent) const override
+    NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
         {
         return CreateProvider(context, parent);
         }
-    NavNodesProviderPtr _CreateForVirtualParent(NavNodesProviderContextR context, NavNodeCP parent) const override
+    NavNodesProviderPtr _CreateForVirtualParent(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
         {
         return CreateProvider(context, parent);
 
@@ -483,9 +543,12 @@ public:
 struct TestNodesProviderContextFactory : INodesProviderContextFactory
 {
 private:
+    IConnectionManagerCR m_connections;
     TestUserSettings m_settings;
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderFactory m_providerFactory;
+    PresentationRuleSetCPtr m_ruleset;
+    IECDbUsedClassesListener* m_usedClassesListener;
     mutable ECExpressionsCache m_ecexpressionsCache;
     mutable RelatedPathsCache m_relatedPathsCache;
     mutable ECSqlStatementCache m_statementsCache;
@@ -494,25 +557,84 @@ private:
     mutable IHierarchyCacheP m_nodesCache;
 
 private:
-    IHierarchyCacheR GetNodesCache() const
-        {
-        return (nullptr != m_nodesCache) ? *m_nodesCache : m_testNodesCache;
-        }
+    IHierarchyCacheR GetNodesCache() const {return (nullptr != m_nodesCache) ? *m_nodesCache : m_testNodesCache;}
 
 protected:
-    NavNodesProviderContextPtr _Create(ECDbCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, bool disableUpdates) const override
+    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
         {
-        PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(rulesetId, 1, 0, false, "", "", "", false);
+        m_customFunctions.OnConnection(connection.GetDb());
+
+        PresentationRuleSetCPtr ruleset = m_ruleset;
+        if (ruleset.IsNull())
+            ruleset = PresentationRuleSet::CreateInstance(rulesetId, 1, 0, false, "", "", "", false);
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, true, TargetTree_MainTree, parentNodeId, 
             m_settings, m_ecexpressionsCache, m_relatedPathsCache, m_nodesFactory, GetNodesCache(), m_providerFactory, nullptr);
-        context->SetQueryContext(connection, m_statementsCache, m_customFunctions, nullptr);
+        context->SetQueryContext(m_connections, connection, m_statementsCache, m_customFunctions, m_usedClassesListener);
         context->SetIsUpdatesDisabled(disableUpdates);
+        context->SetCancelationToken(cancelationToken);
         return context;
         }
 
 public:
-    TestNodesProviderContextFactory() : m_statementsCache(10), m_nodesCache(nullptr) {}
+    TestNodesProviderContextFactory(IConnectionManagerCR connections) 
+        : m_connections(connections), m_statementsCache(10), m_nodesCache(nullptr), m_customFunctions(connections)
+        {}
     void SetNodesCache(IHierarchyCacheP cache) {m_nodesCache = cache;}
+    void SetRuleset(PresentationRuleSetCP ruleset) {m_ruleset = ruleset;}
+    void SetUsedClassesListener(IECDbUsedClassesListener* listener) {m_usedClassesListener = listener;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                01/2016
++===============+===============+===============+===============+===============+======*/
+struct TestRulesetCallbacksHandler : IRulesetCallbacksHandler
+    {
+    typedef std::function<void(PresentationRuleSetCR)> CallbackHandler;
+    CallbackHandler m_onCreatedHandler;
+    CallbackHandler m_onDisposedHandler;
+
+    void SetCreatedHandler(CallbackHandler const& handler) {m_onCreatedHandler = handler;}
+    void SetDisposedHandler(CallbackHandler const& handler) {m_onDisposedHandler = handler;}
+
+    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset)
+        {
+        if (nullptr != m_onCreatedHandler)
+            m_onCreatedHandler(ruleset);
+        }
+    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset)
+        {
+        if (nullptr != m_onDisposedHandler)
+            m_onDisposedHandler(ruleset);
+        }
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct TestUserSettingsChangeListener : IUserSettingsChangeListener
+    {
+    std::function<void(Utf8CP, Utf8CP)> m_callback;
+
+    virtual void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override
+        {
+        if (m_callback)
+            m_callback(rulesetId, settingId);
+        }
+
+    void SetCallback(std::function<void(Utf8CP, Utf8CP)> callback) {m_callback = callback;}
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct TestCancelationToken : ICancelationToken
+{
+private:
+    std::function<bool()> m_isCanceledCallback;
+protected:
+    bool _IsCanceled() const override {return m_isCanceledCallback();}
+public:
+    TestCancelationToken(std::function<bool()> callback) : m_isCanceledCallback(callback) {}
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

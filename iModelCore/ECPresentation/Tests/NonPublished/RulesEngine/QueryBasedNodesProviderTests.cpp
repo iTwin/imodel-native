@@ -7,30 +7,19 @@
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/JsonNavNode.h"
 #include "../../../Source/RulesDriven/RulesEngine/QueryContracts.h"
-#include "QueryBasedNodesProviderTests.h"
-#include "TestHelpers.h"
+#include "NodesProviderTests.h"
 
-ECDbTestProject* QueryBasedNodesProviderTests::s_project = nullptr;
-CustomFunctionsInjector* QueryBasedNodesProviderTests::s_customFunctions = nullptr;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBasedNodesProviderTests::SetUpTestCase()
-    {
-    QueryBasedNodesProviderTests::s_project = new ECDbTestProject();
-    QueryBasedNodesProviderTests::s_project->Create("QueryBasedNodesProviderTests", "RulesEngineTest.01.00.ecschema.xml");
-    QueryBasedNodesProviderTests::s_customFunctions = new CustomFunctionsInjector(QueryBasedNodesProviderTests::s_project->GetECDb());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBasedNodesProviderTests::TearDownTestCase()
-    {
-    DELETE_AND_CLEAR(QueryBasedNodesProviderTests::s_project);
-    DELETE_AND_CLEAR(QueryBasedNodesProviderTests::s_customFunctions);
-    }
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
+struct QueryBasedNodesProviderTests : NodesProviderTests
+    {    
+    ECEntityClassCP m_widgetClass;
+    ECEntityClassCP m_gadgetClass;
+    ECEntityClassCP m_sprocketClass;
+    
+    void SetUp() override;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -41,14 +30,7 @@ void QueryBasedNodesProviderTests::SetUp()
     m_gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget")->GetEntityClassCP();
     m_sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket")->GetEntityClassCP();
 
-    m_ruleset = PresentationRuleSet::CreateInstance("QueryBasedNodesProviderTests", 1, 0, false, "", "", "", false);
-    RootNodeRuleP rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
-    m_ruleset->AddPresentationRule(*rule);
-
-    m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
-        m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
-    m_context->SetQueryContext(s_project->GetECDb(), m_statementCache, *s_customFunctions, nullptr);
-    m_context->SetRootNodeContext(*rule);
+    NodesProviderTests::SetUp();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,10 +38,10 @@ void QueryBasedNodesProviderTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedNodesProviderTests, DoesntCustomizeNodesIfNotNecessary)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
@@ -70,6 +52,7 @@ TEST_F (QueryBasedNodesProviderTests, DoesntCustomizeNodesIfNotNecessary)
     EXPECT_TRUE(provider->HasNodes());
     for (size_t i = 0; i < 3; i++)
         {
+        // note: getting nodes from executor doesn't force them to be customized
         JsonNavNodePtr node = provider->GetExecutor().GetNode(i);
         EXPECT_FALSE(NavNodeExtendedData(*node).IsCustomized());
         }
@@ -78,6 +61,7 @@ TEST_F (QueryBasedNodesProviderTests, DoesntCustomizeNodesIfNotNecessary)
     EXPECT_EQ(3, provider->GetNodesCount());
     for (size_t i = 0; i < 3; i++)
         {
+        // note: getting nodes from executor doesn't force them to be customized
         JsonNavNodePtr node = provider->GetExecutor().GetNode(i);
         EXPECT_FALSE(NavNodeExtendedData(*node).IsCustomized());
         }
@@ -95,11 +79,65 @@ TEST_F (QueryBasedNodesProviderTests, DoesntCustomizeNodesIfNotNecessary)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
+    {
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
+    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
+    RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
+
+    DataSourceInfo const* cachedDataSource = nullptr;
+    int nodesCached = 0;
+    ICancelationTokenPtr cancelationToken = new TestCancelationToken([&nodesCached]()
+        {
+        // cancel when at least one node is created
+        return nodesCached > 0;
+        });
+    m_context->SetCancelationToken(cancelationToken.get());
+
+    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool)
+        {
+        cachedDataSource = &ds;
+        });
+    m_nodesCache.SetCacheNodeHandler([&](JsonNavNodeR, bool)
+        {
+        nodesCached++;
+        });
+    
+    // force initialization
+    provider->GetNodesCount();
+
+    // verify the data source is still invalid
+    ASSERT_TRUE(nullptr != cachedDataSource);
+    EXPECT_FALSE(cachedDataSource->IsValid());
+
+    // verify the initialization was aborted after creating the first node
+    EXPECT_EQ(1, nodesCached);
+
+    // verify the provider's state hasn't changed
+    EXPECT_FALSE(provider->HasNodes());
+    EXPECT_EQ(0, provider->GetNodesCount());
+
+    // verify the nodes cache is empty
+    EXPECT_TRUE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), nullptr)).IsNull());
+
+    // remove the cancelation token and verify provider gets initialized successfully
+    m_context->SetCancelationToken(nullptr);
+
+    EXPECT_TRUE(provider->HasNodes());
+    EXPECT_EQ(2, provider->GetNodesCount());
+    EXPECT_FALSE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), nullptr)).IsNull());
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedNodesProviderTests, HasNodesDoesntQueryChildrenIfAlwaysReturnsChildrenFlagIsSet)
     {
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);

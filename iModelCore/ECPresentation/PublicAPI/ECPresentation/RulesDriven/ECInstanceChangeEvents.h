@@ -37,15 +37,15 @@ protected:
     //! Virtual destructor.
     virtual ~IECDbUsedClassesListener() {}
 
-    //! Called when an ECClass is used in the context of the supplied ECDb.
-    //! @param[in] connection The ECDb where the class was used.
+    //! Called when an ECClass is used in the context of the supplied connection.
+    //! @param[in] db The ECDb where the class was used.
     //! @param[in] ecClass The ECClass that was used.
     //! @param[in] polymorphically Was the class used polymorphically.
-    virtual void _OnClassUsed(ECDbCR connection, ECClassCR ecClass, bool polymorphically) = 0;
+    virtual void _OnClassUsed(ECDbCR db, ECClassCR ecClass, bool polymorphically) = 0;
 
 public:
     //! @see _OnClassUsed
-    void NotifyClassUsed(ECDbCR connection, ECClassCR ecClass, bool polymorphically) {_OnClassUsed(connection, ecClass, polymorphically);}
+    void NotifyClassUsed(ECDbCR db, ECClassCR ecClass, bool polymorphically) {_OnClassUsed(db, ecClass, polymorphically);}
 };
 
 //=======================================================================================
@@ -117,28 +117,25 @@ struct ECInstanceChangeEventSource : RefCountedBase, IECDbUsedClassesListener
         virtual ~IEventHandler() {}
 
         //! Called by ECInstanceChangeEventSource to notify about changed ECInstances.
-        //! @param[in] connection The ECDb where the change happened.
+        //! @param[in] db The ECDb where the change happened.
         //! @param[in] changes The list of changes that happened.
-        virtual void _OnECInstancesChanged(ECDbCR connection, bvector<ChangedECInstance> const& changes) = 0;
+        virtual void _OnECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) = 0;
     };
 
 private:
     bset<IEventHandler*> m_eventHandlers;
     
 protected:
-    //! Virtual destructor.
-    virtual ~ECInstanceChangeEventSource() {}
-
     //! @see IECDbUsedClassesListener::_OnClassUsed
-    void _OnClassUsed(ECDbCR, ECClassCR, bool polymorphically) override {}
+    virtual void _OnClassUsed(ECDbCR, ECClassCR, bool polymorphically) override {}
 
     //! A method that subclasses should call to notify listeners about changed ECInstance.
     //! @note If more than one ECInstance changes at a time, it's recommended to call @ref NotifyECInstancesChanged
     //! instead.
-    ECPRESENTATION_EXPORT void NotifyECInstanceChanged(ECDbCR db, ChangedECInstance const& change) const;
+    ECPRESENTATION_EXPORT void NotifyECInstanceChanged(ECDbCR db, ChangedECInstance change) const;
 
     //! A method that subclasses should call to notify listeners about changed ECInstances.
-    ECPRESENTATION_EXPORT void NotifyECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> const& changes) const;
+    ECPRESENTATION_EXPORT void NotifyECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) const;
 
 public:
     //! Registers an event handler.

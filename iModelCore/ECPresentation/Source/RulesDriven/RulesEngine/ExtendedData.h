@@ -31,8 +31,8 @@ struct ItemExtendedData : RapidJsonAccessor
     ItemExtendedData(IRapidJsonExtendedDataHolder const& item) : RapidJsonAccessor(item) {}
 
     bool HasConnectionId() const {return GetJson().HasMember(ITEM_EXTENDEDDATA_ConnectionId);}
-    BeSQLite::BeGuid GetConnectionId() const {BeSQLite::BeGuid guid; guid.FromString(GetJson()[ITEM_EXTENDEDDATA_ConnectionId].GetString()); return guid;}
-    void SetConnectionId(BeSQLite::BeGuidCR connectionId) {AddMember(ITEM_EXTENDEDDATA_ConnectionId, rapidjson::Value(connectionId.ToString().c_str(), GetAllocator()));}
+    Utf8CP GetConnectionId() const {return GetJson()[ITEM_EXTENDEDDATA_ConnectionId].GetString();}
+    void SetConnectionId(Utf8StringCR connectionId) {AddMember(ITEM_EXTENDEDDATA_ConnectionId, rapidjson::Value(connectionId.c_str(), GetAllocator()));}
 
     bool HasRulesetId() const {return GetJson().HasMember(ITEM_EXTENDEDDATA_RulesetId);}
     Utf8CP GetRulesetId() const {return GetJson()[ITEM_EXTENDEDDATA_RulesetId].GetString();}

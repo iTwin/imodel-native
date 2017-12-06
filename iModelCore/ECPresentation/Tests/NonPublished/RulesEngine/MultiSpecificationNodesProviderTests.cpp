@@ -9,7 +9,7 @@
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include "../../../Source/RulesDriven/RulesEngine/NavNodeProviders.h"
 #include "../../../Source/RulesDriven/RulesEngine/NavNodesCache.h"
-#include "TestHelpers.h"
+#include "NodesProviderTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -18,47 +18,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct MultiSpecificationNodesProviderTests : ::testing::Test
+struct MultiSpecificationNodesProviderTests : NodesProviderTests
     {
-    static ECDbTestProject* s_project;
-    static CustomFunctionsInjector* s_customFunctions;
-    
-    ECSqlStatementCache m_statementCache;
-    RelatedPathsCache m_relatedPathsCache;
-    ECExpressionsCache m_expressionsCache;
-    PresentationRuleSetPtr m_ruleset;
-    NavNodesProviderContextPtr m_context;
-    TestNodesProviderFactory m_providerFactory;
-    TestUserSettings m_settings;
-    JsonNavNodesFactory m_nodesFactory;
-    TestNodesCache m_nodesCache;
-    
-    MultiSpecificationNodesProviderTests() : m_statementCache(5) {}
-    
-    static void SetUpTestCase()
-        {
-        Localization::Init();
-        s_project = new ECDbTestProject();
-        s_project->Create("MultiSpecificationNodesProviderTests", "RulesEngineTest.01.00.ecschema.xml");
-        s_customFunctions = new CustomFunctionsInjector(s_project->GetECDb());
-        }
-    static void TearDownTestCase()
-        {
-        DELETE_AND_CLEAR(s_project);
-        DELETE_AND_CLEAR(s_customFunctions);
-        Localization::Terminate();
-        }
-
-    void SetUp() override
-        {
-        m_ruleset = PresentationRuleSet::CreateInstance("CustomNodesProviderTests", 1, 0, false, "", "", "", false);
-        m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
-            m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
-        m_context->SetQueryContext(s_project->GetECDb(), m_statementCache, *s_customFunctions, nullptr);
-        }
     };
-ECDbTestProject* MultiSpecificationNodesProviderTests::s_project = nullptr;
-CustomFunctionsInjector* MultiSpecificationNodesProviderTests::s_customFunctions = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015

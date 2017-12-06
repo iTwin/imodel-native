@@ -23,127 +23,168 @@ IECPresentationManagerR IECPresentationManager::GetManager() {BeAssert(nullptr !
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataContainer<NavNodeCPtr> IECPresentationManager::GetRootNodes(ECDbR connection, PageOptionsCR pageOptions, JsonValueCR options)
+folly::Future<DataContainer<NavNodeCPtr>> IECPresentationManager::GetRootNodes(ECDbCR db, PageOptionsCR pageOptions, JsonValueCR options)
     {
-    return _GetRootNodes(connection, pageOptions, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetRootNodes(*connection, pageOptions, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t IECPresentationManager::GetRootNodesCount(ECDbR connection, JsonValueCR options)
+folly::Future<size_t> IECPresentationManager::GetRootNodesCount(ECDbCR db, JsonValueCR options)
     {
-    return _GetRootNodesCount(connection, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetRootNodesCount(*connection, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataContainer<NavNodeCPtr> IECPresentationManager::GetChildren(ECDbR connection, NavNodeCR node, PageOptionsCR pageOptions, JsonValueCR options)
+folly::Future<DataContainer<NavNodeCPtr>> IECPresentationManager::GetChildren(ECDbCR db, NavNodeCR node, PageOptionsCR pageOptions, JsonValueCR options)
     {
-    return _GetChildren(connection, node, pageOptions, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetChildren(*connection, node, pageOptions, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t IECPresentationManager::GetChildrenCount(ECDbR connection, NavNodeCR node, JsonValueCR options)
+folly::Future<size_t> IECPresentationManager::GetChildrenCount(ECDbCR db, NavNodeCR node, JsonValueCR options)
     {
-    return _GetChildrenCount(connection, node, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetChildrenCount(*connection, node, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr IECPresentationManager::GetParent(ECDbR connection, NavNodeCR node, JsonValueCR options)
+folly::Future<NavNodeCPtr> IECPresentationManager::GetParent(ECDbCR db, NavNodeCR node, JsonValueCR options)
     {
-    return _GetParent(connection, node, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetParent(*connection, node, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<SelectClassInfo> IECPresentationManager::GetContentClasses(ECDbR connection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& input, JsonValueCR options)
+folly::Future<bvector<SelectClassInfo>> IECPresentationManager::GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& input, JsonValueCR options)
     {
-    return _GetContentClasses(connection, preferredDisplayType, input, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetContentClasses(*connection, preferredDisplayType, input, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorCPtr IECPresentationManager::GetContentDescriptor(ECDbR connection, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options)
+folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options)
     {
-    return _GetContentDescriptor(connection, preferredDisplayType, selectionInfo, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetContentDescriptor(*connection, preferredDisplayType, selectionInfo, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentCPtr IECPresentationManager::GetContent(ECDbR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR options)
+folly::Future<ContentCPtr> IECPresentationManager::GetContent(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR options)
     {
-    return _GetContent(connection, descriptor, selectionInfo, pageOptions, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetContent(*connection, descriptor, selectionInfo, pageOptions, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t IECPresentationManager::GetContentSetSize(ECDbR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR options)
+folly::Future<size_t> IECPresentationManager::GetContentSetSize(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR options)
     {
-    return _GetContentSetSize(connection, descriptor, selectionInfo, options);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetContentSetSize(*connection, descriptor, selectionInfo, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr IECPresentationManager::GetNode(ECDbR connection, uint64_t nodeId) {return _GetNode(connection, nodeId);}
+folly::Future<NavNodeCPtr> IECPresentationManager::GetNode(ECDbCR db, uint64_t nodeId)
+    {
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetNode(*connection, nodeId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECPresentationManager::NotifyNodeChecked(ECDbR connection, uint64_t nodeId) {return _OnNodeChecked(connection, nodeId);}
+folly::Future<folly::Unit> IECPresentationManager::NotifyNodeChecked(ECDbCR db, uint64_t nodeId)
+    {
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _OnNodeChecked(*connection, nodeId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECPresentationManager::NotifyNodeUnchecked(ECDbR connection, uint64_t nodeId) {return _OnNodeUnchecked(connection, nodeId);}
+folly::Future<folly::Unit> IECPresentationManager::NotifyNodeUnchecked(ECDbCR db, uint64_t nodeId) 
+    {
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _OnNodeUnchecked(*connection, nodeId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECPresentationManager::NotifyNodeExpanded(ECDbR connection, uint64_t nodeId) {return _OnNodeExpanded(connection, nodeId);}
+folly::Future<folly::Unit> IECPresentationManager::NotifyNodeExpanded(ECDbCR db, uint64_t nodeId) 
+    {
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _OnNodeExpanded(*connection, nodeId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECPresentationManager::NotifyNodeCollapsed(ECDbR connection, uint64_t nodeId) {return _OnNodeCollapsed(connection, nodeId);}
+folly::Future<folly::Unit> IECPresentationManager::NotifyNodeCollapsed(ECDbCR db, uint64_t nodeId) 
+    {
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _OnNodeCollapsed(*connection, nodeId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECPresentationManager::NotifyAllNodesCollapsed(ECDbR connection, JsonValueCR options) {return _OnAllNodesCollapsed(connection, options);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IECPresentationManager::HasChild(ECDbR connection, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions) {return _HasChild(connection, parentNode, childNodeKey, extendedOptions);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-NodesPathElement IECPresentationManager::FindNode(ECDbR connection, NavNodeCP parentNode, NavNodeKeyCR lookupKey, JsonValueCR extendedOptions)
+folly::Future<folly::Unit> IECPresentationManager::NotifyAllNodesCollapsed(ECDbCR db, JsonValueCR options) 
     {
-    DataContainer<NavNodeCPtr> nodes = (nullptr == parentNode)
-        ? GetRootNodes(connection, PageOptions(), extendedOptions)
-        : GetChildren(connection, *parentNode, PageOptions(), extendedOptions);
-    for (size_t i = 0; i < nodes.GetSize(); ++i)
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _OnAllNodesCollapsed(*connection, options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<bool> IECPresentationManager::HasChild(ECDbCR db, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions) 
+    {
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _HasChild(*connection, parentNode, childNodeKey, extendedOptions);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<NodesPathElement> IECPresentationManager::FindNode(ECDbCR db, NavNodeCP parentNode, NavNodeKeyCR lookupKey, JsonValueCR extendedOptions)
+    {
+    NavNodeKeyCPtr lookupKeyPtr = &lookupKey;
+    folly::Future<DataContainer<NavNodeCPtr>> nodesFuture = (nullptr == parentNode)
+        ? GetRootNodes(db, PageOptions(), extendedOptions)
+        : GetChildren(db, *parentNode, PageOptions(), extendedOptions);
+    return nodesFuture.then([this, &db, lookupKeyPtr, extendedOptions](DataContainer<NavNodeCPtr> nodes) -> NodesPathElement
         {
-        NavNodeCPtr node = nodes[i];
-        if (0 == node->GetKey().Compare(lookupKey))
-            return NodesPathElement(*node, i);
-        if (HasChild(connection, *node, lookupKey, extendedOptions))
-            return NodesPathElement(*node, i);
-        }
-    return NodesPathElement();
+        for (size_t i = 0; i < nodes.GetSize(); ++i)
+            {
+            NavNodeCPtr node = nodes[i];
+            if (0 == node->GetKey().Compare(*lookupKeyPtr))
+                return NodesPathElement(*node, i);
+            if (HasChild(db, *node, *lookupKeyPtr, extendedOptions).get())
+                return NodesPathElement(*node, i);
+            }
+        return NodesPathElement();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -164,7 +205,7 @@ static NodesPathElement* AddToPath(NodesPathElement& path, NodesPathElement&& el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodesPathElement IECPresentationManager::GetNodesPath(ECDbR connection, NavNodeKeyPath const& keyPath, JsonValueCR extendedOptions)
+folly::Future<NodesPathElement> IECPresentationManager::GetNodesPath(ECDbCR db, NavNodeKeyPath const& keyPath, JsonValueCR extendedOptions)
     {
     NodesPathElement path;
     NodesPathElement* curr = &path;
@@ -174,7 +215,7 @@ NodesPathElement IECPresentationManager::GetNodesPath(ECDbR connection, NavNodeK
         while (true)
             {
             NavNodeKeyCR key = *keyPath[i];
-            NodesPathElement el = FindNode(connection, parent, key, extendedOptions);
+            NodesPathElement el = FindNode(db, parent, key, extendedOptions).get();
             if (!el.GetNode().IsValid())
                 {
                 BeAssert(false && "Provided nodes path doesn't exist in the hierarchy");
@@ -240,64 +281,80 @@ static void MarkLeaves(NodesPathElement& path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NodesPathElement> IECPresentationManager::GetNodesPath(ECDbR connection, bvector<NavNodeKeyPath> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions)
+folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetNodesPath(ECDbCR db, bvector<NavNodeKeyPath> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions)
     {
-    bvector<NodesPathElement> paths;
+    bvector<folly::Future<NodesPathElement>> pathFutures;
     for (size_t i = 0; i < keyPaths.size(); ++i)
         {
         NavNodeKeyPath const& keyPath = keyPaths[i];
-        NodesPathElement path = GetNodesPath(connection, keyPath, extendedOptions);
-        if (path.GetNode().IsValid())
+        pathFutures.push_back(GetNodesPath(db, keyPath, extendedOptions));
+        }
+    return folly::collect(pathFutures).then([markedIndex](std::vector<NodesPathElement> paths) -> bvector<NodesPathElement>
+        {
+        bvector<NodesPathElement> mergedPaths;
+        for (size_t i = 0; i < paths.size(); ++i)
             {
-            if (markedIndex == (int64_t)i)
-                MarkLeaves(path);
-            AppendPath(paths, path);
+            NodesPathElement& path = paths[i];
+            if (path.GetNode().IsValid())
+                {
+                if (markedIndex == (int64_t)i)
+                    MarkLeaves(path);
+                AppendPath(mergedPaths, path);
+                }
             }
-        }
-    return paths;
+        return mergedPaths;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceChangeResult IECPresentationManager::SaveValueChange(ECDbR connection, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions)
+folly::Future<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbCR db, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions)
     {
-    bvector<ECInstanceChangeResult> result = SaveValueChange(connection, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions);
-    if (result.empty())
+    return SaveValueChange(db, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions).then([](bvector<ECInstanceChangeResult> result) -> ECInstanceChangeResult
         {
-        BeAssert(false);
-        return ECInstanceChangeResult::Error(L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()));
-        }
-    return result[0];
+        if (result.empty())
+            {
+            BeAssert(false);
+            return ECInstanceChangeResult::Error(L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()));
+            }
+        return result[0];
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbR connection, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions)
+folly::Future<bvector<ECInstanceChangeResult>> IECPresentationManager::SaveValueChange(ECDbCR db, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions)
     {
-    return _SaveValueChange(connection, instanceInfos, propertyAccessor, value, extendedOptions);
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _SaveValueChange(*connection, instanceInfos, propertyAccessor, value, extendedOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceChangeResult IECPresentationManager::SaveValueChange(ECDbR connection, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions)
+folly::Future<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbCR db, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions)
     {
-    bvector<ECInstanceChangeResult> result = SaveValueChange(connection, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions);
-    if (result.empty())
+    return SaveValueChange(db, bvector<ChangedECInstanceInfo>{instanceInfo}, propertyAccessor, value, extendedOptions).then([](bvector<ECInstanceChangeResult> result) -> ECInstanceChangeResult
         {
-        BeAssert(false);
-        return ECInstanceChangeResult::Error(L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()));
-        }
-    return result[0];
+        if (result.empty())
+            {
+            BeAssert(false);
+            return ECInstanceChangeResult::Error(L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()));
+            }
+        return result[0];
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbR connection, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions)
+folly::Future<bvector<ECInstanceChangeResult>> IECPresentationManager::SaveValueChange(ECDbCR db, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions)
     {
+    if (instanceInfos.empty())
+        return bvector<ECInstanceChangeResult>();
+
     // note: assumes that all changed instances in this field use the same property
     ECClassCR changedClass = instanceInfos.front().GetChangedInstanceClass();
     ECPropertyCP prop = changedClass.GetPropertyP(propertyAccessor);
@@ -308,27 +365,43 @@ bvector<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(ECDbR co
             ECInstanceChangeResult::Error(L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::ERROR_General_Unknown())));
         }
     ECValue ecValue = ValueHelpers::GetECValueFromJson(*prop, value);
-    return SaveValueChange(connection, instanceInfos, propertyAccessor, ecValue, extendedOptions);
+    return SaveValueChange(db, instanceInfos, propertyAccessor, ecValue, extendedOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bmap<uint64_t, bvector<NavNodeCPtr>>::iterator IECPresentationManager::InsertNodeToMap(ECDbR connection, bmap<uint64_t, bvector<NavNodeCPtr>>& hierarchy, NavNodeCPtr node)
+static bmap<uint64_t, bvector<NavNodeCPtr>>::iterator CreateHierarchy(IECPresentationManager& mgr, ECDbCR db, NavNodeCR node, bmap<uint64_t, bvector<NavNodeCPtr>>& hierarchy, bvector<NavNodeCPtr>& roots)
     {
-    auto parentIter = hierarchy.find(node->GetParentNodeId());
-    if (parentIter == hierarchy.end())
+    auto parentIter = hierarchy.end();
+    if (0 == node.GetParentNodeId())
         {
-        NavNodeCPtr parent = GetNode(connection, node->GetParentNodeId());
-        if (parent.IsValid())
-            parentIter = InsertNodeToMap(connection, hierarchy, parent);
+        // this node has no parent
+        roots.push_back(&node);
         }
-    auto iter = hierarchy.find(node->GetNodeId());
+    else
+        {
+        // see if parent is already in the hierarchy
+        parentIter = hierarchy.find(node.GetParentNodeId());
+        if (parentIter == hierarchy.end())
+            {
+            // get the parent and put it into the hierarchy
+            NavNodeCPtr parent = mgr.GetNode(db, node.GetParentNodeId()).get();
+            if (parent.IsValid())
+                parentIter = CreateHierarchy(mgr, db, *parent, hierarchy, roots);
+            }
+        }
+    // see if this node is already in the hierarchy
+    auto iter = hierarchy.find(node.GetNodeId());
     if (iter == hierarchy.end())
         {
         if (parentIter != hierarchy.end())
-            parentIter->second.push_back(node);
-        return hierarchy.Insert(node->GetNodeId(), bvector<NavNodeCPtr>()).first;
+            {
+            // if this node has parent, add this as parent's child
+            parentIter->second.push_back(&node);
+            }
+        // insert this node into the hierarchy
+        return hierarchy.Insert(node.GetNodeId(), bvector<NavNodeCPtr>()).first;
         }
     return iter;
     }
@@ -336,35 +409,35 @@ bmap<uint64_t, bvector<NavNodeCPtr>>::iterator IECPresentationManager::InsertNod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NodesPathElement GetPath(NavNodeCPtr root, bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy, size_t index)
+static NodesPathElement GetPath(NavNodeCR root, bmap<uint64_t, bvector<NavNodeCPtr>> const& hierarchy, size_t index)
     {
-    NodesPathElement node(*root, index);
-    auto iter = hierarchy.find(root->GetNodeId());
+    NodesPathElement node(root, index);
+    auto iter = hierarchy.find(root.GetNodeId());
     for (size_t i = 0; i < iter->second.size(); i++)
-        node.GetChildren().push_back(GetPath(iter->second[i], hierarchy, i));
+        node.GetChildren().push_back(GetPath(*iter->second[i], hierarchy, i));
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NodesPathElement> IECPresentationManager::GetFilteredNodesPaths(ECDbR connection, Utf8CP filterText, JsonValueCR options)
+folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNodesPaths(ECDbCR db, Utf8CP filterText, JsonValueCR options)
     {
-    bvector<NavNodeCPtr> filteredNodes = _GetFilteredNodes(connection, filterText, options);
-
-    bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy;
-    for (NavNodeCPtr node : filteredNodes)
-        InsertNodeToMap(connection, hierarchy, node);
-
-    bvector<NodesPathElement> rootNodes;
-    size_t index = 0;
-    for (auto iter = hierarchy.begin(); iter != hierarchy.end(); iter++)
+    IConnectionCPtr connection = GetConnections().GetConnection(db);
+    return _GetFilteredNodes(*connection, filterText, options).then([&](bvector<NavNodeCPtr> filteredNodes)
         {
-        NavNodeCPtr node = GetNode(connection, iter->first);
-        if (node.IsValid() && 0 == node->GetParentNodeId())
-            rootNodes.push_back(GetPath(node, hierarchy, index++));
-        }
-    return rootNodes;
+        bvector<NavNodeCPtr> roots;
+        bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy;
+        for (NavNodeCPtr node : filteredNodes)
+            CreateHierarchy(*this, db, *node, hierarchy, roots);
+
+        size_t index = 0;
+        bvector<NodesPathElement> paths;
+        for (NavNodeCPtr const& root : roots)
+            paths.push_back(GetPath(*root, hierarchy, index++));
+
+        return paths;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -51,7 +51,7 @@ private:
     CustomFunctionsManager const& m_manager;
 protected:
     ScalarFunction(Utf8CP name, int argsCount, DbValueType returnType, CustomFunctionsManager const& manager)
-        : BeSQLite::ScalarFunction(name, argsCount, returnType), m_manager(manager) 
+        : BeSQLite::ScalarFunction(name, argsCount, returnType), m_manager(manager)
         {}
     CustomFunctionsContext& GetContext() const {return m_manager.GetCurrentContext();}
 };
@@ -62,8 +62,8 @@ protected:
 template<typename CacheType>
 struct CachingScalarFunction : ECPresentation::ScalarFunction, ICustomFunctionsContextListener
     {
-    CachingScalarFunction(Utf8CP name, int argsCount, DbValueType returnType, CustomFunctionsManager const& manager) 
-        : ECPresentation::ScalarFunction(name, argsCount, returnType, manager) 
+    CachingScalarFunction(Utf8CP name, int argsCount, DbValueType returnType, CustomFunctionsManager const& manager)
+        : ECPresentation::ScalarFunction(name, argsCount, returnType, manager)
         {}
     CacheType& GetCache()
         {
@@ -96,7 +96,7 @@ private:
     CustomFunctionsManager const& m_manager;
 protected:
     AggregateFunction(Utf8CP name, int argsCount, DbValueType returnType, CustomFunctionsManager const& manager)
-        : BeSQLite::AggregateFunction(name, argsCount, returnType), m_manager(manager) 
+        : BeSQLite::AggregateFunction(name, argsCount, returnType), m_manager(manager)
         {}
     CustomFunctionsContext& GetContext() const {return m_manager.GetCurrentContext();}
 };
@@ -111,8 +111,8 @@ protected:
 +===============+===============+===============+===============+===============+======*/
 struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId, Utf8String>>
     {
-    GetECInstanceDisplayLabelScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_GetECInstanceDisplayLabel, 4, DbValueType::TextVal, manager) 
+    GetECInstanceDisplayLabelScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetECInstanceDisplayLabel, 4, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -128,19 +128,19 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
                 {
                 // create a temporary node for ECExpression evaluation context
                 ECClassId classId = args[0].GetValueId<ECClassId>();
-                NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetSchemaHelper().GetDb(), classId, instanceId, "");
+                JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), classId, instanceId, "");
                 NavNodesHelper::AddRelatedInstanceInfo(*thisNode, args[3].GetValueText());
 
                 // look for label override
                 ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetDb());
-                RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetSchemaHelper().GetDb(), *thisNode, GetContext().GetParentNode(), 
+                RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
                     GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
                 LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
                 if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                     {
                     // evaluate the ECExpression to get the label
-                    ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(), 
-                        GetContext().GetSchemaHelper().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                    ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
+                        GetContext().GetConnection(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                     ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                     ECValue value;
                     if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -174,7 +174,7 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
 
             if (label.empty())
                 label = RULESENGINE_LOCALIZEDSTRING_NotSpecified;
-            
+
             ApplyLocalization(label, GetContext());
             iter = GetCache().Insert(instanceId, label).first;
             }
@@ -190,8 +190,8 @@ struct GetECInstanceDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceId
 +===============+===============+===============+===============+===============+======*/
 struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8String>>
     {
-    GetECClassDisplayLabelScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_GetECClassDisplayLabel, 2, DbValueType::TextVal, manager) 
+    GetECClassDisplayLabelScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetECClassDisplayLabel, 2, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -207,28 +207,28 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             Utf8String label;
 
             // first, look for label override
-            NavNodePtr thisNode;
+            JsonNavNodePtr thisNode;
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(args[1].GetValueInt64()); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
             if (ecClass->IsRelationshipClass())
-                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetSchemaHelper().GetDb().GetDbGuid(), *ecClass->GetRelationshipClassCP(), "", groupedInstanceKeys);
+                thisNode = GetContext().GetNodesFactory().CreateECRelationshipGroupingNode(GetContext().GetConnection().GetId(), *ecClass->GetRelationshipClassCP(), "", groupedInstanceKeys);
             else
-                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetSchemaHelper().GetDb().GetDbGuid(), *ecClass, "", groupedInstanceKeys);
-            
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetSchemaHelper().GetDb(), *thisNode, GetContext().GetParentNode(), 
+                thisNode = GetContext().GetNodesFactory().CreateECClassGroupingNode(GetContext().GetConnection().GetId(), *ecClass, "", groupedInstanceKeys);
+
+            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
                 GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
-                ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(), 
-                    GetContext().GetSchemaHelper().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
+                    GetContext().GetConnection(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
                     {
                     if (nullptr != GetContext().GetUsedClassesListener())
                         {
-                        UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(), 
+                        UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
                             GetContext().GetSchemaHelper(), GetContext().GetECExpressionsCache(), labelOverride->GetLabel());
                         }
                     }
@@ -259,7 +259,7 @@ struct ECExpressionScalarCacheKey
     Utf8String m_expression;
     bool operator<(ECExpressionScalarCacheKey const& other) const
         {
-        return m_classId < other.m_classId 
+        return m_classId < other.m_classId
             || m_classId == other.m_classId && m_instanceId < other.m_instanceId
             || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) < 0;
         }
@@ -287,8 +287,8 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         auto iter = GetCache().find(key);
         if (GetCache().end() == iter)
             {
-            NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetSchemaHelper().GetDb(), classId, instanceId, "");
-            ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(thisNode, GetContext().GetUserSettings());
+            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), classId, instanceId, "");
+            ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(*thisNode, GetContext().GetUserSettings());
 
             ECValue value;
             Utf8String expressionResult;
@@ -319,17 +319,17 @@ struct ECPropertyDisplayLabelScalarCacheKey
     Utf8String m_propertyName;
     Utf8String m_defaultLabel;
     uint64_t m_groupedInstancesCount;
-    bool operator<(ECPropertyDisplayLabelScalarCacheKey const& other) const 
+    bool operator<(ECPropertyDisplayLabelScalarCacheKey const& other) const
         {
-        return m_classId < other.m_classId 
-            || m_classId == other.m_classId 
+        return m_classId < other.m_classId
+            || m_classId == other.m_classId
                 && m_groupedInstancesCount < other.m_groupedInstancesCount
-            || m_classId == other.m_classId 
-                && m_groupedInstancesCount == other.m_groupedInstancesCount 
+            || m_classId == other.m_classId
+                && m_groupedInstancesCount == other.m_groupedInstancesCount
                 && m_propertyName.CompareTo(other.m_propertyName) < 0
-            || m_classId == other.m_classId 
-                && m_groupedInstancesCount == other.m_groupedInstancesCount 
-                && m_propertyName.Equals(other.m_propertyName) 
+            || m_classId == other.m_classId
+                && m_groupedInstancesCount == other.m_groupedInstancesCount
+                && m_propertyName.Equals(other.m_propertyName)
                 && m_defaultLabel.CompareTo(other.m_defaultLabel) < 0;
         }
     };
@@ -357,8 +357,8 @@ private:
         return str;
         }
 public:
-    GetECPropertyDisplayLabelScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_GetECPropertyDisplayLabel, 5, DbValueType::TextVal, manager) 
+    GetECPropertyDisplayLabelScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetECPropertyDisplayLabel, 5, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -399,14 +399,14 @@ public:
             // first, look for label override
             GroupedInstanceKeysList groupedInstanceKeys;
             groupedInstanceKeys.resize(groupedInstancesCount); // note: this creates a list of invalid ECInstanceKeys. but it's okay as we only need it for count
-            NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetSchemaHelper().GetDb().GetDbGuid(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetSchemaHelper().GetDb(), *thisNode, GetContext().GetParentNode(), 
+            JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection().GetId(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
+            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
                 GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
-                ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(), 
-                    GetContext().GetSchemaHelper().GetDb(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
+                    GetContext().GetConnection(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -455,7 +455,7 @@ public:
                                 if (json.HasMember("z"))
                                     label.append(" Z: ").append(GetValueAsString(json["z"].GetDouble()));
                                 break;
-                                }                      
+                                }
                             default:
                                 label = args[3].GetValueText();
                             }
@@ -651,8 +651,8 @@ private:
         }
 
 public:
-    GetSortingValueScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_GetSortingValue, 1, DbValueType::TextVal, manager) 
+    GetSortingValueScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetSortingValue, 1, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -706,8 +706,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct GetRangeIndexScalar : CachingScalarFunction<bmap<double, int>>
     {
-    GetRangeIndexScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_GetRangeIndex, 1, DbValueType::IntegerVal, manager) 
+    GetRangeIndexScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetRangeIndex, 1, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -752,8 +752,8 @@ struct GetRangeIndexScalar : CachingScalarFunction<bmap<double, int>>
 +===============+===============+===============+===============+===============+======*/
 struct GetRangeImageIdScalar : CachingScalarFunction<bmap<double, Utf8String>>
     {
-    GetRangeImageIdScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_GetRangeImageId, 1, DbValueType::TextVal, manager) 
+    GetRangeImageIdScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_GetRangeImageId, 1, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -773,7 +773,7 @@ struct GetRangeImageIdScalar : CachingScalarFunction<bmap<double, Utf8String>>
                 ctx.SetResultError("Query extended data not set", BE_SQLITE_ERROR);
                 return;
                 }
-            
+
             NavigationQueryExtendedData extendedData(*GetContext().GetQueryExtendedData());
             if (!extendedData.HasRangesData())
                 {
@@ -803,8 +803,8 @@ struct GetRangeImageIdScalar : CachingScalarFunction<bmap<double, Utf8String>>
 +===============+===============+===============+===============+===============+======*/
 struct IsOfClassScalar : ECPresentation::ScalarFunction
     {
-    IsOfClassScalar(CustomFunctionsManager const& manager) 
-        : ECPresentation::ScalarFunction(FUNCTION_NAME_IsOfClass, 3, DbValueType::IntegerVal, manager) 
+    IsOfClassScalar(CustomFunctionsManager const& manager)
+        : ECPresentation::ScalarFunction(FUNCTION_NAME_IsOfClass, 3, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -828,8 +828,8 @@ struct IsOfClassScalar : ECPresentation::ScalarFunction
 +===============+===============+===============+===============+===============+======*/
 struct GetECClassIdScalar : ECPresentation::ScalarFunction
     {
-    GetECClassIdScalar(CustomFunctionsManager const& manager) 
-        : ECPresentation::ScalarFunction(FUNCTION_NAME_GetECClassId, 2, DbValueType::IntegerVal, manager) 
+    GetECClassIdScalar(CustomFunctionsManager const& manager)
+        : ECPresentation::ScalarFunction(FUNCTION_NAME_GetECClassId, 2, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -849,8 +849,8 @@ struct GetECClassIdScalar : ECPresentation::ScalarFunction
 +===============+===============+===============+===============+===============+======*/
 struct GetInstanceKeyScalar : ECPresentation::ScalarFunction
     {
-    GetInstanceKeyScalar(CustomFunctionsManager const& manager) 
-        : ScalarFunction(FUNCTION_NAME_GetInstanceKey, 2, DbValueType::TextVal, manager) 
+    GetInstanceKeyScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetInstanceKey, 2, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1017,8 +1017,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct GetSettingValueScalar : ECPresentation::ScalarFunction
     {
-    GetSettingValueScalar(CustomFunctionsManager const& manager) 
-        : ScalarFunction(FUNCTION_NAME_GetSettingValue, 1, DbValueType::TextVal, manager) 
+    GetSettingValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetSettingValue, 1, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1026,7 +1026,7 @@ struct GetSettingValueScalar : ECPresentation::ScalarFunction
         Utf8CP settingId = args[0].GetValueText();
         Utf8String value = GetContext().GetUserSettings().GetSettingValue(settingId);
         ctx.SetResultText(value.c_str(), (int)value.size(), DbFunction::Context::CopyData::Yes);
-        
+
         if (nullptr != GetContext().GetUsedUserSettingsListener())
             GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
         }
@@ -1039,15 +1039,15 @@ struct GetSettingValueScalar : ECPresentation::ScalarFunction
 +===============+===============+===============+===============+===============+======*/
 struct GetSettingIntValueScalar : ECPresentation::ScalarFunction
     {
-    GetSettingIntValueScalar(CustomFunctionsManager const& manager) 
-        : ScalarFunction(FUNCTION_NAME_GetSettingIntValue, 1, DbValueType::IntegerVal, manager) 
+    GetSettingIntValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetSettingIntValue, 1, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(1 == nArgs);
         Utf8CP settingId = args[0].GetValueText();
         ctx.SetResultInt64(GetContext().GetUserSettings().GetSettingIntValue(settingId));
-        
+
         if (nullptr != GetContext().GetUsedUserSettingsListener())
             GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
         }
@@ -1060,15 +1060,15 @@ struct GetSettingIntValueScalar : ECPresentation::ScalarFunction
 +===============+===============+===============+===============+===============+======*/
 struct GetSettingBoolValueScalar : ECPresentation::ScalarFunction
     {
-    GetSettingBoolValueScalar(CustomFunctionsManager const& manager) 
-        : ScalarFunction(FUNCTION_NAME_GetSettingBoolValue, 1, DbValueType::IntegerVal, manager) 
+    GetSettingBoolValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetSettingBoolValue, 1, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(1 == nArgs);
         Utf8CP settingId = args[0].GetValueText();
         ctx.SetResultInt(GetContext().GetUserSettings().GetSettingBoolValue(settingId) ? 1 : 0);
-        
+
         if (nullptr != GetContext().GetUsedUserSettingsListener())
             GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
         }
@@ -1082,8 +1082,8 @@ struct GetSettingBoolValueScalar : ECPresentation::ScalarFunction
 +===============+===============+===============+===============+===============+======*/
 struct InSettingIntValuesScalar : CachingScalarFunction<bmap<Utf8String, bvector<int64_t>>>
     {
-    InSettingIntValuesScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_InSettingIntValues, 2, DbValueType::IntegerVal, manager) 
+    InSettingIntValuesScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_InSettingIntValues, 2, DbValueType::IntegerVal, manager)
         {}
     void _OnUserSettingChanged(Utf8CP settingId) override {GetCache().erase(settingId);}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
@@ -1091,7 +1091,7 @@ struct InSettingIntValuesScalar : CachingScalarFunction<bmap<Utf8String, bvector
         BeAssert(2 == nArgs);
         Utf8CP settingId = args[0].GetValueText();
         int64_t lookupValue = args[1].GetValueInt64();
-        
+
         if (nullptr != GetContext().GetUsedUserSettingsListener())
             GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
 
@@ -1120,8 +1120,8 @@ struct InSettingIntValuesScalar : CachingScalarFunction<bmap<Utf8String, bvector
 +===============+===============+===============+===============+===============+======*/
 struct HasSettingScalar : ECPresentation::ScalarFunction
     {
-    HasSettingScalar(CustomFunctionsManager const& manager) 
-        : ScalarFunction(FUNCTION_NAME_HasSetting, 1, DbValueType::IntegerVal, manager) 
+    HasSettingScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_HasSetting, 1, DbValueType::IntegerVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1175,7 +1175,7 @@ struct IsRecursivelyRelatedFunctionCache
 
     RelatedKeysCache::const_iterator m_lastMatch;
 
-    IsRecursivelyRelatedFunctionCache() 
+    IsRecursivelyRelatedFunctionCache()
         : m_statements(10), m_lastMatch(m_relatedKeys.end())
         {}
     };
@@ -1192,8 +1192,8 @@ struct IsRecursivelyRelatedFunctionCache
 +===============+===============+===============+===============+===============+======*/
 struct IsRecursivelyRelatedScalar : CachingScalarFunction<IsRecursivelyRelatedFunctionCache>
     {
-    IsRecursivelyRelatedScalar(CustomFunctionsManager const& manager) 
-        : CachingScalarFunction(FUNCTION_NAME_IsRecursivelyRelated, 6, DbValueType::IntegerVal, manager) 
+    IsRecursivelyRelatedScalar(CustomFunctionsManager const& manager)
+        : CachingScalarFunction(FUNCTION_NAME_IsRecursivelyRelated, 6, DbValueType::IntegerVal, manager)
         {}
     void RecursivelySelectAndAddRelatedKeys(std::unordered_set<uint64_t>& relatedInstanceKeys, ECSqlStatement& stmt, ECInstanceId const& instanceId) const
         {
@@ -1252,7 +1252,7 @@ struct IsRecursivelyRelatedScalar : CachingScalarFunction<IsRecursivelyRelatedFu
                 "  FROM %s"
                 " WHERE %s = ?";
 
-            Utf8String query; 
+            Utf8String query;
             if (0 == strcmp("Forward", key.m_relationshipDirection))
                 query.Sprintf(s_queryFormat, s_sourceECInstanceIdField, relationshipClass->GetECSqlName().c_str(), s_targetECInstanceIdField);
             else if (0 == strcmp("Backward", key.m_relationshipDirection))
@@ -1289,8 +1289,8 @@ struct IsRecursivelyRelatedScalar : CachingScalarFunction<IsRecursivelyRelatedFu
 +===============+===============+===============+===============+===============+======*/
 struct GetECEnumerationValueScalar : ECPresentation::ScalarFunction
     {
-    GetECEnumerationValueScalar(CustomFunctionsManager const& manager) 
-        : ScalarFunction(FUNCTION_NAME_GetECEnumerationValue, 3, DbValueType::TextVal, manager) 
+    GetECEnumerationValueScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_GetECEnumerationValue, 3, DbValueType::TextVal, manager)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
@@ -1421,11 +1421,14 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomFunctionsContext::CustomFunctionsContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, 
-    ECExpressionsCache& ecexpressionsCache, JsonNavNodesFactory const& nodesFactory, IUsedClassesListener* usedClassesListener, 
-    NavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter)
-    : m_schemaHelper(schemaHelper), m_ruleset(ruleset), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache), 
-    m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener), m_extendedData(queryExtendedData), m_localizationProvider(nullptr), m_propertyFormatter(formatter)
+CustomFunctionsContext::CustomFunctionsContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection,
+    PresentationRuleSetCR ruleset, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener,
+    ECExpressionsCache& ecexpressionsCache, JsonNavNodesFactory const& nodesFactory, IUsedClassesListener* usedClassesListener,
+    JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter)
+    : m_schemaHelper(schemaHelper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_userSettings(userSettings),
+    m_usedSettingsListener(usedSettingsListener), m_ecexpressionsCache(ecexpressionsCache),
+    m_parentNode(parentNode), m_nodesFactory(nodesFactory), m_usedClassesListener(usedClassesListener),
+    m_extendedData(queryExtendedData), m_localizationProvider(nullptr), m_propertyFormatter(formatter)
     {
     CustomFunctionsManager::GetManager().PushContext(*this);
     }
@@ -1545,14 +1548,19 @@ CustomFunctionsContext* CustomFunctionsManager::PopContext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomFunctionsInjector::CustomFunctionsInjector() : ECDbBasedCache(false) {CreateFunctions();}
+CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connections) : m_connections(connections)
+    {
+    m_connections.AddListener(*this);
+    CreateFunctions();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomFunctionsInjector::CustomFunctionsInjector(ECDbR db)
-    : ECDbBasedCache(false)
+CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connections, ECDbR db)
+    : m_connections(connections)
     {
+    m_connections.AddListener(*this);
     CreateFunctions();
     OnConnection(db);
     }
@@ -1565,6 +1573,7 @@ CustomFunctionsInjector::~CustomFunctionsInjector()
     for (ECDb const* db : m_handledDbs)
         UnregisterFromDb(*db);
     DestroyFunctions();
+    m_connections.DropListener(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1643,6 +1652,9 @@ void CustomFunctionsInjector::RegisterInDb(ECDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomFunctionsInjector::UnregisterFromDb(ECDbCR db)
     {
+    if (!db.IsDbOpen())
+        return;
+
     for (ScalarFunction* func : m_scalarFunctions)
         {
         DbResult result = (DbResult)db.RemoveFunction(*func);
@@ -1673,13 +1685,16 @@ void CustomFunctionsInjector::OnConnection(ECDbCR connection)
 
     m_handledDbs.insert(&connection);
     RegisterInDb(connection);
-    ECDbBasedCache::OnConnection(connection);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CustomFunctionsInjector::_ClearECDbCache(ECDbCR connection)
+void CustomFunctionsInjector::_OnConnectionEvent(ConnectionEvent const& evt)
     {
-    m_handledDbs.erase(&connection);
+    if (ConnectionEventType::Closed == evt.GetEventType())
+        {
+        UnregisterFromDb(evt.GetConnection().GetDb());
+        m_handledDbs.erase(&evt.GetConnection().GetDb());
+        }
     }

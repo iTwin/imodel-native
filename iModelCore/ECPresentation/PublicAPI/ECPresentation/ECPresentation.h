@@ -8,6 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
+#include <folly/futures/Future.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECDb/ECDbApi.h>
 
 //-----------------------------------------------------------------------------------------
@@ -43,7 +45,8 @@
 //-----------------------------------------------------------------------------------------
 // Define the ECPresentation logger namespace
 //-----------------------------------------------------------------------------------------
-#define LOGGER_NAMESPACE_ECPRESENTATION "ECPresentation"
+#define LOGGER_NAMESPACE_ECPRESENTATION             "ECPresentation"
+#define LOGGER_NAMESPACE_ECPRESENTATION_CONNECTIONS LOGGER_NAMESPACE_ECPRESENTATION ".Connections"
 
 //-----------------------------------------------------------------------------------------
 // Use the ECPresentation namespace

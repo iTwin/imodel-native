@@ -121,7 +121,7 @@ protected:
         return str;
         }
 public:
-    RemapNodeIdsTask(NodesCache& cache, SelectionManagerP, bmap<uint64_t, uint64_t> const& remapInfo) 
+    RemapNodeIdsTask(NodesCache& cache, bmap<uint64_t, uint64_t> const& remapInfo) 
         : m_cache(cache), m_remapInfo(remapInfo)
         {}
 };
@@ -163,7 +163,7 @@ struct RefreshHierarchyTask : IUpdateTask
 private:
     HierarchyUpdater const& m_updater;
     UpdateContext& m_updateContext;
-    ECDbCR m_connection;
+    IConnectionCR m_connection;
     HierarchyLevelInfo m_hierarchyInfo;
 protected:
     virtual uint32_t _GetPriority() const override {return TASK_PRIORITY_RefreshHierarchy;}
@@ -186,15 +186,15 @@ protected:
         Utf8String str = "[RefreshHierarchyTask]";
         if (!DidPerform())
             {
-            str.append(" ConnectionId: ").append(m_hierarchyInfo.GetConnectionId().ToString());
+            str.append(" ConnectionId: ").append(m_hierarchyInfo.GetConnectionId());
             str.append(" RulesetId: ").append(m_hierarchyInfo.GetRulesetId());
             str.append(" PhysicalParentId: ").append((nullptr == m_hierarchyInfo.GetPhysicalParentNodeId()) ? "null" : std::to_string(*m_hierarchyInfo.GetPhysicalParentNodeId()).c_str());
             }
         return str;
         }
 public:
-    RefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, ECDbCR db, HierarchyLevelInfo info) 
-        : m_updater(updater), m_updateContext(updateContext), m_connection(db), m_hierarchyInfo(info)
+    RefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, IConnectionCR connection, HierarchyLevelInfo info) 
+        : m_updater(updater), m_updateContext(updateContext), m_connection(connection), m_hierarchyInfo(info)
         {}
 };
 
@@ -319,9 +319,9 @@ public:
 struct RefreshSelectionTask : IUpdateTask
 {
 private:
-    SelectionManagerP m_selectionManager;
+    ISelectionManager& m_selectionManager;
     bmap<uint64_t, uint64_t>& m_remapInfo;
-    ECDbCR m_db;
+    IConnectionCR m_connection;
 
 private:
     INavNodeKeysContainerCPtr GetNewKeys(INavNodeKeysContainerCR selection)
@@ -372,24 +372,20 @@ protected:
         if (m_remapInfo.empty())
             return bvector<IUpdateTaskPtr>();
 
-        ECDbR db = const_cast<ECDbR>(m_db);
-        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager->GetSelection(db));
-        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager->GetSubSelection(db));
+        INavNodeKeysContainerCPtr selectionKeys = GetNewKeys(*m_selectionManager.GetSelection(m_connection.GetDb()));
         if (0 != selectionKeys->size())
-            m_selectionManager->ChangeSelection(db, "RefreshSelectionTask", false, *selectionKeys);
+            m_selectionManager.ChangeSelection(m_connection.GetDb(), "RefreshSelectionTask", false, *selectionKeys);
+
+        INavNodeKeysContainerCPtr subSelectionKeys = GetNewKeys(*m_selectionManager.GetSubSelection(m_connection.GetDb()));
         if (0 != subSelectionKeys->size())
-            m_selectionManager->ChangeSelection(db, "RefreshSelectionTask", true, *subSelectionKeys);
+            m_selectionManager.ChangeSelection(m_connection.GetDb(), "RefreshSelectionTask", true, *subSelectionKeys);
 
         return bvector<IUpdateTaskPtr>();
         }
-    Utf8String _GetPrintStr() const override
-        {
-        Utf8String str = "[RefreshSelectioTask]";
-        return str;
-        }
+    Utf8String _GetPrintStr() const override {return "[RefreshSelectionTask]";}
 public:
-    RefreshSelectionTask(SelectionManager& manager, ECDbCR db, bmap<uint64_t, uint64_t>& remap)
-        : m_selectionManager(&manager), m_remapInfo(remap), m_db(db)
+    RefreshSelectionTask(ISelectionManager& manager, IConnectionCR connection, bmap<uint64_t, uint64_t>& remapInfo)
+        : m_selectionManager(manager), m_remapInfo(remapInfo), m_connection(connection)
         {}
 };
 
@@ -404,7 +400,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRemapNodeIdsTask(bmap<uint64_t, uint64_
         return nullptr;
         }
 
-    return new RemapNodeIdsTask(*m_nodesCache, m_selectionManager, remapInfo);
+    return new RemapNodeIdsTask(*m_nodesCache, remapInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,7 +421,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRemoveDataSourceTask(BeGuidCR removalId
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 IUpdateTaskPtr UpdateTasksFactory::CreateRefreshHierarchyTask(HierarchyUpdater const& updater, UpdateContext& updateContext, 
-    ECDbCR db, HierarchyLevelInfo const& info) const
+    IConnectionCR db, HierarchyLevelInfo const& info) const
     {
     return new RefreshHierarchyTask(updater, updateContext, db, info);
     }
@@ -463,18 +459,18 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(FullUpdateRecord record) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateRefreshSelectionTask(ECDbCR db, bmap<uint64_t, uint64_t>& remap) const
+IUpdateTaskPtr UpdateTasksFactory::CreateRefreshSelectionTask(IConnectionCR connection, bmap<uint64_t, uint64_t>& remap) const
     {
     if (nullptr == m_selectionManager)
         return nullptr;
 
-    return new RefreshSelectionTask(*m_selectionManager, db, remap);
+    return new RefreshSelectionTask(*m_selectionManager, connection, remap);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-UpdateHandler::UpdateHandler(NodesCache* nodesCache, ContentCache* contentCache, IConnectionCacheCR connections, INodesProviderContextFactoryCR contextFactory, 
+UpdateHandler::UpdateHandler(NodesCache* nodesCache, ContentCache* contentCache, IConnectionManagerCR connections, INodesProviderContextFactoryCR contextFactory, 
     INodesProviderFactoryCR providerFactory, IECExpressionsCacheProvider& ecexpressionsCacheProvider) 
     : m_nodesCache(nodesCache), m_contentCache(contentCache), m_connections(connections), m_tasksFactory(nodesCache, contentCache, nullptr), 
     m_ecexpressionsCacheProvider(ecexpressionsCacheProvider), m_hierarchyUpdater(nullptr), m_selectionManager(nullptr)
@@ -494,32 +490,32 @@ UpdateHandler::~UpdateHandler()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<HierarchyLevelInfo> UpdateHandler::GetAffectedHierarchyLevels(ECDbCR connection, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) const
+bvector<HierarchyLevelInfo> UpdateHandler::GetAffectedHierarchyLevels(IConnectionCR connection, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) const
     {
     bset<ECInstanceKey> keys;
     for (ECInstanceChangeEventSource::ChangedECInstance const& change : changes)
         keys.insert(ECInstanceKey(change.GetClass()->GetId(), change.GetInstanceId()));
 
-    return m_nodesCache->GetRelatedHierarchyLevels(connection.GetDbGuid(), keys);
+    return m_nodesCache->GetRelatedHierarchyLevels(connection.GetId(), keys);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateContext, ECDbCR db, 
+bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateContext, IConnectionCR connection, 
     bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) const
     {
     bvector<IUpdateTaskPtr> tasks;
 
     if (nullptr != m_hierarchyUpdater)
         {
-        bvector<HierarchyLevelInfo> affectedHierarchies = GetAffectedHierarchyLevels(db, changes);
+        bvector<HierarchyLevelInfo> affectedHierarchies = GetAffectedHierarchyLevels(connection, changes);
         AddTasksForAffectedHierarchies(tasks, updateContext, affectedHierarchies);
         }
 
     if (nullptr != m_contentCache)
         {
-        bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(db);
+        bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(connection);
         for (SpecificationContentProviderPtr& provider : affectedContentProviders)
             AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, updateContext, *provider));
         }
@@ -556,10 +552,10 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
 void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext& updateContext,
     bvector<HierarchyLevelInfo> const& affectedHierarchies) const
     {
-    bset<ECDb const*> affectedConnections;
+    bset<IConnectionCP> affectedConnections;
     for (HierarchyLevelInfo const& info : affectedHierarchies)
         {
-        ECDb const* connection = m_connections.GetConnection(info.GetConnectionId().ToString().c_str());
+        IConnectionCP connection = m_connections.GetConnection(info.GetConnectionId().c_str());
         if (nullptr == connection)
             {
             BeAssert(false);
@@ -569,7 +565,8 @@ void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& task
         if (nullptr != m_selectionManager)
             affectedConnections.insert(connection);
         }
-    for (ECDb const* connection: affectedConnections)
+
+    for (IConnectionCP connection : affectedConnections)
         AddTask(tasks, *m_tasksFactory.CreateRefreshSelectionTask(*connection, updateContext.GetRemapInfo()));
 
     AddTask(tasks, *m_tasksFactory.CreateRemapNodeIdsTask(updateContext.GetRemapInfo()));
@@ -633,15 +630,14 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdateHandler::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes)
+void UpdateHandler::NotifyECInstancesChanged(IConnectionCR connection, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes)
     {
     LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Received ECInstance change event with %u change(s)", changes.size()).c_str());
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Update, "Updating", NativeLogging::LOG_TRACE);
-
     s_taskId = 1; // reset task IDs counter
 
     UpdateContext updateContext;
-    bvector<IUpdateTaskPtr> tasks = CreateUpdateTasks(updateContext, db, changes);
+    bvector<IUpdateTaskPtr> tasks = CreateUpdateTasks(updateContext, connection, changes);
     ExecuteTasks(tasks);
     }
 
@@ -649,10 +645,9 @@ void UpdateHandler::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEve
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdateHandler::NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId)
-    {    
+    {
     LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Setting '%s' changed for ruleset ID '%s'", settingId, rulesetId).c_str());
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Update, "Updating", NativeLogging::LOG_TRACE);
-
     s_taskId = 1; // reset task IDs counter
 
     UpdateContext updateContext;
@@ -721,20 +716,7 @@ void UpdateHandler::NotifyCategoriesChanged()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdateHandler::_OnConnectionClosed(ECDbCR connection)
-    {
-    Utf8String msg;
-    msg.append("Connection ").append(connection.GetDbGuid().ToString()).append(" closed. Clear related caches.");
-    LoggingHelper::LogMessage(Log::Update, msg.c_str());
-
-    if (nullptr != m_contentCache)
-        m_contentCache->ClearCache(connection);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr HierarchyUpdater::CreateProvider(ECDbCR connection, HierarchyLevelInfo const& info) const
+NavNodesProviderPtr HierarchyUpdater::CreateProvider(IConnectionCR connection, HierarchyLevelInfo const& info) const
     {
     // create the nodes provider context
     NavNodesProviderContextPtr context = m_contextFactory.Create(connection, info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId());
@@ -742,10 +724,10 @@ NavNodesProviderPtr HierarchyUpdater::CreateProvider(ECDbCR connection, Hierarch
         return nullptr;
 
     context->SetUpdateContext(true);
-    NavNodeCPtr parent = context->GetPhysicalParentNode();
 
     // create the provider
-    return m_nodesProviderFactory.CreateForHierarchyLevel(*context, parent.get());
+    JsonNavNodeCPtr parentNode = (nullptr != info.GetPhysicalParentNodeId()) ? m_nodesCache.GetNode(*info.GetPhysicalParentNodeId()) : nullptr;
+    return m_nodesProviderFactory.CreateForHierarchyLevel(*context, parentNode.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -876,9 +858,9 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
     if (parentProvider.IsValid())
         {
         NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
-        HierarchyLevelInfo parentInfo(parentProviderContext.GetDb().GetDbGuid(), parentProviderContext.GetRuleset().GetRuleSetId(),
+        HierarchyLevelInfo parentInfo(parentProviderContext.GetConnection().GetId(), parentProviderContext.GetRuleset().GetRuleSetId(),
             parentProviderContext.GetPhysicalParentNodeId());
-        subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentProviderContext.GetDb(), parentInfo));
+        subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentProviderContext.GetConnection(), parentInfo));
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -932,7 +914,7 @@ bool HierarchyUpdater::IsHierarchyRemoved(UpdateContext const& context, Hierarch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, ECDbCR connection, HierarchyLevelInfo const& oldInfo, HierarchyLevelInfo const& newInfo) const
+void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& context, IConnectionCR connection, HierarchyLevelInfo const& oldInfo, HierarchyLevelInfo const& newInfo) const
     {
     if (context.GetHandledHierarchies().end() != context.GetHandledHierarchies().find(oldInfo))
         {

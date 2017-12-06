@@ -190,6 +190,7 @@ public:
 
 //=======================================================================================
 //! An interface for a class that takes and handles a number of update records.
+//! @note Handler methods may be called from multiple different threads.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                02/2016
 //=======================================================================================

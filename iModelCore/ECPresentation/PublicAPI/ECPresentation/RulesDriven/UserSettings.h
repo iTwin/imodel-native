@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentation.h>
@@ -13,10 +13,6 @@
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
-
-#define USER_SETTINGS_LOCALSTATE
-
-#define USER_SETTINGS_LOCALSTATE
 
 struct ILocalizationProvider;
 struct UserSettingsManager;
@@ -39,6 +35,7 @@ struct IUserSettingsChangeListener
 
 //=======================================================================================
 //! Handles user settings' storage and retrieval.
+//! @note The implementation must be thread safe.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                01/2016
 //=======================================================================================
@@ -51,6 +48,7 @@ protected:
 
     virtual bool _HasSetting(Utf8CP id) const = 0;
 
+    virtual void _InitFrom(UserSettingsGroupList const&) = 0;
     virtual void _SetSettingValue(Utf8CP id, Utf8CP value) = 0;
     virtual void _SetSettingIntValue(Utf8CP id, int64_t value) = 0;
     virtual void _SetSettingIntValues(Utf8CP id, bvector<int64_t> const& values) = 0;
@@ -68,6 +66,8 @@ public:
     //! Is there a user setting with the specified id.
     bool HasSetting(Utf8CP id) const {return _HasSetting(id);}
 
+    //! Initialize settings from presentation rules.
+    void InitFrom(UserSettingsGroupList const& rules) {_InitFrom(rules);}
     //! Set a setting value.
     void SetSettingValue(Utf8CP id, Utf8CP value) {_SetSettingValue(id, value);}
     //! Set a setting value.
@@ -87,59 +87,9 @@ public:
     bool GetSettingBoolValue(Utf8CP id) const {return _GetSettingBoolValue(id);}
 };
 
-#ifdef USER_SETTINGS_DB
 //=======================================================================================
 //! Handles user settings' storage and retrieval.
-//! @ingroup GROUP_RulesDrivenPresentation
-// @bsiclass                                    Grigas.Petraitis                01/2016
-//=======================================================================================
-struct UserSettings : IUserSettings
-{
-friend struct UserSettingsManager;
-
-private:
-    BeSQLite::Db& m_settingsDb;
-    BeSQLite::StatementCache& m_statements;
-    Utf8String m_rulesetId;
-    ILocalizationProvider const* m_localizationProvider;
-    Json::Value m_presentationInfo;
-    IUserSettingsChangeListener const* m_changeListener;
-    bool m_isInitializing;
-    
-private:
-    bool HasValue(Utf8CP settingId) const;
-    Json::Value GetValue(Utf8CP settingId, bool isText) const;
-    void DeleteValues(Utf8CP settingId);
-    void InsertValue(Utf8CP settingId, JsonValueCR settingValue, bool updateIfExists, bool notifyListeners);
-
-    void AddValues(JsonValueR json) const;
-    Utf8String GetLocalizedLabel(Utf8StringCR nonLocalizedLabel) const;
-    void InitFrom(UserSettingsGroupList const& rules, JsonValueR presentationObj);
-
-protected:
-    ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo() const override;
-    ECPRESENTATION_EXPORT bool _HasSetting(Utf8CP id) const override;
-    ECPRESENTATION_EXPORT void _SetSettingValue(Utf8CP id, Utf8CP value) override;
-    ECPRESENTATION_EXPORT void _SetSettingIntValue(Utf8CP id, int64_t value) override;
-    ECPRESENTATION_EXPORT void _SetSettingIntValues(Utf8CP id, bvector<int64_t> const& values) override;
-    ECPRESENTATION_EXPORT void _SetSettingBoolValue(Utf8CP id, bool value) override;
-    ECPRESENTATION_EXPORT Utf8String _GetSettingValue(Utf8CP id) const override;
-    ECPRESENTATION_EXPORT int64_t _GetSettingIntValue(Utf8CP id) const override;
-    ECPRESENTATION_EXPORT bvector<int64_t> _GetSettingIntValues(Utf8CP id) const override;
-    ECPRESENTATION_EXPORT bool _GetSettingBoolValue(Utf8CP id) const override;
-
-public:
-    UserSettings(BeSQLite::Db& settingsDb, BeSQLite::StatementCache& statements, Utf8CP rulesetId, IUserSettingsChangeListener const* changeListener = nullptr) 
-        : m_settingsDb(settingsDb), m_statements(statements), m_changeListener(changeListener), m_rulesetId(rulesetId), m_localizationProvider(nullptr), m_isInitializing(false)
-        {}
-    void SetLocalizationProvider(ILocalizationProvider const* provider) {m_localizationProvider = provider;}
-    ECPRESENTATION_EXPORT void InitFrom(UserSettingsGroupList const& rules);
-};
-#endif
-
-#ifdef USER_SETTINGS_LOCALSTATE
-//=======================================================================================
-//! Handles user settings' storage and retrieval.
+//! @note The implementation must be thread safe.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                01/2016
 //=======================================================================================
@@ -155,15 +105,17 @@ private:
     Json::Value m_presentationInfo;
     IUserSettingsChangeListener const* m_changeListener;
     bool m_isInitializing;
-    
+    mutable BeMutex m_mutex;
+
 private:
     void AddValues(JsonValueR json) const;
     Utf8String GetLocalizedLabel(Utf8StringCR nonLocalizedLabel) const;
-    void InitFrom(UserSettingsGroupList const& rules, JsonValueR presentationObj);
-    
+    void InitFromJson(UserSettingsGroupList const& rules, JsonValueR presentationObj);
+
 protected:
     ECPRESENTATION_EXPORT Json::Value _GetPresentationInfo() const override;
     ECPRESENTATION_EXPORT bool _HasSetting(Utf8CP id) const override;
+    ECPRESENTATION_EXPORT void _InitFrom(UserSettingsGroupList const&) override;
     ECPRESENTATION_EXPORT void _SetSettingValue(Utf8CP id, Utf8CP value) override;
     ECPRESENTATION_EXPORT void _SetSettingIntValue(Utf8CP id, int64_t value) override;
     ECPRESENTATION_EXPORT void _SetSettingIntValues(Utf8CP id, bvector<int64_t> const& values) override;
@@ -177,28 +129,45 @@ public:
     //! Constructor.
     //! @param[in] rulesetId The ID of the ruleset whose settings are stored in this instance.
     //! @param[in] changeListener Listener that's notified when a setting in this instance changes.
-    UserSettings(Utf8CP rulesetId, IUserSettingsChangeListener const* changeListener = nullptr) 
+    UserSettings(Utf8CP rulesetId, IUserSettingsChangeListener const* changeListener = nullptr)
         : m_changeListener(changeListener), m_rulesetId(rulesetId), m_localState(nullptr), m_localizationProvider(nullptr), m_logger(nullptr), m_isInitializing(false)
         {}
     void SetLocalState(IJsonLocalState* localState) {m_localState = localState;}
     void SetLocalizationProvider(ILocalizationProvider const* provider) {m_localizationProvider = provider;}
     void SetLogger(NativeLogging::ILogger* logger) {m_logger = logger;}
-    ECPRESENTATION_EXPORT void InitFrom(UserSettingsGroupList const& rules);
 };
-#endif
 
 //=======================================================================================
-//! Manages @ref UserSettings instances for each ruleset.
+//! An interface for @ref UserSettings manager.
+//! @note The implementation must be thread safe.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                01/2016
 //=======================================================================================
 struct IUserSettingsManager
 {
+private:
+    IJsonLocalState* m_localState;
+    ILocalizationProvider const* m_localizationProvider;
+    IUserSettingsChangeListener* m_changeListener;
+
 protected:
     virtual IUserSettings& _GetSettings(Utf8StringCR) const = 0;
+    virtual void _OnLocalizationProviderChanged() {}
+    virtual void _OnLocalStateChanged() {}
+    virtual void _OnChangesListenerChanged() {}
 
 public:
+    IUserSettingsManager() : m_localState(nullptr), m_localizationProvider(nullptr), m_changeListener(nullptr) {}
     virtual ~IUserSettingsManager() {}
+
+    ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
+    void SetLocalizationProvider(ILocalizationProvider const* provider) {m_localizationProvider = provider; _OnLocalizationProviderChanged();}
+
+    IJsonLocalState* GetLocalState() const {return m_localState;}
+    void SetLocalState(IJsonLocalState* localState) {m_localState = localState; _OnLocalStateChanged();}
+
+    IUserSettingsChangeListener* GetChangesListener() const {return m_changeListener;}
+    void SetChangesListener(IUserSettingsChangeListener* listener) {m_changeListener = listener; _OnChangesListenerChanged();}
 
     //! Get a writable @ref IUserSettings instance.
     //! @param[in] rulesetId The ID of the ruleset whose settings should be returned.
@@ -207,6 +176,7 @@ public:
 
 //=======================================================================================
 //! Manages @ref UserSettings instances for each ruleset.
+//! @note The implementation must be thread safe.
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                01/2016
 //=======================================================================================
@@ -214,47 +184,26 @@ struct UserSettingsManager : NonCopyableClass, IUserSettingsManager, IRulesetCal
 {
 private:
     mutable bmap<Utf8String, UserSettings*> m_settings;
-#ifdef USER_SETTINGS_DB
-    BeFileName m_settingsDbPath;
-    BeSQLite::Db m_settingsDb;
-    BeSQLite::StatementCache m_statements;
-    bset<BeSQLite::BeGuid> m_attachedConnections;
-#endif
-#ifdef USER_SETTINGS_LOCALSTATE
-    IJsonLocalState* m_localState;
-#endif
-    ILocalizationProvider const* m_localizationProvider;
-    IUserSettingsChangeListener const* m_changeListener;
-    
-#ifdef USER_SETTINGS_DB
-private:
-    void InitSettingsDb(BeFileNameCR localStateDirectory);
-    void InitSettingsTable();
-#endif
-    
+    mutable BeMutex m_mutex;
+
 protected:
+    // IUserSettingsManager
     IUserSettings& _GetSettings(Utf8StringCR rulesetId) const override {return GetSettings(rulesetId);}
-    void _OnRulesetDispose(PresentationRuleSetCR ruleset) override;
+    void _OnLocalStateChanged() override;
+    void _OnLocalizationProviderChanged() override;
+
+    // IUserSettingsChangeListener
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
 
-public:
-    void SetLocalizationProvider(ILocalizationProvider const* provider);
-#ifdef USER_SETTINGS_DB
-    BeSQLite::Db& GetSettingsDb() {return m_settingsDb;}
-    void InitForConnection(ECDbR);
-    void TerminateForConnection(ECDbR);
-#endif
-#ifdef USER_SETTINGS_LOCALSTATE
-    ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState* localState);
-#endif
+    // IRulesetCallbacksHandler
+    void _OnRulesetDispose(PresentationRuleSetCR ruleset) override;
 
 public:
     //! Constructor.
     //! @param[in] temporaryDirectory Path to a temporary directory which can be used to store temp files.
-    //! @param[in] changeListener Listener that's notified when a user setting changes.
-    ECPRESENTATION_EXPORT UserSettingsManager(BeFileNameCR temporaryDirectory, IUserSettingsChangeListener const* changeListener = nullptr);
+    ECPRESENTATION_EXPORT UserSettingsManager(BeFileNameCR temporaryDirectory);
     ECPRESENTATION_EXPORT ~UserSettingsManager();
-        
+
     //! Get a @ref UserSettings instance.
     //! @param[in] rulesetId The ID of the ruleset whose settings should be returned.
     ECPRESENTATION_EXPORT UserSettings& GetSettings(Utf8StringCR rulesetId) const;

@@ -29,21 +29,12 @@ struct RulesDrivenECPresentationManagerContentTests : RulesDrivenECPresentationM
         {
         RulesDrivenECPresentationManagerTests::SetUp();
 
-        if (!s_project->GetECDb().GetDefaultTransaction()->IsActive())
-            s_project->GetECDb().GetDefaultTransaction()->Begin();
-
         m_schema = s_project->GetECDb().Schemas().GetSchema("RulesEngineTest");
         ASSERT_TRUE(nullptr != m_schema);
         
         m_widgetClass = m_schema->GetClassCP("Widget");
         m_gadgetClass = m_schema->GetClassCP("Gadget");
         m_sprocketClass = m_schema->GetClassCP("Sprocket");
-        }
-
-    void TearDown() override
-        {
-        s_project->GetECDb().GetDefaultTransaction()->Cancel();
-        RulesDrivenECPresentationManagerTests::TearDown();
         }
 };
 
@@ -65,7 +56,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(2, descriptor->GetSelectClasses().size());
@@ -83,8 +74,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNode)
     {
     // insert some widget instances
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance1);
 
@@ -105,12 +96,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -123,8 +114,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AcceptableClassNames_ReturnsInstanceOfDefinedClassName)
     {
     // insert some widget & gadget instances
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     
     NavNodePtr widgetNode = TestNodesHelper::CreateInstanceNode(*widgetInstance);
     NavNodePtr gadgetNode = TestNodesHelper::CreateInstanceNode(*gadgetInstance);
@@ -147,12 +138,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -165,7 +156,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AcceptableSchemaName_WrongSchemaName_ContentIsNotValid)
     {
     // insert widget instance
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
@@ -186,7 +177,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_FALSE(descriptor.IsValid());
     }
 
@@ -199,8 +190,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     ECClassCP classE = m_schema->GetClassCP("ClassE");
     ECClassCP classF = m_schema->GetClassCP("ClassF");
     
-    IECInstancePtr classEInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    IECInstancePtr classFInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *classF);
+    IECInstancePtr classEInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr classFInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
     
     NavNodePtr nodeE = TestNodesHelper::CreateInstanceNode(*classEInstance);
     NavNodePtr nodeF = TestNodesHelper::CreateInstanceNode(*classFInstance);
@@ -223,12 +214,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     RulesDrivenECPresentationManager::ContentOptions options("SelectedNodeInstances_AcceptablePolymorphically");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -241,8 +232,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfTheSameClass)
     {
     // insert some widget instances
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
@@ -265,12 +256,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     RulesDrivenECPresentationManager::ContentOptions options("SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfTheSameClass");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -283,8 +274,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfDifferentClasses)
     {
     // insert some widget instances
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
@@ -307,12 +298,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     RulesDrivenECPresentationManager::ContentOptions options("SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfDifferentClasses");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -325,8 +316,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
 TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSortingFieldAndOrder)
     {
     // insert some widgets and gadgets
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("2"));});
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("1"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("2"));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("1"));});
     
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*widget);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*gadget);
@@ -347,11 +338,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options("DescriptorOverride_SortingField");
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // get the default content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate the default content set
@@ -362,7 +353,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     ovr->SetSortingField("Widget_Gadget_MyID");
 
     // get the content with descriptor override
-    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson());
+    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are sorted
@@ -372,7 +363,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     ovr->SetSortDirection(SortDirection::Descending);
 
     // get the content with the changed sorting order
-    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson());
+    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are sorted in descending order
@@ -385,9 +376,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
 TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_SortingByEnumProperty)
     {
     // insert some instances
-    ECEntityClassCP classQ = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassQ")->GetEntityClassCP();
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classQ, [](IECInstanceR instance){instance.SetValue("IntEnum", ECValue(1));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classQ, [](IECInstanceR instance){instance.SetValue("IntEnum", ECValue(3));});
+    ECEntityClassCP classQ = GetClass("RulesEngineTest", "ClassQ")->GetEntityClassCP();
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classQ, [](IECInstanceR instance){instance.SetValue("IntEnum", ECValue(1));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classQ, [](IECInstanceR instance){instance.SetValue("IntEnum", ECValue(3));});
         
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DescriptorOverride_SortingByEnumProperty", 1, 0, false, "", "", "", false);
@@ -400,7 +391,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
     // get the descriptor
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // create the override
@@ -408,7 +399,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
     ovr->SetSortingField("ClassQ_IntEnum");
 
     // get the content with descriptor override
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are sorted
@@ -422,7 +413,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
 TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_RemovesPropertyField)
     {
     // insert a widget instance
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance);
 
@@ -441,7 +432,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
@@ -450,7 +441,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     ovr->RemoveField("Widget_IntProperty");
 
     // get the content with descriptor override
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the IntProperty field has been removed
@@ -465,7 +456,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
 TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_RemovesNavigationField)
     {
     // insert a sprocket instance
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DescriptorOverride_RemovesNavigationField", 1, 0, false, "", "", "", false);
@@ -478,7 +469,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
@@ -487,7 +478,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     ovr->RemoveField("Sprocket_Gadget");
 
     // get the content with descriptor override
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the Gadget field has been removed
@@ -506,9 +497,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
 TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFilters)
     {
     // insert some widget instances
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("DoubleProperty", ECValue(1.0));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("DoubleProperty", ECValue(1.0));});
         
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
@@ -531,11 +522,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options("DescriptorOverride_WithFilters");
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // get the default content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate the default content set
@@ -546,7 +537,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
     ovr->SetFilterExpression("Widget_IntProperty > 1 or Widget_DoubleProperty < 0");
 
     // get the content with descriptor override
-    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson());
+    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are filtered
@@ -571,7 +562,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
@@ -585,8 +576,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
 TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_ClassNames_ReturnsInstanceOfDefinedClass)
     {
     // insert some widget & gadget instances
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(NavNodeKeyList()));
@@ -603,12 +594,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstancesOfSpecificClasses_ClassNames_ReturnsInstanceOfDefinedClass");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -621,8 +612,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
 TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_InstanceFilter)
     {
     // insert some widget instances
-    IECInstancePtr widgetInstance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    IECInstancePtr widgetInstance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    IECInstancePtr widgetInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr widgetInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
     
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(NavNodeKeyList()));
@@ -639,12 +630,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstancesOfSpecificClasses_InstanceFilter");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -660,8 +651,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     ECClassCP classE = m_schema->GetClassCP("ClassE");
     ECClassCP classF = m_schema->GetClassCP("ClassF");
     
-    IECInstancePtr classEInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    IECInstancePtr classFInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *classF);
+    IECInstancePtr classEInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr classFInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
     
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(NavNodeKeyList()));
@@ -678,12 +669,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstancesOfSpecificClasses_ArePolymorphic");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -695,13 +686,13 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_ReturnsValidDescriptorBasedOnSelectedClasses)
     {    
-    ECEntityClassCP sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket")->GetEntityClassCP();
-    ECRelationshipClassCP rel1 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel3 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetsHaveGadgets")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel4 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetsHaveGadgets2")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel5 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprocket")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel6 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    ECEntityClassCP sprocketClass = GetClass("RulesEngineTest", "Sprocket")->GetEntityClassCP();
+    ECRelationshipClassCP rel1 = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel2 = GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel3 = GetClass("RulesEngineTest", "WidgetsHaveGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel4 = GetClass("RulesEngineTest", "WidgetsHaveGadgets2")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel5 = GetClass("RulesEngineTest", "GadgetHasSprocket")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel6 = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
 
     // set up selection
     SelectionInfo selection({m_gadgetClass});
@@ -716,7 +707,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(6, descriptor->GetSelectClasses().size());
@@ -766,11 +757,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     // insert some widget & gadget instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
     ECRelationshipClassCR relationshipWidgetHasGadgets = *m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr gadgetInstance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("CustomID")); });
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance2);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr gadgetInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("CustomID")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance2);
 
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
@@ -791,12 +782,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelatedClassNames_ReturnsRelatedInstance");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -810,9 +801,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     {
     // insert some widget & gadget instances
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*gadgetInstance);
 
@@ -833,12 +824,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelatedClassNames_ReturnsRelatedInstance_BackwardsDirection");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -852,14 +843,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     {
     // insert some widget & gadget instances
     ECRelationshipClassCR relationshipClassAHasBAndC = *m_schema->GetClassCP("ClassAHasBAndC")->GetRelationshipClassCP();
-    ECEntityClassCP classA = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA")->GetEntityClassCP();
-    ECEntityClassCP classB = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
-    ECEntityClassCP classC = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
-    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("A")); });
-    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
-    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(*s_project, *classC, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipClassAHasBAndC, *instanceA, *instanceB);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipClassAHasBAndC, *instanceA, *instanceC);
+    ECEntityClassCP classA = GetClass("RulesEngineTest", "ClassA")->GetEntityClassCP();
+    ECEntityClassCP classB = GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
+    ECEntityClassCP classC = GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("A")); });
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassAHasBAndC, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassAHasBAndC, *instanceA, *instanceC);
     
     // set up selection
     NavNodeKeyList keys;
@@ -878,12 +869,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -911,9 +902,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     {
     // insert some widget & gadget instances
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
@@ -937,7 +928,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelationshipClassNames_ReturnsInvalidContentWhenRelationshipDoesNotExist");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_FALSE(descriptor.IsValid());
     }
 
@@ -949,11 +940,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     // insert some widget & gadget instances with relationships
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
     ECRelationshipClassCR relationshipWidgetHasGadgets = *m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr gadgetInstance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance2);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr gadgetInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance2);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
@@ -974,12 +965,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelationshipClassNames");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -993,9 +984,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     {
     // insert some widget & gadget instances
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*gadgetInstance);
 
@@ -1016,12 +1007,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelationshipClassNames_BackwardsDirection");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1035,11 +1026,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ins
     {
     // insert some widget & gadget instances
     ECRelationshipClassCR relationshipWidgetHasGadgets = *m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("Description", ECValue("Gadget1"));});
-    IECInstancePtr gadgetInstance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("Description", ECValue("Gadget2"));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance2);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("Description", ECValue("Gadget1"));});
+    IECInstancePtr gadgetInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("Description", ECValue("Gadget2"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadgets, *widgetInstance, *gadgetInstance2);
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
@@ -1060,12 +1051,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ins
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_InstanceFilter");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1077,19 +1068,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ins
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Recursive)
     {
-    ECEntityClassCP classN = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassN")->GetEntityClassCP();
-    ECRelationshipClassCP relationshipClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassNGroupsClassN")->GetRelationshipClassCP();
+    ECEntityClassCP classN = GetClass("RulesEngineTest", "ClassN")->GetEntityClassCP();
+    ECRelationshipClassCP relationshipClass = GetClass("RulesEngineTest", "ClassNGroupsClassN")->GetRelationshipClassCP();
     
     // insert some  instances
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(3));});
-    IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(4));});
-    IECInstancePtr instance5 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *instance1, *instance2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *instance2, *instance3);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *instance2, *instance4);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *instance4, *instance5);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(3));});
+    IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(4));});
+    IECInstancePtr instance5 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *instance1, *instance2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *instance2, *instance3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *instance2, *instance4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *instance4, *instance5);
         
     /*
     Relationship hierarchy:
@@ -1121,12 +1112,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1138,29 +1129,29 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_RecursiveWithMultipleRelationships)
     {
-    ECEntityClassCP classN = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassN")->GetEntityClassCP();
-    ECEntityClassCP classO = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassO")->GetEntityClassCP();
-    ECEntityClassCP classP = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassP")->GetEntityClassCP();
-    ECRelationshipClassCP relationshipClassNN = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassNGroupsClassN")->GetRelationshipClassCP();
-    ECRelationshipClassCP relationshipClassNO = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassNOwnsClassO")->GetRelationshipClassCP();
-    ECRelationshipClassCP relationshipClassOP = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassOHasClassP")->GetRelationshipClassCP();    
+    ECEntityClassCP classN = GetClass("RulesEngineTest", "ClassN")->GetEntityClassCP();
+    ECEntityClassCP classO = GetClass("RulesEngineTest", "ClassO")->GetEntityClassCP();
+    ECEntityClassCP classP = GetClass("RulesEngineTest", "ClassP")->GetEntityClassCP();
+    ECRelationshipClassCP relationshipClassNN = GetClass("RulesEngineTest", "ClassNGroupsClassN")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipClassNO = GetClass("RulesEngineTest", "ClassNOwnsClassO")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipClassOP = GetClass("RulesEngineTest", "ClassOHasClassP")->GetRelationshipClassCP();    
     
     // insert some  instances
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(3));});
-    IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(4));});
-    IECInstancePtr instance5 = RulesEngineTestHelpers::InsertInstance(*s_project, *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    IECInstancePtr instance6 = RulesEngineTestHelpers::InsertInstance(*s_project, *classO, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(6));});
-    IECInstancePtr instance7 = RulesEngineTestHelpers::InsertInstance(*s_project, *classO, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(7));});
-    IECInstancePtr instance8 = RulesEngineTestHelpers::InsertInstance(*s_project, *classP, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(8));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClassNN, *instance1, *instance2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClassNN, *instance2, *instance3);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClassNN, *instance2, *instance4);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClassNN, *instance4, *instance5);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClassNO, *instance5, *instance6);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClassNO, *instance5, *instance7);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClassOP, *instance7, *instance8);
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(3));});
+    IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(4));});
+    IECInstancePtr instance5 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classN, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    IECInstancePtr instance6 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classO, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(6));});
+    IECInstancePtr instance7 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classO, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(7));});
+    IECInstancePtr instance8 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classP, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(8));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassNN, *instance1, *instance2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassNN, *instance2, *instance3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassNN, *instance2, *instance4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassNN, *instance4, *instance5);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassNO, *instance5, *instance6);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassNO, *instance5, *instance7);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClassOP, *instance7, *instance8);
             
     /*
     Relationship hierarchy:
@@ -1197,12 +1188,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1244,12 +1235,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     ECRelationshipClassCP relationshipClass = GetRelationshipClass("ElementOwnsChildElements")->GetRelationshipClassCP();
     
     // insert some  instances
-    IECInstancePtr parentA = RulesEngineTestHelpers::InsertInstance(*s_project, *elementAClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(1));});
-    IECInstancePtr childA = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(2));});
-    IECInstancePtr parentB = RulesEngineTestHelpers::InsertInstance(*s_project, *elementBClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(3));});
-    IECInstancePtr childB = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(4));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *parentA, *childA);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *relationshipClass, *parentB, *childB);
+    IECInstancePtr parentA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementAClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(1));});
+    IECInstancePtr childA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(2));});
+    IECInstancePtr parentB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementBClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(3));});
+    IECInstancePtr childB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementProperty", ECValue(4));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *parentA, *childA);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *parentB, *childB);
 
     // set up selection
     NavNodeKeyList keys = {ECInstanceNodeKey::Create(*parentA), ECInstanceNodeKey::Create(*parentB)};
@@ -1268,12 +1259,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1286,7 +1277,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_CalculatedPropertiesValue)
     {
     // insert some widget instances
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Test"));
         });
@@ -1310,7 +1301,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstanceOfSpecificClass");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(10, descriptor->GetVisibleFields().size());
 
@@ -1331,7 +1322,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_STREQ("this.MyID", descriptor->GetVisibleFields()[9]->AsCalculatedPropertyField()->GetValueExpression().c_str());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1351,10 +1342,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecificationAppliedForBaseClassAndDerived_CreatesOneField)
     {
     // set up the dataset
-    ECEntityClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
-    ECEntityClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
-    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(*s_project, *classF, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(1000));});
-    IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(2000));});
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    ECEntityClassCP classH = GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(1000));});
+    IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(2000));});
 
     // set up selection
     NavNodeKeyList keys;
@@ -1379,12 +1370,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1418,7 +1409,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
 TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
     {
     // insert widget instance
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("Description", ECValue("MyDescription"));
         instance.SetValue("MyID", ECValue("MyID"));
@@ -1446,9 +1437,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
         
     // request for content
     RulesDrivenECPresentationManager::ContentOptions options("ContentSerialization");
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     rapidjson::Document contentJson = content->AsJson();
     EXPECT_TRUE(contentJson.IsObject());
@@ -1550,7 +1541,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesCustomPropertyCategoryS
     RulesDrivenECPresentationManager::ContentOptions options("UsesCustomPropertyCategorySupplierIfSet");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
@@ -1577,11 +1568,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesCustomPropertyCategoryS
 TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCorrectWhenSelectionIncludesInstanceOfRelatedInstanceClass)
     {
     // set up the dataset
-    ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("Description", ECValue("Test Gadget"));});
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget 1"));});
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget 2"));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetsRelationship, *widget1, *gadget);
+    ECRelationshipClassCP widgetHasGadgetsRelationship = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("Description", ECValue("Test Gadget"));});
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget 1"));});
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget 2"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget1, *gadget);
 
     // set up selection
     NavNodePtr gadgetNode = TestNodesHelper::CreateInstanceNode(*gadget);
@@ -1607,12 +1598,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(3, descriptor->GetVisibleFields().size()); // Gadget.Description, related Widget.MyID, Widget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1638,10 +1629,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKeys)
     {
     // set up the dataset
-    ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetsRelationship, *widget, *gadget);
+    ECRelationshipClassCP widgetHasGadgetsRelationship = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget, *gadget);
 
     ECInstanceId gadgetId, widgetId;
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
@@ -1668,12 +1659,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(5, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID, Widget.IntProperty
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1714,8 +1705,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKeysWhenColumnsAreMerged)
     {
     // set up the dataset
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
     ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
     ECInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
 
@@ -1736,12 +1727,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID + Sprocket.MyID, Gadget.Description + Sprocket.MyID, Gadget.Widget, Sprocket.Gadget
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1808,8 +1799,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKeysWhenRowsAreMerged)
     {
     // set up the dataset
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     ECInstanceKey gadgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*gadget1);
     ECInstanceKey gadgetKey2 = RulesEngineTestHelpers::GetInstanceKey(*gadget2);
 
@@ -1830,7 +1821,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget
 
@@ -1839,7 +1830,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1873,8 +1864,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKeysWhenRowsAndColumnsAreMerged)
     {
     // set up the dataset
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
     ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
     ECInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
 
@@ -1895,7 +1886,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID + Sprocket.MyID, Gadget.Description + Sprocket.MyID, Gadget.Widget, Sprocket.Gadget
     
@@ -1904,7 +1895,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1950,16 +1941,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValuesWhenSelectingFromMultipleClasses)
     {
     // set up the dataset
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    ECRelationshipClassCP rel = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Widget"));
         });
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance)
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Gadget"));
         });
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [&](IECInstanceR instance)
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Sprocket"));
         instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel));
@@ -1984,12 +1975,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); // 7 Widget properties (2 of them merged with Sprocket MyID and Description), Sprocket.Gadget, Gadget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2015,28 +2006,28 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValuesWhenSelectingFromMultipleClassesAndFieldsAreMerged)
     {
-    ECRelationshipClassCP rel_gs = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel_wg = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel_gs = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel_wg = GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
 
     // set up the dataset
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance)
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Gadget"));
         });
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance)
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Gadget"));
         });
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Widget"));
         });
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel_wg, *widget, *gadget1);
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel_wg, *widget, *gadget1);
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Sprocket"));
         });
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel_gs, *gadget2, *sprocket);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel_gs, *gadget2, *sprocket);
     
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -2057,7 +2048,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); // 7 Widget properties (2 of them merged with Sprocket MyID and Description), Gadget.MyID, Sprocket.Gadget
     
@@ -2066,7 +2057,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2088,15 +2079,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyValuesWhenSelectingFromMultipleClassesWithNoRelationships)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Widget"));
         });
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance)
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Gadget"));
         });
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [&](IECInstanceR instance)
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Sprocket"));
         });
@@ -2120,12 +2111,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(10, descriptor->GetVisibleFields().size()); // 7 Widget properties (2 of them merged with MyID and Description of Gadget and Sprocket), Gadget.Widget, Sprocket.Gadget, Gadget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2184,12 +2175,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     ECRelationshipClassCP rel = GetRelationshipClass("ElementHasRelatedInstances");
 
     // set up the dataset
-    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
-    IECInstancePtr relatedInstance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *derivedRelatedClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element1, *relatedInstance1);
-    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(*s_project, *elementClass);
-    IECInstancePtr relatedInstance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *baseRelatedClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *element2, *relatedInstance2);
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr relatedInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derivedRelatedClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element1, *relatedInstance1);
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr relatedInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *baseRelatedClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element2, *relatedInstance2);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -2211,12 +2202,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::PropertyPane, 
-        selection, options.GetJson());
+        selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Element.ElementProperty + <BaseRelatedClass.RelatedProperty, DerivedRelatedClass.RelatedProperty>
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2238,7 +2229,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstanceKeyWhenThereIsNoRelatedInstance)
     {
     // set up the dataset
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     ECInstanceId gadgetId;
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
     ECInstanceKey gadgetKey(m_gadgetClass->GetId(), gadgetId);
@@ -2262,12 +2253,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2303,8 +2294,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstanceKeyWhenThereIsNoRelatedInstance_MergedValuesCase)
     {
     // set up the dataset
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
     ECInstanceId gadgetId1;
     ECInstanceId::FromString(gadgetId1, gadget1->GetInstanceId().c_str());
@@ -2334,7 +2325,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), 
-        nullptr, selection, options.GetJson());
+        nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID
 
@@ -2343,7 +2334,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2383,7 +2374,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label"));});
 
     // set up selection
@@ -2404,7 +2395,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2412,7 +2403,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2427,9 +2418,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreEqual)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label"));});
 
     // set up selection
@@ -2450,7 +2441,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2459,7 +2450,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2474,9 +2465,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreDifferent)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label 1"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label 2"));});
 
     // set up selection
@@ -2497,7 +2488,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2506,7 +2497,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2521,8 +2512,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhenMergingRecordsAndClassesAreDifferent)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -2541,7 +2532,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2550,7 +2541,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2565,8 +2556,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecordsAndClassesAreEqual)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -2585,7 +2576,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2593,7 +2584,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2608,8 +2599,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRecordsAndClassesDifferent)
     {
     // set up the dataset
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -2628,7 +2619,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2636,7 +2627,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2651,8 +2642,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
 TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent)
     {
     // set up the dataset
-    ECEntityClassCP ecClass = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1, 2, 3)));});
+    ECEntityClassCP ecClass = GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1, 2, 3)));});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ReturnsPointPropertyContent", 1, 0, false, "", "", "", false);
@@ -2672,12 +2663,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     SelectionInfo selection("Test", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2699,8 +2690,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
 TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecificationsGetMerged)
     {
     // set up the dataset
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance) {instance.SetValue("Description", ECValue("Test Gadget")); });
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("Description", ECValue("Test Widget")); });
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance) {instance.SetValue("Description", ECValue("Test Gadget")); });
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("Description", ECValue("Test Widget")); });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RecordFromDifferrentSpecificationsGetMerged", 1, 0, false, "", "", "", false);
@@ -2719,7 +2710,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
@@ -2728,7 +2719,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2749,8 +2740,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
 TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreatedForRecordsfromDifferentSpecifications)
     {
     // set up the dataset
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, 
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget"));});
 
     // create the rule set
@@ -2768,7 +2759,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); // no display label in the descriptor
 
@@ -2777,7 +2768,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(9, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
 
@@ -2801,7 +2792,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     {
     TestPropertyFormatter formatter;
     m_manager->SetECPropertyFormatter(&formatter);
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Test 1"));
         instance.SetValue("Description", ECValue("Test 2"));
@@ -2828,7 +2819,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
@@ -2837,7 +2828,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, SelectionInfo(), PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, SelectionInfo(), PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2906,7 +2897,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(7, descriptor->GetVisibleFields().size());
 
@@ -2941,8 +2932,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWh
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_EQ(descriptor1, descriptor2);
@@ -2956,6 +2947,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
     // set up a different connection
     ECDbTestProject project2;
     project2.Create("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", "RulesEngineTest.01.00.ecschema.xml");
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -2970,11 +2962,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(project2.GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(project2.GetECDb(), nullptr, selection, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
+
+    m_connections.NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2995,8 +2989,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Graphics, selection, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Grid, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Graphics, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Grid, selection, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3023,8 +3017,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3051,8 +3045,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3085,8 +3079,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3116,9 +3110,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options1(rules1->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options1.GetJson());
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options1.GetJson()).get();
     RulesDrivenECPresentationManager::ContentOptions options2(rules2->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options2.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options2.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3130,7 +3124,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHiddenPropertiesSpecification)
     {
     // set up the dataset
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance) { 
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance) { 
         instance.SetValue("Description", ECValue("TestDescription")); 
         instance.SetValue("MyID", ECValue("TestID"));
         });
@@ -3155,12 +3149,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3178,10 +3172,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelatedPropertiesSpecification)
     {
     // set up the dataset
-    ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetsRelationship, *widget, *gadget);
+    ECRelationshipClassCP widgetHasGadgetsRelationship = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget, *gadget);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -3204,12 +3198,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3232,8 +3226,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesCalculatedPropertiesSpecification)
     {
     // insert some widget instances
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -3255,12 +3249,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); //Gadget_Widget_MyId, Gadget_Widget_Description, Gadget_Widget, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3282,10 +3276,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierOnBaseClassPropertyIsAppliedToOnlyOneChildClass)
     {
     // set up data set
-    ECEntityClassCP classB = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
-    ECEntityClassCP classC = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
-    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
-    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(*s_project, *classC, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
+    ECEntityClassCP classB = GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
+    ECEntityClassCP classC = GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
     
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -3307,12 +3301,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); //ShouldBe:BaseOfBAndC_MyId, CalculatedProperty_0 Is:ClassB_ClassC_MyId, ClassB_ClassC_A, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3338,11 +3332,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAppliedToOnlyOneChildClassPolimorphically)
     {
     // set up data set
-    ECEntityClassCP classB = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
-    ECEntityClassCP classC = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
-    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(*s_project, *classB, 
+    ECEntityClassCP classB = GetClass("RulesEngineTest", "ClassB")->GetEntityClassCP();
+    ECEntityClassCP classC = GetClass("RulesEngineTest", "ClassC")->GetEntityClassCP();
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, 
         [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
-    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(*s_project, *classC, 
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, 
         [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
     
     // set up selection
@@ -3365,12 +3359,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); //BaseOfBAndC_MyId, ClassB_ClassC_A, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3397,9 +3391,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     {
     // insert some widget & gadget instances
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*gadgetInstance)}));
@@ -3420,12 +3414,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); //Widget_MyId,Widget_Description, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3452,17 +3446,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     {
     // set up data set
     ECRelationshipClassCR relationshipClassDHasClassE = *m_schema->GetClassCP("ClassDHasClassE")->GetRelationshipClassCP();
-    ECEntityClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    ECEntityClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
-    ECEntityClassCP classG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassG")->GetEntityClassCP();
-    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(*s_project, *classF, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(1000)); });
-    IECInstancePtr instanceG = RulesEngineTestHelpers::InsertInstance(*s_project, *classG);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipClassDHasClassE, *instanceD, *instanceE);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipClassDHasClassE, *instanceD, *instanceF);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipClassDHasClassE, *instanceD, *instanceG);
+    ECEntityClassCP classD = GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    ECEntityClassCP classG = GetClass("RulesEngineTest", "ClassG")->GetEntityClassCP();
+    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(1000)); });
+    IECInstancePtr instanceG = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceE);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceF);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceG);
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceD)}));
 
@@ -3482,12 +3476,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();;
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();;
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3537,11 +3531,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     {
     // insert widget
     ECRelationshipClassCR relationshipClassDHasClassE = *m_schema->GetClassCP("ClassDHasClassE")->GetRelationshipClassCP();
-    ECEntityClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(12345)); });
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipClassDHasClassE, *instanceD, *instanceE);
+    ECEntityClassCP classD = GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(12345)); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceE);
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceD)}));
 
@@ -3565,14 +3559,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     IGNORE_BE_ASSERT()
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
 
     //Calculated property is not applied
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3594,8 +3588,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ContentModifierAppliesCalculatedPropertiesSpecification)
     {
     // insert some widget & gadget instances
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
     
     // set up selection
     NavNodeKeyList keys;
@@ -3619,12 +3613,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); //Gadget_Widget_MyId, Gadget_Widget_Description, Gadget_Widget, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -3662,8 +3656,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
     {
     // set up data set
-    ECEntityClassCP classQ = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassQ")->GetEntityClassCP();
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *classQ, [](IECInstanceR instance)
+    ECEntityClassCP classQ = GetClass("RulesEngineTest", "ClassQ")->GetEntityClassCP();
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classQ, [](IECInstanceR instance)
         {
         instance.SetValue("IntEnum", ECValue(2));
         instance.SetValue("StrEnum", ECValue("Three"));
@@ -3684,12 +3678,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3711,7 +3705,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_AppliesDisplayedPropertiesSpecification)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -3731,12 +3725,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3754,7 +3748,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AppliesDisplayedPropertiesSpecification)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
     // set up selection
     NavNodeKeyList keys;
@@ -3776,12 +3770,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Appli
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3800,9 +3794,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
     {
     // set up the dataset
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
 
     // set up selection
     NavNodeKeyList keys;
@@ -3824,12 +3818,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3847,7 +3841,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedPropertiesSpecificationWhenPriorityIsHigher)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -3868,12 +3862,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3891,7 +3885,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropertiesSpecificationWhenPriorityIsHigher)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -3912,12 +3906,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); //Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3935,7 +3929,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropertiesSpecificationWhenPrioritiesEqual)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(1));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -3956,12 +3950,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_IntProperty
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3979,8 +3973,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedPropertiesSpecificationFromBaseClass)
     {
     // set up the dataset
-    ECEntityClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
-    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(*s_project, *classF, [](IECInstanceR instance) {
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) {
         instance.SetValue("IntProperty", ECValue(10));
         });
 
@@ -4003,12 +3997,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); //ClassF_IntProperty
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4026,8 +4020,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhenUsingDisplayedPropertiesSpecificationInContentModifierAndRequestingDerivedClass)
     {
     // set up the dataset
-    ECEntityClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
-    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(*s_project, *classF, [](IECInstanceR instance)
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(123));
         instance.SetValue("PropertyF", ECValue(456));
@@ -4054,12 +4048,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassF_PropertyF
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4078,7 +4072,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDisplayedPropertiesSpecification)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -4100,12 +4094,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4123,7 +4117,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDisplayPropertiesSpecificationWhenPriorityIsHigher)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -4146,12 +4140,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4169,7 +4163,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHiddenPropertiesSpecificationWhenPriorityIsHigher)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -4192,12 +4186,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4215,7 +4209,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecificationApliesPropertyEditorsSpecification)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -4235,7 +4229,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_IntProperty
     
@@ -4249,8 +4243,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpecification_GetOneFieldWhenPropertiesAndEditorsAreSimilar)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4273,7 +4267,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget_Widget_MyID
     
@@ -4287,8 +4281,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpecification_GetDifferentFieldsWhenPropertiesAndEditorsAreDifferent)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4315,7 +4309,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Widget_MyID, Gadget_MyID
 
@@ -4332,10 +4326,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpecificationFromBaseClassOnDerivedClass)
     {
     // set up the dataset
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    ECEntityClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
-    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(*s_project, *classF);
-    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
+    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4361,7 +4355,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassE_ClassF_IntProperty
     
@@ -4375,12 +4369,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditorsSpecificationFromDerivedClassOnBaseClass)
     {
     // set up the dataset
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    ECEntityClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
-    ECEntityClassCP classH = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
-    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(*s_project, *classF);
-    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(*s_project, *classH);
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    ECEntityClassCP classH = GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
+    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4407,7 +4401,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
     
@@ -4424,9 +4418,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     {
     // set up the dataset
     ECRelationshipClassCP widgetHasGadgets = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widgetInstance, *gadgetInstance);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widgetInstance, *gadgetInstance);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4447,12 +4441,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(3, descriptor->GetVisibleFields().size());
 
     ContentDescriptorCPtr over = ContentDescriptor::Create(*descriptor);
 
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4477,11 +4471,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
     ECClassCP classA = m_schema->GetClassCP("ClassA");
     ECClassCP classB = m_schema->GetClassCP("ClassB");
     ECClassCP classC = m_schema->GetClassCP("ClassC");
-    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
-    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(*s_project, *classC);
-    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(*s_project, *classA);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *classAHasBAndC, *instanceA, *instanceB);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *classAHasBAndC, *instanceA, *instanceC);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classAHasBAndC, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classAHasBAndC, *instanceA, *instanceC);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4502,10 +4496,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4534,11 +4528,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     // set up the dataset
     ECRelationshipClassCP widgetHasGadgets = m_schema->GetClassCP("WidgetHasGadgets")->GetRelationshipClassCP();
     ECRelationshipClassCP gadgetHasSprockets = m_schema->GetClassCP("GadgetHasSprockets")->GetRelationshipClassCP();
-    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr sprocketInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widgetInstance, *gadgetInstance);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadgetInstance, *sprocketInstance);
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr sprocketInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widgetInstance, *gadgetInstance);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadgetInstance, *sprocketInstance);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4559,10 +4553,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(4, descriptor->GetVisibleFields().size());
 
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4594,18 +4588,18 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCorrectValuesWhenNavigationPropertiesPointsToDifferentClassesButAreInTheSameField)
     {
     // set up the dataset
-    ECClassCP classA = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA");
-    ECClassCP classB = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB");
-    ECClassCP classA2Base = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2Base");
-    ECClassCP classB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB2");
-    ECRelationshipClassCP classAHasBAndC = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassAHasBAndC")->GetRelationshipClassCP();
-    ECRelationshipClassCP classA2HasB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
-    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(*s_project, *classA);
-    IECInstancePtr instanceA2Base = RulesEngineTestHelpers::InsertInstance(*s_project, *classA2Base);
-    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
-    IECInstancePtr instanceB2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classB2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *classAHasBAndC, *instanceA, *instanceB);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *classA2HasB2, *instanceA2Base, *instanceB2);
+    ECClassCP classA = GetClass("RulesEngineTest", "ClassA");
+    ECClassCP classB = GetClass("RulesEngineTest", "ClassB");
+    ECClassCP classA2Base = GetClass("RulesEngineTest", "ClassA2Base");
+    ECClassCP classB2 = GetClass("RulesEngineTest", "ClassB2");
+    ECRelationshipClassCP classAHasBAndC = GetClass("RulesEngineTest", "ClassAHasBAndC")->GetRelationshipClassCP();
+    ECRelationshipClassCP classA2HasB2 = GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceA2Base = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA2Base);
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr instanceB2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classAHasBAndC, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2HasB2, *instanceA2Base, *instanceB2);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4626,11 +4620,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4657,12 +4651,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDerivedClassLabelWhenNavigationPropertyPointsToDerivedClass)
     {
-    ECClassCP classA2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2");
-    ECClassCP classB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassB2");
-    ECRelationshipClassCP classA2HasB2 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
-    IECInstancePtr instanceB2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classB2);
-    IECInstancePtr instanceA2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classA2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *classA2HasB2, *instanceA2, *instanceB2);
+    ECClassCP classA2 = GetClass("RulesEngineTest", "ClassA2");
+    ECClassCP classB2 = GetClass("RulesEngineTest", "ClassB2");
+    ECRelationshipClassCP classA2HasB2 = GetClass("RulesEngineTest", "ClassA2BaseHasB2")->GetRelationshipClassCP();
+    IECInstancePtr instanceB2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
+    IECInstancePtr instanceA2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2HasB2, *instanceA2, *instanceB2);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4682,11 +4676,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4706,10 +4700,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCorrectNavigationPropertiesValuesWhenRelatedPropertiesSpecificationIsApplied)
     {
-    ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
+    ECRelationshipClassCP widgetHasGadgets = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4732,11 +4726,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4757,10 +4751,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_GetRelatedInstanceNavigationPropertyValue)
     {
-    ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
+    ECRelationshipClassCP widgetHasGadgets = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget);
 
     // set up selection
     NavNodeKeyList keys;
@@ -4781,11 +4775,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(3, descriptor->GetVisibleFields().size());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4806,14 +4800,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPropertyWhenSelectingFromBaseClassAndDerivedClass)
     {
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassGUsesClassD")->GetRelationshipClassCP();
-    ECClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE");
-    ECClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD");
-    ECClassCP classG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassG");
-    IECInstancePtr relatedInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr baseInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    IECInstancePtr derivedInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *classG);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *relatedInstance, *derivedInstance);
+    ECRelationshipClassCP rel = GetClass("RulesEngineTest", "ClassGUsesClassD")->GetRelationshipClassCP();
+    ECClassCP classE = GetClass("RulesEngineTest", "ClassE");
+    ECClassCP classD = GetClass("RulesEngineTest", "ClassD");
+    ECClassCP classG = GetClass("RulesEngineTest", "ClassG");
+    IECInstancePtr relatedInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr baseInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr derivedInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *relatedInstance, *derivedInstance);
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -4831,11 +4825,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4862,13 +4856,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     {
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 3);
         instance.SetValue("ArrayProperty", ECValue(3), 0);
@@ -4891,7 +4885,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -4909,7 +4903,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4967,8 +4961,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesDescriptorsWithSimila
     ECClassCP element = GetClass("Element");
     ECClassCP derivedElement = GetClass("DerivedElement");
 
-    IECInstancePtr elementInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *element);
-    IECInstancePtr derivedInstance = RulesEngineTestHelpers::InsertInstance(*s_project, *derivedElement);
+    IECInstancePtr elementInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element);
+    IECInstancePtr derivedInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derivedElement);
 
     // set up selection
     SelectionInfo elementSelection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*elementInstance)}));
@@ -4987,10 +4981,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesDescriptorsWithSimila
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptors
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, elementSelection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, elementSelection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, derivedSelection, options.GetJson());
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, derivedSelection, options.GetJson()).get();
     ASSERT_TRUE(descriptor2.IsValid());
 
     // merge descriptors
@@ -5016,13 +5010,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 3);
         instance.SetValue("ArrayProperty", ECValue(3), 0);
@@ -5045,12 +5039,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5094,13 +5088,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
@@ -5122,7 +5116,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5130,7 +5124,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5167,13 +5161,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 3);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
@@ -5196,7 +5190,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5204,7 +5198,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5230,13 +5224,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     {
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
@@ -5258,7 +5252,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5266,7 +5260,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5300,13 +5294,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 3);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
@@ -5329,7 +5323,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5337,7 +5331,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5364,13 +5358,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(1), 0);
@@ -5392,7 +5386,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5400,7 +5394,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5430,13 +5424,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     // set up data set
     ECClassCP classA = GetClass("ClassA");
     ECClassCP classB = GetClass("ClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesPrimitiveArrayPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
@@ -5453,7 +5447,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5461,7 +5455,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5492,13 +5486,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
     {
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("EnumsArray", 2);
         instance.SetValue("EnumsArray", ECValue(2), 0);
         instance.SetValue("EnumsArray", ECValue(1), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("EnumsArray", 3);
         instance.SetValue("EnumsArray", ECValue(1), 0);
@@ -5521,7 +5515,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -5539,7 +5533,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5600,12 +5594,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -5626,7 +5620,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -5655,7 +5649,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5708,12 +5702,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsO
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -5734,12 +5728,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsO
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5791,12 +5785,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
@@ -5817,7 +5811,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5825,7 +5819,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5868,12 +5862,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     // set up data set
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -5894,7 +5888,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5902,7 +5896,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5933,12 +5927,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
@@ -5959,7 +5953,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5967,7 +5961,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6008,12 +6002,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -6034,7 +6028,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6042,7 +6036,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6076,12 +6070,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
     // set up data set
     ECClassCP classA = GetClass("ClassA");
     ECClassCP classB = GetClass("ClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
@@ -6098,7 +6092,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6106,7 +6100,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6136,7 +6130,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
 
@@ -6147,7 +6141,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 2);
 
@@ -6181,7 +6175,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -6214,7 +6208,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6270,7 +6264,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
 
@@ -6281,7 +6275,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 2);
 
@@ -6315,12 +6309,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6376,7 +6370,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
         IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -6386,7 +6380,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
         IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -6412,7 +6406,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6420,7 +6414,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6464,7 +6458,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
         IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -6474,7 +6468,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
         IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -6500,7 +6494,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6508,7 +6502,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6539,7 +6533,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
 
@@ -6550,7 +6544,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
         
@@ -6577,7 +6571,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6585,7 +6579,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6626,7 +6620,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
 
@@ -6637,7 +6631,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 2);
 
@@ -6671,7 +6665,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6679,7 +6673,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6711,7 +6705,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
 
@@ -6722,7 +6716,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
 
@@ -6749,7 +6743,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6757,7 +6751,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6792,7 +6786,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("ClassA");
     ECClassCP classB = GetClass("ClassB");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classA, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructArrayProperty", 1);
         IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -6802,7 +6796,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classB);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesStructArrayPropertyValueWhenClassesAreDifferent", 1, 0, false, "", "", "", false);
@@ -6819,7 +6813,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6827,7 +6821,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6856,13 +6850,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructProperty.IntProperty", 2);
         instance.SetValue("StructProperty.IntProperty", ECValue(1), 0);
         instance.SetValue("StructProperty.IntProperty", ECValue(2), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
         {
         instance.AddArrayElements("StructProperty.IntProperty", 3);
         instance.SetValue("StructProperty.IntProperty", ECValue(4), 0);
@@ -6885,7 +6879,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -6911,7 +6905,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6956,7 +6950,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
 
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("ArrayProperty", 2);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
@@ -6978,12 +6972,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7020,7 +7014,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
 
     // set up data set
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(*s_project, *ecClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
@@ -7041,12 +7035,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7101,8 +7095,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     ECClassCP parentClass = GetClass("ParentClass");
     ECClassCP childClass = GetClass("ChildClass");
     ECRelationshipClassCP rel = GetRelationshipClass("ParentHasChildren");
-    IECInstancePtr parent = RulesEngineTestHelpers::InsertInstance(*s_project, *parentClass);
-    IECInstancePtr child1 = RulesEngineTestHelpers::InsertInstance(*s_project, *childClass, [&](IECInstanceR instance)
+    IECInstancePtr parent = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *parentClass);
+    IECInstancePtr child1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetInstanceId(), rel));
         instance.SetValue("IntProperty", ECValue(1));
@@ -7123,7 +7117,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         structValue.SetStruct(structInstance.get());
         instance.SetValue("StructArrayProperty", structValue, 0);
         });
-    IECInstancePtr child2 = RulesEngineTestHelpers::InsertInstance(*s_project, *childClass, [&](IECInstanceR instance)
+    IECInstancePtr child2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetInstanceId(), rel));
         instance.SetValue("IntProperty", ECValue(2));
@@ -7169,7 +7163,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ParentClass_ParentProperty, Nested<5 ChildClass properties>
     
@@ -7258,7 +7252,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7349,61 +7343,61 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenEqual)
     {
     // set up data set
-    ECEntityClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
-    IECInstancePtr instanceD1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE11 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    ECEntityClassCP classD = GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECRelationshipClassCP rel = GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
+    IECInstancePtr instanceD1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceE11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceE12 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceE12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceE13 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceE13 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE21 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceE21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceE22 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceE22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceE23 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceE23 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceD3 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE31 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceD3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceE31 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceE32 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceE32 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceE33 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceE33 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
@@ -7428,7 +7422,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassD_StringProperty, Array<ClassE_IntProperty + ClassE_LongProperty>
     
@@ -7437,7 +7431,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7513,28 +7507,28 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
 
     // set up data set
-    ECEntityClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
-    IECInstancePtr instanceD1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    ECEntityClassCP classD = GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECRelationshipClassCP rel = GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
+    IECInstancePtr instanceD1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
@@ -7557,7 +7551,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassD_StringProperty, Array<ClassE_IntProperty + ClassE_LongProperty>
     
@@ -7566,7 +7560,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7595,61 +7589,61 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
 
     // set up data set
-    ECEntityClassCP classD = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
-    ECEntityClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
-    IECInstancePtr instanceD1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    ECEntityClassCP classD = GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECRelationshipClassCP rel = GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
+    IECInstancePtr instanceD1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(4));
         instance.SetValue("LongProperty", ECValue((int64_t)444));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(5));
         instance.SetValue("LongProperty", ECValue((int64_t)555));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(6));
         instance.SetValue("LongProperty", ECValue((int64_t)666));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
         });
-    IECInstancePtr instanceD3 = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    IECInstancePtr instanceD3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(7));
         instance.SetValue("LongProperty", ECValue((int64_t)777));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(8));
         instance.SetValue("LongProperty", ECValue((int64_t)888));
         instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE, [&](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(9));
         instance.SetValue("LongProperty", ECValue((int64_t)999));
@@ -7674,7 +7668,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassD_StringProperty, Array<ClassE_IntProperty + ClassE_LongProperty>
     
@@ -7683,7 +7677,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7710,14 +7704,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedInstancesAsArraysWhenShowingIntermediateProperties)
     {
     // set up data set
-    ECRelationshipClassCP rel_WG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel_GS = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&](IECInstanceR instance)
+    ECRelationshipClassCP rel_WG = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel_GS = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Widget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId(), rel_WG));
         });
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [&](IECInstanceR instance)
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel_GS));
         });
@@ -7740,12 +7734,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); // 7 Widget properties, Gadget 
     
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7803,14 +7797,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedInstancesAsArraysWhenSkippingIntermediateProperties)
     {
     // set up data set
-    ECRelationshipClassCP rel_WG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    ECRelationshipClassCP rel_GS = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&](IECInstanceR instance)
+    ECRelationshipClassCP rel_WG = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel_GS = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Widget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId(), rel_WG));
         });
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [&](IECInstanceR instance)
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
         instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel_GS));
         });
@@ -7833,12 +7827,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); // 7 Widget properties, Sprocket 
     
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7881,7 +7875,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
 TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithClassIdsAllowsUsingSelectedNodeECExpressionSymbol)
     {    
     // set up selection
-    ECClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF");
+    ECClassCP classF = GetClass("RulesEngineTest", "ClassF");
     SelectionInfo selection({classF});
 
     // create the rule set
@@ -7894,7 +7888,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
@@ -7919,7 +7913,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsNull());
     }
 
@@ -7929,10 +7923,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
 TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecification_GetCorrectFieldDisplayLabelWhenRelationshipMeaningIsSetToSameInstance)
     {    
     // set up selection
-    ECRelationshipClassCP widgetHasGadget = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadget, *widget, *gadget);
+    ECRelationshipClassCP widgetHasGadget = GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadget, *widget, *gadget);
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadget));
@@ -7951,7 +7945,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(4, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[0]->IsPropertiesField());
@@ -7973,10 +7967,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecification_GetCorrectFieldDisplayLabelWhenRelationshipMeaningIsSetToRelatedInstance)
     {    
     // set up selection
-    ECRelationshipClassCP widgetHasGadget = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadget, *widget, *gadget);
+    ECRelationshipClassCP widgetHasGadget = GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadget, *widget, *gadget);
 
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadget));
@@ -7995,7 +7989,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_EQ(4, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[0]->IsPropertiesField());
@@ -8017,10 +8011,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropertiesHaveDifferentKindOfQuantities)
     {
     // set up selection
-    ECClassCP classK = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassK");
-    ECClassCP classL = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassL");
-    IECInstancePtr instanceK = RulesEngineTestHelpers::InsertInstance(*s_project, *classK);
-    IECInstancePtr instanceL = RulesEngineTestHelpers::InsertInstance(*s_project, *classL);
+    ECClassCP classK = GetClass("RulesEngineTest", "ClassK");
+    ECClassCP classL = GetClass("RulesEngineTest", "ClassL");
+    IECInstancePtr instanceK = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classK);
+    IECInstancePtr instanceL = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classL);
 
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceK));
@@ -8038,7 +8032,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
@@ -8053,9 +8047,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     {
     // set up the dataset
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
 
     // set up selection
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
@@ -8073,7 +8067,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
 
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     bvector<ContentDescriptor::Field*> fieldVectorCopy = descriptor->GetAllFields();
@@ -8089,7 +8083,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -8110,10 +8104,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
 TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMergedField)
     {
     // insert some widget & gadget instances
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
-    IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
+    IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
 
     // set up selection
     NavNodeKeyList keys;
@@ -8136,7 +8130,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); //Gadget_Widget_MyId, Gadget_Widget_Description, Gadget_Widget, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date
     
@@ -8152,7 +8146,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -8171,13 +8165,13 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNavigationPropertiesFromDifferentContentSpecifications)
     {
     // prepare dataset
-    ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    ECRelationshipClassCP gadgetHasSprockets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadget, *sprocket);
+    ECRelationshipClassCP widgetHasGadgets = GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP gadgetHasSprockets = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget, *sprocket);
 
     SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
@@ -8197,12 +8191,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     // validate content descriptor
     RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
 
-    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content
@@ -8227,9 +8221,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     {
     // prepare dataset
     ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
     RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget);
 
@@ -8248,7 +8242,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
 
     // validate content descriptor
-    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -8257,7 +8251,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // request for content
-    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content

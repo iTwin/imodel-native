@@ -14,11 +14,12 @@
 void NavigationQueryBuilderTests::SetUp()
     {
     Localization::Init();
-
+    
+    m_connection = m_connections.NotifyConnectionOpened(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb());
     m_ruleset = PresentationRuleSet::CreateInstance("NavigationQueryBuilderTests", 1, 0, false, "", "", "", false);
-    m_schemaHelper = new ECSchemaHelper(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb(), m_relatedPathsCache, nullptr);
-    m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, 
-        *m_ruleset, m_settings, nullptr, m_expressionsCache, m_nodesCache));
+    m_schemaHelper = new ECSchemaHelper(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb(), &m_relatedPathsCache, nullptr);
+    m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, m_connections,
+        *m_connection, *m_ruleset, m_settings, nullptr, m_expressionsCache, m_nodesCache));
 
     m_rootNodeRule = new RootNodeRule();
     m_childNodeRule = new ChildNodeRule();
@@ -49,15 +50,6 @@ ECClassCP NavigationQueryBuilderTests::GetECClass(Utf8CP schemaName, Utf8CP clas
 bvector<ECClassCP> NavigationQueryBuilderTests::GetECClasses(Utf8CP schemaName)
     {
     return ExpectedQueries::GetInstance(BeTest::GetHost()).GetECClasses(schemaName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String NavigationQueryBuilderTests::GetInstanceIdWithFormat(Utf8CP format, NavNodeCR node)
-    {
-    Utf8String instanceId(node.GetInstance()->GetInstanceId().c_str());
-    return Utf8PrintfString(format, instanceId.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,7 +99,6 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedClassesInJoins)
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
     
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
-    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     ChildNodeRule rule("", 1000, false, TargetTree_MainTree);

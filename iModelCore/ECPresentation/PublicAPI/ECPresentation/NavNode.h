@@ -14,6 +14,10 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+
 #define NAVNODE_TYPE_ECInstanceNode             "ECInstanceNode"
 #define NAVNODE_TYPE_ECClassGroupingNode        "ECClassGroupingNode"
 #define NAVNODE_TYPE_ECRelationshipGroupingNode "ECRelationshipGroupingNode"
@@ -47,7 +51,6 @@ protected:
     virtual DisplayLabelGroupingNodeKey const* _AsDisplayLabelGroupingNodeKey() const {return nullptr;}
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const;
-    virtual bmap<uint64_t, uint64_t>::const_iterator _RemapNodeId(bmap<uint64_t, uint64_t> const& remapInfo) {return remapInfo.end();}
 
 public:
     //! Try to get this key as a @ref ECClassGroupingNodeKey.
@@ -71,9 +74,6 @@ public:
     bool IsSimilar(NavNodeKey const& other) const {return _IsSimilar(other);}
     //! Get hash string of this node key.
     ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
-
-    //! Called when node ids change to update the id stored in node key.
-    bmap<uint64_t, uint64_t>::const_iterator RemapNodeId(bmap<uint64_t, uint64_t> const& remapInfo) {return _RemapNodeId(remapInfo);}
 
     //! Get the type of the @ref NavNode.
     Utf8StringCR GetType() const {return m_type;}
@@ -133,7 +133,6 @@ protected:
     ECPRESENTATION_EXPORT virtual int _Compare(NavNodeKey const& other) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const override;
-    ECPRESENTATION_EXPORT bmap<uint64_t, uint64_t>::const_iterator _RemapNodeId(bmap<uint64_t, uint64_t> const&) override;
 public:
     //! Get the node id.
     uint64_t GetNodeId() const {return m_nodeId;}
@@ -147,9 +146,9 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodeKey : GroupingNodeKey
 {
 private:
-    ECN::ECClassId m_classId;
+    ECClassId m_classId;
 protected:
-    ECClassGroupingNodeKey(uint64_t nodeId, ECN::ECClassId classId, Utf8String type) 
+    ECClassGroupingNodeKey(uint64_t nodeId, ECClassId classId, Utf8String type) 
         : GroupingNodeKey(nodeId, type), m_classId(classId) 
         {}
 protected:
@@ -162,12 +161,12 @@ public:
     //! Create an @ref ECClassGroupingNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(RapidJsonValueCR);
     //! Create an @ref ECClassGroupingNodeKey using the supplied parameters.
-    static RefCountedPtr<ECClassGroupingNodeKey> Create(uint64_t nodeId, ECN::ECClassId classId, Utf8String type = NAVNODE_TYPE_ECClassGroupingNode)
+    static RefCountedPtr<ECClassGroupingNodeKey> Create(uint64_t nodeId, ECClassId classId, Utf8String type = NAVNODE_TYPE_ECClassGroupingNode)
         {
         return new ECClassGroupingNodeKey(nodeId, classId, type);
         }
     //! Get ECClass ID.
-    ECN::ECClassId GetECClassId() const {return m_classId;}
+    ECClassId GetECClassId() const {return m_classId;}
 };
 
 //=======================================================================================
@@ -182,7 +181,7 @@ private:
     int m_rangeIndex;
     rapidjson::Document const* m_value;
 private:
-    ECPropertyGroupingNodeKey(uint64_t nodeId, ECN::ECClassId ecClassId, Utf8String propertyName, int rangeIndex, rapidjson::Value const* value)
+    ECPropertyGroupingNodeKey(uint64_t nodeId, ECClassId ecClassId, Utf8String propertyName, int rangeIndex, rapidjson::Value const* value)
         : ECClassGroupingNodeKey(nodeId, ecClassId, NAVNODE_TYPE_ECPropertyGroupingNode), m_propertyName(propertyName), m_rangeIndex(rangeIndex), m_value(nullptr)
         {
         if (nullptr != value)
@@ -208,7 +207,7 @@ public:
     //! @param[in] propertyName The name of the grouping property.
     //! @param[in] rangeIndex The range index if this is range grouping or -1 if this is value grouping.
     //! @param[in] value The grouping value if this is value grouping or nullptr if this is range grouping
-    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(uint64_t nodeId, ECN::ECClassId ecClassId, Utf8String propertyName, int rangeIndex, rapidjson::Value const* value)
+    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(uint64_t nodeId, ECClassId ecClassId, Utf8String propertyName, int rangeIndex, rapidjson::Value const* value)
         {
         return new ECPropertyGroupingNodeKey(nodeId, ecClassId, propertyName, rangeIndex, value);
         }
@@ -218,7 +217,7 @@ public:
     //! @param[in] ecProperty The grouping property.
     //! @param[in] rangeIndex The range index if this is range grouping or -1 if this is value grouping.
     //! @param[in] value The grouping value if this is value grouping or nullptr if this is range grouping
-    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(uint64_t nodeId, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty, int rangeIndex, rapidjson::Value const* value)
+    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(uint64_t nodeId, ECClassCR ecClass, ECPropertyCR ecProperty, int rangeIndex, rapidjson::Value const* value)
         {
         return Create(nodeId, ecClass.GetId(), ecProperty.GetName(), rangeIndex, value);
         }
@@ -276,9 +275,9 @@ typedef RefCountedPtr<ECInstanceNodeKey>  ECInstanceNodeKeyPtr;
 struct EXPORT_VTABLE_ATTRIBUTE ECInstanceNodeKey : NavNodeKey
 {
 private:
-    BeSQLite::EC::ECInstanceKey m_instanceKey;
+    ECInstanceKey m_instanceKey;
 private:
-    ECInstanceNodeKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) 
+    ECInstanceNodeKey(ECClassId classId, ECInstanceId instanceId) 
         : NavNodeKey(NAVNODE_TYPE_ECInstanceNode), m_instanceKey(classId, instanceId)
         {}
 protected:
@@ -295,30 +294,30 @@ public:
     //! Create an @ref ECInstanceNodeKey using supplied parameters.
     //! @param[in] classId The ID of the ECInstance class.
     //! @param[in] instanceId The ECInstance ID.
-    static RefCountedPtr<ECInstanceNodeKey> Create(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId)
+    static RefCountedPtr<ECInstanceNodeKey> Create(ECClassId classId, ECInstanceId instanceId)
         {
         return new ECInstanceNodeKey(classId, instanceId);
         }
     //! Create an @ref ECInstanceNodeKey using supplied parameters.
     //! @param[in] key The ECInstance key.
-    static RefCountedPtr<ECInstanceNodeKey> Create(BeSQLite::EC::ECInstanceKeyCR key)
+    static RefCountedPtr<ECInstanceNodeKey> Create(ECInstanceKeyCR key)
         {
         return new ECInstanceNodeKey(key.GetClassId(), key.GetInstanceId());
         }
     //! Create an @ref ECInstanceNodeKey using supplied parameters.
     //! @param[in] instance The ECInstance.
-    static RefCountedPtr<ECInstanceNodeKey> Create(ECN::IECInstanceCR instance)
+    static RefCountedPtr<ECInstanceNodeKey> Create(IECInstanceCR instance)
         {
-        BeSQLite::EC::ECInstanceId instanceId;
-        BeSQLite::EC::ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
+        ECInstanceId instanceId;
+        ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
         return Create(instance.GetClass().GetId(), instanceId);
         }
     //! Get ECClass ID.
-    ECN::ECClassId GetECClassId() const {return m_instanceKey.GetClassId();}
+    ECClassId GetECClassId() const {return m_instanceKey.GetClassId();}
     //! Get the ECInstance ID.
-    BeSQLite::EC::ECInstanceId GetInstanceId() const {return m_instanceKey.GetInstanceId();}
+    ECInstanceId GetInstanceId() const {return m_instanceKey.GetInstanceId();}
     //! Get the ECInstance key.
-    BeSQLite::EC::ECInstanceKeyCR GetInstanceKey() const {return m_instanceKey;}
+    ECInstanceKeyCR GetInstanceKey() const {return m_instanceKey;}
 };
 
 //=======================================================================================
@@ -336,7 +335,6 @@ protected:
     virtual uint64_t _GetNodeId() const = 0;
     virtual uint64_t _GetParentNodeId() const = 0;
     virtual NavNodeKeyCPtr _CreateKey() const = 0;
-    virtual RefCountedPtr<ECN::IECInstance const> _GetInstance() const = 0;
     virtual Utf8String _GetLabel() const = 0;
     virtual Utf8String _GetDescription() const = 0;
     virtual Utf8String _GetExpandedImageId() const = 0;
@@ -369,11 +367,6 @@ public:
 
     //! Get unique parent node ID or 0 if this is a root node.
     uint64_t GetParentNodeId() const {return _GetParentNodeId();}
-
-    //! Get the ECInstance that's represented by this node or nullptr if this is not an ECInstance node.
-    //! @note Calling this function executes a select query against the database to create the ECInstance
-    //! if it hasn't been cached yet.
-    RefCountedPtr<ECN::IECInstance const> GetInstance() const {return _GetInstance();}
 
     //! Get the label.
     Utf8String GetLabel() const {return _GetLabel();}
@@ -455,20 +448,6 @@ public:
 
     //! Serialize this object to JSON.
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
-};
-
-//=======================================================================================
-//! An interface for @ref NavNode objects locater which can find nodes by their keys.
-//! @ingroup GROUP_Presentation_Navigation
-// @bsiclass                                    Grigas.Petraitis                08/2016
-//=======================================================================================
-struct  INavNodeLocater
-{
-protected:
-    virtual NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR) const = 0;
-public:
-    virtual ~INavNodeLocater() {}
-    NavNodeCPtr LocateNode(ECDbCR connection, NavNodeKeyCR key) const {return _LocateNode(connection, key);}
 };
 
 //=======================================================================================
@@ -614,7 +593,7 @@ public:
     ECPRESENTATION_EXPORT static INavNodeKeysContainerCPtr Create(NavNodeKeyList list);
 };
 
-typedef bvector<BeSQLite::EC::ECInstanceKey> GroupedInstanceKeysList;
+typedef bvector<ECInstanceKey> GroupedInstanceKeysList;
 typedef GroupedInstanceKeysList const&       GroupedInstanceKeysListCR;
 
 //=======================================================================================
@@ -625,33 +604,33 @@ typedef GroupedInstanceKeysList const&       GroupedInstanceKeysListCR;
 struct INavNodesFactory
 {
 protected:
-    virtual NavNodePtr _CreateECInstanceNode(BeSQLite::EC::ECDbCR, ECN::ECClassId, BeSQLite::EC::ECInstanceId, Utf8CP label) const = 0;
-    virtual NavNodePtr _CreateECInstanceNode(BeSQLite::BeGuidCR, ECN::IECInstanceCR, Utf8CP label) const = 0;
-    virtual NavNodePtr _CreateECClassGroupingNode(BeSQLite::BeGuidCR, ECN::ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateECRelationshipGroupingNode(BeSQLite::BeGuidCR, ECN::ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateECPropertyGroupingNode(BeSQLite::BeGuidCR, ECN::ECClassCR, ECN::ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateDisplayLabelGroupingNode(BeSQLite::BeGuidCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
-    virtual NavNodePtr _CreateCustomNode(BeSQLite::BeGuidCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const = 0;
+    virtual NavNodePtr _CreateECInstanceNode(IConnectionCR, ECClassId, ECInstanceId, Utf8CP label) const = 0;
+    virtual NavNodePtr _CreateECInstanceNode(Utf8StringCR, IECInstanceCR, Utf8CP label) const = 0;
+    virtual NavNodePtr _CreateECClassGroupingNode(Utf8StringCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateECRelationshipGroupingNode(Utf8StringCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateECPropertyGroupingNode(Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateDisplayLabelGroupingNode(Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const = 0;
+    virtual NavNodePtr _CreateCustomNode(Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const = 0;
 
 public:
     //! Virtual destructor.
     virtual ~INavNodesFactory() {}
 
     //! Creates an ECInstance node.
-    //! @param[in] db The DB that the instance belongs to.
+    //! @param[in] connection The connection that the instance belongs to.
     //! @param[in] classId The ID of the ECInstance class.
     //! @param[in] instanceId The ID of the ECInstance.
     //! @param[in] label The label of the node.
-    NavNodePtr CreateECInstanceNode(BeSQLite::EC::ECDbCR db, ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId, Utf8CP label) const
+    NavNodePtr CreateECInstanceNode(IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const
         {
-        return _CreateECInstanceNode(db, classId, instanceId, label);
+        return _CreateECInstanceNode(connection, classId, instanceId, label);
         }
     
     //! Creates an ECInstance node.
     //! @param[in] connectionId Guid of the connection that the instance belongs to.
     //! @param[in] instance The instance to create the node for.
     //! @param[in] label The label of the node.
-    NavNodePtr CreateECInstanceNode(BeSQLite::BeGuidCR connectionId, ECN::IECInstanceCR instance, Utf8CP label) const
+    NavNodePtr CreateECInstanceNode(Utf8StringCR connectionId, IECInstanceCR instance, Utf8CP label) const
         {
         return _CreateECInstanceNode(connectionId, instance, label);
         }
@@ -661,7 +640,7 @@ public:
     //! @param[in] ecClass The ECClass to create the node for.
     //! @param[in] label The label of the node.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECClassGroupingNode(BeSQLite::BeGuidCR connectionId, ECN::ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+    NavNodePtr CreateECClassGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
         return _CreateECClassGroupingNode(connectionId, ecClass, label, groupedInstanceKeys);
         }
@@ -671,7 +650,7 @@ public:
     //! @param[in] relationshipClass The ECRelationship to create the node for.
     //! @param[in] label The label of the node.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECRelationshipGroupingNode(BeSQLite::BeGuidCR connectionId, ECN::ECRelationshipClassCR relationshipClass, 
+    NavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR connectionId, ECRelationshipClassCR relationshipClass, 
         Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
         return _CreateECRelationshipGroupingNode(connectionId, relationshipClass, label, groupedInstanceKeys);
@@ -687,7 +666,7 @@ public:
     //! @param[in] groupingValue The grouping value or range index if creating a range grouping node.
     //! @param[in] isRangeGrouping Should a range grouping node be created.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateECPropertyGroupingNode(BeSQLite::BeGuidCR connectionId, ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty, 
+    NavNodePtr CreateECPropertyGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, ECPropertyCR ecProperty, 
         Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
         return _CreateECPropertyGroupingNode(connectionId, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);
@@ -697,7 +676,7 @@ public:
     //! @param[in] connectionId Guid of the connection whose instances this node groups.
     //! @param[in] label The label of the node.
     //! @param[in] groupedInstanceKeys A list of instance keys grouped by the grouping node.
-    NavNodePtr CreateDisplayLabelGroupingNode(BeSQLite::BeGuidCR connectionId, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
+    NavNodePtr CreateDisplayLabelGroupingNode(Utf8StringCR connectionId, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const
         {
         return _CreateDisplayLabelGroupingNode(connectionId, label, groupedInstanceKeys);
         }
@@ -708,7 +687,7 @@ public:
     //! @param[in] description The description of the node.
     //! @param[in] imageId The image ID to use for this node.
     //! @param[in] type The type identifier for this node.
-    NavNodePtr CreateCustomNode(BeSQLite::BeGuidCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
+    NavNodePtr CreateCustomNode(Utf8StringCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const
         {
         return _CreateCustomNode(connectionId, label, description, imageId, type);
         }

@@ -85,10 +85,10 @@ void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, selection, options.GetJson());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, selection, options.GetJson()).get();
 
     // get the content
-    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson());
+    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson()).get();
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(expectedContentSize, content->GetContentSet().GetSize());
     for (ContentSetItemCPtr record : content->GetContentSet())
@@ -125,7 +125,7 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     
     // get the descriptor
     Timer _timer;
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(descriptor.IsValid());
     }
 
@@ -140,7 +140,7 @@ TEST_F(ContentPerformanceTests, GetContentClassesForBisElements)
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
 
     Timer _timer;
-    bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson());
+    bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(!classes.empty());
     }
 

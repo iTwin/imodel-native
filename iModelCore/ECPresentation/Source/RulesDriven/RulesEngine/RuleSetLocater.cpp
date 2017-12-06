@@ -14,27 +14,13 @@
 #define PRESENTATION_RULESET_EXTENSION  L".PresentationRuleSet.xml"
 #define PRESENTATION_RULESET_WILDCARD   L"*" PRESENTATION_RULESET_EXTENSION
 
-//=======================================================================================
-// @bsiclass                                    Grigas.Petraitis                08/2017
-//=======================================================================================
-struct RuleSetLocaterManager::ConnectionsTracker : ECDbBasedCache
-{
-private:
-    RuleSetLocaterManager& m_manager;
-protected:
-    void _ClearECDbCache(ECDbCR connection) override {m_manager.OnConnectionClosed(connection);}
-public:
-    ConnectionsTracker(RuleSetLocaterManager& manager) : ECDbBasedCache(true), m_manager(manager) {}
-    void OnConnection(ECDbCR connection) {ECDbBasedCache::OnConnection(connection);}
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RuleSetLocaterManager::RuleSetLocaterManager()
-    : m_rulesetCallbacksHandler(nullptr)
+RuleSetLocaterManager::RuleSetLocaterManager(IConnectionManagerCR connections)
+    : m_connections(connections)
     {
-    m_connectionsTracker = new ConnectionsTracker(*this);
+    m_connections.AddListener(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -42,7 +28,9 @@ RuleSetLocaterManager::RuleSetLocaterManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 RuleSetLocaterManager::~RuleSetLocaterManager()
     {
-    DELETE_AND_CLEAR(m_connectionsTracker);
+    m_connections.DropListener(*this);
+
+    BeMutexHolder lock(m_mutex);
     for (RuleSetLocaterPtr const& locater : m_locaters)
         locater->SetRulesetCallbacksHandler(nullptr);
     }
@@ -50,8 +38,9 @@ RuleSetLocaterManager::~RuleSetLocaterManager()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocaterManager::RegisterLocater(RuleSetLocater& locater)
+void RuleSetLocaterManager::_RegisterLocater(RuleSetLocater& locater)
     {
+    BeMutexHolder lock(m_mutex);
     locater.SetRulesetCallbacksHandler(this);
     m_locaters.push_back(&locater);
     }
@@ -59,15 +48,10 @@ void RuleSetLocaterManager::RegisterLocater(RuleSetLocater& locater)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocaterManager::UnregisterLocater(RuleSetLocater const& locater)
+void RuleSetLocaterManager::_UnregisterLocater(RuleSetLocater const& locater)
     {
-    auto iter = m_locaters.begin();
-    for (; iter != m_locaters.end(); iter++)
-        {
-        RuleSetLocater* candidate = (*iter).get();
-        if (candidate == &locater)
-            break;
-        }
+    BeMutexHolder lock(m_mutex);
+    auto iter = std::find(m_locaters.begin(), m_locaters.end(), RuleSetLocaterCPtr(&locater));
     if (iter == m_locaters.end())
         {
         BeAssert(false);
@@ -80,16 +64,12 @@ void RuleSetLocaterManager::UnregisterLocater(RuleSetLocater const& locater)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocaterManager::SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler) {m_rulesetCallbacksHandler = handler;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocaterManager::_OnRulesetDispose(PresentationRuleSetCR ruleset)
     {
-    if (nullptr != m_rulesetCallbacksHandler)
-        m_rulesetCallbacksHandler->_OnRulesetDispose(ruleset);
-
+    if (nullptr != GetRulesetCallbacksHandler())
+        GetRulesetCallbacksHandler()->_OnRulesetDispose(ruleset);
+    
+    BeMutexHolder lock(m_mutex);
     bvector<CacheKey> toErase;
     for (auto pair : m_rulesetsCache)
         {
@@ -105,19 +85,20 @@ void RuleSetLocaterManager::_OnRulesetDispose(PresentationRuleSetCR ruleset)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocaterManager::_OnRulesetCreated(PresentationRuleSetCR ruleset)
     {
-    if (nullptr != m_rulesetCallbacksHandler)
-        m_rulesetCallbacksHandler->_OnRulesetCreated(ruleset);
+    if (nullptr != GetRulesetCallbacksHandler())
+        GetRulesetCallbacksHandler()->_OnRulesetCreated(ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocaterManager::OnConnectionClosed(ECDbCR connection)
+void RuleSetLocaterManager::_OnConnectionEvent(ConnectionEvent const& evt)
     {
+    BeMutexHolder lock(m_mutex);
     bvector<CacheKey> toErase;
     for (auto pair : m_rulesetsCache)
         {
-        if (pair.first.m_connection == &connection)
+        if (pair.first.m_connectionId == evt.GetConnection().GetId())
             toErase.push_back(pair.first);
         }
     for (CacheKey const& key : toErase)
@@ -127,8 +108,10 @@ void RuleSetLocaterManager::OnConnectionClosed(ECDbCR connection)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocaterManager::InvalidateCache(Utf8CP rulesetId)
+void RuleSetLocaterManager::_InvalidateCache(Utf8CP rulesetId)
     {
+    BeMutexHolder lock(m_mutex);
+
     for (RuleSetLocaterPtr const& locater : m_locaters)
         locater->InvalidateCache(rulesetId);
 
@@ -145,18 +128,25 @@ void RuleSetLocaterManager::InvalidateCache(Utf8CP rulesetId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(ECDbCR connection, Utf8CP rulesetId) const
+bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(ECDbCR db, Utf8CP rulesetId) const
     {
+    IConnectionPtr connection = m_connections.GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return bvector<PresentationRuleSetPtr>();
+        }
+    
+    BeMutexHolder lock(m_mutex);
+
     if (nullptr != rulesetId)
         {
-        auto cacheIter = m_rulesetsCache.find(CacheKey(connection, rulesetId));
+        auto cacheIter = m_rulesetsCache.find(CacheKey(connection->GetId(), rulesetId));
         if (m_rulesetsCache.end() != cacheIter)
             return cacheIter->second;
         }
-    
-    RelatedPathsCache relatedPathsCache;
-    ECSchemaHelper helper(connection, relatedPathsCache, nullptr);
 
+    ECSchemaHelper helper(db, nullptr, nullptr);
     bvector<RuleSetLocaterPtr> sortedLocaters = m_locaters;
     std::sort(sortedLocaters.begin(), sortedLocaters.end(), [](RuleSetLocaterPtr a, RuleSetLocaterPtr b)
         {
@@ -170,7 +160,7 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(ECDbCR con
     bmap<Utf8String, PresentationRuleSetPtr> locatedRulesets;
     for (RuleSetLocaterPtr& locater : sortedLocaters)
         {
-        if (nullptr != locater->GetDesignatedConnection() && &connection != locater->GetDesignatedConnection())
+        if (nullptr != locater->GetDesignatedConnection() && &locater->GetDesignatedConnection()->GetDb() != &db)
             continue;
 
         bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets(rulesetId);
@@ -188,8 +178,7 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(ECDbCR con
     for (auto& ruleset : locatedRulesets)
         {
         results.push_back(ruleset.second);
-        m_rulesetsCache[CacheKey(connection, ruleset.second->GetRuleSetId())].push_back(ruleset.second);
-        m_connectionsTracker->OnConnection(connection);
+        m_rulesetsCache[CacheKey(connection->GetId(), ruleset.second->GetRuleSetId())].push_back(ruleset.second);
         }
 
     return results;
@@ -198,8 +187,9 @@ bvector<PresentationRuleSetPtr> RuleSetLocaterManager::LocateRuleSets(ECDbCR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> RuleSetLocaterManager::GetRuleSetIds() const
+bvector<Utf8String> RuleSetLocaterManager::_GetRuleSetIds() const
     {
+    BeMutexHolder lock(m_mutex);
     bvector<Utf8String> results;
     for (RuleSetLocaterPtr const& locater : m_locaters)
         {
@@ -212,12 +202,20 @@ bvector<Utf8String> RuleSetLocaterManager::GetRuleSetIds() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PresentationRuleSetPtr> RuleSetLocater::LocateRuleSets(Utf8CP rulesetId) const {return _LocateRuleSets(rulesetId);}
+bvector<PresentationRuleSetPtr> RuleSetLocater::LocateRuleSets(Utf8CP rulesetId) const
+    {
+    BeMutexHolder lock(GetMutex());
+    return _LocateRuleSets(rulesetId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> RuleSetLocater::GetRuleSetIds() const {return _GetRuleSetIds();}
+bvector<Utf8String> RuleSetLocater::GetRuleSetIds() const
+    {
+    BeMutexHolder lock(GetMutex());
+    return _GetRuleSetIds();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
@@ -225,10 +223,20 @@ bvector<Utf8String> RuleSetLocater::GetRuleSetIds() const {return _GetRuleSetIds
 int RuleSetLocater::GetPriority() const {return _GetPriority();}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RuleSetLocater::InvalidateCache(Utf8CP rulesetId)
+    {
+    BeMutexHolder lock(GetMutex());
+    _InvalidateCache(rulesetId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetCR ruleset) const
     {
+    BeMutexHolder lock(GetMutex());
     if (nullptr != m_rulesetCallbacksHandler)
         m_rulesetCallbacksHandler->_OnRulesetDispose(ruleset);
     else
@@ -244,6 +252,7 @@ void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetCR ruleset) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocater::OnRulesetCreated(PresentationRuleSetCR ruleset) const
     {
+    BeMutexHolder lock(GetMutex());
     if (nullptr != m_rulesetCallbacksHandler)
         m_rulesetCallbacksHandler->_OnRulesetCreated(ruleset);
     else
@@ -255,6 +264,8 @@ void RuleSetLocater::OnRulesetCreated(PresentationRuleSetCR ruleset) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocater::SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler)
     {
+    BeMutexHolder lock(GetMutex());
+
     m_rulesetCallbacksHandler = handler;
 
     if (nullptr != m_rulesetCallbacksHandler)
@@ -333,7 +344,7 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
                 OnRulesetCreated(*ruleset);
                 }
             }
-        
+
         if (ruleset.IsValid() && (nullptr == rulesetId || ruleset->GetRuleSetId().Equals(rulesetId)))
             rulesets.push_back(ruleset);
         }
@@ -376,6 +387,8 @@ void DirectoryRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void FileRuleSetLocater::SetPath(BeFileNameCR path)
     {
+    BeMutexHolder lock(GetMutex());
+
     if (path.Equals(m_path))
         return;
 
@@ -417,7 +430,7 @@ bvector<PresentationRuleSetPtr> FileRuleSetLocater::_LocateRuleSets(Utf8CP rules
         OnRulesetCreated(*ruleset);
         rulesets.push_back(ruleset);
         }
-        
+
     return rulesets;
     }
 
@@ -450,11 +463,21 @@ void FileRuleSetLocater::_InvalidateCache(Utf8CP rulesetId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+EmbeddedRuleSetLocater::EmbeddedRuleSetLocater(IConnectionCR connection)
+    : m_connection(connection)
+    {
+    BeMutexHolder lock(GetMutex());
+    LoadRuleSets();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void EmbeddedRuleSetLocater::LoadRuleSets() const
     {
-    DbEmbeddedFileTable& embeddedFiles = const_cast<ECDbR>(m_connection).EmbeddedFiles();
+    DbEmbeddedFileTable& embeddedFiles = m_connection.GetDb().EmbeddedFiles();
     for (auto const& file : embeddedFiles.MakeIterator())
         {
         if (0 != strcmp(file.GetTypeUtf8(), RuleSetEmbedder::FILE_TYPE_PresentationRuleSet))
@@ -488,7 +511,7 @@ bvector<PresentationRuleSetPtr> EmbeddedRuleSetLocater::_LocateRuleSets(Utf8CP r
     {
     if (nullptr == rulesetId)
         return m_cache;
-    
+
     bvector<PresentationRuleSetPtr> rulesets;
     for (PresentationRuleSetPtr ruleset : m_cache)
         {
@@ -498,6 +521,7 @@ bvector<PresentationRuleSetPtr> EmbeddedRuleSetLocater::_LocateRuleSets(Utf8CP r
 
     return rulesets;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -528,7 +552,9 @@ void EmbeddedRuleSetLocater::_InvalidateCache(Utf8CP)
 bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
     {
     bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(nullptr);
-    rulesets.erase(std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return !r->GetIsSupplemental();}), rulesets.end());
+    auto iter = std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return !r->GetIsSupplemental();});
+    if (rulesets.end() != iter)
+        rulesets.erase(iter);
     for (PresentationRuleSetPtr ruleset : rulesets)
         ruleset->SetRuleSetId(rulesetId);
     return rulesets;

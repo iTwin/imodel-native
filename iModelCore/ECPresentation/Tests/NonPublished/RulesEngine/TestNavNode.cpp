@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestNavNode.h"
+#include <ECPresentation/Connection.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -15,7 +16,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestNavNode::InitNode(ECDb const* db)
+void TestNavNode::InitNode(IConnectionP connection)
     {
     SetLabel("TestLabel");
     SetType("TestType");
@@ -24,10 +25,10 @@ void TestNavNode::InitNode(ECDb const* db)
     extendedData.SetSpecificationHash(""); // "" is an invalid Hash so it will never match anything unless specifically set
     extendedData.SetRulesetId("Invalid ruleset ID");
 
-    if (nullptr != db)
+    if (nullptr != connection)
         {
-        SetECDb(*db);
-        extendedData.SetConnectionId(db->GetDbGuid());
+        SetECDb(connection->GetDb());
+        extendedData.SetConnectionId(connection->GetId());
         }
     }
 
@@ -66,7 +67,7 @@ TestNavNodePtr TestNodesHelper::CreateInstanceNode(ECClassCR ecClass, ECInstance
 TestNavNodePtr TestNodesHelper::CreateInstanceNode(IECInstanceR instance)
     {
     TestNavNodePtr node = TestNavNode::Create();
-    s_testNodesFactory.InitECInstanceNode(*node, BeGuid(true), instance, "label");
+    s_testNodesFactory.InitECInstanceNode(*node, "undefined connection id", instance, "label");
     node->m_classId = instance.GetClass().GetId();
     return node;
     }
@@ -77,7 +78,7 @@ TestNavNodePtr TestNodesHelper::CreateInstanceNode(IECInstanceR instance)
 TestNavNodePtr TestNodesHelper::CreateClassGroupingNode(ECClassCR ecClass, Utf8CP label)
     {
     TestNavNodePtr node = TestNavNode::Create();
-    s_testNodesFactory.InitECClassGroupingNode(*node, BeGuid(true), ecClass, label, GroupedInstanceKeysList());
+    s_testNodesFactory.InitECClassGroupingNode(*node, "undefined connection id", ecClass, label, GroupedInstanceKeysList());
     node->m_classId = ecClass.GetId();
     return node;
     }
@@ -88,7 +89,7 @@ TestNavNodePtr TestNodesHelper::CreateClassGroupingNode(ECClassCR ecClass, Utf8C
 TestNavNodePtr TestNodesHelper::CreateRelationshipGroupingNode(ECRelationshipClassCR rel, Utf8CP label)
     {
     TestNavNodePtr node = TestNavNode::Create();
-    s_testNodesFactory.InitECRelationshipGroupingNode(*node, BeGuid(true), rel, label, GroupedInstanceKeysList());
+    s_testNodesFactory.InitECRelationshipGroupingNode(*node, "undefined connection id", rel, label, GroupedInstanceKeysList());
     node->m_classId = rel.GetId();
     return node;
     }
@@ -99,7 +100,7 @@ TestNavNodePtr TestNodesHelper::CreateRelationshipGroupingNode(ECRelationshipCla
 TestNavNodePtr TestNodesHelper::CreatePropertyGroupingNode(ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, RapidJsonValueCR groupingValue, bool isRangeGrouping)
     {
     TestNavNodePtr node = TestNavNode::Create();
-    s_testNodesFactory.InitECPropertyGroupingNode(*node, BeGuid(true), ecClass, ecProperty, label, "", groupingValue, isRangeGrouping, GroupedInstanceKeysList());
+    s_testNodesFactory.InitECPropertyGroupingNode(*node, "undefined connection id", ecClass, ecProperty, label, "", groupingValue, isRangeGrouping, GroupedInstanceKeysList());
     node->m_classId = ecClass.GetId();
     return node;
     }
@@ -110,7 +111,7 @@ TestNavNodePtr TestNodesHelper::CreatePropertyGroupingNode(ECClassCR ecClass, EC
 TestNavNodePtr TestNodesHelper::CreateLabelGroupingNode(Utf8CP label)
     {
     TestNavNodePtr node = TestNavNode::Create();
-    s_testNodesFactory.InitDisplayLabelGroupingNode(*node, BeGuid(true), label, GroupedInstanceKeysList());
+    s_testNodesFactory.InitDisplayLabelGroupingNode(*node, "undefined connection id", label, GroupedInstanceKeysList());
     return node;
     }
 
@@ -120,6 +121,6 @@ TestNavNodePtr TestNodesHelper::CreateLabelGroupingNode(Utf8CP label)
 TestNavNodePtr TestNodesHelper::CreateCustomNode(Utf8CP type, Utf8CP label, Utf8CP description)
     {
     TestNavNodePtr node = TestNavNode::Create();
-    s_testNodesFactory.InitCustomNode(*node, BeGuid(true), label, description, "", type);
+    s_testNodesFactory.InitCustomNode(*node, "undefined connection id", label, description, "", type);
     return node;
     }

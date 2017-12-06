@@ -31,6 +31,7 @@ private:
 
 protected:
     ECDb m_project;
+    ConnectionManager m_connections;
     RulesDrivenECPresentationManager* m_manager;
     
 protected:

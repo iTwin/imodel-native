@@ -153,6 +153,34 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct PreloadedDataSource : INavNodesDataSource
+{
+private:
+    INavNodesDataSourceCPtr m_source;
+    bvector<NavNodePtr> m_nodes;
+
+private:
+    PreloadedDataSource(INavNodesDataSourceCR source) 
+        : m_source(&source)
+        {
+        size_t size = source.GetSize();
+        m_nodes.reserve(size);
+        for (size_t i = 0; i < size; ++i)
+            m_nodes.push_back(source.GetNode(i));
+        BeAssert(m_nodes.size() == size);
+        }
+
+protected:
+    NavNodePtr _GetNode(size_t index) const override {return (index < m_nodes.size()) ? m_nodes[index] : nullptr;}
+    size_t _GetSize() const override {return m_nodes.size();}
+
+public:
+    static RefCountedPtr<PreloadedDataSource> Create(INavNodesDataSourceCR source) {return new PreloadedDataSource(source);}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE EmptyNavNodesDataSource : INavNodesDataSource
