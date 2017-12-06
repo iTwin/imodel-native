@@ -215,10 +215,11 @@ PolyfaceEdgeChain::PolyfaceEdgeChain(CurveTopologyIdCR id, PolyfaceQueryCR polyf
     bvector<PolyfaceEdge>   edges;
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
-        for (size_t i=0; i<3; i++)
+        uint32_t    edgeCount = visitor->NumEdgesThisFace();
+        for (size_t i=0; i<edgeCount; i++)
             {
             if (visitor->GetVisibleCP()[i])
-                edges.push_back(PolyfaceEdge(visitor->GetClientPointIndexCP()[i]+1, visitor->GetClientPointIndexCP()[(i+1)%3]+1));
+                edges.push_back(PolyfaceEdge(visitor->GetClientPointIndexCP()[i]+1, visitor->GetClientPointIndexCP()[(i+1)%edgeCount]+1));
             }
         }
     Build(std::move(edges));
