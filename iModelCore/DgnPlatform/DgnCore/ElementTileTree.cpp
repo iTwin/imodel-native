@@ -83,7 +83,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
