@@ -1,0 +1,57 @@
+#pragma once
+
+//__PUBLISH_SECTION_START__
+#include <Bentley/Bentley.h>
+#include <Bentley/WString.h>
+#include <ECDb/ECDbTypes.h>
+#include <ECDb/ECDbApi.h>
+#include <ECObjects/ECSchema.h>
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnModel.h>
+
+
+#ifdef __FORMS_DOMAIN_BUILD__
+#define FORMS_DOMAIN_EXPORT EXPORT_ATTRIBUTE
+#else
+#define FORMS_DOMAIN_EXPORT IMPORT_ATTRIBUTE
+#endif
+
+
+#define BEGIN_BENTLEY_FORMS_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Forms {
+#define END_BENTLEY_FORMS_NAMESPACE } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_FORMS using namespace BentleyApi::Forms;
+
+#define FORMS_POINTER_SUFFIX_TYPEDEFS(_structname_) \
+    BEGIN_BENTLEY_FORMS_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) END_BENTLEY_FORMS_NAMESPACE
+
+#define FORMS_REFCOUNTED_TYPEDEFS(_structname_) \
+    BEGIN_BENTLEY_FORMS_NAMESPACE struct _structname_; DEFINE_REF_COUNTED_PTR(_structname_) END_BENTLEY_FORMS_NAMESPACE
+
+#define FORMS_POINTER_TYPEDEFS(_structname_) \
+    FORMS_POINTER_SUFFIX_TYPEDEFS(_structname_) \
+    FORMS_REFCOUNTED_TYPEDEFS(_structname_)
+
+//-----------------------------------------------------------------------------------------
+// ECSchema macros
+//-----------------------------------------------------------------------------------------
+#define BENTLEY_FORMS_SCHEMA_NAME                        "Forms"
+#define BENTLEY_FORMS_SCHEMA_PATH                        L"ECSchemas/Domain/Forms.ecschema.xml"
+#define BENTLEY_FORMS_SCHEMA(className)                  BENTLEY_FORMS_SCHEMA_NAME "." className
+#define BENTLEY_FORMS_SCHEMA_CODE                        BENTLEY_FORMS_SCHEMA_NAME
+#define BENTLEY_FORMS_AUTHORITY                          BENTLEY_FORMS_SCHEMA_NAME
+
+//-----------------------------------------------------------------------------------------
+// ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
+//-----------------------------------------------------------------------------------------
+//#define STRUCTURAL_COMMON_CLASS_StructuralPhysicalModel              "StructuralPhysicalModel"
+//#define STRUCTURAL_COMMON_CLASS_StructuralTypeDefinitionModel        "StructuralTypeDefinitionModel"
+#define FORMS_COMMON_CLASS_FormAspect                    "Form"
+
+//-----------------------------------------------------------------------------------------
+// All R, CR, P, CP, Ptr, CPtr declarations
+//-----------------------------------------------------------------------------------------
+//STRUCTURAL_POINTER_TYPEDEFS(StructuralPhysicalModel)
+//STRUCTURAL_POINTER_TYPEDEFS(StructuralTypeDefinitionModel)
+
+FORMS_POINTER_TYPEDEFS(Form)

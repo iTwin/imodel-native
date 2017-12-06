@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    
+    <appender name="Console" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{HH:mm:ss,SSS} %-5p - %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="StructuralDomainTests.log"/>
+        <param name="MaxFileSize" value="10000000" />
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="createpath" value="true"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{HH:mm:ss,SSS} %-5p - %c - %m%n"/>
+        </layout>
+        <param name="Append" value="true"/>
+    </appender>
+
+    <appender name="DevenvAppender" class="org.apache.log4j.DebuggerAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{HH:mm:ss,SSS} %-5p - %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <root>
+        <priority value="debug" />
+        <appender-ref ref="Console" />
+        <appender-ref ref="RollingFileAppender"/>
+    </root>
+
+</log4j:configuration>

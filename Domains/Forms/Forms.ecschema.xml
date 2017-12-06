@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Forms" alias="frm" version="01.00.00" description="Forms Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="Profiles" version="01.00.00" alias="prf"/>
+    <ECEntityClass typeName="Form" displayLabel="Form Aspect" modifier="none">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ProfiledExtrusion" description="Profiled Extrusion" modifier="none">
+        <BaseClass>Form</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty description="The using UniqueAspect" propertyName="Profile" direction="Forward" relationshipName="ProfiledExtrusionHasProfile">
+            <ECCustomAttributes> </ECCustomAttributes>
+        </ECNavigationProperty>    
+    </ECEntityClass>
+    <ECEntityClass typeName="CurvedExtrusion" description="Curved Extrusion">
+        <BaseClass>ProfiledExtrusion</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="StraightExtrusion" description="Straight Extrusion">
+        <BaseClass>ProfiledExtrusion</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ProfiledExtrusionHasProfile" description="TODO" modifier="None" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="TODO1" polymorphic="true">
+            <Class class="ProfiledExtrusion"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="TODO2" polymorphic="true">
+            <Class class="prf:Profile"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
