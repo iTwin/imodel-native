@@ -1680,8 +1680,7 @@ void ScalableMeshModel::CompactExtraFiles()
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     {
-    assert(m_smPtr == nullptr);
-    m_path = smFilename;
+    assert(m_smPtr == nullptr);    
 
     bvector<IMeshSpatialModelP> allScalableMeshes;
     ScalableMeshModel::GetAllScalableMeshes(dgnProject, allScalableMeshes);
@@ -2594,6 +2593,9 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 
     if (nullptr != classifiers)
         model->SetClassifiers(*classifiers);
+    
+    //After Insert model pointer is handled by DgnModels.
+    model->Insert();
 
     if (openFile)
         {
@@ -2603,9 +2605,8 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
         {
         model->SetFileNameProperty(smFilename);
         }
-    //After Insert model pointer is handled by DgnModels.
-    model->Insert();
-    model->OpenFile(smFilename, db);
+
+    //model->OpenFile(smFilename, db);
     model->Update();
 
   //  if (model->IsTerrain())
@@ -2755,14 +2756,12 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     if (m_smPtr == 0 && !m_tryOpen)
         {
         WString fileNameW(((this)->m_properties).m_fileId.c_str(), true);
-        BeFileName smFileName;
-        smFileName.AppendString(fileNameW.c_str());
-        //BeFileName smFileName;
-
+        m_path = BeFileName(fileNameW);
+                
         //NEEDS_WORK_SM : Doesn't work with URL
         if (BeFileName::DoesPathExist(m_path.c_str()) || IsUrl(m_path.c_str()))
             {
-            OpenFile(smFileName, GetDgnDb());
+            OpenFile(m_path, GetDgnDb());
             }
 
         m_tryOpen = true;
