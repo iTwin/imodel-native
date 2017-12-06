@@ -181,6 +181,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             {
             }
 
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, JsonValueCR val);
+
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
         void SetModeledElementRelClassId(DgnClassId classId) {m_modeledElementRelClassId = classId;} //!< Set the DgnClassId of the relationship of the DgnModel to the modeled element
         void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this model should @em not appear in lists shown to the user
@@ -272,6 +274,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
 
     //! Initialize this DgnModel from a Json::Value.
+    //! @param props The properties. @note The input object's properties will be moved into and consumed by this model.
     //! @note If you override this method, you @em must call T_Super::_FromJson
     DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
@@ -714,6 +717,10 @@ public:
 
     void RemoveUserProperties(Utf8CP nameSpace) {GetUserPropsR().RemoveMember(nameSpace);}
     /** @} */
+
+    //! Set this model's properties from JavaScript.
+    //! @param opts The properties. @note The input object's properties will be moved into and consumed by this model.
+    void FromJson(JsonValueR opts) {return _FromJson(opts);}
 
     Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
 }; // DgnModel
