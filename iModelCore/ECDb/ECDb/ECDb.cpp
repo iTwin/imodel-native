@@ -21,6 +21,7 @@ ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 //---------------+---------------+---------------+---------------+---------------+------
 ECDb::~ECDb() 
     { 
+    m_appData.Clear();
     if (m_pimpl != nullptr)
         {
         delete m_pimpl;
