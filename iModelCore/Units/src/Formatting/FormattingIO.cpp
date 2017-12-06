@@ -250,7 +250,7 @@ size_t StdFormatSet::CustomInit()
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms\", \"SpecName\" : \"CAngleDMS\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms8\", \"SpecName\" : \"CAngleDMS8\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdm8\", \"SpecName\" : \"CAngleDM8\", \"SpecType\" : \"composite\"}");
-    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"mile(s)\", \"unitName\" : \"MILE\"}, \"MiddleUnit\" : {\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MinorUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"SubUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"myfi4\", \"SpecName\" : \"AmerMYFI4\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"mile(s)\", \"unitName\" : \"MILE\"}, \"MiddleUnit\" : {\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MinorUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"SubUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":4, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"myfi4\", \"SpecName\" : \"AmerMYFI4\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi8\", \"SpecName\" : \"AmerFI8\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi16\", \"SpecName\" : \"AmerFI16\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MinorUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"yfi8\", \"SpecName\" : \"AmerYFI8\", \"SpecType\" : \"composite\"}");
@@ -652,6 +652,25 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
 // NamedFormatSpec Methods
 //
 //===================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+void NamedFormatSpec::Init(FormatProblemCode prob)
+    {
+    m_name.clear();
+    m_alias.clear();
+    m_description.clear();
+    m_displayLabel.clear();
+    m_numericSpec.DefaultInit(0);
+    m_compositeSpec.Init();
+    m_specType = FormatSpecType::Undefined;
+    m_problem.UpdateProblemCode(prob);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 Json::Value NamedFormatSpec::ToJson(bool verbose) const
     {
     Json::Value jNFS;
@@ -670,16 +689,19 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     return jNFS;
     }
 
-NamedFormatSpec::NamedFormatSpec(Json::Value jval)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+void NamedFormatSpec::LoadJson(Json::Value jval)
     {
     Utf8CP paramName;
-    Utf8String str;
+    Init();
     if (jval.empty())
         {
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
         return;
         }
-    str = jval.ToString();
+    //str = jval.ToString();
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         paramName = iter.memberName();
@@ -701,7 +723,54 @@ NamedFormatSpec::NamedFormatSpec(Json::Value jval)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+NamedFormatSpec::NamedFormatSpec(Json::Value jval)
+    {
+    LoadJson(jval);
+    //Utf8CP paramName;
+    ////Utf8String str;
+    //if (jval.empty())
+    //    {
+    //    m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
+    //    return;
+    //    }
+    ////str = jval.ToString();
+    //for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    //    {
+    //    paramName = iter.memberName();
+    //    JsonValueCR val = *iter;
+    //    if (BeStringUtilities::StricmpAscii(paramName, json_SpecName()) == 0)
+    //        m_name = val.asString();
+    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecAlias()) == 0)
+    //        m_alias = val.asString();
+    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecDescript()) == 0)
+    //        m_description = val.asString();
+    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecLabel()) == 0)
+    //        m_displayLabel = val.asString();
+    //    else if (BeStringUtilities::StricmpAscii(paramName, json_SpecType()) == 0)
+    //        m_specType = Utils::NameToFormatSpecType(val.asCString());
+    //    else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
+    //        m_numericSpec = NumericFormatSpec(val);
+    //    else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
+    //        m_compositeSpec.LoadJsonData(val);
+    //    }
+    }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+NamedFormatSpec::NamedFormatSpec(Utf8CP jsonString)
+    {
+    Json::Value jval (Json::objectValue);
+    Json::Reader::Parse(jsonString, jval);
+    LoadJson(jval);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 void NamedFormatSpec::ReplaceLocalizables(JsonValueCR jval)
     {
     return;

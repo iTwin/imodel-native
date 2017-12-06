@@ -1515,6 +1515,16 @@ void NamedFormatSpec::Clone(NamedFormatSpecCR other)
     m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+NamedFormatSpec::NamedFormatSpec()
+    {
+    m_specType = FormatSpecType::Undefined;
+    m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
+    }
+
+
  //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
  
  //              NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
@@ -1528,22 +1538,12 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Compo
     m_alias = alias;
     m_name = name;
     m_numericSpec = NumericFormatSpec(numSpec);
-    m_compositeSpec = CompositeValueSpec(compSpec);
+    m_compositeSpec.Clone(compSpec);
     m_specType = FormatSpecType::Composite;
     m_problem = FormatProblemDetail();
     if (Utils::IsNameNullOrEmpty(name))
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec()
-    {
-    m_specType = FormatSpecType::Undefined;
-    m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
-    }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17

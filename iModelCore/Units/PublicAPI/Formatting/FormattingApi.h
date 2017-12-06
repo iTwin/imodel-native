@@ -270,7 +270,7 @@ private:
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
   
-    UNITS_EXPORT void DefaultInit(size_t precision);
+
     UNITS_EXPORT void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     UNITS_EXPORT double RoundedValue(double dval, double round) const;
     UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index) const;
@@ -278,6 +278,7 @@ private:
     
 
 public:
+    UNITS_EXPORT void DefaultInit(size_t precision);
     UNITS_EXPORT void CopySpec(NumericFormatSpecCR other);
     NumericFormatSpec() { DefaultInit( FormatConstant::DefaultDecimalPrecisionIndex()); }
     NumericFormatSpec(size_t precision) { DefaultInit(precision); }
@@ -553,12 +554,11 @@ protected:
     CompositeSpecType m_type;
     bool m_includeZero;
     Utf8String m_spacer;
-
     void SetUnitLabel(int index, Utf8CP label);
     size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
     size_t UnitRatio(size_t uppIndx, size_t lowIndx);
     void ResetType() { m_type = CompositeSpecType::Undefined; }
-    void Init();
+    
     bool SetInputUnit(BEU::UnitCP inputUnit) {return m_unitProx.SetUnit(indxInput, inputUnit); }
     void SetUnitRatios();
     bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit=nullptr, Utf8CP MinorUnit = nullptr, Utf8CP SubUnit = nullptr);
@@ -572,6 +572,7 @@ protected:
     
 
 public:
+    UNITS_EXPORT void Init();
     UNITS_EXPORT void Clone(CompositeValueSpecCR other);
    // UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
     CompositeValueSpec() { Init(); };
@@ -646,13 +647,15 @@ private:
         FormatSpecType     m_specType;
         FormatProblemDetail m_problem;
 
+        void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
         void Clone(NamedFormatSpecCR other);
+        void LoadJson(Json::Value jval);
 public:
         UNITS_EXPORT NamedFormatSpec();
-        //UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr, CompositeValueSpecP compSpec = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Json::Value jval);
+        UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString);
         UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
         Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
         Utf8CP GetAlias() const { return m_alias.c_str(); }
@@ -688,7 +691,7 @@ struct FormatUnitSet
         Utf8String  m_unitName;
         BEU::UnitCP m_unit;
         FormatProblemDetail m_problem;
-        NamedFormatSpec m_localCopy;
+        //NamedFormatSpec m_localCopy;
 
     public:
         FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}

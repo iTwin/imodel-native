@@ -211,7 +211,17 @@ TEST(FormattingTest, StdFormatting)
     {
     SetUpL10N();
 
-    "{AddSynonym:{UnitName:\"FT\", Synonym:\"'\"";
+    Utf8String tes1 = "{AddSynonym:{UnitName:\"FT\", Synonym:\"'\"";
+    Utf8String tes2 = tes1;
+    LOG.infov("tes1 %s", tes1.c_str());
+    LOG.infov("tes2 %s", tes2.c_str());
+    NamedFormatSpec nfs1 = NamedFormatSpec();
+
+    Utf8CP scnT = "{\"NumericFormat\":{\"presentType\":\"ScientificNorm\"},\"SpecAlias\":\"sciN\",\"SpecName\":\"NormalizedExp\",\"SpecType\":\"numeric\"}";
+    FormattingTestFixture::StandaloneNamedFormatTest(scnT, true);
+    scnT = "{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"mile(s)\",\"unitName\":\"MILE\"},\"MiddleUnit\":{\"unitLabel\":\"yrd(s)\",\"unitName\":\"YRD\"},\"MinorUnit\":{\"unitLabel\":\"'\",\"unitName\":\"FT\"},\"SubUnit\":{\"unitLabel\":\"\\\"\",\"unitName\":\"IN\"},\"includeZero\":true},\"NumericFormat\":{\"fractPrec\":4,\"presentType\":\"Fractional\"},\"SpecAlias\":\"myfi4\",\"SpecName\":\"AmerMYFI4\",\"SpecType\":\"composite\"}";
+    FormattingTestFixture::StandaloneNamedFormatTest(scnT, true);
+
 
     FormattingTestFixture::StdFormattingTest("stop100-2",   1517.23, "15+17.23");
     FormattingTestFixture::StdFormattingTest("stop1000-2",   1517.23, "1+517.23");

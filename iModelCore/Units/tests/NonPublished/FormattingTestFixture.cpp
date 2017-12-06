@@ -1038,6 +1038,24 @@ void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
         LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName());
     }
 
+void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
+    {
+    NamedFormatSpec scn = NamedFormatSpec(jsonFormat);
+    Json::Value scnJ = scn.ToJson(false);
+    int diff = BeStringUtilities::StricmpAscii(jsonFormat, scnJ.ToString().c_str());
+    EXPECT_TRUE(diff == 0);
+    if (doPrint)
+        {
+        LOG.infov("\n=================StandaloneFormatTest================");
+        LOG.infov("Restored Json: %s   (diff %d)", scnJ.ToString().c_str(), diff);
+        if(diff != 0)
+            LOG.infov("Different from original: %s   (diff %d)", jsonFormat);
+        LOG.infov("=======================================================\n");
+        }
+    }
+
+
+
 END_BENTLEY_FORMATTEST_NAMESPACE
 
 //FormattingTestFixture::
