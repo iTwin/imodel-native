@@ -217,7 +217,7 @@ BentleyStatus GltfReader::ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GltfReader::ReadVertices(QVertex3dListR vertexList, Json::Value const& primitiveValue)
+BentleyStatus GltfReader::ReadVertices(QPoint3dListR vertexList, Json::Value const& primitiveValue)
     {
     void const*     pData;
     size_t          count, byteLength;
@@ -250,7 +250,7 @@ BentleyStatus GltfReader::ReadVertices(QVertex3dListR vertexList, Json::Value co
                 return ERROR;
                 }
 
-            vertexList.Init(DRange3d::From(min[0].asDouble(), min[1].asDouble(), min[2].asDouble(), max[0].asDouble(), max[1].asDouble(), max[2].asDouble()), reinterpret_cast <QPoint3d const*>(pData), count); 
+            vertexList.Assign(reinterpret_cast<QPoint3d const*>(pData), count, QPoint3d::Params(DRange3d::From(min[0].asDouble(), min[1].asDouble(), min[2].asDouble(), max[0].asDouble(), max[1].asDouble(), max[2].asDouble())));
             return SUCCESS;
             }
 
