@@ -219,6 +219,7 @@ Dgn::TileTree::RootPtr RasterFileModel::_CreateTileTree(Dgn::Render::SystemP ren
         }
 
     RasterRootPtr rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
+    rasterRoot->SetPickable(true);
     if (!rasterRoot.IsValid())
         {  
         m_loadFileFailed = true;

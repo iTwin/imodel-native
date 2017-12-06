@@ -287,7 +287,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             geomParams.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
             Dgn::TileTree::TriMeshTree::TriMeshList& triMeshList = ((Node*)m_children[nodeId->second].get())->GetGeometry();
-            scene._CreateGeometry(triMeshList, geomParams, renderSys);
+            scene.CreateGeometry(triMeshList, geomParams, renderSys);
             }
         }
 

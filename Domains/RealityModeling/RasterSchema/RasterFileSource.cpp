@@ -97,10 +97,12 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
     params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
     auto texture = GetRenderSystem()->_CreateTexture(m_image, params);
 
-    auto const& root = rasterTile.GetRoot();
-    auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0);
-    rasterTile.m_graphic = GetRenderSystem()->_CreateTile(*texture, rasterTile.GetCorners(), root.GetDgnDb(), gfParams);
-    m_tile->SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+    // ###TODO: is this needed?  auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0);
+    auto& root = rasterTile.GetRoot();
+    Dgn::TileTree::TriMeshTree::TriMesh::CreateParams geomParams;
+    FPoint3d fpts[4]; // local storage for floating point corners
+    geomParams.FromTile(*texture, rasterTile.GetCorners(), fpts, root.GetDgnDb()); // ###TODO: gfParams?
+    root.CreateGeometry(rasterTile.m_meshes, geomParams, GetRenderSystem());
 
     return SUCCESS;
     };

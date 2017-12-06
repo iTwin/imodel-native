@@ -848,7 +848,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
             auto texture = renderTextures.find(texName);
             trimesh.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
-            ((Node*)m_children[nodeId->second].get())->m_meshes.push_front(scene._CreateGeometry(trimesh, renderSys));
+            ((Node*)m_children[nodeId->second].get())->m_meshes.push_front(scene.CreateGeometry(trimesh, renderSys));
             }
         }
 #endif
@@ -962,7 +962,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         }
 
     Dgn::TileTree::TriMeshTree::TriMeshList triMeshList;
-    scene._CreateGeometry(triMeshList, trimesh, renderSys);
+    scene.CreateGeometry(triMeshList, trimesh, renderSys);
     for (auto& meshEntry : triMeshList)
         {
         m_meshes.push_front(meshEntry);

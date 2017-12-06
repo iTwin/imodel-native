@@ -40,7 +40,7 @@ struct TileId
 //! The root of a multi-resolution raster.
 // @bsiclass                                                    Mathieu.Marchand  9/2016
 //=======================================================================================
-struct RasterRoot : Dgn::TileTree::Root
+struct RasterRoot : Dgn::TileTree::TriMeshTree::Root
 {
 public:
     //=======================================================================================
@@ -117,7 +117,7 @@ struct RasterTile : Dgn::TileTree::Tile
 protected:
     TileId m_id;                                            //! tile id 
     Dgn::Render::GraphicBuilder::TileCorners m_corners;    //! 4 corners of tile, in world coordinates
-    Dgn::Render::GraphicPtr m_graphic;                      //! the texture for this tile.
+    Dgn::TileTree::TriMeshTree::TriMeshList m_meshes;
 
     bool m_reprojected = true;                              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
 
@@ -135,7 +135,7 @@ public:
     //! 4 corners of tile, in world coordinates
     Dgn::Render::GraphicBuilder::TileCorners const& GetCorners() const {return m_corners;}
 
-    bool _HasGraphics() const override { return IsReady() && m_graphic.IsValid(); }
+    bool _HasGraphics() const override;
 
     bool _HasChildren() const override { return m_id.resolution > 0; }
 
