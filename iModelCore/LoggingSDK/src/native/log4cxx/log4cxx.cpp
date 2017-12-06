@@ -64,6 +64,8 @@ class LoggerMap
         ILogProviderContext * getProviderContext ( Logger* pLogger )
             {
             assert ( NULL != pLogger );
+            if (NULL == pLogger)
+                return NULL;
             return reinterpret_cast<ILogProviderContext *>(pLogger);
             };
 
@@ -367,10 +369,12 @@ ILogProviderContext** ppContext
     {
     assert ( NULL != ppContext );
     assert ( NULL != m_pMap );
+    if (NULL == m_pMap)
+        return ERROR;
 
     LoggerPtr logger = m_pMap->getLogger ( nameSpace );
 
-    assert ( logger != NULL );
+    assert ( NULL != logger );
 
     *ppContext = m_pMap->getProviderContext ( logger );
 
@@ -409,10 +413,14 @@ const wchar_t*             msg
     assert ( NULL != msg );
 
     assert ( NULL != m_pMap );
+    if (NULL == m_pMap)
+        return;
 
     LoggerPtr logger = m_pMap->getLogger ( context );
 
-    assert ( logger != NULL );
+    assert ( NULL != logger );
+    if (NULL == logger)
+        return;
 
     logger->log ( translateSeverity(sev), msg );
     }
@@ -456,12 +464,18 @@ SEVERITY            sev
 )
     {
     assert ( NULL != context );
+    if (NULL == context)
+        return false;
 
     assert ( NULL != m_pMap );
+    if (NULL == m_pMap)
+        return false;
 
     LoggerPtr logger = m_pMap->getLogger ( context );
 
-    assert ( logger != NULL );
+    assert ( NULL != logger );
+    if (NULL == logger)
+        return false;
 
     return logger->isEnabledFor ( translateSeverity(sev) );
     }
@@ -532,6 +546,11 @@ unsigned int  valueSize
     assert ( NULL != attribName );
     assert ( NULL != attribValue );
 
+    if (NULL == attribName)
+        return ERROR;
+    if (NULL == attribValue)
+        return ERROR;
+
     if ( 0 == wcscmp ( attribName, CONFIG_OPTION_CONFIG_FILE ) )
         {
         wcsncpy ( attribValue,  m_configFile.c_str(), valueSize-1 );
@@ -566,7 +585,6 @@ ILogProvider* InstanceLoggingProvider( void )
     {
     return new Log4cxxProvider();
     }
-
 
 }
 
