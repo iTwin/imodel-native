@@ -1695,7 +1695,7 @@ void Root::_OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
     // Note that currently we consider drawing outside of the project extents to be illegal.
     // Therefore we do not attempt to regenerate tiles to include geometry previously outside the extents, or exclude geometry previously within them.
     auto rootTile = static_cast<TileP>(GetRootTile().get());
-    if (Is3d() && nullptr != rootTile)
+    if (Is3d() && nullptr != rootTile && !m_ignoreChanges)
         {
         // ###TODO: What about non-spatial 3d models?
         Transform tfToTile;
