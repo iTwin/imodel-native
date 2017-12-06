@@ -2028,6 +2028,13 @@ public:
     //! Gets the default presentation Unit of this KindOfQuantity.
     Formatting::FormatUnitSet GetDefaultPresentationUnit() const { return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; };
     ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
+
+    //! Gets the specified FormatUnitSet to use to format the Quantity.
+    //! @param[in]  fusId  The name(or alias) of the FUS to return.
+    //! @param[in]  useAlias  If true the fusId specifies an alias, else it defines FUS name.
+    //! @return pointer to FormatUnitSet if found else nullptr is returned.
+    ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(Utf8CP fusId, bool useAlias) const;
+
     ECOBJECTS_EXPORT Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const;
 
     //! Adds the FormatUnitSet to the list of presentation Units.

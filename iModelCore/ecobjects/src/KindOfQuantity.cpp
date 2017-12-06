@@ -343,6 +343,30 @@ Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) cons
         return &m_persistenceFUS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  12/2017
+//---------------------------------------------------------------------------------------
+Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(Utf8CP inFusId, bool useAlias) const
+    {
+    if (!inFusId)
+        return nullptr;
+    Utf8String fusId(inFusId);
+
+    for (Formatting::FormatUnitSetCR fus : m_presentationFUS)
+        {
+        if (fus.HasProblem())
+            continue;
+
+        if (fusId.Equals(fus.ToText(useAlias)))
+            return &fus;
+        }
+
+    if (fusId.Equals(m_persistenceFUS.ToText(useAlias)))
+        return &m_persistenceFUS;
+
+    return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 @bsimethod                                David.Fox-Rabinovitz      06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
