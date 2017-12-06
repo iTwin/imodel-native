@@ -178,7 +178,7 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::IsChangeSummaryCacheAttached() const { return m_pimpl->GetChangeSummaryManager().IsChangeSummaryCacheAttached(); }
+bool ECDb::IsChangeSummaryCacheAttached() const { return m_pimpl->GetChangeSummaryManager().IsChangeSummaryCacheAttachedAndValid(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017

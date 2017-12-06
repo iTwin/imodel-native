@@ -55,7 +55,14 @@ bool DbTableSpace::Exists(ECDbCR ecdb, Utf8CP tableSpace)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle       12/2017
 //---------------------------------------------------------------------------------------
-bool DbTableSpace::IsAttachedECDb(ECDbCR ecdb) const { return IsAttached() && DbUtilities::TableExists(ecdb, TABLE_Schema, m_name.c_str()); }
+//static
+bool DbTableSpace::IsAttachedECDbFile(ECDbCR ecdb, Utf8CP tableSpace) 
+    {
+    if (IsMain(tableSpace) || IsTemp(tableSpace))
+        return false;
+
+    return DbUtilities::TableExists(ecdb, TABLE_Schema, tableSpace);
+    }
 
 //****************************************************************************************
 // DbUtilities

@@ -22,6 +22,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDBCHANGE_CLASS_InstanceChange "InstanceChange"
 #define ECDBCHANGE_CLASS_PropertyValueChange "PropertyValueChange"
 
+#define TABLE_ChangeSummary "change_" ECDBCHANGE_CLASS_ChangeSummary
+
 #define FILEEXT_ChangeSummaryCache L".changesummaries"
 
 //=======================================================================================
@@ -33,6 +35,8 @@ struct ChangeSummaryManager final
         ECDbCR m_ecdb;
         ChangeSummaryExtractor m_extractor;
         mutable std::unique_ptr<ChangedValueSqlFunction> m_changedValueSqlFunction;
+        //static non-POD must not be deleted (Bentley guideline)
+        static ProfileVersion const* s_expectedCacheVersion;
 
         //not copyable
         ChangeSummaryManager(ChangeSummaryManager const&) = delete;
@@ -46,10 +50,17 @@ struct ChangeSummaryManager final
 
         BentleyStatus Extract(ECInstanceKey& summaryKey, BeSQLite::IChangeSet&, ECDb::ChangeSummaryExtractOptions const&) const;
 
+        //! Expected version of the ChangeSummary Cache file (which always matches the version of the ECDbChangeSummaries ECSchema)
+        static ProfileVersion const& GetExpectedCacheVersion() { return *s_expectedCacheVersion; }
         static BeFileName DetermineCachePath(ECDbCR);
         static BeFileName DetermineCachePath(BeFileNameCR ecdbPath);
 
-        bool IsChangeSummaryCacheAttached() const { return DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ChangeSummaries); }
+        //! This only checks whether a file with the change summary alias was attached. It could be any file though.
+        //! Use IsChangeSummaryCacheAttached to find out whether the attached file is a valid change summary cache file
+        bool ChangeSummaryTableSpaceExists() const { return DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ChangeSummaries); }
+        bool IsChangeSummaryCacheAttachedAndValid(bool logError = false) const;
+        static bool IsChangeSummaryCacheValid(ECDbCR cacheFile, bool logError = false);
+
         DbResult AttachChangeSummaryCacheFile(bool createIfNotExists) const;
 
         ChangeSummaryExtractor const& GetExtractor() const { return m_extractor; }

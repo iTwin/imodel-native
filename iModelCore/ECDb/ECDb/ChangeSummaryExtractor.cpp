@@ -749,9 +749,7 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
 //---------------------------------------------------------------------------------------
-ChangeSummaryExtractor::Context::Context(ChangeSummaryManager& manager)
-    : m_manager(manager), m_changeSummaryStmtCache(15), m_wasChangeSummaryFileAttached(m_manager.IsChangeSummaryCacheAttached())
-    {}
+ChangeSummaryExtractor::Context::Context(ChangeSummaryManager& manager) : m_manager(manager), m_changeSummaryStmtCache(15) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
@@ -785,6 +783,13 @@ ChangeSummaryExtractor::Context::~Context()
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
     {
+    if (m_manager.ChangeSummaryTableSpaceExists())
+        {
+        m_wasChangeSummaryFileAttached = m_manager.IsChangeSummaryCacheAttachedAndValid(true);
+        if (!m_wasChangeSummaryFileAttached)
+            return BE_SQLITE_ERROR;
+        }
+
     if (m_wasChangeSummaryFileAttached)
         {
         DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ChangeSummaries);
@@ -804,7 +809,14 @@ DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
         }
 
     //Must open the cache file with "DoNotAttach" to avoid that a cache to the cache is being created
-    return m_changeSummaryECDb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::ReadWrite).Set(ECDb::ChangeSummaryCacheMode::DoNotAttach));
+    DbResult r = m_changeSummaryECDb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::ReadWrite).Set(ECDb::ChangeSummaryCacheMode::DoNotAttach));
+    if (BE_SQLITE_OK != r)
+        return r;
+
+    if (!ChangeSummaryManager::IsChangeSummaryCacheValid(m_changeSummaryECDb, true))
+        return BE_SQLITE_ERROR;
+
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------

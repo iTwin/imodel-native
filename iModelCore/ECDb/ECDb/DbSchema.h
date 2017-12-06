@@ -456,6 +456,7 @@ public:
 private:
     DbTableId m_id;
     Utf8String m_name;
+    DbTableSpace const& m_tableSpace;
     Type m_type;
     ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
@@ -479,7 +480,7 @@ private:
     static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
-    DbTable(DbTableId id, Utf8StringCR name, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
+    DbTable(DbTableId id, Utf8StringCR name, DbTableSpace const&, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
     bool operator==(DbTable const& rhs) const;
@@ -489,10 +490,8 @@ public:
     DbTableId GetId() const { BeAssert(m_id.IsValid() && "Must not call DbTable::GetId on unpersisted DbTable"); return m_id; }
     void SetId(DbTableId id) { BeAssert(!m_id.IsValid()); BeAssert(id.IsValid()); m_id = id; }
 
-    //!@remarks A DbTable is unique with an ECDb connection just by its name. It does not need
-    //! the DB schema name to make it unique. I.e. tables in the TEMP namespace or in an attached
-    //! database may not have the same name as in the MAIN namespace
     Utf8StringCR GetName() const { return m_name; }
+    DbTableSpace const& GetTableSpace() const { return m_tableSpace; }
     Type GetType() const { return m_type; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
@@ -573,11 +572,12 @@ public:
                     const_iterator& operator++() { m_it++; return *this; }
                 };
         private:
+            DbTableSpace const& m_tableSpace;
             mutable std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> m_tableMapByName;
             mutable bmap<DbTableId, DbTable const*> m_cacheById;
 
         public:
-            TableCollection() {}
+            explicit TableCollection(DbTableSpace const& tableSpace) : m_tableSpace(tableSpace) {}
 
             DbTable* Add(DbTableId, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
             void Remove(Utf8StringCR tableName) const;
@@ -616,7 +616,7 @@ private:
     CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
 
 public:
-    explicit DbSchema(TableSpaceSchemaManager const& manager) : m_schemaManager(manager) {}
+    explicit DbSchema(TableSpaceSchemaManager const&);
     ~DbSchema() {}
 
     //! Create a table with a given name or if name is null a name will be generated

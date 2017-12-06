@@ -19,6 +19,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
+DbSchema::DbSchema(TableSpaceSchemaManager const& manager) : m_schemaManager(manager), m_tables(manager.GetTableSpace()) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
 DbTable const* DbSchema::FindTable(Utf8StringCR name) const
     {
     DbTable const* table = m_tables.Get(name);
@@ -811,7 +816,13 @@ DbTable* DbSchema::TableCollection::Add(DbTableId tableId, Utf8StringCR name, Db
         return nullptr;
         }
 
-    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(tableId, name, tableType, exclusiveRootClassId, parentTable);
+    if (parentTable != nullptr && parentTable->GetTableSpace() != m_tableSpace)
+        {
+        BeAssert(false && "Parent table must be in same table space as this DbSchema object");
+        return nullptr;
+        }
+
+    std::unique_ptr<DbTable> table = std::make_unique<DbTable>(tableId, name, m_tableSpace, tableType, exclusiveRootClassId, parentTable);
     if (tableType == DbTable::Type::Existing)
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
@@ -877,8 +888,8 @@ void DbSchema::TableCollection::Remove(Utf8StringCR tableName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   05/2016
 //---------------------------------------------------------------------------------------
-DbTable::DbTable(DbTableId id, Utf8StringCR name, Type type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
-    : m_id(id), m_name(name), m_type(type), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable)
+DbTable::DbTable(DbTableId id, Utf8StringCR name, DbTableSpace const& tableSpace, Type type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable)
+    : m_id(id), m_name(name), m_tableSpace(tableSpace), m_type(type), m_exclusiveRootECClassId(exclusiveRootClass), m_linkNode(*this, parentTable)
     {
     if (m_type != Type::Existing && m_type != Type::Virtual)
         m_sharedColumnNameGenerator = DbSchemaNameGenerator(GetSharedColumnNamePrefix(m_type));
@@ -898,7 +909,7 @@ bool DbTable::operator==(DbTable const& rhs) const
     if (m_id.IsValid() && rhs.m_id.IsValid())
         return m_id == rhs.m_id;
 
-    return m_name.EqualsIAscii(rhs.m_name);
+    return m_name.EqualsIAscii(rhs.m_name) && m_tableSpace == rhs.m_tableSpace;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1206,9 +1217,9 @@ BentleyStatus DbTable::LinkNode::Validate() const
                 Type type = m_children[0]->m_table.GetType();
                 for (size_t i = 1; i < m_children.size(); i++)
                     {
-                    if (m_children[i]->m_table.GetType() != type)
+                    if (m_children[i]->m_table.GetType() != type || m_children[i]->m_table.GetTableSpace() != m_table.GetTableSpace())
                         {
-                        BeAssert(false && "All sibling tables must be of the same type");
+                        BeAssert(false && "All sibling tables must be of the same type and be in the same table space as the primary table");
                         return ERROR;
                         }
                     }
@@ -1239,6 +1250,12 @@ BentleyStatus DbTable::LinkNode::Validate() const
                 if (m_children.size() > 1 || m_children[0]->m_table.GetType() != Type::Overflow)
                     {
                     BeAssert(false && "Joined table can only have a single child table at most and it must be an overflow table");
+                    return ERROR;
+                    }
+
+                if (m_children[0]->m_table.GetTableSpace() != m_table.GetTableSpace())
+                    {
+                    BeAssert(false && "Joined table and overflow table must be in the same table space");
                     return ERROR;
                     }
                 }

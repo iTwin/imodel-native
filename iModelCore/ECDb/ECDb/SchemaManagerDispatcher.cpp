@@ -32,10 +32,7 @@ TableSpaceSchemaManager const* SchemaManager::Dispatcher::GetManager(Utf8CP tabl
 
     auto it = m_managers.find(tableSpace.GetName());
     if (it == m_managers.end())
-        {
-        m_ecdb.GetImpl().Issues().Report("Failed to get schema information. The specified table space '%s' does not exist or is not attached.", tableSpaceName);
         return nullptr;
-        }
 
     return it->second.get();
     }

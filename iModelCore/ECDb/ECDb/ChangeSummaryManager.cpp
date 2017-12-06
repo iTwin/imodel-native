@@ -18,22 +18,112 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
+//Must match version of ECDbChangeSummaries ECSchema:
+//ProfileVersion::Major == ECSchema VersionMajor
+//ProfileVersion::Minor == ECSchema VersionWrite
+//ProfileVersion::Sub1 == ECSchema VersionMinor
+//static
+ProfileVersion const* ChangeSummaryManager::s_expectedCacheVersion = new ProfileVersion(1, 0, 0, 0);
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Krischan.Eberle     11/2017
+//---------------------------------------------------------------------------------------
 BentleyStatus ChangeSummaryManager::Extract(ECInstanceKey& summaryKey, BeSQLite::IChangeSet& changeset, ECDb::ChangeSummaryExtractOptions const& options) const
     {
     BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
     return m_extractor.Extract(summaryKey, const_cast<ChangeSummaryManager&>(*this), changeset, options);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+bool ChangeSummaryManager::IsChangeSummaryCacheAttachedAndValid(bool logError) const
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM " TABLESPACE_ChangeSummaries ".meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChangeSummaries "'"))
+        {
+        if (logError)
+            m_ecdb.GetImpl().Issues().Report("Change summary cache file is not attached or another file has been attached with the same table space (" TABLESPACE_ChangeSummaries ")");
+
+        return false; //if file is not attached or not an ECDb file
+        }
+
+    if (stmt.Step() != BE_SQLITE_ROW)
+        {
+        if (logError)
+            m_ecdb.GetImpl().Issues().Report("Attached file with table space '" TABLESPACE_ChangeSummaries "' is not a Change Summary cache file.");
+
+        return false;
+        }
+
+    const int versionDigit1 = stmt.GetValueInt(0);
+    const int versionDigit2 = stmt.GetValueInt(1);
+    const int versionDigit3 = stmt.GetValueInt(2);
+
+    if (versionDigit1 == (int) s_expectedCacheVersion->GetMajor() && versionDigit2 == (int) s_expectedCacheVersion->GetMinor() &&  versionDigit3 == (int) s_expectedCacheVersion->GetSub1())
+        return true;
+
+    if (logError)
+        m_ecdb.GetImpl().Issues().Report("Attached file is a Change Summary cache file with a mismatching version. Expected cache file version: %s. Actual version: %d.%d.%d", 
+                                         s_expectedCacheVersion->ToString().c_str(), versionDigit1, versionDigit2, versionDigit3);
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+//static
+bool ChangeSummaryManager::IsChangeSummaryCacheValid(ECDbCR cacheECDb, bool logError)
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(cacheECDb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChangeSummaries "'"))
+        {
+        if (logError)
+            cacheECDb.GetImpl().Issues().Report("Invalid Change summary cache file '%s' : File is not an ECDb file.", cacheECDb.GetDbFileName());
+
+        return false; //if file is not attached or not an ECDb file
+        }
+
+    if (stmt.Step() != BE_SQLITE_ROW)
+        {
+        //it is an ECDb file but not a change summary cache (because it doesn't have the change summary ECSchema)
+        if (logError)
+            cacheECDb.GetImpl().Issues().Report("Invalid Change summary cache file '%s'.", cacheECDb.GetDbFileName());
+
+        return false;
+        }
+
+    const int versionDigit1 = stmt.GetValueInt(0);
+    const int versionDigit2 = stmt.GetValueInt(1);
+    const int versionDigit3 = stmt.GetValueInt(2);
+
+    if (versionDigit1 == (int) s_expectedCacheVersion->GetMajor() && versionDigit2 == (int) s_expectedCacheVersion->GetMinor() && versionDigit3 == (int) s_expectedCacheVersion->GetSub1())
+        return true;
+
+    if (logError)
+        cacheECDb.GetImpl().Issues().Report("Invalid Change summary cache file '%s' : Mismatching versions. Expected cache file version: %s. Actual version: %d.%d.%d",
+                                            cacheECDb.GetDbFileName(), s_expectedCacheVersion->ToString().c_str(), versionDigit1, versionDigit2, versionDigit3);
+
+    return false;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExists) const
     {
-    if (IsChangeSummaryCacheAttached())
+    if (ChangeSummaryTableSpaceExists())
+        {
+        if (!IsChangeSummaryCacheAttachedAndValid(true))
+            return BE_SQLITE_ERROR;
+
         return BE_SQLITE_OK;
+        }
 
     BeFileName cachePath = DetermineCachePath(m_ecdb);
-    if (!cachePath.DoesPathExist())
+    const bool cacheAlreadyExisted = cachePath.DoesPathExist();
+    if (!cacheAlreadyExisted)
         {
         if (!createIfNotExists)
             return BE_SQLITE_OK;
@@ -56,6 +146,9 @@ DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExis
         return r;
         }
 
+    if (cacheAlreadyExisted && !IsChangeSummaryCacheAttachedAndValid(true))
+        return BE_SQLITE_ERROR;
+
     return BE_SQLITE_OK;
     }
 
@@ -65,7 +158,7 @@ DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExis
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryManager::CreateCacheFile(BeFileNameCR cachePath) const
     {
-    BeAssert(!IsChangeSummaryCacheAttached());
+    BeAssert(!IsChangeSummaryCacheAttachedAndValid());
 
     if (cachePath.DoesPathExist())
         {

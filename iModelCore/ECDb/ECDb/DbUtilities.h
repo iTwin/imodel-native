@@ -43,8 +43,8 @@ struct DbTableSpace final
         bool IsTemp() const { return m_type == Type::Temp; }
         bool IsAttached() const { return m_type == Type::Attached; }
 
-        bool IsAttachedECDb(ECDbCR) const;
-        
+       
+        static bool IsAttachedECDbFile(ECDbCR, Utf8CP tableSpace);
         static bool Exists(ECDbCR, Utf8CP tableSpace);
         
         static DbTableSpace const& Main() { return s_main; }

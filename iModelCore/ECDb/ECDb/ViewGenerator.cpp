@@ -232,7 +232,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
 
 #define TABLEALIAS_InstanceChange "ic"
-#define TABLE_InstanceChange "change_InstanceChange"
+#define TABLE_InstanceChange ECSCHEMA_ALIAS_ECDbChangeSummaries "_" ECDBCHANGE_CLASS_InstanceChange
 #define TABLE_InstanceChange_COL_Id "Id"
 #define TABLE_InstanceChange_COL_SummaryId "SummaryId"
 #define TABLE_InstanceChange_COL_OpCode "OpCode"
@@ -545,14 +545,14 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
     if (RenderPropertyMaps(viewSql, ctx, requireJoinTo, classMap, contextTable, castAs, PropertyMap::Type::Data | PropertyMap::Type::ECInstanceId | PropertyMap::Type::ECClassId) != SUCCESS)
         return ERROR;
 
-    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName());
+    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot().AppendEscaped(contextTable.GetName());
 
     //Join necessary table for table 
     for(DbTable const* to : requireJoinTo)
         {
         DbColumn const* primaryKey = contextTable.FindFirst(DbColumn::Kind::ECInstanceId);
         DbColumn const* fkKey = to->FindFirst(DbColumn::Kind::ECInstanceId);
-        viewSql.Append(" INNER JOIN ").AppendEscaped(to->GetName());
+        viewSql.Append(" INNER JOIN ").AppendEscaped(to->GetTableSpace().GetName()).AppendDot().AppendEscaped(to->GetName());
         viewSql.Append(" ON ").AppendEscaped(contextTable.GetName()).AppendDot().AppendEscaped(primaryKey->GetName());
         viewSql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).AppendEscaped(to->GetName()).AppendDot().AppendEscaped(fkKey->GetName());
         }
@@ -807,14 +807,14 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             viewSql.AppendSpace().Append(ECDBSYS_PROP_TargetECClassId);
 
         //FROM
-        viewSql.Append(" FROM ").AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetName());
+        viewSql.Append(" FROM ").AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetTableSpace().GetName()).AppendDot().AppendEscaped(partition->GetECInstanceIdColumn().GetTable().GetName());
         DbColumn const& refClassIdCol = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
         DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceIdColumn() : partition->GetTargetECInstanceIdColumn();
         if (refClassIdCol.GetPersistenceType() == PersistenceType::Physical)
             {
             DbColumn const* idColumn = refClassIdCol.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
             BeAssert(idColumn != nullptr);
-            viewSql.Append(" INNER JOIN ").AppendEscaped(refClassIdCol.GetTable().GetName());
+            viewSql.Append(" INNER JOIN ").AppendEscaped(refClassIdCol.GetTable().GetTableSpace().GetName()).AppendDot().AppendEscaped(refClassIdCol.GetTable().GetName());
             if (isSelf)
                 {
                 viewSql.AppendSpace().Append(referencedEndAlias).Append(" ON ");
@@ -1049,7 +1049,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         viewSql.AppendComma().Append(dataPropertySql);
         }
 
-    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName());
+    viewSql.Append(" FROM ").AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot().AppendEscaped(contextTable.GetName());
     return SUCCESS;
     }
 
@@ -1389,16 +1389,9 @@ NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSql() const
         }
 
     NativeSqlBuilder sql(" INNER JOIN ");
-    sql.AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetName().c_str())
-        .AppendSpace()
-        .AppendEscaped(GetSqlTableAlias())
-        .Append(" ON ")
-        .AppendEscaped(GetSqlTableAlias())
-        .AppendDot()
-        .AppendEscaped(m_primaryECInstanceIdCol->GetName().c_str())
-        .Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo))
-        .AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName().c_str());
-
+    sql.AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetTableSpace().GetName()).AppendDot().AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetName()).AppendSpace();
+    sql.AppendEscaped(GetSqlTableAlias()).Append(" ON ").AppendEscaped(GetSqlTableAlias()).AppendDot().AppendEscaped(m_primaryECInstanceIdCol->GetName());
+    sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName());
     return sql;
     }
 

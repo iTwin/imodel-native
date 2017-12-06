@@ -296,6 +296,7 @@ public:
     //! @{
 
     //! Determines whether the ChangeSummary cache file is attached to this %ECDb file or not.
+    //! @return true if the ChangeSummary cache file is attached and valid. false otherwise
     //! @see @ref ECDbChangeSummaries
     ECDB_EXPORT bool IsChangeSummaryCacheAttached() const;
 
