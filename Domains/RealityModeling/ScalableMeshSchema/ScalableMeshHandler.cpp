@@ -534,7 +534,7 @@ TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Sys
  +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNode::_WantDebugRangeGraphics() const
     {
-    static bool s_debugRange = true;
+    static bool s_debugRange = false;
     return s_debugRange;
     }
 
@@ -573,47 +573,6 @@ bool SMNode::IsNotLoaded() const
     return false;
     }
 */
-
-/*---------------------------------------------------------------------------------**//**
- * Draw this node.
- * @bsimethod                                                    Mathieu.St-Pierre  08/17
- +---------------+---------------+---------------+---------------+---------------+------*/
-void SMNode::_DrawGraphics(Dgn::TileTree::DrawArgsR args) const
-    {
-    static bool s_debugTexture = false;
-    if (!s_debugTexture)
-        {
-        T_Super::_DrawGraphics(args);
-        return;
-        }
-
-    if (_WantDebugRangeGraphics())
-        AddDebugRangeGraphics(args);
-
-    for (auto& mesh : m_meshes)
-        {
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateSceneGraphic();
-
-        GraphicBuilder::TileCorners corners;
-        DPoint3d rangeCorners[8];
-        m_range.Get8Corners(rangeCorners);
-
-        memcpy(&corners.m_pts[0], &rangeCorners[4], sizeof(DPoint3d));
-        memcpy(&corners.m_pts[1], &rangeCorners[5], sizeof(DPoint3d));
-        memcpy(&corners.m_pts[2], &rangeCorners[6], sizeof(DPoint3d));
-        memcpy(&corners.m_pts[3], &rangeCorners[7], sizeof(DPoint3d));
-
-        auto& geom = static_cast<SMGeometry&>(*mesh);
-
-        GraphicParams params;
-        params.SetLineColor(ColorDef::Blue());
-        graphic->ActivateGraphicParams(params);
-        graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-        graphic->AddTile(*geom.m_texture, corners);
-
-        args.m_graphics.Add(*graphic->Finish());
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
@@ -1002,7 +961,12 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
                 
         }
 
-    m_meshes.push_front(scene._CreateGeometry(trimesh, renderSys));
+    Dgn::TileTree::TriMeshTree::TriMeshList triMeshList;
+    scene._CreateGeometry(triMeshList, trimesh, renderSys);
+    for (auto& meshEntry : triMeshList)
+        {
+        m_meshes.push_front(meshEntry);
+        }
 
     delete [] trimesh.m_points;
     delete [] trimesh.m_vertIndex;
@@ -1260,6 +1224,16 @@ void ScalableMeshModel::ClearAllDisplayMem()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshModel::SetClip(Dgn::ClipVectorCP clip)
+    {
+    m_clip = clip;
+    if (m_root.IsValid())
+        static_cast<SMSceneP>(m_root.get())->SetClip(clip);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
@@ -1332,6 +1306,7 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
     if (SUCCESS != scene->LoadScene())
         return nullptr;
 
+    scene->SetClip(m_clip.get());
     return scene.get();
     }
 
@@ -2594,7 +2569,7 @@ void ScalableMeshModel::GetActiveClipSetIds(bset<uint64_t>& allShownIds)
     allShownIds = clips;
     }
 
-IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile, ModelSpatialClassifiersCP classifiers)
+IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile, ClipVectorCP clip, ModelSpatialClassifiersCP classifiers)
     {
     /*
           BeFileName smtFileName;
@@ -2614,6 +2589,20 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 
     RefCountedPtr<ScalableMeshModel> model(new ScalableMeshModel(DgnModel::CreateParams(db, classId, modeledElement.GetElementId())));
 
+    if (nullptr != clip)
+        model->SetClip(ClipVector::CreateCopy(*clip).get());
+
+    if (nullptr != classifiers)
+        model->SetClassifiers(*classifiers);
+
+    if (openFile)
+        {
+        model->OpenFile(smFilename, db);
+        }
+    else
+        {
+        model->SetFileNameProperty(smFilename);
+        }
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
     model->OpenFile(smFilename, db);
@@ -2729,6 +2718,9 @@ void ScalableMeshModel::_OnSaveJsonProperties()
 
     m_properties.ToJson(val);
 
+    if (m_clip.IsValid())
+        val[json_clip()] = m_clip->ToJson();
+
     if (!m_classifiers.empty())
         val[json_classifiers()] = m_classifiers.ToJson();
 
@@ -2753,6 +2745,9 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     Json::Value val(GetJsonProperties(json_scalablemesh()));
 
     m_properties.FromJson(val);
+
+    if (val.isMember(json_clip()))
+        m_clip = ClipVector::FromJson(val[json_clip()]);
 
     if (val.isMember(json_classifiers()))
         m_classifiers.FromJson(val[json_classifiers()]);
