@@ -15,18 +15,18 @@ USING_NAMESPACE_BENTLEY
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Affan.Khan         07/2017
 //---------------------------------------------------------------------------------------
-struct BimChangeTracker : BeSQLite::ChangeTracker
+struct BimConsoleChangeTracker final : BeSQLite::ChangeTracker
     {
-    BimChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
-
+    explicit BimConsoleChangeTracker(BeSQLite::DbR db) : BeSQLite::ChangeTracker() { SetDb(&db); }
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Continue; }
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Affan.Khan         07/2017
 //---------------------------------------------------------------------------------------
-struct BimChangeSet : BeSQLite::ChangeSet
+struct BimConsoleChangeSet final : BeSQLite::ChangeSet
     {
+    BimConsoleChangeSet() : BeSQLite::ChangeSet() {}
     ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }
     };
 
@@ -62,7 +62,8 @@ struct SessionFile
 
     private:
         Type m_type;
-        std::unique_ptr<BimChangeTracker> m_changeTracker;
+        std::unique_ptr<BimConsoleChangeTracker> m_changeTracker;
+
         virtual BeSQLite::EC::ECDb* _GetECDbHandle() const = 0;
         virtual BeSQLite::Db& _GetBeSqliteHandle() const { BeAssert(_GetECDbHandle() != nullptr); return *_GetECDbHandle(); }
         
@@ -88,9 +89,9 @@ struct SessionFile
         BeSQLite::Db& GetHandleR() const { return _GetBeSqliteHandle(); }
 
         bool TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>&) const;
-        bool EnableTracking(bool val);
-        bool IsTracking() const;
-        BimChangeTracker* GetTracker() const { return m_changeTracker.get(); }
+        bool EnableTracking(bool enable);
+        bool IsTracking() const { return m_changeTracker != nullptr && m_changeTracker->IsTracking(); }
+        BimConsoleChangeTracker* GetTracker() const { return m_changeTracker.get(); }
         Type GetType() const { return m_type; }
         Utf8CP TypeToString() const { return TypeToString(m_type); }
         static Utf8CP TypeToString(Type type);

@@ -54,7 +54,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 26 && "Command was added or removed, please update the HelpCommand accordingly.");
     BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -69,6 +69,8 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".attach")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".detach")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".change")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
@@ -531,6 +533,197 @@ void RollbackCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         BimConsole::WriteLine("Rolled current transaction back and restarted it.");
     }
 
+
+
+//******************************* AttachCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+Utf8String AttachCommand::_GetUsage() const
+    {
+    return " .attach <file path> <table space>     Attaches the specified file to the currently open file.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+void AttachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    const size_t switchArgIndex = 0;
+    if (args.size() != 2)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    Utf8CP filePath = args[0].c_str();
+    if (!BeFileName::DoesPathExist(WString(filePath, BentleyCharEncoding::Utf8).c_str()))
+        {
+        BimConsole::WriteErrorLine("File to attach does not exist: %s", filePath);
+        return;
+        }
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().AttachDb(filePath, args[1].c_str()))
+        {
+        BimConsole::WriteErrorLine("Failed to attach file %s as table space %s: %s", filePath, args[1].c_str(),
+                                   session.GetFile().GetHandle().GetLastError().c_str());
+        return;
+        }
+
+    BimConsole::WriteLine("Attached file %s as table space %s.", filePath, args[1].c_str());
+    }
+
+//******************************* DetachCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+Utf8String DetachCommand::_GetUsage() const
+    {
+    return " .detach <table space>          Detaches the table space and its backing file";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    const size_t switchArgIndex = 0;
+    if (args.size() != 1)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().DetachDb(args[0].c_str()))
+        {
+        BimConsole::WriteErrorLine("Failed to detach table space %s and backing file: %s", args[0].c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+        return;
+        }
+
+    BimConsole::WriteLine("Detached table space %s and backing file.", args[0].c_str());
+    }
+
+//******************************* ChangeCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan     11/2017
+//---------------------------------------------------------------------------------------
+Utf8String ChangeCommand::_GetUsage() const
+    {
+    return " .change tracking [on|off]      Enable / disable change tracking.\r\n"
+        "         attachcache            attaches (and creates if necessary) the change summary cache file.\r\n"
+        "         createsummary          creates a change summary from the current changes.\r\n";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan     11/2017
+//---------------------------------------------------------------------------------------
+void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    if (!session.IsECDbFileLoaded(true))
+        return;
+
+    const std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+    if (args.size() != 1 && args.size() != 2)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (args[0].EqualsIAscii("tracking"))
+        {
+        if (args.size() == 1)
+            {
+            BimConsole::WriteLine("Change tracking is %s.", session.GetFile().IsTracking() ? "on" : "off");
+            return;
+            }
+
+        const bool on = args[1].EqualsIAscii("on");
+        if (on && session.GetFile().IsTracking())
+            {
+            BimConsole::WriteLine("Change tracking is already on.");
+            return;
+            }
+
+        if (!on && !session.GetFile().IsTracking())
+            {
+            BimConsole::WriteLine("Change tracking is already off.");
+            return;
+            }
+
+        session.GetFileR().EnableTracking(on);
+        return;
+        }
+
+    if (args[0].EqualsIAscii("attachcache"))
+        {
+        if (session.GetFileR().GetECDbHandle()->IsChangeSummaryCacheAttached())
+            {
+            BimConsole::WriteLine("Change summary cache file has already been attached.");
+            return;
+            }
+
+        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeSummaryCache())
+            {
+            BimConsole::WriteErrorLine("Failed to attach change summary cache.");
+            return;
+            }
+
+        BimConsole::WriteLine("Attach change summary cache.");
+        return;
+        }
+
+    if (args[0].EqualsIAscii("createsummary"))
+        {
+        if (!session.GetFileR().GetECDbHandle()->IsChangeSummaryCacheAttached())
+            {
+            BimConsole::WriteErrorLine("Failed to extract change summary. Change summary file is not attached. Make sure to attach it first.");
+            return;
+            }
+
+        BimConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
+        if (tracker == nullptr)
+            {
+            BimConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
+            return;
+            }
+
+        if (!tracker->HasChanges())
+            {
+            BimConsole::WriteErrorLine("No changes tracked.");
+            return;
+            }
+
+        BimConsoleChangeSet changeset;
+        if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
+            {
+            BimConsole::WriteErrorLine("Failed to retrieve changeset.");
+            return;
+            }
+
+        ECInstanceKey changeSummaryKey;
+        if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, changeset) != SUCCESS)
+            {
+            BimConsole::WriteErrorLine("Failed to extract change summary.");
+            return;
+            }
+
+        BimConsole::WriteLine("Successfully extracted ChangeSummary (Id: %s).", changeSummaryKey.GetInstanceId().ToString());
+        return;
+        }
+
+    BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+    }
 //******************************* ImportCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -1649,120 +1842,7 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
     }
 
 
-//******************************* ChangeCommand ******************
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Affan.Khan     11/2017
-//---------------------------------------------------------------------------------------
-Utf8String ChangeCommand::_GetUsage() const
-    {
-    return " .change tracking [on|off] | summary create\r\n\r\n"
-        COMMAND_USAGE_IDENT "Allow user to enable or disable change tracking\r\n";
-    COMMAND_USAGE_IDENT "While change tracking is enable user can also create a summary.\r\n";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Affan.Khan     11/2017
-//---------------------------------------------------------------------------------------
-void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
-    {
-    if (!session.IsFileLoaded(true))
-        return;
-
-    if (session.GetFile().GetType() == SessionFile::Type::BeSQLite)
-        {
-        BimConsole::WriteErrorLine("Only Bim and ECDb file are supported");
-        return;
-        }
-
-    const std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
-    if (args.empty())
-        {
-        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    if (args[0].EqualsIAscii("tracking"))
-        {
-        if (args.size() == 1)
-            {
-            BimConsole::WriteLine("Tracking : %s", session.GetFile().IsTracking() ? "on" : "off");
-            }
-        else if (args.size() == 2)
-            {
-            bool tracking = false;
-            if (args[1].EqualsIAscii("on"))
-                {
-                if (session.GetFile().IsTracking())
-                    {
-                    BimConsole::WriteLine("Tracking is already enabled");
-                    return;
-                    }
-                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(true) ? "on" : "off");
-                return;
-                }
-            else if (args[1].EqualsIAscii("off"))
-                {
-                if (!session.GetFile().IsTracking())
-                    {
-                    BimConsole::WriteLine("Tracking is already disabled");
-                    return;
-                    }
-
-                BimConsole::WriteLine("Tracking : %s", session.GetFileR().EnableTracking(false) ? "on" : "off");
-                return;
-                }
-            else
-                {
-                BimConsole::WriteErrorLine("Expecting argument 'on' or 'off'");
-                return;
-                }
-            }
-        }
-    else if (args[0].EqualsIAscii("summary"))
-        {
-        if (args.size() != 2)
-            {
-            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-            return;
-            }
-        else if (!args[1].EqualsIAscii("create"))
-            {
-            BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-            return;
-            }
-        else
-            {
-            if (session.GetFileR().GetTracker() == nullptr)
-                {
-                BimConsole::WriteErrorLine("Tracking is not switched 'on'");
-                return;
-                }
-
-            if (!session.GetFileR().GetTracker()->HasChanges())
-                {
-                BimConsole::WriteErrorLine("Tracker has no changes");
-                return;
-                }
-
-            BimChangeSet changeset;
-            if (changeset.FromChangeTrack(*session.GetFileR().GetTracker()) != BE_SQLITE_OK)
-                {
-                BimConsole::WriteErrorLine("Failed to extract changes from tracker");
-                return;
-                }
-
-            ECInstanceKey changeSummaryKey;
-            if (session.GetFileR().GetECDbHandleP()->ExtractChangeSummary(changeSummaryKey, changeset) != SUCCESS)
-                {
-                BimConsole::WriteErrorLine("Failed to extract change summary");
-                return;
-                }
-
-            BimConsole::WriteLine("ChangeSummary extracted successfully [Id=%s]", changeSummaryKey.GetInstanceId().ToString());
-            }
-        }
-    }
 
 //******************************* SchemaStatsCommand ******************
 

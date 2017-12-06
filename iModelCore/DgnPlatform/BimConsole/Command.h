@@ -46,23 +46,6 @@ struct Command
 
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                                   Affan.Khan    11/2017
-//---------------------------------------------------------------------------------------
-struct ChangeCommand final : public Command
-    {
-    private:
-        Utf8String _GetName() const override { return ".change"; }
-        Utf8String _GetUsage() const override;
-        void _Run(Session&, Utf8StringCR args) const override;
-    public:
-         ChangeCommand()
-            : Command()
-            {}
-
-        ~ChangeCommand() {}
-    };
-//| 
-//---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
 struct HelpCommand final : public Command
@@ -297,6 +280,50 @@ struct RollbackCommand final : public Command
     public:
         RollbackCommand() : Command() {}
         ~RollbackCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    12/2017
+//---------------------------------------------------------------------------------------
+struct AttachCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".attach"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        AttachCommand() : Command() {}
+        ~AttachCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    12/2017
+//---------------------------------------------------------------------------------------
+struct DetachCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".detach"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        DetachCommand() : Command() {}
+        ~DetachCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Affan.Khan    11/2017
+//---------------------------------------------------------------------------------------
+struct ChangeCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".change"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+    public:
+        ChangeCommand(): Command() {}
+        ~ChangeCommand() {}
     };
 
 //---------------------------------------------------------------------------------------

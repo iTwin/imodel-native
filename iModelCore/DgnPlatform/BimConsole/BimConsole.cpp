@@ -81,24 +81,14 @@ Utf8CP SessionFile::TypeToString(Type type)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        03/2017
 //---------------------------------------------------------------------------------------
-bool SessionFile::EnableTracking(bool val)
+bool SessionFile::EnableTracking(bool enable)
     {
     if (m_changeTracker == nullptr)
-        m_changeTracker = std::unique_ptr<BimChangeTracker>(new BimChangeTracker(GetHandleR()));
+        m_changeTracker = std::make_unique<BimConsoleChangeTracker>(GetHandleR());
 
-    return m_changeTracker->EnableTracking(val);
+    return m_changeTracker->EnableTracking(enable);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Affan.Khan        03/2017
-//---------------------------------------------------------------------------------------
-bool SessionFile::IsTracking() const
-    {
-    if (m_changeTracker == nullptr)
-        return false;
-
-    return m_changeTracker->IsTracking();
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    03/2017
 //---------------------------------------------------------------------------------------
@@ -153,7 +143,7 @@ bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& 
 void BimConsole::Setup()
     {
     WriteLine(" --------------------------------------------------------------------------- ");
-    WriteLine(" BimConsole.exe v1.0");
+    WriteLine(" BimConsole v1.0");
     WriteLine(" Copyright (c) Bentley Systems 2017. All rights reserved. www.Bentley.com.");
     WriteLine(" ----------------------------------------------------------------------------");
     WriteLine();
@@ -170,9 +160,11 @@ void BimConsole::Setup()
     auto metadataCommand = std::make_shared<MetadataCommand>();
     AddCommand(metadataCommand);
     AddCommand(".meta", metadataCommand); //add same command with alternative command name
-    AddCommand(std::make_shared<ChangeCommand>());
     AddCommand(std::make_shared<CommitCommand>());
     AddCommand(std::make_shared<RollbackCommand>());
+    AddCommand(std::make_shared<AttachCommand>());
+    AddCommand(std::make_shared<DetachCommand>());
+    AddCommand(std::make_shared<ChangeCommand>());
     AddCommand(std::make_shared<ImportCommand>());
     AddCommand(std::make_shared<ExportCommand>());
     AddCommand(std::make_shared<ParseCommand>());
