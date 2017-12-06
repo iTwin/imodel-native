@@ -714,7 +714,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         {
         }
 
-    ~NodeAddonDgnDb() {}
+    ~NodeAddonDgnDb() 
+        {
+        TearDownPresentationManager();
+        }
 
     DgnDbR GetDgnDb() {return *m_dgndb;}
 
@@ -734,6 +737,14 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
         m_connections.NotifyConnectionOpened(*m_dgndb);
+        }
+
+    void TearDownPresentationManager()
+        {
+        if (m_presentationManager == nullptr)
+            return;
+        IECPresentationManager::RegisterImplementation(nullptr);
+        m_presentationManager.reset();
         }
 
     Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NodeUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
@@ -1236,6 +1247,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     void CloseDgnDb(const Napi::CallbackInfo& info)
         {
+        TearDownPresentationManager();
         AddonUtils::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
         }
