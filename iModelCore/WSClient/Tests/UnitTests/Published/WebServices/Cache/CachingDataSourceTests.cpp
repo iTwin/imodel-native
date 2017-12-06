@@ -1922,7 +1922,7 @@ TEST_F(CachingDataSourceTests, GetObject_ObjectNotCached_RetrievesRemoteObjectAn
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(objectId, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
-    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::CachedOrRemoteData, IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, CachingDataSource::DataOrigin::CachedOrRemoteData)->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     }
 
@@ -3371,7 +3371,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseNotCachedBack
     txn.Commit();
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::Status::DataNotCached, result.GetError().GetStatus());
@@ -3405,7 +3405,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgro
 
     auto backgroundSync = SyncNotifier::Create();
 
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
@@ -3438,7 +3438,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgro
 
     auto backgroundSync = SyncNotifier::Create();
 
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::CachedData, result.GetValue().GetOrigin());
@@ -3468,7 +3468,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgro
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(ICachingDataSource::DataOrigin::CachedData, result.GetValue().GetOrigin());
@@ -3495,7 +3495,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataNetworkErrorsBackgroundSync_D
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync))->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
 
@@ -3521,7 +3521,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataNotModifiedBackgroundSync_Doe
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
 
@@ -3535,11 +3535,8 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataNotModifiedBackgroundSync_Doe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataBackgroundSync_DoesNotSyncInBackground)
     {
-
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
-    //auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
     auto ds = CreateMockedCachingDataSource(nullptr, cache);
-    //auto ds = GetTestDataSourceV1();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3553,10 +3550,10 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataBackgroundSync_DoesNotSyncInB
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
-    EXPECT_CALL(*cache, ReadInstance(_, _, _)).WillOnce(DoAll(SetArgReferee<1>("instance"), Return(CacheStatus::OK)));
+    EXPECT_CALL(*cache, ReadInstance(_, _)).WillOnce(DoAll(SetArgReferee<1>("instance"), Return(CacheStatus::OK)));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
 
@@ -3587,7 +3584,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseCache
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
 
@@ -3609,7 +3606,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCa
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync))->GetResult();
 
     ASSERT_FALSE(result.IsSuccess());
 
@@ -3634,7 +3631,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCa
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::CachedOrRemoteData, backgroundSync))->GetResult();
     ASSERT_FALSE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -3664,7 +3661,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseCachedAndNetw
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync))->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
 
@@ -3689,7 +3686,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseNotCachedAndN
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync))->GetResult();
     ASSERT_FALSE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -3717,7 +3714,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataNotModifiedBackground
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubWSObjectsResponseNotModified()))));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync))->GetResult();
     ASSERT_TRUE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
@@ -3745,7 +3742,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataBackgroundSync_DoesNo
         .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     auto backgroundSync = SyncNotifier::Create();
-    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync), IDataSourceCache::JsonFormat::Raw)->GetResult();
+    auto result = ds->GetObject(objectId, ICachingDataSource::RetrieveOptions(CachingDataSource::DataOrigin::RemoteOrCachedData, backgroundSync))->GetResult();
     ASSERT_TRUE(result.IsSuccess());
 
     auto backgroundSyncResult = backgroundSync->OnComplete()->GetResult();
