@@ -9166,4 +9166,43 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
         }
     }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Muhammad Hassan                     04/16
+    //+---------------+---------------+---------------+---------------+---------------+------
+    TEST_F(SchemaUpgradeTestFixture, UpdateClass_AddStructProperty)
+        {
+        SchemaItem schemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECStructClass typeName='ST' modifier='None'>"
+            "       <ECProperty propertyName='Size' typeName='int' readOnly='false' />"
+            "   </ECStructClass>"
+            "   <ECEntityClass typeName='Foo' modifier='None' >"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "   </ECEntityClass>"
+            "</ECSchema>");
+
+        ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+        BeFileName filePath(m_ecdb.GetDbFileName());
+        m_ecdb.CloseDb();
+
+        Utf8CP editedSchemaXml =
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+            "   <ECStructClass typeName='ST' modifier='None'>"
+            "       <ECProperty propertyName='Size' typeName='int' readOnly='false' />"
+            "   </ECStructClass>"
+            "   <ECEntityClass typeName='Foo' modifier='None' >"
+            "       <ECProperty propertyName='P1' typeName='int' />"
+            "       <ECStructProperty propertyName='S' typeName='ST'/>"
+            "   </ECEntityClass>"
+            "</ECSchema>";
+
+        m_updatedDbs.clear();
+        AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Adding StructProperty is supported");
+        }
 END_ECDBUNITTESTS_NAMESPACE
