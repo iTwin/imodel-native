@@ -240,9 +240,13 @@
     </Part>
 
     <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
-    <Part Name="L10N-UnitsXliffs-en" OnlyPlatforms="x64"
+    <Part
+        Name="L10N-UnitsXliffs-en"
+        OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
-        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/Units/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10N-Units/ -dL10N_XLIFF_LANG_DIRECTORY=en">
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/Units/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10N-Units/ -dL10N_XLIFF_LANG_DIRECTORY=en"
+        >
+        <RequiredRepository>l10N-Units</RequiredRepository>
         <SubPart PartName="UnitsDll"/>
     </Part>
 

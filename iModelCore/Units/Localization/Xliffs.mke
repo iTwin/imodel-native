@@ -13,12 +13,5 @@ SQLANG_CHeader  = $(_MakeFilePath)xliffs/Units.xliff.h
 SQLANG_Xliff    = $(OutputRootDir)build/Units/Xliffs/Units_en.xliff
 %include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
 
-%include $(SrcRoot)Units/mki/Units.mki
-    
-baseDir  = $(_MakeFilePath)
-
-$(OutputRootDir)build/Units/Xliffs/UnitLabels_en.xliff: $(baseDir)xliffs/UnitLabels_en.xliff
-    $(copyCmd) $(baseDir)xliffs/UnitLabels_en.xliff $(OutputRootDir)build/Units/Xliffs/UnitLabels_en.xliff
-
-always:    
-    @CreateSymLinks.py -i -f"$(BuildContext)Delivery/xliffs/UnitLabels_en.xliff=$(OutputRootDir)build/Units/Xliffs/UnitLabels_en.xliff"
+$(ContextDeliveryDir)xliffs/UnitLabels_en.xliff : $(_MakeFilePath)xliffs/UnitLabels_en.xliff
+    $(LinkFirstDepToFirstTarget)
