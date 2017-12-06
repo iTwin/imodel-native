@@ -308,6 +308,12 @@ DGNPLATFORM_EXPORT static Json::Value NavigationPropertyToJson(ECN::ECValue::Nav
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT static ECN::ECValue NavigationPropertyFromJson(JsonValueCR json, DgnDbR db);
 
+/*---------------------------------------------------------------------------------**//**
+*! Get the class id from a string in the form "Schema:ClassName"
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT static DgnClassId DgnClassIdFromJson(JsonValueCR json, DgnDbR db);
+
 };
 
 END_BENTLEY_DGN_NAMESPACE

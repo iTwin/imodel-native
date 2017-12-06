@@ -16,6 +16,20 @@
 #define MODEL_PROP_IsTemplate "IsTemplate"
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModel::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
+    {
+    m_classId = JsonUtils::DgnClassIdFromJson(val[DgnModel::json_classFullName()], db);
+    m_modeledElementId.FromJson(val[DgnModel::json_modeledElement()]);
+    m_isPrivate = false;
+    if (val.isMember(DgnModel::json_isPrivate()))
+        m_isPrivate = val[DgnModel::json_isPrivate()].asBool();
+    if (val.isMember(DgnModel::json_isTemplate()))
+        m_isTemplate = val[DgnModel::json_isTemplate()].asBool();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QuerySubModelId(DgnCodeCR modeledElementCode) const
@@ -737,7 +751,7 @@ void DgnModel::_FromJson(JsonValueR val)
     if (val.isMember(json_isPrivate()))
         m_isPrivate = val[json_isPrivate()].asBool();
     if (val.isMember(json_isTemplate()))
-        m_isPrivate = val[json_isTemplate()].asBool();
+        m_isTemplate = val[json_isTemplate()].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**
