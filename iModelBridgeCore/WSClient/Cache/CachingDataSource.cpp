@@ -784,18 +784,17 @@ AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetObject
 (
 ObjectIdCR objectId,
 RetrieveOptions retrieveOptions,
-IDataSourceCache::JsonFormat format,
 ICancellationTokenPtr ct
 )
     {
     ct = CreateCancellationToken(ct);
 
-    return GetObjectInternal(objectId, retrieveOptions.GetOrigin(), format, ct)->Then<CachingDataSource::ObjectsResult>([=](CachingDataSource::ObjectsResult& result)
+    return GetObjectInternal(objectId, retrieveOptions.GetOrigin(), ct)->Then<CachingDataSource::ObjectsResult>([=](CachingDataSource::ObjectsResult& result)
         {
         if (!result.IsSuccess())
             return result;
 
-        GetObjectInBackgroundIfNeeded(objectId, retrieveOptions, format, result, ct);
+        GetObjectInBackgroundIfNeeded(objectId, retrieveOptions, result, ct);
 
         return result;
         });
@@ -808,7 +807,6 @@ void CachingDataSource::GetObjectInBackgroundIfNeeded
 (
 ObjectIdCR objectId,
 RetrieveOptions retrieveOptions,
-IDataSourceCache::JsonFormat format,
 CachingDataSource::ObjectsResult result,
 ICancellationTokenPtr ct
 )
@@ -831,7 +829,7 @@ ICancellationTokenPtr ct
             return;
             }
 
-        GetObjectInternal(objectId, DataOrigin::RemoteData, format, ct)
+        GetObjectInternal(objectId, DataOrigin::RemoteData, ct)
             ->Then(m_cacheAccessThread, [=](CachingDataSource::ObjectsResult& result)
             {
             if (!result.IsSuccess())

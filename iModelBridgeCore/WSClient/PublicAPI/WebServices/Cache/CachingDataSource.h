@@ -124,7 +124,6 @@ struct CachingDataSource :
             (
             ObjectIdCR objectId,
             DataOrigin origin,
-            IDataSourceCache::JsonFormat format = IDataSourceCache::JsonFormat::Raw,
             ICancellationTokenPtr ct = nullptr
             );
 
@@ -132,7 +131,6 @@ struct CachingDataSource :
             (
             ObjectIdCR objectId,
             RetrieveOptions retrieveOptions,
-            IDataSourceCache::JsonFormat format,
             CachingDataSource::ObjectsResult result,
             ICancellationTokenPtr ct
             );
