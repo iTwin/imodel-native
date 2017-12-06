@@ -391,32 +391,16 @@ struct  MainThreadMark : RefCountedBase
 struct WorkerThreadOuterMark : RefCountedBase
     {
     public:
+
     DGNPLATFORM_EXPORT WorkerThreadOuterMark ();
     DGNPLATFORM_EXPORT ~WorkerThreadOuterMark ();
     };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      09/2017
-*
-*  The WorkerThreadInnerMark should be included once in the worker thread whenever
-*  any Parasolid processing occurs.  It set the partition to the lightweight partition
-*  for this thread and advances the partition mark (PMark) so that will be used to 
-*  roll back if a sever error occurs.
-*                                                    Ray.Bentley      09/2017
-+===============+===============+===============+===============+===============+======*/
-struct WorkerThreadInnerMark : RefCountedBase
-    {
-    private:
-    BeMutexHolder     m_mutexHolder;
-
-    public:
-    DGNPLATFORM_EXPORT WorkerThreadInnerMark ();
-    DGNPLATFORM_EXPORT ~WorkerThreadInnerMark ();
-    };
+static PK_PARTITION_t  GetThreadPartition();
+static void  SetThreadPartitionMark();
     
 typedef  RefCountedPtr<MainThreadMark>          MainThreadMarkPtr;
 typedef  RefCountedPtr<WorkerThreadOuterMark>   WorkerThreadOuterMarkPtr;
-typedef  RefCountedPtr<WorkerThreadInnerMark>   WorkerThreadInnerMarkPtr;
 };
 
 END_BENTLEY_DGN_NAMESPACE

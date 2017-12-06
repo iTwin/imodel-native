@@ -119,11 +119,7 @@ private:
     IBRepEntityPtr      m_entity;
     BeMutex             m_mutex;
 
-    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
-        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
-        {
-        //
-        }
+    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db);
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
@@ -1570,6 +1566,15 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
+        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+    {
+    PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context)
@@ -1577,16 +1582,13 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
     PolyfaceList tilePolyfaces;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
-#if defined(WIP_PMARKS)
-    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
-#endif
 
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
 
     DRange3d entityRange = m_entity->GetEntityRange();
     if (entityRange.IsNull())
-        return tilePolyfaces;
+        return tilePolyfaces;                                                                                                                                                                                                 
 
     double              rangeDiagonal = entityRange.DiagonalDistance();
     static double       s_minRangeRelTol = 1.0e-4;
@@ -1792,10 +1794,6 @@ bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayPara
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
-    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
-#endif
-
     DRange3d range = body.GetEntityRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);

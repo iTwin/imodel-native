@@ -14,6 +14,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
+
 // Define this if you want to generate a root tile containing geometry.
 // By default the root tile is empty unless it would contain relatively few elements, which enables us to:
 //  - reduce the number of elements per top-most tile; and
@@ -743,6 +744,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
     return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
     }
 
+
 #ifdef TILECACHE_DEBUG
 static double s_displayTime = 5.0;   // Every 5 second.
 
@@ -792,15 +794,12 @@ void Display()
 static TileCacheStatistics       s_statistics;
 #endif
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
     PSolidThreadUtil::WorkerThreadOuterMark outerMark;
-#endif
 
     auto& tile = GetElementTile();
 
@@ -1133,7 +1132,7 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     m_cache = model.GetDgnDb().ElementTileCache();
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
+#if defined (BENTLEYCONFIG_PARASOLID) 
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 #endif
 
@@ -1182,10 +1181,8 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
 #if defined (BENTLEYCONFIG_PARASOLID)
     PSolidKernelManager::StartSession();
 
-#if defined(WIP_PMARKS)
     if (s_psolidMainThreadMark.IsNull())
         s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
-#endif
 #endif
 
     RootPtr root = new Root(model, transform, system);
@@ -2066,8 +2063,11 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
 
-#if defined(DISABLE_CLIPPING)
-    isContained = true;
+#ifndef NDEBUG
+    static DgnElementId             s_debugId; // ((uint64_t) 64);
+
+    if (s_debugId.IsValid() && s_debugId != elemId)
+        return;
 #endif
 
     if (isContained)
@@ -2136,6 +2136,25 @@ void MeshGenerator::ClipStrokes(StrokesR strokes) const
     else
         strokes = ClipSegments(strokes);
     }
+
+#ifdef WIP
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PointLists Strokes::ClipToRange(PointLists&& input, DRange3dCR range)
+    {
+    DRange3d    strokesRange = DRange3d::From(input.m_points);
+
+    if (strokesRange.IsContained(range))
+        return input;
+
+    if (!strokesRange.IntersectsWith(range))
+        return PointLists();
+
+    
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
@@ -2771,36 +2790,12 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings 09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
-static bool hasPartOrBRep(GeometrySourceCR source)
-    {
-    Dgn::GeometryCollection collection(source);
-
-    for (auto iter : collection)
-        {
-        if (Dgn::GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType() ||
-            Dgn::GeometryCollection::Iterator::EntryType::GeometryPart == iter.GetEntryType())      
-            return true;
-        }
-
-    return false;
-    }
-#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
-    PSolidThreadUtil::WorkerThreadInnerMarkPtr innerMark;
-    if (hasPartOrBRep(source))
-        innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
-#endif
-
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
     }
