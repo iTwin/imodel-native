@@ -36,17 +36,17 @@ You can build the addon like this:
 
 If you are making changes to the libraries that are used by the addon, such as DgnPlatform.dll, then you must add BuildAll to your build strategy, in order to build and link with your local build, rather than with LKGs, like this:
 
-`bb -s"imodeljs-nodeaddonapi;BuildAll" b`
+`bb -s"iModelJsNodeAddon;BuildAll" b`
 
 To force a rebuild of individual parts, do this:
 
-`bb "imodeljs-nodeaddonapi;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
+`bb "iModelJsNodeAddon;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
 
-The MakePackages part will print a message like this: 
+The MakePackages part will print a message like this:
 
 ``` bat
-npm publish %OutRoot%Winx64\packages\imodeljs-E_1_6_11-WinX64
-npm publish %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
+npm publish %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
+npm publish %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
 npm publish %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
 ```
 
@@ -62,22 +62,9 @@ To test changes to the native code before publishing, you must at a minimum inst
 cd <localjsroot>\imodeljs-core
 cd source\backend
 npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
 cd ..\test
+npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
 npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
-```
-
-Here is the same set of commands in the form of a .bat file:
-
-``` bat
-cd <localjsroot>\imodeljs-core
-cd source\backend
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
-cd ..\test
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-N_8_9-WinX64
 ```
 
 This example is for a Windows node app. Use appropriate paths, as printed by the MakePackages part in your local build.
@@ -91,7 +78,7 @@ Then go back up to the imodeljs-core parent directory and rebuild and run the te
 
 ### Change the Package Version
 
-The package version that is used for both the addon(s) and the corresponding imodeljs-nodeaddonapi is contained in a text file called `%SrcRoot%imodeljs-nodeaddonapi\package_version.txt`. Edit this file to change the version number as appropriate. Don't forget to hg commit and hg push that. 
+The package version that is used for both the addon(s) and the corresponding imodeljs-nodeaddonapi is contained in a text file called `%SrcRoot%imodeljs-nodeaddonapi\package_version.txt`. Edit this file to change the version number as appropriate. Don't forget to hg commit and hg push that.
 
 ### Rebuild the packages
 
@@ -109,27 +96,27 @@ The addon is still specific to a major.minor version of nodejs. (That will chang
 
 ### Get New node-gyp Package
 
-Get the node header files and the .lib for the desired version. 
+Get the node header files and the .lib for the desired version.
 
-If you haven't already, install node-gyp: 
+If you haven't already, install node-gyp:
 `npm install -g node-gyp`
 
-Tell node-gyp to install the version of nodejs that you want. 
+Tell node-gyp to install the version of nodejs that you want.
 `node-gyp install <nodevernum>`
 
-That will install the headers and libs to the .node-gyp directory in your %homedrive%%homepath% directory. Copy the files from the relevant subdirectory to thirdparty\nodejs\node-gyp 
+That will install the headers and libs to the .node-gyp directory in your %homedrive%%homepath% directory. Copy the files from the relevant subdirectory to thirdparty\nodejs\node-gyp
 
 ### Update thirdparty/nodejs/node-gyp
 
 1. Copy that whole directory to `%SrcRoot%thirdparty\nodejs\node-gyp`, creating a new subdirectory with the same name as the origin.
-2. Rename the new subdirectory by prefixing it with "N_" and replacing dots with underscores. 
+2. Rename the new subdirectory by prefixing it with "N_" and replacing dots with underscores.
 
-For example, suppose you want to update to 8.9.2 for node addons. You would copy the `%homedrive%%homepath%.node-gyp\8.9.2` to `%SrcRoot%thirdparty\nodejs\node-gyp`. That would create a subdirectory called `8.9.2`. You would then rename the copy to `N_8_9_2`. 
+For example, suppose you want to update to 8.9.2 for node addons. You would copy the `%homedrive%%homepath%.node-gyp\8.9.2` to `%SrcRoot%thirdparty\nodejs\node-gyp`. That would create a subdirectory called `8.9.2`. You would then rename the copy to `N_8_9_2`.
 
 ### Change Partfiles
 
-Finally, change the PartFiles that refer to the version of the node api that is used to build the addon. 
+Finally, change the PartFiles that refer to the version of the node api that is used to build the addon.
 
-1. Edit `%SrcRoot%thirdparty\nodejs\napi\node-addon-api.mke` and change the value of the macros such as `nodeIncludes` that you see that refer to the version-specific node-gyp includes and libs. 
+1. Edit `%SrcRoot%thirdparty\nodejs\napi\node-addon-api.mke` and change the value of the macros such as `nodeIncludes` that you see that refer to the version-specific node-gyp includes and libs.
 
 2. Edit `%SrcRoot%imodeljs-nodeaddonapi\imodeljs-nodeaddonapi.PartFile.xml` and change the node version that you see in the various `iModelJsNode_node_module` bindings. Note that we specify only major and minor version, not build number.

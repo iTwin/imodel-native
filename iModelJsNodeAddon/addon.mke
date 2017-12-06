@@ -8,7 +8,11 @@
 CLANG_ALLOW_UNDEFINED=1
 %include mdl.mki
 
-appName     = imodeljs_$(NODE_GYP_VER)
+%if !defined(NODE_ADDON_API)
+    %error NODE_ADDON_API must defined to the name of the node-addon-api library that is being used
+%endif
+
+appName     = imodeljs_$(NODE_ADDON_API)
 
 # I get the impression that node addons names should be all lower case. At least, that's what I see out there.
 
@@ -27,7 +31,7 @@ cDefs + -DBUILDING_NODE_EXTENSION
   cDefs + -D_DARWIN_USE_64_BIT_INODE=1
 %endif
 
-o = $(OutputRootDir)Build/iModelJsNodeAddon_$(NODE_GYP_VER)/
+o = $(OutputRootDir)Build/iModelJsNodeAddon_$(NODE_ADDON_API)/
 always:
     !~@mkdir $(o)
 
@@ -37,8 +41,10 @@ always:
 #
 PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 
-always:
-    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljs-nodeaddonapi.package.version.h $(o)imodeljs-nodeaddonapi.package.version.h
+$(o)imodeljs-nodeaddonapi.package.version.h: $(baseDir)/imodeljs-nodeaddonapi.package.version.h
+    $(msg)
+    $(copyCmd) "$<" $@
+    python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
  
 cIncs + -I$(o)
 
@@ -101,7 +107,7 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libnode-addon-api.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)lib$(NODE_ADDON_API).a
 
 THIN_ARCHIVE_NAME = libiModelJsNodeAddon.inputs.a
 
@@ -112,6 +118,7 @@ DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
 %ifdef __apple
 # OSX Specific library
 LINKER_LIBRARIES  + -framework CoreFoundation
+LINKER_LIBRARIES  + -framework CFNetwork
 # This is a hack, Mac is not set up with the various context definitions like linux
 BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
 %endif
@@ -124,7 +131,7 @@ BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
 
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
 
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)node-addon-api$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)$(NODE_ADDON_API)$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECPresentation$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
@@ -140,15 +147,9 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(
 #----------------------------------------------------------------------
 #   Deliver the shared library using the .node extension
 #----------------------------------------------------------------------
-$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_ADDON_API)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
     $(LinkFirstDepToFirstTarget)
 	
-#----------------------------------------------------------------------
-# Deliver package.json. That contains the package version number.
-#----------------------------------------------------------------------
-always:
-    ~linkfile "$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/package.json=$(baseDir)/package.json"
-    
 #----------------------------------------------------------------------
 # Deliver Presentation Rules
 #----------------------------------------------------------------------

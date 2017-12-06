@@ -1,5 +1,8 @@
 {
-  "name": "@bentley/imodeljs-nodeaddonapi",
+  "name": "@bentley/imodeljs-${NODE_VERSION_CODE}-${NODE_OS}-${NODE_CPU}",
+  "os": "${NODE_OS}",
+  "cpu":  "${NODE_CPU}",
+  ${NODE_ENGINES}
   "license": "UNLICENSED",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
@@ -9,6 +12,5 @@
   "author": {
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
-  },
-  "types": "./imodeljs-nodeaddonapi.d.ts"
+  }
 }

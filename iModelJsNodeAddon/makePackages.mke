@@ -13,20 +13,21 @@ baseDir = $(_MakeFilePath)
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     Platform=Windows
-    PlatformAndArch=WinX64
+    NodeOS=win32
+    NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
     Platform=Linux
-    PlatformAndArch=LinuxX64
+    NodeOS=linux
+    NodeCPU=X64
 %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
-    Platform=MacOS
-    PlatformAndArch=DarwinX64
+    Platform=Darwin
+    NodeOS=darwin
+    NodeCPU=X64
 %else
     %error iModelJsNodeAddon is not available for this platform
 %endif
 
 # NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
-
-PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
     always:
@@ -36,13 +37,6 @@ PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 %endif
 
 always:
-    | -- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
+    |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(_MakeFilePath)makeImodelJsNativePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(PlatformAndArch) $(PACKAGE_VERSION)
-    @$(mkDirCmd) $(o)imodeljs-nodeaddonapi > $(o)sink
-    @$(copyCmd) $(baseDir)/*.d.ts $(o)imodeljs-nodeaddonapi > $(o)sink
-    @$(copyCmd) $(baseDir)/*.md $(o)imodeljs-nodeaddonapi > $(o)sink
-    python $(bsiScripts)RegexReplaceInFile.py "\$$\{PACKAGE_VERSION\}" "$(PACKAGE_VERSION)" $(baseDir)/imodeljs-nodeaddonapi.package.json $(o)imodeljs-nodeaddonapi/package.json
-    |npm publish $(o)imodeljs-nodeaddonapi
-
-
+    python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir)

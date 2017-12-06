@@ -120,11 +120,32 @@ declare class NodeAddonDgnDb {
   updateElementSync(elemProps: string): IModelStatus;
 
   /**
-   * Insert an element.
+   * Delete an element.
    * @param elemIdJson The element's ID, in stringified JSON format
    * @return non-zero error status if the operation failed.
    */
   deleteElementSync(elemIdJson: string): IModelStatus;
+
+  /**
+   * Insert a model.
+   * @param modelProps The model's properties, in stringified JSON format.
+   * @return non-zero error status if the operation failed.
+   */
+  insertModelSync(modelProps: string): ErrorStatusOrResult<IModelStatus, string>;
+
+  /**
+   * Update a model.
+   * @param modelProps The model's properties, in stringified JSON format.
+   * @return non-zero error status if the operation failed.
+   */
+  updateModelSync(modelProps: string): IModelStatus;
+
+  /**
+   * Delete a model.
+   * @param modelIdJson The model's ID, in stringified JSON format
+   * @return non-zero error status if the operation failed.
+   */
+  deleteModelSync(modelIdJson: string): IModelStatus;
 
   /**
    * Format an element's properties, suitable for display to the user.
