@@ -911,7 +911,29 @@ void Root::DrawInView(SceneContextR context)
 DrawArgs Root::CreateDrawArgs(SceneContextR context)
     {
     auto now = BeTimePoint::Now();
-    return DrawArgs(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    return DrawArgs(context, GetDisplayTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform Root::GetDisplayTransform(RenderContextR context) const
+    {
+    auto transform = _GetTransform(context);
+    if (m_haveDisplayTransform)
+        transform = Transform::FromProduct(transform, m_displayTransform);
+
+    return transform;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::SetDisplayTransform(TransformCP tf)
+    {
+    m_haveDisplayTransform = nullptr != tf;
+    if (m_haveDisplayTransform)
+        m_displayTransform = *tf;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1438,10 +1460,18 @@ void Root::MarkDamaged(DRange3dCR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::SetIgnoreChanges(bool ignore) { m_ignoreChanges = ignore; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(range);
     _OnAddToRangeIndex(range, id);
     }
@@ -1451,6 +1481,9 @@ void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(range);
     _OnRemoveFromRangeIndex(range, id);
     }
@@ -1460,6 +1493,9 @@ void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(oldRange);
     MarkDamaged(newRange);
     _OnUpdateRangeIndex(oldRange, newRange, id);

@@ -1571,7 +1571,9 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
 SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
         : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
     {
+#if defined (BENTLEYCONFIG_PARASOLID)    
     PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1841,6 +1843,9 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     {
     DRange3d range = m_geometries.ComputeRange();
     bool is2d = !range.IsNull() && range.IsAlmostZeroZ();
+
+    // NB: Scale the quantization range slightly to prevent floating-point fuzz from producing positions slightly outside it.
+    range.ScaleAboutCenter(range, 1.0001);
 
     MeshBuilderMap builderMap(tolerance, featureTable, range, is2d);
     if (m_geometries.empty())
