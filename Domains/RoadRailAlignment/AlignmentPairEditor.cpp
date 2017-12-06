@@ -517,11 +517,9 @@ bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
                     pi.InitNoCurve(hzStart);
                     pis.push_back(pi);
                     }
-                else
-                    {
-                    if (GetLinePI(pi, i))
-                        pis.push_back(pi);
-                    }
+
+                if (GetLinePI(pi, i))
+                    pis.push_back(pi);
 
                 //! Unlike other primitives, failure to read a Line PI isn't an error
                 break;
@@ -632,7 +630,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR c
     const DVec3d poi = DVec3d::From(currPI);
 
     // Returns angle between -pi to +pi
-    const double angle = abs(v0.AngleToXY(v1));
+    const double angle = std::abs(v0.AngleToXY(v1));
     if (0.0 == angle)
         {
         ROADRAILALIGNMENT_LOGW("AlignmentPairEditor::BuildArc - null angle");
