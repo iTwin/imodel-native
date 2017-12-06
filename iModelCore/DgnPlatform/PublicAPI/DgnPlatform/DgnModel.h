@@ -719,7 +719,7 @@ public:
     /** @} */
 
     //! Set this model's properties from JavaScript.
-    //! @param props The properties. @note The input object's properties will be moved into and consumed by this model.
+    //! @param opts The properties. @note The input object's properties will be moved into and consumed by this model.
     void FromJson(JsonValueR opts) {return _FromJson(opts);}
 
     Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
