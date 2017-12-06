@@ -1421,8 +1421,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         {
         bool addNormals = facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount(),
              addParams = facetOptions.GetParamsRequired() && 0 == geom.GetParamCount(),
-             addFaceData = addParams && 0 == geom.GetFaceCount(),
-             addEdgeChains = facetOptions.GetEdgeChainsRequired() && 0 == geom.GetEdgeChainCount();
+             addFaceData = addParams && 0 == geom.GetFaceCount();
 
         if (addNormals)
             AddNormals(*polyface, facetOptions);
@@ -1436,8 +1435,8 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
             polyface->Triangulate(3);
 
-        if (addEdgeChains)
-            polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
+        // Not necessary to add edges chains -- edges will be generated from visibility flags later
+        // and decimation will not handle edge chains correctly.
         }
 
     return polyface;

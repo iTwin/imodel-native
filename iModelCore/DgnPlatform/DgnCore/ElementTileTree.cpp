@@ -83,7 +83,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -2050,8 +2050,12 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
+
     if (doDecimate)
+        {
+        BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
+        }
 
 #if defined(DISABLE_EDGE_GENERATION)
     auto edgeOptions = MeshEdgeCreationOptions::NoEdges;
@@ -2674,7 +2678,7 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     try
         {
 #ifndef NDEBUG
-        static DgnElementId             s_debugId; // ((uint64_t) 1099511628078);
+        static DgnElementId             s_debugId; // ((uint64_t) 2877);
 
         if (s_debugId.IsValid() && s_debugId != elemId)
             return;
