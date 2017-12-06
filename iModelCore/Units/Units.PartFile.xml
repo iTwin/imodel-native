@@ -108,8 +108,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="TestsSqlang" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/ECPresentation/SQLang/Units_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+    <Part Name="TestsSqlang" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/Units/SQLang/Units_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
         <SubPart PartName="UnitsDll" />
+        <SubPart PartName="Units-Xliffs" />
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/Units_en.sqlang.db3</Files>
         </Bindings>
