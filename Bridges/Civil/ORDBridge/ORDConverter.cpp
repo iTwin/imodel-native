@@ -849,7 +849,7 @@ void ORDConverter::ConvertORDData(Params& params)
     BeFileName dgnFileName = params.iModelBridgeParamsCP->GetInputFileName();
 
     DgnV8Api::DgnFileStatus v8Status;
-    auto dgnFilePtr = converterLib.OpenDgnV8File(v8Status, params.dgnFileName);
+    auto dgnFilePtr = converterLib.OpenDgnV8File(v8Status, dgnFileName);
     if (dgnFilePtr.IsNull())
         return;
 
