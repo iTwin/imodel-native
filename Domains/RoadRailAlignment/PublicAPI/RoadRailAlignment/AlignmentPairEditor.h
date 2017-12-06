@@ -325,15 +325,17 @@ public:
     // Allow the move end of a spiral, will ONLY affect the length, returns null if invalid
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr MoveES (size_t index, DPoint3dCR toPt, AlignmentPI* pOutPI = nullptr) const;
 
-    // update the radius of a particular PI index.  Will return nullptr if the radius is too large
-    ROADRAILALIGNMENT_EXPORT CurveVectorPtr UpdateRadius(size_t index, double radius, AlignmentPI* pOutPI = nullptr, bool validate = true);
+    // Updates the radius of a particular PI or nullptr if the radius is too large
+    // @remarks will only work for ARC or SCS types
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr UpdateRadius(size_t index, double radius, AlignmentPI* pOutPI = nullptr) const;
+    // Updates the length of both spirals
+    // @remarks will only work for SCS or SS types.
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr UpdateSpiralLengths(size_t index, double spiralLength, AlignmentPI* pOutPI = nullptr) const;
+
     // change SCS PI to an Arc, set the spiral length to 0
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr RemoveSpirals(size_t index, AlignmentPI* pOutPI = nullptr) const;
     // change Arc PI to SCS and add the new spiral length, will return nullptr if the resultant curve doesn't work
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr AddSpirals(size_t index, double spiralLength, AlignmentPI* pOutPI = nullptr) const;
-
-    // query for the slope at a given station
-    ROADRAILALIGNMENT_EXPORT virtual double SlopeAtStation (const double& station);
 
     // insert a pi to a horizontal alignment, this method will insert the pi at a location
     // between the to "nearest" PIs
@@ -352,8 +354,11 @@ public:
     ROADRAILALIGNMENT_EXPORT bool GetPI(AlignmentPIR pi, size_t index) const;
 
 
-#if 0
     //////////// Vertical Editing /////////////////////////////
+    // query for the slope at a given station
+    ROADRAILALIGNMENT_EXPORT virtual double SlopeAtStation(const double& station);
+
+#if 0
     // return a vector of points in X,Z format for high and low points on a profile
     ROADRAILALIGNMENT_EXPORT virtual bvector<DPoint3d> CrestAndSagPointsXZ(ZeroSlopePoints zsType = ZeroSlopePoints::BothSagAndCrest);
     // return a vector of station values for high and low points
