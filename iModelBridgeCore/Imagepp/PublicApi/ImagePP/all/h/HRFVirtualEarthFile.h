@@ -102,7 +102,7 @@ public:
     virtual uint64_t                     GetFileCurrentSize(HFCBinStream* pi_pBinStream) const;
 
     //Look ahead method.
-    bool                         CanPerformLookAhead(uint32_t pi_Page) const;
+    bool                         CanPerformLookAhead(uint32_t pi_Page) const override;
     IMAGEPP_EXPORT virtual bool  ForceCancelLookAhead(uint32_t pi_Page);
 
     //This static method indicates if a plain URL can be represented

@@ -87,17 +87,17 @@ protected:
     //--------------------------------------
     //This method is used to determine if the file format supports look ahead
     //by block.
-    virtual bool HasLookAheadByBlock(uint32_t pi_Page) const;
+    virtual bool HasLookAheadByBlock(uint32_t pi_Page) const override;
 
     //This method is used in SetLookAhead to give the list of needed tiles
     //to a derived class, since it knows how to obtain the tiles.
     virtual void RequestLookAhead(uint32_t             pi_Page,
                                  const HGFTileIDList& pi_rBlocks,
-                                 bool                pi_Async);
+                                 bool                pi_Async) override;
 
     //This method is used in SetLookAhead to indicate to a derived class that
     //the current LookAhead has been cancelled.
-    virtual void CancelLookAhead(uint32_t              pi_Page);
+    virtual void CancelLookAhead(uint32_t              pi_Page) override;
 
 private:
     
