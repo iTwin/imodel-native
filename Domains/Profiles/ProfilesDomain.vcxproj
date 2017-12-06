@@ -1,0 +1,121 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BuiltUpProfile.cpp" />
+    <ClCompile Include="BuiltUpProfileComponent.cpp" />
+    <ClCompile Include="ConstantProfile.cpp" />
+    <ClCompile Include="ParametricProfile.cpp" />
+    <ClCompile Include="Profile.cpp" />
+    <ClCompile Include="ProfilesDomain.cpp" />
+    <ClCompile Include="ProfilesDomainUtilities.cpp" />
+    <ClCompile Include="ProfilesModel.cpp" />
+    <ClCompile Include="ProfilesPartition.cpp" />
+    <ClCompile Include="PublishedProfile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Profiles.mke" />
+    <None Include="Profiles.prewire.mke" />
+    <None Include="ProfilesCompileOptions.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Profiles.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="ProfilesDomain.Partfile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\ProfilesDomain\BuiltUpProfile.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\BuiltUpProfileComponent.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ConstantProfile.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ParametricProfile.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\Profile.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomain.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainApi.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainDefinitions.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainUtilities.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesModel.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesPartition.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain\PublishedProfile.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SRCROOT)DgnDomains\Profiles;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\VendorAPI</IncludePath>
+    <NMakeBuildCommandLine>bb -ax64 -p ProfilesDomainDLL b -b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 re ProfilesDomainDLL</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ProfilesDomainDLL -ax64 b -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

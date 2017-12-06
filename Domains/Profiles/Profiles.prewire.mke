@@ -1,0 +1,44 @@
+%include mdl.mki
+
+targetAPIDir = $(BuildContext)PublicAPI/ProfilesDomain/
+
+targetSchemasDir = $(BuildContext)ECSchemas/Domain/
+
+$(targetAPIDir)ProfilesDomainApi.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ProfilesDomainApi.h
+    $(LinkFirstDepToFirstTarget)
+	
+$(targetAPIDir)ProfilesDomainUtilities.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ProfilesDomainUtilities.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)ProfilesDomainDefinitions.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ProfilesDomainDefinitions.h
+    $(LinkFirstDepToFirstTarget)
+    
+$(targetAPIDir)ProfilesDomain.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ProfilesDomain.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)ProfilesPartition.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ProfilesPartition.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)ProfilesModel.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ProfilesModel.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)Profile.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/Profile.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)ConstantProfile.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ConstantProfile.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)BuiltUpProfile.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/BuiltUpProfile.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)BuiltUpProfileComponent.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/BuiltUpProfileComponent.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)ParametricProfile.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/ParametricProfile.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)PublishedProfile.h : $(_MakeFilePath)/PublicAPI/ProfilesDomain/PublishedProfile.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetSchemasDir)Profiles.ecschema.xml : $(_MakeFilePath)/Profiles.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
