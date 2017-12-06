@@ -30,7 +30,6 @@ protected:
     Dgn::DisplayStyle3dPtr CreateDisplayStyle3d(Dgn::DefinitionModelR);
     BentleyStatus Create2dView(Dgn::DefinitionModelR, Dgn::CategorySelectorR, Dgn::DgnModelId, Dgn::DisplayStyle2dR);
     BentleyStatus Create3dView(Dgn::DefinitionModelR, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR);
-    void UpdateProjectExtents(Dgn::SpatialModelR);
     Utf8String ComputeJobSubjectName(Utf8StringCR docId);
     Utf8String ComputeJobSubjectName();
 

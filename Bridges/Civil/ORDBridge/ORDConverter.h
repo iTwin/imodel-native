@@ -18,15 +18,16 @@ struct ORDConverter
 public:
     struct Params
         {
-        Params(BeFileNameCR dgnFileName, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId) :
-            dgnFileName(dgnFileName), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId), spatialDataTransformHasChanged(false)
+        Params(Dgn::iModelBridge::Params const& iModelBridgeParams, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId) :
+            iModelBridgeParamsCP(&iModelBridgeParams), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId), spatialDataTransformHasChanged(false)
             {}
 
-        BeFileName dgnFileName;
+        Dgn::iModelBridge::Params const* iModelBridgeParamsCP;
         Dgn::SubjectCPtr subjectCPtr;
         Dgn::iModelBridgeSyncInfoFile::ChangeDetector* changeDetectorP;
         Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId;
         bool spatialDataTransformHasChanged;
+        bool isCreatingNewDgnDb;
         };
 
 private:
