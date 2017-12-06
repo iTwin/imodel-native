@@ -1063,6 +1063,26 @@ void AlignmentPairEditor_GetPIs()
 
     ASSERT_EQ(AlignmentPI::TYPE_NoCurve, pis[4].GetType());
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469577.74622473511, 2259638.5295264777), pis[4].GetNoCurve()->piPoint);
+
+    CurveVectorPtr hzStartsAndEndsWithArcs = hzWith3Arcs->Clone();
+    hzStartsAndEndsWithArcs->erase(&hzStartsAndEndsWithArcs->front());
+    hzStartsAndEndsWithArcs->erase(&hzStartsAndEndsWithArcs->back());
+
+    // we should only have Arc-Line-Arc-Line-Arc now
+    ASSERT_EQ(5, hzStartsAndEndsWithArcs->size());
+    EXPECT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, hzStartsAndEndsWithArcs->at(0)->GetCurvePrimitiveType());
+    EXPECT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, hzStartsAndEndsWithArcs->at(2)->GetCurvePrimitiveType());
+    EXPECT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, hzStartsAndEndsWithArcs->at(4)->GetCurvePrimitiveType());
+
+    editor = AlignmentPairEditor::Create(*hzStartsAndEndsWithArcs, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    pis = editor->GetPIs();
+    ASSERT_EQ(3, pis.size());
+    for (auto const& pi : pis)
+        {
+        ASSERT_TRUE(nullptr != pi.GetArc());
+        }
     }
 //---------------------------------------------------------------------------------------
 // @betest                              Alexandre.Gagnon                        11/2017
@@ -1357,6 +1377,38 @@ void AlignmentPairEditor_UpdateRadius()
 
     result = editor->UpdateRadius(1, 6000);
     EXPECT_FALSE(result.IsValid()) << "Radius should not fit in this design";
+    }
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_UpdateSpiralLengths()
+    {
+    // Test with 'Line-SCS-Line-SCS-Line-SCS-Line
+    CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
+    ASSERT_TRUE(hzWith3Spirals.IsValid());
+
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    ASSERT_TRUE(editor.IsValid());
+
+    CurveVectorPtr result = editor->UpdateSpiralLengths(0, 12.3456);
+    EXPECT_FALSE(result.IsValid());
+
+    AlignmentPI pi;
+    result = editor->UpdateSpiralLengths(1, 12.3456, &pi);
+    ASSERT_TRUE(result.IsValid());
+    AlignmentPI::SCSInfoCP pSCS = pi.GetSCS();
+    ASSERT_TRUE(nullptr != pSCS);
+    EXPECT_EQ_DOUBLE(12.3456, pSCS->spiral1.length);
+    EXPECT_EQ_DOUBLE(12.3456, pSCS->spiral2.length);
+
+    result = editor->UpdateSpiralLengths(1, 2400);
+    EXPECT_FALSE(result.IsValid()) << "Spiral length shouldn't fit this design";
+
+    result = editor->UpdateSpiralLengths(1, 0.0);
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->UpdateSpiralLengths(1, -1.0);
+    EXPECT_FALSE(result.IsValid());
     }
 //---------------------------------------------------------------------------------------
 // @betest                              Alexandre.Gagnon                        12/2017
@@ -2132,6 +2184,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairTests)
     AlignmentPairEditor_MovePC_MovePT();
     AlignmentPairEditor_MoveBS_MoveES();
     AlignmentPairEditor_UpdateRadius();
+    AlignmentPairEditor_UpdateSpiralLengths();
     AlignmentPairEditor_RemoveSpirals_AddSpirals();
 
 #if 0 //&&AG NEEDSWORK EDITOR
