@@ -185,6 +185,12 @@ private:
 protected:
     void _OnECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) override
         {
+        if (nullptr == m_connections.GetConnection(db))
+            {
+            // don't forward the event if connection is not tracked
+            return;
+            }
+
         folly::via(&m_executor, [&, connectionId = m_connections.GetConnection(db)->GetId(), changes]()
             {
             IConnectionPtr connection = m_connections.GetConnection(connectionId.c_str());
