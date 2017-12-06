@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1813,9 +1813,14 @@ TEST_F(SchemaVersionTest, CreateECVersionTest)
     EXPECT_EQ(ECVersion::V3_1, ecVersion31) << "The ECVersion should have been set to 3.1.";
     EXPECT_STREQ("3.1", ECSchema::GetECVersionString(ecVersion31)) << "The string should be in the major.minor for the provided ECVersion.";
 
-    EXPECT_EQ(ECVersion::Latest, ecVersion31) << "ECVersion Latest should be equal to 3.1, therefore the comparsion should succeed.";
+    ECVersion ecVersion32;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateECVersion(ecVersion32, 3, 2)) << "Creating a 3.2 ECVersion should succeed";
+    EXPECT_EQ(ECVersion::V3_2, ecVersion32) << "The ECVersion should have been set to 3.2.";
+    EXPECT_STREQ("3.2", ECSchema::GetECVersionString(ecVersion32)) << "The string should be in the major.minor for the provided ECVersion.";
 
-    EXPECT_STREQ("3.1", ECSchema::GetECVersionString(ECVersion::Latest)) << "ECVersion Latest should be equal to 3.1, therefore the string of it should be equal to 3.1.";
+    EXPECT_EQ(ECVersion::Latest, ecVersion32) << "ECVersion Latest should be equal to 3.2, therefore the comparsion should succeed.";
+
+    EXPECT_STREQ("3.2", ECSchema::GetECVersionString(ECVersion::Latest)) << "ECVersion Latest should be equal to 3.2, therefore the string of it should be equal to 3.2.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1826,26 +1831,32 @@ TEST_F(SchemaVersionTest, CreateSchemaECVersionTest)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The default schema ECVersion should be EC3.1 so this should validate to true.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The default schema ECVersion should be EC3.2 so this should validate to true.";
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The default schema ECVersion should be the latest so this should validate to true.";
     }
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::Latest);
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema was created as the Latest version which is EC3.1 so this should validate to true.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as the Latest version which is EC3.2 so this should validate to true.";
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as the Latest version so this should validate to true.";
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_2);
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2)) << "The schema was created as an EC3.2 schema.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.2 schema so Latest should return true.";
     }
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_1);
     EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema was created as an EC3.1 schema.";
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.1 schema so Latest should return true.";
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.1 schema so it is not the latest.";
     }
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V3_0);
     EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema was created as an EC3.0 schema.";
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.0 schema so it is not the latest";
+    EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC3.0 schema so it is not the latest.";
     }
     {
     ECSchemaPtr schema;
@@ -1880,7 +1891,7 @@ TEST_F(SchemaVersionTest, ChangeOriginalECXmlVersion)
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
     EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
+    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMinor());
     ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(2, 0));
     EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
     EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());

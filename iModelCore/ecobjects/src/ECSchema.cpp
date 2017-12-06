@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -523,6 +523,8 @@ ECObjectsStatus ECSchema::CreateECVersion(ECVersion &ecVersion, uint32_t ecMajor
         ecVersion = ECVersion::V3_0;
     else if (ecMajorVersion == 3 && ecMinorVersion == 1)
         ecVersion = ECVersion::V3_1;
+    else if (ecMajorVersion == 3 && ecMinorVersion == 2)
+        ecVersion = ECVersion::V3_2;
     else
         return ECObjectsStatus::InvalidECVersion;
 
@@ -553,6 +555,8 @@ Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
             return "3.0";
         case ECVersion::V3_1:
             return "3.1";
+        case ECVersion::V3_2:
+            return "3.2";
         }
     return nullptr;
     }
@@ -631,7 +635,7 @@ bool ECSchema::Validate(bool resolveIssues)
             LOG.warningv("ECSchema did not pass EC3.1 validation.");
         }
     else
-        m_ecVersion = ECVersion::V3_1;
+        m_ecVersion = ECVersion::Latest;
 
     return true;
     }
@@ -1268,6 +1272,7 @@ ECObjectsStatus ECSchema::SetECVersion(ECVersion ecVersion)
         case ECVersion::V2_0:
         case ECVersion::V3_0:
         case ECVersion::V3_1:
+        case ECVersion::V3_2:
             m_ecVersion = ecVersion;
             status = ParseECVersion(m_originalECXmlVersionMajor, m_originalECXmlVersionMinor, ecVersion);
             break;

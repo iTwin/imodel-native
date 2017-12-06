@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -285,7 +285,8 @@ enum class ECVersion : uint32_t
     V2_0 = (0x02 << 16),
     V3_0 = (0x03 << 16),
     V3_1 = (0x03 << 16 | 0x01),
-    Latest = V3_1
+    V3_2 = (0x03 << 16 | 0x02),
+    Latest = V3_2
     };
 
 /*---------------------------------------------------------------------------------**//**

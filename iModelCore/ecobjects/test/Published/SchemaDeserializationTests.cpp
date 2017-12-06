@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaDeserializationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -37,7 +37,7 @@ struct SchemaDeserializationTest : ECTestFixture
     void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
         {
         ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1));
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2));
 
         EXPECT_STREQ ("Widgets", schema->GetName ().c_str ());
         EXPECT_STREQ ("wid", schema->GetAlias ().c_str ());

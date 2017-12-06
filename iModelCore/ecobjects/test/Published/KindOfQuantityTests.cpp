@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/KindOfQuantityTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -336,7 +336,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityIsAppli
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_2));
 
     ECClassCP aClass = schema->GetClassCP("A");
     ASSERT_NE(nullptr, aClass) << "Could not find 'A' class";
@@ -378,7 +378,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityInherit
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::Latest));
 
     for (auto const& pClass : schema->GetClasses())
         {
