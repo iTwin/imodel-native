@@ -338,7 +338,7 @@ bool AlignmentPairEditor::LoadSpiralData(AlignmentPI::Spiral& spiral, ICurvePrim
     DSpiral2dPlacementCP pPlacement = primitiveSpiral.GetSpiralPlacementCP();
     DSpiral2dBaseCP pSpiral = pPlacement->spiral;
 
-    DVec3d startVector, endVector;
+    
     primitiveSpiral.GetStartEnd(spiral.startPoint, spiral.endPoint, spiral.startVector, spiral.endVector);
     spiral.startPoint.z = 0.0;
     spiral.endPoint.z = 0.0;
@@ -1778,7 +1778,6 @@ CurveVectorPtr AlignmentPairEditor::MoveBSorES(size_t index, DPoint3dCR toPt, bo
     if (index == 0 || index >= (pis.size() - 1))
         return nullptr; // todo start and end?
 
-    AlignmentPI::Arc& arc = (AlignmentPI::TYPE_Arc == piType) ? pis[index].GetArcP()->arc : pis[index].GetSCSP()->arc;
     AlignmentPI::Spiral& spiral1 = (AlignmentPI::TYPE_SCS == piType) ? pis[index].GetSCSP()->spiral1 : pis[index].GetSSP()->spiral1;
     AlignmentPI::Spiral& spiral2 = (AlignmentPI::TYPE_SCS == piType) ? pis[index].GetSCSP()->spiral2 : pis[index].GetSSP()->spiral2;
 
