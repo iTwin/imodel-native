@@ -1230,7 +1230,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, schemaPathnameStrObj);
         RETURN_IF_HAD_EXCEPTION_SYNC
         BeFileName schemaPathname(schemaPathnameStrObj.c_str(), true);
-        auto stat = AddonUtils::ImportSchema(GetDgnDb(), schemaPathname);
+        auto stat = AddonUtils::ImportSchemaDgnDb(GetDgnDb(), schemaPathname);
         return Napi::Number::New(Env(), (int)stat);
         }
 

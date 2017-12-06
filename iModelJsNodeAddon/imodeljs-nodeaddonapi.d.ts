@@ -86,8 +86,14 @@ declare class NodeAddonDgnDb {
 
   /**
    * Import an EC schema.
+   * There are a number of restrictions when importing schemas into a briefcase. 
+   * When importing into a briefcse, this function will acquire the schema lock. That means that that briefcase must be at the tip of the revision
+   * history in iModelHub. If not, this function will return SchemaLockFailed.
+   * Importing or upgrading a schema into a briefcase must be done in isolation from all other kinds of changes. That means two things:
+   * there must be no pending local changes. All local changes must be pushed to iModelHub. This function will return SchemaImportFailed if that is not true.
+   * Also, the caller must push the results of this function to iModelHub before making other changes to the briefcase.
    * @param schemaPathname The full path to the .xml file in the local file system.
-   * @return non-zero error status if the operation failed.
+   * @return non-zero error status if the operation failed, including SchemaImportFailed if the schema is invalid.
    */
   importSchema(schemaPathname: string): DbResult;
 

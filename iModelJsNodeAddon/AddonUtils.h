@@ -82,6 +82,7 @@ struct AddonUtils
     static JsECDbPtr CreateECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname);
     static JsECDbPtr OpenECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
+    static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
     static BeSQLite::DbResult InsertInstance(Utf8StringR insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::DbResult UpdateInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::DbResult ReadInstance(JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
