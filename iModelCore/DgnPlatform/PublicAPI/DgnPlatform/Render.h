@@ -1898,7 +1898,7 @@ namespace Quantization
 
     inline uint16_t Quantize(double pos, double origin, double scale)
         {
-        double qpos = QuantizeDouble(pos, origin, scale);
+        double qpos = QuantizeDouble(std::max(pos, origin), origin, scale);
         BeAssert(IsInRange(qpos));
         return static_cast<uint16_t>(qpos);
         }
