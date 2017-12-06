@@ -1953,7 +1953,7 @@ namespace Quantization
         void Assign(T const* points, size_t nPoints, Params const& params)
             {
             m_params = params;
-            assign(points, points+nPoints);
+            this->assign(points, points+nPoints);
             }
 
         //! Empty this list and change its quantization parameters

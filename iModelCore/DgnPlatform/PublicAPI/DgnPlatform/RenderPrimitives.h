@@ -611,8 +611,9 @@ struct Strokes
         PointList(bvector<DPoint3d>&& points, DPoint3dCR rangeCenter) : m_startDistance(0.0), m_points(std::move(points)), m_rangeCenter(rangeCenter) { }
         };
 
-
     typedef bvector<PointList> PointLists;
+
+    static PointLists ClipToRange(PointLists&& input, DRange3dCR range);
 
     DisplayParamsCPtr   m_displayParams;
     PointLists          m_strokes;
@@ -623,6 +624,7 @@ struct Strokes
     Strokes(DisplayParamsCR displayParams, bool disjoint, bool isPlanar) : m_displayParams(&displayParams), m_disjoint(disjoint), m_isPlanar(isPlanar) { }
 
     void Transform(TransformCR transform);
+
 };
 
 //=======================================================================================
