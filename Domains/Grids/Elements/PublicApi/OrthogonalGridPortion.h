@@ -30,14 +30,12 @@ public:     //public - non-exported
         DEFINE_T_SUPER (OrthogonalGrid::T_Super::CreateParams);
 
         Dgn::SpatialLocationModelCP m_model;    //TODO: remove, instead use modelId of base CreateParams
-        DVec3d m_normal;
         bool    m_createDimensions;
 
         //! Creates create parameters for orthogonal grid
         //! @param[in] model                        model to create the grid in
         //! @param[in] horizontalCount              horizontal lines count
         //! @param[in] verticalCount                vertical lines count
-        //! @param[in] normal                       perpendicularity plane of this Grid
         //! @param[in] horizontalInterval           distance between horizontal lines
         //! @param[in] verticalInterval             distance between vertical lines
         //! @param[in] length                       length of grid lines
@@ -46,10 +44,9 @@ public:     //public - non-exported
         //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
         //! @param[in] createDimensions             true to create dimensions between planes
         //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
-        CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, DVec3d normal, bool createDimensions, Utf8CP name) :
+        CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, bool createDimensions, Utf8CP name) :
             T_Super (DgnElement::CreateParams (model->GetDgnDb (), model->GetModelId (), QueryClassId (model->GetDgnDb ()), Dgn::DgnCode (model->GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid), modeledElementId, name))),
             m_model (model),
-            m_normal (normal),
             m_createDimensions (createDimensions)
             {}
 
@@ -79,7 +76,6 @@ public:     //public - non-exported
                                     //! @param[in] model                        model to create the grid in
                                     //! @param[in] horizontalCount              horizontal lines count
                                     //! @param[in] verticalCount                vertical lines count
-                                    //! @param[in] normal                       perpendicularity plane of this Grid
                                     //! @param[in] horizontalInterval           distance between horizontal lines
                                     //! @param[in] verticalInterval             distance between vertical lines
                                     //! @param[in] length                       length of grid lines
@@ -89,8 +85,8 @@ public:     //public - non-exported
                                     //! @param[in] createDimensions             true to create dimensions between planes
                                     //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
         StandardCreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int horizontalCount, int verticalCount, double horizontalInterval, double verticalInterval,
-                      double length, double height, DVec3d normal, DVec3d horizontalExtendTranslation, DVec3d verticalExtendTranslation, bool createDimensions, bool extendHeight, Utf8CP name) :
-            T_Super (model, modeledElementId, normal, createDimensions, name),
+                      double length, double height, DVec3d horizontalExtendTranslation, DVec3d verticalExtendTranslation, bool createDimensions, bool extendHeight, Utf8CP name) :
+            T_Super (model, modeledElementId, createDimensions, name),
             m_horizontalCount (horizontalCount),
             m_verticalCount (verticalCount),
             m_horizontalInterval (horizontalInterval),
@@ -111,6 +107,11 @@ public:     //public - non-exported
         };
 private:
 
+    BE_PROP_NAME (DefaultStartExtentX)
+    BE_PROP_NAME (DefaultEndExtentX)
+    BE_PROP_NAME (DefaultStartExtentY)
+    BE_PROP_NAME (DefaultEndExtentY)
+
     static BentleyStatus            ValidateBySurfacesParams (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
     static bool                     AreSurfacesCoplanar (bvector<CurveVectorPtr> const& surfaces);
 
@@ -126,7 +127,6 @@ private:
 
 protected:
     explicit GRIDELEMENTS_EXPORT OrthogonalGrid (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT OrthogonalGrid (T_Super::CreateParams const& params, DVec3d normal);
     friend struct OrthogonalGridHandler;
 
     //! Calculates translation for grid planed needed for grid to be orthogonal
@@ -171,6 +171,39 @@ public:
     //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
     //! @return                     Dgn::RepositoryStatus::Success if no error has occured when rotating the grid
     GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta, bool updateDimensions = false);
+
+    //! Gets Default X start extent of this OrthogonalGrid
+    //! @return DefaultStartExtentX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartExtentX () const { return GetPropertyValueDouble (prop_DefaultStartExtentX ()); }
+
+    //! Sets Default X start extent of this OrthogonalGrid
+    //! @param[in]  staExtentX   new DefaultStartExtentX for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartExtentX (double staExtentX) { SetPropertyValue (prop_DefaultStartExtentX (), staExtentX); };
+
+    //! Gets Default X end extent of this OrthogonalGrid
+    //! @return DefaultEndExtentX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndExtentX () const { return GetPropertyValueDouble (prop_DefaultEndExtentX ()); }
+
+    //! Sets Default X end extent of this OrthogonalGrid
+    //! @param[in]  endExtentX   new DefaultEndExtentX for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndExtentX (double endExtentX) { SetPropertyValue (prop_DefaultEndExtentX (), endExtentX); };
+
+    //! Gets Default Y start extent of this OrthogonalGrid
+    //! @return DefaultStartExtentY of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartExtentY () const { return GetPropertyValueDouble (prop_DefaultStartExtentY ()); }
+
+    //! Sets Default Y start extent of this OrthogonalGrid
+    //! @param[in]  staExtentY   new DefaultStartExtentY for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartExtentY (double staExtentY) { SetPropertyValue (prop_DefaultStartExtentY (), staExtentY); };
+
+    //! Gets Default Y end extent of this OrthogonalGrid
+    //! @return DefaultEndExtentY of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndExtentY () const { return GetPropertyValueDouble (prop_DefaultEndExtentY ()); }
+
+    //! Sets Default Y end extent of this OrthogonalGrid
+    //! @param[in]  endExtentY   new DefaultEndExtentY for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndExtentY (double endExtentY) { SetPropertyValue (prop_DefaultEndExtentY (), endExtentY); };
+
 };
 
 END_GRIDS_NAMESPACE

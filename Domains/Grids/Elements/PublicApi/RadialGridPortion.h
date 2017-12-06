@@ -36,7 +36,6 @@ public:
         double m_circularInterval;
         double m_length;
         double m_height;
-        DVec3d m_normal;
         bool m_extendHeight;    //TODO: Remove, needs to be handled by the tools
 
         //! Creates create parameters for radial grid
@@ -49,7 +48,7 @@ public:
         //! @param[in] height               height of grid surfaces
         //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
         CreateParams(Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
-                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false, DVec3d normal = DVec3d::From(0, 0, 1)) :
+                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false) :
             T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()), Dgn::DgnCode(model->GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_Grid), modeledElementId, name))),
             m_model(model),
             m_planeCount(planeCount),
@@ -58,8 +57,7 @@ public:
             m_circularInterval(circularInterval),
             m_length(length),
             m_height(height),
-            m_extendHeight(extendHeight),
-            m_normal(normal)
+            m_extendHeight(extendHeight)
             {
             }
 
@@ -70,9 +68,15 @@ public:
             : T_Super(params) { }
         };
 
+private:
+
+    BE_PROP_NAME (DefaultStartAngle)
+    BE_PROP_NAME (DefaultEndAngle)
+    BE_PROP_NAME (DefaultStartRadius)
+    BE_PROP_NAME (DefaultEndRadius)
+
 protected:
     explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params, DVec3d normal);
 
 
     static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis);
@@ -87,15 +91,45 @@ public:
     //---------------------------------------------------------------------------------------
     //! Creates an empty radial grid
     //! @param[in]  model   model for the radialgridportion
-    //! @param[in]  normal  perpendicularity plane of this Grid
     //! @return             Radial grid
-    GRIDELEMENTS_EXPORT static RadialGridPtr Create (Dgn::SpatialLocationModelCR model, DVec3d normal);
+    GRIDELEMENTS_EXPORT static RadialGridPtr Create (Dgn::SpatialLocationModelCR model);
 
     //! Creates an empty radial grid
     //! @param[in]  params  create params for this grid portion. See CreateParams
     //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsert (CreateParams params);
 
+    //! Gets default start angle of this RadialGrid
+    //! @return DefaultStartAngle of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartAngle () const { return GetPropertyValueDouble (prop_DefaultStartAngle ()); }
+
+    //! Sets default start angle of this RadialGrid
+    //! @param[in]  staAngle   new DefaultStartAngle for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartAngle (double staAngle) { SetPropertyValue (prop_DefaultStartAngle (), staAngle); };
+
+    //! Gets default end angle of this RadialGrid
+    //! @return DefaultEndAngle of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndAngle () const { return GetPropertyValueDouble (prop_DefaultEndAngle ()); }
+
+    //! Sets default end angle of this RadialGrid
+    //! @param[in]  endAngle   new DefaultEndAngle for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndAngle (double endAngle) { SetPropertyValue (prop_DefaultEndAngle (), endAngle); };
+
+    //! Gets default start radius of this RadialGrid
+    //! @return DefaultStartRadius of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartRadius () const { return GetPropertyValueDouble (prop_DefaultStartRadius ()); }
+
+    //! Sets default start radius of this RadialGrid
+    //! @param[in]  staRadius   new DefaultStartRadius for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartRadius (double staRadius) { SetPropertyValue (prop_DefaultStartRadius (), staRadius); };
+
+    //! Gets default end radius of this RadialGrid
+    //! @return DefaultEndRadius of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndRadius () const { return GetPropertyValueDouble (prop_DefaultEndRadius ()); }
+
+    //! Sets default end radius of this RadialGrid
+    //! @param[in]  endRadius   new DefaultEndRadius for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndRadius (double endRadius) { SetPropertyValue (prop_DefaultEndRadius (), endRadius); };
 };
 
 END_GRIDS_NAMESPACE

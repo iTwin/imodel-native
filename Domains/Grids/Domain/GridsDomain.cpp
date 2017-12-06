@@ -28,7 +28,7 @@ DOMAIN_DEFINE_MEMBERS(GridsDomain)
 GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     {
     RegisterHandler (GridArcSurfaceHandler::GetHandler ());
-    RegisterHandler (GridPlaneSurfaceHandler::GetHandler ());
+    RegisterHandler (GridPlanarSurfaceHandler::GetHandler ());
     RegisterHandler (GridSplineSurfaceHandler::GetHandler ());
 
     RegisterHandler (OrthogonalGridHandler::GetHandler ());

@@ -10,5 +10,5 @@
 
 USING_NAMESPACE_GRIDS
 
-HANDLER_DEFINE_MEMBERS(GridPlaneSurfaceHandler)
+HANDLER_DEFINE_MEMBERS(GridPlanarSurfaceHandler)
 

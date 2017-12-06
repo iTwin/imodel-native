@@ -8,12 +8,12 @@
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlaneSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPlaneSurface::GridPlaneSurface
+GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params
 ) : T_Super(params) 
@@ -24,7 +24,7 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPlaneSurface::GridPlaneSurface
+GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params,
 GridAxisCPtr gridAxis,
@@ -36,7 +36,7 @@ CurveVectorPtr  surfaceVector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas              03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPlaneSurface::GridPlaneSurface
+GridPlanarSurface::GridPlanarSurface
 (
 CreateParams const& params,
 GridAxisCPtr gridAxis,
@@ -48,7 +48,7 @@ ISolidPrimitivePtr surface
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
-bool GridPlaneSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
+bool GridPlanarSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
     {
     DgnExtrusionDetail extrDetail;
     if (!surface->TryGetDgnExtrusionDetail(extrDetail))
@@ -67,14 +67,14 @@ bool GridPlaneSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPlaneSurfacePtr             GridPlaneSurface::Create 
+GridPlanarSurfacePtr             GridPlanarSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
 GridAxisCPtr gridAxis,
 CurveVectorPtr  surfaceVector
 )
     {
-    GridPlaneSurfacePtr surface = new GridPlaneSurface(CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surfaceVector);
+    GridPlanarSurfacePtr surface = new GridPlanarSurface(CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surfaceVector);
 
     if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
         return nullptr;
@@ -85,14 +85,14 @@ CurveVectorPtr  surfaceVector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas              03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridPlaneSurfacePtr             GridPlaneSurface::Create 
+GridPlanarSurfacePtr             GridPlanarSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
 GridAxisCPtr gridAxis,
 ISolidPrimitivePtr surface
 )
     {
-    GridPlaneSurfacePtr gridSurface = new GridPlaneSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridPlanarSurfacePtr gridSurface = new GridPlanarSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
 
     if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
         return nullptr;
@@ -103,7 +103,7 @@ ISolidPrimitivePtr surface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPlane3d                        GridPlaneSurface::GetPlane
+DPlane3d                        GridPlanarSurface::GetPlane
 (
 ) const
     {
@@ -150,7 +150,7 @@ DPlane3d                        GridPlaneSurface::GetPlane
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                        GridPlaneSurface::SetCurveVector
+void                        GridPlanarSurface::SetCurveVector
 (
 CurveVectorR newShape
 )
@@ -179,7 +179,7 @@ CurveVectorR newShape
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas              04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                            GridPlaneSurface::GetGeomIdPlane 
+bool                            GridPlanarSurface::GetGeomIdPlane 
 (
     int geomId, 
     DPlane3dR planeOut
@@ -195,7 +195,7 @@ bool                            GridPlaneSurface::GetGeomIdPlane
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas              04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                            GridPlaneSurface::StretchGeomIdToPlane
+bool                            GridPlanarSurface::StretchGeomIdToPlane
 (
     int geomId, 
     DPlane3dR targetPlane
@@ -208,20 +208,20 @@ bool                            GridPlaneSurface::StretchGeomIdToPlane
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-GridPlaneSurfacePtr GridPlaneSurface::Create
+GridPlanarSurfacePtr GridPlanarSurface::Create
 (
 Dgn::SpatialLocationModelCR model,
 GridAxisCPtr gridAxis, 
 DgnExtrusionDetail extDetail
 )
     {
-    return GridPlaneSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
+    return GridPlanarSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DgnDbStatus      GridPlaneSurface::_Validate
+DgnDbStatus      GridPlanarSurface::_Validate
 (
 ) const
     {

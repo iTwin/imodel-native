@@ -26,24 +26,11 @@ T_Super::CreateParams const& params
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-SketchGrid::SketchGrid
-(
-T_Super::CreateParams const& params,
-DVec3d                      normal
-) : T_Super(params, normal) 
-    {
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SketchGridPtr        SketchGrid::Create
 (
 Dgn::DgnModelCR model,
-DVec3d          normal,
 Utf8CP          name
 )
     {
@@ -54,8 +41,7 @@ Utf8CP          name
                                                                   Placement3d(),
                                                                   Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_Grid),
                                                                                model.GetModeledElementId(),
-                                                                               name)),
-                                 normal);
+                                                                               name)));
     }
 
 
