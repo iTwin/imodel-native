@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include "ECConversion.h"
-#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
-#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
-
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 using namespace BeSQLite::EC;
@@ -955,23 +951,6 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
                     }
                 }
             }
-        }
-
-    Utf8String fileName(context.GetDgnDb().GetFileName().GetFileNameWithoutExtension().c_str());
-    for (auto perSchema = aspectClassNames.begin(); perSchema != aspectClassNames.end(); perSchema++)
-        {
-        Utf8PrintfString aspectSchemaName("%s specific", perSchema->first.c_str());
-        Utf8PrintfString relation("BisCore,%s", perSchema->first.c_str());
-        PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(fileName, 1, 0, true, aspectSchemaName, relation, "", false);
-        ContentModifierP modifier = new ContentModifier("BisCore", "Element");
-        ruleset->AddPresentationRule(*modifier);
-        for (auto aspectClass : perSchema->second)
-            {
-            Utf8PrintfString fullName("%s:%s", perSchema->first.c_str(), aspectClass.c_str());
-            modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "BisCore:ElementOwnsMultiAspects", fullName, "", RelationshipMeaning::SameInstance));
-            }
-        RuleSetEmbedder embedder(context.GetDgnDb());
-        embedder.Embed(*ruleset);
         }
 
     return BSISUCCESS;

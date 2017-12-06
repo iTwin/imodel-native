@@ -110,6 +110,23 @@ public:
     static bool TryFind(DgnDbR db, DgnV8EhCR el, ECClassName const&);
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct ElementClassToAspectClassMapping : NonCopyableClass
+    {
+private:
+    ElementClassToAspectClassMapping();
+    ~ElementClassToAspectClassMapping();
+
+    static bool TryFind(DgnDbR db, DgnClassId elementId, ECN::ECClassId aspectId);
+
+public:
+    static BentleyStatus CreateTable(DgnDbR db);
+    static BentleyStatus Insert(DgnDbR db, DgnClassId elementId, Utf8CP elementSchemaName, Utf8CP elementClassName, ECN::ECClassId aspectId, Utf8CP aspectSchemaName, Utf8CP aspectClassName);
+    static void CreatePresentationRules(DgnDbR db);
+    };
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2015
 //+===============+===============+===============+===============+===============+======

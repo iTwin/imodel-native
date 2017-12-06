@@ -1181,6 +1181,14 @@ void RootModelConverter::UpdateCalculatedProperties()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void RootModelConverter::CreatePresentationRules()
+    {
+    ElementClassToAspectClassMapping::CreatePresentationRules(GetDgnDb());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   03/2015
 //---------------------------------------------------------------------------------------
 BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
@@ -1505,6 +1513,8 @@ void RootModelConverter::_FinishConversion()
     m_linkConverter->PurgeOrphanedLinks();
 
     EmbedSpecifiedFiles();
+
+    CreatePresentationRules();
 
     for (auto f : m_finishers)
         {

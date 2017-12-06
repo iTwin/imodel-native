@@ -971,6 +971,7 @@ protected:
     ElementConverter*   m_elementConverter = nullptr;
     ElementAspectConverter* m_elementAspectConverter;
     bvector<IFinishConversion*> m_finishers;
+    bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -2472,6 +2473,8 @@ protected:
     void ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR, TransformCR);
     //! @private
     void UpdateCalculatedProperties();
+    //! @private
+    void CreatePresentationRules();
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
     void FindV8DrawingsAndSheets();

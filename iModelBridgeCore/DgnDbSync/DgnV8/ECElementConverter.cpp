@@ -6,10 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
-#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
-#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
-
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 using namespace BeSQLite::EC;
