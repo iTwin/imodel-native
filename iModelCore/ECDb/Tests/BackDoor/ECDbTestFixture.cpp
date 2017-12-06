@@ -179,10 +179,20 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
     BeFileName ecdbFilePath = BuildECDbPath(effectiveFileName.c_str());
     if (ecdbFilePath.DoesPathExist())
         {  // Delete any previously created file
-        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(ecdbFilePath.GetName()))
+        if (BeFileNameStatus::Success != ecdbFilePath.BeDeleteFile())
             {
             EXPECT_FALSE(true) << "Could not delete ecdb file " << ecdbFilePath.GetNameUtf8().c_str();
             return BE_SQLITE_ERROR;
+            }
+
+        BeFileName changeSummaryCachePath = ECDb::GetChangeSummaryCachePath(ecdbFilePath);
+        if (changeSummaryCachePath.DoesPathExist())
+            {
+            if (BeFileNameStatus::Success != changeSummaryCachePath.BeDeleteFile())
+                {
+                EXPECT_FALSE(true) << "Could not delete change summary cache file " << changeSummaryCachePath.GetNameUtf8().c_str();
+                return BE_SQLITE_ERROR;
+                }
             }
         }
 
