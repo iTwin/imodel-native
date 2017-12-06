@@ -56,7 +56,7 @@ private:
 public:
     int m_currentQuery;
     int m_terrainQuery;
-    bvector<ClipVectorPtr> m_coverageClips;
+    bvector<BentleyB0200::Dgn::ClipVectorPtr> m_coverageClips;
     bool m_hasCoverage;
     bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
     bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
@@ -273,7 +273,7 @@ private:
 
     void Cleanup(bool isModelDelete);
 
-    void DrawBingLogo(ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
+    void DrawBingLogo(BentleyB0200::Dgn::ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
     IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 		void InitializeTerrainRegions(Dgn::ViewContextR);
 		
