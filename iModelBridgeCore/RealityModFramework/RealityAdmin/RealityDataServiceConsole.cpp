@@ -198,6 +198,8 @@ RealityDataConsole::RealityDataConsole() :
     //m_realityDataProperties.push_back("ModifiedTimestamp");
     //m_realityDataProperties.push_back("CreatedTimestamp");
     m_realityDataProperties.push_back("OwnedBy");
+    m_realityDataProperties.push_back("Hidden");
+    m_realityDataProperties.push_back("DelegatePermissions");
     m_realityDataProperties.push_back("-Finish-");
 
     m_visibilityOptions = bvector<Utf8String>();
@@ -1416,7 +1418,7 @@ void RealityDataConsole::ChangeProps()
                 propertyString.append(",");
 
             value = Utf8String(str.c_str()).Trim();
-            if (input.Equals("Listable") || input.Equals("Streamed"))
+            if (input.Equals("Listable") || input.Equals("Streamed") || input.Equals("Hidden") || input.Equals("DelegatePermissions"))
                 {
                 if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
                     propertyString.append(Utf8PrintfString("\"%s\" : false", input));

@@ -207,6 +207,10 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetInfo();
 
     //! Server request
+    //! Will update the reality data on the server, with the info in the object
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse UpdateInfo();
+
+    //! Server request
     //! Will upload the reality data at the specified file path, to the specified server path (GUID)
     //! If serverPath is an empty string, a new reality data entry will be created on the server
     //! and the auto-generated guid will be assigned to the serverPath variable

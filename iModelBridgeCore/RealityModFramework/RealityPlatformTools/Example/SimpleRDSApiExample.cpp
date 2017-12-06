@@ -6,7 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include <Windows.h>
+
 #include <RealityPlatformTools/SimpleRDSApi.h>
+#include <Bentley/BeFile.h>
 
 #include <stdio.h>
 #include <conio.h>
@@ -16,10 +19,8 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-int main(int argc, char *argv[])
+void Inspect()
     {
-    RDSRequestManager::GetInstance();
-
     bvector<ConnectedNavNode> rootNodes = bvector<ConnectedNavNode>();
 
     ConnectedResponse response = ConnectedNavNode::GetRootNodes(rootNodes);
@@ -27,7 +28,7 @@ int main(int argc, char *argv[])
     if(!response.simpleSuccess)
         {
         std::cout << response.simpleMessage << std::endl;
-        return 1;
+        return;
         }
 
     ConnectedRealityData rd = ConnectedRealityData(rootNodes[0].GetInstanceId());
@@ -61,6 +62,148 @@ int main(int argc, char *argv[])
     response = stats.GetStats();
 
     std::cout << "total size on server: " << stats.GetTotalSizeKB() << "KB" << std::endl;
+    }
+
+Utf8String CreateUpload()
+    {
+    //Creating a repo to upload.
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    WString exeDir = exePath;
+    size_t pos = exeDir.find_last_of(L"/\\");
+    exeDir = exeDir.substr(0, pos + 1);
+    BeFileName outDir = BeFileName(exeDir);
+    outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
+    WString directory(outDir);
+    if (BeFileName::DoesPathExist(directory.c_str()))
+        BeFileName::EmptyAndRemoveDirectory(directory.c_str());
+    BeFileName::CreateNewDirectory(directory.c_str());
+
+    BeFileName dummyRoot = BeFileName(directory.c_str());
+    dummyRoot.AppendToPath(L"DummyFolderUp");
+    BeFileName::CreateNewDirectory(dummyRoot.c_str());
+
+    BeFileName dummyFile = BeFileName(dummyRoot.c_str());
+    dummyFile.AppendToPath(L"DummyRootDocument.json");
+
+    FILE* pFile;
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 5000000, SEEK_SET); //5Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummyFolder/
+    dummyFile.AppendToPath(L"DummySubFolder");
+    BeFileName::CreateNewDirectory(dummyFile.c_str());
+    dummyFile.AppendToPath(L"smallfile1.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile2.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile3.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile4.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    dummyFile.PopDir(); // .../DummySubFolder/
+    dummyFile.AppendToPath(L"smallfile5.txt");
+
+    pFile = fopen(dummyFile.GetNameUtf8().c_str(), "w");
+    fseek(pFile, 1000000, SEEK_SET); //1Mb
+    fwrite("1", sizeof(char), 1, pFile);
+    fclose(pFile);
+
+    //the actual upload begins here
+    ConnectedRealityData crd = ConnectedRealityData();
+    crd.SetName("SimpleRDSApiExample (DELETE THIS)");
+    crd.SetClassification(RealityDataBase::Classification::TERRAIN);
+    crd.SetRealityDataType("S3MX");
+    crd.SetVisibility(RealityDataBase::Visibility::ENTERPRISE);
+    crd.SetRootDocument("DummyRootDocument.json");
+
+    Utf8String empty = "";
+
+    ConnectedResponse response = crd.Upload(dummyRoot, empty);
+
+    if (!response.simpleSuccess)
+        {
+        std::cout << response.simpleMessage << std::endl;
+        return "";
+        }
+
+    return crd.GetIdentifier();
+    }
+
+void DownloadModify(Utf8String guid)
+    {
+    WChar exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    WString exeDir = exePath;
+    size_t pos = exeDir.find_last_of(L"/\\");
+    exeDir = exeDir.substr(0, pos + 1);
+    BeFileName outDir = BeFileName(exeDir);
+    outDir.AppendToPath(L"SimpleRDSApiTestDirectory");
+    WString directory(outDir);
+
+    BeFileName dummyRoot = BeFileName(directory.c_str());
+    dummyRoot.AppendToPath(L"DummyFolderDown");
+
+    ConnectedRealityData crd = ConnectedRealityData(guid);
+    crd.Download(dummyRoot, guid);
+    crd.SetName("SimpleModifiedExample (DELETE THIS)");
+    ConnectedResponse response = crd.UpdateInfo();
+
+    if (!response.simpleSuccess)
+        {
+        std::cout << response.simpleMessage << std::endl;
+        return;
+        }
+    }
+
+void Delete(Utf8String guid)
+    {
+    ConnectedRealityData crd = ConnectedRealityData(guid);
+    crd.Delete();
+
+    ConnectedRealityData crdTester = ConnectedRealityData(guid);
+    if(!crdTester.GetName().empty())
+        {
+        std::cout << "Delete failed" << std::endl;
+        return;
+        }
+    }
+
+int main(int argc, char *argv[])
+    {
+    RDSRequestManager::GetInstance();
+
+    Inspect();
+    Utf8String guid = CreateUpload();
+    if(guid.empty())
+        return 1;
+    DownloadModify(guid);
+    Delete(guid);
 
     return 0;
     }

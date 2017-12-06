@@ -213,7 +213,6 @@ public:
         ENTERPRISE = 0x02,
         PERMISSION = 0x04,
         PRIVATE = 0x08
-
         };
 
 
@@ -325,6 +324,7 @@ public:
 
 protected:
     RealityDataBase();
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityDataBase(){}
 
     Utf8String m_identifier;
     Utf8String m_name;
@@ -495,8 +495,17 @@ public:
     REALITYDATAPLATFORM_EXPORT bool HasDelegatePermissions() const;
     REALITYDATAPLATFORM_EXPORT void SetDelegatePermissions(bool dp);
 
+    //! Indicates the last time the data was read or modified.
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetLastAccessedDateTime() const;
+    REALITYDATAPLATFORM_EXPORT void SetLastAccessedDateTime(DateTimeCR lastAccessedDateTime);
+
+    //! Indicates if the footprint is exact or approximate.
+    REALITYDATAPLATFORM_EXPORT bool IsApproximateFootprint() const;
+    REALITYDATAPLATFORM_EXPORT void SetApproximateFootprint(bool isApproximate);
+
 protected:
     REALITYDATAPLATFORM_EXPORT RealityData();
+    REALITYDATAPLATFORM_EXPORT virtual ~RealityData(){}
 
     Utf8String  m_realityDataType;
     bool        m_streamed;
@@ -523,6 +532,8 @@ protected:
 
     bool        m_hidden;
     bool        m_delegatePermissions;
+    DateTime    m_lastAccessedDate;
+    bool        m_approximateFootprint;
     };
 
 struct RealityDataExtended: public RealityData

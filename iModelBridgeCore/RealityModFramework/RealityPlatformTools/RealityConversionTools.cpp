@@ -437,13 +437,20 @@ void RealityConversionTools::JsonToRealityData(RealityDataPtr realityData, Json:
     if (properties.isMember("OwnedBy") && !properties["OwnedBy"].isNull())
         realityData->SetOwner(Utf8CP(properties["OwnedBy"].asString().c_str()));
 
-    // Listable
     if (properties.isMember("Hidden") && !properties["Hidden"].isNull())
         realityData->SetHidden(properties["Hidden"].asBool());
 
-    // Listable
     if (properties.isMember("DelegatePermissions") && !properties["DelegatePermissions"].isNull())
         realityData->SetDelegatePermissions(properties["DelegatePermissions"].asBool());
+
+    if (properties.isMember("LastAccessedTimestamp") && !properties["LastAccessedTimestamp"].isNull())
+        {
+        DateTime::FromString(date, properties["LastAccessedTimestamp"].asCString());
+        realityData->SetLastAccessedDateTime(date);
+        }
+
+    if (properties.isMember("ApproximateFootprint") && !properties["ApproximateFootprint"].isNull())
+        realityData->SetApproximateFootprint(properties["ApproximateFootprint"].asBool());
     }
 
 

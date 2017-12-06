@@ -778,6 +778,12 @@ void RealityData::SetHidden(bool hidden) { m_hidden = hidden; }
 bool RealityData::HasDelegatePermissions() const { return m_delegatePermissions; }
 void RealityData::SetDelegatePermissions(bool dp) { m_delegatePermissions = dp; }
 
+DateTimeCR RealityData::GetLastAccessedDateTime() const { return m_lastAccessedDate; }
+void RealityData::SetLastAccessedDateTime(DateTimeCR lastAccessedDateTime) { m_lastAccessedDate = lastAccessedDateTime; }
+
+bool RealityData::IsApproximateFootprint() const { return m_approximateFootprint; }
+void RealityData::SetApproximateFootprint(bool isApproximate) { m_approximateFootprint = isApproximate; }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert         	    02/2017
 //-------------------------------------------------------------------------------------
@@ -788,6 +794,7 @@ RealityData::RealityData()
     m_totalSize = 0;
     m_hidden = false;
     m_delegatePermissions = false;
+    m_approximateFootprint = false;
     }
 
 //-------------------------------------------------------------------------------------

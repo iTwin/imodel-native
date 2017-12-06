@@ -349,7 +349,6 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityDataSourceBasicTest)
 
     //ASSERT_TRUE(!mySpatialEntityDataSource->GetIsMultiband());
 
-
     /*Utf8String redUrl;
     Utf8String greenUrl;
     Utf8String blueUrl;
@@ -732,6 +731,8 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetTermsOfUse().c_str(), "");
     EXPECT_TRUE(!myRealityData->GetModifiedDateTime().IsValid()); // Time not set should be invalid
     EXPECT_STREQ(myRealityData->GetGroup().c_str(), "");
+    EXPECT_TRUE(!myRealityData->GetLastAccessedDateTime().IsValid());
+    EXPECT_FALSE(myRealityData->IsApproximateFootprint());
 
     // Check set methods
     myRealityData->SetIdentifier("f28fdab2-c369-4913-b18a-fbe541af635c");
@@ -825,6 +826,10 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetModifiedDateTime(DateTime(2017, 02, 27));
     EXPECT_TRUE(myRealityData->GetModifiedDateTime().IsValid());
     EXPECT_TRUE(myRealityData->GetModifiedDateTime() == DateTime(2017, 02, 27));
+
+    myRealityData->SetLastAccessedDateTime(DateTime(2017, 02, 27));
+    EXPECT_TRUE(myRealityData->GetLastAccessedDateTime().IsValid());
+    EXPECT_TRUE(myRealityData->GetLastAccessedDateTime() == DateTime(2017, 02, 27));
 
     myRealityData->SetGroup("MyGroup1");
     EXPECT_STREQ(myRealityData->GetGroup().c_str(), "MyGroup1");

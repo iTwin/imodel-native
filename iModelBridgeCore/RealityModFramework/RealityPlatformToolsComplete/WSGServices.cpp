@@ -109,9 +109,14 @@ void* RequestConstructor::PrepareRequestBase(const WSGURL& wsgRequest, RawServer
 
     curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
 
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, (verifyPeer ? 1: 0));
+    if(m_certificatePath.empty())
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+    else
+        {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, (verifyPeer ? 1: 0));
 
-    curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
+        curl_easy_setopt(curl, CURLOPT_CAINFO, m_certificatePath.GetNameUtf8());
+        }
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
 

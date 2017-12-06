@@ -38,7 +38,7 @@ RDSRequestManager::RDSRequestManager(RDS_FeedbackFunction errorCallback)
 void RDSRequestManager::Init()
     {
     Utf8String serverName = MakeBuddiCall();
-    WSGServer server = WSGServer(serverName, true);
+    WSGServer server = WSGServer(serverName, false);
     
     RawServerResponse versionResponse = RawServerResponse();
     Utf8String version = server.GetVersion(versionResponse);
@@ -48,7 +48,7 @@ void RDSRequestManager::Init()
         return;
         }
     
-    RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX", WSGRequest::GetInstance().GetCertificatePath().GetNameUtf8());
+    RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX", "" /*WSGRequest::GetInstance().GetCertificatePath().GetNameUtf8()*/);
     }
 
 //-------------------------------------------------------------------------------------
@@ -786,8 +786,79 @@ ConnectedResponse ConnectedRealityData::GetInfo()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityData::UpdateInfo()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    if (m_identifier.empty())
+        {
+        response.simpleSuccess = false;
+        response.simpleMessage = "must set ultimate id, first";
+        return response;
+        }
+
+    RawServerResponse rawResponse = RawServerResponse();
+
+    Utf8String propertyString = "";
+    if(!m_organizationId.empty())
+        propertyString.append(Utf8PrintfString("\"OrganizationId\" : \"%s\",", m_organizationId));
+    if (!m_ultimateId.empty())
+        propertyString.append(Utf8PrintfString("\"UltimateId\" : \"%s\",", m_ultimateId));
+    if (!m_ultimateSite.empty())
+        propertyString.append(Utf8PrintfString("\"UltimateSite\" : \"%s\",", m_ultimateSite));
+    if (!m_name.empty())
+        propertyString.append(Utf8PrintfString("\"Name\" : \"%s\",", m_name));
+    if (!m_dataset.empty())
+        propertyString.append(Utf8PrintfString("\"Dataset\" : \"%s\",", m_dataset));
+    if (!m_group.empty())
+        propertyString.append(Utf8PrintfString("\"Group\" : \"%s\",", m_group));
+    if (!m_description.empty())
+        propertyString.append(Utf8PrintfString("\"Description\" : \"%s\",", m_description));
+    if (!m_rootDocument.empty())
+        propertyString.append(Utf8PrintfString("\"RootDocument\" : \"%s\",", m_rootDocument));
+    if (!GetClassificationTag().empty())
+        propertyString.append(Utf8PrintfString("\"Classification\" : \"%s\",", GetClassificationTag()));
+    if (!m_realityDataType.empty())
+        propertyString.append(Utf8PrintfString("\"Type\" : \"%s\",", m_realityDataType));
+    propertyString.append(m_streamed ? "\"Streamed\" : true," : "\"Streamed\" : false,"); 
+    if (!GetFootprintString().empty())
+        propertyString.append(Utf8PrintfString("\"Footprint\" : \"%s\",", GetFootprintString()));
+    if (!m_thumbnailDocument.empty())
+        propertyString.append(Utf8PrintfString("\"ThumbnailDocument\" : \"%s\",", m_thumbnailDocument));
+    if (!m_metadataUrl.empty())
+        propertyString.append(Utf8PrintfString("\"MetadataUrl\" : \"%s\",", m_metadataUrl));
+    if (!m_copyright.empty())
+        propertyString.append(Utf8PrintfString("\"Copyright\" : \"%s\",", m_copyright));
+    if (!m_metadataUrl.empty())
+        propertyString.append(Utf8PrintfString("\"MetadataUrl\" : \"%s\",", m_metadataUrl));
+    if (!m_termsOfUse.empty())
+        propertyString.append(Utf8PrintfString("\"TermsOfUse\" : \"%s\",", m_termsOfUse));
+    if (!m_resolution.empty())
+        propertyString.append(Utf8PrintfString("\"ResolutionInMeters\" : \"%s\",", m_resolution));
+    if (!m_accuracy.empty())
+        propertyString.append(Utf8PrintfString("\"AccuracyInMeters\" : \"%s\",", m_accuracy));
+    if (!GetVisibilityTag().empty())
+        propertyString.append(Utf8PrintfString("\"Visibility\" : \"%s\",", GetVisibilityTag()));
+    propertyString.append(m_listable ? "\"Listable\" : true," : "\"Listable\" : false,");
+    if (!m_owner.empty())
+        propertyString.append(Utf8PrintfString("\"OwnedBy\" : \"%s\",", m_owner));
+    propertyString.append(m_hidden ? "\"Hidden\" : true," : "\"Hidden\" : false,");
+    propertyString.append(m_delegatePermissions ? "\"DelegatePermissions\" : true," : "\"DelegatePermissions\" : false,");
+    
+    RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_identifier, propertyString);
+    RealityDataService::Request(changeReq, rawResponse);
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
 ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR serverPath)
     {
+    m_identifier = serverPath;
+
     ConnectedResponse response = ConnectedResponse();
 
     if (!filePath.DoesPathExist())
@@ -823,9 +894,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
         properties.Insert(RealityDataField::Classification, GetClassificationTag());
     if (!m_realityDataType.empty())
         properties.Insert(RealityDataField::Type, m_realityDataType);
-    if (!m_description.empty())
-        properties.Insert(RealityDataField::Streamed, m_description);
-    properties.Insert(RealityDataField::Description, m_streamed ? "True" : "False");
+    properties.Insert(RealityDataField::Streamed, m_streamed ? "true" : "false");
     if (!m_footprintString.empty() || !m_footprint.empty())
         properties.Insert(RealityDataField::Footprint, GetFootprintString());
     if (!m_thumbnailDocument.empty())
@@ -842,7 +911,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
         properties.Insert(RealityDataField::AccuracyInMeters, m_accuracy);
     if ((m_visibility != Visibility::UNDEFINED_VISIBILITY) || !m_visibilityString.empty())
         properties.Insert(RealityDataField::Visibility, GetVisibilityTag());
-    properties.Insert(RealityDataField::Listable, m_listable ? "True" : "False");
+    properties.Insert(RealityDataField::Listable, m_listable ? "true" : "false");
     if (!m_owner.empty())
         properties.Insert(RealityDataField::OwnedBy, m_owner);
     if (!m_group.empty())
@@ -850,16 +919,16 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
 
     Utf8String propertyString = RealityDataServiceUpload::PackageProperties(properties);
 
-    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, serverPath, propertyString);
+    RealityDataServiceUpload upload = RealityDataServiceUpload(filePath, m_identifier, propertyString);
     if (upload.IsValidTransfer())
         {
-        serverPath = upload.GetRealityDataId();
+        m_identifier = upload.GetRealityDataId();
         upload.OnlyReportErrors(true);
         const TransferReport& ur = upload.Perform();
         if (ur.results.empty())
             {
             response.simpleSuccess = true;
-            response.simpleMessage = Utf8PrintfString("repo uploaded to %s", serverPath);
+            response.simpleMessage = Utf8PrintfString("repo uploaded to %s", m_identifier);
             }
         else
             {
