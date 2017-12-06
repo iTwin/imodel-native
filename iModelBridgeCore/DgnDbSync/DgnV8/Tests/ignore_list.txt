@@ -8,8 +8,6 @@ DataValidationTests.*
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-#TFS 365625: DgnDbSync DgnV8Converter does embed configuration file
-ImportConfigTests.embedConfigFile
 
 ECConversionTests.RelationshipInstance       # WIP UmarH
 

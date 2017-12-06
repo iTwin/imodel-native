@@ -1505,6 +1505,12 @@ void Converter::_OnConversionComplete()
     else
         OnUpdateComplete();
 
+    if (!m_config.GetInstanceFilename().empty() && m_config.GetOptionValueBool("EmbedConfigFile", false))
+        {
+        BeSQLite::DbResult result;
+        m_dgndb->EmbeddedFiles().Import(Utf8String(m_config.GetInstanceFilename().GetFileNameWithoutExtension().c_str()).c_str(), m_config.GetInstanceFilename().GetNameUtf8().c_str(), "xml");
+    }
+
 #ifdef WIP_DUMP
     dumpParentAndChildren(*GetDgnDb().Elements().GetRootSubject(), 0);
 #endif
