@@ -174,7 +174,7 @@ void    AddClippedEdge (OrderedIndexPair const& edgeIndices)
 
 };  //  OutputChainEdge
 
-typedef bvector <OutputChainEdge*>                          T_OutputChainEdges;
+typedef bvector <OutputChainEdge*>                      T_OutputChainEdges;
 typedef bmap <OrderedIndexPair, OutputChainEdge*>       T_EdgeIndexMap;
 
 
@@ -406,7 +406,7 @@ PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipPlaneCR plane, bool h
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/2017
 *
-*  Constructor for a facet clipped to a plane from unclipped facet and plane
+*  Constructor for a facet clipped to a range axis from unclipped facet and axis
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipRangeAxis const& rangeAxis) 
     {
@@ -535,9 +535,11 @@ void   AddToPolyface  (IPolyfaceConstructionR builder, OutputChainMap& outputCha
             builder.AddParamIndex (builder.FindOrAddParam (m_params[i]));
         }
          
+#ifdef DO_EDGE_CHAINS
     for (size_t i=0; i<count; i++)
-         if (NULL != m_chainEdges[i])
+         if (nullptr != m_chainEdges[i])
             m_chainEdges[i]->AddClippedEdge (OrderedIndexPair (1+pointIndices[i], 1 + pointIndices[(i + 1) % count]));
+#endif
 
 
     builder.AddPointIndexTerminator();
@@ -858,7 +860,6 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     static double           s_relativeTolerance = 1.0E-6;
 
     range.InitFrom (GetPointCP(), (int) GetPointCount());
-
     if (!range.IntersectsWith(clipRange))
         return SUCCESS;     // No intersection - no output.
 
