@@ -46,7 +46,8 @@
     <KindOfQuantity typeName="FORCE_DENSITY"                        displayLabel="Force Density"                        persistenceUnit="N/CUB.M(DefaultReal)"                  presentationUnits="N/CUB.M(real4);KN/CUB.M(real4);N/CUB.FT(real4);KN/CUB.FT(real4)"                         relativeError="0.001"/>
     <KindOfQuantity typeName="LINEAR_ROTATIONAL_SPRING_CONSTANT"    displayLabel="Linear Rotational Spring Constant"    persistenceUnit="N/RAD(DefaultReal)"                    presentationUnits="N/RAD(real4)"                                                                            relativeError="0.001"/>
     <KindOfQuantity typeName="WARPING_CONSTANT"                     displayLabel="Warping Constant"                     persistenceUnit="M^6(DefaultReal)"                      presentationUnits="M^6(real4);FT^6(real4)"                                                                  relativeError="0.001"/>
-    <KindOfQuantity typeName="ANGULAR_VELOCITY"                     displayLabel="Angular Velocity"                     persistenceUnit="RAD/SEC(DefaultReal)"                  presentationUnits="RAD/SEC(real4);DEG/SEC(real4);RPM(real4)"                                                           relativeError="0.001"/>
+    <KindOfQuantity typeName="ANGULAR_VELOCITY"                     displayLabel="Angular Velocity"                     persistenceUnit="RAD/SEC(DefaultReal)"                  presentationUnits="RAD/SEC(real4);DEG/SEC(real4);RPM(real4)"                                                relativeError="0.001"/>
+    <KindOfQuantity typeName="THERMAL_CONDUCTIVITY"                 displayLabel="Thermal Conductivity"                 persistenceUnit="W/(M*K)(DefaultReal)"                  presentationUnits="W/(M*K)(real4);W/(M*C)(real4);(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)(real4)"                     relativeError="0.001"/>
 
     
 

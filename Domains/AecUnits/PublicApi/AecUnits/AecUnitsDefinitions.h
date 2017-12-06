@@ -84,6 +84,8 @@
 #define AEC_KOQ_LINEAR_ROTATIONAL_SPRING_CONSTANT   "LINEAR_ROTATIONAL_SPRING_CONSTANT"
 #define AEC_KOQ_WARPING_CONSTANT                    "WARPING_CONSTANT"
 #define AEC_KOQ_ANGULAR_VELOCITY                    "ANGULAR_VELOCITY"
+#define AEC_KOQ_THERMAL_CONDUCTIVITY                "THERMAL_CONDUCTIVITY"
+
 
 
 // Angular Units
@@ -275,4 +277,8 @@
 #define AEC_UNIT_DEG_PER_SEC                                    "DEG/SEC"
 #define AEC_UNIT_RPM                                            "RPM"
 
+// Thermal Conductivity Units
+#define AEC_UNIT_W_PER_M_KELVIN                                 "W/(M*K)"
+#define AEC_UNIT_W_PER_M_CELSIUS                                "W/(M*C)"
+#define AEC_UNIT_BTU_IN_PER_SQ_FT_HR_FAHRENHEIT                 "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)"
 

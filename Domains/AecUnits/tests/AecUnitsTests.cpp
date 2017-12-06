@@ -69,6 +69,7 @@
 #define DYNAMIC_LINEAR_ROTATIONAL_SPRING_CONSTANT_NAME      "RotationalSpringConstantProp"
 #define DYNAMIC_WARPING_CONSTANT_NAME                       "WarpingConstantProp"
 #define DYNAMIC_ANGULAR_VELOCITY_NAME                       "AngularVelocityProp"
+#define DYNAMIC_THERMAL_CONDUCTIVITY_NAME                   "ThermalConductivityProp"
 
 
 
@@ -461,6 +462,11 @@ TEST_F(AecUnitsTestFixture, AddClassesToDynamicSchema)
     newClass->CreatePrimitiveProperty(myProp, DYNAMIC_ANGULAR_VELOCITY_NAME);
     myProp->SetType(ECN::PRIMITIVETYPE_Double);
     locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_ANGULAR_VELOCITY);
+    myProp->SetKindOfQuantity(locatedKOQ);
+    
+    newClass->CreatePrimitiveProperty(myProp, DYNAMIC_THERMAL_CONDUCTIVITY_NAME);
+    myProp->SetType(ECN::PRIMITIVETYPE_Double);
+    locatedKOQ = unitsSchema->GetKindOfQuantityCP(AEC_KOQ_THERMAL_CONDUCTIVITY);
     myProp->SetKindOfQuantity(locatedKOQ);
     
     
@@ -7779,6 +7785,123 @@ TEST_F(AecUnitsTestFixture, AngularVelocityUnitsTest)
 
     AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_ANGULAR_VELOCITY_NAME, AEC_UNIT_RPM, testDouble);
     ASSERT_NEAR(testDouble, RPM, 0.001);
+
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(AecUnitsTestFixture, ThermalConductivityUnitsTest)
+    {
+    DgnDbPtr db = OpenDgnDb();
+
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaCP schema = db->Schemas().GetSchema(DYNAMIC_SCHEMA_NAME);
+
+    ASSERT_TRUE(nullptr != schema);
+
+    Dgn::SubjectCPtr parentSubject = db->Elements().GetRootSubject();
+
+    Dgn::DgnCode               partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, MODEL_TEST_NAME);
+    Dgn::DgnElementId          partitionId = db->Elements().QueryElementIdByCode(partitionCode);
+    Dgn::PhysicalPartitionCPtr partition = db->Elements().Get<Dgn::PhysicalPartition>(partitionId);
+    ASSERT_TRUE(partition.IsValid());
+
+    PhysicalModelCPtr physModel = dynamic_cast<PhysicalModelP>(partition->GetSubModel().get());
+    ASSERT_TRUE(physModel.IsValid());
+
+    Dgn::PhysicalElementPtr element = CreatePhysicalElement(DYNAMIC_SCHEMA_NAME, DYNAMIC_CLASS_NAME, *physModel);
+
+    ASSERT_TRUE(element.IsValid());
+
+#define W_PER_M_KELVIN                    10.0
+#define W_PER_M_CELSIUS                   W_PER_M_KELVIN
+#define BTU_IN_PER_SQ_FT_HR_FAHRENHEIT    69.334717985159784
+
+    // Set using W_PER_M_KELVIN
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*element, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_KELVIN, W_PER_M_KELVIN));
+
+    Dgn::DgnDbStatus status;
+
+    Dgn::DgnElementCPtr testElement = element->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ECN::ECValue propVal;
+    double testValue;
+
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_THERMAL_CONDUCTIVITY_NAME));
+    double testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, W_PER_M_KELVIN, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_KELVIN, testDouble);
+    ASSERT_NEAR(testDouble, W_PER_M_KELVIN, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_CELSIUS, testDouble);
+    ASSERT_NEAR(testDouble, W_PER_M_CELSIUS, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_BTU_IN_PER_SQ_FT_HR_FAHRENHEIT, testDouble);
+    ASSERT_NEAR(testDouble, BTU_IN_PER_SQ_FT_HR_FAHRENHEIT, 0.001);
+
+    // Set using W_PER_M_CELSIUS
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_CELSIUS, W_PER_M_CELSIUS));
+
+    testElement = queriedElement->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_THERMAL_CONDUCTIVITY_NAME));
+    testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, W_PER_M_KELVIN, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_KELVIN, testDouble);
+    ASSERT_NEAR(testDouble, W_PER_M_KELVIN, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_CELSIUS, testDouble);
+    ASSERT_NEAR(testDouble, W_PER_M_CELSIUS, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_BTU_IN_PER_SQ_FT_HR_FAHRENHEIT, testDouble);
+    ASSERT_NEAR(testDouble, BTU_IN_PER_SQ_FT_HR_FAHRENHEIT, 0.001);
+
+    // Set using BTU_IN_PER_SQ_FT_HR_FAHRENHEIT
+
+    ASSERT_TRUE(BentleyStatus::SUCCESS == AecUnits::AecUnitsUtilities::SetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_BTU_IN_PER_SQ_FT_HR_FAHRENHEIT, BTU_IN_PER_SQ_FT_HR_FAHRENHEIT));
+
+    testElement = queriedElement->Update(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    queriedElement = QueryById<Dgn::PhysicalElement>(*physModel, testElement->GetElementId());
+
+    ASSERT_TRUE(queriedElement.IsValid());
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_THERMAL_CONDUCTIVITY_NAME));
+    testDouble = propVal.GetDouble();
+    ASSERT_NEAR(testDouble, W_PER_M_KELVIN, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_KELVIN, testDouble);
+    ASSERT_NEAR(testDouble, W_PER_M_KELVIN, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_W_PER_M_CELSIUS, testDouble);
+    ASSERT_NEAR(testDouble, W_PER_M_CELSIUS, 0.001);
+
+    AecUnits::AecUnitsUtilities::GetDoublePropertyUsingUnitString(*queriedElement, DYNAMIC_THERMAL_CONDUCTIVITY_NAME, AEC_UNIT_BTU_IN_PER_SQ_FT_HR_FAHRENHEIT, testDouble);
+    ASSERT_NEAR(testDouble, BTU_IN_PER_SQ_FT_HR_FAHRENHEIT, 0.001);
 
 
     }
