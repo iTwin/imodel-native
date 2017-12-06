@@ -679,7 +679,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        BimConsole::WriteLine("Attach change summary cache.");
+        BimConsole::WriteLine("Attached change summary cache.");
         return;
         }
 
