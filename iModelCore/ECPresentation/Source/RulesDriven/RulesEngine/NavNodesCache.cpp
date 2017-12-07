@@ -315,6 +315,7 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
                      "[SettingId] TEXT NOT NULL, "
                      "PRIMARY KEY([SettingId],[DataSourceId])";
         m_db.CreateTable(NODESCACHE_TABLENAME_DataSourceSettings, ddl);
+        m_db.ExecuteSql("CREATE INDEX [IX_DataSourceSettings] ON [" NODESCACHE_TABLENAME_DataSourceSettings "]([DataSourceId])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_Nodes))
         {
@@ -349,7 +350,8 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
     if (!m_db.TableExists(NODESCACHE_TABLENAME_Connections))
         {
         Utf8CP ddl = "[ConnectionId] GUID PRIMARY KEY NOT NULL, "
-                     "[LastModTime] INTEGER NOT NULL";
+                     "[LastModTime] INTEGER NOT NULL, "
+                     "[LastUsedTime] INTEGER NOT NULL";
         m_db.CreateTable(NODESCACHE_TABLENAME_Connections, ddl);
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_Rulesets))
@@ -379,6 +381,7 @@ NodesCache::NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodesFa
     IECSqlStatementCacheProvider& ecsqlStatements, NodesCacheType type)
     : m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_connections(connections), m_statements(50), m_type(type), m_tempCache(false), m_ecsqlStamementCache(ecsqlStatements)
     {
+    m_sizeLimit = NAVNODES_CACHE_DB_SIZE_LIMIT;
     Initialize(tempDirectory);
     m_connections.AddListener(*this);
     }
@@ -389,6 +392,9 @@ NodesCache::NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodesFa
 NodesCache::~NodesCache()
     {
     m_connections.DropListener(*this);
+    if (!m_tempCache && !Utf8String::IsNullOrEmpty(m_db.GetDbFileName()))
+        LimitCacheSize();
+
     if (!m_db.IsDbOpen() || !m_tempCache)
         return;
 
@@ -433,7 +439,7 @@ void NodesCache::OnFirstConnection(ECDbCR connection)
             }
         }
 
-    Utf8CP insertQuery = "INSERT INTO [" NODESCACHE_TABLENAME_Connections "] ([ConnectionId], [LastModTime]) VALUES (?, ?)";
+    Utf8CP insertQuery = "INSERT INTO [" NODESCACHE_TABLENAME_Connections "] ([ConnectionId], [LastModTime], [LastUsedTime]) VALUES (?, ?, ?)";
     CachedStatementPtr insertStmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(insertStmt, *m_db.GetDbFile(), insertQuery))
         {
@@ -442,6 +448,7 @@ void NodesCache::OnFirstConnection(ECDbCR connection)
         }
     insertStmt->BindGuid(1, connection.GetDbGuid());
     insertStmt->BindInt64(2, (int64_t)fileModTime);
+    insertStmt->BindUInt64(3, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     insertStmt->Step();
     }
 
@@ -454,7 +461,7 @@ void NodesCache::OnConnectionClosed(BeSQLite::EC::ECDbCR connection)
     time_t lastMod;
     connectionFile.GetFileTime(nullptr, nullptr, &lastMod);
 
-    Utf8CP query = "UPDATE [" NODESCACHE_TABLENAME_Connections "] SET [LastModTime] = ? WHERE [ConnectionId] = ?";
+    Utf8CP query = "UPDATE [" NODESCACHE_TABLENAME_Connections "] SET [LastModTime] = ?, [LastUsedTime] = ? WHERE [ConnectionId] = ?";
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
         {
@@ -462,7 +469,8 @@ void NodesCache::OnConnectionClosed(BeSQLite::EC::ECDbCR connection)
         return;
         }
     stmt->BindInt64(1, (int64_t)lastMod);
-    stmt->BindGuid(2, connection.GetDbGuid());
+    stmt->BindUInt64(2, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindGuid(3, connection.GetDbGuid());
     stmt->Step();
     }
 
@@ -2123,4 +2131,58 @@ NavNodesProviderPtr NodesCache::GetUndeterminedNodesProvider(ECDbR connection, U
     {    
     NavNodesProviderContextPtr context = m_contextFactory.Create(connection, rulesetId, nullptr, isUpdatesDisabled);
     return context.IsValid() ? NodesWithUndeterminedChildrenProvider::Create(*context, m_db, m_statements) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t GetCacheFileSize(Utf8CP fileName)
+    {
+    BeFileName dbFile(fileName);
+    uint64_t size = 0;
+    if (BeFileNameStatus::Success != dbFile.GetFileSize(size))
+        {
+        BeAssert(false);
+        return 0;
+        }
+    return size;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCache::LimitCacheSize()
+    {
+    m_db.SaveChanges();
+    if (0 == m_sizeLimit || GetCacheFileSize(m_db.GetDbFileName()) <= m_sizeLimit)
+        return;
+
+    m_db.GetDefaultTransaction()->Commit();
+    m_db.TryExecuteSql("PRAGMA synchronous=0");
+    m_db.GetDefaultTransaction()->Begin();
+
+    Utf8CP connectionQuery = "SELECT [ConnectionId] FROM [" NODESCACHE_TABLENAME_Connections "] ORDER BY [LastUsedTime] ASC";
+    CachedStatementPtr connectionStmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(connectionStmt, *m_db.GetDbFile(), connectionQuery))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Connections "] WHERE [ConnectionId] = ?";
+    CachedStatementPtr deleteStmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(deleteStmt, *m_db.GetDbFile(), deleteQuery))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    while (GetCacheFileSize(m_db.GetDbFileName()) > m_sizeLimit && BE_SQLITE_ROW == connectionStmt->Step())
+        {
+        BeGuid connectionId = connectionStmt->GetValueGuid(0);
+        deleteStmt->BindGuid(1, connectionId);
+        deleteStmt->Step();
+        deleteStmt->Reset();
+        m_db.SaveChanges();
+        }
     }

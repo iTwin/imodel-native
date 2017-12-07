@@ -96,6 +96,12 @@ public:
     void MakeVirtual(JsonNavNodeCR node) {_MakeVirtual(node);}
 };
 
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_WINRT) || defined(BENTLEYCONFIG_OS_ANDROID)
+    #define NAVNODES_CACHE_DB_SIZE_LIMIT    50 * 1024 * 1024
+#else
+    #define NAVNODES_CACHE_DB_SIZE_LIMIT    1024 * 1024 * 1024
+#endif
+
 #define NODESCACHE_TABLENAME_DataSources        "DataSources"
 #define NODESCACHE_TABLENAME_DataSourceClasses  "DataSourceClasses"
 #define NODESCACHE_TABLENAME_DataSourceSettings "DataSourceSettings"
@@ -129,6 +135,7 @@ private:
     IECSqlStatementCacheProvider& m_ecsqlStamementCache;
     mutable bvector<bpair<HierarchyLevelInfo, NavNodesProviderPtr>> m_quickDataSourceCache;
     mutable bvector<bpair<uint64_t, JsonNavNodePtr>> m_quickNodesCache;
+    uint64_t m_sizeLimit;
     
 private:
     void Initialize(BeFileNameCR tempDirectory);
@@ -146,6 +153,7 @@ private:
     void ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateChildDatasources);
     bool IsUpdatesDisabled(HierarchyLevelInfo const& info) const;
     void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
+    void LimitCacheSize();
 
     NavNodeCPtr LocateECInstanceNode(ECDbCR, ECInstanceNodeKey const&) const;
     NavNodeCPtr LocateECClassGroupingNode(ECDbCR, ECClassGroupingNodeKey const&) const;
@@ -206,6 +214,7 @@ public:
 
     ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetCR);
     BeSQLite::Db const& GetDb() const {return m_db;}
+    void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 
     ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(ECDbR connection, Utf8CP rulesetId, Utf8CP filtertext) const;
     ECPRESENTATION_EXPORT void ResetExpandedNodes(BeSQLite::BeGuid connectionId, Utf8CP rulesetId);

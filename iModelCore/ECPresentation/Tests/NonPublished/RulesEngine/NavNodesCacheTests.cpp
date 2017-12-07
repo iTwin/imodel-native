@@ -2429,3 +2429,137 @@ TEST_F(DiskNodesCacheTests, ClearCacheIfRulesetWasModified)
     EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
     EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache some nodes
+    bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+
+    // set cache limit
+    m_cache->SetCacheFileSizeLimit(1);
+
+    // close cache
+    DELETE_AND_CLEAR(m_cache);
+
+    // open cache
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+
+    // verify cache is cleared
+    EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit)
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache some nodes
+    FillWithNodes(info, 30, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    m_connectionCache.NotifyConnectionClosed(s_project->GetECDb());
+
+    // open second connection and cache root data source
+    ECDbTestProject project;
+    project.Create("ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+
+    DataSourceInfo info2(project.GetECDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache some nodes
+    FillWithNodes(info2, 40, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+
+    // set cache file size limit
+    const_cast<Db&>(m_cache->GetDb()).SaveChanges();
+    BeFileName cacheFile(m_cache->GetDb().GetDbFileName());
+    uint64_t fileSize = 0;
+    cacheFile.GetFileSize(fileSize);
+    m_cache->SetCacheFileSizeLimit(fileSize - 1);
+
+    // close cache
+    DELETE_AND_CLEAR(m_cache);
+
+    // open cache
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+
+    // verify first connection cache was deleted
+    m_connectionCache.NotifyConnectionOpened(GetDb());
+    EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
+
+    // verify second connection cache wasn't deleted
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
+    {
+    // cache root data source
+    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache some nodes
+    FillWithNodes(info, 30, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    m_connectionCache.NotifyConnectionClosed(s_project->GetECDb());
+
+    // open second connection and cache root data source
+    ECDbTestProject project;
+    project.Create("DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual");
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+
+    DataSourceInfo info2(project.GetECDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+
+    // cache some nodes
+    FillWithNodes(info2, 40, true);
+    EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
+    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+
+    // set cache file size limit
+    const_cast<Db&>(m_cache->GetDb()).SaveChanges();
+    BeFileName cacheFile(m_cache->GetDb().GetDbFileName());
+    uint64_t fileSize = 0;
+    cacheFile.GetFileSize(fileSize);
+    m_cache->SetCacheFileSizeLimit(fileSize);
+
+    // close cache
+    DELETE_AND_CLEAR(m_cache);
+
+    // open cache
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+
+    // verify first connection cache wasn't deleted
+    m_connectionCache.NotifyConnectionOpened(GetDb());
+    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+
+    // verify second connection cache wasn't deleted
+    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
+    }
