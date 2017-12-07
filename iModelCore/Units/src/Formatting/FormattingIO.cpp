@@ -218,7 +218,9 @@ size_t StdFormatSet::CustomInit()
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2u\", \"SpecName\" : \"Stop100-2u\", \"SpecType\" : \"numeric\"}");
 
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}");
-
+    
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-2z\", \"SpecName\" : \"Stop100-2-2z\", \"SpecType\" : \"numeric\"}");
+    AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-3z\", \"SpecName\" : \"Stop1000-2-3z\", \"SpecType\" : \"numeric\"}");
 
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-4u\", \"SpecName\" : \"Stop100-2-4u\", \"SpecType\" : \"numeric\"}");
     AddCustomFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\"}, \"minWidth\" : 4, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-4u\", \"SpecName\" : \"Stop1000-2-4u\", \"SpecType\" : \"numeric\"}");
