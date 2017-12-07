@@ -267,8 +267,11 @@ static double s_tileSizePerIdStringSize = 10.0;
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
         bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
         Dgn::RenderContextR                         context,
-        const DMatrix4d&                            storageToUors
-        /*ScalableMeshDisplayCacheManager*            mgr*/)
+        const DMatrix4d&                            storageToUors,
+
+                             bset<uint64_t>&                             activeClips,
+                             bool                                        displayTexture, 
+                             bool                                        isCesium)
     {
 #if 0 //NEEDS_WORK_SM_TEMP_OUT
 
@@ -308,8 +311,9 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                    matSymbP->Init();
                    ColorDef white(0xff, 0xff, 0xff);
                    ColorDef green(0, 0x77, 0);
-                   matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);
-                   matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);
+				   matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() && displayTexture ? white : green);
+	               matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() && displayTexture ? white : green);
+
                    matSymbP->SetFillTransparency(s_transparency);
                    matSymbP->SetLineTransparency(s_transparency);
 
