@@ -73,6 +73,12 @@ void RulesDrivenECPresentationManagerMultithreadingTests::TearDown()
     DELETE_AND_CLEAR(m_manager);
     }
 
+#ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
+    #define VERIFY_THREAD_NE(threadId)
+#else
+    #define VERIFY_THREAD_NE(threadId)  EXPECT_NE(threadId, BeThreadUtilities::GetCurrentThreadId())
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -90,7 +96,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, RulesetLocaterCallsI
     callbacksHandler.SetCreatedHandler([&](PresentationRuleSetCR ruleset)
         {
         didGetCreatedCallback.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false));
     Sync();
@@ -100,7 +106,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, RulesetLocaterCallsI
     callbacksHandler.SetDisposedHandler([&](PresentationRuleSetCR ruleset)
         {
         didGetDisposedCallback.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });   
     locater->Clear();
     Sync();
@@ -123,7 +129,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, UserSettingsManagerC
     listener.SetCallback([&](Utf8CP, Utf8CP)
         {
         didGetCallback.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
     m_manager->GetUserSettings("rulesetid").SetSettingIntValue("settingid", 111);
     Sync();
@@ -146,7 +152,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, SelectionManagerCall
     listener.SetCallback([&](SelectionChangedEventCR)
         {
         didGetCallback.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
     selectionManager.AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create({DisplayLabelGroupingNodeKey::Create(1, "label")}));
     Sync();
@@ -170,7 +176,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, ECInstanceChangeEven
     handler.SetCallback([&](ECDbCR, bvector<ECInstanceChangeEventSource::ChangedECInstance>)
         {
         didGetCallback.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
     IECInstancePtr anyInstance = s_project->GetECDb().Schemas().GetClass(ECClassId((uint64_t)1))->GetDefaultStandaloneEnabler()->CreateInstance();
     eventsSource->NotifyECInstanceDeleted(s_project->GetECDb(), *anyInstance);
@@ -208,7 +214,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsRootN
     m_impl->SetRootNodesCountHandler([&](IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return 0;
         });
 
@@ -227,7 +233,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsRootN
     m_impl->SetRootNodesHandler([&](IConnectionCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return nullptr;
         });
 
@@ -247,7 +253,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsChild
     m_impl->SetChildNodesCountHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return 0;
         });
 
@@ -268,7 +274,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsChild
     m_impl->SetChildNodesHandler([&](IConnectionCR, NavNodeCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return nullptr;
         });
 
@@ -289,7 +295,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsHasCh
     m_impl->SetHasChildHandler([&](IConnectionCR, NavNodeCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return false;
         });
 
@@ -310,7 +316,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeR
     m_impl->SetGetNodeHandler([&](IConnectionCR, uint64_t, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return nullptr;
         });
 
@@ -329,7 +335,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsParen
     m_impl->SetGetParentHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return nullptr;
         });
 
@@ -350,7 +356,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return bvector<SelectClassInfo>();
         });
 
@@ -370,7 +376,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return nullptr;
         });
 
@@ -391,7 +397,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return nullptr;
         });
 
@@ -413,7 +419,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         return 0;
         });
 
@@ -435,7 +441,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeC
     m_impl->SetNodeCheckedHandler([&](IConnectionCR, uint64_t, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
 
     // request and verify
@@ -453,7 +459,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeU
     m_impl->SetNodeUncheckedHandler([&](IConnectionCR, uint64_t, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
 
     // request and verify
@@ -471,7 +477,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeE
     m_impl->SetNodeExpandedHandler([&](IConnectionCR, uint64_t, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
 
     // request and verify
@@ -489,7 +495,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeC
     m_impl->SetNodeCollapsedHandler([&](IConnectionCR, uint64_t, ICancelationTokenCR)
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
 
     // request and verify
@@ -524,7 +530,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsCateg
     m_impl->SetCategoriesChangedHandler([&]()
         {
         wasCalled.store(true);
-        EXPECT_NE(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
+        VERIFY_THREAD_NE(mainThreadId);
         });
     m_manager->NotifyCategoriesChanged();
     Sync();

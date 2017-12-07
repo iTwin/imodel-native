@@ -8,8 +8,13 @@
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "PresentationManagerImpl.h"
-#include "SingleThreadQueueExecutor.h"
 #include "NavNodesDataSource.h"
+
+#ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
+#include <folly/futures/InlineExecutor.h>
+#else
+#include "SingleThreadQueueExecutor.h"
+#endif
 
 const Utf8CP RulesDrivenECPresentationManager::ContentOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RulesetId = "RulesetId";
@@ -404,7 +409,11 @@ std::unique_ptr<IRulesDrivenECPresentationManagerDependenciesFactory> RulesDrive
 RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache)
     : IECPresentationManager(connections), m_selectionProviderWrapper(nullptr)
     {
+#ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
+    m_executor = new folly::InlineExecutor();
+#else
     m_executor = new SingleThreadedQueueExecutor("ECPresentation");
+#endif
     m_cancelableTasks = new CancelableTasksStore();
     m_connectionsWrapper = new ConnectionManagerWrapper(*this, connections);
     m_impl = new RulesDrivenECPresentationManagerImpl(*CreateDependenciesFactory(), *m_connectionsWrapper, paths, disableDiskCache);
@@ -424,7 +433,9 @@ RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
         // be used from one thread)
         DELETE_AND_CLEAR(m_impl);
         });
+#ifndef RULES_ENGINE_FORCE_SINGLE_THREAD
     static_cast<SingleThreadedQueueExecutor&>(*m_executor).Terminate().wait();
+#endif
 
     DELETE_AND_CLEAR(m_connectionsWrapper);
     DELETE_AND_CLEAR(m_selectionProviderWrapper);
