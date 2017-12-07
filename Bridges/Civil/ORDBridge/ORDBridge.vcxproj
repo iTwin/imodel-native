@@ -94,8 +94,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p ORDBridge -f CiviliModelBridges -r Civil-iModelBridges -ax64 b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -p ORDBridge -f CiviliModelBridges -r Civil-iModelBridges -N0 r ORDBridgeLibrary</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p ORDBridge -f CiviliModelBridges -r Civil-iModelBridges -N0 r ORDBridgeLibrary</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p ORDBridge -f CiviliModelBridges -r Civil-iModelBridges -ax64 re ORDBridgeLibrary -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__ORDBRIDGE_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)Civil\iModelBridges\ORDBridge\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
