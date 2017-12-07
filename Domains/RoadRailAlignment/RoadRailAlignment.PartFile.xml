@@ -5,6 +5,7 @@
     <Part Name="RoadRailAlignment" BentleyBuildMakeFile="RoadRailAlignment.mke">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="LinearReferencing"            PartFile="LinearReferencing"         Repository="DgnDomains-LinearReferencing"/>
+        <SubPart PartName="UnitsDll"                     PartFile="Units"                     Repository="Units"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)RoadRailAlignment$(libext)</Libs>
             <Assemblies Required="false">Delivery/$(shlibprefix)RoadRailAlignment$(shlibext)</Assemblies>

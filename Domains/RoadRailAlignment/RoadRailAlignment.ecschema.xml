@@ -3,6 +3,9 @@
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
     <ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/>
+
+    <KindOfQuantity typeName="STATION" displayLabel="Station" persistenceUnit="M(DefaultReal)" presentationUnits="M(stop1000-2-3z);FT(stop100-2-2z)" relativeError="0.0001"/>
+    
     <ECEntityClass typeName="AlignmentCategoryModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
@@ -16,7 +19,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="aecu:LENGTH"/>
+        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="STATION"/>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignmentsPortion" description="Horizontal/Top portions of Alignments in an AlignmentModel that will be broken down in more detail in a separate HorizontalAlignmentModel.">
         <BaseClass>bis:SpatialLocationPortion</BaseClass>
@@ -105,7 +108,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="aecu:LENGTH"/>
+        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="STATION"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AlignmentOwnsStations" strength="embedding" modifier="Sealed" description="Relationship definitiong ownership from an Alignment to its child Stations.">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>

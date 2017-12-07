@@ -94,6 +94,29 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_DOUBLE_EQ(150.0, stationTranslatorPtr->ToDistanceAlongFromStart(130.0).Value());
     ASSERT_TRUE(stationTranslatorPtr->ToDistanceAlongFromStart(140.0).IsNull());
 
+    // Station formatting
+    auto koqCP = projectPtr->Schemas().GetKindOfQuantity(BRRA_SCHEMA_NAME, "STATION");
+    auto presentationUnitList = koqCP->GetPresentationUnitList();
+
+    auto mUnitP = UnitRegistry::Instance().LookupUnitCI("M");
+    Quantity qty(stationTranslatorPtr->ToStation(71).Value(), *mUnitP);
+    auto fusP = std::find_if(presentationUnitList.begin(), presentationUnitList.end(), 
+        [](FormatUnitSet& fus) { return 0 == fus.GetUnitName().CompareTo("M"); });
+    ASSERT_TRUE(fusP != presentationUnitList.end());
+    ASSERT_TRUE(fusP->GetUnit() != nullptr);
+
+    Utf8String str = fusP->FormatQuantity(qty, nullptr);
+    ASSERT_STRCASEEQ("10+001.00", str.c_str());
+    
+    qty = Quantity(stationTranslatorPtr->ToStation(71).Value(), *mUnitP);
+    fusP = std::find_if(presentationUnitList.begin(), presentationUnitList.end(),
+        [](FormatUnitSet& fus) { return 0 == fus.GetUnitName().CompareTo("FT"); });
+    ASSERT_TRUE(fusP != presentationUnitList.end());
+    ASSERT_TRUE(fusP->GetUnit() != nullptr);
+
+    str = fusP->FormatQuantity(qty, nullptr);
+    ASSERT_STRCASEEQ("328+11.68", str.c_str());
+
     // Delete-cascade
     ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->Delete());
     
