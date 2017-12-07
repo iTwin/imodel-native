@@ -230,6 +230,7 @@ Dgn::TileTree::RootPtr WmsModel::_CreateTileTree(Dgn::Render::SystemP renderSys)
    RasterRootPtr rasterRoot = WmsSource::Create(mapInfo, const_cast<WmsModel&>(*this), renderSys);
 #else
     RasterRootPtr rasterRoot = WmsSource::Create(m_map, const_cast<WmsModel&>(*this), renderSys);
+    rasterRoot->SetPickable(true);
 #endif    
 
     return rasterRoot.get();

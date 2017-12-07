@@ -22,7 +22,7 @@ USING_NAMESPACE_TILETREE
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
 RasterRoot::RasterRoot(RasterModel& model, Utf8CP rootUrl, Dgn::Render::SystemP system)
-    :TileTree::Root(model.GetDgnDb(), Transform::FromIdentity(), rootUrl, system),
+    :TileTree::TriMeshTree::Root(model.GetDgnDb(), Transform::FromIdentity(), rootUrl, system),
      m_model(model)
     {
     }
@@ -86,6 +86,24 @@ Utf8String RasterTile::_GetTileCacheKey() const
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mark.Schlosser   12/2017
+//----------------------------------------------------------------------------------------
+bool RasterTile::_HasGraphics() const
+    {
+    if (!IsReady())
+        return false;
+    for (auto& mesh : m_meshes)
+        {
+        for (auto& graphic : mesh->GetGraphics())
+            {
+            if (graphic.IsValid())
+                return true;
+            }
+        }
+    return false;
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
 void RasterTile::_DrawGraphics(TileTree::DrawArgsR args) const
@@ -94,7 +112,13 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args) const
         return;
 
     BeAssert(IsReady());
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
+    for (auto& mesh : m_meshes)
+        {
+        for (auto& graphic : mesh->GetGraphics())
+            {
+            if (graphic.IsValid())
+                args.m_graphics.Add(*graphic);
+            }
+        }
     }
 

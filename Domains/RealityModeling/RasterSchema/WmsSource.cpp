@@ -472,10 +472,12 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
     textureParams.SetIsTileSection();
     auto texture = GetRenderSystem()->_CreateTexture(image, textureParams);
 
-    auto const& root = m_tile->GetRoot();
-    auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0); // this is to set transparency
-    rasterTile.m_graphic = GetRenderSystem()->_CreateTile(*texture, rasterTile.m_corners, root.GetDgnDb(), gfParams);
-    BeAssert(rasterTile.m_graphic.IsValid());
+    // ###TODO: is this needed?  auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0);
+    auto& root = rasterTile.GetRoot();
+    Dgn::TileTree::TriMeshTree::TriMesh::CreateParams geomParams;
+    FPoint3d fpts[4]; // local storage for floating point corners
+    geomParams.FromTile(*texture, rasterTile.m_corners, fpts, root.GetDgnDb()); // ###TODO: gfParams?
+    root.CreateGeometry(rasterTile.m_meshes, geomParams, GetRenderSystem());
 
     rasterTile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
