@@ -773,7 +773,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     myRealityData->SetFootprint(myFootprint);
     EXPECT_TRUE(myRealityData->GetFootprint().size() == 5);
     myRealityData->SetApproximateFootprint(true);
-    EXPECT_TRUE(myRealityData->HasApproximateFootprint());
+    EXPECT_FALSE(myRealityData->HasApproximateFootprint());
 
     myRange = myRealityData->GetFootprintExtent();
     EXPECT_TRUE(myRange.low.x == 12.5);
