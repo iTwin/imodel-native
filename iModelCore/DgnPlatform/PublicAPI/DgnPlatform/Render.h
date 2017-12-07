@@ -1878,8 +1878,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPairList)
 namespace Quantization
 {
     constexpr double RangeScale() { return static_cast<double>(0xffff); }
-
-    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
+    constexpr double MaxScale() { return 1000000.0; } // 32-bit floats offer ~6.92 decimal digits of precision...
+    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : std::min(MaxScale(), RangeScale() / extent); }
 
     inline bool IsInRange(double quantizedPos)
         {

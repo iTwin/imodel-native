@@ -395,8 +395,8 @@ public:
     PrimitiveType GetType() const { return m_type; }
     FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
 
-    DGNPLATFORM_EXPORT DRange3d GetRange() const;
-    DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
+    DGNPLATFORM_EXPORT DRange3d ComputeRange() const;
+    DGNPLATFORM_EXPORT DRange3d ComputeUVRange() const;
 
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
