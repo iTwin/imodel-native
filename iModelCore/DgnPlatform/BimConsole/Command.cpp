@@ -620,9 +620,9 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //---------------------------------------------------------------------------------------
 Utf8String ChangeCommand::_GetUsage() const
     {
-    return " .change tracking [on|off]      Enable / disable change tracking.\r\n"
-        "         attachcache            attaches (and creates if necessary) the change summary cache file.\r\n"
-        "         createsummary          creates a change summary from the current changes.\r\n";
+    return " .change tracking [on|off]      Enable / pause change tracking. Pausing does not create a revision.\r\n"
+           "         attachcache            attaches (and creates if necessary) the change summary cache file.\r\n"
+           "         extractsummary         creates a revision and extracts a change summary from it.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -683,7 +683,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (args[0].EqualsIAscii("createsummary"))
+    if (args[0].EqualsIAscii("extractsummary"))
         {
         if (!session.GetFileR().GetECDbHandle()->IsChangeSummaryCacheAttached())
             {
@@ -718,12 +718,19 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        BimConsole::WriteLine("Successfully extracted ChangeSummary (Id: %s).", changeSummaryKey.GetInstanceId().ToString());
+        const bool trackingWasOn = tracker->IsTracking();
+        tracker->EndTracking();//end the changeset
+        BimConsole::WriteLine("Successfully created revision and extracted ChangeSummary (Id: %s) from it.", changeSummaryKey.GetInstanceId().ToString());
+        if (trackingWasOn)
+            tracker->EnableTracking(true);
+
         return;
         }
 
     BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
     }
+
+
 //******************************* ImportCommand ******************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
