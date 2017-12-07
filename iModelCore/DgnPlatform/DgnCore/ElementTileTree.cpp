@@ -2127,25 +2127,6 @@ void MeshGenerator::ClipStrokes(StrokesR strokes) const
         strokes = ClipSegments(strokes);
     }
 
-#ifdef WIP
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-PointLists Strokes::ClipToRange(PointLists&& input, DRange3dCR range)
-    {
-    DRange3d    strokesRange = DRange3d::From(input.m_points);
-
-    if (strokesRange.IsContained(range))
-        return input;
-
-    if (!strokesRange.IntersectsWith(range))
-        return PointLists();
-
-    
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2688,7 +2669,7 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     try
         {
 #ifndef NDEBUG
-        static DgnElementId             s_debugId;      //((uint64_t) 62);
+        static DgnElementId             s_debugId; // ((uint64_t) 1099511628078);
 
         if (s_debugId.IsValid() && s_debugId != elemId)
             return;
@@ -2744,7 +2725,7 @@ void TileContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     _CookGeometryParams(geomParams, graphicParams);
     AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams);
     }
-
+                                                                                                                                 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/

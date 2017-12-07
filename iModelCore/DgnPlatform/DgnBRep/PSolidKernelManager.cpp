@@ -2911,7 +2911,7 @@ static bool setupHatchOptionsForFace(PK_TOPOL_render_line_o_t& options, PK_FACE_
         case PK_CLASS_torus:
             {
             options.radial = PK_render_radial_yes_c;
-            options.radial_around = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_around = (msGeomConst_2pi / 4.0); // Don't think other arcs are very useful snap locations...avoid clutter and just output every 90 degrees...
             options.radial_about = (msGeomConst_2pi / (double) (2 * divisor));
             options.radial_around_start = msGeomConst_pi;
 
@@ -2922,7 +2922,7 @@ static bool setupHatchOptionsForFace(PK_TOPOL_render_line_o_t& options, PK_FACE_
             {
             options.radial = PK_render_radial_yes_c;
             options.radial_around = (msGeomConst_2pi / (double) (2 * divisor));
-            options.radial_about = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_about = (msGeomConst_2pi / 4.0); // Don't think other arcs are very useful snap locations...avoid clutter and just output equator...
             options.radial_around_start = msGeomConst_pi;
             options.radial_about_start = msGeomConst_pi;
 
