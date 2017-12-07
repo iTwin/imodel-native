@@ -984,6 +984,7 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
     {
     SnapGraphicsProcessor&  m_processor;
     SimplifyGraphic&        m_graphic;
+    Transform               m_entityTransform;
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    BrienBastings   11/2017
@@ -992,12 +993,13 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
         {
         CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, hatchCurve.Clone());
 
+        curve->TransformInPlace(m_entityTransform);
         m_processor.TestCurveLocation(*curve, m_graphic);
 
         return (m_processor.m_snapContext.CheckStop() ? ERROR : SUCCESS);
         }
 
-    BRepFaceHatchProcessor(SnapGraphicsProcessor& processor, SimplifyGraphic& graphic) : m_processor(processor), m_graphic(graphic) {}
+    BRepFaceHatchProcessor(SnapGraphicsProcessor& processor, SimplifyGraphic& graphic, TransformCR entityTransform) : m_processor(processor), m_graphic(graphic), m_entityTransform(entityTransform) {}
 
     }; // BRepFaceHatchProcessor
 
@@ -1054,11 +1056,10 @@ bool _ProcessBody(IBRepEntityCR entity, SimplifyGraphic& graphic) override
 
     int divisor = m_snapContext.GetSnapDivisor();
 
-    BRepFaceHatchProcessor output(*this, graphic);
-    Transform entityTransform = entity.GetEntityTransform();
+    BRepFaceHatchProcessor output(*this, graphic, entity.GetEntityTransform());
 
-    PSolidGoOutput::ProcessFaceHatching(output, divisor, PSolidSubEntity::GetSubEntityTag(*closeEntity), &entityTransform);
-    
+    PSolidGoOutput::ProcessFaceHatching(output, divisor, PSolidSubEntity::GetSubEntityTag(*closeEntity));
+
     bvector<ISubEntityPtr> faceEdges;
 
     if (SUCCESS != BRepUtil::GetFaceEdges(faceEdges, *closeEntity))

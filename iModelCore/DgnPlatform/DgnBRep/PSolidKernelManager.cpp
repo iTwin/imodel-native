@@ -2818,7 +2818,7 @@ void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP
     computeViewTransform(viewTransformTag, eyePoint, direction);
 
     if (nullptr != entityTransform)
-        PSolidUtil::CreateTransf(entityTransformTag, *entityTransform);
+        PSolidUtil::CreateTransf(entityTransformTag, *entityTransform); // NEEDSWORK: Scale isn't supported by PK_TOPOL_render_line for topol transform...
 
     PK_TOPOL_render_line_o_t options;
 
@@ -2969,7 +2969,7 @@ static bool setupHatchOptionsForFace(PK_TOPOL_render_line_o_t& options, PK_FACE_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Brien.Bastings                 11/2017
 //---------------------------------------------------------------------------------------
-void PSolidGoOutput::ProcessFaceHatching(IParasolidWireOutput& output, int divisor, PK_FACE_t entityTag, TransformCP entityTransform, double tolerance)
+void PSolidGoOutput::ProcessFaceHatching(IParasolidWireOutput& output, int divisor, PK_FACE_t entityTag, double tolerance)
     {
     if (0 == divisor)
         return;
@@ -2984,17 +2984,9 @@ void PSolidGoOutput::ProcessFaceHatching(IParasolidWireOutput& output, int divis
     if (!setupHatchOptionsForFace(options, entityTag, divisor, tolerance))
         return;
 
-    PK_TRANSF_t entityTransformTag = PK_ENTITY_null;
-
-    if (nullptr != entityTransform)
-        PSolidUtil::CreateTransf(entityTransformTag, *entityTransform);
-
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
-    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null == entityTransformTag ? PK_ENTITY_null : &entityTransformTag, PK_ENTITY_null, &options);
+    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, PK_ENTITY_null, &options);
     s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
-
-    if (PK_ENTITY_null != entityTransformTag)
-        PK_ENTITY_delete(1, &entityTransformTag);
     }
 
 /*---------------------------------------------------------------------------------**//**
