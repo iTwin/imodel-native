@@ -2974,7 +2974,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     Json::Value actualJson;
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
-    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
+    ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
     }
 
     //**** Test 2 *****
@@ -3010,7 +3010,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     Json::Value actualJson;
     ASSERT_EQ(SUCCESS, jsonAdapter.GetRow(actualJson)) << selStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("SAStructProp"));
-    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["SAStructProp"]));
+    ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["SAStructProp"]));
     }
 
     //Mismatching types
@@ -3040,7 +3040,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     verifyStmt.ClearBindings();
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "i" : 3 })json")) << "Double value in original JSON is converted to int during binding";
-    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
+    ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
     }
 
     {
@@ -3060,7 +3060,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "l" : 3 })json")) << "Double value in original JSON is converted to int64 during binding";
-    ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
+    ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson["PStructProp"]));
     }
 
     ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJson, R"json({ "b" : 3.1415 })json"));
@@ -3148,7 +3148,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     Json::Value actualJson;
     ASSERT_EQ(SUCCESS, verifyAdapter.GetRow(actualJson)) << key.GetInstanceId().ToString() << " " << verifyStmt.GetECSql();
     ASSERT_TRUE(actualJson.isMember("PStructProp"));
-    ASSERT_EQ(ComparableJsonCppValue(expectedUpdatedJson), ComparableJsonCppValue(actualJson["PStructProp"]));
+    ASSERT_EQ(JsonValue(expectedUpdatedJson), JsonValue(actualJson["PStructProp"]));
     }
 
 
@@ -5375,7 +5375,7 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
         Json::Value newInstanceJson, instanceJson;
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(newInstanceJson, *newInstance, nullptr, false));
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, nullptr, false));
-        ASSERT_EQ(ComparableJsonCppValue(newInstanceJson), ComparableJsonCppValue(instanceJson));
+        ASSERT_EQ(JsonValue(newInstanceJson), JsonValue(instanceJson));
         }
     }
 

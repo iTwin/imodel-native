@@ -10151,7 +10151,7 @@ TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
     Json::Value expectedCAJson, actualCAJson;
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedCAJson, *expectedCAInstanceWithInstanceId, nullptr, true));
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualCAJson, *actualCAInstanceWithInstanceId, nullptr, true));
-    ASSERT_EQ(ComparableJsonCppValue(expectedCAJson), ComparableJsonCppValue(actualCAJson)) << "Read custom attribute instance with instance id differs from expected.";
+    ASSERT_EQ(JsonValue(expectedCAJson), JsonValue(actualCAJson)) << "Read custom attribute instance with instance id differs from expected.";
 
     //*** assert custom attribute instance without instance id
     ECClassCP domainClass2 = readSchema->GetClassCP("domain2");
@@ -10166,7 +10166,7 @@ TEST_F(DbMappingTestFixture, ReadCustomAttributesTest)
     //compare rest of instance
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedCAJson, *expectedCAInstanceWithoutInstanceId, nullptr, true));
     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualCAJson, *actualCAInstanceWithoutInstanceId, nullptr, true));
-    ASSERT_EQ(ComparableJsonCppValue(expectedCAJson), ComparableJsonCppValue(actualCAJson)) << "Read custom attribute instance without instance id differs from expected.";
+    ASSERT_EQ(JsonValue(expectedCAJson), JsonValue(actualCAJson)) << "Read custom attribute instance without instance id differs from expected.";
     }
 
 //---------------------------------------------------------------------------------------

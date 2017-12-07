@@ -131,6 +131,29 @@ DbResult TestHelper::ExecuteECSql(Utf8CP ecsql) const
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     03/17
 //+---------------+---------------+---------------+---------------+---------------+------
+JsonValue TestHelper::ExecuteSelectECSql(Utf8CP ecsql) const
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
+        return JsonValue(Json::nullValue);
+
+    JsonValue resultSet(Json::arrayValue);
+    JsonECSqlSelectAdapter adapter(stmt);
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Json::Value row;
+        if (SUCCESS != adapter.GetRow(row))
+            return JsonValue(Json::nullValue);
+
+        resultSet.m_value.append(row);
+        }
+
+    return resultSet;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
     {
     ECSqlStatement stmt;
@@ -509,79 +532,7 @@ BentleyStatus TestUtilities::ReadFile(Utf8StringR fileContent, BeFileNameCR file
     return SUCCESS;
     }
 
-//**************************************************************************************
-// ComparableJsonCppValue
-//**************************************************************************************
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle     10/17
-//---------------------------------------------------------------------------------------
-bool ComparableJsonCppValue::operator==(ComparableJsonCppValue const& rhs) const
-    {
-    if (m_value.type() != rhs.m_value.type())
-        return false;
-
-    switch (m_value.type())
-        {
-            case Json::ValueType::arrayValue:
-            {
-            if (m_value.size() != rhs.m_value.size())
-                return false;
-
-            for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
-                {
-                if (ComparableJsonCppValue(m_value[i]) != ComparableJsonCppValue(rhs.m_value[i]))
-                    return false;
-                }
-
-            return true;
-            }
-            case Json::ValueType::booleanValue:
-                return m_value.asBool() == rhs.m_value.asBool();
-
-            case Json::ValueType::intValue:
-                return m_value.asInt64() == rhs.m_value.asInt64();
-
-            case Json::ValueType::nullValue:
-                return m_value.isNull() == rhs.m_value.isNull();
-
-            case Json::ValueType::objectValue:
-            {
-            bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
-            if (lhsMemberNames.size() != rhs.m_value.size())
-                return false;
-
-            for (Utf8StringCR memberName : lhsMemberNames)
-                {
-                if (!rhs.m_value.isMember(memberName))
-                    return false;
-
-                if (ComparableJsonCppValue(m_value[memberName]) != ComparableJsonCppValue(rhs.m_value[memberName]))
-                    return false;
-                }
-
-            return true;
-            }
-
-            case Json::ValueType::realValue:
-                return TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
-
-            case Json::ValueType::stringValue:
-                return strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
-
-            case Json::ValueType::uintValue:
-                return m_value.asUInt64() == rhs.m_value.asUInt64();
-
-            default:
-                BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
-                return false;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  10/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(ComparableJsonCppValue const& json, std::ostream* os) { *os << json.m_value.ToString(); }
 
 //**************************************************************************************
 // ECInstancePopulator

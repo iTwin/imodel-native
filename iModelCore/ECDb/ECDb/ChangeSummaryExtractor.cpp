@@ -29,8 +29,12 @@ BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, ChangeS
 
     // Pass 2
     if (options.IncludeRelationshipInstances())
-        return Extract(ctx, summaryKey.GetInstanceId(), changeSet, ExtractMode::RelationshipInstancesOnly);
+        {
+        if (SUCCESS != Extract(ctx, summaryKey.GetInstanceId(), changeSet, ExtractMode::RelationshipInstancesOnly))
+            return ERROR;
+        }
 
+    ctx.ExtractCompletedSuccessfully(); //to indicate that changes should be committed and not rolled back
     return SUCCESS;
     }
 
@@ -759,10 +763,17 @@ ChangeSummaryExtractor::Context::~Context()
     if (!m_changeSummaryECDb.IsDbOpen())
         return;
 
-    if (BE_SQLITE_OK != m_changeSummaryECDb.SaveChanges())
+    if (m_extractCompletedSuccessfully)
         {
-        Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummary cache file %s", m_changeSummaryECDb.GetDbFileName());
-        BeAssert(false);
+        if (BE_SQLITE_OK != m_changeSummaryECDb.SaveChanges())
+            {
+            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummary cache file %s", m_changeSummaryECDb.GetDbFileName());
+            BeAssert(false);
+            }
+        }
+    else
+        {
+        m_changeSummaryECDb.AbandonChanges();
         }
 
     m_changeSummaryStmtCache.Empty();

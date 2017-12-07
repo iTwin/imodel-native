@@ -13,6 +13,27 @@
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //=======================================================================================    
+// @bsiclass                                                 Krischan.Eberle     10/2017
+//=======================================================================================    
+struct JsonValue final
+    {
+    public:
+        Json::Value m_value = Json::Value(Json::nullValue);
+
+        JsonValue() {}
+        explicit JsonValue(Json::ValueType type) : m_value(type) {}
+        explicit JsonValue(JsonValueCR json) : m_value(json) {}
+        explicit JsonValue(Utf8CP json);
+
+        bool operator==(JsonValue const& rhs) const;
+        bool operator!=(JsonValue const& rhs) const { return !(*this == rhs); }
+
+        Utf8String ToString() const { return m_value.ToString(); }
+    };
+
+void PrintTo(JsonValue const&, std::ostream*);
+
+//=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  07/15
 //=======================================================================================    
 struct SchemaItem final

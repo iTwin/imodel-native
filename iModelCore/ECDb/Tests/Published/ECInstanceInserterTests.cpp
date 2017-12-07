@@ -73,7 +73,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
         Json::Value expectedJson, actualJson;
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedJson, *expected, nullptr, true));
         ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(actualJson, *actual, nullptr, true));
-        ASSERT_EQ(ComparableJsonCppValue(expectedJson), ComparableJsonCppValue(actualJson));
+        ASSERT_EQ(JsonValue(expectedJson), JsonValue(actualJson));
         i++;
         }
     }

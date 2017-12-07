@@ -62,7 +62,7 @@ struct ChangeSummaryExtractor final
                 ECDb m_changeSummaryECDb;
                 ECSqlStatementCache m_changeSummaryStmtCache;
                 bool m_wasChangeSummaryFileAttached = false;
-
+                bool m_extractCompletedSuccessfully = false;
             public:
                 explicit Context(ChangeSummaryManager& manager);
                 //Performs clean-up: 
@@ -71,7 +71,7 @@ struct ChangeSummaryExtractor final
                 ~Context();
 
                 DbResult OpenChangeSummaryECDb();
-
+                void ExtractCompletedSuccessfully() { m_extractCompletedSuccessfully = true; }
                 ECDbCR GetChangeSummaryECDb() const { return m_changeSummaryECDb; }
                 CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const { return m_changeSummaryStmtCache.GetPreparedStatement(m_changeSummaryECDb, ecsql); }
                 ECDbCR GetPrimaryECDb() const;

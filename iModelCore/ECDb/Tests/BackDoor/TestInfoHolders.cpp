@@ -6,8 +6,93 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/TestInfoHolders.h"
+#include "PublicAPI/BackDoor/ECDb/TestHelper.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//**************************************************************************************
+// ComparableJsonCppValue
+//**************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle     12/17
+//---------------------------------------------------------------------------------------
+JsonValue::JsonValue(Utf8CP json)
+    {
+    if (SUCCESS != TestUtilities::ParseJson(m_value, json))
+        m_value = Json::Value(Json::nullValue);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle     10/17
+//---------------------------------------------------------------------------------------
+bool JsonValue::operator==(JsonValue const& rhs) const
+    {
+    if (m_value.type() != rhs.m_value.type())
+        return false;
+
+    switch (m_value.type())
+        {
+            case Json::ValueType::arrayValue:
+            {
+            if (m_value.size() != rhs.m_value.size())
+                return false;
+
+            for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
+                {
+                if (JsonValue(m_value[i]) != JsonValue(rhs.m_value[i]))
+                    return false;
+                }
+
+            return true;
+            }
+            case Json::ValueType::booleanValue:
+                return m_value.asBool() == rhs.m_value.asBool();
+
+            case Json::ValueType::intValue:
+                return m_value.asInt64() == rhs.m_value.asInt64();
+
+            case Json::ValueType::nullValue:
+                return m_value.isNull() == rhs.m_value.isNull();
+
+            case Json::ValueType::objectValue:
+            {
+            bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
+            if (lhsMemberNames.size() != rhs.m_value.size())
+                return false;
+
+            for (Utf8StringCR memberName : lhsMemberNames)
+                {
+                if (!rhs.m_value.isMember(memberName))
+                    return false;
+
+                if (JsonValue(m_value[memberName]) != JsonValue(rhs.m_value[memberName]))
+                    return false;
+                }
+
+            return true;
+            }
+
+            case Json::ValueType::realValue:
+                return TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
+
+            case Json::ValueType::stringValue:
+                return strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
+
+            case Json::ValueType::uintValue:
+                return m_value.asUInt64() == rhs.m_value.asUInt64();
+
+            default:
+                BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
+                return false;
+        }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(JsonValue const& json, std::ostream* os) { *os << json.ToString(); }
 
 //*****************************************************************
 // Table 

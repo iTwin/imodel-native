@@ -81,7 +81,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
                     Json::Value expectedInstanceJson, selectedInstanceJson;
                     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(expectedInstanceJson, *instance, nullptr, true));
                     ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(selectedInstanceJson, *selectedInstance, nullptr, true));
-                    ASSERT_EQ(ComparableJsonCppValue(expectedInstanceJson), ComparableJsonCppValue(selectedInstanceJson)) << "Updated instance from ecdb not as expected.";
+                    ASSERT_EQ(JsonValue(expectedInstanceJson), JsonValue(selectedInstanceJson)) << "Updated instance from ecdb not as expected.";
                     }
                 }
             delete updater;
