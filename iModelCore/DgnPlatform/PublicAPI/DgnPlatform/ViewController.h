@@ -107,6 +107,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 
 protected:
     friend struct ViewContext;
+    friend struct DecorateContext;
     friend struct DgnViewport;
     friend struct ViewManager;
     friend struct ToolAdmin;
@@ -204,9 +205,9 @@ protected:
     //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize);
 
-    //! Stroke a single HitDetail through a ViewContext.
+    //! Stroke a single HitDetail through a DecorateContext.
     //! An application can override _StrokeHit to change how elements are flashed for auto-locate.
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR);
+    DGNPLATFORM_EXPORT virtual BentleyStatus _StrokeHit(DecorateContextR, GeometrySourceCR, HitDetailCR);
 
     //! Get the extent of the model(s) viewed by this view
     virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const = 0;
@@ -749,7 +750,7 @@ private:
 
     void _DrawView(ViewContextR) override;
     Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    Render::GraphicPtr _StrokeHit(ViewContextR, GeometrySourceCR, HitDetailCR) override;
+    BentleyStatus _StrokeHit(DecorateContextR, GeometrySourceCR, HitDetailCR) override;
     bool _Allow3dManipulations() const override;
     AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
 
