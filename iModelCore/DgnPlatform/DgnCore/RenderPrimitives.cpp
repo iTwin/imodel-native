@@ -117,7 +117,6 @@ struct SolidKernelGeometry : Geometry
 {
 private:
     IBRepEntityPtr      m_entity;
-    BeMutex             m_mutex;
 
     SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db);
 
@@ -1584,10 +1583,6 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
     PolyfaceList tilePolyfaces;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
-
-    // Cannot process the same solid entity simultaneously from multiple threads...
-    BeMutexHolder lock(m_mutex);
-
     DRange3d entityRange = m_entity->GetEntityRange();
     if (entityRange.IsNull())
         return tilePolyfaces;                                                                                                                                                                                                 

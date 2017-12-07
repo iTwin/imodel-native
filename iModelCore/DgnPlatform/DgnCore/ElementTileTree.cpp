@@ -37,6 +37,11 @@ struct TileContext;
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
 
+// We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
+// That can't work for BReps because they are associated with a specific thread's partition.
+// In any case it wasn't much of an optimization as we still had to facet/stroke the geometry each time it was encountered.
+// #define CACHE_LARGE_GEOMETRY
+
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
 // With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
@@ -1126,7 +1131,12 @@ bool Loader::IsPastCollectionDeadline() const { return m_collectionDeadline.IsVa
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model.GetDgnDb(), transform, "", &system),
-    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()), m_cacheGeometry(m_is3d)
+    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()),
+#if defined(CACHE_LARGE_GEOMETRY)
+    m_cacheGeometry(m_is3d)
+#else
+    m_cacheGeometry(false)
+#endif
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
