@@ -124,7 +124,7 @@ TEST_F(NotificationManagerTest, PointerTypeDetails_defaults)
     OutputMessagePriority priority = OutputMessagePriority::Info;
     Utf8CP brief = "This is a test";
     NotifyMessageDetails x(priority, brief);
-    ASSERT_EQ(4000, x.GetDisplayTime());    // 4 seconds is the default
+    ASSERT_EQ(3500, x.GetDisplayTime());    // 3.5 seconds is the default
     ASSERT_EQ(nullptr, x.GetPointerTypeViewport());
     ASSERT_EQ(0, x.GetPointerTypeDisplayPoint().x);
     ASSERT_EQ(0, x.GetPointerTypeDisplayPoint().y);
