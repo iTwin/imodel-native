@@ -253,7 +253,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
 
     DPlane3d gridPlane = orthogonalGridUnconstrained->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
-    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From( 1, 0, 0 ))) << "Grid plane normal is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From( 0, 0, 1 ))) << "Grid plane normal is incorrect";
 
     db.SaveChanges ();
 
@@ -679,7 +679,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
 
     DPlane3d gridPlane = orthogonalGridUnconstrainedExtended->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
-    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(1, 0, 0))) << "Grid plane normal is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
 
     db.SaveChanges();
 
@@ -1009,7 +1009,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
 
     DPlane3d gridPlane = orthogonalGridConstrained->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
-    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(1, 0, 0))) << "Grid plane normal is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
 
     db.SaveChanges();
 
@@ -1434,7 +1434,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
 
     DPlane3d gridPlane = orthogonalGridConstrainedExtended->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
-    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(1, 0, 0))) << "Grid plane normal is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
 
     db.SaveChanges();
 
@@ -1763,7 +1763,7 @@ TEST_F(GridsTestFixture, RadialGrid_Empty_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    RadialGridPtr empty = RadialGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1));
+    RadialGridPtr empty = RadialGrid::Create(*m_model.get());
     ASSERT_TRUE(empty.IsValid()) << "Failed to create empty radial grid";
     ASSERT_TRUE(empty->Insert().IsValid()) << "Failed to insert empty grid";
 
@@ -3164,7 +3164,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Grid");
+    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), "Grid");
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
     
     /////////////////////////////////////////////////////////////
@@ -3197,7 +3197,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     /////////////////////////////////////////////////////////////
     // Try setting grid id to a grid axis
     /////////////////////////////////////////////////////////////
-    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Other Grid");
+    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), "Other Grid");
     ASSERT_TRUE(otherGrid->Insert().IsValid()) << "Failed to insert grid";
 
     gridAxis0->SetGridId(otherGrid->GetElementId());
@@ -3216,7 +3216,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     ASSERT_EQ(0, gridAxis1->MakeIterator().BuildIdList<DgnElementId>().size()) << "Grid axis should contain no elements";
     
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 50, 20, 0 }, { 50, 70, 0 }, 90);
-    GridPlaneSurfacePtr plane = GridPlaneSurface::Create(*grid->GetSurfacesModel().get(), gridAxis1, planeExtDetail);
+    GridPlanarSurfacePtr plane = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), gridAxis1, planeExtDetail);
 
     ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
 
@@ -3238,7 +3238,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), DVec3d::From(0, 0, 1), "Grid");
+    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), "Grid");
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
 
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
@@ -3246,7 +3246,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create and insert grid axis";
 
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 0, 0 }, { 10, 0, 0 }, 20);
-    GridPlaneSurfacePtr surface = GridPlaneSurface::Create(*grid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+    GridPlanarSurfacePtr surface = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
 
     ASSERT_TRUE(surface.IsValid()) << "Failed to create grid plane surface";
     ASSERT_TRUE(surface->Insert().IsValid()) << "Failed to insert grid plane surface";
