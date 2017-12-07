@@ -934,7 +934,7 @@ void Mesh::Features::SetIndices(bvector<uint32_t>&& indices)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Mesh::GetRange() const
+DRange3d Mesh::ComputeRange() const
     {
     DRange3d range = DRange3d::NullRange();
     auto const& points = Points();
@@ -948,7 +948,7 @@ DRange3d Mesh::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Mesh::GetUVRange() const
+DRange3d Mesh::ComputeUVRange() const
     {
     DRange3d range = DRange3d::NullRange();
     for (auto const& fpoint : m_uvParams)
@@ -1843,9 +1843,6 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     {
     DRange3d range = m_geometries.ComputeRange();
     bool is2d = !range.IsNull() && range.IsAlmostZeroZ();
-
-    // NB: Scale the quantization range slightly to prevent floating-point fuzz from producing positions slightly outside it.
-    range.ScaleAboutCenter(range, 1.0001);
 
     MeshBuilderMap builderMap(tolerance, featureTable, range, is2d);
     if (m_geometries.empty())

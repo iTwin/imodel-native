@@ -1154,19 +1154,14 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
 
-        // This drastically reduces the time required to generate the root tile, so that the user sees *something* on the screen much sooner.
         range.ScaleAboutCenter(range, s_spatialRangeMultiplier);
         populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
         }
     else
         {
-        // ###TODO_ELEMENT_TILE: What happens if user later adds geometry outside initial range?
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))
-            {
-            // return nullptr; ###TODO_ELEMENT_TILE: Empty models exist...
             range = DRange3d::From(DPoint3d::FromZero());
-            }
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
