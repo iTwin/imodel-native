@@ -28,9 +28,8 @@ CreateParams const& params
 GridSplineSurface::GridSplineSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
-) : T_Super(params, gridAxis, surface) 
+) : T_Super(params, surface) 
     {
     }
 
@@ -58,11 +57,11 @@ bool GridSplineSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
 GridSplineSurfacePtr                 GridSplineSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
-    GridSplineSurfacePtr gridSurface = new GridSplineSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridSplineSurfacePtr gridSurface = new GridSplineSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
     if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
         return nullptr;
 
@@ -75,7 +74,7 @@ ISolidPrimitivePtr  surface
 GridSplineSurfacePtr GridSplineSurface::Create
 (
 Dgn::SpatialLocationModelCR model, 
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 DgnExtrusionDetail extDetail
 )
     {

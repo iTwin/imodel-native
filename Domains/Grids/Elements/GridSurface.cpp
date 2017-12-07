@@ -29,7 +29,8 @@ GridSurface::GridSurface
 CreateParams const& params
 ) : T_Super(params) 
     {
-
+    if (params.m_classId.IsValid()) // elements created via handler have no classid.
+        SetAxisId (params.m_gridAxisId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -38,7 +39,6 @@ CreateParams const& params
 GridSurface::GridSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
 ) : T_Super(params) 
     {
@@ -82,8 +82,7 @@ ISolidPrimitivePtr  surface
             BeAssert (!"Failed to create DrivingSurface Geometry");
         }
 
-    BeAssert (gridAxis->GetElementId ().IsValid ());
-    SetAxisId (gridAxis->GetElementId ());
+    SetAxisId (params.m_gridAxisId);
     }
 
 
@@ -93,7 +92,6 @@ ISolidPrimitivePtr  surface
 GridSurface::GridSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
 CurveVectorPtr  surfaceVector
 ) : T_Super(params) 
     {
@@ -122,22 +120,22 @@ CurveVectorPtr  surfaceVector
             BeAssert (!"Failed to create DrivingSurface Geometry");
         }
 
-    BeAssert (gridAxis->GetElementId ().IsValid ());
-    SetAxisId (gridAxis->GetElementId ());
+    SetAxisId (params.m_gridAxisId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::GeometricElement3d::CreateParams           GridSurface::CreateParamsFromModel
+GridSurface::CreateParams       GridSurface::CreateParamsFromModelAxisClassId
 (
 Dgn::SpatialLocationModelCR model,
+GridAxisCR axis,
 DgnClassId classId
 )
     {
     DgnCategoryId categoryId = SpatialCategory::QueryCategoryId (model.GetDgnDb().GetDictionaryModel (), GRIDS_CATEGORY_CODE_GridSurface);
 
-    CreateParams createParams (model.GetDgnDb (), model.GetModelId (), classId, categoryId);
+    CreateParams createParams (model, classId, axis.GetElementId());
 
     return createParams;
     }
@@ -372,6 +370,19 @@ Dgn::ElementIterator GridSurface::MakeCreatedCurvesIterator() const
         pStmnt->BindId(1, GetElementId());
         }
     return iterator;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+IPlanGridSurface::IPlanGridSurface 
+(
+Dgn::DgnElementR thisElem,
+CreateParams const& params
+) :m_thisElem(thisElem)
+    {
+    SetStartElevation (params.m_startElevation);
+    SetEndElevation (params.m_endElevation);
     }
 
 END_GRIDS_NAMESPACE

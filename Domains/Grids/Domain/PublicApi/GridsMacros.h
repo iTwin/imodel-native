@@ -82,7 +82,9 @@
 
 #define GRIDS_CLASS_DrivingSurface                              "DrivingSurface"
 #define GRIDS_CLASS_GridSurface                                 "GridSurface"
-#define GRIDS_CLASS_GridPlanarSurface                            "GridPlanarSurface"
+#define GRIDS_CLASS_GridPlanarSurface                           "GridPlanarSurface"
+#define GRIDS_CLASS_PlanGridPlanarSurface                       "PlanGridPlanarSurface"
+#define GRIDS_CLASS_PlanCartesianGridSurface                    "PlanCartesianGridSurface"
 #define GRIDS_CLASS_GridSplineSurface                           "GridSplineSurface"
 #define GRIDS_CLASS_GridArcSurface                              "GridArcSurface"
 

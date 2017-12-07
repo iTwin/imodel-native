@@ -28,9 +28,8 @@ CreateParams const& params
 GridArcSurface::GridArcSurface
 (
 CreateParams const& params,
-GridAxisCPtr gridAxis,
 ISolidPrimitivePtr  surface
-) : T_Super(params, gridAxis, surface) 
+) : T_Super(params, surface) 
     {
     }
 
@@ -56,11 +55,11 @@ bool GridArcSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
 GridArcSurfacePtr                 GridArcSurface::Create 
 (
 Dgn::SpatialLocationModelCR model,
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 ISolidPrimitivePtr  surface
 )
     {
-    GridArcSurfacePtr gridSurface =  new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), gridAxis, surface);
+    GridArcSurfacePtr gridSurface =  new GridArcSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
     if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
         return nullptr;
 
@@ -73,7 +72,7 @@ ISolidPrimitivePtr  surface
 GridArcSurfacePtr GridArcSurface::Create
 (
 Dgn::SpatialLocationModelCR model, 
-GridAxisCPtr gridAxis,
+GridAxisCR gridAxis,
 DgnExtrusionDetail extDetail
 )
     {

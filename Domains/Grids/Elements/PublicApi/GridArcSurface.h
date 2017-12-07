@@ -26,7 +26,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GridArcSurface : GridSurface
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params);
-    explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
+    explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params, ISolidPrimitivePtr surface);
     friend struct GridArcSurfaceHandler;
 
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const override;
@@ -43,14 +43,14 @@ public:
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridarc surface
     //! Note: Only solid primitives with DgnExtrusionDetails with arcs as base curves pass as valid geometry
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, ISolidPrimitivePtr surface);
+    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, ISolidPrimitivePtr surface);
 
     //! Creates a gridarc surface
     //! @param[in]  model           model for the grid surface
     //! @param[in]  extDetail       surface geometry
     //! @return                     gridarc surface
     //! Note: Only DgnExtrusionDetails with arcs as base curves pass as valid geometry
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCPtr gridAxis, DgnExtrusionDetail extDetail);
+    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, DgnExtrusionDetail extDetail);
 };
 
 END_GRIDS_NAMESPACE

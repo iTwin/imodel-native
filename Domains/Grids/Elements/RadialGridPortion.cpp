@@ -44,7 +44,7 @@ Dgn::SpatialLocationModelCR model
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisPtr planeAxis, GridAxisPtr arcAxis)
+BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR planeAxis, GridAxisCR arcAxis)
     {
     bvector<GridSurfacePtr> surfaces;
 
@@ -126,7 +126,7 @@ RadialGridPtr RadialGrid::CreateAndInsert (CreateParams params)
 
     if (subModel.IsValid())
         {
-        if (BentleyStatus::ERROR == CreateAndInsertGridSurfaces(params, subModel.get(), planeAxis, arcAxis))
+        if (BentleyStatus::ERROR == CreateAndInsertGridSurfaces(params, subModel.get(), *planeAxis, *arcAxis))
             return nullptr;
         }
     return thisGrid;
