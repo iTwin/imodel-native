@@ -501,8 +501,14 @@ BentleyStatus ElementClassToAspectClassMapping::CreateTable(DgnDbR db)
     {
     if (db.TableExists(SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE)))
         return BSISUCCESS;
-    return db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " (ElementClassId INTEGER NOT NULL, ElementSchemaName TEXT NOT NULL, ElementClassName TEXT NOT NULL, AspectClassId INTEGER NOT NULL, AspectSchemaName TEXT NOT NULL, AspectClassName TEXT NOT NULL)")
-        == BE_SQLITE_OK ? BSISUCCESS : BSIERROR;
+    if (BE_SQLITE_OK != db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " (ElementClassId INTEGER NOT NULL, ElementSchemaName TEXT NOT NULL, ElementClassName TEXT NOT NULL, AspectClassId INTEGER NOT NULL, AspectSchemaName TEXT NOT NULL, AspectClassName TEXT NOT NULL)"))
+        return BSIERROR;
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementClassIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementClassId)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "AspectClassIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(AspectClassId)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "AspectSchemaNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(AspectSchemaName)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementSchemaNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementSchemaName)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementClassNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementClassName)");
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1981,7 +1987,9 @@ void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECCla
                 wasFlattened = true;
                 }
             }
+
         }
+
     if (wasFlattened)
         {
         ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
