@@ -810,7 +810,7 @@
 
     ### Querying into the change summaries
     You can use ECSQL against the @b ECDbChangeSummaries ECSchema to find out what ECInstances and what properties in them have changed 
-    in a given changeset. The @b ECDbChangeSummaries ECSchema is built-into every <b>ChangeSummary cache %ECDb file</b>. Once attached
+    in a given changeset. The @b ECDbChangeSummaries ECSchema is built into every <b>ChangeSummary cache %ECDb file</b>. Once attached
     the entities of that schema can be referenced by the table space mentioned above.
 
     Example:
