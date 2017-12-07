@@ -3974,13 +3974,7 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
                 builder->AddCurveVectorR(*curve, false);
 
                 graphic = builder->Finish();
-
-                if (!graphic.IsValid())
-                    return ERROR;
-
-                context.AddWorldOverlay(*graphic); 
-
-                return SUCCESS;
+                break;
                 }
 
             case SubSelectionMode::Primitive:
@@ -4054,7 +4048,7 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
             return ERROR;
         }
 
-    // Use branch to push geometry from primitive/part towards eye and to override color to differeniate it from normal flash hilite...
+    // Use branch to push geometry towards eye and to override color from normal flash for primitive/part sub-selection...
     double      offsetDist = context.GetPixelSizeAtPoint(&hit.GetHitPoint());
     DVec3d      offsetDir;
     DPoint3d    viewPt[2];
@@ -4071,10 +4065,13 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
     ColorDef color = context.GetViewport()->GetHiliteColor();
     Render::OvrGraphicParams ovrParams;
 
-    ovrParams.SetLineColor(color);
-    ovrParams.SetFillColor(color);
-    ovrParams.SetLineTransparency(0x64);
-    ovrParams.SetFillTransparency(0x64);
+    if (SubSelectionMode::Segment != subMode)
+        {
+        ovrParams.SetLineColor(color);
+        ovrParams.SetFillColor(color);
+        ovrParams.SetLineTransparency(0x64);
+        ovrParams.SetFillTransparency(0x64);
+        }
 
     GraphicBranch branch;
 
