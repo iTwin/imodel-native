@@ -736,6 +736,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
+        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
         m_connections.NotifyConnectionOpened(*m_dgndb);
         }
 
@@ -1139,6 +1140,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             if (descriptor.IsNull())
                 {
                 m_status = DgnDbStatus::BadArg;
+                return;
                 }
             PageOptions pageOptions;
             pageOptions.SetPageStart(0);
