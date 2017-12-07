@@ -2071,7 +2071,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
 
     if (isContained)
         {
-        AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
+        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
         }
     else
         {
@@ -2080,7 +2080,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, displayParams, edges, isPlanar, doVertexCluster);
+            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
         }
     }
 

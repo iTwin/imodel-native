@@ -593,6 +593,7 @@ struct Polyface
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
     Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar); }
+    DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
 };
 
 //=======================================================================================
