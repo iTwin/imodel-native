@@ -10,7 +10,6 @@
 
 #include <RoadRailAlignment/RoadRailAlignment.h>
 #include <GeomSerialization/GeomSerializationApi.h>
-#include <Formatting/FormattingApi.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC

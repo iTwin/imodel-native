@@ -92,7 +92,6 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(lib
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
-LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
 
