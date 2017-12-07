@@ -74,7 +74,7 @@ void RulesDrivenECPresentationManagerMultithreadingTests::TearDown()
     }
 
 #ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
-    #define VERIFY_THREAD_NE(threadId)
+    #define VERIFY_THREAD_NE(threadId)  (void)threadId;
 #else
     #define VERIFY_THREAD_NE(threadId)  EXPECT_NE(threadId, BeThreadUtilities::GetCurrentThreadId())
 #endif
