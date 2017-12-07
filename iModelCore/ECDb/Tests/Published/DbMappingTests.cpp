@@ -2959,6 +2959,75 @@ TEST_F(DbMappingTestFixture, AttachedTableSpace)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  12/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, AttachWithoutApi)
+    {
+    BeFileName attachedECDbPath;
+
+    {
+    //attach file
+    BeTest::GetHost().GetOutputRoot(attachedECDbPath);
+    attachedECDbPath.AppendToPath(L"AttachedTableSpace.ecdb.attached");
+    if (attachedECDbPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, attachedECDbPath.BeDeleteFile());
+
+    ECDb attached;
+    ASSERT_EQ(BE_SQLITE_OK, attached.CreateNewDb(attachedECDbPath));
+
+    TestHelper testHelper(attached);
+    ASSERT_EQ(SUCCESS, testHelper.ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Parent" modifier="None">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" modifier="Sealed">
+                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Parent" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="Child" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey parentKey;
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, testHelper.ExecuteECSql(Utf8PrintfString("INSERT INTO ts.Child(Parent.Id,Name) VALUES(%s,'Child 1')",
+                                                                       parentKey.GetInstanceId().ToString().c_str()).c_str()));
+
+    ASSERT_EQ(BE_SQLITE_OK, attached.SaveChanges());
+    attached.CloseDb();
+    }
+
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("attachedtablespace.ecdb"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachDb(attachedECDbPath.GetNameUtf8().c_str(), "attached"));
+
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM main.ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent"));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachDb("attached"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent")) << "after detaching";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent")) << "after detaching";
+
+    //now attach with plain SQL. ECDb will not be notified about the attachment. Therefore queries will not work
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly, DefaultTxn::No)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS attached", attachedECDbPath.GetNameUtf8().c_str()).c_str()));
+    Savepoint sp(m_ecdb, "");
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Parent")) << "after attaching via SQL";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM attached.ts.Parent")) << "after attaching via SQL";
+    sp.Cancel();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                     Krischan.Eberle                  11/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECDbAndNonECDbAttachedTableSpace)

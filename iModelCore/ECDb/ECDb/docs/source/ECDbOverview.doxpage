@@ -825,15 +825,20 @@
 
         SELECT ... FROM MySchema.MyClass.<b>Changes</b>(ChangeSummaryId, ChangedValueState) ...
 
-    where ChangedValueState corresponds to the values of the enum @ref BentleyApi::BeSQLite::EC::ChangedValueState "ChangedValueState" :
+    ChangeSummaryId: The ECInstanceId of the ChangeSummary instance created by BentleyApi::BeSQLite::ECECDb::ExtractChangeSummary.
+    ChangedValueState: corresponds to the values of the enum @ref BentleyApi::BeSQLite::EC::ChangedValueState "ChangedValueState".
     
-    ChangedValueState|Description
-    -----------------|-----------
-    AfterInsert|the value of an inserted row
-    BeforeUpdate|the value of an updated row before the update
-    AfterUpdate|the value of an updated row fater the update
-    BeforeDelete|the value of a deleted row before the delete
+    @note You can format the ChangedValueState in the ECSQL either by the enum's integral values or by the enum value's name. The following
+    two ECSQL statements are equivalent:
+        
+        SELECT ... FROM MySchema.MyClass.Changes(12, 1)
+    or
+        SELECT ... FROM MySchema.MyClass.Changes(12, 'AfterInsert')
 
+    ### Notes when specifying ChangedValueStatue::BeforeUpdate or ChangedValueStatue::AfterUpdate
+    For any select clause item whose value has not changed in the specified change summary, the value of the current state of the file is returned. The function does @b NOT 
+    return the value it was at the revision the change summary referred to.
+    
     @see @ref ECDbOverview
     */
 

@@ -113,6 +113,15 @@ bool ChangeSummaryManager::IsChangeSummaryCacheValid(ECDbCR cacheECDb, bool logE
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExists) const
     {
+    if (!m_ecdb.IsDbOpen())
+        return BE_SQLITE_ERROR;
+
+    if (Utf8String::IsNullOrEmpty(m_ecdb.GetDbFileName()))
+        {
+        m_ecdb.GetImpl().Issues().Report("Failed to attach the ChangeSummary cache file. Primary file is an in-memory or temporary ECDb file for which ChangeSummary cache files are not supported.");
+        return BE_SQLITE_ERROR;
+        }
+
     if (ChangeSummaryTableSpaceExists())
         {
         if (!IsChangeSummaryCacheAttachedAndValid(true))

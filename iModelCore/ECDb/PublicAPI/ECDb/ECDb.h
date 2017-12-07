@@ -44,10 +44,10 @@ enum class ChangeOpCode
 //+===============+===============+===============+===============+===============+======
 enum class ChangedValueState
     {
-    AfterInsert = 1,
-    AfterUpdate = 2,
-    BeforeUpdate = 3,
-    BeforeDelete = 4
+    AfterInsert = 1, //!< query for the property values of an inserted row
+    BeforeUpdate = 2, //!< query for the changed property values of an updated row before the update
+    AfterUpdate = 3, //!< query for the changed property values of an updated row after the update
+    BeforeDelete = 4 //!< query for the property values of a deleted row before the delete
     };
 
 //=======================================================================================

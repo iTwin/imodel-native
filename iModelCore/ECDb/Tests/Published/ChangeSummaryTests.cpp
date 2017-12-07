@@ -394,7 +394,7 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("ValidCache_InvalidCache.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?> 
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
             <ECEntityClass typeName="Foo1">
@@ -487,6 +487,17 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     assertExtraction(m_ecdb, revision1, true, "Opened with ChangeSummaryCacheMode::AttachAndCreateIfNotExists where cache did exist");
 
     CloseECDb();
+
+    //attach cache with plain SQL command
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS changesummaries", cachePath.GetNameUtf8().c_str()).c_str()));
+    Savepoint sp(m_ecdb, "");
+    assertCache(m_ecdb, false, "Attached change summary with SQL command (expected to not be recognized by ECDb)");
+    assertExtraction(m_ecdb, revision1, false, "Attached change summary with SQL command (expected to not be recognized by ECDb)");
+    sp.Cancel();
+
+    //open with default open params when cache doesn't exist
+    CloseECDb();
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     assertCache(m_ecdb, false, "Opened with default open params where cache did not exist");
@@ -568,6 +579,29 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateNewDb(":memory:"));
+    TestHelper helper(m_ecdb);
+
+    ASSERT_EQ(SUCCESS, helper.ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo2">
+                <ECProperty propertyName="Dt" typeName="dateTime" />
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeSummaryCache()) << "cannot create a change summary cache for an in-memory primary file";
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
@@ -916,11 +950,10 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
     m_ecdb.SaveChanges();
     {
     ECSqlStatement stmt;
-    //ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2 FROM ts.Element.Changes(?1, ?2)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, P2D FROM ts.Element.Changes(?,?)"));
 
     stmt.BindId(1, changeSummaryKey.GetInstanceId());
-    stmt.BindInt(2, 1); //1: Insert TODO: Replace by OpCode enum
+    stmt.BindInt(2, (int) ChangedValueState::AfterInsert);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
     }
@@ -1568,7 +1601,7 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                       11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ChangeSummaryTestFixture, AttachFileIsNotTrackingByChangeTracking)
+TEST_F(ChangeSummaryTestFixture, NoChangeTrackingInAttachedFile)
     {
     BeFileName primaryFilePath = ECDbTestFixture::BuildECDbPath("pri.db");
     BeFileName attachedFilePath = ECDbTestFixture::BuildECDbPath("sec.db");
