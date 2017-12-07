@@ -966,7 +966,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         }
 
     Dgn::TileTree::TriMeshTree::TriMeshList triMeshList;
-    scene._CreateGeometry(triMeshList, trimesh, renderSys);
+    scene.CreateGeometry(triMeshList, trimesh, renderSys);
     for (auto& meshEntry : triMeshList)
         {
         m_meshes.push_front(meshEntry);
