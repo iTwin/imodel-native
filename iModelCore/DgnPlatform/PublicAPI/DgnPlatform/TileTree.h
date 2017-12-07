@@ -77,7 +77,6 @@ HTTP request caching:
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PickArgs)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNode)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileRequests)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
@@ -319,6 +318,8 @@ public:
 
     //! When the range of the model changes, update this tile's range
     virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
+
+    virtual bool _IsPartial() const { return false; }
 };
 
 /*=================================================================================**//**
@@ -334,6 +335,8 @@ struct Root : RefCountedBase, NonCopyableClass
 protected:
     bool m_isHttp;
     bool m_pickable = false;
+    bool m_ignoreChanges = false;
+    bool m_haveDisplayTransform = false;
     mutable std::set<TileLoadStatePtr, TileLoadState::PtrComparator> m_activeLoads;
     DgnDbR m_db;
     BeFileName m_localCacheName;
@@ -345,6 +348,7 @@ protected:
     RealityData::CachePtr m_cache;
     mutable BeConditionVariable m_cv;
     DirtyRanges::List m_damagedRanges;
+    Transform m_displayTransform;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
@@ -353,6 +357,7 @@ protected:
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
+    Transform GetDisplayTransform(RenderContextR context) const;
 
     virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }
     virtual void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) { }
@@ -435,6 +440,8 @@ public:
     void OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id);
     void OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id);
     virtual void _OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents) { }
+    void SetIgnoreChanges(bool ignore); //!< @private
+    void SetDisplayTransform(TransformCP tf); //!< @private
 };
 
 //=======================================================================================
@@ -545,34 +552,6 @@ struct FileDataQuery
 };
 
 //=======================================================================================
-//! Describes a missing tile and its distance from the camera.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct MissingNode
-{
-private:
-    TileCPtr    m_tile;
-    double      m_distance;
-public:
-    MissingNode(TileCR tile, double distance) : m_tile(&tile), m_distance(distance) {}
-    MissingNode() {} // for bset use only...
-
-    TileCR GetTile() const { return *m_tile; }
-    double GetDistance() const { return m_distance; }
-    uint32_t GetDepth() const { return GetTile().GetDepth(); }
-
-    bool operator<(MissingNodeCR rhs) const
-        {
-        if (m_tile.get() == rhs.m_tile.get())
-            return false;
-        else if (GetDistance() != rhs.GetDistance())
-            return GetDistance() < rhs.GetDistance();
-        else
-            return GetDepth() < rhs.GetDepth();
-        }
-};
-
-//=======================================================================================
 //! A set of missing tiles intended to be queued for loading.
 //! Sorted according to priority for loading - tiles nearer the root or closer to the camera
 //! are loaded with priority.
@@ -581,12 +560,36 @@ public:
 //=======================================================================================
 struct MissingNodes
 {
+    struct Node
+    {
+        friend struct MissingNodes;
+    private:
+        TileCPtr    m_tile;
+        bool        m_prioritize;
+
+        Node(TileCR tile, bool prioritize) : m_tile(&tile), m_prioritize(prioritize) { }
+    public:
+        Node() { }
+
+        TileCR operator*() const { return *m_tile; }
+        TileCP operator->() const { return m_tile.get(); }
+
+        bool operator<(Node const& rhs) const
+            {
+            if (m_tile->GetDepth() != rhs.m_tile->GetDepth())
+                return m_tile->GetDepth() < rhs.m_tile->GetDepth();
+            else if (m_prioritize != rhs.m_prioritize)
+                return m_prioritize;
+            else
+                return m_tile.get() < rhs.m_tile.get();
+            }
+    };
 private:
-    typedef bset<MissingNode> Set;
+    typedef bset<Node> Set;
 
     Set m_set;
 public:
-    void Insert(TileCR tile, double distance);
+    void Insert(TileCR tile, bool prioritize);
     bool Contains(TileCR tile) const;
 
     bool empty() const { return m_set.empty(); }
@@ -857,6 +860,8 @@ struct TriMesh : RefCountedBase, NonCopyableClass
 
         Render::QPoint3dList QuantizePoints() const;
         Render::OctEncodedNormalList QuantizeNormals() const;
+        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+        DGNPLATFORM_EXPORT void FromTile(Render::TextureCR tile, Render::GraphicBuilder::TileCorners const& corners, FPoint3d* fpts, DgnDbR db);
     };
 protected:
     Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
@@ -873,6 +878,7 @@ public:
     DGNPLATFORM_EXPORT void Draw(DrawArgsR);
     DGNPLATFORM_EXPORT void Pick(PickArgsR);
 
+    bvector<Render::GraphicPtr> GetGraphics() const {return m_graphics;}
     void ClearGraphic() {m_graphics.clear();}
     Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
@@ -881,6 +887,8 @@ public:
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriMesh);
 DEFINE_REF_COUNTED_PTR(TriMesh);
+
+typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
 
 //=======================================================================================
 //! The root of a TriMeshTree
@@ -893,8 +901,12 @@ struct Root : TileTree::Root
 protected:
     Root(DgnDbR db, TransformCR location, Utf8CP sceneFile, Render::SystemP system) : T_Super(db, location, sceneFile, system) { }
 
-    virtual TriMeshPtr _CreateGeometry(TriMesh::CreateParams const& args, Render::SystemP system) {return new TriMesh(args, *this, system);}
+    void ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
+
     virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
+
+public:
+    DGNPLATFORM_EXPORT void CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
 };
 
 //=======================================================================================
@@ -904,7 +916,6 @@ protected:
 struct Tile : TileTree::Tile
 {
     DEFINE_T_SUPER(TileTree::Tile);
-    typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
 
 protected:
     double m_maxDiameter;

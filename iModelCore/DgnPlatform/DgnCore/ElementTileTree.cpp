@@ -14,6 +14,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
+
 // Define this if you want to generate a root tile containing geometry.
 // By default the root tile is empty unless it would contain relatively few elements, which enables us to:
 //  - reduce the number of elements per top-most tile; and
@@ -53,6 +54,8 @@ struct TileContext;
 // Uncomment this to enable that (ideally after having addressed the symbology issue noted above)
 // #define SHARE_GEOMETRY_PARTS
 
+// #define DISABLE_CLIPPING
+
 // Uncomment to record and output statistics on # of cached tiles, time spent reading them, etc
 #define TILECACHE_DEBUG
 
@@ -69,208 +72,6 @@ struct TileContext;
 #define TILECACHE_PRINTF THREADLOG.debugv
 #else
 #define TILECACHE_PRINTF(...)
-
-#endif
-
-#if defined (BENTLEYCONFIG_PARASOLID) 
-
-// These marks are a huge bottleneck, killing performance.
-// #define SKIP_PMARKS
-
-// The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
-// by all threads.
-
-#if !defined(SKIP_PMARKS)
-typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     ThreadedParasolidErrorHandlerInnerMarkPtr;
-
-
-class   ParasolidException {};
-
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      10/2015
-*  Called from the main thread to register Thread Local Storage used by
-*  all threads for Parasolid error handling.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedLocalParasolidHandlerStorageMark
-{
-    BeThreadLocalStorage*       m_previousLocalStorage;
-
-    ThreadedLocalParasolidHandlerStorageMark ();
-    ~ThreadedLocalParasolidHandlerStorageMark ();
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      10/2015
-*  Inner mark.   Included around code sections that should be rolled back in case
-*                Of serious error.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedParasolidErrorHandlerInnerMark : RefCountedBase
-{
-    static ThreadedParasolidErrorHandlerInnerMarkPtr Create () { return new ThreadedParasolidErrorHandlerInnerMark(); }                                                 
-
-protected:
-
-    ThreadedParasolidErrorHandlerInnerMark();
-    ~ThreadedParasolidErrorHandlerInnerMark();
-};
-      
-typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerOuterMark>     ThreadedParasolidErrorHandlerOuterMarkPtr;
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2015
-*  Outer mark.   Included once to set up Parasolid error handling for a single thread.
-+===============+===============+===============+===============+===============+======*/
-struct  ThreadedParasolidErrorHandlerOuterMark  : RefCountedBase 
-{
-    PK_ERROR_frustrum_t     m_previousErrorFrustum;
-
-    static ThreadedParasolidErrorHandlerOuterMarkPtr Create () { return new ThreadedParasolidErrorHandlerOuterMark(); }
-
-protected:
-
-    ThreadedParasolidErrorHandlerOuterMark();
-    ~ThreadedParasolidErrorHandlerOuterMark();
-};
-    
-
-static      BeThreadLocalStorage*       s_threadLocalParasolidHandlerStorage;    
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015                                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMark ()
-    {
-    if (nullptr == (m_previousLocalStorage = s_threadLocalParasolidHandlerStorage))
-        s_threadLocalParasolidHandlerStorage = new BeThreadLocalStorage;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageMark () 
-    { 
-    if (nullptr == m_previousLocalStorage) 
-        DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
-
-    }
-
-typedef bvector<PK_MARK_t>  T_RollbackMarks;
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static T_RollbackMarks*  getRollbackMarks () 
-    { 
-    static T_RollbackMarks      s_unthreadedMarks;
-
-    return nullptr == s_threadLocalParasolidHandlerStorage ? &s_unthreadedMarks : reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());   
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void clearRollbackMarks () 
-    {    
-    T_RollbackMarks*    rollbackMarks;
-             
-    if (nullptr != s_threadLocalParasolidHandlerStorage &&
-        nullptr != (rollbackMarks = reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer())))
-        {
-        delete rollbackMarks;
-        s_threadLocalParasolidHandlerStorage->SetValueAsPointer(nullptr);
-        } 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void clearExclusions()
-    {
-    PK_THREAD_exclusion_t       clearedExclusion;
-    PK_LOGICAL_t                clearedThisThread;
-
-    PK_THREAD_clear_exclusion (PK_THREAD_exclusion_serious_c, &clearedExclusion, &clearedThisThread);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
-    {
-    if (errorSf->severity > PK_ERROR_mild)
-        {
-        switch (errorSf->code)
-            {
-            case 942:         // Edge crossing (constructing face from curve vector to perform intersections)
-            case 547:         // Nonmanifold  (constructing face from curve vector to perform intersections)
-            case 1083:        // Degenerate trim loop.
-                break;
-
-            default:
-                printf ("Error %d caught in parasolid error handler\n", errorSf->code);
-                BeAssert (false && "Severe error during threaded processing");
-                break;
-            }
-        PK_MARK_goto (getRollbackMarks()->back());
-        clearExclusions ();
-        
-        PK_THREAD_tidy();
-
-        throw ParasolidException();
-        }
-    
-    return 0; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerOuterMark::ThreadedParasolidErrorHandlerOuterMark ()
-    {
-    BeAssert (nullptr == getRollbackMarks());      // The outer mark is not nestable.
-
-    PK_THREAD_ask_error_cbs (&m_previousErrorFrustum);
-
-    PK_ERROR_frustrum_t     errorFrustum;
-
-    errorFrustum.handler_fn = threadedParasolidErrorHandler;
-    PK_THREAD_register_error_cbs (errorFrustum);
-
-    s_threadLocalParasolidHandlerStorage->SetValueAsPointer (new T_RollbackMarks());
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerOuterMark::~ThreadedParasolidErrorHandlerOuterMark ()
-    {
-    PK_THREAD_register_error_cbs (m_previousErrorFrustum);
-    clearRollbackMarks(); 
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerInnerMark::ThreadedParasolidErrorHandlerInnerMark ()
-    {
-    PK_MARK_t       mark;
-
-    PK_MARK_create (&mark);
-    getRollbackMarks()->push_back (mark);
-    }
-      
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      02/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark ()
-    {
-    PK_MARK_delete (getRollbackMarks()->back());
-    getRollbackMarks()->pop_back();
-    }
-#endif // SKIP_PMARKS
 
 #endif
 
@@ -943,6 +744,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
     return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
     }
 
+
 #ifdef TILECACHE_DEBUG
 static double s_displayTime = 5.0;   // Every 5 second.
 
@@ -992,24 +794,13 @@ void Display()
 static TileCacheStatistics       s_statistics;
 #endif
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
     {
-#if defined (BENTLEYCONFIG_PARASOLID)
-
-#if !defined(SKIP_PMARKS)
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-#endif
-    PSolidKernelManager::StartSession();
-
-#if !defined(SKIP_PMARKS)
-    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-#endif
-
+#if defined (BENTLEYCONFIG_PARASOLID)    
+    PSolidThreadUtil::WorkerThreadOuterMark outerMark;
 #endif
 
     auto& tile = GetElementTile();
@@ -1247,7 +1038,7 @@ BentleyStatus Loader::_LoadTile()
             }
         }
 
-    if (!tile.IsPartial())
+    if (!tile._IsPartial())
         {
         tile.ClearBackupGraphic();
         tile.SetIsReady();
@@ -1258,6 +1049,10 @@ BentleyStatus Loader::_LoadTile()
         // Mark partial tile as canceled so it becomes 'not loaded' again and we can resume tile generation from where we left off...
         BeAssert(nullptr != m_loads);
         m_loads->SetCanceled();
+
+        // Also notify host that a new tile has become available, though it's only partial - otherwise it won't know to recreate the scene...
+        T_HOST._OnNewTileReady(root.GetDgnDb());
+
         return ERROR;
         }
     }
@@ -1339,6 +1134,10 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     m_cache = model.GetDgnDb().ElementTileCache();
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID) 
+static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1381,12 +1180,11 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     Transform transform = Transform::From(centroid);
 
-    // ###TODO parasolid...
 #if defined (BENTLEYCONFIG_PARASOLID)
-#if !defined(SKIP_PMARKS)
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-#endif
     PSolidKernelManager::StartSession();
+
+    if (s_psolidMainThreadMark.IsNull())
+        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
 #endif
 
     RootPtr root = new Root(model, transform, system);
@@ -1626,7 +1424,7 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
     // Only cache geometry which occupies a significant portion of the model's range, since it will appear in many tiles
     constexpr double rangeRatio = 0.25;
     DRange3d range = ComputeRange();
-    double diag = range.low.DistanceSquared(range.high); // ###TODO: Cache this.
+    double diag = range.low.DistanceSquared(range.high);
     if (0.0 == diag)
         return false;
 
@@ -1770,7 +1568,7 @@ Utf8String Tile::_GetTileCacheKey() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
-    if (IsReady())
+    if (IsReady() || _IsPartial())
         {
         BeAssert(_HasGraphics());
         if (_HasGraphics())
@@ -1897,7 +1695,7 @@ void Root::_OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
     // Note that currently we consider drawing outside of the project extents to be illegal.
     // Therefore we do not attempt to regenerate tiles to include geometry previously outside the extents, or exclude geometry previously within them.
     auto rootTile = static_cast<TileP>(GetRootTile().get());
-    if (Is3d() && nullptr != rootTile)
+    if (Is3d() && nullptr != rootTile && !m_ignoreChanges)
         {
         // ###TODO: What about non-spatial 3d models?
         Transform tfToTile;
@@ -2040,6 +1838,18 @@ double Tile::_GetMaximumSize() const
     return m_displayable ? s_tileScreenSize * m_zoomFactor : 0.0;
     }
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     12/2017
++===============+===============+===============+===============+===============+======*/
+struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
+{
+    bvector<PolyfaceHeaderPtr>  m_clipped;
+    bvector<PolyfaceQueryCP>    m_output;
+
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
+};
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -2066,6 +1876,7 @@ private:
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
     void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained) { AddPolyface(polyfaces, geom, geom.GetDisplayParams(), rangePixels, isContained); }
     void AddPolyface(Polyface& polyface, GeometryR, DisplayParamsCR ,double rangePixels, bool isContained);
+    void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
@@ -2236,20 +2047,11 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
         return;
 
-    DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
-    bool hasTexture = displayParams.IsTextured();
-
-    MeshBuilderMap::Key key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
-    MeshBuilderR builder = GetMeshBuilder(key);
-
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
-
-    bool                    anyContributed = false;
-    uint32_t                fillColor = displayParams.GetFillColor();
 
 #if defined(DISABLE_EDGE_GENERATION)
     auto edgeOptions = MeshEdgeCreationOptions::NoEdges;
@@ -2257,16 +2059,53 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     auto edgeOptions = tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
 #endif
 
-    builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(edgeOptions));
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+    // NB: You might think we wouldn't need to clip the root tile - but geometry can end up outside the project extents so...
+
+    DgnElementId            elemId = GetElementId(geom);
+    MeshEdgeCreationOptions edges(edgeOptions);
+    bool                    isPlanar = tilePolyface.m_isPlanar;
+
+    if (isContained)
         {
-        if (isContained || GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-            {
-            anyContributed = true;
-            DgnElementId elemId = GetElementId(geom);
-            builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
-            m_contentRange.Extend(visitor->Point());
-            }
+        AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
+        }
+    else
+        {
+        TileRangeClipOutput     clipOutput;
+
+        polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
+
+        for (auto& clipped : clipOutput.m_output)
+            AddClippedPolyface(*clipped, elemId, displayParams, edges, isPlanar, doVertexCluster);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar, bool doVertexCluster)
+    {
+    bool hasTexture = displayParams.IsTextured();
+    bool anyContributed = false;
+    uint32_t fillColor = displayParams.GetFillColor();
+    DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
+
+    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar);
+    MeshBuilderR builder = GetMeshBuilder(key);
+
+    builder.BeginPolyface(polyface, edgeOptions);
+
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
+        {
+#if defined(DISABLE_CLIPPING)
+        if (!GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+            continue;
+#else
+        BeAssert(GetTileRange().IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))));
+#endif
+        anyContributed = true;
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor, nullptr != polyface.GetNormalCP());
+        m_contentRange.Extend(visitor->Point());
         }
 
     builder.EndPolyface();
@@ -2294,66 +2133,64 @@ void MeshGenerator::ClipStrokes(StrokesR strokes) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
+* @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Strokes MeshGenerator::ClipSegments(StrokesCR input) const
     {
-    // Might be more efficient to modify input in-place.
     BeAssert(!input.m_disjoint);
 
-    Strokes output(*input.m_displayParams, input.m_disjoint, input.m_isPlanar);
-    enum    State { kInside, kOutside, kCrossedOutside };
-
+    Strokes output(*input.m_displayParams, false, input.m_isPlanar);
     output.m_strokes.reserve(input.m_strokes.size());
 
     for (auto const& inputStroke : input.m_strokes)
         {
-        auto const&     points = inputStroke.m_points;
-        DRange3d        range = DRange3d::From(points);
-        DPoint3d        rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
-
+        auto const& points = inputStroke.m_points;
         if (points.size() <= 1)
             continue;
 
+        DRange3d    range = DRange3d::From(points);
+        DPoint3d    rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
+
         DPoint3d prevPt = points.front();
-        State   prevState = GetTileRange().IsContained(prevPt) ? kInside : kOutside;
-        if (kInside == prevState)
+        bool prevOutside = !GetTileRange().IsContained(prevPt);
+        if (!prevOutside)
             {
             output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance, rangeCenter));
             output.m_strokes.back().m_points.push_back(prevPt);
             }
 
-        double   length = inputStroke.m_startDistance;       // Cumulative length along polyline.
+        double length = inputStroke.m_startDistance;        // Cumulative length along polyline
         for (size_t i = 1; i < points.size(); i++)
             {
             auto nextPt = points[i];
-            bool contained = GetTileRange().IsContained(nextPt);
-            State nextState = contained ? kInside : (kInside == prevState ? kCrossedOutside : kOutside);
-            if (kOutside == nextState && kOutside == prevState)
+            bool nextOutside = !GetTileRange().IsContained(nextPt);
+            DSegment3d clippedSegment;
+            if (prevOutside || nextOutside)
                 {
-                // The endpoints of a segment may lie outside of the range, but intersect it...
-                double unused1, unused2;
-                DSegment3d unused3;
-                DSegment3d segment = DSegment3d::From(prevPt, nextPt);
-                if (GetTileRange().IntersectBounded(unused1, unused2, unused3, segment))
-                    nextState = kCrossedOutside;
-                }
-
-            if (kOutside != nextState)
-                {
-                if (kOutside == prevState)
+                double param0, param1;
+                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
+                if (!GetTileRange().IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
                     {
-                    // back inside - start a new line string...
-                    output.m_strokes.push_back(Strokes::PointList(length, rangeCenter));
-                    output.m_strokes.back().m_points.push_back(prevPt);
+                    // entire segment clipped
+                    BeAssert(prevOutside && nextOutside);
+                    prevPt = nextPt;
+                    continue;
                     }
-
-                BeAssert(!output.m_strokes.empty());
-                output.m_strokes.back().m_points.push_back(nextPt);
                 }
-            length += prevPt.Distance(nextPt);
-            prevState = nextState;
+
+            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
+            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
+
+            if (prevOutside)
+                {
+                output.m_strokes.push_back(Strokes::PointList(length, rangeCenter));
+                output.m_strokes.back().m_points.push_back(startPt);
+                }
+
+            output.m_strokes.back().m_points.push_back(endPt);
+
             prevPt = nextPt;
+            prevOutside = nextOutside;
             }
 
         BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().m_points.size());
@@ -2434,10 +2271,7 @@ MeshList MeshGenerator::GetMeshes()
         {
         MeshP mesh = builder.second->GetMesh();
         if (!mesh->IsEmpty())
-            {
-            mesh->Close();
             meshes.push_back(mesh);
-            }
         }
 
     // Do not allow vertices outside of this tile's range to expand its content range
@@ -2724,7 +2558,7 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
 
     // Ensure partial root tiles are completed before generating child tiles...
     // NB: We don't mark the partial tiles as 'ready'...wait until they are complete.
-    if (IsPartial())
+    if (_IsPartial())
         {
         args.InsertMissing(*this);
         if (_HasGraphics())
@@ -2786,6 +2620,8 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
     if (!tooCoarse)
         _UnloadChildren(args.m_purgeOlderThan);
 
+#define REQUIRE_ALL_CHILDREN_LOADED
+#if defined(REQUIRE_ALL_CHILDREN_LOADED)
     if (ready)
         {
         if (_HasGraphics())
@@ -2793,14 +2629,14 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
 
         return SelectParent::No;
         }
-    else if (_HasBackupGraphics())
-        {
-        // Draw placeholder graphics while waiting for tile to be repaired...
-        selected.push_back(this);
-        return SelectParent::No;
-        }
 
     return SelectParent::Yes;
+#else
+    if (_HasGraphics())
+        selected.push_back(this);
+
+    return SelectParent::No;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2821,11 +2657,11 @@ GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGrap
     {
     DgnGeometryPartCR input = subGf.GetInput();
     if (accum.GetGeometries().empty())
-        BeAssert(false);
+        BeAssert(m_loadContext.WasAborted());
 
     subGf.SetOutput(*GeomPart::Create(input.GetBoundingBox(), accum.GetGeometries()));
     if (accum.GetGeometries().empty())
-        BeAssert(false);
+        BeAssert(m_loadContext.WasAborted());
 
     return m_finishedGraphic;
     }
@@ -2837,6 +2673,13 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     {
     try
         {
+#ifndef NDEBUG
+        static DgnElementId             s_debugId; // ((uint64_t) 1099511628078);
+
+        if (s_debugId.IsValid() && s_debugId != elemId)
+            return;
+#endif
+
         if (!m_root.GetCachedGeometry(m_geometries, elemId, rangeDiagonalSquared))
             {
             m_curElemId = elemId;
@@ -2887,7 +2730,7 @@ void TileContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     _CookGeometryParams(geomParams, graphicParams);
     AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams);
     }
-
+                                                                                                                                 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2930,6 +2773,7 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     return status;
     }
 
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2938,9 +2782,4 @@ Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double 
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
     }
-
-#if defined (BENTLEYCONFIG_PARASOLID) && !defined(SKIP_PMARKS)
-// ###TODO: ugh.
-static ThreadedLocalParasolidHandlerStorageMark s_tempParasolidThreadedHandlerStorageMark;
-#endif
 

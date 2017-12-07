@@ -13,8 +13,15 @@
 * get the class id from a string in the form "Schema:ClassName"
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
+DgnClassId JsonUtils::DgnClassIdFromJson(JsonValueCR json, DgnDbR db)
     {
+    auto name = json.asString();
+    if (name.empty())
+        {
+        BeDataAssert(false && "JSON representation of classid must be a string in the form \"Schema:ClassName\"");
+        return DgnClassId();
+        }
+
     auto dot = name.find(':');
     if (Utf8String::npos == dot || name.length() <= dot + 1)
         return DgnClassId();
@@ -1240,7 +1247,7 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
 
     m_id.FromJson(val[json_id()]);
     if (m_id.IsValid())
-        m_relClassId = getClassId(db, val[json_relClass()].asString());
+        m_relClassId = JsonUtils::DgnClassIdFromJson(val[json_relClass()], db);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1593,7 +1600,7 @@ void DgnElement::_FromJson(JsonValueR props)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     {
-    m_classId = getClassId(db, val[DgnElement::json_classFullName()].asString());
+    m_classId = JsonUtils::DgnClassIdFromJson(val[DgnElement::json_classFullName()], db);
     m_modelId.FromJson(val[DgnElement::json_model()]);
     m_code.FromJson(val[DgnElement::json_code()]);
     m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());

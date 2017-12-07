@@ -682,7 +682,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
     {
     if (importSchemas.empty())
         {
-        BeAssert(false);
+        // BeAssert(false);
         return SchemaStatus::Success;
         }
 

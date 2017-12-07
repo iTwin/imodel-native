@@ -1389,6 +1389,8 @@ static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddLineString(int numPoints, DPoint3dCP points)
     {
+    m_processor._OnNewGeometry();
+
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
     
     ClipAndProcessCurveVector(*curve, false);
@@ -1410,6 +1412,8 @@ void SimplifyGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddPointString(int numPoints, DPoint3dCP points)
     {
+    m_processor._OnNewGeometry();
+
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
 
     ClipAndProcessCurveVector(*curve, false);
@@ -1431,6 +1435,8 @@ void SimplifyGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
+    m_processor._OnNewGeometry();
+
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
 
     ClipAndProcessCurveVector(*curve, filled);
@@ -1453,6 +1459,8 @@ void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled,
 PUSH_MSVC_IGNORE(6386) // I can't figure out how to silence this static analysis warning in this function, so just ignoring.
 void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
+    m_processor._OnNewGeometry();
+
     if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int         nPt = 0;
@@ -1492,6 +1500,8 @@ void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, AsThicken
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
     {
+    m_processor._OnNewGeometry();
+
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
     CurveVectorPtr curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse));
     
@@ -1531,6 +1541,8 @@ void SimplifyGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
+    m_processor._OnNewGeometry();
+
     CurveVectorPtr curve = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
 
     ClipAndProcessCurveVector(*curve, filled);
@@ -1563,6 +1575,8 @@ void SimplifyGraphic::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, d
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddCurveVector(CurveVectorCR curves, bool isFilled)
     {
+    m_processor._OnNewGeometry();
+
     ClipAndProcessCurveVector(curves, isFilled);
     }
 
@@ -1588,6 +1602,8 @@ void SimplifyGraphic::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, dou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddSolidPrimitive(ISolidPrimitiveCR geom)
     {
+    m_processor._OnNewGeometry();
+
     ClipAndProcessSolidPrimitive(geom);
     }
 
@@ -1596,6 +1612,8 @@ void SimplifyGraphic::_AddSolidPrimitive(ISolidPrimitiveCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR geom)
     {
+    m_processor._OnNewGeometry();
+
     ClipAndProcessSurface(geom);
     }
 
@@ -1604,6 +1622,8 @@ void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     {
+    m_processor._OnNewGeometry();
+
     // See if we need to modify this polyface to conform to the processor's facet options...
     IGeometryProcessor::IncompatiblePolyfacePreference pref = m_processor._GetIncompatiblePolyfacePreference(geom, *this);
 
@@ -1638,6 +1658,8 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
     {
+    m_processor._OnNewGeometry();
+
     ClipAndProcessBody(geom);
     }
 
@@ -1646,6 +1668,8 @@ void SimplifyGraphic::_AddBody(IBRepEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTextString(TextStringCR text)
     {
+    m_processor._OnNewGeometry();
+
     ClipAndProcessText(text);
     }
 
@@ -1673,8 +1697,11 @@ void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
     {
+    m_processor._OnNewGeometry();
+
     // NEEDSWORK...Draw box...
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
@@ -1716,6 +1743,8 @@ void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corner
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
     {
+    m_processor._OnNewGeometry();
+
     ClipAndProcessTriMesh(args);
     }
 

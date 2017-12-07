@@ -34,7 +34,6 @@ PSolidThreadLocalStorage()
         }
         
     PK_PARTITION_set_type(m_partition, PK_PARTITION_type_light_c);
-    PK_PARTITION_set_current(m_partition);
     PK_PARTITION_make_pmark(m_partition, &m_mark);
     }
 
@@ -53,10 +52,12 @@ PSolidThreadLocalStorage()
 
 public:
 
+PK_PARTITION_t  GetPartition() const { return m_partition; }
 static void  GoToPMark ();
 static void  Initialize();
 static void  Clear();
 static void  PrepareToWork();
+
 
 };
 
@@ -130,7 +131,6 @@ void PSolidThreadLocalStorage::PrepareToWork()
         BeAssert(false);
         return;
         }
-     PK_PARTITION_set_current(storage->m_partition);
 
     PK_PARTITION_advance_pmark_o_t advanceMarkOption;
     PK_PARTITION_advance_pmark_o_m(advanceMarkOption);
@@ -227,22 +227,32 @@ PSolidThreadUtil::WorkerThreadOuterMark::~WorkerThreadOuterMark()
     }
 
 
-static BeMutex           s_protectedWorkSection;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PK_PARTITION_t  PSolidThreadUtil::GetThreadPartition()  
+    { 
+    PSolidThreadLocalStorage*     storage = reinterpret_cast<PSolidThreadLocalStorage*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());
+
+    if (nullptr == storage)
+        {
+        BeAssert(false);
+        return 0;
+        }
+
+    return storage->GetPartition(); 
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PSolidThreadUtil::WorkerThreadInnerMark::WorkerThreadInnerMark() : m_mutexHolder(s_protectedWorkSection) 
+void PSolidThreadUtil::SetThreadPartitionMark()
     {
     PSolidThreadLocalStorage::PrepareToWork();
     }
     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-PSolidThreadUtil::WorkerThreadInnerMark::~WorkerThreadInnerMark()
-    {
-    }
+
      
      
      
