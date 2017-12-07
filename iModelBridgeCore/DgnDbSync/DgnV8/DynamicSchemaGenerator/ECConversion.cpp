@@ -1988,6 +1988,8 @@ void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECCla
                 }
             }
 
+        if (ecClass->GetClassModifier() == ECN::ECClassModifier::Abstract)
+            verifyBaseClassAbstract(ecClass);
         }
 
     if (wasFlattened)
