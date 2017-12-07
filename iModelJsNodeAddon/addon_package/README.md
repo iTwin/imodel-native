@@ -17,7 +17,7 @@ The app must load and register the addon in its initialization logic, like this:
 
 ``` ts
 import { NodeAddonLoader } from "@bentley/imodeljs-nodeaddon/NodeAddonLoader";
-import { NodeAddonRegistry } from "@bentley/imodeljs-backend/NodeAddonRegistry";
+import { NodeAddonRegistry } from "@bentley/imodeljs-backend/lib/backend/NodeAddonRegistry";
 
 NodeAddonRegistry.registerAddon(NodeAddonLoader.loadAddon());
 ```
