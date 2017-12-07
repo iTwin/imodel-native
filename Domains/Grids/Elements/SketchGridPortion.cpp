@@ -39,20 +39,9 @@ Utf8CP          name
                                                                   QueryClassId(model.GetDgnDb()),
                                                                   DgnCategoryId(),
                                                                   Placement3d(),
-                                                                  Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_SketchGrid),
+                                                                  Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_Grid),
                                                                                model.GetModeledElementId(),
                                                                                name)));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  10/17
-//---------------------------------------------------------------------------------------
-SketchGridPtr SketchGrid::TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName)
-    {
-    return db.Elements().GetForEdit<Grids::SketchGrid>(BuildingElementsUtils::GetElementIdByParentElementAuthorityAndName(db,
-                                                                                                                           GRIDS_AUTHORITY_SketchGrid,
-                                                                                                                           parentId,
-                                                                                                                           gridName));
     }
 
 

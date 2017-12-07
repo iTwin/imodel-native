@@ -103,9 +103,6 @@
 #define GRIDS_AUTHORITY_GridCurve                       GRIDS_CODESPEC_CODE(GRIDS_CLASS_GridCurve)
 #define GRIDS_AUTHORITY_SurfaceSet                      GRIDS_CODESPEC_CODE(GRIDS_CLASS_SurfaceSet)
 #define GRIDS_AUTHORITY_Grid                     GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
-#define GRIDS_AUTHORITY_OrthogonalGrid           GRIDS_CODESPEC_CODE(GRIDS_CLASS_OrthogonalGrid)
-#define GRIDS_AUTHORITY_RadialGrid               GRIDS_CODESPEC_CODE(GRIDS_CLASS_RadialGrid)
-#define GRIDS_AUTHORITY_SketchGrid               GRIDS_CODESPEC_CODE(GRIDS_CLASS_SketchGrid)
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

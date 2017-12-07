@@ -123,18 +123,15 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGrid : Grid
 private:
 
 protected:
-
-
-    //! gets the perpendicularity plane of this Grid
-    //! @return             perpendicularity plane of this Grid
-    GRIDELEMENTS_EXPORT DPlane3d    GetPlane () const;
-
     //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
     explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params) : T_Super (params) {};
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid, GRIDELEMENTS_EXPORT)
 
+    //! gets the perpendicularity plane of this Grid
+    //! @return             perpendicularity plane of this Grid
+    GRIDELEMENTS_EXPORT DPlane3d    GetPlane() const;
     };
 
 //=======================================================================================

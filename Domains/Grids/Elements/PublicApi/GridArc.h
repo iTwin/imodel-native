@@ -29,6 +29,7 @@ protected:
 
     virtual GRIDELEMENTS_EXPORT void                _CopyFrom (Dgn::DgnElementCR source) override;
 
+    virtual bool            _ValidateGeometry(ICurvePrimitivePtr curve) const override;
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridArc, GRIDELEMENTS_EXPORT)
 

@@ -36,17 +36,6 @@ public:
     //! @param[in]  model   model for the radialgridportion
     //! @return             sketch grid
     GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::DgnModelCR model, Utf8CP name);
-
-    //---------------------------------------------------------------------------------------
-    // Queries
-    //---------------------------------------------------------------------------------------
-    //! Returns a sketch grid portion with given parent element and name
-    //! @param[in]  db          db to try get sketch grid portion from
-    //! @param[in]  parentId    id of parent element for grid portion
-    //! @param[in]  gridName    name for grid portion
-    //! @return                 if grid portion is found, returns a ptr to it
-    //!                         else nullptr is returned
-    GRIDELEMENTS_EXPORT static SketchGridPtr TryGet(Dgn::DgnDbR db, Dgn::DgnElementId parentId, Utf8CP gridName);
-};
+    };
 
 END_GRIDS_NAMESPACE

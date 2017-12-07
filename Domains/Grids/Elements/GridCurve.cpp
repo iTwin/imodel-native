@@ -62,6 +62,28 @@ DgnClassId classId
     return createParams;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  12/17
+//---------------------------------------------------------------------------------------
+Dgn::DgnDbStatus GridCurve::_OnInsert()
+    {
+    if (!_ValidateGeometry(GetCurve()))
+        return DgnDbStatus::ValidationFailed;
+
+    return T_Super::_OnInsert();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  12/17
+//---------------------------------------------------------------------------------------
+Dgn::DgnDbStatus GridCurve::_OnUpdate(Dgn::DgnElementCR original)
+    {
+    if (!_ValidateGeometry(GetCurve()))
+        return DgnDbStatus::ValidationFailed;
+
+    return T_Super::_OnUpdate(original);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

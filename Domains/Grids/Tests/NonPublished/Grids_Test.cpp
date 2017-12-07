@@ -251,7 +251,15 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
 
     OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert (createParams);
 
+    DPlane3d gridPlane = orthogonalGridUnconstrained->GetPlane();
+    ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From( 0, 0, 1 ))) << "Grid plane normal is incorrect";
+
     db.SaveChanges ();
+
+    GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Unconstrained Grid");
+    ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
+    ASSERT_EQ(orthogonalGridUnconstrained->GetElementId(), thisGrid->GetElementId()) << "Loaded grid's element id is incorrect";
 
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
@@ -500,6 +508,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
     ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
     db.SaveChanges();
 
+    double existingAngle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridUnconstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
+    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
         {
@@ -587,6 +599,11 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
     db.SaveChanges();
 
+    double existingAngle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridUnconstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
+    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+
+
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
         {
@@ -660,7 +677,15 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
 
     OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
+    DPlane3d gridPlane = orthogonalGridUnconstrainedExtended->GetPlane();
+    ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
+
     db.SaveChanges();
+
+    GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Unconstrained Grid");
+    ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
+    ASSERT_EQ(orthogonalGridUnconstrainedExtended->GetElementId(), thisGrid->GetElementId()) << "Loaded grid's element id is incorrect";
 
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
@@ -982,7 +1007,15 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
 
     OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
 
+    DPlane3d gridPlane = orthogonalGridConstrained->GetPlane();
+    ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
+
     db.SaveChanges();
+
+    GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Constrained Grid");
+    ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
+    ASSERT_EQ(orthogonalGridConstrained->GetElementId(), thisGrid->GetElementId()) << "Loaded grid's element id is incorrect";
 
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
@@ -1231,6 +1264,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
     ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
     db.SaveChanges();
 
+    double existingAngle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridConstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
+    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    
     bvector<DgnElementId> axesIds = orthogonalGridConstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
         {
@@ -1318,6 +1355,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
     db.SaveChanges();
 
+    double existingAngle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridConstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
+    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+
     bvector<DgnElementId> axesIds = orthogonalGridConstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
         {
@@ -1391,7 +1432,15 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
 
     OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
 
+    DPlane3d gridPlane = orthogonalGridConstrainedExtended->GetPlane();
+    ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
+
     db.SaveChanges();
+
+    GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Constrained Grid");
+    ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
+    ASSERT_EQ(orthogonalGridConstrainedExtended->GetElementId(), thisGrid->GetElementId()) << "Loaded grid's element id is incorrect";
 
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
@@ -1640,6 +1689,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrainedExtended->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
     db.SaveChanges();
 
+    double existingAngle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridConstrainedExtended->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
+    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+
     bvector<DgnElementId> axesIds = orthogonalGridConstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
         {
@@ -1702,7 +1755,23 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
         ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
-    
+  
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, RadialGrid_Empty_CreatedAndDeleted)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    RadialGridPtr empty = RadialGrid::Create(*m_model.get());
+    ASSERT_TRUE(empty.IsValid()) << "Failed to create empty radial grid";
+    ASSERT_TRUE(empty->Insert().IsValid()) << "Failed to insert empty grid";
+
+    ASSERT_EQ(DgnDbStatus::Success, empty->Delete());
+
+    db.SaveChanges();
+    }
+
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
@@ -1712,7 +1781,16 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
+
+    DPlane3d gridPlane = radialGrid->GetPlane();
+    ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
+
     db.SaveChanges();
+
+    GridPtr thisGrid = Grid::TryGet(db, db.Elements().GetRootSubject()->GetElementId(), "Radial Grid");
+    ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
+    ASSERT_EQ(radialGrid->GetElementId(), thisGrid->GetElementId()) << "Loaded grid's element id is incorrect";
 
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
@@ -1953,6 +2031,10 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->RotateToAngleXY(newAngle)) << "radial grid rotation was not successful";
     db.SaveChanges();
 
+    double existingAngle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, radialGrid->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
+    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+
     bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
         {
@@ -2041,6 +2123,10 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->RotateToAngleXY(newAngle)) << "radial grid rotation was not successful";
     db.SaveChanges();
 
+    double existingAngle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, radialGrid->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
+    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+
     bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
         {
@@ -2113,6 +2199,10 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
 
     SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), "Sketch Grid");
 
+    DPlane3d gridPlane = sketchGrid->GetPlane();
+    ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
+    ASSERT_TRUE(gridPlane.normal.AlmostEqual(DVec3d::From(0, 0, 1))) << "Grid plane normal is incorrect";
+
     /////////////////////////////////////////////////////////////
     // Check if grid is valid and has correct number of elements
     /////////////////////////////////////////////////////////////
@@ -2120,6 +2210,10 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
 
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();
+
+    GridPtr thisGrid = Grid::TryGet(db, m_model->GetModeledElementId(), "Sketch Grid");
+    ASSERT_TRUE(thisGrid.IsValid()) << "Failed to get created grid";
+    ASSERT_EQ(sketchGrid->GetElementId(), thisGrid->GetElementId()) << "Loaded grid's element id is incorrect";
 
     ASSERT_TRUE(sketchGrid->GetSurfacesModel().IsValid()) << "Failed to get sketch grid surfaces model";
 
@@ -2147,6 +2241,25 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     GridPlanarSurfacePtr plane = GridPlanarSurface::Create(*sketchGrid->GetSurfacesModel().get(), *gridAxis, planeExtDetail);
 
     ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
+
+    DPlane3d surfacePlane = plane->GetPlane();
+    ASSERT_TRUE(surfacePlane.origin.AlmostEqual({ 50, 20, 0 })) << "plane's origin is incorrect";
+
+    DVec3d expectedNormal = DVec3d::FromCrossProduct
+    (
+        DVec3d::FromStartEnd
+        (
+            DPoint3d::From(50, 20, 0),
+            DPoint3d::From(50, 70, 0)
+        ),
+        DVec3d::FromStartEnd
+        (
+            DPoint3d::From(50, 20, 0),
+            DPoint3d::From(50, 20, 90)
+        )
+    );
+
+    ASSERT_TRUE(surfacePlane.normal.AlmostEqual(expectedNormal)) << "plane's normal is incorrect";
 
     plane->Insert();
     db.SaveChanges();
@@ -2563,14 +2676,28 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
             ICurvePrimitive::CreateLineString({ { 0, 0, elevation },{ 0, 50, elevation } })
             };
 
+        bvector<GridSurfacePtr> intersectingSurfaces;
         for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
             {
             GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
             ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
+
+            GridSurfacePtr intersecting = curve->GetIntersectingSurface();
+            ASSERT_TRUE(intersecting.IsValid()) << "Failed to get curve's intersecting surface";
+            intersectingSurfaces.push_back(intersecting);
+
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
                                                              [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
                 << "Grid curve geometry is not as expected";
+            }
+
+        // Make sure intersecting surfaces are correct
+        bvector<DgnElementId> expectedIds = orthogonalGrid->MakeIterator().BuildIdList<DgnElementId>();
+        ASSERT_EQ(expectedIds.size(), intersectingSurfaces.size());
+        for (GridSurfacePtr intersecting : intersectingSurfaces)
+            {
+            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting->GetElementId())) << "Intersecting surface id is incorrect";
             }
         }
     }
@@ -2690,16 +2817,29 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                          {20 * std::cos(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), 20 * std::sin(30.0 * msGeomConst_pi / 180.0 + UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH) / 40), elevation }))
             };
 
+        bvector<GridSurfacePtr> intersectingSurfaces;
         for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
             {
             GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
             ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
 
+            GridSurfacePtr intersecting = curve->GetIntersectingSurface();
+            ASSERT_TRUE(intersecting.IsValid()) << "Failed to get curve's intersecting surface";
+            intersectingSurfaces.push_back(intersecting);
+
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
                                                              [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
                 << "Grid curve geometry is not as expected";
-            }        
+            }     
+
+        // Make sure intersecting surfaces are correct
+        bvector<DgnElementId> expectedIds = radialGrid->MakeIterator().BuildIdList<DgnElementId>();
+        ASSERT_EQ(/*expectedIds.size()*/ 2, intersectingSurfaces.size());
+        for (GridSurfacePtr intersecting : intersectingSurfaces)
+            {
+            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting->GetElementId())) << "Intersecting surface id is incorrect";
+            }
         }
     }
 
@@ -2828,14 +2968,448 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
             ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 } }, &splineWeights, &splineKnots, 3, false, false))
             };
 
+        bvector<GridSurfacePtr> intersectingSurfaces;
         for (DgnElementId curveId : floorGridCurvesIterator.BuildIdList<DgnElementId>())
             {
             GridCurveCPtr curve = db.Elements().Get<GridCurve>(curveId);
             ASSERT_TRUE(curve.IsValid()) << "Failed to get grid curve";
+
+            GridSurfacePtr intersecting = curve->GetIntersectingSurface();
+            ASSERT_TRUE(intersecting.IsValid()) << "Failed to get curve's intersecting surface";
+            intersectingSurfaces.push_back(intersecting);
+
             ASSERT_NE(expectedGeometries.end(), std::find_if(expectedGeometries.begin(),
                                                              expectedGeometries.end(),
                                                              [&](ICurvePrimitiveCPtr expectedCurve) {return expectedCurve->IsSameStructureAndGeometry(*curve->GetCurve(), 0.1); }))
                 << "Grid curve geometry is not as expected";
             }
+
+        // Make sure intersecting surfaces are correct
+        bvector<DgnElementId> expectedIds = sketchGrid->MakeIterator().BuildIdList<DgnElementId>();
+        ASSERT_EQ(/*expectedIds.size()*/ 1, intersectingSurfaces.size());
+        for (GridSurfacePtr intersecting : intersectingSurfaces)
+            {
+            ASSERT_NE(expectedIds.end(), std::find(expectedIds.begin(), expectedIds.end(), intersecting->GetElementId())) << "Intersecting surface id is incorrect";
+            }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, GridArc_Created)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid arc with curve primitive containing arc
+    /////////////////////////////////////////////////////////////
+    ICurvePrimitivePtr arcCurve = GeometryUtils::CreateArc({ 0, 0, 0 }, { 5, 0, 0 }, { 0, 5, 0 }, true);
+    ASSERT_TRUE(arcCurve.IsValid()) << "Failed to create arc curve";
+
+    // Make sure arc curve's geometry is correct
+    DEllipse3d arcEllipse;
+    ASSERT_TRUE(arcCurve->TryGetArc(arcEllipse)) << "Created arcCurve is not an ellipse";
+    ASSERT_TRUE(arcEllipse.center.AlmostEqual({ 0, 0, 0 })) << "Created arcCurve's center point is incorrect" ;
+    
+    DPoint3d arcStart, arcEnd;
+    arcEllipse.EvaluateEndPoints(arcStart, arcEnd);
+    ASSERT_TRUE(arcStart.AlmostEqual({ 5, 0, 0 })) << "Created arcCurve's start point is incorrect";
+    ASSERT_TRUE(arcEnd.AlmostEqual({ 0, 5, 0 })) << "Created arcCurve's end point is incorrect";
+    
+    double arcAngle = DVec3d::FromStartEnd(DPoint3d::From( 0, 0, 0 ), DPoint3d::From(5, 0, 0 )).AngleToXY(DVec3d::FromStartEnd(DPoint3d::From(0, 0, 0 ), DPoint3d::From(0, 5, 0 )));
+    ASSERT_EQ(arcEllipse.ArcLength(), arcAngle * 5) << "Created arcCurve's length is incorrect";
+
+    // Try creating the grid arc
+    GridArcPtr arc = GridArc::Create(*m_model.get(), arcCurve);
+    ASSERT_TRUE(arc.IsValid()) << "Error when creating grid arc";
+
+    ASSERT_TRUE(arc->Insert().IsValid()) << "Error when inserting grid arc";
+    ICurvePrimitivePtr actualGeometry = arc->GetCurve();
+
+    ASSERT_TRUE(actualGeometry.IsValid()) << "Failed to get grid arc's geometry";
+    ASSERT_TRUE(actualGeometry->IsSameStructureAndGeometry(*arcCurve.get(), BUILDING_TOLERANCE));
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid arc with curve primitive containing not arc
+    /////////////////////////////////////////////////////////////
+    ICurvePrimitivePtr lineCurve = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 5, 0, 0 });
+    ASSERT_TRUE(lineCurve.IsValid()) << "Failed to create line curve";
+
+    GridArcPtr lineArc = GridArc::Create(*m_model.get(), lineCurve);
+    ASSERT_TRUE(lineArc.IsValid()) << "Error when creating grid arc";
+
+    ASSERT_TRUE(lineArc->Insert().IsNull()) << "Should not be able to insert GridArc with invalid geometry";
+    
+    /////////////////////////////////////////////////////////////
+    // Try setting a valid GridArc with invalid geometry
+    /////////////////////////////////////////////////////////////
+    arc->SetCurve(lineCurve);
+    ASSERT_TRUE(arc->Update().IsNull()) << "Should not be able to update GridArc with invalid geometry";
+
+    db.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, GridLine_Created)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid arc with curve primitive containing line
+    /////////////////////////////////////////////////////////////
+    ICurvePrimitivePtr lineCurve = ICurvePrimitive::CreateLineString({ { 0, 0, 0 }, { 5, 0, 0 } });
+    ASSERT_TRUE(lineCurve.IsValid()) << "Failed to create line curve";
+
+    // Make sure line curve's geometry is correct
+    bvector<DPoint3d> const * line = lineCurve->GetLineStringCP();
+    ASSERT_TRUE(nullptr != line) << "Created lineCurve is not a line";
+    ASSERT_EQ(2, line->size());
+    ASSERT_NE(line->end(), std::find_if(line->begin(), line->end(), [&](DPoint3d linePoint) 
+        {
+        return linePoint.AlmostEqual({ 0, 0, 0 });
+        })) << "Created line curve geometry is incorrect";
+    ASSERT_NE(line->end(), std::find_if(line->begin(), line->end(), [&](DPoint3d linePoint)
+        {
+        return linePoint.AlmostEqual({ 5, 0, 0 });
+        })) << "Created line curve geometry is incorrect";
+
+    // Try creating the grid line
+    GridLinePtr gridLine = GridLine::Create(*m_model.get(), lineCurve);
+    ASSERT_TRUE(gridLine.IsValid()) << "Error when creating grid line";
+
+    ASSERT_TRUE(gridLine->Insert().IsValid()) << "Error when inserting grid line";
+    ICurvePrimitivePtr actualGeometry = gridLine->GetCurve();
+
+    ASSERT_TRUE(actualGeometry.IsValid()) << "Failed to get grid line's geometry";
+    ASSERT_TRUE(actualGeometry->IsSameStructureAndGeometry(*lineCurve.get(), BUILDING_TOLERANCE));
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid line with curve primitive containing not line
+    /////////////////////////////////////////////////////////////
+    ICurvePrimitivePtr arcCurve = GeometryUtils::CreateArc({ 0, 0, 0 }, { 5, 0, 0 }, { 0, 5, 0 }, true);
+    ASSERT_TRUE(arcCurve.IsValid()) << "Failed to create line curve";
+
+    GridLinePtr arcLine = GridLine::Create(*m_model.get(), arcCurve);
+    ASSERT_TRUE(arcLine.IsValid()) << "Error when creating grid line";
+
+    ASSERT_TRUE(arcLine->Insert().IsNull()) << "Should not be able to insert GridLine with invalid geometry";
+
+    /////////////////////////////////////////////////////////////
+    // Try setting a valid GridLine with invalid geometry
+    /////////////////////////////////////////////////////////////
+    gridLine->SetCurve(arcCurve);
+    ASSERT_TRUE(gridLine->Update().IsNull()) << "Should not be able to update GridLine with invalid geometry";
+
+    db.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, GridSpline_Created)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid spline with curve primitive containing spline
+    /////////////////////////////////////////////////////////////
+    bvector<double> splineWeights = { 1.0, 1.0, 1.0 };
+    bvector<double> splineKnots = { 0, 1, 2, 3, 4, 5 };
+    ICurvePrimitivePtr splineCurve = ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder({ { 0, 0, 0 },{ 10, 0, 0 },{ 0, 10, 0 } }, &splineWeights, &splineKnots, 3, false, false));
+    ASSERT_TRUE(splineCurve.IsValid()) << "Failed to create spline curve";
+
+    // Try creating the grid line
+    GridSplinePtr gridSpline = GridSpline::Create(*m_model.get(), splineCurve);
+    ASSERT_TRUE(gridSpline.IsValid()) << "Error when creating grid spline";
+
+    ASSERT_TRUE(gridSpline->Insert().IsValid()) << "Error when inserting grid spline";
+    ICurvePrimitivePtr actualGeometry = gridSpline->GetCurve();
+
+    ASSERT_TRUE(actualGeometry.IsValid()) << "Failed to get grid line's geometry";
+    ASSERT_TRUE(actualGeometry->IsSameStructureAndGeometry(*splineCurve.get(), BUILDING_TOLERANCE));
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Create Grid spline with curve primitive containing not spline
+    /////////////////////////////////////////////////////////////
+    ICurvePrimitivePtr arcCurve = GeometryUtils::CreateArc({ 0, 0, 0 }, { 5, 0, 0 }, { 0, 5, 0 }, true);
+    ASSERT_TRUE(arcCurve.IsValid()) << "Failed to create spline curve";
+
+    GridSplinePtr arcSpline = GridSpline::Create(*m_model.get(), arcCurve);
+    ASSERT_TRUE(arcSpline.IsValid()) << "Error when creating grid spline";
+
+    ASSERT_TRUE(arcSpline->Insert().IsNull()) << "Should not be able to insert GridSpline with invalid geometry";
+
+    /////////////////////////////////////////////////////////////
+    // Try setting a valid GridLine with invalid geometry
+    /////////////////////////////////////////////////////////////
+    gridSpline->SetCurve(arcCurve);
+    ASSERT_TRUE(gridSpline->Update().IsNull()) << "Should not be able to update GridSpline with invalid geometry";
+
+    db.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, GridAxis_Created)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), "Grid");
+    ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
+    
+    /////////////////////////////////////////////////////////////
+    // Use Create method to create grid axis
+    /////////////////////////////////////////////////////////////
+    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Grids::GridAxisPtr gridAxis0 = GridAxis::Create(defModel, *grid);
+
+    ASSERT_TRUE(gridAxis0.IsValid()) << "Failed to create grid axis";
+    ASSERT_FALSE(gridAxis0->GetElementId().IsValid()) << "Grid axis should not have been inserted yet";
+
+    ASSERT_TRUE(gridAxis0->Insert().IsValid()) << "Failed to insert created grid axis";
+    ASSERT_TRUE(gridAxis0->GetElementId().IsValid()) << "Inserted grid axis' id should be valid";
+
+    ASSERT_EQ(grid->GetElementId(), gridAxis0->GetGridId()) << "Grid axis' grid id is incorrect";
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Use CreateAndInsert method to create grid axis
+    /////////////////////////////////////////////////////////////
+    Grids::GridAxisPtr gridAxis1 = GridAxis::CreateAndInsert(defModel, *grid);
+    ASSERT_TRUE(gridAxis1.IsValid()) << "Failed to create and insert grid axis";
+    ASSERT_TRUE(gridAxis1->GetElementId().IsValid()) << "Inserted grid axis' id should be valid";
+
+    ASSERT_EQ(grid->GetElementId(), gridAxis1->GetGridId()) << "Grid axis' grid id is incorrect";
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Try setting grid id to a grid axis
+    /////////////////////////////////////////////////////////////
+    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), "Other Grid");
+    ASSERT_TRUE(otherGrid->Insert().IsValid()) << "Failed to insert grid";
+
+    gridAxis0->SetGridId(otherGrid->GetElementId());
+    ASSERT_TRUE(gridAxis0->Update().IsValid()) << "Failed to update grid axis with other grid's id";
+    ASSERT_EQ(otherGrid->GetElementId(), gridAxis0->GetGridId()) << "Grid axis' grid id is incorrect";
+
+
+    gridAxis0->SetGridId(DgnElementId());
+    ASSERT_TRUE(gridAxis0->Update().IsNull()) << "Should not be able to update grid axis with invalid grid id";
+    
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check grid axis' elements
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(0, gridAxis1->MakeIterator().BuildIdList<DgnElementId>().size()) << "Grid axis should contain no elements";
+    
+    DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 50, 20, 0 }, { 50, 70, 0 }, 90);
+    GridPlanarSurfacePtr plane = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), *gridAxis1, planeExtDetail);
+
+    ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
+
+    plane->Insert();
+    db.SaveChanges();
+
+    ASSERT_EQ(1, gridAxis1->MakeIterator().BuildIdList<DgnElementId>().size()) << "Grid axis should contain the inserted grid plane";
+
+    plane->Delete();
+    db.SaveChanges();
+
+    ASSERT_EQ(0, gridAxis1->MakeIterator().BuildIdList<DgnElementId>().size()) << "Grid axis should no longer contain the grid plane";
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Haroldas.Vitunskas              12/2017
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, GridSurfacesTests)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), "Grid");
+    ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
+
+    Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
+    Grids::GridAxisPtr gridAxis = GridAxis::CreateAndInsert(defModel, *grid);
+    ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create and insert grid axis";
+
+    DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 0, 0 }, { 10, 0, 0 }, 20);
+    GridPlanarSurfacePtr surface = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), *gridAxis, planeExtDetail);
+
+    ASSERT_TRUE(surface.IsValid()) << "Failed to create grid plane surface";
+    ASSERT_TRUE(surface->Insert().IsValid()) << "Failed to insert grid plane surface";
+
+    db.SaveChanges();
+
+    /////////////////////////////////////////////////////////////
+    // Check created grid surface
+    /////////////////////////////////////////////////////////////
+    ASSERT_EQ(grid->GetElementId(), surface->GetGridId()) << "Surface's grid id is incorrect";
+    ASSERT_EQ(gridAxis->GetElementId(), surface->GetAxisId()) << "Surface's axis id is incorrect";
+    
+    double gridHeight;
+    ASSERT_EQ(BentleyStatus::SUCCESS, surface->TryGetHeight(gridHeight)) << "Failed to get surface's height";
+    ASSERT_EQ(20, gridHeight) << "Surface's height is incorrect";
+
+    double gridLength;
+    ASSERT_EQ(BentleyStatus::SUCCESS, surface->TryGetLength(gridLength)) << "Failed to get surface's length";
+    ASSERT_EQ(10, gridLength) << "Surface's length is incorrect";
+
+    CurveVectorPtr expectedBase = CurveVector::CreateLinear({ {0, 0, 0}, {10, 0, 0} }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+    ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+    CurveVectorPtr actualBase = surface->GetSurfaceVector();
+    ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+    ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), BUILDING_TOLERANCE)) << "Grid's base curve vector is incorrect";
+    
+    /////////////////////////////////////////////////////////////
+    // Try modifying grid surface's geometry
+    /////////////////////////////////////////////////////////////
+    { // Try rotating around origin
+            {
+            surface->RotateXY(msGeomConst_pi / 4);
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 7.07, 7.07, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+
+            // Return to previous state
+            {
+            surface->RotateXY(-msGeomConst_pi / 4);
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+    }
+
+    { // Try rotating around given point
+            {
+            surface->RotateXY({ 10, 0, 0 }, msGeomConst_pi / 4);
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 2.93, -7.07, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+
+            // Return to previous state
+            {
+            surface->RotateXY({ 10, 0, 0 }, -msGeomConst_pi / 4);
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+    }
+
+    { // Try moving to given point
+            {
+            surface->MoveToPoint({ 5, 5, 0 });
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 5, 5, 0 },{ 15, 5, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+
+            // Return to previous state
+            {
+            surface->MoveToPoint({ 0, 0, 0 });
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+    }
+
+    { // Try translate by given vector
+            {
+            surface->TranslateXY(DVec3d::From(10, 10, 10));
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 10, 10, 0 },{ 20, 10, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+
+            // Return to previous state
+            {
+            surface->TranslateXY(DVec3d::From(-10, -10, -10));
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+    }
+
+    { // Try translate by given vector
+            {
+            surface->Translate(DVec3d::From( 10, 10, 10 ));
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 10, 10, 10 },{ 20, 10, 10 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+
+            // Return to previous state
+            {
+            surface->Translate(DVec3d::From(-10, -10, -10));
+            ASSERT_TRUE(surface->Update().IsValid()) << "Failed to update modified surface";
+
+            CurveVectorPtr expectedBase = CurveVector::CreateLinear({ { 0, 0, 0 },{ 10, 0, 0 } }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(expectedBase.IsValid()) << "Failed to create imitating surface's base curve vector";
+
+            CurveVectorPtr actualBase = surface->GetSurfaceVector();
+            ASSERT_TRUE(actualBase.IsValid()) << "Failed to get surface's curve vector";
+            ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
+            }
+    }
+    db.SaveChanges();
     }

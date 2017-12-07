@@ -45,7 +45,7 @@ public:     //public - non-exported
         //! @param[in] createDimensions             true to create dimensions between planes
         //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
         CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, bool createDimensions, Utf8CP name) :
-            T_Super (DgnElement::CreateParams (model->GetDgnDb (), model->GetModelId (), QueryClassId (model->GetDgnDb ()), Dgn::DgnCode (model->GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_OrthogonalGrid), modeledElementId, name))),
+            T_Super (DgnElement::CreateParams (model->GetDgnDb (), model->GetModelId (), QueryClassId (model->GetDgnDb ()), Dgn::DgnCode (model->GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid), modeledElementId, name))),
             m_model (model),
             m_createDimensions (createDimensions)
             {}
