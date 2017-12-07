@@ -255,7 +255,7 @@ PlanGridPlanarSurface::PlanGridPlanarSurface
 (
 CreateParams const& params,
 DgnExtrusionDetailCR extDetail
-) : T_Super(params, ISolidPrimitive::CreateDgnExtrusion (extDetail)), IPlanGridSurface(*this, params)
+) : T_Super(params, ISolidPrimitive::CreateDgnExtrusion (extDetail)), IPlanGridSurface(*this, params, params.m_classId)
     {
 
     }
@@ -266,7 +266,7 @@ DgnExtrusionDetailCR extDetail
 PlanGridPlanarSurface::PlanGridPlanarSurface
 (
 CreateParams const& params
-) : T_Super(params), IPlanGridSurface(*this, params)
+) : T_Super(params), IPlanGridSurface(*this, params, params.m_classId)
     {
 
     }
@@ -316,9 +316,12 @@ PlanCartesianGridSurface::PlanCartesianGridSurface
 CreateParams const& params
 ) : T_Super(params)
     {
-    SetCoordinate (params.m_coordinate);
-    SetStartExtent (params.m_startExtent);
-    SetEndExtent (params.m_endExtent);
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetCoordinate (params.m_coordinate);
+        SetStartExtent (params.m_startExtent);
+        SetEndExtent (params.m_endExtent);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

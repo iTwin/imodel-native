@@ -168,7 +168,7 @@ protected:
     BE_PROP_NAME (EndElevation)
 
     //! initialized this mixin with element reference (pass *this)
-    IPlanGridSurface (Dgn::DgnElementR thisElem, CreateParams const& params);
+    IPlanGridSurface (Dgn::DgnElementR thisElem, CreateParams const& params, Dgn::DgnClassId classId);
 public:
 
     //! Gets start elevation of this IPlanGridSurface

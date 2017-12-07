@@ -378,11 +378,15 @@ Dgn::ElementIterator GridSurface::MakeCreatedCurvesIterator() const
 IPlanGridSurface::IPlanGridSurface 
 (
 Dgn::DgnElementR thisElem,
-CreateParams const& params
+CreateParams const& params,
+Dgn::DgnClassId classId
 ) :m_thisElem(thisElem)
     {
-    SetStartElevation (params.m_startElevation);
-    SetEndElevation (params.m_endElevation);
+    if (classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetStartElevation (params.m_startElevation);
+        SetEndElevation (params.m_endElevation);
+        }
     }
 
 END_GRIDS_NAMESPACE

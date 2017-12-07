@@ -20,7 +20,7 @@ struct GridPlanarSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
 
 struct PlanCartesianGridSurfaceHandler : GridPlanarSurfaceHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_PlanCartesianGridSurface, PlanCartesianGridSurface, PlanCartesianGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_PlanCartesianGridSurface, PlanCartesianGridSurface, PlanCartesianGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
     };
 
 END_GRIDS_NAMESPACE

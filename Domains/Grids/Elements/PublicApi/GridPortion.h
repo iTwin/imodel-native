@@ -139,6 +139,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
     {
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_ElevationGrid, Grid);
     DEFINE_T_SUPER (Grid);
     private:
 
