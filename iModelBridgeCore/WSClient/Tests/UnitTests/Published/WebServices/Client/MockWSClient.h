@@ -30,6 +30,7 @@ struct MockWSClient : public IWSClient
 
             ON_CALL(*client, RegisterServerInfoListener(_)).WillByDefault(Return());
             ON_CALL(*client, UnregisterServerInfoListener(_)).WillByDefault(Return());
+            ON_CALL(*client, GetServerUrl()).WillByDefault(Return("MockServerUrl"));
 
             return client;
             };
