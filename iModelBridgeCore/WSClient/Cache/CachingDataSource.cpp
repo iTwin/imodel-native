@@ -312,9 +312,17 @@ ICancellationTokenPtr ct
 
             if (!openResult->IsSuccess())
                 {
-                LOG.errorv("CachingDataSource::OpenOrCreate() error: %s %s",
+                LOG.errorv(
+                    "CachingDataSource::OpenOrCreate() failed with error: '%s %s' for:\n"
+                    "file: '%s'\n"
+                    "repository: '%s'\n"
+                    "server: '%s'",
                     openResult->GetError().GetMessage().c_str(),
-                    openResult->GetError().GetDescription().c_str());
+                    openResult->GetError().GetDescription().c_str(),
+                    cacheFilePath.GetNameUtf8().c_str(),
+                    client->GetRepositoryId().c_str(),
+                    client->GetWSClient()->GetServerUrl().c_str()
+                    );
 
                 // Force close cache
                 if (nullptr != ds)
