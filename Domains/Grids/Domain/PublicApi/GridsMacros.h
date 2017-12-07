@@ -68,6 +68,7 @@
 
 #define GRIDS_CLASS_SurfaceSet                                  "SurfaceSet"
 #define GRIDS_CLASS_Grid                                 "Grid"
+#define GRIDS_CLASS_ElevationGrid                        "ElevationGrid"
 #define GRIDS_CLASS_PlanGrid                             "PlanGrid"
 #define GRIDS_CLASS_OrthogonalGrid                       "OrthogonalGrid"
 #define GRIDS_CLASS_RadialGrid                           "RadialGrid"

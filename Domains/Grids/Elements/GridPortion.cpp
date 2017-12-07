@@ -19,6 +19,7 @@ USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (Grid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid)
 
 
@@ -288,6 +289,104 @@ Dgn::DgnModelCR targetModel
 
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   ElevationGrid::ValidateSurfaces
+(
+bvector<CurveVectorPtr> const& surfaces
+)
+    {
+    DPlane3d zPlane;
+    zPlane.origin = DPoint3d::FromZero ();
+    zPlane.normal = DVec3d::From (0.0, 0.0, 1.0);
+    for (CurveVectorPtr gridPlaneGeom : surfaces)
+        {
+        DPlane3d planeThis;
+        Transform localToWorld, worldToLocal;
+        DRange3d range;
+
+        if (!gridPlaneGeom->IsPlanar (localToWorld, worldToLocal, range))
+            return ERROR;
+
+        bsiTransform_getOriginAndVectors (&localToWorld, &planeThis.origin, NULL, NULL, &planeThis.normal);
+
+        //if planes are not parallel to Z, then fail
+        if (!bsiDVec3d_areParallelTolerance (&planeThis.normal, &zPlane.normal, BUILDING_TOLERANCE))
+            {
+            return ERROR;
+            }
+        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   ElevationGrid::CreateElevationGridPlanes
+(
+bvector<CurveVectorPtr> const& surfaces,
+GridAxisCR gridAxis,
+bool createDimensions
+)
+    {
+    BentleyStatus status = BentleyStatus::ERROR;
+    Dgn::SpatialLocationModelPtr subModel = GetSurfacesModel ();
+
+    if (subModel.IsValid ())
+        {
+        status = BentleyStatus::SUCCESS;
+
+        //not putting into same method yet.. will do as GridAxis element is introduced.
+        GridPlanarSurfacePtr lastGridPlane = nullptr;
+        DPlane3d planeLast;
+        for (CurveVectorPtr gridPlaneGeom : surfaces)
+            {
+            GridPlanarSurfacePtr gridPlane = GridPlanarSurface::Create (*subModel, gridAxis, gridPlaneGeom);
+            BuildingLocks_LockElementForOperation (*gridPlane, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
+            gridPlane->Insert ();
+            DPlane3d planeThis;
+            planeThis = gridPlane->GetPlane ();
+            if (lastGridPlane.IsValid () && createDimensions)
+                {
+                DimensionHandler::Insert (GetDgnDb(), lastGridPlane->GetElementId (), gridPlane->GetElementId (), 0, 0, planeThis.normal, bsiDPlane3d_evaluate (&planeLast, &planeThis.origin));
+                }
+            planeLast = planeThis;
+            lastGridPlane = gridPlane;
+            }
+        }
+    return status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ElevationGridPtr        ElevationGrid::CreateAndInsertWithSurfaces
+(
+CreateParams const& params,
+bvector<CurveVectorPtr> const& surfaces,
+bool createDimensions
+)
+    {
+    if (BentleyStatus::SUCCESS != ValidateSurfaces (surfaces))
+        return nullptr;
+
+    ElevationGridPtr thisGrid = new ElevationGrid (params);
+
+    BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting elevation grid");
+    if (!thisGrid->Insert ().IsValid ())
+        return nullptr;
+
+    Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
+
+    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
+    
+    if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *horizontalAxis, createDimensions))
+        BeAssert (!"error inserting gridSurfaces into elevation grid.. shouldn't get here..");
+    return thisGrid;
+    }
+
+
 
 END_GRIDS_NAMESPACE
 

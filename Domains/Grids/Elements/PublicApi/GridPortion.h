@@ -136,5 +136,37 @@ public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid, GRIDELEMENTS_EXPORT)
 
     };
-    
+
+//=======================================================================================
+//! Physical building element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
+    {
+    DEFINE_T_SUPER (Grid);
+    private:
+
+    protected:
+
+        static  BentleyStatus           ValidateSurfaces (bvector<CurveVectorPtr> const& surfaces);
+
+                BentleyStatus           CreateElevationGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisCR gridAxis, bool createDimensions);
+        //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
+        //! @param[in]          params  params for creation
+        explicit GRIDELEMENTS_EXPORT ElevationGrid (T_Super::CreateParams const& params) : T_Super (params) {};
+    public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid, GRIDELEMENTS_EXPORT)
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates orthogonal grid
+        //! @param[in]  params          grid parameters containing information about the grid. For more info look up CreateParams
+        //! @param[in]  surfaces        gridsurface geometry
+        //! @return                     grid with gridsurfaces in submodel
+        //! @note all surfaces will be tested to be planar and normal needs to be in Z direction
+        GRIDELEMENTS_EXPORT static ElevationGridPtr CreateAndInsertWithSurfaces (CreateParams const& params, bvector<CurveVectorPtr> const& surfaces, bool createDimensions);
+
+        GRIDELEMENTS_EXPORT static ElevationGridPtr Create (CreateParams const& params);
+
+    };
 END_GRIDS_NAMESPACE
