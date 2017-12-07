@@ -165,12 +165,12 @@ struct SavePropertyMapVisitor final : IPropertyMapVisitor
     {
     private:
         DbClassMapSaveContext& m_context;
-
+        DbTable const* m_tableFilter;
         BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
-        explicit SavePropertyMapVisitor(DbClassMapSaveContext& ctx) : IPropertyMapVisitor(), m_context(ctx) {}
+        explicit SavePropertyMapVisitor(DbClassMapSaveContext& ctx, DbTable const* tableFilter = nullptr) : IPropertyMapVisitor(), m_context(ctx), m_tableFilter(tableFilter) {}
         ~SavePropertyMapVisitor() {}
     };
 

@@ -9177,10 +9177,25 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
             "   <ECStructClass typeName='ST' modifier='None'>"
-            "       <ECProperty propertyName='Size' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S1' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S2' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S3' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S4' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S5' typeName='int' readOnly='false' />"
             "   </ECStructClass>"
             "   <ECEntityClass typeName='Foo' modifier='None' >"
+            "       <ECCustomAttributes>"
+            "           <ClassMap xmlns='ECDbMap.02.00'>"
+            "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "           </ClassMap>"
+            "           <ShareColumns xmlns='ECDbMap.02.00'>"
+            "               <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
+            "               <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "           </ShareColumns>"
+            "       </ECCustomAttributes>"
             "       <ECProperty propertyName='P1' typeName='int' />"
+            "       <ECProperty propertyName='P2' typeName='int' />"
+            "       <ECProperty propertyName='P3' typeName='int' />"
             "   </ECEntityClass>"
             "</ECSchema>");
 
@@ -9194,15 +9209,32 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
             "   <ECStructClass typeName='ST' modifier='None'>"
-            "       <ECProperty propertyName='Size' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S1' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S2' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S3' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S4' typeName='int' readOnly='false' />"
+            "       <ECProperty propertyName='S5' typeName='int' readOnly='false' />"
             "   </ECStructClass>"
             "   <ECEntityClass typeName='Foo' modifier='None' >"
+            "       <ECCustomAttributes>"
+            "           <ClassMap xmlns='ECDbMap.02.00'>"
+            "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "           </ClassMap>"
+            "           <ShareColumns xmlns='ECDbMap.02.00'>"
+            "               <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
+            "               <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+            "           </ShareColumns>"
+            "       </ECCustomAttributes>"
             "       <ECProperty propertyName='P1' typeName='int' />"
+            "       <ECProperty propertyName='P2' typeName='int' />"
+            "       <ECProperty propertyName='P3' typeName='int' />"
             "       <ECStructProperty propertyName='S' typeName='ST'/>"
             "   </ECEntityClass>"
             "</ECSchema>";
 
         m_updatedDbs.clear();
         AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Adding StructProperty is supported");
+        OpenECDb(filePath);
+        ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
         }
 END_ECDBUNITTESTS_NAMESPACE

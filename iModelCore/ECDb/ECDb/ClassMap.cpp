@@ -524,6 +524,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     {
+    //Follow can change ECInstanceId, ECClassId by optionally adding 
     if (m_failedToLoadProperties.empty())
         return SUCCESS;
 
@@ -639,7 +640,6 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
 
     ECInstanceIdPropertyMap* ecInstanceIdPropertyMap = const_cast<ECInstanceIdPropertyMap*>(GetECInstanceIdPropertyMap());
     ECClassIdPropertyMap* ecClassIdPropertyMap = const_cast<ECClassIdPropertyMap*>(GetECClassIdPropertyMap());
-
     if (ecInstanceIdPropertyMap == nullptr || ecClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -663,13 +663,27 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
         return ERROR;
         }
 
-
     if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecInstanceIdPropertyMap, *ecInstanceIdColumn) == ERROR)
         return ERROR;
 
     if (SystemPropertyMap::AppendSystemColumnFromNewlyAddedDataTable(*ecClassIdPropertyMap, *ecClassIdColumn) == ERROR)
         return ERROR;
     
+    if (GetState() == ObjectState::Modified)
+        {
+        //We need to save to get id for overflow table when its created during schema update
+        if (!overflowTable.HasId())
+            m_ecdb.Schemas().GetDbMap().GetDbSchema().SaveOrUpdateTables();
+
+        DbMapSaveContext ctx(m_ecdb);
+        ctx.BeginSaving(*this);
+        DbClassMapSaveContext classMapContext(ctx);
+        SavePropertyMapVisitor saveVisitor(classMapContext, &overflowTable);
+        ecInstanceIdPropertyMap->AcceptVisitor(saveVisitor);
+        ecClassIdPropertyMap->AcceptVisitor(saveVisitor);
+        ctx.EndSaving(*this);
+        }
+
     for (ClassMapCP derviedClassMap : GetDerivedClassMaps())
         if (derviedClassMap)
             const_cast<ClassMap*>(derviedClassMap)->SetOverflowTable(overflowTable);

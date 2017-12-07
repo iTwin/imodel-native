@@ -132,8 +132,6 @@ struct SchemaImportContext final
         MappingEntities,
         MappingRelationships
         };
-
-    private:
         ECDbCR m_ecdb;
         SchemaManager::SchemaImportOptions m_options;
         Phase m_phase = Phase::ImportingSchemas;
@@ -142,7 +140,7 @@ struct SchemaImportContext final
         bset<ECN::ECClassId> m_classMapsToSave;
         FkRelationshipMappingInfo::Collection m_fkRelMappingInfos;
         SchemaPolicies m_schemaPolicies;
-
+       
     public:
         SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options) {}
         SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }

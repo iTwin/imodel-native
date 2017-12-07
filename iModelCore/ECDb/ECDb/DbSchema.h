@@ -460,7 +460,7 @@ public:
     void InitializeSharedColumnNameGenerator(uint32_t existingSharedColumnCount) { m_sharedColumnNameGenerator.Initialize(existingSharedColumnCount); }
     DbTableId GetId() const { BeAssert(m_id.IsValid() && "Must not call DbTable::GetId on unpersisted DbTable"); return m_id; }
     void SetId(DbTableId id) { BeAssert(!m_id.IsValid()); BeAssert(id.IsValid()); m_id = id; }
-
+    bool HasId() const { return m_id.IsValid();}
     Utf8StringCR GetName() const { return m_name; }
     Type GetType() const { return m_type; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class

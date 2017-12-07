@@ -483,6 +483,9 @@ ToSqlPropertyMapVisitor::Result& ToSqlPropertyMapVisitor::Record(SingleColumnDat
 //---------------------------------------------------------------------------------------
 BentleyStatus SavePropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
+    if (m_tableFilter && m_tableFilter->GetId() != propertyMap.GetColumn().GetTable().GetId())
+        return SUCCESS;
+
     const ECN::ECPropertyId rootPropertyId = propertyMap.GetRootPropertyId();
     Utf8StringCR accessString = propertyMap.GetAccessString();
     if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), propertyMap.GetColumn().GetId()) != SUCCESS)
@@ -503,6 +506,9 @@ BentleyStatus SavePropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMa
     Utf8StringCR accessString = propertyMap.GetAccessString();
     for (SystemPropertyMap::PerTableIdPropertyMap const* childMap : propertyMap.GetDataPropertyMaps())
         {
+        if (m_tableFilter && m_tableFilter->GetId() != childMap->GetColumn().GetTable().GetId())
+            continue;
+
         if (m_context.InsertPropertyMap(propertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
             {
             BeAssert(false);

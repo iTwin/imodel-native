@@ -581,7 +581,11 @@ DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ct
         return nullptr;
         }
 
-    const_cast<ClassMap&>(m_classMap).SetOverflowTable(*m_overflowTable);
+    if (const_cast<ClassMap&>(m_classMap).SetOverflowTable(*m_overflowTable) != SUCCESS)
+        {
+        BeAssert(false && "SetOverflowTable failed");
+        }
+
     return m_overflowTable;
     }
 
