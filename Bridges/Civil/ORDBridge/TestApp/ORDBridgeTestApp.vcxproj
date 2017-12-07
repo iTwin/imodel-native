@@ -78,8 +78,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p ORDBridgeTestApp -f CiviliModelBridges -r Civil-iModelBridges -ax64 b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -p ORDBridgeTestAppExe -f CiviliModelBridges -r Civil-iModelBridges -N0 r ORDBridgeTestAppExe</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p ORDBridgeTestAppExe -f CiviliModelBridges -r Civil-iModelBridges -N0 r ORDBridgeTestAppExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p ORDBridgeTestAppExe -f CiviliModelBridges -r Civil-iModelBridges -ax64 re ORDBridgeTestAppExe -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
