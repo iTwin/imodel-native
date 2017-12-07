@@ -179,7 +179,6 @@ private:
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
-    static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
     BeSQLite::DbResult MergeSchemaRevisions(BeSQLite::Db::OpenParams const& params);
 
 protected:
@@ -311,6 +310,8 @@ public:
     //! compatible version number. 
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
+
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
 
     //! Inserts a new link table ECRelationship. 
     //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.

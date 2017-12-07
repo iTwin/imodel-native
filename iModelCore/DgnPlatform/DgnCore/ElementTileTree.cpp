@@ -1695,7 +1695,7 @@ void Root::_OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
     // Note that currently we consider drawing outside of the project extents to be illegal.
     // Therefore we do not attempt to regenerate tiles to include geometry previously outside the extents, or exclude geometry previously within them.
     auto rootTile = static_cast<TileP>(GetRootTile().get());
-    if (Is3d() && nullptr != rootTile)
+    if (Is3d() && nullptr != rootTile && !m_ignoreChanges)
         {
         // ###TODO: What about non-spatial 3d models?
         Transform tfToTile;
@@ -2131,25 +2131,6 @@ void MeshGenerator::ClipStrokes(StrokesR strokes) const
     else
         strokes = ClipSegments(strokes);
     }
-
-#ifdef WIP
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-PointLists Strokes::ClipToRange(PointLists&& input, DRange3dCR range)
-    {
-    DRange3d    strokesRange = DRange3d::From(input.m_points);
-
-    if (strokesRange.IsContained(range))
-        return input;
-
-    if (!strokesRange.IntersectsWith(range))
-        return PointLists();
-
-    
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
@@ -2693,7 +2674,7 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     try
         {
 #ifndef NDEBUG
-        static DgnElementId             s_debugId;      //((uint64_t) 62);
+        static DgnElementId             s_debugId; // ((uint64_t) 1099511628078);
 
         if (s_debugId.IsValid() && s_debugId != elemId)
             return;
@@ -2749,7 +2730,7 @@ void TileContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     _CookGeometryParams(geomParams, graphicParams);
     AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams);
     }
-
+                                                                                                                                 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/

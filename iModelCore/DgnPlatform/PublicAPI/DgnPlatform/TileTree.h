@@ -335,6 +335,8 @@ struct Root : RefCountedBase, NonCopyableClass
 protected:
     bool m_isHttp;
     bool m_pickable = false;
+    bool m_ignoreChanges = false;
+    bool m_haveDisplayTransform = false;
     mutable std::set<TileLoadStatePtr, TileLoadState::PtrComparator> m_activeLoads;
     DgnDbR m_db;
     BeFileName m_localCacheName;
@@ -346,6 +348,7 @@ protected:
     RealityData::CachePtr m_cache;
     mutable BeConditionVariable m_cv;
     DirtyRanges::List m_damagedRanges;
+    Transform m_displayTransform;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
@@ -354,6 +357,7 @@ protected:
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
+    Transform GetDisplayTransform(RenderContextR context) const;
 
     virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }
     virtual void _OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id) { }
@@ -436,6 +440,8 @@ public:
     void OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id);
     void OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id);
     virtual void _OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents) { }
+    void SetIgnoreChanges(bool ignore); //!< @private
+    void SetDisplayTransform(TransformCP tf); //!< @private
 };
 
 //=======================================================================================
@@ -855,6 +861,7 @@ struct TriMesh : RefCountedBase, NonCopyableClass
         Render::QPoint3dList QuantizePoints() const;
         Render::OctEncodedNormalList QuantizeNormals() const;
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+        DGNPLATFORM_EXPORT void FromTile(Render::TextureCR tile, Render::GraphicBuilder::TileCorners const& corners, FPoint3d* fpts, DgnDbR db);
     };
 protected:
     Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
@@ -871,6 +878,7 @@ public:
     DGNPLATFORM_EXPORT void Draw(DrawArgsR);
     DGNPLATFORM_EXPORT void Pick(PickArgsR);
 
+    bvector<Render::GraphicPtr> GetGraphics() const {return m_graphics;}
     void ClearGraphic() {m_graphics.clear();}
     Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
     bool IsEmpty() const {return m_points.empty();}
@@ -895,8 +903,10 @@ protected:
 
     void ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
 
-    DGNPLATFORM_EXPORT void _CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
     virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
+
+public:
+    DGNPLATFORM_EXPORT void CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
 };
 
 //=======================================================================================
