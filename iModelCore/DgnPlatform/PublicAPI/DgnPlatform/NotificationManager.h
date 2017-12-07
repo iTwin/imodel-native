@@ -66,7 +66,7 @@ private:
     RelativePosition      m_relativePosition;
 
 public:
-    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Toast), m_viewport(nullptr), m_displayTime(4000) {}
+    NotifyMessageDetails() : m_priority(OutputMessagePriority::None), m_openAlert(OutputMessageAlert::None), m_msgType(OutputMessageType::Toast), m_viewport(nullptr), m_displayTime(3500) {}
 
     //! Construct a NotifyMessageDetails
     //! @param[in]  priority        The priority this message should be accorded by the NotificationManager.
@@ -86,7 +86,7 @@ public:
         m_openAlert     = openAlert;
         m_msgType       = msgType;
 
-        m_displayTime = 4000;   // Default to 4 seconds
+        m_displayTime = 3500;   // Default to 3.5 seconds
         m_viewport = nullptr;
         m_displayPoint.Init(0, 0);
         m_relativePosition = RelativePosition::TopRight;
