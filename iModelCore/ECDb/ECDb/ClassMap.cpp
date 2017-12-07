@@ -672,8 +672,8 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
         {
         //We need to save to get id for overflow table when its created during schema update
         if (!overflowTable.HasId())
-            m_ecdb.Schemas().GetDbMap().GetDbSchema().SaveOrUpdateTables();
-
+            m_ecdb.Schemas().GetDispatcher().Main().GetDbSchema().SaveOrUpdateTables();
+        
         DbMapSaveContext ctx(m_ecdb);
         ctx.BeginSaving(*this);
         DbClassMapSaveContext classMapContext(ctx);
