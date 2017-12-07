@@ -32,7 +32,7 @@ def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = 
         if (PACKAGE_VERSION):
             str = str.replace(r'${PACKAGE_VERSION}', PACKAGE_VERSION.lower())
         if (DECL_FILE_NAME):
-            str = str.replace(r'${DECL_FILE_NAME}', DECL_FILE_NAME.lower())
+            str = str.replace(r'${DECL_FILE_NAME}', DECL_FILE_NAME)
         pf.write(str)
 
 # Tell copytree to ignore binary files that should not be in the addon
@@ -88,28 +88,64 @@ def doCopy(outputpackagedir, inputProductdir, nodeVersionCode, nodeOS, nodeCPU, 
 
     setMacros(dstpackagefile, NODE_VERSION_CODE = nodeVersionCode, NODE_OS = nodeOS, NODE_CPU = nodeCPU, PACKAGE_VERSION = packageVersion, NODE_ENGINES = nodeEngines)
 
-# Generate the package that defines the API implemented by all platform-specific packages
-# @param outputpackagedir The path to the output directory in which the package should be generated
-# @param sourceDir The source directory, i.e., %SrcRoot%iModelJsNodeAddon
+# Generate imodeljs-nodeaddonapi
+# @param outdirParent The path to the output package's parent directory
+# @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
 # @param packageVersion The semantic version number for the generated package
-def generateApiPackage(outputpackagedir, sourceDir, packageVersion):
+def generate_imodeljs_nodeaddonapi(outdirParent, parentSourceDir, packageVersion):
+
+    outputpackagedir = os.path.join(outdirParent, 'imodeljs-nodeaddonapi')
+
+    apiSourceDir = os.path.join(parentSourceDir, 'api_package');
 
     os.makedirs(outputpackagedir);
 
     declFileName = 'imodeljs-nodeaddonapi.d.ts'
-    packageTemplateFileName = 'imodeljs-nodeaddonapi.package.json.template'
+    packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
     filesToCopy = [declFileName, 'README.md']
 
     for fileToCopy in filesToCopy:
-        shutil.copyfile(os.path.join(sourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
+        shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
 
     # Generate the package.json file
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
-    shutil.copyfile(os.path.join(sourceDir, packageTemplateFileName), dstpackagefile);
+    shutil.copyfile(os.path.join(apiSourceDir, packageTemplateFileName), dstpackagefile);
 
     setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, DECL_FILE_NAME = declFileName)
+
+    print 'npm publish ' + outputpackagedir;
+
+
+# Generate imodeljs-nodeaddon
+# @param outdirParent The path to the output package's parent directory
+# @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
+# @param packageVersion The semantic version number for the generated package
+def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, packageVersion):
+
+    outputpackagedir = os.path.join(outdirParent, 'imodeljs-nodeaddon')
+
+    addonSourceDir = os.path.join(parentSourceDir, 'addon_package');
+
+    os.makedirs(outputpackagedir);
+
+    declFileName = 'NodeAddonLoader.d.ts'
+    packageTemplateFileName = 'package.json.template'
+
+    # Copy some files into place without modifying them.
+    filesToCopy = [declFileName, 'NodeAddonLoader.js', 'README.md']
+
+    for fileToCopy in filesToCopy:
+        shutil.copyfile(os.path.join(addonSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
+
+    # Generate the package.json file
+    dstpackagefile = os.path.join(outputpackagedir, 'package.json')
+    shutil.copyfile(os.path.join(addonSourceDir, packageTemplateFileName), dstpackagefile);
+
+    setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, DECL_FILE_NAME = declFileName)
+    
+    print 'npm publish ' + outputpackagedir;
 
 #
 #   main
@@ -173,9 +209,8 @@ if __name__ == '__main__':
 
         print 'npm publish ' + outputpackagedir;
 
-    # Generate the package that defines the API implemented by all platform-specific packages
-    outputpackagedir = os.path.join(outdirParent, 'imodeljs-nodeaddonapi')
-    generateApiPackage(outputpackagedir, sourceDir, packageVersion);
-    print 'npm publish ' + outputpackagedir;
+    # Generate the other packages that surround the addons
+    generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion);
+    generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion);
 
     exit(0)
