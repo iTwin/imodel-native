@@ -3216,7 +3216,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     ASSERT_EQ(0, gridAxis1->MakeIterator().BuildIdList<DgnElementId>().size()) << "Grid axis should contain no elements";
     
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 50, 20, 0 }, { 50, 70, 0 }, 90);
-    GridPlanarSurfacePtr plane = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), gridAxis1, planeExtDetail);
+    GridPlanarSurfacePtr plane = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), *gridAxis1, planeExtDetail);
 
     ASSERT_TRUE(plane.IsValid()) << "Failed to create grid plane surface";
 
@@ -3246,7 +3246,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create and insert grid axis";
 
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 0, 0 }, { 10, 0, 0 }, 20);
-    GridPlanarSurfacePtr surface = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), gridAxis, planeExtDetail);
+    GridPlanarSurfacePtr surface = GridPlanarSurface::Create(*grid->GetSurfacesModel().get(), *gridAxis, planeExtDetail);
 
     ASSERT_TRUE(surface.IsValid()) << "Failed to create grid plane surface";
     ASSERT_TRUE(surface->Insert().IsValid()) << "Failed to insert grid plane surface";
