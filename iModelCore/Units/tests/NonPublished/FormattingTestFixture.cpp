@@ -1040,15 +1040,23 @@ void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
 
 void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
     {
-    NamedFormatSpec scn = NamedFormatSpec(jsonFormat);
-    Json::Value scnJ = scn.ToJson(false);
-    int diff = BeStringUtilities::StricmpAscii(jsonFormat, scnJ.ToString().c_str());
+    NamedFormatSpec nfs = NamedFormatSpec(jsonFormat);
+    Json::Value nfsJ = nfs.ToJson(false);
+    int diff = BeStringUtilities::StricmpAscii(jsonFormat, nfsJ.ToString().c_str());
+
+    NamedFormatSpec nfsE = NamedFormatSpec();
+    nfsE.LoadJson(jsonFormat);
+    Json::Value nfsEJ = nfsE.ToJson(false);
+    int diffE = BeStringUtilities::StricmpAscii(jsonFormat, nfsEJ.ToString().c_str());
+
     EXPECT_TRUE(diff == 0);
+    EXPECT_TRUE(diffE == 0);
     if (doPrint)
         {
         LOG.infov("\n=================StandaloneFormatTest================");
-        LOG.infov("Restored Json: %s   (diff %d)", scnJ.ToString().c_str(), diff);
-        if(diff != 0)
+        LOG.infov("Restored Json: %s   (diff %d)", nfsJ.ToString().c_str(), diff);
+        LOG.infov("Json-loaded: %s   (diff %d)", nfsEJ.ToString().c_str(), diffE);
+        if(diff != 0 || diffE != 0)
             LOG.infov("Different from original: %s   (diff %d)", jsonFormat);
         LOG.infov("=======================================================\n");
         }

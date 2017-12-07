@@ -75,6 +75,7 @@ BE_JSON_NAME(NumericFormat)
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(unitLabel)
 BE_JSON_NAME(formatName)
+BE_JSON_NAME(formatSpec)
 BE_JSON_NAME(synonym)
 
 //CompositeValueSpec
@@ -247,8 +248,6 @@ public:
 //=======================================================================================
 struct NumericFormatSpec
     {
-    
-
 private:
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
@@ -269,14 +268,12 @@ private:
                                                  // with the boundaries of a virtual box is the responsibility of annotation layer
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
-  
 
     UNITS_EXPORT void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     UNITS_EXPORT double RoundedValue(double dval, double round) const;
     UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index) const;
     UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
-    
-
+    void LoadJson(Json::Value jval);
 public:
     UNITS_EXPORT void DefaultInit(size_t precision);
     UNITS_EXPORT void CopySpec(NumericFormatSpecCR other);
@@ -296,6 +293,7 @@ public:
         m_statSeparator(other.m_statSeparator), m_minWidth(other.m_minWidth) {}
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
+    UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
 
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }   
@@ -645,12 +643,13 @@ private:
         NumericFormatSpec  m_numericSpec;
         CompositeValueSpec m_compositeSpec;
         FormatSpecType     m_specType;
-        FormatProblemDetail m_problem;
-
-        void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
-        void Clone(NamedFormatSpecCR other);
-        void LoadJson(Json::Value jval);
+        FormatProblemDetail m_problem;      
 public:
+        UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
+        UNITS_EXPORT void Clone(NamedFormatSpecCR other);
+        UNITS_EXPORT void Clone(NamedFormatSpecCP other);
+        UNITS_EXPORT void LoadJson(Json::Value jval);
+        UNITS_EXPORT void LoadJson(Utf8CP jsonString);
         UNITS_EXPORT NamedFormatSpec();
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
@@ -691,12 +690,13 @@ struct FormatUnitSet
         Utf8String  m_unitName;
         BEU::UnitCP m_unit;
         FormatProblemDetail m_problem;
-        //NamedFormatSpec m_localCopy;
+        NamedFormatSpec m_localCopy;
 
     public:
-        FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}
-        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit);
-        UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName);
+        UNITS_EXPORT void Init();
+        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}
+        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData=false);
+        UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
         FormatUnitSet(FormatUnitSetCR other)
             {
             m_formatSpec = other.m_formatSpec;
@@ -723,8 +723,8 @@ struct FormatUnitSet
         NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
         UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty) const;
         UNITS_EXPORT bool IsUnitComparable(Utf8CP unitName) const;
-        UNITS_EXPORT Json::Value ToJson(bool useAlias) const;
-        UNITS_EXPORT Utf8String ToJsonString(bool useAlias) const;
+        UNITS_EXPORT Json::Value ToJson(bool useAlias, bool verbose = false) const;
+        UNITS_EXPORT Utf8String ToJsonString(bool useAlias, bool verbose = false) const;
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
         UNITS_EXPORT void LoadJsonData(Json::Value jval);

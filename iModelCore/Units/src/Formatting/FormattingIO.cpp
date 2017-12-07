@@ -264,7 +264,7 @@ size_t StdFormatSet::CustomInit()
 //
 //===================================================
 
-NumericFormatSpec::NumericFormatSpec(Json::Value jval)
+void NumericFormatSpec::LoadJson(Json::Value jval)
     {
     DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
     if (!jval.empty())
@@ -329,6 +329,81 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval)
                 }
             } // for
         }// not empty
+    }
+
+NumericFormatSpec::NumericFormatSpec(Json::Value jval)
+    {
+    LoadJson(jval);
+    //DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
+    //if (!jval.empty())
+    //    {
+    //    Utf8CP paramName;
+    //    Utf8String str;
+    //    Utf8String jStr = jval.ToString();
+    //    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    //        {
+    //        paramName = iter.memberName();
+    //        JsonValueCR val = *iter;
+    //        if (BeStringUtilities::StricmpAscii(paramName, json_presentType()) == 0)
+    //            {
+    //            m_presentationType = Utils::NameToPresentationType(val.asCString());
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
+    //            {
+    //            m_roundFactor = val.asDouble();
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
+    //            {
+    //            m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
+    //            {
+    //            m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
+    //            {
+    //            m_signOption = Utils::NameToSignOption(val.asCString());
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
+    //            {
+    //            m_barType = Utils::NameToFractionBarType(val.asCString());
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
+    //            {
+    //            str = val.asString();
+    //            m_decimalSeparator = str.c_str()[0];
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
+    //            {
+    //            str = val.asString();
+    //            m_thousandsSeparator = str.c_str()[0];
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_uomSeparator()) == 0)
+    //            {
+    //            m_uomSeparator = val.asString();
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_statSeparator()) == 0)
+    //            {
+    //            str = val.asString();
+    //            m_statSeparator = str.c_str()[0];
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
+    //            {
+    //            m_minWidth = val.asInt();
+    //            }
+    //        else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
+    //            {
+    //            TraitsFromJson(val);
+    //            }
+    //        } // for
+    //    }// not empty
+    }
+
+NumericFormatSpec::NumericFormatSpec(Utf8CP jsonString)
+    {
+    Json::Value jval (Json::objectValue);
+    Json::Reader::Parse(jsonString, jval);
+    LoadJson(jval);
     }
 
 FormatTraits NumericFormatSpec::TraitsFromJson(JsonValueCR jval)
@@ -662,7 +737,7 @@ void NamedFormatSpec::Init(FormatProblemCode prob)
     m_alias.clear();
     m_description.clear();
     m_displayLabel.clear();
-    m_numericSpec.DefaultInit(0);
+    m_numericSpec.DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
     m_compositeSpec.Init();
     m_specType = FormatSpecType::Undefined;
     m_problem.UpdateProblemCode(prob);
@@ -684,8 +759,8 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     jNFS[json_SpecType()] = Utils::FormatSpecTypeToName(m_specType);
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
     Json::Value jcs = m_compositeSpec.ToJson();
-    if(!jcs.empty())
-      jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
+    if (!jcs.empty())
+        jNFS[json_CompositeFormat()] = jcs; // m_compositeSpec.ToJson();
     return jNFS;
     }
 
@@ -723,6 +798,12 @@ void NamedFormatSpec::LoadJson(Json::Value jval)
         }
     }
 
+void NamedFormatSpec::LoadJson(Utf8CP jsonString)
+    {
+    Json::Value jval (Json::objectValue);
+    Json::Reader::Parse(jsonString, jval);
+    LoadJson(jval);
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -785,21 +866,24 @@ void NamedFormatSpec::ReplaceLocalizables(JsonValueCR jval)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-Json::Value FormatUnitSet::ToJson(bool useAlias) const
+Json::Value FormatUnitSet::ToJson(bool useAlias, bool verbose) const
     {
     Json::Value jval;
-    jval[json_formatName()] = useAlias? m_formatSpec->GetAlias() : m_formatSpec->GetName();
     jval[json_unitName()] = m_unit->GetName();
+    if(verbose)
+        jval[json_formatSpec()] = m_formatSpec->ToJson(true);
+    else
+        jval[json_formatName()] = useAlias? m_formatSpec->GetAlias() : m_formatSpec->GetName();
     return jval;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-Utf8String FormatUnitSet::ToJsonString(bool useAlias) const
+Utf8String FormatUnitSet::ToJsonString(bool useAlias, bool verbose) const
     {
     Utf8String str;
-    Json::Value jval = ToJson(useAlias);
+    Json::Value jval = ToJson(useAlias, verbose);
     str = jval.ToString();
     return str;
     }
@@ -882,7 +966,7 @@ FormatUnitGroup::FormatUnitGroup(JsonValueCR jval)
                 }
             else if (BeStringUtilities::StricmpAscii(paramName, json_persistFUS()) == 0)
                 {
-                fus = FormatUnitSet();
+                fus.Init();
                 fus.LoadJsonData(val);
                 m_group.push_back(fus);
                 }
@@ -890,7 +974,7 @@ FormatUnitGroup::FormatUnitGroup(JsonValueCR jval)
                 {
                 for (Json::Value::iterator iter = val.begin(); iter != val.end(); iter++)
                     {
-                    fus = FormatUnitSet();
+                    fus.Init();
                     JsonValueCR val = *iter;
                     fus.LoadJsonData(val);
                     m_group.push_back(fus);

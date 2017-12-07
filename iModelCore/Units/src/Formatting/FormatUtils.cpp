@@ -262,6 +262,14 @@ FormatSpecType Utils::NameToFormatSpecType(Utf8CP name)
     return FormatSpecType::Undefined;
     }
 
+Utf8CP Utils::SkipBlanks(Utf8CP str)
+    {
+    while (isspace(*str))
+        {
+        str++;
+        }
+    return str;
+    }
 
 Utf8String Utils::AccumulatorStateName(AccumulatorState state)
     {
@@ -290,8 +298,11 @@ Utf8String Utils::CharToString(Utf8Char c)
 //----------------------------------------------------------------------------------------
 DecimalPrecision Utils::DecimalPrecisionByIndex(size_t num)
     {
+    if (num > FormatConstant::MaxDecimalPrecisionIndex())
+        return FormatConstant::DefaultDecimalPrecision();
     switch (num)
         {
+        case 0: return DecimalPrecision::Precision0;
         case 1: return DecimalPrecision::Precision1;
         case 2: return DecimalPrecision::Precision2;
         case 3: return DecimalPrecision::Precision3;
@@ -1154,10 +1165,20 @@ POP_MSVC_IGNORE
 // FormatUnitSet
 //
 //===================================================
+
+void FormatUnitSet::Init()
+    {
+    m_formatSpec = nullptr;
+    m_unitName.clear();
+    m_unit = nullptr;
+    m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
+    m_localCopy.Init();
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit)
+FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData)
     {
     m_formatSpec = format;
     m_unitName = Utf8String(unit->GetName());
@@ -1173,7 +1194,7 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
+FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData)
     {
     m_problem = FormatProblemDetail();
     m_unit = nullptr;
@@ -1197,6 +1218,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName)
 FormatUnitSet::FormatUnitSet(Utf8CP description)
     {
     m_problem = FormatProblemDetail();
+    description = Utils::SkipBlanks(description);
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
     FormattingWord fnam;
     FormattingWord unit;
@@ -1505,14 +1527,29 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 //----------------------------------------------------------------------------------------
 void NamedFormatSpec::Clone(NamedFormatSpecCR other)
     {
-    m_name = Utf8String(other.m_name);
-    m_alias = Utf8String(other.m_alias);
-    m_description = Utf8String(other.m_description);
-    m_displayLabel = Utf8String(other.m_displayLabel);
+    m_name = other.m_name;
+    m_alias = other.m_alias;
+    m_description = other.m_description;
+    m_displayLabel = other.m_displayLabel;
     m_numericSpec.CopySpec(other.m_numericSpec);
     m_compositeSpec.Clone(other.m_compositeSpec);
     m_specType = other.m_specType;
     m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+void NamedFormatSpec::Clone(NamedFormatSpecCP other)
+    {
+    m_name = other->m_name;
+    m_alias = other->m_alias;
+    m_description = other->m_description;
+    m_displayLabel = other->m_displayLabel;
+    m_numericSpec.CopySpec(other->m_numericSpec);
+    m_compositeSpec.Clone(other->m_compositeSpec);
+    m_specType = other->m_specType;
+    m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());
     }
 
 //----------------------------------------------------------------------------------------

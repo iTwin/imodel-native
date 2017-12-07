@@ -215,6 +215,8 @@ TEST(FormattingTest, StdFormatting)
     Utf8String tes2 = tes1;
     LOG.infov("tes1 %s", tes1.c_str());
     LOG.infov("tes2 %s", tes2.c_str());
+    tes1.clear();
+    LOG.infov("t1-cleared tes2 %s", tes2.c_str());
     NamedFormatSpec nfs1 = NamedFormatSpec();
 
     Utf8CP scnT = "{\"NumericFormat\":{\"presentType\":\"ScientificNorm\"},\"SpecAlias\":\"sciN\",\"SpecName\":\"NormalizedExp\",\"SpecType\":\"numeric\"}";
@@ -548,6 +550,9 @@ TEST(FormattingTest, PhysValues)
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
     //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
     EXPECT_STREQ ("74 15/32ft", fusYF.FormatQuantity(len, "").c_str());
+
+    Utf8String fusJ = fusYF.ToJsonString(false, true);
+    LOG.infov("\nfusJ  %s\n", fusJ.c_str());
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
