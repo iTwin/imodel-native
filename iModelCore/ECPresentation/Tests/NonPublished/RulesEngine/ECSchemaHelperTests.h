@@ -204,8 +204,6 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct ECSchemaHelperTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
-    
-    RelatedPathsCache* m_relatedPathsCache;
     ECSchemaHelper* m_helper;
 
     ECSchemaHelperTests() : m_helper(nullptr) {}

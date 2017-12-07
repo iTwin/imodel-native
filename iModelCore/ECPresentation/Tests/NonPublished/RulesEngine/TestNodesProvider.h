@@ -40,3 +40,36 @@ public:
     void SetHasNodesHandler(HasNodesHandler const& handler) {m_hasNodesHandler = handler;}
     void SetGetNodesCountHandler(GetNodesCountHandler const& handler) {m_getNodesCountHandler = handler;}
 };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct BVectorNodesProvider : NavNodesProvider
+{
+private:
+    bvector<JsonNavNode*> m_nodes;
+
+private:
+    BVectorNodesProvider(NavNodesProviderContext const& context, bvector<JsonNavNode*> nodes) 
+        : NavNodesProvider(context), m_nodes(nodes)
+        {}
+    
+protected:
+    bool _GetNode(JsonNavNodePtr& node, size_t index) const override
+        {
+        if (index < GetNodesCount())
+            {
+            node = m_nodes[index];
+            return true;
+            }
+        return false;
+        }
+    bool _HasNodes() const override {return !m_nodes.empty();}
+    size_t _GetNodesCount() const override {return m_nodes.size();}
+
+public:
+    static RefCountedPtr<BVectorNodesProvider> Create(NavNodesProviderContext const& context, bvector<JsonNavNode*> nodes)
+        {
+        return new BVectorNodesProvider(context, nodes);
+        }
+};

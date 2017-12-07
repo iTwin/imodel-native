@@ -7,47 +7,18 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
-#include "CustomNodesProviderTests.h"
-#include "TestNavNode.h"
+#include "NodesProviderTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
-ECDbTestProject* CustomNodesProviderTests::s_project = nullptr;
-CustomFunctionsInjector* CustomNodesProviderTests::s_customFunctions = nullptr;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodesProviderTests::SetUpTestCase()
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2015
++===============+===============+===============+===============+===============+======*/
+struct CustomNodesProviderTests : NodesProviderTests
     {
-    Localization::Init();
-    CustomNodesProviderTests::s_project = new ECDbTestProject();
-    CustomNodesProviderTests::s_project->Create("CustomNodesProviderTests", "RulesEngineTest.01.00.ecschema.xml");
-    CustomNodesProviderTests::s_customFunctions = new CustomFunctionsInjector(CustomNodesProviderTests::s_project->GetECDb());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodesProviderTests::TearDownTestCase()
-    {
-    DELETE_AND_CLEAR(CustomNodesProviderTests::s_project);
-    DELETE_AND_CLEAR(CustomNodesProviderTests::s_customFunctions);
-    Localization::Terminate();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomNodesProviderTests::SetUp()
-    {
-    m_ruleset = PresentationRuleSet::CreateInstance("CustomNodesProviderTests", 1, 0, false, "", "", "", false);
-    m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
-        m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
-    m_context->SetQueryContext(s_project->GetECDb(), m_statementCache, *s_customFunctions, nullptr);
-    }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
@@ -143,7 +114,7 @@ TEST_F(CustomNodesProviderTests, ReturnsValidNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     {
-    TestNavNodePtr parent = TestNavNode::Create();
+    TestNavNodePtr parent = TestNodesHelper::CreateCustomNode("parent_type", "parent_label", "parent_descr");
     m_nodesCache.Cache(*parent, true);
 
     ChildNodeRule rule;

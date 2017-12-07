@@ -10,7 +10,6 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "RulesEngineTypes.h"
 #include "ContentProviders.h"
-#include "../../ECDbBasedCache.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 

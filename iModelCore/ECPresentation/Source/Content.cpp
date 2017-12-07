@@ -1317,7 +1317,7 @@ rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::MemoryPoolAllocato
 +---------------+---------------+---------------+---------------+---------------+------*/
 SelectionInfo::SelectionInfo(ISelectionProvider const& selectionProvider, SelectionChangedEventCR evt)
     : m_isValid(true), m_selectionProviderName(evt.GetSourceName()), m_isSubSelection(evt.IsSubSelection()), 
-    m_keys(evt.IsSubSelection() ? selectionProvider.GetSubSelection(evt.GetConnection()) : selectionProvider.GetSelection(evt.GetConnection()))
+    m_keys(evt.IsSubSelection() ? selectionProvider.GetSubSelection(evt.GetDb()) : selectionProvider.GetSelection(evt.GetDb()))
     {}
 
 /*---------------------------------------------------------------------------------**//**

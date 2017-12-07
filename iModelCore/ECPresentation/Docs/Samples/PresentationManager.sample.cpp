@@ -19,6 +19,11 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 static RulesDrivenECPresentationManager* m_manager = nullptr;
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Grigas.Petraitis                11/2017
+//---------------------------------------------------------------------------------------
+static IConnectionManager* GetConnectionsManager() {return nullptr;}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Grigas.Petraitis                08/2017
 //---------------------------------------------------------------------------------------
 static IJsonLocalState* GetLocalState() {return nullptr;}
@@ -61,14 +66,14 @@ void setup()
     //__PUBLISH_EXTRACT_START__ PresentationManagerSample_SetUp.sampleCode
     // Create the manager 
     RulesDrivenECPresentationManager::Paths paths(PLATFORM_ASSETS_DIRECTORY, TEMPORARY_DIRECTORY);
-    m_manager = new RulesDrivenECPresentationManager(paths);
+    m_manager = new RulesDrivenECPresentationManager(*GetConnectionsManager(), paths);
 
     // Register the manager so it can be accessed statically
     IECPresentationManager::RegisterImplementation(m_manager);
 
     // (optional) Register local state to be used for storing persistent settings. Settings aren't
     // persisted if local state is not set.
-    m_manager->SetLocalState(*GetLocalState());
+    m_manager->SetLocalState(GetLocalState());
 
     // (optional) Register a property formatter responsible for formatting ECInstance property values. Property values don't
     // get formatted if the formatter is not registered
@@ -94,8 +99,8 @@ void setup()
     // Register change event sources which trigger update events
     m_manager->RegisterECInstanceChangeEventSource(*CreateECInstanceChangeEventSource());
 
-    // Register update records handler which applies view model changes to the UI
-    m_manager->RegisterUpdateRecordsHandler(GetUpdateRecordsHandler());
+    // Set update records handler which applies view model changes to the UI
+    m_manager->SetUpdateRecordsHandler(GetUpdateRecordsHandler());
     //__PUBLISH_EXTRACT_END__
     }
 

@@ -24,7 +24,7 @@ public:
     ECInstanceChangesDirector(HandlersSet const& handlers)
         : m_handlers(handlers)
         {}
-    bvector<ECInstanceChangeResult> Handle(BeSQLite::EC::ECDbR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR);
+    bvector<ECInstanceChangeResult> Handle(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

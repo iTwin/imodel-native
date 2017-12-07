@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once 
 #include <ECPresentation/ECPresentation.h>
-#include "../../ECDbBasedCache.h"
 #include "../../ValueHelpers.h"
 #include "ExtendedData.h"
 
@@ -118,9 +117,10 @@ struct ECSchemaHelper : NonCopyableClass
         };
 
 private:
-    BeSQLite::EC::ECDbCR m_db;
-    RelatedPathsCache& m_relatedPathsCache;
-    BeSQLite::EC::ECSqlStatementCache const* m_statementCache;
+    ECDbCR m_db;
+    RelatedPathsCache* m_relatedPathsCache;
+    bool m_ownsRelatedPathsCache;
+    ECSqlStatementCache const* m_statementCache;
     bool m_ownsStatementCache;
 
 private:
@@ -133,13 +133,13 @@ private:
         bset<RelatedClass>&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, int relationshipDirection, 
         int depth, ECEntityClassCP targetClass, bool include) const;
     void GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bmap<ECRelationshipClassCP, int>& relationshipsUseCounter, 
-        bset<RelatedClass>&, BeSQLite::EC::ECSqlStatement&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, 
+        bset<RelatedClass>&, ECSqlStatement&, SupportedClassesResolver const&, BeSQLite::VirtualSet const& sourceClassIds, 
         int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
                 
 public:
-    ECPRESENTATION_EXPORT ECSchemaHelper(BeSQLite::EC::ECDbCR db, RelatedPathsCache&, BeSQLite::EC::ECSqlStatementCache const*);
+    ECPRESENTATION_EXPORT ECSchemaHelper(ECDbCR db, RelatedPathsCache*, ECSqlStatementCache const*);
     ECPRESENTATION_EXPORT ~ECSchemaHelper();
-    BeSQLite::EC::ECDbCR GetDb() const {return m_db;}
+    ECDbCR GetDb() const {return m_db;}
 
     ECPRESENTATION_EXPORT ECSchemaCP GetSchema(Utf8CP schemaName) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;
@@ -216,7 +216,7 @@ struct ECInstancesHelper : NonCopyableClass
 private:
     ECInstancesHelper() {}
 public:
-    static IECInstancePtr LoadInstance(BeSQLite::EC::ECDbCR db, BeSQLite::EC::ECInstanceKeyCR key);
+    static IECInstancePtr LoadInstance(ECDbCR db, ECInstanceKeyCR key);
 };
 
 /*=================================================================================**//**

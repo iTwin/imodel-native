@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PresentationManagerTests.h"
 #include "../../NonPublished/RulesEngine/TestHelpers.h"
+#include "../../BackDoor/PublicAPI/BackDoor/ECPresentation/BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -25,7 +26,7 @@ static bmap<Utf8String, Utf8String>& GetRegisteredSchemaXmls()
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                07/2015
+* @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerTests::SetUpTestCase()
     {
@@ -78,11 +79,13 @@ void RulesDrivenECPresentationManagerTests::SetUp()
     {
     Localization::Init();
 
-    m_locater = TestRuleSetLocater::Create();
-    m_manager = new RulesDrivenECPresentationManager(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
-    m_manager->GetLocaters().RegisterLocater(*m_locater);
+    m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     IECPresentationManager::RegisterImplementation(m_manager);
-    IECPresentationManager::GetManager().GetConnections().NotifyConnectionOpened(s_project->GetECDb());
+
+    m_locater = TestRuleSetLocater::Create();
+    m_manager->GetLocaters().RegisterLocater(*m_locater);
+    
+    m_connections.NotifyConnectionOpened(s_project->GetECDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -90,10 +93,10 @@ void RulesDrivenECPresentationManagerTests::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerTests::TearDown()
     {
+    s_project->GetECDb().AbandonChanges();
     m_locater = nullptr;
-    IECPresentationManager::GetManager().GetConnections().NotifyConnectionClosed(s_project->GetECDb());
+    DELETE_AND_CLEAR(m_manager);
     IECPresentationManager::RegisterImplementation(nullptr);
-    delete m_manager;
     Localization::Terminate();
     }
 
@@ -203,7 +206,7 @@ Utf8String RulesDrivenECPresentationManagerTests::GetDisplayLabel(IECInstanceCR 
 TEST_F(RulesDrivenECPresentationManagerTests, InitializesUserSettings)
     {
     StubLocalState localState;
-    m_manager->SetLocalState(localState);
+    m_manager->SetLocalState(&localState);
 
     ASSERT_TRUE(m_manager->GetUserSettings("MyRulesetId").GetSettingValue("TestSetting").empty());
 
@@ -287,7 +290,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_CallsHandlerWithVa
         ChangedECInstanceInfo(*widgetClass, widgetKey.GetInstanceId()), 
         ChangedECInstanceInfo(*gadgetClass, gadgetKey.GetInstanceId())
         };
-    bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test.property.accessor", ECValue(123));
+    bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test.property.accessor", ECValue(123)).get();
 
     EXPECT_EQ(2, canHandleHandler_callCount);
     EXPECT_EQ(2, changeHandler_callCount);
@@ -331,7 +334,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_CallsHandlerOnlyWi
         ChangedECInstanceInfo(*widgetClass, widgetKey.GetInstanceId()), 
         ChangedECInstanceInfo(*gadgetClass, gadgetKey.GetInstanceId())
         };
-    bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test", ECValue());
+    bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test", ECValue()).get();
 
     ASSERT_EQ(2, result.size());
 
@@ -389,7 +392,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_PutsResultsInCorre
         ChangedECInstanceInfo(*gadgetClass, gadgetKey.GetInstanceId()),
         ChangedECInstanceInfo(*widgetClass, widgetKey2.GetInstanceId())
         };
-    bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test", ECValue());
+    bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test", ECValue()).get();
     
     // note - _CanHandle callback should be called only once because the class is the same for both changes
     EXPECT_EQ(1, canHandleHandler_callCount);
@@ -409,60 +412,32 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_PutsResultsInCorre
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerTests, OnNodeExpanded_SetsTheFlagAndUpdatesNodeInCache)
+TEST_F(RulesDrivenECPresentationManagerTests, NotifyNodeExpanded_NotifyNodeCollapsed_SetsTheFlagAndUpdatesNodeInCache)
     {
-    NodesCache& cache = m_manager->GetNodesCache();
+    // create a ruleset with which returns 1 custom root node
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*ruleset);
+    RootNodeRuleP rule = new RootNodeRule();
+    ruleset->AddPresentationRule(*rule);
+    rule->AddSpecification(*new CustomNodeSpecification(1, false, "T", "L", "D", "I"));
 
-    // cache root data source
-    m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
-    DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
-    cache.Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
-
-    // create the root node
-    JsonNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(s_project->GetECDb().GetDbGuid());
-    extendedData.SetRulesetId(info.GetRulesetId().c_str());
-    cache.Cache(*node, false);
-
-    // verify
+    // get the node
+    RulesDrivenECPresentationManager::NavigationOptions options("test", TargetTree_Both);
+    NavNodesContainer nodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    NavNodeCPtr node = nodes[0];
     EXPECT_FALSE(node->IsExpanded());
 
     // tell the node was expanded
-    m_manager->NotifyNodeExpanded(s_project->GetECDb(), node->GetNodeId());
-    
-    // verify
-    node = cache.GetNode(node->GetNodeId());
-    EXPECT_TRUE(node->IsExpanded());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerTests, OnNodeCollapsed_SetsTheFlagAndUpdatesNodeInCache)
-    {
-    NodesCache& cache = m_manager->GetNodesCache();
-
-    // cache root data source
-    m_manager->GetNodesCache().OnRulesetCreated(*PresentationRuleSet::CreateInstance("RulesDrivenMessagingTest", 1, 0, false, "", "", "", false));
-    DataSourceInfo info(s_project->GetECDb().GetDbGuid(), "RulesDrivenMessagingTest", nullptr, nullptr);
-    cache.Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
-
-    // create the root node
-    JsonNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
-    node->SetIsExpanded(true);
-    NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(s_project->GetECDb().GetDbGuid());
-    extendedData.SetRulesetId(info.GetRulesetId().c_str());
-    cache.Cache(*node, false);
+    m_manager->NotifyNodeExpanded(s_project->GetECDb(), node->GetNodeId()).wait();
 
     // verify
+    node = m_manager->GetNode(s_project->GetECDb(), node->GetNodeId()).get();
     EXPECT_TRUE(node->IsExpanded());
 
-    // tell the node was expanded
-    m_manager->NotifyNodeCollapsed(s_project->GetECDb(), node->GetNodeId());
+    // tell the node was collapsed
+    m_manager->NotifyNodeCollapsed(s_project->GetECDb(), node->GetNodeId()).wait();
     
     // verify
-    node = cache.GetNode(node->GetNodeId());
+    node = m_manager->GetNode(s_project->GetECDb(), node->GetNodeId()).get();
     EXPECT_FALSE(node->IsExpanded());
     }

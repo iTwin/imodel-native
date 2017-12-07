@@ -16,6 +16,12 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
+
+//! A container of refcounted NavNode objects.
+typedef DataContainer<NavNodeCPtr> NavNodesContainer;
+
 //=======================================================================================
 //! An abstract presentation manager which drives presentation controls and unified selection.
 //! @ingroup GROUP_Presentation
@@ -28,87 +34,79 @@ private:
     static IECPresentationManager* s_instance;
     
 private:
-    NodesPathElement FindNode(BeSQLite::EC::ECDbR, NavNodeCP, NavNodeKeyCR, JsonValueCR);
-    bmap<uint64_t, bvector<NavNodeCPtr>>::iterator InsertNodeToMap(BeSQLite::EC::ECDbR connection, bmap<uint64_t, bvector<NavNodeCPtr>>& hierarchy, NavNodeCPtr node);
+    folly::Future<NodesPathElement> FindNode(ECDbCR, NavNodeCP, NavNodeKeyCR, JsonValueCR);
 
 //__PUBLISH_SECTION_START__
 private:
-    ConnectionManager m_connections;
+    IConnectionManagerR m_connections;
     
 protected:
-    virtual ~IECPresentationManager() {}
-
-protected:    
 /** @name Navigation  
  *  @{ */
-    //! Retrieves the root nodes.
     //! @see GetRootNodes
-    virtual DataContainer<NavNodeCPtr> _GetRootNodes(BeSQLite::EC::ECDbR, PageOptionsCR, JsonValueCR) = 0;
+    virtual folly::Future<NavNodesContainer> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR) = 0;
 
-    //! Retrieves the number of root nodes.
     //! @see GetRootNodesCount
-    virtual size_t _GetRootNodesCount(BeSQLite::EC::ECDbR, JsonValueCR) = 0;
+    virtual folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR) = 0;
 
-    //! Retrieves the child nodes.
     //! @see GetChildren
-    virtual DataContainer<NavNodeCPtr> _GetChildren(BeSQLite::EC::ECDbR, NavNodeCR, PageOptionsCR, JsonValueCR) = 0;
+    virtual folly::Future<NavNodesContainer> _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, JsonValueCR) = 0;
 
-    //! Retrieves the number of child nodes.
     //! @see GetChildrenCount
-    virtual size_t _GetChildrenCount(BeSQLite::EC::ECDbR, NavNodeCR, JsonValueCR) = 0;
+    virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR) = 0;
     
-    //! @copydoc HasChild
-    virtual bool _HasChild(BeSQLite::EC::ECDbR connection, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions) = 0;
+    //! @see HasChild
+    virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, JsonValueCR) = 0;
 
     //! Retrieves the parent node of the specified node.
     //! @see GetParent
-    virtual NavNodeCPtr _GetParent(BeSQLite::EC::ECDbR, NavNodeCR, JsonValueCR) = 0;
+    virtual folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR, JsonValueCR) = 0;
 
     //! Retrieves a node by ID.
     //! @see GetNode
-    virtual NavNodeCPtr _GetNode(BeSQLite::EC::ECDbR, uint64_t) = 0;
+    virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, uint64_t) = 0;
 
     //! Retrieves filtered Node paths.
     //! @see GetFilteredNodes
-    virtual bvector<NavNodeCPtr> _GetFilteredNodes(BeSQLite::EC::ECDbR, Utf8CP, JsonValueCR) = 0;
+    virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR, Utf8CP, JsonValueCR) = 0;
 
-    //! @copydoc NotifyNodeChecked
-    virtual void _OnNodeChecked(BeSQLite::EC::ECDbR, uint64_t nodeId) = 0;
-    //! @copydoc NotifyNodeUnchecked
-    virtual void _OnNodeUnchecked(BeSQLite::EC::ECDbR, uint64_t nodeId) = 0;
+    //! @see NotifyNodeChecked
+    virtual folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR, uint64_t nodeId) = 0;
+    //! @see NotifyNodeUnchecked
+    virtual folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR, uint64_t nodeId) = 0;
 
-    //! @copydoc NotifyNodeExpanded
-    virtual void _OnNodeExpanded(BeSQLite::EC::ECDbR, uint64_t nodeId) = 0;
-    //! @copydoc NotifyNodeCollapsed
-    virtual void _OnNodeCollapsed(BeSQLite::EC::ECDbR, uint64_t nodeId) = 0;
-    //! @copydoc NotifyAllNodesCollapsed
-    virtual void _OnAllNodesCollapsed(BeSQLite::EC::ECDbR, JsonValueCR options) = 0;
+    //! @see NotifyNodeExpanded
+    virtual folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR, uint64_t nodeId) = 0;
+    //! @see NotifyNodeCollapsed
+    virtual folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR, uint64_t nodeId) = 0;
+    //! @see NotifyAllNodesCollapsed
+    virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR) = 0;
 /** @} */
 
 /** @name Content  
  *  @{ */
     //! Get content classes from the list of supplied input classes.
     //! @see GetContentClasses
-    virtual bvector<SelectClassInfo> _GetContentClasses(BeSQLite::EC::ECDbR, Utf8CP, bvector<ECN::ECClassCP> const&, JsonValueCR) = 0;
+    virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR) = 0;
 
     //! Get the content descriptor based on the supplied parameters.
     //! @see GetContentDescriptor
-    virtual ContentDescriptorCPtr _GetContentDescriptor(BeSQLite::EC::ECDbR, Utf8CP, SelectionInfo const&, JsonValueCR) = 0;
+    virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, SelectionInfo const&, JsonValueCR) = 0;
 
     //! Get the content.
     //! @see GetContent
-    virtual ContentCPtr _GetContent(BeSQLite::EC::ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) = 0;
+    virtual folly::Future<ContentCPtr> _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) = 0;
 
     //! Get the content set size. 
     //! @see GetContentSetSize
-    virtual size_t _GetContentSetSize(BeSQLite::EC::ECDbR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) = 0;
+    virtual folly::Future<size_t> _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) = 0;
 /** @} */
     
 /** @name Updating
  *  @{ */
     //! Changes an ECInstance(s) value using the specified parameters.
     //! @see SaveValueChange
-    virtual bvector<ECInstanceChangeResult> _SaveValueChange(BeSQLite::EC::ECDbR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECN::ECValueCR, JsonValueCR) = 0;
+    virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) = 0;
 /** @} */
 
 public:
@@ -123,157 +121,162 @@ public:
     //! Get the presentation manager.
     //! @warning @ref IsActive() can be used to verify if a manager is registered.
     ECPRESENTATION_EXPORT static IECPresentationManagerR GetManager();
+    
+    //! Constructor.
+    IECPresentationManager(IConnectionManagerR connections) : m_connections(connections) {}
+
+    //! Virtual destructor.
+    virtual ~IECPresentationManager() {}
 
     //! Get the connection manager used by this presentation manager.
-    ConnectionManager const& GetConnections() const {return m_connections;}
-    ConnectionManager& GetConnections() {return m_connections;}
+    IConnectionManagerCR GetConnections() const {return m_connections;}
 /** @} */
 
 /** @name Navigation  
  *  @{ */
     //! Retrieves the root nodes.
-    //! @param[in] connection The connection to use for getting the nodes.
+    //! @param[in] db The db to use for getting the nodes.
     //! @param[in] pageOptions Info about the requested page of data.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT DataContainer<NavNodeCPtr> GetRootNodes(BeSQLite::EC::ECDbR connection, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<NavNodesContainer> GetRootNodes(ECDbCR db, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
 
     //! Retrieves the number of root nodes. This number may be higher than the size of data container returned by GetRootNodes in cases
     //! when the presentation manager returns nodes in a pageable manner.
-    //! @param[in] connection The connection to use for getting the nodes count.
+    //! @param[in] db The db to use for getting the nodes count.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT size_t GetRootNodesCount(BeSQLite::EC::ECDbR connection, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<size_t> GetRootNodesCount(ECDbCR db, JsonValueCR extendedOptions = Json::Value());
 
     //! Retrieves the child nodes.
-    //! @param[in] connection The connection to use for getting the nodes.
+    //! @param[in] db The db to use for getting the nodes.
     //! @param[in] parentNode The parent node to get the children for.
     //! @param[in] pageOptions Info about the requested page of data.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT DataContainer<NavNodeCPtr> GetChildren(BeSQLite::EC::ECDbR connection, NavNodeCR parentNode, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<NavNodesContainer> GetChildren(ECDbCR db, NavNodeCR parentNode, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
 
     //! Retrieves the number of child nodes. This number may be higher than the size of data container returned by GetChildren in cases
     //! when the presentation manager returns nodes in a pageable manner.
-    //! @param[in] connection The connection to use for getting the nodes count.
+    //! @param[in] db The db to use for getting the nodes count.
     //! @param[in] parentNode The parent node to get the children for.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT size_t GetChildrenCount(BeSQLite::EC::ECDbR connection, NavNodeCR parentNode, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<size_t> GetChildrenCount(ECDbCR db, NavNodeCR parentNode, JsonValueCR extendedOptions = Json::Value());
     
     //! Checks whether the specified parent node has the specified child node as its children.
-    //! @param[in] connection The connection to use for checking.
+    //! @param[in] db The db to use for checking.
     //! @param[in] parentNode The parent node whose children should be checked.
     //! @param[in] childNodeKey Key of the child node to look for.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT bool HasChild(BeSQLite::EC::ECDbR connection, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<bool> HasChild(ECDbCR db, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions = Json::Value());
 
     //! Retrieves the parent node of the specified node.
-    //! @param[in] connection The connection to use for getting the node.
+    //! @param[in] db The db to use for getting the node.
     //! @param[in] childNode The child node to get the parent for.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT NavNodeCPtr GetParent(BeSQLite::EC::ECDbR connection, NavNodeCR childNode, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<NavNodeCPtr> GetParent(ECDbCR db, NavNodeCR childNode, JsonValueCR extendedOptions = Json::Value());
 
     //! Retrieves the node with the specified node ID.
-    //! @param[in] connection The connection to use for getting the node.
+    //! @param[in] db The db to use for getting the node.
     //! @param[in] nodeId ID of the node to get. See @ref NavNode::GetNodeId()
-    ECPRESENTATION_EXPORT NavNodeCPtr GetNode(BeSQLite::EC::ECDbR connection, uint64_t nodeId);
+    ECPRESENTATION_EXPORT folly::Future<NavNodeCPtr> GetNode(ECDbCR db, uint64_t nodeId);
     
     //! Provided a path of node keys, returns a path of nodes.
-    //! @param[in] connection The connection to use for getting the nodes path.
+    //! @param[in] db The db to use for getting the nodes path.
     //! @param[in] keyPath Node keys path describing the path from the root node down to the target node.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT NodesPathElement GetNodesPath(BeSQLite::EC::ECDbR connection, NavNodeKeyPath const& keyPath, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<NodesPathElement> GetNodesPath(ECDbCR db, NavNodeKeyPath const& keyPath, JsonValueCR extendedOptions = Json::Value());
 
     //! Returns node paths from the provided node key paths.
-    //! @param[in] connection The connection to use for getting the nodes path.
+    //! @param[in] db The db to use for getting the nodes path.
     //! @param[in] keyPaths Node key paths describing the path from the root node down to the target nodes.
     //! @param[in] markedIndex Index of the path which will be marked in the resulting path's list.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT bvector<NodesPathElement> GetNodesPath(BeSQLite::EC::ECDbR connection, bvector<NavNodeKeyPath> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<bvector<NodesPathElement>> GetNodesPath(ECDbCR db, bvector<NavNodeKeyPath> const& keyPaths, int64_t markedIndex, JsonValueCR extendedOptions = Json::Value());
     
     //! Returns filtered nodes paths
-    //! @param[in] connection The connection to use for getting the nodes path.
+    //! @param[in] db The db to use for getting the nodes path.
     //! @param[in] filterText The Text to filter nodes by.
     //! @param[in] options Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT bvector<NodesPathElement> GetFilteredNodesPaths(BeSQLite::EC::ECDbR connection, Utf8CP filterText, JsonValueCR options);
+    ECPRESENTATION_EXPORT folly::Future<bvector<NodesPathElement>> GetFilteredNodesPaths(ECDbCR db, Utf8CP filterText, JsonValueCR options = Json::Value());
     
     //! Mark node with the specified ID as checked.
-    ECPRESENTATION_EXPORT void NotifyNodeChecked(BeSQLite::EC::ECDbR, uint64_t nodeId);
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeChecked(ECDbCR, uint64_t nodeId);
     //! Mark node with the specified ID as not checked.
-    ECPRESENTATION_EXPORT void NotifyNodeUnchecked(BeSQLite::EC::ECDbR, uint64_t nodeId);
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeUnchecked(ECDbCR, uint64_t nodeId);
 
     //! Mark node with the specified ID as expanded.
-    ECPRESENTATION_EXPORT void NotifyNodeExpanded(BeSQLite::EC::ECDbR, uint64_t nodeId);
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeExpanded(ECDbCR, uint64_t nodeId);
     //! Mark node with the specified ID as collapsed.
-    ECPRESENTATION_EXPORT void NotifyNodeCollapsed(BeSQLite::EC::ECDbR, uint64_t nodeId);
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyNodeCollapsed(ECDbCR, uint64_t nodeId);
     //! Collapse all expanded nodes
-    ECPRESENTATION_EXPORT void NotifyAllNodesCollapsed(BeSQLite::EC::ECDbR, JsonValueCR options);
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> NotifyAllNodesCollapsed(ECDbCR, JsonValueCR options = Json::Value());
 /** @} */
 
 /** @name Content  
  *  @{ */
     //! Get content classes from the list of supplied input classes.
-    //! @param[in] connection The connection to use for getting the content.
+    //! @param[in] db The db to use for getting the content.
     //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.
     //! @param[in] inputClasses Input classes to get content classes for.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT bvector<SelectClassInfo> GetContentClasses(BeSQLite::EC::ECDbR connection, Utf8CP preferredDisplayType, bvector<ECN::ECClassCP> const& inputClasses, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<bvector<SelectClassInfo>> GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& inputClasses, JsonValueCR extendedOptions = Json::Value());
 
     //! Get the content descriptor based on the supplied parameters.
-    //! @param[in] connection The connection to use for getting the content.
+    //! @param[in] db The db to use for getting the content.
     //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.
     //! @param[in] selectionInfo Info about the selection.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT ContentDescriptorCPtr GetContentDescriptor(BeSQLite::EC::ECDbR connection, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ContentDescriptorCPtr> GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
 
     //! Get the content.
-    //! @param[in] connection The connection to use for getting the content.
+    //! @param[in] db The db to use for getting the content.
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
     //! @param[in] selectionInfo Info about the selection.
     //! @param[in] pageOptions Info about the requested page of data.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT ContentCPtr GetContent(BeSQLite::EC::ECDbR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ContentCPtr> GetContent(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
 
     //! Get the content set size.
-    //! @param[in] connection The connection to use for getting the content.
+    //! @param[in] db The db to use for getting the content.
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
     //! @param[in] selectionInfo Info about the selection.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT size_t GetContentSetSize(BeSQLite::EC::ECDbR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<size_t> GetContentSetSize(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
 /** @} */
     
 /** @name Updating
  *  @{ */
     //! Changes an ECInstance(s) value using the specified parameters.
-    //! @param[in] connection The connection to change the value in.
+    //! @param[in] db The db to change the value in.
     //! @param[in] instanceInfo Info about changed instance.
     //! @param[in] propertyAccessor Changed ECProperty accessor.
     //! @param[in] value The value to change to.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT ECInstanceChangeResult SaveValueChange(BeSQLite::EC::ECDbR connection, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, ECN::ECValueCR value, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ECInstanceChangeResult> SaveValueChange(ECDbCR db, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions = Json::Value());
 
     //! Changes an ECInstance(s) value using the specified parameters.
-    //! @param[in] connection The connection to change the value in.
+    //! @param[in] db The db to change the value in.
     //! @param[in] instanceInfos Infos about changed instances.
     //! @param[in] propertyAccessor Changed ECProperty accessor.
     //! @param[in] value The value to change to.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> SaveValueChange(BeSQLite::EC::ECDbR connection, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, ECN::ECValueCR value, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<bvector<ECInstanceChangeResult>> SaveValueChange(ECDbCR db, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions = Json::Value());
     
     //! Changes an ECInstance(s) value using the specified parameters.
-    //! @param[in] connection The connection to change the value in.
+    //! @param[in] db The db to change the value in.
     //! @param[in] instanceInfo Info about changed instance.
     //! @param[in] propertyAccessor Changed ECProperty accessor.
     //! @param[in] value The value to change to.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT ECInstanceChangeResult SaveValueChange(BeSQLite::EC::ECDbR connection, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ECInstanceChangeResult> SaveValueChange(ECDbCR db, ChangedECInstanceInfo const& instanceInfo, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions = Json::Value());
 
     //! Changes an ECInstance(s) value using the specified parameters.
-    //! @param[in] connection The connection to change the value in.
+    //! @param[in] db The db to change the value in.
     //! @param[in] instanceInfos Infos about changed instances.
     //! @param[in] propertyAccessor Changed ECProperty accessor.
     //! @param[in] value The value to change to.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> SaveValueChange(BeSQLite::EC::ECDbR connection, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<bvector<ECInstanceChangeResult>> SaveValueChange(ECDbCR db, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, JsonValueCR value, JsonValueCR extendedOptions = Json::Value());
 /** @} */
 };
 

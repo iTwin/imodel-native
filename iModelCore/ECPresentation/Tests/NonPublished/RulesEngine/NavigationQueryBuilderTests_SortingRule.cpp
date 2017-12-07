@@ -264,7 +264,6 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsByProperty_WhenUsingParentI
     m_ruleset->AddPresentationRule(*sortingRule);
 
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("Basic3", "Class3"));
-    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
    
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.SomeProperty = parent.SomeProperty", "Basic3:Class3", false);

@@ -9,7 +9,7 @@
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include "../../../Source/RulesDriven/RulesEngine/NavNodeProviders.h"
 #include "../../../Source/RulesDriven/RulesEngine/CustomizationHelper.h"
-#include "QueryBasedNodesProviderTests.h"
+#include "NodesProviderTests.h"
 #include "TestHelpers.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -18,43 +18,28 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +===============+===============+===============+===============+===============+======*/
-struct CheckboxRuleTests : QueryBasedNodesProviderTests
+struct CheckboxRuleTests : NodesProviderTests
     {
-    public: static void SetUpTestCase();
-    public: static void TearDownTestCase();
+    ECClassCP m_widgetClass;
+    void SetUp() override
+        {
+        NodesProviderTests::SetUp();
+        m_widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+        }
     };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CheckboxRuleTests::SetUpTestCase()
-    {
-    QueryBasedNodesProviderTests::s_project = new ECDbTestProject();
-    QueryBasedNodesProviderTests::s_project->Create("CheckboxRuleTests", "RulesEngineTest.01.00.ecschema.xml");
-    QueryBasedNodesProviderTests::s_customFunctions = new CustomFunctionsInjector(QueryBasedNodesProviderTests::s_project->GetECDb());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CheckboxRuleTests::TearDownTestCase()
-    {
-    DELETE_AND_CLEAR(QueryBasedNodesProviderTests::s_project);
-    DELETE_AND_CLEAR(QueryBasedNodesProviderTests::s_customFunctions);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, SetsPropertyBoundCheckboxProperties)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("A"));
         instance.SetValue("BoolProperty", ECValue(true));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("B"));
         instance.SetValue("BoolProperty", ECValue(false));
@@ -94,13 +79,13 @@ TEST_F(CheckboxRuleTests, SetsPropertyBoundCheckboxProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, SetsInversedPropertyBoundCheckboxProperties)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("A"));
         instance.SetValue("BoolProperty", ECValue(true));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("B"));
         instance.SetValue("BoolProperty", ECValue(false));
@@ -140,8 +125,8 @@ TEST_F(CheckboxRuleTests, SetsInversedPropertyBoundCheckboxProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, AppliesDefaultValueIfPropertyIsNull)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "BoolProperty", true, true, "");
     m_ruleset->AddPresentationRule(*rule);
@@ -165,8 +150,8 @@ TEST_F(CheckboxRuleTests, AppliesDefaultValueIfPropertyIsNull)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, AppliesDefaultValueIfNotPropertyBound)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "", false, true, "");
     m_ruleset->AddPresentationRule(*rule);
@@ -190,8 +175,8 @@ TEST_F(CheckboxRuleTests, AppliesDefaultValueIfNotPropertyBound)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("BoolProperty", ECValue(true));});
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("BoolProperty", ECValue(true));});
     
     CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "BoolProperty", false, false, "");
     m_ruleset->AddPresentationRule(*rule);
@@ -219,19 +204,19 @@ TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
     ECValue value;
     EXPECT_EQ(ECObjectsStatus::Success, nodeInstance->GetValue(value, "BoolProperty"));
     EXPECT_EQ(true, value.GetBoolean());
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(*s_project, *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
+    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
     EXPECT_EQ(true, value.GetBoolean());
 
     CustomizationHelper::NotifyCheckedStateChanged(s_project->GetECDb(), *node, false);
     EXPECT_EQ(ECObjectsStatus::Success, nodeInstance->GetValue(value, "BoolProperty"));
     EXPECT_EQ(false, value.GetBoolean());
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(*s_project, *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
+    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
     EXPECT_EQ(false, value.GetBoolean());
     
     CustomizationHelper::NotifyCheckedStateChanged(s_project->GetECDb(), *node, true);
     EXPECT_EQ(ECObjectsStatus::Success, nodeInstance->GetValue(value, "BoolProperty"));
     EXPECT_EQ(true, value.GetBoolean());
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(*s_project, *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
+    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, instanceId)->GetValue(value, "BoolProperty"));
     EXPECT_EQ(true, value.GetBoolean());
     }
 
@@ -240,8 +225,8 @@ TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, SetCheckBoxEnabled)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "", true, true, "1=1");
     m_ruleset->AddPresentationRule(*rule);
@@ -263,8 +248,8 @@ TEST_F(CheckboxRuleTests, SetCheckBoxEnabled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, SetCheckBoxDisabled)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "", false, true, "1>2");
     m_ruleset->AddPresentationRule(*rule);

@@ -104,23 +104,28 @@ struct RulesPreprocessor
     struct PreprocessorParameters
     {
     private:
-        BeSQLite::EC::ECDbCR m_connection;
+        IConnectionManagerCR m_connections;
+        IConnectionCR m_connection;
         PresentationRuleSetCR m_ruleset;
         IUserSettings const& m_userSettings;
         IUsedUserSettingsListener* m_usedSettingsListener;
         ECExpressionsCache& m_ecexpressionsCache;
     public:
         //! Constructor.
+        //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        PreprocessorParameters(BeSQLite::EC::ECDbCR connection, PresentationRuleSetCR ruleset, 
+        PreprocessorParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : m_connection(connection), m_ruleset(ruleset), m_userSettings(settings), m_usedSettingsListener(settingsListener), m_ecexpressionsCache(ecexpressionsCache)
+            : m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_userSettings(settings), 
+            m_usedSettingsListener(settingsListener), m_ecexpressionsCache(ecexpressionsCache)
             {}
+        //! Get the connections manager.
+        IConnectionManagerCR GetConnections() const {return m_connections;}
         //! Get the connection.
-        BeSQLite::EC::ECDbCR GetConnection() const {return m_connection;}
+        IConnectionCR GetConnection() const {return m_connection;}
         //! Get the ruleset.
         PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
         //! Get the user settings.
@@ -141,14 +146,15 @@ struct RulesPreprocessor
         RuleTargetTree m_tree;
     public:
         //! Constructor.
+        //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] tree The target tree to find the rules for.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        RootNodeRuleParameters(BeSQLite::EC::ECDbCR connection, PresentationRuleSetCR ruleset, RuleTargetTree tree, 
+        RootNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, RuleTargetTree tree, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connection, ruleset, settings, settingsListener, ecexpressionsCache), m_tree(tree)
+            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_tree(tree)
             {}
         //! Get the target tree.
         RuleTargetTree GetTargetTree() const {return m_tree;}
@@ -161,21 +167,22 @@ struct RulesPreprocessor
     struct ChildNodeRuleParameters : RootNodeRuleParameters
     {
     private:
-        NavNodeCR m_parentNode;
+        JsonNavNodeCR m_parentNode;
     public:
         //! Constructor.
+        //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] parentNode The parent node to find the children rules for.
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] tree The target tree to find the rules for.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        ChildNodeRuleParameters(BeSQLite::EC::ECDbCR connection, NavNodeCR parentNode, PresentationRuleSetCR ruleset, RuleTargetTree tree, 
+        ChildNodeRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR parentNode, PresentationRuleSetCR ruleset, RuleTargetTree tree, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : RootNodeRuleParameters(connection, ruleset, tree, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode)
+            : RootNodeRuleParameters(connections, connection, ruleset, tree, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode)
             {}
         //! Get the parent node.
-        NavNodeCR GetParentNode() const {return m_parentNode;}
+        JsonNavNodeCR GetParentNode() const {return m_parentNode;}
     };
 
     //===================================================================================
@@ -185,24 +192,25 @@ struct RulesPreprocessor
     struct CustomizationRuleParameters : PreprocessorParameters
     {
     private:
-        NavNodeCR m_node;
-        NavNodeCPtr m_parentNode;
+        JsonNavNodeCR m_node;
+        JsonNavNodeCPtr m_parentNode;
     public:
         //! Constructor.
+        //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] node The node to find the rules for.
         //! @param[in] parentNode The parent node of the @p node.
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        CustomizationRuleParameters(BeSQLite::EC::ECDbCR connection, NavNodeCR node, NavNodeCP parentNode, PresentationRuleSetCR ruleset, 
+        CustomizationRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, JsonNavNodeCR node, JsonNavNodeCP parentNode, PresentationRuleSetCR ruleset, 
             IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connection, ruleset, settings, settingsListener, ecexpressionsCache), m_node(node), m_parentNode(parentNode)
+            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_node(node), m_parentNode(parentNode)
             {}
         //! Get the node.
-        NavNodeCR GetNode() const {return m_node;}
+        JsonNavNodeCR GetNode() const {return m_node;}
         //! Get the parent node.
-        NavNodeCP GetParentNode() const {return m_parentNode.get();}
+        JsonNavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
     
     //===================================================================================
@@ -212,22 +220,25 @@ struct RulesPreprocessor
     struct AggregateCustomizationRuleParameters : PreprocessorParameters
     {
     private:
-        NavNodeCP m_parentNode;
+        JsonNavNodeCP m_parentNode;
         Utf8StringCR m_specificationHash;
     public:
         //! Constructor.
         //! @param[in] parentNode The parent node whose children the rules will be applied to.
         //! @param[in] specificationHash The Hash of specification which nests customization rule
+        //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
-        AggregateCustomizationRuleParameters(NavNodeCP parentNode, Utf8StringCR specificationHash, BeSQLite::EC::ECDbCR connection, PresentationRuleSetCR ruleset, 
-            IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, ECExpressionsCache& ecexpressionsCache)
-            : PreprocessorParameters(connection, ruleset, settings, settingsListener, ecexpressionsCache), m_parentNode(parentNode), m_specificationHash(specificationHash)
+        AggregateCustomizationRuleParameters(JsonNavNodeCP parentNode, Utf8StringCR specificationHash, IConnectionManagerCR connections, 
+            IConnectionCR connection, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener, 
+            ECExpressionsCache& ecexpressionsCache)
+            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), 
+            m_parentNode(parentNode), m_specificationHash(specificationHash)
             {}
         //! Get the parent node.
-        NavNodeCP GetParentNode() const {return m_parentNode;}
+        JsonNavNodeCP GetParentNode() const {return m_parentNode;}
         //! Get specification Id
         Utf8StringCR GetSpecificationHash() const {return m_specificationHash;}
     };
@@ -246,6 +257,7 @@ struct RulesPreprocessor
         bool m_isSubSelection;
     public:
         //! Constructor.
+        //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
         //! @param[in] selectedNodeKeys A container of selected nodes.
         //! @param[in] preferredContentDisplayType Type of content display that the content is going to be displayed in.
@@ -255,10 +267,10 @@ struct RulesPreprocessor
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         //! @param[in] nodeLocater Nodes locater.
-        ContentRuleParameters(BeSQLite::EC::ECDbCR connection, INavNodeKeysContainerCR selectedNodeKeys, Utf8StringCR preferredContentDisplayType,
+        ContentRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, INavNodeKeysContainerCR selectedNodeKeys, Utf8StringCR preferredContentDisplayType,
             Utf8StringCR selectionProviderName, bool isSubSelection, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
             ECExpressionsCache& ecexpressionsCache, INavNodeLocaterCR nodeLocater)
-            : PreprocessorParameters(connection, ruleset, settings, settingsListener, ecexpressionsCache), m_selectedNodeKeys(&selectedNodeKeys), 
+            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_selectedNodeKeys(&selectedNodeKeys), 
             m_preferredContentDisplayType(preferredContentDisplayType), m_selectionProviderName(selectionProviderName), m_nodeLocater(nodeLocater)
             {
             m_isSubSelection = isSubSelection;
@@ -300,8 +312,8 @@ public:
     //! @param[in] locaters Ruleset locater manager which holds all available ruleset locaters.
     //! @param[in] connection The connection to check whether the ruleset is supported.
     //! @param[in] rulesetId ID of the ruleset to find. Returns the first available ruleset if nullptr.
-    ECPRESENTATION_EXPORT static PresentationRuleSetPtr GetPresentationRuleSet(RuleSetLocaterManager const& locaters, 
-        ECDbCR connection, Utf8CP rulesetId = nullptr);
+    ECPRESENTATION_EXPORT static PresentationRuleSetPtr GetPresentationRuleSet(IRulesetLocaterManager const& locaters, 
+        IConnectionCR connection, Utf8CP rulesetId = nullptr);
 /** @} */
 
 /** @name Navigation rules */

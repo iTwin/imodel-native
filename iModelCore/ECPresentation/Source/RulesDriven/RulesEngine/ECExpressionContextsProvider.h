@@ -9,6 +9,7 @@
 #include <ECObjects/ECExpressions.h>
 #include <ECPresentation/NavNode.h>
 #include <ECDb/ECDbTypes.h>
+#include "JsonNavNode.h"
 #include "ECExpressionOptimizer.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -24,14 +25,14 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct ContextParametersBase
     {
     private:
-        BeSQLite::EC::ECDbCR m_connection;
+        IConnectionCR m_connection;
         IUserSettings const& m_userSettings;
         IUsedUserSettingsListener* m_usedSettingsListener;
     public:
-        ContextParametersBase(BeSQLite::EC::ECDbCR connection, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
+        ContextParametersBase(IConnectionCR connection, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : m_connection(connection), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener)
             {}
-        BeSQLite::EC::ECDbCR GetConnection() const {return m_connection;}
+        IConnectionCR GetConnection() const {return m_connection;}
         IUserSettings const& GetUserSettings() const {return m_userSettings;}
         IUsedUserSettingsListener* GetUsedSettingsListener() const {return m_usedSettingsListener;}
     };
@@ -42,13 +43,13 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct NodeRulesContextParameters : ContextParametersBase
     {
     private:
-        NavNodeCP m_parentNode;
+        JsonNavNodeCP m_parentNode;
     public:
-        NodeRulesContextParameters(NavNodeCP parentNode, BeSQLite::EC::ECDbCR connection, 
+        NodeRulesContextParameters(JsonNavNodeCP parentNode, IConnectionCR connection, 
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, userSettings, usedSettingsListener), m_parentNode(parentNode)
             {}
-        NavNodeCP GetParentNode() const {return m_parentNode;}
+        JsonNavNodeCP GetParentNode() const {return m_parentNode;}
     };
     
     /*=================================================================================**//**
@@ -63,7 +64,7 @@ struct ECExpressionContextsProvider : NonCopyableClass
         bool m_isSubSelection;
         NavNodeKeyCP m_selectedNodeKey;
     public:
-        ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, BeSQLite::EC::ECDbCR connection, 
+        ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, 
             INavNodeLocaterCR nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, userSettings, usedSettingsListener), m_contentDisplayType(contentDisplayType), 
             m_selectionProviderName(selectionProviderName), m_isSubSelection(isSubSelection), m_nodeLocater(nodeLocater), m_selectedNodeKey(selectedNodeKey)
@@ -81,15 +82,15 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct CustomizationRulesContextParameters : ContextParametersBase
     {
     private:
-        NavNodeCR m_node;
-        NavNodeCPtr m_parentNode;
+        JsonNavNodeCR m_node;
+        JsonNavNodeCPtr m_parentNode;
     public:
-        CustomizationRulesContextParameters(NavNodeCR node, NavNodeCP parentNode, BeSQLite::EC::ECDbCR connection, 
+        CustomizationRulesContextParameters(JsonNavNodeCR node, JsonNavNodeCP parentNode, IConnectionCR connection, 
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, userSettings, usedSettingsListener), m_node(node), m_parentNode(parentNode)
             {}
-        NavNodeCR GetNode() const {return m_node;}
-        NavNodeCP GetParentNode() const {return m_parentNode.get();}
+        JsonNavNodeCR GetNode() const {return m_node;}
+        JsonNavNodeCP GetParentNode() const {return m_parentNode.get();}
     };
 
 private:
@@ -99,7 +100,7 @@ public:
     ECPRESENTATION_EXPORT static ExpressionContextPtr GetNodeRulesContext(NodeRulesContextParameters const&);
     ECPRESENTATION_EXPORT static ExpressionContextPtr GetContentRulesContext(ContentRulesContextParameters const&);
     ECPRESENTATION_EXPORT static ExpressionContextPtr GetCustomizationRulesContext(CustomizationRulesContextParameters const&);
-    ECPRESENTATION_EXPORT static ExpressionContextPtr GetCalculatedPropertyContext(NavNodePtr const&, IUserSettings const&);
+    ECPRESENTATION_EXPORT static ExpressionContextPtr GetCalculatedPropertyContext(JsonNavNodeCR, IUserSettings const&);
 };
 
 /*=================================================================================**//**

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
+#include <ECPresentation/Connection.h>
 #include "../../../Source/RulesDriven/RulesEngine/QueryExecutor.h"
 #include "../../../Source/RulesDriven/RulesEngine/ECSchemaHelper.h"
 #include "ECDbTestProject.h"

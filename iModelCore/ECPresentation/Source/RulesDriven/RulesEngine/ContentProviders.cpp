@@ -573,7 +573,7 @@ public:
         {
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
-        m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetRuleset(),
+        m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
             context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider);
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
         }
@@ -674,7 +674,7 @@ public:
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
 
-        ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetNodesLocater(), 
+        ContentQueryBuilderParameters params(context.GetSchemaHelper(), context.GetConnections(), context.GetNodesLocater(), context.GetConnection(), 
             context.GetRuleset(), context.GetUserSettings(), context.GetECExpressionsCache(), 
             context.GetCategorySupplier(), formatter, context.GetLocalState(), localizationProvider);
         
@@ -701,7 +701,7 @@ public:
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderContextR context)
-    : m_context(&context), m_executor(context.GetDb(), context.GetStatementCache()), m_initialized(false), 
+    : m_context(&context), m_executor(context.GetConnection(), context.GetStatementCache()), m_initialized(false), 
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
     if (GetContext().IsPropertyFormattingContext())
@@ -712,7 +712,7 @@ ContentProvider::ContentProvider(ContentProviderContextR context)
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderCR other)
-    : m_context(other.m_context), m_executor(m_context->GetDb(), m_context->GetStatementCache()), m_initialized(false), 
+    : m_context(other.m_context), m_executor(m_context->GetConnection(), m_context->GetStatementCache()), m_initialized(false), 
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
     if (GetContext().IsPropertyFormattingContext())
@@ -744,7 +744,7 @@ static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<
                 {
                 // note: each content rule may be based on different selected nodes, so we create a different selection context for each of them
                 selectionIter = selectionsCache.Insert(&rule.GetRule(),
-                    new ParsedSelectionInfo(rule.GetMatchingSelectedNodeKeys(), context.GetNodesLocater(), context.GetSchemaHelper())).first;
+                    new ParsedSelectionInfo(rule.GetMatchingSelectedNodeKeys(), context.GetNodesLocater(), context.GetConnection(), context.GetSchemaHelper())).first;
                 }
             selectionInfo = selectionIter->second;
             }
@@ -836,11 +836,18 @@ void ContentProvider::Initialize()
     m_initialized = true;
     m_executor.SetQuery(*_GetQuery());
         
-    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
+        GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
         GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 
         GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
+    
+    m_executor.SetQuery(*_GetQuery());
+    m_executor.ReadRecords(&GetContext().GetCancelationToken());
+
+    if (GetContext().GetCancelationToken().IsCanceled())
+        return;
 
     size_t index = 0;
     ContentSetItemPtr item;
@@ -849,6 +856,8 @@ void ContentProvider::Initialize()
         LoadNestedContent(*item);
         m_records.push_back(item);
         }
+
+    m_initialized = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -864,7 +873,8 @@ size_t ContentProvider::GetFullContentSetSize() const
             }
         else
             {            
-            CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
+            CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
+                GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
                 GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 
                 GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr);
             if (GetContext().IsLocalizationContext())
@@ -882,8 +892,10 @@ size_t ContentProvider::GetFullContentSetSize() const
             countQuery->From(*StringGenericQuery::Create(queryNotSorted->ToString(), queryNotSorted->GetBoundValues()));
 
             // execute
-            CountQueryExecutor executor(GetContext().GetDb(), GetContext().GetStatementCache(), *countQuery);
-            m_contentSetSize = executor.GetResult();
+            CountQueryExecutor executor(GetContext().GetConnection(), GetContext().GetStatementCache(), *countQuery);
+            executor.ReadRecords(&GetContext().GetCancelationToken());
+            if (!GetContext().GetCancelationToken().IsCanceled())
+                m_contentSetSize = executor.GetResult();
             }
 
         m_fullContentSetSizeDetermined = true;
@@ -923,7 +935,7 @@ bool ContentProvider::GetContentSetItem(ContentSetItemPtr& item, size_t index) c
 void ContentProvider::InvalidateContent()
     {
     _Reset();
-    m_executor.ClearCache();
+    m_executor.Reset();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -966,8 +978,8 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
     if (m_query.IsNull())
         {
         IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
-        ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetNodesLocater(),
-            GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
+        ContentQueryBuilderParameters params(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetNodesLocater(), 
+            GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetUserSettings(), GetContext().GetECExpressionsCache(),
             GetContext().GetCategorySupplier(), formatter, GetContext().GetLocalState());
         if (GetContext().IsLocalizationContext())
             params.SetLoacalizationProvider(&GetContext().GetLocalizationProvider());

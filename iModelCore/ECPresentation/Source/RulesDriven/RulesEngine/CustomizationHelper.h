@@ -36,8 +36,8 @@ struct NavNodeCustomizer
 {
 private:
     RulesDrivenProviderContextCR m_context;
-    NavNodeCR m_node;
-    NavNodeCP m_parentNode;
+    JsonNavNodeCR m_node;
+    JsonNavNodeCP m_parentNode;
     ICustomizablePropertiesSetter const& m_setter;
     BeSQLite::EC::ECDbExpressionSymbolContext const* m_ecdbSymbolsContext;
     ExpressionContextPtr m_nodeExpressionContext;
@@ -46,7 +46,7 @@ private:
     ExpressionContext& GetNodeExpressionContext();
 
 public:
-    NavNodeCustomizer(RulesDrivenProviderContextCR context, NavNodeCR node, NavNodeCP parentNode, ICustomizablePropertiesSetter const& setter);
+    NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonNavNodeCR node, JsonNavNodeCP parentNode, ICustomizablePropertiesSetter const& setter);
     ~NavNodeCustomizer();
     bool ApplyLabelAndDescriptionOverride(bool customizeLabel);
     bool ApplyStyleOverride();
@@ -62,7 +62,7 @@ struct CustomizationHelper
     {
     ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR context, JsonNavNode& node, bool customizeLabel);
     ECPRESENTATION_EXPORT static void Customize(ContentProviderContextCR context, ContentSetItemR item);
-    ECPRESENTATION_EXPORT static void NotifyCheckedStateChanged(BeSQLite::EC::ECDbR db, NavNodeCR node, bool isChecked);
+    ECPRESENTATION_EXPORT static void NotifyCheckedStateChanged(BeSQLite::EC::ECDbR db, JsonNavNodeCR node, bool isChecked);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

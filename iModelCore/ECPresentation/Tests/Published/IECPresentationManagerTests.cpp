@@ -21,6 +21,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct IECPresentationManagerTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
+    TestConnectionManager m_connections;
     TestECPresentationManager* m_manager;
     ECClassId m_widgetClassId;
     ECClassId m_gadgetClassId;
@@ -53,8 +54,10 @@ struct IECPresentationManagerTests : ::testing::Test
         {
         Localization::Init();
 
-        m_manager = new TestECPresentationManager();
+        m_manager = new TestECPresentationManager(m_connections);
         IECPresentationManager::RegisterImplementation(m_manager);
+
+        m_connections.NotifyConnectionOpened(s_project->GetECDb());
 
         m_widgetClassId = s_project->GetECDb().Schemas().GetClassId("RulesEngineTest", "Widget");
         m_gadgetClassId = s_project->GetECDb().Schemas().GetClassId("RulesEngineTest", "Gadget");
@@ -72,6 +75,11 @@ struct IECPresentationManagerTests : ::testing::Test
         }
     
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                11/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static uint64_t CreateNodeId() {static uint64_t id = 0; return ++id;}
+
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     static TestNavNodePtr CreateInstanceNode(ECInstanceKey instanceKey, Utf8CP label)
@@ -83,8 +91,8 @@ struct IECPresentationManagerTests : ::testing::Test
             return nullptr;
             }
         TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*ecClass, instanceKey.GetInstanceId());
+        node->SetNodeId(CreateNodeId());
         node->SetLabel(label);
-        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     
@@ -119,8 +127,8 @@ struct IECPresentationManagerTests : ::testing::Test
             return nullptr;
             }
         TestNavNodePtr node = TestNodesHelper::CreateClassGroupingNode(*ecClass, label);
+        node->SetNodeId(CreateNodeId());
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
-        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     
@@ -147,8 +155,8 @@ struct IECPresentationManagerTests : ::testing::Test
         else if (-1 != rangeIndex)
             groupingValue.SetInt(rangeIndex);
         TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*ecClass, *ecProperty, label, groupingValue, -1 != rangeIndex);
+        node->SetNodeId(CreateNodeId());
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
-        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     
@@ -158,8 +166,8 @@ struct IECPresentationManagerTests : ::testing::Test
     static TestNavNodePtr CreateLabelGroupingNode(Utf8CP label, bvector<ECInstanceKey> const& groupedKeys)
         {
         TestNavNodePtr node = TestNodesHelper::CreateLabelGroupingNode(label);
+        node->SetNodeId(CreateNodeId());
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
-        node->SetNodeId(TestNodesHelper::CreateNodeId());
         return node;
         }
     };
@@ -184,11 +192,21 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchy)
     NavNodeCPtr node3 = hierarchy[node2].front();
     m_manager->SetHierarchy(hierarchy);
 
+    /*
+    A (w1)
+    B (w2)              *
+        B_1 (g1)
+        B_2 (g2)        *
+            B_2_1 (w3)  *
+            B_2_2 (s4)
+        B_3 (g3)
+    */
+
     // create the keys path
     NavNodeKeyPath keysPath = {&node1->GetKey(), &node2->GetKey(), &node3->GetKey()};
 
     // test
-    NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath);
+    NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
 
     NodesPathElement const* curr = &path;
     EXPECT_EQ(1, curr->GetIndex());
@@ -237,12 +255,24 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingW
     hierarchy[node3].push_back(CreateInstanceNode(instanceKey2, "A_2_2_2"));
     NavNodeCPtr node4 = hierarchy[node3].front();
     m_manager->SetHierarchy(hierarchy);
+    
+    /*
+    A (w3, w4)                  *   class grouping node
+        A_1 (w5)                    property grouping node
+        A_2 (w3, w4)            *   property grouping node
+            A_2_1 (w7)              label grouping node
+            A_2_2 (w3, w4)      *   label grouping node
+                A_2_2_1 (w3)    *   instance node
+                A_2_2_2 (w4)        instance node
+        A_3 (w6)                    property grouping node
+    B (g1)                          class grouping node
+    */
 
     // create the keys path
     NavNodeKeyPath keysPath = {&node1->GetKey(), &node2->GetKey(), &node3->GetKey(), &node4->GetKey()};
 
     // test
-    NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath);
+    NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
 
     NodesPathElement const* curr = &path;
     EXPECT_EQ(0, curr->GetIndex());
@@ -275,7 +305,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingW
 TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingWhenPathContainsOnlyInstanceNodes)
     {
     // need to override HasChild function to get this working
-    m_manager->SetHasChildHandler([](ECDbR, NavNodeCR parent, NavNodeKeyCR childKey, JsonValueCR) -> bool
+    m_manager->SetHasChildHandler([](IConnectionCR, NavNodeCR parent, NavNodeKeyCR childKey, JsonValueCR) -> bool
         {
         if (nullptr == childKey.AsECInstanceNodeKey())
             return false;
@@ -325,7 +355,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_InstancesHierarchyWithGroupingW
     NavNodeKeyPath keysPath = {&node4->GetKey()};
 
     // test
-    NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath);
+    NodesPathElement path = m_manager->GetNodesPath(s_project->GetECDb(), keysPath).get();
 
     NodesPathElement const* curr = &path;
     EXPECT_EQ(0, curr->GetIndex());
@@ -384,7 +414,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_ReturnsTwoSeparatePath
     bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2};
 
     // test
-    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, -1);
+    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, -1).get();
     ASSERT_EQ(2, paths.size());
 
     // 1st branch
@@ -452,7 +482,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_ReturnsMergedPathWhenP
     bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
     // test
-    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, -1);
+    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, -1).get();
     ASSERT_EQ(1, paths.size());
 
     NodesPathElement const* curr = &paths[0];    
@@ -524,7 +554,7 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_MarksTheSpecifiedPath)
     bvector<NavNodeKeyPath> keysPaths = {keysPath1, keysPath2, keysPath3, keysPath4};
 
     // test
-    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, 2);
+    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, 2).get();
     ASSERT_EQ(1, paths.size());
 
     NodesPathElement const* curr = &paths[0];
@@ -581,7 +611,7 @@ TEST_F(IECPresentationManagerTests, GetFilteredNodesPaths)
     m_manager->SetHierarchy(hierarchy);
 
 
-    m_manager->SetGetFilteredNodesPathsHandler([&](ECDbR db, Utf8CP filterText, JsonValueCR options) -> bvector<NavNodeCPtr>
+    m_manager->SetGetFilteredNodesPathsHandler([&](IConnectionCR, Utf8CP filterText, JsonValueCR options)
         {
         bvector<NavNodeCPtr> nodelist;
         nodelist.push_back(*(hierarchy[node1].begin()));   //2
@@ -590,7 +620,7 @@ TEST_F(IECPresentationManagerTests, GetFilteredNodesPaths)
         return nodelist;
         });
 
-    bvector<NodesPathElement> paths = m_manager->GetFilteredNodesPaths(s_project->GetECDb(), "T", Json::Value());
+    bvector<NodesPathElement> paths = m_manager->GetFilteredNodesPaths(s_project->GetECDb(), "T", Json::Value()).get();
 
     /* Validate path hierarchy
 

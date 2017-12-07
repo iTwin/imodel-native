@@ -48,12 +48,15 @@ public:
 struct NodesCacheTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
-
+    
+    TestConnectionManager m_connections;
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderContextFactory m_nodesProviderContextFactory;
-    TestConnectionManager m_connectionCache;
+    IConnectionPtr m_connection;
     TestECSqlStatementsCacheProvider m_ecsqlStatements;
     NodesCache* m_cache;
+
+    NodesCacheTests() : m_nodesProviderContextFactory(m_connections) {}
 
     void SetUp() override
         {
@@ -63,12 +66,14 @@ struct NodesCacheTests : ::testing::Test
         BeFileName temporaryDirectory;
         BeTest::GetHost().GetTempDir(temporaryDirectory);
         m_cache = _CreateNodesCache(temporaryDirectory);
-        m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
+        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id", 1, 0, false, "", "", "", false));
+        m_nodesProviderContextFactory.SetNodesCache(m_cache);
         }
 
     virtual void TearDown() override
         {
+        m_connections.ClearConnections();
         DELETE_AND_CLEAR(m_cache);
         s_project->GetECDb().AbandonChanges();
         }
@@ -87,32 +92,25 @@ struct NodesCacheTests : ::testing::Test
         DELETE_AND_CLEAR(s_project);
         }
 
+    void ReCreateProject()
+        {
+        if (nullptr != s_project)
+            {
+            m_connections.NotifyConnectionClosed(*m_connection);
+            DELETE_AND_CLEAR(s_project);
+            }
+
+        s_project = new ECDbTestProject();
+        s_project->Open("NodesCacheTests");
+        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
+        }
+
     virtual NodesCache* _CreateNodesCache(BeFileName tempDir)
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Memory);
+        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Memory);
         }
 
     bvector<JsonNavNodeCPtr> FillWithNodes(DataSourceInfo const&, size_t count, bool createChildDataSources = false);
-    void Test_Clear_Full();
-    void Test_Clear_ByConnection();
-    void Test_Clear_ByRulesetId();
-    void Test_RemovesRootDataSource();
-    void Test_RemovesChildDataSource();
-    void Test_RemovesChildNodesWhenParentDataSourceIsRemoved();
-    void Test_RemovesChildDataSourcesWhenParentDataSourceIsRemoved();
-    void Test_MakePhysical();
-    void Test_MakeVirtual();
-    void Test_UpdateNode();
-    void Test_UpdateDataSource_UpdatesFilter();
-    void Test_UpdateDataSource_UpdatesRelatedClassIds();
-    void Test_UpdateDataSource_UpdatesRelatedSettingIds();
-    void Test_RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical();
-    void Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual();
-    void Test_Updates_IsExpandedFlag();
-    void Test_GetFilteredNodes();
-    void Test_ResetIsExpandedFlag();
-    void Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren();
-    void Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren();
     };
 ECDbTestProject* NodesCacheTests::s_project = nullptr;
 
@@ -124,7 +122,7 @@ bvector<JsonNavNodeCPtr> NodesCacheTests::FillWithNodes(DataSourceInfo const& in
     bvector<JsonNavNodeCPtr> nodes;
     for (size_t i = 0; i < count; ++i)
         {
-        TestNavNodePtr node = TestNavNode::Create(&GetDb());
+        TestNavNodePtr node = TestNavNode::Create(m_connection.get());
         if (nullptr != info.GetPhysicalParentNodeId())
             node->SetParentNodeId(*info.GetPhysicalParentNodeId());
         NavNodeExtendedData extendedData(*node);
@@ -148,28 +146,28 @@ bvector<JsonNavNodeCPtr> NodesCacheTests::FillWithNodes(DataSourceInfo const& in
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_Clear_Full()
+TEST_F(NodesCacheTests, Clear_Full)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData rootExtendedData(*rootNode);
-    rootExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     m_cache->Cache(*rootNode, false);
     uint64_t rootNodeId = rootNode->GetNodeId();
     
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData childExtendedData(*childNode);
-    childExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     childExtendedData.SetVirtualParentId(rootNodeId);
     m_cache->Cache(*childNode, false);
@@ -178,19 +176,19 @@ void NodesCacheTests::Test_Clear_Full()
     // cache root data source for a different connection
     ECDbTestProject project2;
     project2.Create("test2");
-    m_connectionCache.NotifyConnectionOpened(project2.GetECDb());
-    DataSourceInfo rootInfo2(project2.GetECDbCR().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    DataSourceInfo rootInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     
     // cache root data source for a different ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
-    DataSourceInfo rootInfo3(GetDb().GetDbGuid(), "ruleset_id2", nullptr, nullptr);
+    DataSourceInfo rootInfo3(m_connection->GetId(), "ruleset_id2", nullptr, nullptr);
     m_cache->Cache(rootInfo3, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // make sure everything's cached
-    EXPECT_TRUE(m_cache->IsDataSourceCached(project2.GetECDbCR().GetDbGuid(), "ruleset_id"));
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id2"));
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id2"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
     EXPECT_TRUE(m_cache->IsNodeCached(rootNodeId));
     EXPECT_TRUE(m_cache->IsDataSourceCached(rootNodeId));
     EXPECT_TRUE(m_cache->IsNodeCached(childNodeId));
@@ -199,39 +197,41 @@ void NodesCacheTests::Test_Clear_Full()
     m_cache->Clear();
 
     // verify everything's gone
-    EXPECT_FALSE(m_cache->IsDataSourceCached(project2.GetECDbCR().GetDbGuid(), "ruleset_id"));
-    EXPECT_FALSE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id2"));
-    EXPECT_FALSE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id"));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id2"));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
     EXPECT_FALSE(m_cache->IsNodeCached(rootNodeId));
     EXPECT_FALSE(m_cache->IsDataSourceCached(rootNodeId));
     EXPECT_FALSE(m_cache->IsNodeCached(childNodeId));
+
+    m_connections.NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_Clear_ByConnection()
+TEST_F(NodesCacheTests, Clear_ByConnection)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData rootExtendedData(*rootNode);
-    rootExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     m_cache->Cache(*rootNode, false);
     uint64_t rootNodeId = rootNode->GetNodeId();
     
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData childExtendedData(*childNode);
-    childExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     childExtendedData.SetVirtualParentId(rootNodeId);
     m_cache->Cache(*childNode, false);
@@ -240,53 +240,55 @@ void NodesCacheTests::Test_Clear_ByConnection()
     // cache root data source for a different connection
     ECDbTestProject project2;
     project2.Create("test2");
-    m_connectionCache.NotifyConnectionOpened(project2.GetECDb());
-    DataSourceInfo rootInfo2(project2.GetECDbCR().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    DataSourceInfo rootInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // make sure everything's cached
-    EXPECT_TRUE(m_cache->IsDataSourceCached(project2.GetECDbCR().GetDbGuid(), "ruleset_id"));
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
     EXPECT_TRUE(m_cache->IsNodeCached(rootNodeId));
     EXPECT_TRUE(m_cache->IsDataSourceCached(rootNodeId));
     EXPECT_TRUE(m_cache->IsNodeCached(childNodeId));
 
     // fully clear the cache
-    m_cache->Clear(&GetDb());
+    m_cache->Clear(m_connection.get());
 
     // verify everything related to primary connection is now gone
-    EXPECT_TRUE(m_cache->IsDataSourceCached(project2.GetECDbCR().GetDbGuid(), "ruleset_id"));
-    EXPECT_FALSE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
     EXPECT_FALSE(m_cache->IsNodeCached(rootNodeId));
     EXPECT_FALSE(m_cache->IsDataSourceCached(rootNodeId));
     EXPECT_FALSE(m_cache->IsNodeCached(childNodeId));
+
+    m_connections.NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_Clear_ByRulesetId()
+TEST_F(NodesCacheTests, Clear_ByRulesetId)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData rootExtendedData(*rootNode);
-    rootExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     m_cache->Cache(*rootNode, false);
     uint64_t rootNodeId = rootNode->GetNodeId();
     
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData childExtendedData(*childNode);
-    childExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     childExtendedData.SetVirtualParentId(rootNodeId);
     m_cache->Cache(*childNode, false);
@@ -294,12 +296,12 @@ void NodesCacheTests::Test_Clear_ByRulesetId()
         
     // cache root data source for a different ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
-    DataSourceInfo rootInfo3(GetDb().GetDbGuid(), "ruleset_id2", nullptr, nullptr);
+    DataSourceInfo rootInfo3(m_connection->GetId(), "ruleset_id2", nullptr, nullptr);
     m_cache->Cache(rootInfo3, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // make sure everything's cached
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id2"));
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id2"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
     EXPECT_TRUE(m_cache->IsNodeCached(rootNodeId));
     EXPECT_TRUE(m_cache->IsDataSourceCached(rootNodeId));
     EXPECT_TRUE(m_cache->IsNodeCached(childNodeId));
@@ -308,8 +310,8 @@ void NodesCacheTests::Test_Clear_ByRulesetId()
     m_cache->Clear(nullptr, "ruleset_id");
 
     // verify everything related to "ruleset_id" is now gone
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id2"));
-    EXPECT_FALSE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "ruleset_id"));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id2"));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
     EXPECT_FALSE(m_cache->IsNodeCached(rootNodeId));
     EXPECT_FALSE(m_cache->IsDataSourceCached(rootNodeId));
     EXPECT_FALSE(m_cache->IsNodeCached(childNodeId));
@@ -318,14 +320,14 @@ void NodesCacheTests::Test_Clear_ByRulesetId()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_RemovesRootDataSource()
+TEST_F(NodesCacheTests, RemovesRootDataSource)
     {
     // cache data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     
     // verify it got cached
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), info.GetRulesetId().c_str()));
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), info.GetRulesetId().c_str()));
 
     // remove
     BeGuid removalId = m_cache->CreateRemovalId(HierarchyLevelInfo(info.GetConnectionId(), info.GetRulesetId(), info.GetPhysicalParentNodeId()));
@@ -333,28 +335,28 @@ void NodesCacheTests::Test_RemovesRootDataSource()
     m_cache->RemoveDataSource(removalId);
 
     // verify it got removed
-    EXPECT_FALSE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), info.GetRulesetId().c_str()));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(m_connection->GetId(), info.GetRulesetId().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_RemovesChildDataSource()
+TEST_F(NodesCacheTests, RemovesChildDataSource)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     m_cache->Cache(*node, false);
     uint64_t nodeId = node->GetNodeId();
 
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // verify child data source is cached
@@ -371,16 +373,16 @@ void NodesCacheTests::Test_RemovesChildDataSource()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_RemovesChildNodesWhenParentDataSourceIsRemoved()
+TEST_F(NodesCacheTests, RemovesChildNodesWhenParentDataSourceIsRemoved)
     {
     // cache data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     
     // cache node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
     m_cache->Cache(*node, false);
 
@@ -398,22 +400,22 @@ void NodesCacheTests::Test_RemovesChildNodesWhenParentDataSourceIsRemoved()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_RemovesChildDataSourcesWhenParentDataSourceIsRemoved()
+TEST_F(NodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
     {
     // cache data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     
     // cache node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
     m_cache->Cache(*node, false);
     uint64_t parentNodeId = node->GetNodeId();
     
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), info.GetRulesetId(), &parentNodeId, &parentNodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), info.GetRulesetId(), &parentNodeId, &parentNodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // verify child data source is cached
@@ -430,14 +432,14 @@ void NodesCacheTests::Test_RemovesChildDataSourcesWhenParentDataSourceIsRemoved(
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_MakePhysical()
+TEST_F(NodesCacheTests, MakePhysical)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -458,14 +460,14 @@ void NodesCacheTests::Test_MakePhysical()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_MakeVirtual()
+TEST_F(NodesCacheTests, MakeVirtual)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -486,14 +488,14 @@ void NodesCacheTests::Test_MakeVirtual()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_UpdateNode()
+TEST_F(NodesCacheTests, UpdateNode)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     node->SetLabel("A");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
@@ -515,12 +517,12 @@ void NodesCacheTests::Test_UpdateNode()
 * note: the test uses GetRelatedHierarchyLevels function to test the Update
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_UpdateDataSource_UpdatesFilter()
+TEST_F(NodesCacheTests, UpdateDataSource_UpdatesFilter)
     {
     ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
     m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<Utf8String>());
@@ -546,12 +548,12 @@ void NodesCacheTests::Test_UpdateDataSource_UpdatesFilter()
 * note: the test uses GetRelatedHierarchyLevels function to test the Update
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_UpdateDataSource_UpdatesRelatedClassIds()
+TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
     {
     // unused - ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
         
     // verify we don't find related hierarchy level as the key is not related to the data source
@@ -574,12 +576,12 @@ void NodesCacheTests::Test_UpdateDataSource_UpdatesRelatedClassIds()
 * note: the test uses GetRelatedHierarchyLevels function to test the Update
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_UpdateDataSource_UpdatesRelatedSettingIds()
+TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedSettingIds)
     {
     // unused - ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
         
     // verify we don't find related hierarchy level as data source is not related to any setting ids
@@ -598,10 +600,10 @@ void NodesCacheTests::Test_UpdateDataSource_UpdatesRelatedSettingIds()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical()
+TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache 2 root nodes
@@ -629,10 +631,10 @@ void NodesCacheTests::Test_RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual()
+TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache 2 root nodes
@@ -661,28 +663,28 @@ void NodesCacheTests::Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_GetFilteredNodes()
+TEST_F(NodesCacheTests, GetFilteredNodes)
     {
     // create the root node
     TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
     NavNodeExtendedData extendedData1(*node1);
-    extendedData1.SetConnectionId(GetDb().GetDbGuid());
+    extendedData1.SetConnectionId(m_connection->GetId());
     extendedData1.SetRulesetId("ruleset_id");
 
     TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
     NavNodeExtendedData extendedData2(*node2);
-    extendedData2.SetConnectionId(GetDb().GetDbGuid());
+    extendedData2.SetConnectionId(m_connection->GetId());
     extendedData2.SetRulesetId("ruleset_id");
 
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache nodes
     m_cache->Cache(*node1, false);
     m_cache->Cache(*node2, false);
     
-    bvector<NavNodeCPtr> filteredNodes = m_cache->GetFilteredNodes(GetDb(), info.GetRulesetId().c_str(), "test");
+    bvector<NavNodeCPtr> filteredNodes = m_cache->GetFilteredNodes(*m_connection, info.GetRulesetId().c_str(), "test");
     // verify filtered node
     ASSERT_EQ(1, filteredNodes.size());
     EXPECT_TRUE(node1->Equals(*filteredNodes[0]));
@@ -691,13 +693,13 @@ void NodesCacheTests::Test_GetFilteredNodes()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_Updates_IsExpandedFlag()
+TEST_F(NodesCacheTests, Updates_IsExpandedFlag)
     {
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -720,30 +722,30 @@ void NodesCacheTests::Test_Updates_IsExpandedFlag()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_ResetIsExpandedFlag()
+TEST_F(NodesCacheTests, ResetIsExpandedFlag)
     {
     // create the root node
     TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
     NavNodeExtendedData extendedData1(*node1);
-    extendedData1.SetConnectionId(GetDb().GetDbGuid());
+    extendedData1.SetConnectionId(m_connection->GetId());
     extendedData1.SetRulesetId("ruleset_id");
     node1->SetIsExpanded(true);
 
     TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
     NavNodeExtendedData extendedData2(*node2);
-    extendedData2.SetConnectionId(GetDb().GetDbGuid());
+    extendedData2.SetConnectionId(m_connection->GetId());
     extendedData2.SetRulesetId("ruleset_id");
     node2->SetIsExpanded(true);
 
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache nodes
     m_cache->Cache(*node1, false);
     m_cache->Cache(*node2, false);
 
-    m_cache->ResetExpandedNodes(GetDb().GetDbGuid(), "ruleset_id");
+    m_cache->ResetExpandedNodes(m_connection->GetId().c_str(), "ruleset_id");
 
     EXPECT_FALSE(m_cache->GetNode(node1->GetNodeId())->IsExpanded());
     EXPECT_FALSE(m_cache->GetNode(node2->GetNodeId())->IsExpanded());
@@ -752,16 +754,16 @@ void NodesCacheTests::Test_ResetIsExpandedFlag()
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren()
+TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create node
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
     EXPECT_FALSE(node->DeterminedChildren());
 
@@ -769,7 +771,7 @@ void NodesCacheTests::Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetK
     m_cache->Cache(*node, true);
 
     // expect provider with nodes that are not parents for other nodes (yet)
-    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(GetDb(), info.GetRulesetId().c_str(), false);
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.GetRulesetId().c_str(), false);
     ASSERT_TRUE(provider.IsValid());
     EXPECT_EQ(1, provider->GetNodesCount());
 
@@ -783,16 +785,16 @@ void NodesCacheTests::Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetK
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCacheTests::Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren()
+TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create node
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
     EXPECT_FALSE(node->DeterminedChildren());
 
@@ -801,11 +803,11 @@ void NodesCacheTests::Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHas
 
     // cache child data source
     uint64_t nodeId = node->GetNodeId();
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), info.GetRulesetId(), &nodeId, &nodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), info.GetRulesetId(), &nodeId, &nodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // expect provider to be empty, because all nodes are data sources
-    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(GetDb(), info.GetRulesetId().c_str(), false);
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.GetRulesetId().c_str(), false);
     ASSERT_TRUE(provider.IsValid());
     EXPECT_EQ(0, provider->GetNodesCount());
     }
@@ -815,12 +817,12 @@ void NodesCacheTests::Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHas
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, ReturnsNullsWhenEmpty)
     {
-    EXPECT_FALSE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), "test ruleset id"));
+    EXPECT_FALSE(m_cache->IsDataSourceCached(m_connection->GetId(), "test ruleset id"));
     EXPECT_FALSE(m_cache->IsDataSourceCached(999));
     EXPECT_FALSE(m_cache->IsNodeCached(999));
 
-    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), "test ruleset id", 999)).IsNull());
-    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(GetDb().GetDbGuid(), "test ruleset id", nullptr, nullptr)).IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), "test ruleset id", 999)).IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(m_connection->GetId(), "test ruleset id", nullptr, nullptr)).IsNull());
     EXPECT_TRUE(m_cache->GetDataSource(999).IsNull());
     EXPECT_TRUE(m_cache->GetNode(999).IsNull());
     }
@@ -831,13 +833,13 @@ TEST_F(NodesCacheTests, ReturnsNullsWhenEmpty)
 TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // verify the data source is cached
-    EXPECT_TRUE(m_cache->IsDataSourceCached(GetDb().GetDbGuid(), info.GetRulesetId().c_str()));
-    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), info.GetRulesetId(), nullptr)).IsValid());
-    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(GetDb().GetDbGuid(), info.GetRulesetId(), nullptr, nullptr)).IsValid());
+    EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), info.GetRulesetId().c_str()));
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), info.GetRulesetId(), nullptr)).IsValid());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(m_connection->GetId(), info.GetRulesetId(), nullptr, nullptr)).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -846,17 +848,17 @@ TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
 TEST_F(NodesCacheTests, ReturnsCachedRootNode)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create the root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
     
     // the data source should be empty
-    NavNodesProviderPtr cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), info.GetRulesetId(), nullptr));
+    NavNodesProviderPtr cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), info.GetRulesetId(), nullptr));
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(0, cachedProvider->GetNodesCount());
 
@@ -864,7 +866,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
     m_cache->Cache(*node, false);
 
     // verify the node is cached
-    cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), info.GetRulesetId(), nullptr));
+    cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), info.GetRulesetId(), nullptr));
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(1, cachedProvider->GetNodesCount());
 
@@ -879,13 +881,13 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
 TEST_F(NodesCacheTests, ReturnsCachedRootNodeDataSource)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create the root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
     
     // the data source should not be found until its node is cached
@@ -906,29 +908,29 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNodeDataSource)
 TEST_F(NodesCacheTests, ReturnsCachedChildDataSource)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     m_cache->Cache(*node, false);
     uint64_t nodeId = node->GetNodeId();
 
     // no child data source should exist
-    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), nodeId)).IsNull());
-    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &nodeId, &nodeId)).IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), rootInfo.GetRulesetId(), nodeId)).IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId)).IsNull());
 
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // verify the data source exists now
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodeId));
-    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), nodeId)).IsValid());
-    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &nodeId, &nodeId)).IsValid());
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), rootInfo.GetRulesetId(), nodeId)).IsValid());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId)).IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -937,36 +939,36 @@ TEST_F(NodesCacheTests, ReturnsCachedChildDataSource)
 TEST_F(NodesCacheTests, ReturnsCachedChildNode)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData rootExtendedData(*rootNode);
-    rootExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     m_cache->Cache(*rootNode, false);
     uint64_t nodeId = rootNode->GetNodeId();
     
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // the data source should be empty
-    NavNodesProviderPtr cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), nodeId));
+    NavNodesProviderPtr cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), rootInfo.GetRulesetId(), nodeId));
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(0, cachedProvider->GetNodesCount());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData childExtendedData(*childNode);
-    childExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     childExtendedData.SetVirtualParentId(nodeId);
     m_cache->Cache(*childNode, false);    
     
     // verify the child node is cached
-    cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), nodeId));
+    cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), rootInfo.GetRulesetId(), nodeId));
     ASSERT_TRUE(cachedProvider.IsValid());
     EXPECT_EQ(1, cachedProvider->GetNodesCount());
 
@@ -981,25 +983,25 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
 TEST_F(NodesCacheTests, ReturnsCachedChildNodeDataSource)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData rootExtendedData(*rootNode);
-    rootExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     m_cache->Cache(*rootNode, false);
     uint64_t rootNodeId = rootNode->GetNodeId();
     
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create child node
-    TestNavNodePtr childNode = TestNavNode::Create(&GetDb());
+    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData childExtendedData(*childNode);
-    childExtendedData.SetConnectionId(GetDb().GetDbGuid());
+    childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
     childExtendedData.SetVirtualParentId(rootNodeId);
 
@@ -1021,13 +1023,13 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNodeDataSource)
 TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsPhysical)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create the node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
     
     // cache the node
@@ -1045,13 +1047,13 @@ TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsPhysical)
 TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsVirtual)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // create the node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
     
     // cache the node
@@ -1069,7 +1071,7 @@ TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsVirtual)
 TEST_F(NodesCacheTests, ReturnsPreviouslyCachedDataSourceWhenCachingForTheSameParentTwice)
     {
     // cache the data source
-    DataSourceInfo info1(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info1(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     DataSourceInfo info2(info1.GetConnectionId(), info1.GetRulesetId(), info1.GetPhysicalParentNodeId(), info1.GetVirtualParentNodeId());
@@ -1088,14 +1090,14 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesFromValidConnections)
     // create a new connection
     ECDbTestProject project2;
     project2.Create("test2");
-    m_connectionCache.NotifyConnectionOpened(project2.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
     
     // cache root data source for the first connection
-    DataSourceInfo rootInfo1(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo1(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     
     // cache root data source for the second connection
-    DataSourceInfo rootInfo2(project2.GetECDbCR().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // verify correct sources are returned
@@ -1106,6 +1108,8 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesFromValidConnections)
     NavNodesProviderPtr cached2 = m_cache->GetDataSource(rootInfo2);
     ASSERT_TRUE(cached2.IsValid());
     EXPECT_EQ(&project2.GetECDbCR(), &cached2->GetContext().GetDb());
+
+    m_connections.NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1115,12 +1119,12 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesWithValidRulesetIds)
     {    
     // cache root data source for the first ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id1", 1, 0, false, "", "", "", false));
-    DataSourceInfo rootInfo1(GetDb().GetDbGuid(), "ruleset_id1", nullptr, nullptr);
+    DataSourceInfo rootInfo1(m_connection->GetId(), "ruleset_id1", nullptr, nullptr);
     m_cache->Cache(rootInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     
     // cache root data source for the second ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
-    DataSourceInfo rootInfo2(GetDb().GetDbGuid(), "ruleset_id2", nullptr, nullptr);
+    DataSourceInfo rootInfo2(m_connection->GetId(), "ruleset_id2", nullptr, nullptr);
     m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // verify correct sources are returned
@@ -1139,7 +1143,7 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesWithValidRulesetIds)
 TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseForEmptySet)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
@@ -1156,7 +1160,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseForEmptySet)
 TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseForRootNode)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root node
@@ -1174,7 +1178,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseForRootNode)
 TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseIfListDoesntContainParentNodeId)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root nodes
@@ -1195,7 +1199,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseIfListDoesntContainParentNodeI
 TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsImmediateParentNodeId)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root nodes
@@ -1216,7 +1220,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsImmediateParentNo
 TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsGrandParentNodeId)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache root nodes
@@ -1238,14 +1242,14 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsGrandParentNodeId
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void CacheNode(NodesCache& cache, ECDbR db, JsonNavNodeR node)
+static void CacheNode(NodesCache& cache, IConnectionCR connection, JsonNavNodeR node)
     {
     NavNodeExtendedData extendedData(node);
-    extendedData.SetConnectionId(db.GetDbGuid());
+    extendedData.SetConnectionId(connection.GetId());
     extendedData.SetRulesetId("ruleset_id");
     
     // cache root data source
-    DataSourceInfo info(db.GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(connection.GetId(), "ruleset_id", nullptr, nullptr);
     cache.Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache the node
@@ -1260,20 +1264,20 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     // create a similar node in a closed connection
     ECDbTestProject project;
     project.Create("LocateNode_LocatesECInstanceNode", "RulesEngineTest.01.00.ecschema.xml");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     TestNavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*widgetClass2);
-    CacheNode(*m_cache, project.GetECDb(), *node2);
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    CacheNode(*m_cache, *connection2, *node2);
+    m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     TestNavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*widgetClass1);
-    CacheNode(*m_cache, s_project->GetECDb(), *node1);
+    CacheNode(*m_cache, *m_connection, *node1);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECInstanceNodeKey::Create(*node1->GetInstance()));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, *ECInstanceNodeKey::Create(*node1->GetInstance()));
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
@@ -1281,7 +1285,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     ECInstanceKey invalidKey(
         ECClassId(node1->GetKey().AsECInstanceNodeKey()->GetECClassId().GetValue() + 100),
         ECInstanceId(node1->GetKey().AsECInstanceNodeKey()->GetInstanceId().GetValue() + 100));
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECInstanceNodeKey::Create(invalidKey));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECInstanceNodeKey::Create(invalidKey));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1293,29 +1297,29 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     // create a similar node in a closed connection
     ECDbTestProject project;
     project.Create("LocateNode_LocatesECClassGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     TestNavNodePtr node2 = TestNodesHelper::CreateClassGroupingNode(*widgetClass2, "test label");
-    CacheNode(*m_cache, project.GetECDb(), *node2);
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    CacheNode(*m_cache, *connection2, *node2);
+    m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     TestNavNodePtr node1 = TestNodesHelper::CreateClassGroupingNode(*widgetClass1, "test label");
-    CacheNode(*m_cache, s_project->GetECDb(), *node1);
+    CacheNode(*m_cache, *m_connection, *node1);
     
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECClassGroupingNodeKey::Create(node1->GetNodeId(), widgetClass1->GetId()));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, *ECClassGroupingNodeKey::Create(node1->GetNodeId(), widgetClass1->GetId()));
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECClassGroupingNodeKey::Create(node1->GetNodeId() + 100, widgetClass1->GetId()));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECClassGroupingNodeKey::Create(node1->GetNodeId() + 100, widgetClass1->GetId()));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when class id doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECClassGroupingNodeKey::Create(node1->GetNodeId(), ECClassId(widgetClass1->GetId().GetValue() + 100)));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECClassGroupingNodeKey::Create(node1->GetNodeId(), ECClassId(widgetClass1->GetId().GetValue() + 100)));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1330,27 +1334,27 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     // create a similar node in a closed connection
     ECDbTestProject project;
     project.Create("LocateNode_LocatesECPropertyValueGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
     TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass2, *groupingProperty2, "test label", groupingValue, false);
-    CacheNode(*m_cache, project.GetECDb(), *node2);
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    CacheNode(*m_cache, *connection2, *node2);
+    m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
     TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass1, *groupingProperty1, "test label", groupingValue, false);
-    CacheNode(*m_cache, s_project->GetECDb(), *node1);
+    CacheNode(*m_cache, *m_connection, *node1);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId(), *widgetClass1, *groupingProperty1, -1, &groupingValue));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(node1->GetNodeId(), *widgetClass1, *groupingProperty1, -1, &groupingValue));
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId() + 100, *widgetClass1, *groupingProperty1, -1, &groupingValue));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(node1->GetNodeId() + 100, *widgetClass1, *groupingProperty1, -1, &groupingValue));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1365,27 +1369,27 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     // create a similar node in a closed connection
     ECDbTestProject project;
     project.Create("LocateNode_LocatesECPropertyRangeGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
     TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass2, *groupingProperty2, "test label", groupingValue, true);
-    CacheNode(*m_cache, project.GetECDb(), *node2);
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    CacheNode(*m_cache, *connection2, *node2);
+    m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
     TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass1, *groupingProperty1, "test label", groupingValue, true);
-    CacheNode(*m_cache, s_project->GetECDb(), *node1);
+    CacheNode(*m_cache, *m_connection, *node1);
     
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId(), *widgetClass1, *groupingProperty1, 2, nullptr));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(node1->GetNodeId(), *widgetClass1, *groupingProperty1, 2, nullptr));
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *ECPropertyGroupingNodeKey::Create(node1->GetNodeId() + 100, *widgetClass1, *groupingProperty1, 2, nullptr));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(node1->GetNodeId() + 100, *widgetClass1, *groupingProperty1, 2, nullptr));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1397,27 +1401,27 @@ TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
     // create a similar node in a closed connection
     ECDbTestProject project;
     project.Create("LocateNode_LocatesLabelGroupingNode");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     TestNavNodePtr node2 = TestNodesHelper::CreateLabelGroupingNode("test label");
-    CacheNode(*m_cache, project.GetECDb(), *node2);
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    CacheNode(*m_cache, *connection2, *node2);
+    m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     TestNavNodePtr node1 = TestNodesHelper::CreateLabelGroupingNode("test label");
-    CacheNode(*m_cache, s_project->GetECDb(), *node1);
+    CacheNode(*m_cache, *m_connection, *node1);
 
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label"));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label"));
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId() + 100, "test label"));
+    locatedNode = m_cache->LocateNode(*m_connection, *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId() + 100, "test label"));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when label doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "different label"));
+    locatedNode = m_cache->LocateNode(*m_connection, *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "different label"));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1429,31 +1433,31 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     // create a similar node in a closed connection
     ECDbTestProject project;
     project.Create("LocateNode_LocatesCustomNode");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
-    CacheNode(*m_cache, project.GetECDb(), *node2);
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    CacheNode(*m_cache, *connection2, *node2);
+    m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
-    CacheNode(*m_cache, s_project->GetECDb(), *node1);
+    CacheNode(*m_cache, *m_connection, *node1);
     
     // verify the node is found successfully with valid key
-    NavNodeCPtr locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label", "test type"));
+    NavNodeCPtr locatedNode = m_cache->LocateNode(*m_connection, *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label", "test type"));
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node id doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId() + 100, "test label", "test type"));
+    locatedNode = m_cache->LocateNode(*m_connection, *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId() + 100, "test label", "test type"));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when label doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "different label", "test type"));
+    locatedNode = m_cache->LocateNode(*m_connection, *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "different label", "test type"));
     ASSERT_TRUE(locatedNode.IsNull());
 
     // verify the node is not found when type doesnt match
-    locatedNode = m_cache->LocateNode(s_project->GetECDb(), *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label", "different type"));
+    locatedNode = m_cache->LocateNode(*m_connection, *DisplayLabelGroupingNodeKey::Create(node1->GetNodeId(), "test label", "different type"));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1463,21 +1467,21 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
 TEST_F(NodesCacheTests, Quick_AddsToQuickCacheWhenDataSourceReachesRequiredSize)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(rootInfo, 2);
     bvector<uint64_t> rootNodeIds;
     std::transform(rootNodes.begin(), rootNodes.end(), std::back_inserter(rootNodeIds), [](NavNodeCPtr node){return node->GetNodeId();});
 
     // cache child data source 1 (less than required size to add to quick cache)
-    DataSourceInfo childrenInfo1(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeIds[0], &rootNodeIds[0]);
+    DataSourceInfo childrenInfo1(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[0], &rootNodeIds[0]);
     m_cache->Cache(childrenInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     FillWithNodes(childrenInfo1, NODESCACHE_QUICK_Boundary);
     NavNodesProviderPtr datasource1 = m_cache->GetDataSource(HierarchyLevelInfo(childrenInfo1));
     EXPECT_EQ(NODESCACHE_QUICK_Boundary, datasource1->GetNodesCount());
 
     // cache child data source 2 (of required size to add to quick cache)
-    DataSourceInfo childrenInfo2(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeIds[1], &rootNodeIds[1]);
+    DataSourceInfo childrenInfo2(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[1], &rootNodeIds[1]);
     m_cache->Cache(childrenInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     FillWithNodes(childrenInfo2, NODESCACHE_QUICK_Boundary + 1);
     NavNodesProviderPtr datasource2 = m_cache->GetDataSource(HierarchyLevelInfo(childrenInfo2));
@@ -1498,13 +1502,13 @@ TEST_F(NodesCacheTests, Quick_AddsToQuickCacheWhenDataSourceReachesRequiredSize)
 TEST_F(NodesCacheTests, Quick_RemovesPreviousDataSourceIfNewOneIsAddedForTheSameHierarchyLevel)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(rootInfo, 1);
     uint64_t rootNodeId = rootNodes[0]->GetNodeId();
 
     // cache child data source
-    DataSourceInfo childrenInfo(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     FillWithNodes(childrenInfo, NODESCACHE_QUICK_Boundary + 1);
 
@@ -1533,7 +1537,7 @@ TEST_F(NodesCacheTests, Quick_RemovesPreviousDataSourceIfNewOneIsAddedForTheSame
 TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
     {
     // cache root data source
-    DataSourceInfo rootInfo(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(rootInfo, NODESCACHE_QUICK_Size + 1);
     bvector<uint64_t> rootNodeIds;
@@ -1543,7 +1547,7 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
     bvector<NavNodesProviderPtr> providers;
     for (size_t i = 0; i < NODESCACHE_QUICK_Size; ++i)
         {
-        DataSourceInfo info(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeIds[i], &rootNodeIds[i]);
+        DataSourceInfo info(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[i], &rootNodeIds[i]);
         m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
         FillWithNodes(info, NODESCACHE_QUICK_Boundary + 1);
         NavNodesProviderPtr provider = m_cache->GetDataSource(HierarchyLevelInfo(info));
@@ -1556,7 +1560,7 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
         EXPECT_EQ(providers[i].get(), m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), rootNodeIds[i])).get());
 
     // add a new provider
-    DataSourceInfo info(GetDb().GetDbGuid(), rootInfo.GetRulesetId(), &rootNodeIds[NODESCACHE_QUICK_Size], &rootNodeIds[NODESCACHE_QUICK_Size]);
+    DataSourceInfo info(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[NODESCACHE_QUICK_Size], &rootNodeIds[NODESCACHE_QUICK_Size]);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     FillWithNodes(info, NODESCACHE_QUICK_Boundary + 1);
     NavNodesProviderPtr provider = m_cache->GetDataSource(HierarchyLevelInfo(info));
@@ -1575,7 +1579,7 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsEmptyListWhenRulesetAndSettingIdsAreInvalid)
     {
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
@@ -1589,18 +1593,18 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsEmptyListWhenR
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsOnlyRelatedDataSources)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(info, 2);
 
     // cache unrelated datasource
     uint64_t rootNodeId0 = rootNodes[0]->GetNodeId();
-    DataSourceInfo childInfo0(GetDb().GetDbGuid(), "ruleset_id", &rootNodeId0, &rootNodeId0);
+    DataSourceInfo childInfo0(m_connection->GetId(), "ruleset_id", &rootNodeId0, &rootNodeId0);
     m_cache->Cache(childInfo0, DataSourceFilter(), bmap<ECClassId, bool>(), {"setting_0"});
     
     // cache related datasource
     uint64_t rootNodeId1 = rootNodes[1]->GetNodeId();
-    DataSourceInfo childInfo1(GetDb().GetDbGuid(), "ruleset_id", &rootNodeId1, &rootNodeId1);
+    DataSourceInfo childInfo1(m_connection->GetId(), "ruleset_id", &rootNodeId1, &rootNodeId1);
     m_cache->Cache(childInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), {"setting_1"});
 
     // verify the correct datasource is found
@@ -1616,7 +1620,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsOnlyRelatedDat
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhenInstancesArentRelated)
     {
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
@@ -1632,7 +1636,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhenConnectionsAreDifferent)
     {
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
     m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<Utf8String>());
@@ -1640,7 +1644,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(BeGuid(true), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels("does not exist", keys);
     EXPECT_TRUE(related.empty());
     }
 
@@ -1650,7 +1654,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhenClassMatchesAndFilterIsNotSpecified)
     {
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
     m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<Utf8String>());
@@ -1671,7 +1675,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     ECClassCP widgetHasGadget = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadget->GetId());
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
@@ -1696,7 +1700,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
@@ -1723,16 +1727,16 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // set up
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
 
     ECInstanceId widgetId, gadgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Forward, widgetId), nullptr);
@@ -1759,16 +1763,16 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // set up
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
 
     ECInstanceId widgetId, gadgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, gadgetId), nullptr);
@@ -1795,16 +1799,16 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // set up
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
 
     ECInstanceId widgetId, gadgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Both, gadgetId), nullptr);
@@ -1832,16 +1836,16 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ECClassCP widgetHasGadgetsRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets");
 
     // set up
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetRelationship->GetRelationshipClassCP(), *widget, *gadget);
 
     ECInstanceId widgetId, gadgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadgetRelationship->GetId());
     relationshipIds.insert(widgetHasGadgetsRelationship->GetId());
@@ -1865,14 +1869,14 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhenChildNodeGroupedInstanceKeysMatchByClassId)
     {
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
     extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
 
@@ -1888,14 +1892,14 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhenChildNodeGroupedInstanceKeysMatchByInstanceId)
     {
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
     extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
 
@@ -1911,14 +1915,14 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhenChildNodeGroupedInstanceKeysMatch)
     {
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
     extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
     m_cache->Cache(*node, false);
@@ -1938,7 +1942,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     ECClassCP widgetHasGadget = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // cache the data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bset<ECClassId> relationshipIds;
     relationshipIds.insert(widgetHasGadget->GetId());
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
@@ -1948,9 +1952,9 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(&GetDb());
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
     NavNodeExtendedData extendedData(*node);
-    extendedData.SetConnectionId(GetDb().GetDbGuid());
+    extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
     extendedData.SetGroupedInstanceKey(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
     m_cache->Cache(*node, false);
@@ -1962,176 +1966,6 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     EXPECT_EQ(related[0], info);
     }
     
-/*=================================================================================**//**
-* @bsiclass                                     Saulius.Skliutas                09/2017
-+===============+===============+===============+===============+===============+======*/
-struct MemoryNodesCacheTests : NodesCacheTests
-    {
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, Clear_Full)
-    {
-    Test_Clear_Full();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, Clear_ByConnection)
-    {
-    Test_Clear_ByConnection();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, Clear_ByRulesetId)
-    {
-    Test_Clear_ByRulesetId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, RemovesRootDataSource)
-    {
-    Test_RemovesRootDataSource();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, RemovesChildDataSource)
-    {
-    Test_RemovesChildDataSource();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, RemovesChildNodesWhenParentDataSourceIsRemoved)
-    {
-    Test_RemovesChildNodesWhenParentDataSourceIsRemoved();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
-    {
-    Test_RemovesChildDataSourcesWhenParentDataSourceIsRemoved();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, MakePhysical)
-    {
-    Test_MakePhysical();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, MakeVirtual)
-    {
-    Test_MakeVirtual();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, UpdateNode)
-    {
-    Test_UpdateNode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* note: the test uses GetRelatedHierarchyLevels function to test the Update
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, UpdateDataSource_UpdatesFilter)
-    {
-    Test_UpdateDataSource_UpdatesFilter();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* note: the test uses GetRelatedHierarchyLevels function to test the Update
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
-    {
-    Test_UpdateDataSource_UpdatesRelatedClassIds();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* note: the test uses GetRelatedHierarchyLevels function to test the Update
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, UpdateDataSource_UpdatesRelatedSettingIds)
-    {
-    Test_UpdateDataSource_UpdatesRelatedSettingIds();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical)
-    {
-    Test_RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
-    {
-    Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, Updates_IsExpandedFlag)
-    {
-    Test_Updates_IsExpandedFlag();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, GetFilteredNodes)
-    {
-    Test_GetFilteredNodes();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, ResetIsExpandedFlag)
-    {
-    Test_ResetIsExpandedFlag();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren)
-    {
-    Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryNodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren)
-    {
-    Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren();
-    }
-
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                09/2017
 +===============+===============+===============+===============+===============+======*/
@@ -2147,172 +1981,9 @@ struct DiskNodesCacheTests : NodesCacheTests
 
     NodesCache* _CreateNodesCache(BeFileName tempDir) override
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
         }
     };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, Clear_Full)
-    {
-    Test_Clear_Full();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, Clear_ByConnection)
-    {
-    Test_Clear_ByConnection();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, Clear_ByRulesetId)
-    {
-    Test_Clear_ByRulesetId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, RemovesRootDataSource)
-    {
-    Test_RemovesRootDataSource();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, RemovesChildDataSource)
-    {
-    Test_RemovesChildDataSource();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, RemovesChildNodesWhenParentDataSourceIsRemoved)
-    {
-    Test_RemovesChildNodesWhenParentDataSourceIsRemoved();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
-    {
-    Test_RemovesChildDataSourcesWhenParentDataSourceIsRemoved();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, MakePhysical)
-    {
-    Test_MakePhysical();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, MakeVirtual)
-    {
-    Test_MakeVirtual();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, UpdateNode)
-    {
-    Test_UpdateNode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* note: the test uses GetRelatedHierarchyLevels function to test the Update
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, UpdateDataSource_UpdatesFilter)
-    {
-    Test_UpdateDataSource_UpdatesFilter();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* note: the test uses GetRelatedHierarchyLevels function to test the Update
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
-    {
-    Test_UpdateDataSource_UpdatesRelatedClassIds();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* note: the test uses GetRelatedHierarchyLevels function to test the Update
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, UpdateDataSource_UpdatesRelatedSettingIds)
-    {
-    Test_UpdateDataSource_UpdatesRelatedSettingIds();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical)
-    {
-    Test_RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
-    {
-    Test_RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, Updates_IsExpandedFlag)
-    {
-    Test_Updates_IsExpandedFlag();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, GetFilteredNodes)
-    {
-    Test_GetFilteredNodes();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, ResetIsExpandedFlag)
-    {
-    Test_ResetIsExpandedFlag();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren)
-    {
-    Test_GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnownToHaveChildren();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren)
-    {
-    Test_GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChildren();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                09/2017
@@ -2321,10 +1992,10 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
     {
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    NodesCache* secondCache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
 
     Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
-    Utf8CP secondCacheName = secondCache->GetDb().GetDbFileName();
+    Utf8CP secondCacheName = secondCache.GetDb().GetDbFileName();
 
     EXPECT_STRNE(firstCacheName, secondCacheName);
     }
@@ -2332,10 +2003,10 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenInstances)
+TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
@@ -2344,17 +2015,21 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenInstances)
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
 
     // close cache
+    m_connections.NotifyConnectionClosed(*m_connection);
+    DELETE_AND_CLEAR(s_project);
     DELETE_AND_CLEAR(m_cache);
 
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
-    // mock connection opening
-    m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+    
+    // mock connection re-opening
+    ReCreateProject();
+    DataSourceInfo info2(m_connection->GetId(), info.GetRulesetId(), info.GetPhysicalParentNodeId(), info.GetVirtualParentNodeId());
 
     // cache should not be cleaned
-    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
     }
@@ -2362,10 +2037,10 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenInstances)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, ClearCacheIfHierarchyWasModified)
+TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache some nodes
@@ -2375,25 +2050,28 @@ TEST_F(DiskNodesCacheTests, ClearCacheIfHierarchyWasModified)
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
 
     // close cache
+    BeFileName projectPath(s_project->GetECDbPath());
+    m_connections.NotifyConnectionClosed(*m_connection);
+    DELETE_AND_CLEAR(s_project);
     DELETE_AND_CLEAR(m_cache);
 
     // change connection file last modification time
-    BeFileName dbFile(s_project->GetECDbPath());
     time_t modTime;
-    dbFile.GetFileTime(nullptr, nullptr, &modTime);
-    modTime += 100;
-    dbFile.SetFileTime(nullptr, &modTime);
+    projectPath.GetFileTime(nullptr, nullptr, &modTime);
+    modTime -= 100;
+    projectPath.SetFileTime(nullptr, &modTime);
 
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
 
-    // mock connection opening
-    m_connectionCache.NotifyConnectionOpened(s_project->GetECDb());
+    // mock connection re-opening
+    ReCreateProject();
+    DataSourceInfo info2(m_connection->GetId(), info.GetRulesetId(), info.GetPhysicalParentNodeId(), info.GetVirtualParentNodeId());
 
-    // cache should be empty
-    EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
+    // cache should be empty for this connection
+    EXPECT_TRUE(m_cache->GetDataSource(info2).IsNull());
     EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
     EXPECT_FALSE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
     }
@@ -2403,7 +2081,7 @@ TEST_F(DiskNodesCacheTests, ClearCacheIfHierarchyWasModified)
 * In this case OnRulesetDisposed isn't called and only OnRulesetCreated is called.
 * @bsitest                                      Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskNodesCacheTests, ClearCacheIfRulesetWasModified)
+TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
     {
     // create ruleset
     PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("TestRuleset", 1, 0, false, "", "", "", false);
@@ -2411,7 +2089,7 @@ TEST_F(DiskNodesCacheTests, ClearCacheIfRulesetWasModified)
     m_cache->OnRulesetCreated(*ruleset);
 
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), ruleset->GetRuleSetId(), nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), ruleset->GetRuleSetId(), nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache some nodes
@@ -2436,7 +2114,7 @@ TEST_F(DiskNodesCacheTests, ClearCacheIfRulesetWasModified)
 TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache some nodes
@@ -2454,7 +2132,7 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
 
     // verify cache is cleared
     EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
@@ -2468,26 +2146,26 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
 TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache some nodes
     FillWithNodes(info, 30, true);
     EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
-    m_connectionCache.NotifyConnectionClosed(s_project->GetECDb());
+    m_connections.NotifyConnectionClosed(*m_connection);
 
     // open second connection and cache root data source
     ECDbTestProject project;
     project.Create("ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
 
-    DataSourceInfo info2(project.GetECDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache some nodes
     FillWithNodes(info2, 40, true);
     EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    m_connections.NotifyConnectionClosed(*connection2);
 
     // set cache file size limit
     const_cast<Db&>(m_cache->GetDb()).SaveChanges();
@@ -2502,15 +2180,19 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
 
     // verify first connection cache was deleted
-    m_connectionCache.NotifyConnectionOpened(GetDb());
-    EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
+    m_connection = m_connections.NotifyConnectionOpened(GetDb());
+    DataSourceInfo newInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
+    EXPECT_TRUE(m_cache->GetDataSource(newInfo).IsNull());
 
     // verify second connection cache wasn't deleted
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
-    EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
+    connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
+    DataSourceInfo newInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
+    EXPECT_FALSE(m_cache->GetDataSource(newInfo2).IsNull());
+    m_connections.NotifyConnectionClosed(*connection2);
+    project.GetECDb().CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2519,26 +2201,26 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
 TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     {
     // cache root data source
-    DataSourceInfo info(GetDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache some nodes
     FillWithNodes(info, 30, true);
     EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
-    m_connectionCache.NotifyConnectionClosed(s_project->GetECDb());
+    m_connections.NotifyConnectionClosed(*m_connection);
 
     // open second connection and cache root data source
     ECDbTestProject project;
     project.Create("DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual");
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
 
-    DataSourceInfo info2(project.GetECDb().GetDbGuid(), "ruleset_id", nullptr, nullptr);
+    DataSourceInfo info2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
     m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
 
     // cache some nodes
     FillWithNodes(info2, 40, true);
     EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
-    m_connectionCache.NotifyConnectionClosed(project.GetECDb());
+    m_connections.NotifyConnectionClosed(*connection2);
 
     // set cache file size limit
     const_cast<Db&>(m_cache->GetDb()).SaveChanges();
@@ -2553,13 +2235,17 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connectionCache, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
 
-    // verify first connection cache wasn't deleted
-    m_connectionCache.NotifyConnectionOpened(GetDb());
-    EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
+    // verify first connection cache was deleted
+    m_connection = m_connections.NotifyConnectionOpened(GetDb());
+    DataSourceInfo newInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
+    EXPECT_FALSE(m_cache->GetDataSource(newInfo).IsNull());
 
     // verify second connection cache wasn't deleted
-    m_connectionCache.NotifyConnectionOpened(project.GetECDb());
-    EXPECT_FALSE(m_cache->GetDataSource(info2).IsNull());
+    connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
+    DataSourceInfo newInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
+    EXPECT_FALSE(m_cache->GetDataSource(newInfo2).IsNull());
+    m_connections.NotifyConnectionClosed(*connection2);
+    project.GetECDb().CloseDb();
     }

@@ -81,7 +81,7 @@ BentleyStatus PresentationRulesetTester::ReadJsonFromFile(BeFileNameCR configura
 //----------------------------------------------------------------------------------------
 // @bsimethod                                   David.Le                          09/2016
 //----------------------------------------------------------------------------------------
-int PresentationRulesetTester::CheckNode(NavNodeCR node, JsonValueCR tree, int index, ECDbR db, RulesDrivenECPresentationManager* m_presentationManager,
+int PresentationRulesetTester::CheckNode(NavNodeCR node, JsonValueCR tree, int index, RulesDrivenECPresentationManager* m_presentationManager,
     RulesDrivenECPresentationManager::NavigationOptions simpleTest)
     {
     Json::Value jsonValue = tree[index];
@@ -129,7 +129,7 @@ int PresentationRulesetTester::CheckNode(NavNodeCR node, JsonValueCR tree, int i
         Json::Value childArray;
         childArray = jsonValue.get("ChildNodes", Json::Value::GetNull());
         int childIndex = 0;
-        auto childList = m_presentationManager->GetChildren(db, node, PageOptions(), simpleTest.GetJson());
+        auto childList = m_presentationManager->GetChildren(GetDb(), node, PageOptions(), simpleTest.GetJson()).get();
 
         auto jsonChildSize = childArray.size();
         auto nodeChildSize = childList.GetSize();
@@ -157,7 +157,7 @@ int PresentationRulesetTester::CheckNode(NavNodeCR node, JsonValueCR tree, int i
         for (NavNodeCPtr childNode : childList)
             {
             if (nodesMatch)
-                errorCount += CheckNode(*childNode, childArray, childIndex, db, m_presentationManager, simpleTest);
+                errorCount += CheckNode(*childNode, childArray, childIndex, m_presentationManager, simpleTest);
             childIndex++;
             }
         }
@@ -176,9 +176,9 @@ PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileN
 
     m_localState = new StubLocalState();
 
-    m_presentationManager = new RulesDrivenECPresentationManager(paths);
+    m_presentationManager = new RulesDrivenECPresentationManager(m_connections, paths);
     m_presentationManager->GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(rulesetsDir.GetNameUtf8().c_str()));
-    m_presentationManager->SetLocalState(*m_localState);
+    m_presentationManager->SetLocalState(m_localState);
     }
 
 //---------------------------------------------------------------------------------------
@@ -231,7 +231,7 @@ int PresentationRulesetTester::ValidateTree(Utf8CP rulesetId, JsonValueCR treeFi
     JsonValueCR jsonNodes = treeFile.get("nodes", Json::Value::GetNull());
 
     StopWatch timer(nullptr, true);
-    auto roots = m_presentationManager->GetRootNodes(GetDb(), PageOptions(), options.GetJson());
+    auto roots = m_presentationManager->GetRootNodes(GetDb(), PageOptions(), options.GetJson()).get();
     int jsonIndex = 0;
     int errorCount = 0;
     bool nodesMatch = true;
@@ -263,7 +263,7 @@ int PresentationRulesetTester::ValidateTree(Utf8CP rulesetId, JsonValueCR treeFi
         {
         for (NavNodeCPtr rootNode : roots)
             {
-            errorCount += CheckNode(*rootNode, jsonNodes, jsonIndex, GetDb(), m_presentationManager, options);
+            errorCount += CheckNode(*rootNode, jsonNodes, jsonIndex, m_presentationManager, options);
             jsonIndex++;
             }
         }
@@ -316,7 +316,7 @@ Json::Value PresentationRulesetTester::CreateJsonNode(NavNodeCPtr node, RulesDri
     jsonNode["ImageId"] = node->GetExpandedImageId();
     if (node->HasChildren())
         {
-        auto childList = m_presentationManager->GetChildren(GetDb(), *node, PageOptions(), options.GetJson());
+        auto childList = m_presentationManager->GetChildren(GetDb(), *node, PageOptions(), options.GetJson()).get();
         Json::Value childJsonList(Json::arrayValue);
         for (auto childNode : childList)
             {
@@ -335,7 +335,7 @@ Json::Value PresentationRulesetTester::ExportJson(Utf8CP rulesetId)
     Json::Value outputJson(Json::objectValue);
     outputJson["nodes"] = Json::Value(Json::arrayValue);
     RulesDrivenECPresentationManager::NavigationOptions options(rulesetId, RuleTargetTree::TargetTree_MainTree);
-    auto roots = m_presentationManager->GetRootNodes(GetDb(), PageOptions(), options.GetJson());
+    auto roots = m_presentationManager->GetRootNodes(GetDb(), PageOptions(), options.GetJson()).get();
     for (auto rootNode : roots)
         {
         outputJson["nodes"].append(CreateJsonNode(rootNode, options));
@@ -349,7 +349,7 @@ Json::Value PresentationRulesetTester::ExportJson(Utf8CP rulesetId)
 void PresentationRulesetTester::SetECDb(ECDbR db)
     {
     m_db = &db;
-    m_presentationManager->GetConnections().NotifyConnectionOpened(db);
+    m_connections.NotifyConnectionOpened(db);
     }
 
 //----------------------------------------------------------------------------------------

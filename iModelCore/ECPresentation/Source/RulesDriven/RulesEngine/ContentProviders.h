@@ -69,9 +69,9 @@ public:
     IECPropertyFormatter const& GetECPropertyFormatter() const {BeAssert(IsPropertyFormattingContext()); return *m_propertyFormatter;}
 
     // ECDb context
-    void SetQueryContext(BeSQLite::EC::ECDbR db, BeSQLite::EC::ECSqlStatementCache const& statementCache, CustomFunctionsInjector& customFunctions)
+    void SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection, BeSQLite::EC::ECSqlStatementCache const& statementCache, CustomFunctionsInjector& customFunctions)
         {
-        RulesDrivenProviderContext::SetQueryContext(db, statementCache, customFunctions);
+        RulesDrivenProviderContext::SetQueryContext(connections, connection, statementCache, customFunctions);
         }
     void SetQueryContext(ContentProviderContextCR other) {RulesDrivenProviderContext::SetQueryContext(other);}
 };
@@ -92,7 +92,6 @@ private:
     mutable bmap<ContentDescriptor::NestedContentField const*, NestedContentProviderPtr> m_nestedContentProviders;
 
 private:
-    void Initialize();
     NestedContentProviderPtr GetNestedContentProvider(ContentDescriptor::NestedContentField const&, bool) const;
     void LoadNestedContent(ContentSetItemR) const;
     void LoadNestedContentFieldValue(ContentSetItemR, ContentDescriptor::NestedContentField const&, bool) const;
@@ -108,6 +107,7 @@ protected:
     virtual void _Reset();
 
 public:
+    void Initialize();
     ContentProviderPtr Clone() const {return _Clone();}
 
     ContentProviderContextR GetContextR() const {return *m_context;}

@@ -7,31 +7,21 @@
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/JsonNavNode.h"
 #include "../../../Source/RulesDriven/RulesEngine/QueryContracts.h"
-#include "QueryBasedSpecificationNodesProviderTests.h"
-#include "TestHelpers.h"
+#include "NodesProviderTests.h"
 
-static JsonNavNodesFactory s_nodesFactory;
-ECDbTestProject* QueryBasedSpecificationNodesProviderTests::s_project = nullptr;
-CustomFunctionsInjector* QueryBasedSpecificationNodesProviderTests::s_customFunctions = nullptr;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBasedSpecificationNodesProviderTests::SetUpTestCase()
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
+struct QueryBasedSpecificationNodesProviderTests : NodesProviderTests
     {
-    QueryBasedSpecificationNodesProviderTests::s_project = new ECDbTestProject();
-    QueryBasedSpecificationNodesProviderTests::s_project->Create("QueryBasedSpecificationNodesProviderTests", "RulesEngineTest.01.00.ecschema.xml");
-    QueryBasedSpecificationNodesProviderTests::s_customFunctions = new CustomFunctionsInjector(QueryBasedSpecificationNodesProviderTests::s_project->GetECDb());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBasedSpecificationNodesProviderTests::TearDownTestCase()
-    {
-    DELETE_AND_CLEAR(QueryBasedSpecificationNodesProviderTests::s_project);
-    DELETE_AND_CLEAR(QueryBasedSpecificationNodesProviderTests::s_customFunctions);
-    }
+    ECEntityClassCP m_widgetClass;
+    ECEntityClassCP m_gadgetClass;
+    ECEntityClassCP m_sprocketClass;
+    ECRelationshipClassCP m_widgetHasGadgetsRelationshipClass;
+    ECRelationshipClassCP m_gadgetHasSprocketsRelationshipClass;
+        
+    void SetUp() override;
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -43,56 +33,45 @@ void QueryBasedSpecificationNodesProviderTests::SetUp()
     m_sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket")->GetEntityClassCP();
     m_widgetHasGadgetsRelationshipClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     m_gadgetHasSprocketsRelationshipClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
-
-    m_ruleset = PresentationRuleSet::CreateInstance("QueryBasedSpecificationNodesProviderTests", 1, 0, false, "", "", "", false);
-    m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0,
-        m_settings, m_expressionsCache, m_relatedPathsCache, s_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
-    m_context->SetQueryContext(s_project->GetECDb(), m_statementCache, *s_customFunctions, &m_usedClassesListener);
-        
+            
     ECInstanceInserter widgetInserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, widgetInserter, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Test Widget 1"));
         instance.SetValue("BoolProperty", ECValue(true));
         });
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, widgetInserter, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Test Widget 2"));
         instance.SetValue("BoolProperty", ECValue(false));
         });
-    IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(*s_project, widgetInserter, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Test Widget 3"));
         instance.SetValue("BoolProperty", ECValue(true));
         });
 
     ECInstanceInserter gadgetInserter(s_project->GetECDb(), *m_gadgetClass, nullptr);
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
 
     ECInstanceInserter sprocketInserter(s_project->GetECDb(), *m_sprocketClass, nullptr);
-    IECInstancePtr sprocket1 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
-    IECInstancePtr sprocket2 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
-    IECInstancePtr sprocket3 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
-    IECInstancePtr sprocket4 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
+    IECInstancePtr sprocket1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
+    IECInstancePtr sprocket2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
+    IECInstancePtr sprocket3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
+    IECInstancePtr sprocket4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
 
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_widgetHasGadgetsRelationshipClass, *widget1, *gadget1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_widgetHasGadgetsRelationshipClass, *widget1, *gadget2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_widgetHasGadgetsRelationshipClass, *widget1, *gadget3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_widgetHasGadgetsRelationshipClass, *widget1, *gadget1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_widgetHasGadgetsRelationshipClass, *widget1, *gadget2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_widgetHasGadgetsRelationshipClass, *widget1, *gadget3);
 
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket3);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket4);
-    }
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_gadgetHasSprocketsRelationshipClass, *gadget1, *sprocket4);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryBasedSpecificationNodesProviderTests::TearDown()
-    {
-    s_project->GetECDb().AbandonChanges();
+    NodesProviderTests::SetUp();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,8 +214,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildrenIfHideNodesInH
 TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGroupingNodeHasOnlyOne)
     {
     // make sure there's only one Widget
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
@@ -264,8 +243,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfDisplayLabelGro
 TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildIfGroupingRuleDoesntHaveCreateGroupForSingleItemFlag)
     {
     // make sure there's only one Widget
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
@@ -305,7 +284,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsFalseWhenQueryR
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     EXPECT_FALSE(provider->HasNodes());
     }
 
@@ -323,7 +302,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, HasNodesReturnsTrueWhenQueryRe
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     EXPECT_TRUE(provider->HasNodes());
     }
 
@@ -342,18 +321,18 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, NodesCount_SimpleCase)
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
 #ifdef WIP_CLEAR_CACHES_ON_DB_CHANGES
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(0, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(1, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(2, provider->GetNodesCount());
 #else
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(2, provider->GetNodesCount());
     ASSERT_EQ(2, provider->GetNodesCount());
 #endif
@@ -379,12 +358,12 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithHideNodesInHie
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
 #ifdef WIP_CLEAR_CACHES_ON_DB_CHANGES
     ASSERT_EQ(0, provider->GetNodesCount());
 #endif
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(1, provider->GetNodesCount());
     }
 
@@ -405,19 +384,19 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelGr
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
 #ifdef WIP_CLEAR_CACHES_ON_DB_CHANGES
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(0, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
     ASSERT_EQ(1, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
     ASSERT_EQ(1, provider->GetNodesCount());
 #else
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("OtherLabel"));});
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("OtherLabel"));});
     ASSERT_EQ(2, provider->GetNodesCount());
 #endif
     }
@@ -442,10 +421,10 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithDisplayLabelAn
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("OtherLabel"));});
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("MyLabel"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("OtherLabel"));});
     ASSERT_EQ(2, provider->GetNodesCount());
 
     JsonNavNodePtr myLabelNode;
@@ -478,18 +457,18 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NodesCount_WithGroupingRuleNo
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
 
 #ifdef WIP_CLEAR_CACHES_ON_DB_CHANGES
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(0, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(1, provider->GetNodesCount());
 
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(1, provider->GetNodesCount());
 #else
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ASSERT_EQ(1, provider->GetNodesCount());
 #endif
     }
@@ -526,11 +505,11 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, CustomizesNodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNodesInHierarchyFlagIsSet)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
@@ -561,9 +540,9 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenHideNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (QueryBasedSpecificationNodesProviderTests, ReturnsChildNodesWhenTheresOnlyOneLabelGroupingNode)
     {
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
@@ -596,15 +575,15 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_GroupsSubcla
 
     // create our own instances
     ECInstanceInserter inserterE(s_project->GetECDb(), *classE, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserterE, *classE, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserterE, *classE, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterE, *classE, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterE, *classE, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
     ECInstanceInserter inserterF(s_project->GetECDb(), *classF, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterF, *classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
     ECInstanceInserter inserterG(s_project->GetECDb(), *classG, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserterG, *classG, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserterG, *classG, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
         
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);
@@ -650,7 +629,7 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, PropertyGrouping_DoesntGroupN
     {
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
         
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);

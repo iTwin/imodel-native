@@ -12,7 +12,6 @@
 #include "NavNodesDataSource.h"
 #include "NavNodeProviders.h"
 #include "ECExpressionContextsProvider.h"
-#include "../../ECDbBasedCache.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*=================================================================================**//**
@@ -47,11 +46,34 @@ public:
     ECSqlStatementCache& GetECSqlStatementCache(ECDbCR db) {return _GetECSqlStatementCache(db);}
 };
 
+//=======================================================================================
+//! An interface for @ref NavNode objects locater which can find nodes by their keys.
+//! @ingroup GROUP_Presentation_Navigation
+// @bsiclass                                    Grigas.Petraitis                08/2016
+//=======================================================================================
+struct  INavNodeLocater
+{
+protected:
+    virtual JsonNavNodeCPtr _LocateNode(IConnectionCR, NavNodeKeyCR) const = 0;
+public:
+    virtual ~INavNodeLocater() {}
+    JsonNavNodeCPtr LocateNode(IConnectionCR connection, NavNodeKeyCR key) const {return _LocateNode(connection, key);}
+};
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
 struct IHierarchyCache
 {
+    struct Savepoint : RefCountedBase
+    {
+    protected:
+        virtual void _Cancel() = 0;
+    public:
+        void Cancel() {_Cancel();}
+    };
+    typedef RefCountedPtr<Savepoint> SavepointPtr;
+
 protected:
     virtual JsonNavNodePtr _GetNode(uint64_t nodeId, NodeVisibility) const = 0;
     virtual NavNodesProviderPtr _GetDataSource(HierarchyLevelInfo const&) const = 0;
@@ -66,6 +88,8 @@ protected:
 
     virtual void _MakePhysical(JsonNavNodeCR) = 0;
     virtual void _MakeVirtual(JsonNavNodeCR) = 0;
+
+    virtual SavepointPtr _CreateSavepoint() = 0;
 
 public:
     virtual ~IHierarchyCache() {}
@@ -94,6 +118,8 @@ public:
     
     void MakePhysical(JsonNavNodeCR node) {_MakePhysical(node);}
     void MakeVirtual(JsonNavNodeCR node) {_MakeVirtual(node);}
+
+    SavepointPtr CreateSavepoint() {return _CreateSavepoint();}
 };
 
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_WINRT) || defined(BENTLEYCONFIG_OS_ANDROID)
@@ -127,7 +153,7 @@ struct NodesCache : IHierarchyCache, INavNodeLocater, IConnectionsListener
 private:
     JsonNavNodesFactory const& m_nodesFactory;
     INodesProviderContextFactoryCR m_contextFactory;
-    IConnectionManagerR m_connections;
+    IConnectionManagerCR m_connections;
     NodesCacheType m_type;
     bool m_tempCache;
     mutable BeSQLite::Db m_db;
@@ -144,7 +170,7 @@ private:
     void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, bool);
     void CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const&);
     void CacheRelatedSettingIds(uint64_t datasourceId, bvector<Utf8String> const&);
-    DataSourceInfo GetDataSourceInfo(BeSQLite::BeGuid const* connectionId, Utf8CP rulesetId, uint64_t const* parentNodeId, bool isVirtual) const;
+    DataSourceInfo GetDataSourceInfo(Utf8String const* connectionId, Utf8CP rulesetId, uint64_t const* parentNodeId, bool isVirtual) const;
     DataSourceInfo GetDataSourceInfo(uint64_t nodeId) const;
     bool HasDataSource(HierarchyLevelInfo const&) const;
     bool HasDataSource(DataSourceInfo const&) const;
@@ -155,10 +181,10 @@ private:
     void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
     void LimitCacheSize();
 
-    NavNodeCPtr LocateECInstanceNode(ECDbCR, ECInstanceNodeKey const&) const;
-    NavNodeCPtr LocateECClassGroupingNode(ECDbCR, ECClassGroupingNodeKey const&) const;
-    NavNodeCPtr LocateECPropertyGroupingNode(ECDbCR, ECPropertyGroupingNodeKey const&) const;
-    NavNodeCPtr LocateDisplayLabelGroupingNode(ECDbCR, DisplayLabelGroupingNodeKey const&) const;
+    JsonNavNodeCPtr LocateECInstanceNode(IConnectionCR, ECInstanceNodeKey const&) const;
+    JsonNavNodeCPtr LocateECClassGroupingNode(IConnectionCR, ECClassGroupingNodeKey const&) const;
+    JsonNavNodeCPtr LocateECPropertyGroupingNode(IConnectionCR, ECPropertyGroupingNodeKey const&) const;
+    JsonNavNodeCPtr LocateDisplayLabelGroupingNode(IConnectionCR, DisplayLabelGroupingNodeKey const&) const;
 
     void AddQuick(HierarchyLevelInfo, NavNodesProviderR);
     void RemoveQuick(HierarchyLevelInfo const&);
@@ -168,8 +194,8 @@ private:
     void RemoveQuick(uint64_t) const;
     JsonNavNodePtr GetQuick(uint64_t) const;
 
-    void OnConnectionClosed(BeSQLite::EC::ECDbCR);
-    void OnFirstConnection(BeSQLite::EC::ECDbCR);
+    void OnConnectionClosed(IConnectionCR);
+    void OnFirstConnection(IConnectionCR);
 
 protected:
     // IHierarchyCache
@@ -183,21 +209,22 @@ protected:
     ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*) override;
     ECPRESENTATION_EXPORT void _MakePhysical(JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _MakeVirtual(JsonNavNodeCR) override;
+    ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint() override;
     
     // INavNodeLocater
-    ECPRESENTATION_EXPORT NavNodeCPtr _LocateNode(ECDbCR, NavNodeKeyCR) const override;
+    ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, NavNodeKeyCR) const override;
 
     // IConnectionsListener
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
 
 public:
-    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerR, IECSqlStatementCacheProvider&, NodesCacheType);
+    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerCR, IECSqlStatementCacheProvider&, NodesCacheType);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(HierarchyLevelInfo const&, NavNodesProviderR);
     
     ECPRESENTATION_EXPORT bool IsNodeCached(uint64_t nodeId) const;
-    ECPRESENTATION_EXPORT bool IsDataSourceCached(BeSQLite::BeGuidCR connectionId, Utf8CP rulesetId) const;
+    ECPRESENTATION_EXPORT bool IsDataSourceCached(Utf8StringCR connectionId, Utf8CP rulesetId) const;
     ECPRESENTATION_EXPORT bool IsDataSourceCached(uint64_t parentNodeId) const;
 
     ECPRESENTATION_EXPORT BeSQLite::BeGuid CreateRemovalId(HierarchyLevelInfo const&);
@@ -206,19 +233,19 @@ public:
     ECPRESENTATION_EXPORT void RemapNodeIds(bmap<uint64_t, uint64_t> const&);
     ECPRESENTATION_EXPORT bool HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNodeIds) const;
 
-    ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(BeSQLite::BeGuidCR, bset<BeSQLite::EC::ECInstanceKey> const&) const;
+    ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(Utf8StringCR connectionId, bset<ECInstanceKey> const&) const;
     ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(Utf8CP rulesetId, Utf8CP settingId) const;
 
-    ECPRESENTATION_EXPORT void Clear(BeSQLite::EC::ECDb const* connection = nullptr, Utf8CP rulesetId = nullptr);
+    ECPRESENTATION_EXPORT void Clear(IConnectionCP connection = nullptr, Utf8CP rulesetId = nullptr);
     ECPRESENTATION_EXPORT void Persist();
 
     ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetCR);
     BeSQLite::Db const& GetDb() const {return m_db;}
     void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 
-    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(ECDbR connection, Utf8CP rulesetId, Utf8CP filtertext) const;
-    ECPRESENTATION_EXPORT void ResetExpandedNodes(BeSQLite::BeGuid connectionId, Utf8CP rulesetId);
-    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(ECDbR connection, Utf8CP ruleSetId, bool isUpdatesDisabled) const;
+    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(IConnectionCR connection, Utf8CP rulesetId, Utf8CP filtertext) const;
+    ECPRESENTATION_EXPORT void ResetExpandedNodes(Utf8CP connectionId, Utf8CP rulesetId);
+    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, bool isUpdatesDisabled) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

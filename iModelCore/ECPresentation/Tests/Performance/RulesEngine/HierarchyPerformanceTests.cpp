@@ -223,12 +223,12 @@ NavNodeKeyList HierarchyPerformanceTests::GetGeometricElementKeys()
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataContainer<NavNodeCPtr> HierarchyPerformanceTests::GetNodes(PageOptions& pageOptions, Json::Value const& options, NavNodeCP parentNode)
+NavNodesContainer HierarchyPerformanceTests::GetNodes(PageOptions& pageOptions, Json::Value const& options, NavNodeCP parentNode)
     {
     if (nullptr == parentNode)
-        return m_manager->GetRootNodes(m_project, pageOptions, options);
+        return m_manager->GetRootNodes(m_project, pageOptions, options).get();
 
-    return m_manager->GetChildren(m_project, *parentNode, pageOptions, options);
+    return m_manager->GetChildren(m_project, *parentNode, pageOptions, options).get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -236,17 +236,18 @@ DataContainer<NavNodeCPtr> HierarchyPerformanceTests::GetNodes(PageOptions& page
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HierarchyPerformanceTests::IncrementallyGetNodes(Utf8CP rulesetId, NavNodeCP parentNode, bool usePaging)
     {
-    size_t nodesCount = 0;
-
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId, TargetTree_MainTree).GetJson();
-    if (nullptr == parentNode)
-        nodesCount = m_manager->GetRootNodesCount(m_project, options);
-    else
-        nodesCount = m_manager->GetChildrenCount(m_project, *parentNode, options);
 
     size_t pageCount = 1;
     if (usePaging)
+        {
+        size_t nodesCount = 0;
+        if (nullptr == parentNode)
+            nodesCount = m_manager->GetRootNodesCount(m_project, options).get();
+        else
+            nodesCount = m_manager->GetChildrenCount(m_project, *parentNode, options).get();
         pageCount = (size_t)ceil(1.0 * nodesCount / HIERARCHY_REQUEST_PAGE_SIZE);
+        }
 
     for (size_t pageIndex = 0; pageIndex < pageCount; ++pageIndex)
         {
@@ -293,7 +294,7 @@ TEST_F(HierarchyPerformanceTests, FilterNodesFromNotExpandedHierarchy)
     {
     Timer t_hierarchy;
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
-    m_manager->GetFilteredNodesPaths(m_project, "ist", options);
+    m_manager->GetFilteredNodesPaths(m_project, "ist", options).wait();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -304,7 +305,7 @@ TEST_F(HierarchyPerformanceTests, FilterNodesFromExpandedHierarchy)
     IncrementallyGetNodes("Items", nullptr, false);
     Timer t_hierarchy;
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
-    m_manager->GetFilteredNodesPaths(m_project, "ist", options);
+    m_manager->GetFilteredNodesPaths(m_project, "ist", options).wait();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -28,6 +28,7 @@ ILogger& LoggingHelper::GetLogger(Log ns)
         case Log::Content: logger = LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_CONTENT); break;
         case Log::UserSettings: logger = LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_USERSETTINGS); break;
         case Log::Localization: logger = LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_LOCALIZATION); break;
+        case Log::Threads: logger = LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_THREADS); break;
         default: BeAssert(false); logger = LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE);
         }
     return *logger;

@@ -28,11 +28,12 @@
 
     <Part Name="ECPresentation-Library" BentleyBuildMakeFile="ECPresentation.mke" ApiNumber="B02">
         <SubPart PartName="ECPresentation-PublicAPI" />
-        <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/>
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
-        <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ECObjects" />
+        <SubPart PartName="ECDb" PartFile="ECDb" Repository="ECDb" />
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ECObjects" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ECPresentation$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ECPresentation$(ApiNumber)$(shlibext)</Assemblies>

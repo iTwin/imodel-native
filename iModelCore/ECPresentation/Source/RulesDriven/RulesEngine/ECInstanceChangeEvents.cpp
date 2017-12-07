@@ -11,7 +11,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceChangeEventSource::NotifyECInstanceChanged(ECDbCR db, ChangedECInstance const& change) const
+void ECInstanceChangeEventSource::NotifyECInstanceChanged(ECDbCR db, ChangedECInstance change) const
     {
     bvector<ChangedECInstance> changes;
     changes.push_back(change);
@@ -21,7 +21,7 @@ void ECInstanceChangeEventSource::NotifyECInstanceChanged(ECDbCR db, ChangedECIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECInstanceChangeEventSource::NotifyECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> const& changes) const
+void ECInstanceChangeEventSource::NotifyECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) const
     {
     for (IEventHandler* handler : m_eventHandlers)
         handler->_OnECInstancesChanged(db, changes);

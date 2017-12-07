@@ -32,12 +32,16 @@ struct NavigationQueryBuilderTests : ::testing::Test
     ChildNodeRuleP m_childNodeRule;
     NavigationQueryBuilder* m_builder;
     TestUserSettings m_settings;
+    TestConnectionManager m_connections;
+    IConnectionCPtr m_connection;
     RelatedPathsCache m_relatedPathsCache;
     ECExpressionsCache m_expressionsCache;
     RuleSetLocaterManager m_locaterManager;
     TestNodesCache m_nodesCache;
 
-    NavigationQueryBuilderTests() : m_builder(nullptr) {}
+    NavigationQueryBuilderTests() 
+        : m_builder(nullptr), m_locaterManager(m_connections)
+        {}
     
     void SetUp() override;
     void TearDown() override;
@@ -45,7 +49,6 @@ struct NavigationQueryBuilderTests : ::testing::Test
     NavigationQueryBuilder& GetBuilder() {return *m_builder;}
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
     bvector<ECClassCP> GetECClasses(Utf8CP schemaName);
-    Utf8String GetInstanceIdWithFormat(Utf8CP format, NavNodeCR node);
     };
 
 /*=================================================================================**//**
@@ -118,6 +121,8 @@ struct ContentQueryBuilderTests : ::testing::Test
     ContentDescriptorBuilder* m_descriptorBuilder;
     ContentQueryBuilder* m_queryBuilder;
     TestUserSettings m_settings;
+    TestConnectionManager m_connections;
+    IConnectionCPtr m_connection;
     RuleSetLocaterManager m_locaterManager;
     TestNodeLocater m_nodesLocater;
     TestLocalizationProvider m_localizationProvider;
@@ -125,7 +130,9 @@ struct ContentQueryBuilderTests : ::testing::Test
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
 
-    ContentQueryBuilderTests() : m_descriptorBuilder(nullptr), m_queryBuilder(nullptr) {}
+    ContentQueryBuilderTests() 
+        : m_descriptorBuilder(nullptr), m_queryBuilder(nullptr), m_locaterManager(m_connections)
+        {}
     
     void SetUp() override;
     void TearDown() override;

@@ -19,16 +19,16 @@
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryExecutor::QueryExecutor(ECDbR db, ECSqlStatementCache const& statementCache)
-    : m_db(db), m_statementCache(statementCache), m_query(nullptr), m_readStarted(false), m_readFinished(false)
+QueryExecutor::QueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache)
+    : m_connection(connection), m_statementCache(statementCache), m_query(nullptr), m_readStarted(false), m_readFinished(false)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryExecutor::QueryExecutor(ECDbR db, ECSqlStatementCache const& statementCache, PresentationQueryBase const& query)
-    : m_db(db), m_statementCache(statementCache), m_query(&query), m_readStarted(false), m_readFinished(false)
+QueryExecutor::QueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache, PresentationQueryBase const& query)
+    : m_connection(connection), m_statementCache(statementCache), m_query(&query), m_readStarted(false), m_readFinished(false)
     {
     }
 
@@ -65,13 +65,13 @@ Utf8CP QueryExecutor::GetQueryString() const
 CachedECSqlStatementPtr QueryExecutor::GetStatement() const
     {
     Utf8CP query = GetQueryString();
-    return m_statementCache.GetPreparedStatement(m_db, query);
+    return m_statementCache.GetPreparedStatement(GetDb(), query);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryExecutor::Reset()
+void QueryExecutor::_Reset()
     {
     m_readStarted = false;
     m_readFinished = false;
@@ -89,7 +89,7 @@ void QueryExecutor::Reset()
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryExecutor::ReadRecords() const
+void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     {
     if (nullptr == m_query)
         return;
@@ -125,31 +125,38 @@ void QueryExecutor::ReadRecords() const
     uint32_t recordsRead = 0;
     while (DbResult::BE_SQLITE_ROW == (result = statement->Step()))
         {
-        const_cast<QueryExecutor*>(this)->_ReadRecord(*statement);
+        _ReadRecord(*statement);
         recordsRead++;
+
+        if (nullptr != cancelationToken && cancelationToken->IsCanceled())
+            {
+            Reset();
+            LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled", NativeLogging::LOG_TRACE);
+            return;
+            }
         }
     _l = nullptr;
 
     BeAssert(DbResult::BE_SQLITE_DONE == result);
     m_readFinished = true;
-    LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("Finished reading %d records", recordsRead).c_str(), NativeLogging::LOG_TRACE);
+    LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Finished reading %d records", recordsRead).c_str(), NativeLogging::LOG_TRACE);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, ECDbR db, ECSqlStatementCache const& statementCache)
-    : QueryExecutor(db, statementCache), m_nodesFactory(nodesFactory)
+NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, IConnectionCR connection, ECSqlStatementCache const& statementCache)
+    : QueryExecutor(connection, statementCache), m_nodesFactory(nodesFactory)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, ECDbR db, ECSqlStatementCache const& statementCache, NavigationQuery const& query)
-    : QueryExecutor(db, statementCache, query), m_nodesFactory(nodesFactory), m_query(&query)
+NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& nodesFactory, IConnectionCR connection, ECSqlStatementCache const& statementCache, NavigationQuery const& query)
+    : QueryExecutor(connection, statementCache, query), m_nodesFactory(nodesFactory), m_query(&query)
     {
-    m_reader = NavNodeReader::Create(m_nodesFactory, GetDb(), *query.GetContract(), query.GetResultParameters().GetResultType());
+    m_reader = NavNodeReader::Create(m_nodesFactory, GetConnection(), *query.GetContract(), query.GetResultParameters().GetResultType());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,18 +165,24 @@ NavigationQueryExecutor::NavigationQueryExecutor(JsonNavNodesFactory const& node
 void NavigationQueryExecutor::SetQuery(NavigationQuery const& query, bool clearCache)
     {
     if (clearCache)
-        {
-        Reset();
-        m_nodes.clear();
-        }
+        _Reset();
 
     if (m_query != &query)
         {
-        m_reader = NavNodeReader::Create(m_nodesFactory, GetDb(), *query.GetContract(), query.GetResultParameters().GetResultType());
+        m_reader = NavNodeReader::Create(m_nodesFactory, GetConnection(), *query.GetContract(), query.GetResultParameters().GetResultType());
         m_query = &query;
         }
 
     QueryExecutor::SetQuery(query);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Grigas.Petraitis                10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void NavigationQueryExecutor::_Reset()
+    {
+    QueryExecutor::_Reset();
+    m_nodes.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,7 +208,7 @@ void NavigationQueryExecutor::_ReadRecord(BeSQLite::EC::ECSqlStatement& statemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonNavNodePtr NavigationQueryExecutor::GetNode(size_t index) const
     {
-    ReadRecords();
+    BeAssert(IsReadFinished());
     if (m_nodes.empty() || index >= m_nodes.size())
         return nullptr;
     return m_nodes[index];
@@ -206,32 +219,32 @@ JsonNavNodePtr NavigationQueryExecutor::GetNode(size_t index) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t NavigationQueryExecutor::GetNodesCount() const
     {
-    ReadRecords();
+    BeAssert(IsReadFinished());
     return m_nodes.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryExecutor::ContentQueryExecutor(ECDbR db, ECSqlStatementCache const& statementCache)
-    : QueryExecutor(db, statementCache), m_propertyFormatter(nullptr)
+ContentQueryExecutor::ContentQueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache)
+    : QueryExecutor(connection, statementCache), m_propertyFormatter(nullptr)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryExecutor::ContentQueryExecutor(ECDbR db, ECSqlStatementCache const& statementCache, ContentQuery const& query)
-    : QueryExecutor(db, statementCache, query), m_query(&query), m_propertyFormatter(nullptr)
+ContentQueryExecutor::ContentQueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache, ContentQuery const& query)
+    : QueryExecutor(connection, statementCache, query), m_query(&query), m_propertyFormatter(nullptr)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                   Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentQueryExecutor::ClearCache()
+void ContentQueryExecutor::_Reset()
     {
-    Reset();
+    QueryExecutor::_Reset();
     m_records.clear();
     }
 
@@ -241,7 +254,7 @@ void ContentQueryExecutor::ClearCache()
 void ContentQueryExecutor::SetQuery(ContentQuery const& query, bool clearCache)
     {
     if (clearCache)
-        ClearCache();
+        _Reset();
 
     m_query = &query;
     QueryExecutor::SetQuery(query);
@@ -252,7 +265,7 @@ void ContentQueryExecutor::SetQuery(ContentQuery const& query, bool clearCache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentSetItemPtr ContentQueryExecutor::GetRecord(size_t index) const
     {
-    ReadRecords();
+    BeAssert(IsReadFinished());
     if (m_records.empty() || index >= m_records.size())
         return nullptr;
     return m_records[index];
@@ -263,7 +276,7 @@ ContentSetItemPtr ContentQueryExecutor::GetRecord(size_t index) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ContentQueryExecutor::GetRecordsCount() const
     {
-    ReadRecords();
+    BeAssert(IsReadFinished());
     return m_records.size();
     }
 
@@ -744,7 +757,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t CountQueryExecutor::GetResult() const
     {
-    ReadRecords();
+    BeAssert(IsReadFinished());
     return m_result;
     }
 

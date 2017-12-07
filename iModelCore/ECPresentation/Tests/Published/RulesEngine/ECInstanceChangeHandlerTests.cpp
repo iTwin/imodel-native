@@ -20,6 +20,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct DefaultECInstanceChangeHandlerTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
+    ECDbR m_db;
     RefCountedPtr<DefaultECInstanceChangeHandler> m_handler;
     
     static void SetUpTestCase()
@@ -33,6 +34,8 @@ struct DefaultECInstanceChangeHandlerTests : ::testing::Test
         DELETE_AND_CLEAR(s_project);
         }
 
+    DefaultECInstanceChangeHandlerTests() : m_db(s_project->GetECDb()) {}
+
     void SetUp() override
         {
         s_project->GetECDb().AbandonChanges();
@@ -41,10 +44,10 @@ struct DefaultECInstanceChangeHandlerTests : ::testing::Test
 
     ECValue GetInstanceValue(ECInstanceKeyCR key, Utf8CP propertyAccessor)
         {
-        ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass(key.GetClassId());
+        ECClassCP ecClass = m_db.Schemas().GetClass(key.GetClassId());
 
         ECSqlStatement stmt;
-        stmt.Prepare(s_project->GetECDb(), Utf8String("SELECT * FROM ").append(ecClass->GetECSqlName()).c_str());
+        stmt.Prepare(m_db, Utf8String("SELECT * FROM ").append(ecClass->GetECSqlName()).c_str());
         stmt.Step();
 
         ECInstanceECSqlSelectAdapter adapter(stmt);
@@ -62,12 +65,12 @@ ECDbTestProject* DefaultECInstanceChangeHandlerTests::s_project = nullptr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DefaultECInstanceChangeHandlerTests, ChangesPrimaryInstanceValue)
     {
-    ECEntityClassCP widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
+    ECEntityClassCP widgetClass = m_db.Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
 
     EXPECT_TRUE(m_handler->CanHandle(s_project->GetECDb(), *widgetClass));
     
     // insert an empty widget
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *widgetClass);
     ECInstanceKey key = RulesEngineTestHelpers::GetInstanceKey(*widget);
 
     // verify the value is null
@@ -76,7 +79,7 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesPrimaryInstanceValue)
 
     // change the value
     ECValue valueAfter(123);
-    ECInstanceChangeResult result = m_handler->Change(s_project->GetECDb(), ChangedECInstanceInfo(*widgetClass, key.GetInstanceId()), propertyAccessor, valueAfter);
+    ECInstanceChangeResult result = m_handler->Change(m_db, ChangedECInstanceInfo(*widgetClass, key.GetInstanceId()), propertyAccessor, valueAfter);
 
     // verify
     EXPECT_EQ(SUCCESS, result.GetStatus());
@@ -89,17 +92,17 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesPrimaryInstanceValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DefaultECInstanceChangeHandlerTests, ChangesRelatedInstanceValue)
     {
-    ECEntityClassCP widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
-    ECEntityClassCP gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget")->GetEntityClassCP();
-    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECEntityClassCP widgetClass = m_db.Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
+    ECEntityClassCP gadgetClass = m_db.Schemas().GetClass("RulesEngineTest", "Gadget")->GetEntityClassCP();
+    ECRelationshipClassCP rel = m_db.Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     RelatedClassPath relationshipPath = {RelatedClass(*widgetClass, *gadgetClass, *rel, true)};
     
     EXPECT_TRUE(m_handler->CanHandle(s_project->GetECDb(), *widgetClass));
         
     // insert an empty widget
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *widget, *gadget);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *rel, *widget, *gadget);
     ECInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
     ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
 
@@ -110,7 +113,7 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesRelatedInstanceValue)
     // change the value
     ECValue valueAfter(123);
     ChangedECInstanceInfo changeInfo(*gadgetClass, gadgetKey.GetInstanceId(), *widgetClass, widgetKey.GetInstanceId(), relationshipPath);
-    ECInstanceChangeResult result = m_handler->Change(s_project->GetECDb(), changeInfo, propertyAccessor, valueAfter);
+    ECInstanceChangeResult result = m_handler->Change(m_db, changeInfo, propertyAccessor, valueAfter);
 
     // verify
     EXPECT_EQ(SUCCESS, result.GetStatus());

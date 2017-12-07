@@ -20,8 +20,8 @@ ECDbTestProject* QueryExecutorTests::s_project = nullptr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryExecutorTests::SetUpTestCase()
     {
-    QueryExecutorTests::s_project = new ECDbTestProject();
-    QueryExecutorTests::s_project->Create("QueryExecutorTests", "RulesEngineTest.01.00.ecschema.xml");
+    s_project = new ECDbTestProject();
+    s_project->Create("QueryExecutorTests", "RulesEngineTest.01.00.ecschema.xml");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -29,15 +29,88 @@ void QueryExecutorTests::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryExecutorTests::TearDownTestCase()
     {
-    delete QueryExecutorTests::s_project;
-    QueryExecutorTests::s_project = nullptr;
+    DELETE_AND_CLEAR(s_project);
     }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct TestExecutor : QueryExecutor
+    {
+    std::function<void()> m_resetCallback;
+    std::function<void(ECSqlStatement&)> m_readRecordCallback;
+
+    void _Reset() override {if (m_resetCallback) m_resetCallback();}
+    void _ReadRecord(ECSqlStatement& stmt) override {if (m_readRecordCallback) m_readRecordCallback(stmt);}
+    
+    TestExecutor(IConnectionCR connection, ECSqlStatementCache const& statements, PresentationQueryBase const& query)
+        : QueryExecutor(connection, statements, query)
+        {}
+    void SetResetCallback(std::function<void()> callback) {m_resetCallback = callback;}
+    void SetReadRecordCallback(std::function<void(ECSqlStatement&)> callback) {m_readRecordCallback = callback;}
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, GetInstanceNodes)
+TEST_F(QueryExecutorTests, StopsReadingWhenCanceled)
     {
+    // insert a couple of widgets
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    // create a query to select all widgets
+    GenericQueryPtr query = StringGenericQuery::Create("SELECT * FROM [RET].[Widget]", BoundQueryValuesList());
+
+    bool wasReset = false;
+    uint32_t recordsRead = 0;
+
+    // create the executor
+    TestExecutor executor(*m_connection, m_statementCache, *query);
+    executor.SetResetCallback([&]()
+        {
+        wasReset = true;
+        });
+    executor.SetReadRecordCallback([&](ECSqlStatement&)
+        {
+        recordsRead++;
+        });
+    TestCancelationToken cancelationToken([&]()
+        {
+        // cancel after the first record
+        return (recordsRead > 0);
+        });
+    executor.ReadRecords(&cancelationToken);
+
+    // verify the read was canceled succesfully
+    EXPECT_EQ(1, recordsRead);
+    EXPECT_TRUE(wasReset);
+
+    // attempt to read again without a cancelation token
+    wasReset = false;
+    recordsRead = 0;
+    executor.ReadRecords(nullptr);
+    
+    // verify the read succeeded
+    EXPECT_EQ(2, recordsRead);
+    EXPECT_FALSE(wasReset);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct NavigationQueryExecutorTests : QueryExecutorTests
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (NavigationQueryExecutorTests, GetInstanceNodes)
+    {
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
     ECClassSet classes;
     classes[m_widgetClass] = true;
     classes[m_gadgetClass] = true;
@@ -46,61 +119,45 @@ TEST_F (QueryExecutorTests, GetInstanceNodes)
     query->SelectAll();
     query->From(*RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(classes, "this"));
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
-
-    bvector<IECInstancePtr> expectedInstances;
-    ASSERT_EQ(SUCCESS, s_project->GetInstances(expectedInstances, "RulesEngineTest", "Widget"));
-    bvector<IECInstancePtr> expectedGadgetInstances;
-    ASSERT_EQ(SUCCESS, s_project->GetInstances(expectedGadgetInstances, "RulesEngineTest", "Gadget"));
-    expectedInstances.insert(expectedInstances.end(), expectedGadgetInstances.begin(), expectedGadgetInstances.end());
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
+    JsonNavNodePtr node;
     size_t nodesCount = executor.GetNodesCount();
-    ASSERT_EQ(expectedInstances.size(), nodesCount);
+    ASSERT_EQ(2, nodesCount);
 
-    for (size_t i = 0; i < nodesCount; i++)
-        {
-        JsonNavNodePtr node = executor.GetNode(i);
-        ASSERT_TRUE(node.IsValid());
-
-        EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
-        RefCountedPtr<IECInstance const> actualInstance = node->GetInstance();
-
-        IECInstancePtr expectedInstance;
-        for (IECInstancePtr& instance : expectedInstances)
-            {
-            if (instance->GetInstanceId().Equals(actualInstance->GetInstanceId()))
-                {
-                expectedInstance = instance;
-                break;
-                }
-            }
-        ASSERT_TRUE(expectedInstance.IsValid());
-
-        EXPECT_EQ(node->GetKey(), *ECInstanceNodeKey::Create(*expectedInstance));
-        EXPECT_STREQ(RulesEngineTestHelpers::GetDisplayLabel(*expectedInstance).c_str(), node->GetLabel().c_str());
-        }
+    node = executor.GetNode(0);
+    ASSERT_TRUE(node.IsValid());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+    EXPECT_EQ(*ECInstanceNodeKey::Create(*gadget), node->GetKey());
+    EXPECT_STREQ(RulesEngineTestHelpers::GetDisplayLabel(*gadget).c_str(), node->GetLabel().c_str());
+    
+    node = executor.GetNode(1);
+    ASSERT_TRUE(node.IsValid());
+    EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, node->GetType().c_str());
+    EXPECT_EQ(*ECInstanceNodeKey::Create(*widget), node->GetKey());
+    EXPECT_STREQ(RulesEngineTestHelpers::GetDisplayLabel(*widget).c_str(), node->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * TFS#711486
 * @bsitest                                      Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, GetInstanceNodes_GroupsByInstanceKey)
+TEST_F (NavigationQueryExecutorTests, GetInstanceNodes_GroupsByInstanceKey)
     {
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
     ECRelationshipClassCP widgetsHaveGadgetsRelationship = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetsHaveGadgets")->GetRelationshipClassCP();
 
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetsHaveGadgetsRelationship, *widget1, *gadget1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetsHaveGadgetsRelationship, *widget1, *gadget2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetsRelationship, *widget2, *gadget1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetsRelationship, *widget2, *gadget2);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetsHaveGadgetsRelationship, *widget1, *gadget1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetsHaveGadgetsRelationship, *widget1, *gadget2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget2, *gadget1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget2, *gadget2);
 
     RelatedClassPath relationshipPath = {
         RelatedClass(*m_widgetClass, *m_gadgetClass, *widgetHasGadgetsRelationship, true, "gadget", "r_WidgetHasGadgets"),
@@ -119,9 +176,9 @@ TEST_F (QueryExecutorTests, GetInstanceNodes_GroupsByInstanceKey)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     size_t nodesCount = executor.GetNodesCount();
     ASSERT_EQ(1, nodesCount);
@@ -135,13 +192,13 @@ TEST_F (QueryExecutorTests, GetInstanceNodes_GroupsByInstanceKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, GetClassGroupingNodes)
+TEST_F (NavigationQueryExecutorTests, GetClassGroupingNodes)
     {
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ECInstanceId widgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
 
     bvector<ECClassCP> classes;
     classes.push_back(m_gadgetClass);
@@ -160,9 +217,9 @@ TEST_F (QueryExecutorTests, GetClassGroupingNodes)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
     NavNodeCPtr gadgetNode = executor.GetNode(0);
@@ -180,13 +237,13 @@ TEST_F (QueryExecutorTests, GetClassGroupingNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, GetDisplayLabelGroupingNodes)
+TEST_F (NavigationQueryExecutorTests, GetDisplayLabelGroupingNodes)
     {
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ECInstanceId widgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
 
     ECClassSet classes;
     classes[m_widgetClass] = true;
@@ -200,9 +257,9 @@ TEST_F (QueryExecutorTests, GetDisplayLabelGroupingNodes)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
         
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
     
     NavNodeCPtr gadgetNode = executor.GetNode(0);
@@ -218,11 +275,11 @@ TEST_F (QueryExecutorTests, GetDisplayLabelGroupingNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
+TEST_F (NavigationQueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
     {
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("AAA"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("AAA"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("BBB"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("AAA"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("AAA"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("BBB"));});
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -234,9 +291,9 @@ TEST_F (QueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     size_t nodesCount = executor.GetNodesCount();
     ASSERT_EQ(2, nodesCount);
@@ -253,11 +310,11 @@ TEST_F (QueryExecutorTests, GetChildNodesOfDisplayLabelGroupingNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupedByLabel)
+TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupedByLabel)
     {
     IECInstancePtr widgets[2];
-    widgets[0] = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    widgets[1] = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    widgets[0] = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    widgets[1] = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -265,9 +322,9 @@ TEST_F (QueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupedByLabel)
     query->From(ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false));
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
     for (size_t i = 0; i < 2; i++)
@@ -283,10 +340,10 @@ TEST_F (QueryExecutorTests, GetChildNodesOfClassGroupingNode_NotGroupedByLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedByLabel)
+TEST_F (NavigationQueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedByLabel)
     {
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
         
     NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -296,9 +353,9 @@ TEST_F (QueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedByLabel)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
@@ -309,15 +366,15 @@ TEST_F (QueryExecutorTests, GetChildNodesOfClassGroupingNode_GroupedByLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, OverridesLabel)
+TEST_F (NavigationQueryExecutorTests, OverridesLabel)
     {
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ECInstanceId widgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
 
-    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, "\"QueryExecutorTests.OverridesLabel\"", ""));
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsInstanceNode AND ThisNode.ClassName=\"Widget\"", 1, "\"NavigationQueryExecutorTests.OverridesLabel\"", ""));
     
     ECClassSet classes;
     classes[m_widgetClass] = true;
@@ -328,9 +385,9 @@ TEST_F (QueryExecutorTests, OverridesLabel)
     query->From(*RulesEngineTestHelpers::CreateECInstanceNodesQueryForClasses(classes, "this"));
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     EXPECT_EQ(3, executor.GetNodesCount());
 
     for (size_t i = 0; i < 3; i++)
@@ -338,16 +395,16 @@ TEST_F (QueryExecutorTests, OverridesLabel)
         JsonNavNodePtr node = executor.GetNode(i);
         EXPECT_TRUE(node.IsValid());
         if (m_widgetClass == &node->GetInstance()->GetClass())
-            EXPECT_STREQ("QueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
+            EXPECT_STREQ("NavigationQueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
         else
-            EXPECT_STRNE("QueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
+            EXPECT_STRNE("NavigationQueryExecutorTests.OverridesLabel", node->GetLabel().c_str());
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, InstanceNodesSortedAlphanumerically)
+TEST_F (NavigationQueryExecutorTests, InstanceNodesSortedAlphanumerically)
     {
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -358,15 +415,15 @@ TEST_F (QueryExecutorTests, InstanceNodesSortedAlphanumerically)
 
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget10"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget9A10"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget9A9"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget10"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget9A10"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget9A9"));});
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
         {
@@ -386,15 +443,15 @@ TEST_F (QueryExecutorTests, InstanceNodesSortedAlphanumerically)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByLabel)
+TEST_F (NavigationQueryExecutorTests, ClassGroupingNodesSortedByLabel)
     {
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     ECInstanceId widgetId;
     ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&widgetId](IECInstanceR gadget){gadget.SetValue("Widget", ECValue((int64_t)widgetId.GetValue()));});
     ECInstanceId gadgetId;
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass, [&gadgetId](IECInstanceR sprocket){sprocket.SetValue("Gadget", ECValue((int64_t)gadgetId.GetValue()));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&gadgetId](IECInstanceR sprocket){sprocket.SetValue("Gadget", ECValue((int64_t)gadgetId.GetValue()));});
 
     bvector<ECClassCP> classes;
     classes.push_back(m_gadgetClass);
@@ -416,9 +473,9 @@ TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByLabel)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
@@ -437,20 +494,18 @@ TEST_F (QueryExecutorTests, ClassGroupingNodesSortedByLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyGrouping)
+TEST_F (NavigationQueryExecutorTests, PropertyGrouping)
     {
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
 
     PropertyGroup propertyGroup("", "TestImageId", false, "IntProperty", "");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_widgetClass, *m_widgetClass->GetPropertyP("IntProperty"), nullptr, propertyGroup, nullptr);
     ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
     nested->SelectContract(*contract);
@@ -460,8 +515,9 @@ TEST_F (QueryExecutorTests, PropertyGrouping)
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < 3; i++)
         {
@@ -481,24 +537,23 @@ TEST_F (QueryExecutorTests, PropertyGrouping)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyRangeGrouping)
+TEST_F (NavigationQueryExecutorTests, PropertyRangeGrouping)
     {
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(6));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(8));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(21));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(6));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(8));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(21));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
 
     PropertyGroup propertyGroup("", "", false, "IntProperty", "");
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "0", "5"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "6", "10"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("", "", "11", "20"));
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
     ECPropertyCR groupingProperty = *m_widgetClass->GetPropertyP("IntProperty");
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_widgetClass, groupingProperty, nullptr, propertyGroup, nullptr);
@@ -511,8 +566,9 @@ TEST_F (QueryExecutorTests, PropertyRangeGrouping)
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
 
     NavigationQueryExtendedData(*grouped).AddRangesData(groupingProperty, propertyGroup);    
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < 3; i++)
         {
@@ -530,24 +586,23 @@ TEST_F (QueryExecutorTests, PropertyRangeGrouping)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndImageIds)
+TEST_F (NavigationQueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndImageIds)
     {
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(6));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(8));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(21));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(6));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(8));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(21));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(100));});
 
     PropertyGroup propertyGroup("", "", false, "IntProperty", "");
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("CustomLabel2", "", "0", "5"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("CustomLabel1", "CustomImage1", "6", "10"));
     propertyGroup.AddRange(*new PropertyRangeGroupSpecification("Custom3", "CustomImage3", "11", "20"));
 
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
     ECPropertyCR groupingProperty = *m_widgetClass->GetPropertyP("IntProperty");
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_widgetClass, groupingProperty, nullptr, propertyGroup, nullptr);
@@ -560,8 +615,9 @@ TEST_F (QueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndImageIds)
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
     NavigationQueryExtendedData(*grouped).AddRangesData(groupingProperty, propertyGroup);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
         {
@@ -591,28 +647,26 @@ TEST_F (QueryExecutorTests, PropertyRangeGroupingWithCustomLabelsAndImageIds)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplayLabel)
+TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplayLabel)
     {
     ECRelationshipClassCP gadgetHasSprockets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
 
     // create our own instances
     ECInstanceInserter gadgetInserter(s_project->GetECDb(), *m_gadgetClass, nullptr);
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
     ECInstanceInserter sprocketInserter(s_project->GetECDb(), *m_sprocketClass, nullptr);
-    IECInstancePtr sprocket1 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
-    IECInstancePtr sprocket2 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
-    IECInstancePtr sprocket3 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
-    IECInstancePtr sprocket4 = RulesEngineTestHelpers::InsertInstance(*s_project, sprocketInserter, *m_sprocketClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadget1, *sprocket1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadget1, *sprocket2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadget2, *sprocket3);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *gadgetHasSprockets, *gadget2, *sprocket4);
+    IECInstancePtr sprocket1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
+    IECInstancePtr sprocket2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
+    IECInstancePtr sprocket3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
+    IECInstancePtr sprocket4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), sprocketInserter, *m_sprocketClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget1, *sprocket1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget1, *sprocket2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget2, *sprocket3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget2, *sprocket4);
 
     PropertyGroup propertyGroup("", "", false, "Gadget", "");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_sprocketClass, *m_sprocketClass->GetPropertyP("Gadget"), nullptr, propertyGroup, m_gadgetClass);
     ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
     nested->SelectContract(*contract, "alias");
@@ -624,8 +678,9 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplayLabel)
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
     JsonNavNodePtr node = executor.GetNode(0);
@@ -636,27 +691,25 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithoutDisplayLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel)
+TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel)
     {
     ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
 
     // create our own instances
     ECInstanceInserter widgetInserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
     ECInstanceInserter gadgetInserter(s_project->GetECDb(), *m_gadgetClass, nullptr);
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget4 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget2, *gadget3);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget2, *gadget4);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget1, *gadget1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget1, *gadget2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget2, *gadget3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget2, *gadget4);
 
     PropertyGroup propertyGroup("", "", false, "Widget", "");
-    
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_gadgetClass, *m_gadgetClass->GetPropertyP("Widget"), nullptr, propertyGroup, m_widgetClass);
     ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
@@ -671,8 +724,9 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
         {
@@ -689,21 +743,19 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_UsingNavigationProperty)
+TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_UsingNavigationProperty)
     {
     ECClassCP classD = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassD");
     ECClassCP classE = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassE");
     ECRelationshipClassCP classDHasClassE = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
 
     // create our own instances
-    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    IECInstancePtr instanceE2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *classDHasClassE, *instanceD, *instanceE1);
+    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceE1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr instanceE2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasClassE, *instanceD, *instanceE1);
     
     PropertyGroup propertyGroup("", "", false, "ClassD", "");
-    
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*classE, *classE->GetPropertyP("ClassD"), nullptr, propertyGroup, classD->GetEntityClassCP());
     ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
@@ -716,8 +768,9 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_UsingNa
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
@@ -728,23 +781,21 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_UsingNa
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithLabelOverride)
+TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithLabelOverride)
     {
     ECClassCP classD = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassD");
     ECClassCP classE = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassE");
     ECRelationshipClassCP classDHasClassE = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
 
     // create our own instances
-    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(*s_project, *classD);
-    IECInstancePtr instanceE1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    IECInstancePtr instanceE2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *classDHasClassE, *instanceD, *instanceE1);
+    IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
+    IECInstancePtr instanceE1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr instanceE2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classDHasClassE, *instanceD, *instanceE1);
     
     PropertyGroup propertyGroup("", "", false, "ClassD", "");
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsInstanceNode ANDALSO ThisNode.ClassName=\"ClassD\"", 1, "\"MyLabel\"", ""));
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*classE, *classE->GetPropertyP("ClassD"), nullptr, propertyGroup, classD->GetEntityClassCP());
     ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
     nested->SelectContract(*contract, "alias");
@@ -756,8 +807,9 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithLabelOverride)
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
@@ -768,27 +820,25 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithLabelOverride)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_DifferentInstancesWithSameLabelGetMerged)
+TEST_F (NavigationQueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_DifferentInstancesWithSameLabelGetMerged)
     {
     ECRelationshipClassCP widgetHasGadgets = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
 
     // create our own instances
     ECInstanceInserter widgetInserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetName"));});
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetName"));});
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetName"));});
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), widgetInserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetName"));});
     ECInstanceInserter gadgetInserter(s_project->GetECDb(), *m_gadgetClass, nullptr);
-    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    IECInstancePtr gadget4 = RulesEngineTestHelpers::InsertInstance(*s_project, gadgetInserter, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget1);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget2);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget2, *gadget3);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget2, *gadget4);
+    IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    IECInstancePtr gadget4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), gadgetInserter, *m_gadgetClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget1, *gadget1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget1, *gadget2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget2, *gadget3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget2, *gadget4);
 
     PropertyGroup propertyGroup("", "", false, "Widget", "");
-    
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
 
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_gadgetClass, *m_gadgetClass->GetPropertyP("Widget"), nullptr, propertyGroup, m_widgetClass);
     ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
@@ -803,45 +853,14 @@ TEST_F (QueryExecutorTests, PropertyGroupingByForeignKeyWithDisplayLabel_Differe
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
     JsonNavNodePtr node = executor.GetNode(0);
     ASSERT_TRUE(node.IsValid());
     EXPECT_STREQ("WidgetName", node->GetLabel().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, HandlesUnionSelectionFromClassWithPointProperty)
-    {
-    ECEntityClassCP classH = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
-    ECEntityClassCP classE = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
-
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classH);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classE);
-
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
-    AddField(*descriptor, *classH, ContentDescriptor::Property("h", *classH, *classH->GetPropertyP("PointProperty")->GetAsPrimitiveProperty()));
-    AddField(*descriptor, *classE, ContentDescriptor::Property("e", *classE, *classE->GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
-
-    ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
-    q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, classH, *q1), "h");
-    q1->From(*classH, false, "h");
-
-    ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
-    q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, classE, *q2), "e");
-    q2->From(*classE, false, "e");
-
-    UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
-    
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
-    
-    ASSERT_EQ(2, executor.GetRecordsCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -891,17 +910,17 @@ static void AssertNodeGroupsECInstances(NavNodeCR node, bvector<ECInstanceKey> c
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForECInstanceNodes)
+TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForECInstanceNodes)
     {
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
     ComplexNavigationQueryPtr query = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_widgetClass, true, "this");
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
     JsonNavNodePtr node1 = executor.GetNode(0);
@@ -916,11 +935,11 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForECInstanceNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForECClassGroupingNodes)
+TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForECClassGroupingNodes)
     {
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     
     bvector<ECClassCP> classes;
     classes.push_back(m_gadgetClass);
@@ -938,9 +957,9 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForECClassGroupingNodes)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Class);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
     
     JsonNavNodePtr gadgetNode = executor.GetNode(0);
@@ -956,15 +975,15 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForECClassGroupingNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGroupingNodes)
+TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGroupingNodes)
     {
     ECClassCP classE = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE");
     ECClassCP classF = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF");
     ECClassCP classG = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassG");
 
-    IECInstancePtr itemF1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classF);
-    IECInstancePtr itemF2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classF);
-    IECInstancePtr itemG = RulesEngineTestHelpers::InsertInstance(*s_project, *classG);
+    IECInstancePtr itemF1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
+    IECInstancePtr itemF2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
+    IECInstancePtr itemG = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
     
     NavigationQueryContractPtr contract = BaseECClassGroupingNodesQueryContract::Create(classE->GetId());
 
@@ -986,9 +1005,9 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGroupingNodes)
     sorted->From(*grouped);
     sorted->OrderBy("DisplayLabel");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &sorted->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *sorted);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &sorted->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *sorted);
+    executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
     JsonNavNodePtr node = executor.GetNode(0);
@@ -1002,10 +1021,10 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForBaseClassGroupingNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroupingNodes)
+TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroupingNodes)
     {
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);    
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);    
 
     NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -1016,9 +1035,9 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroupingNodes)
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::DisplayLabelGroupingNodes);
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::DisplayLabel);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     ASSERT_EQ(1, executor.GetNodesCount());
     
     JsonNavNodePtr widgetNode = executor.GetNode(0);
@@ -1031,20 +1050,18 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForDisplayLabelGroupingNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForPropertyGroupingNodes)
+TEST_F(NavigationQueryExecutorTests, SetsGroupedInstanceKeysForPropertyGroupingNodes)
     {
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
-    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
-    IECInstancePtr widget4 = RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
-    IECInstancePtr widget5 = RulesEngineTestHelpers::InsertInstance(*s_project, inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
+    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
+    IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    IECInstancePtr widget3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
+    IECInstancePtr widget4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(-1));});
+    IECInstancePtr widget5 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(10));});
 
     PropertyGroup propertyGroup("", "", false, "IntProperty", "");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_widgetClass, *m_widgetClass->GetPropertyP("IntProperty"), nullptr, propertyGroup, nullptr);
     ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
     nested->SelectContract(*contract);
@@ -1054,8 +1071,9 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForPropertyGroupingNodes)
     grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *grouped);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *grouped);
+    executor.ReadRecords();
     ASSERT_EQ(3, executor.GetNodesCount());
     
     JsonNavNodePtr node1 = executor.GetNode(0);
@@ -1077,12 +1095,12 @@ TEST_F(QueryExecutorTests, SetsGroupedInstanceKeysForPropertyGroupingNodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
+TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     {
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass);
-    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(*s_project, *m_sprocketClass);
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *m_widgetHasGadgetsClass, *widget, *gadget);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+    IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *m_widgetHasGadgetsClass, *widget, *gadget);
     
     RelatedClass widgetRelatedToGadgetInfo(*m_gadgetClass, *m_widgetClass, *m_widgetHasGadgetsClass, false, "w");
     bvector<RelatedClass> gadgetRelatedClasses;
@@ -1094,9 +1112,9 @@ TEST_F(QueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*gadgetsQuery, *sprocketsQuery);
     unionQuery->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &unionQuery->GetExtendedData());
-    NavigationQueryExecutor executor(m_nodesFactory, s_project->GetECDb(), m_statementCache, *unionQuery);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &unionQuery->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, m_statementCache, *unionQuery);
+    executor.ReadRecords();
     ASSERT_EQ(2, executor.GetNodesCount());
 
     JsonNavNodePtr node = executor.GetNode(0);
@@ -1112,17 +1130,57 @@ TEST_F(QueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     ASSERT_TRUE(NavNodeExtendedData(*node).GetRelatedInstanceKeys().empty());
     }
 
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct ContentQueryExecutorTests : QueryExecutorTests
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentQueryExecutorTests, HandlesUnionSelectionFromClassWithPointProperty)
+    {
+    ECEntityClassCP classH = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
+    ECEntityClassCP classE = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create();
+    AddField(*descriptor, *classH, ContentDescriptor::Property("h", *classH, *classH->GetPropertyP("PointProperty")->GetAsPrimitiveProperty()));
+    AddField(*descriptor, *classE, ContentDescriptor::Property("e", *classE, *classE->GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
+
+    ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
+    q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, classH, *q1), "h");
+    q1->From(*classH, false, "h");
+
+    ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
+    q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, classE, *q2), "e");
+    q2->From(*classE, false, "e");
+
+    UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
+    
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+    
+    ASSERT_EQ(2, executor.GetRecordsCount());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, HandlesResultsMergingFromOneClass)
+TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromOneClass)
     {
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("GadgetId"));
         instance.SetValue("Description", ECValue("Gadget 1"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("GadgetId"));
         instance.SetValue("Description", ECValue("Gadget 2"));
@@ -1140,9 +1198,9 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromOneClass)
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query), "gadget");
     query->From(*m_gadgetClass, false, "gadget");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     ASSERT_EQ(1, executor.GetRecordsCount());
     ContentSetItemPtr record = executor.GetRecord(0);
@@ -1166,14 +1224,14 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromOneClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
+TEST_F(ContentQueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     {
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Gadget"));
         instance.SetValue("Description", ECValue("Gadget description"));
         });
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Widget"));
         instance.SetValue("Description", ECValue("Widget description"));
@@ -1211,9 +1269,9 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
     query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query));
     query->From(*UnionContentQuery::Create(*q1, *q2));    
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     ASSERT_EQ(1, executor.GetRecordsCount());
     ContentSetItemPtr record = executor.GetRecord(0);
@@ -1232,10 +1290,10 @@ TEST_F(QueryExecutorTests, HandlesResultsMergingFromMultipleClasses)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, HandlesStructProperties)
+TEST_F(ContentQueryExecutorTests, HandlesStructProperties)
     {
     ECEntityClassCP classI = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassI")->GetEntityClassCP();
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classI, [](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classI, [](IECInstanceR instance)
         {
         instance.SetValue("StringProperty", ECValue("1"));
         instance.SetValue("StructProperty.IntProperty", ECValue(2));
@@ -1251,9 +1309,9 @@ TEST_F(QueryExecutorTests, HandlesStructProperties)
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query, false), "this");
     query->From(*classI, false, "this");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     ASSERT_EQ(1, executor.GetRecordsCount());
     ContentSetItemPtr record = executor.GetRecord(0);
@@ -1282,11 +1340,11 @@ TEST_F(QueryExecutorTests, HandlesStructProperties)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, HandlesArrayProperties)
+TEST_F(ContentQueryExecutorTests, HandlesArrayProperties)
     {
     ECClassCP classStruct1 = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Struct1");
     ECEntityClassCP classR = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassR")->GetEntityClassCP();
-    RulesEngineTestHelpers::InsertInstance(*s_project, *classR, [&classStruct1](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classR, [&classStruct1](IECInstanceR instance)
         {
         instance.AddArrayElements("IntsArray", 2);
         instance.SetValue("IntsArray", ECValue(2), 0);
@@ -1315,9 +1373,9 @@ TEST_F(QueryExecutorTests, HandlesArrayProperties)
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query, false), "this");
     query->From(*classR, false, "this");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     ASSERT_EQ(1, executor.GetRecordsCount());
     ContentSetItemPtr record = executor.GetRecord(0);
@@ -1346,12 +1404,12 @@ TEST_F(QueryExecutorTests, HandlesArrayProperties)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SelectsRelatedProperties)
+TEST_F(ContentQueryExecutorTests, SelectsRelatedProperties)
     {
     ECRelationshipClassCP widgetHasGadgetsRelationship = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Gadget"));});
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget"));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgetsRelationship, *widget, *gadget);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Gadget"));});
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget, *gadget);
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("this", *m_gadgetClass, *m_gadgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
@@ -1363,9 +1421,9 @@ TEST_F(QueryExecutorTests, SelectsRelatedProperties)
     query->From(*m_gadgetClass, false, "this");
     query->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *widgetHasGadgetsRelationship, false, "rel_RET_Widget_0"), true);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     ASSERT_EQ(1, executor.GetRecordsCount());
     ContentSetItemPtr record = executor.GetRecord(0);
@@ -1388,17 +1446,17 @@ TEST_F(QueryExecutorTests, SelectsRelatedProperties)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhenSelectingFromMultipleClasses)
+TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhenSelectingFromMultipleClasses)
     {
     ECEntityClassCR classD = *s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassD")->GetEntityClassCP();
     ECEntityClassCR classE = *s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
     ECEntityClassCR classF = *s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
-    ECRelationshipClassCR classDHasClassERelationship = *s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
+    ECRelationshipClassCR classDHasClassERelationship = *s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "ClassDHasClassE")->GetRelationshipClassCP();
 
-    IECInstancePtr dInstance = RulesEngineTestHelpers::InsertInstance(*s_project, classD, [](IECInstanceR instance){instance.SetValue("StringProperty", ECValue("D Property"));});
-    IECInstancePtr eInstance = RulesEngineTestHelpers::InsertInstance(*s_project, classE, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(11));});
-    IECInstancePtr fInstance = RulesEngineTestHelpers::InsertInstance(*s_project, classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(22));});
-    RulesEngineTestHelpers::InsertRelationship(*s_project, classDHasClassERelationship, *dInstance, *eInstance);
+    IECInstancePtr dInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), classD, [](IECInstanceR instance){instance.SetValue("StringProperty", ECValue("D Property"));});
+    IECInstancePtr eInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), classE, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(11));});
+    IECInstancePtr fInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), classF, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(22));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), classDHasClassERelationship, *dInstance, *eInstance);
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
     AddField(*descriptor, classE, ContentDescriptor::Property("this", classE, *classE.GetPropertyP("IntProperty")->GetAsPrimitiveProperty()));
@@ -1416,9 +1474,9 @@ TEST_F(QueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhenSelect
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
 
     ASSERT_EQ(2, executor.GetRecordsCount());
 
@@ -1459,10 +1517,10 @@ TEST_F(QueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhenSelect
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPropertyValues)
+TEST_F(ContentQueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPropertyValues)
     {
     TestPropertyFormatter formatter;
-    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance)
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Test 1"));
         instance.SetValue("Description", ECValue("Test 2"));
@@ -1482,10 +1540,11 @@ TEST_F(QueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPro
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query), "widget");
     query->From(*m_widgetClass, false, "widget");
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), &m_relatedPathsCache, nullptr);
+    CustomFunctionsContext ctx(schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
     executor.SetPropertyFormatter(formatter);
+    executor.ReadRecords();
     
     ASSERT_EQ(1, executor.GetRecordsCount());
     ContentSetItemPtr record = executor.GetRecord(0);
@@ -1511,9 +1570,9 @@ TEST_F(QueryExecutorTests, UsesSuppliedECPropertyFormatterToFormatPrimitiveECPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
@@ -1525,9 +1584,11 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
     query->From(*m_widgetClass, false, "widget");
     query->GroupByContract(*contract);
 
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), &m_relatedPathsCache, nullptr);
+    CustomFunctionsContext ctx(schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+
     ASSERT_EQ(2, executor.GetRecordsCount());  
 
     rapidjson::Document expectedValues;
@@ -1549,11 +1610,11 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
+TEST_F(ContentQueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
 
@@ -1566,9 +1627,11 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
     query->From(*m_widgetClass, false, "widget");
     query->GroupByContract(*contract);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), &m_relatedPathsCache, nullptr);
+    CustomFunctionsContext ctx(schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+
     ASSERT_EQ(2, executor.GetRecordsCount());  
 
     rapidjson::Document expectedValues;
@@ -1592,9 +1655,9 @@ TEST_F(QueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
     {
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
-    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(*s_project, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget1"));});
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category("Misc.", "Misc.", 0, false), "MyID", "MyID");
@@ -1618,9 +1681,11 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), &m_relatedPathsCache, nullptr);
+    CustomFunctionsContext ctx(schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+
     ASSERT_EQ(2, executor.GetRecordsCount());  
 
     rapidjson::Document expectedValues;
@@ -1645,8 +1710,8 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
 TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
     {
     ECEntityClassCP classH = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234566666, 2.0, 3.0)));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(*s_project, *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234567777, 2.0, 3.0)));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234566666, 2.0, 3.0)));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234567777, 2.0, 3.0)));});
 
     ContentDescriptorPtr descriptor = ContentDescriptor::Create();
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
@@ -1658,9 +1723,10 @@ TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
     query->From(*classH, false, "h");
     query->GroupByContract(*contract);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
-    ContentQueryExecutor executor(s_project->GetECDb(), m_statementCache, *query);
+    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), &m_relatedPathsCache, nullptr);
+    CustomFunctionsContext ctx(schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
+    ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
+    executor.ReadRecords();
     
     ASSERT_EQ(1, executor.GetRecordsCount());
     }

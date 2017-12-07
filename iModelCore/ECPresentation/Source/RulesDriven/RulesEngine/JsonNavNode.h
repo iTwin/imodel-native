@@ -55,7 +55,7 @@ private:
     ECPRESENTATION_EXPORT void AddMember(Utf8CP name, rapidjson::Value& value);
 
 protected:
-    void SetECDb(BeSQLite::EC::ECDbCR ecdb) {m_ecdb = &ecdb;}
+    void SetECDb(ECDbCR ecdb) {m_ecdb = &ecdb;}
     void SetInstance(IECInstanceCR instance) {m_instance = &instance;}
 
 protected:
@@ -64,7 +64,6 @@ protected:
     ECPRESENTATION_EXPORT Utf8String _GetLabel() const override;
     ECPRESENTATION_EXPORT Utf8String _GetDescription() const override;
     ECPRESENTATION_EXPORT virtual NavNodeKeyCPtr _CreateKey() const override;
-    ECPRESENTATION_EXPORT RefCountedPtr<IECInstance const> _GetInstance() const override;
     ECPRESENTATION_EXPORT Utf8String _GetExpandedImageId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetCollapsedImageId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetForeColor() const override;
@@ -88,6 +87,7 @@ public:
 
     ECPRESENTATION_EXPORT RapidJsonValueCR GetJson() const;
     bool DeterminedChildren() const {return m_json.HasMember(NAVNODE_HasChildren);}
+    ECPRESENTATION_EXPORT RefCountedPtr<IECInstance const> GetInstance() const;
     
     ECPRESENTATION_EXPORT void SetLabel(Utf8CP label);
     ECPRESENTATION_EXPORT void SetImageId(Utf8CP imageId);
@@ -115,32 +115,32 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE JsonNavNodesFactory : INavNodesFactory
 {
 protected:
-    NavNodePtr _CreateECInstanceNode(BeSQLite::EC::ECDbCR db, ECClassId classId, BeSQLite::EC::ECInstanceId instanceId, Utf8CP label) const {return CreateECInstanceNode(db, classId, instanceId, label);}
-    NavNodePtr _CreateECInstanceNode(BeSQLite::BeGuidCR connectionId, IECInstanceCR instance, Utf8CP label) const {return CreateECInstanceNode(connectionId, instance, label);}
-    NavNodePtr _CreateECClassGroupingNode(BeSQLite::BeGuidCR connectionId, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const {return CreateECClassGroupingNode(connectionId, ecClass, label, groupedInstanceKeys);}
-    NavNodePtr _CreateECRelationshipGroupingNode(BeSQLite::BeGuidCR connectionId, ECRelationshipClassCR relationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const {return CreateECRelationshipGroupingNode(connectionId, relationshipClass, label, groupedInstanceKeys);}
-    NavNodePtr _CreateECPropertyGroupingNode(BeSQLite::BeGuidCR connectionId, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const {return CreateECPropertyGroupingNode(connectionId, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);}
-    NavNodePtr _CreateDisplayLabelGroupingNode(BeSQLite::BeGuidCR connectionId, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const {return CreateDisplayLabelGroupingNode(connectionId, label, groupedInstanceKeys);}
-    NavNodePtr _CreateCustomNode(BeSQLite::BeGuidCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const {return CreateCustomNode(connectionId, label, description, imageId, type);}
+    virtual NavNodePtr _CreateECInstanceNode(IConnectionCR db, ECClassId classId, BeSQLite::EC::ECInstanceId instanceId, Utf8CP label) const override {return CreateECInstanceNode(db, classId, instanceId, label);}
+    virtual NavNodePtr _CreateECInstanceNode(Utf8StringCR connectionId, IECInstanceCR instance, Utf8CP label) const override {return CreateECInstanceNode(connectionId, instance, label);}
+    virtual NavNodePtr _CreateECClassGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const override {return CreateECClassGroupingNode(connectionId, ecClass, label, groupedInstanceKeys);}
+    virtual NavNodePtr _CreateECRelationshipGroupingNode(Utf8StringCR connectionId, ECRelationshipClassCR relationshipClass, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const override {return CreateECRelationshipGroupingNode(connectionId, relationshipClass, label, groupedInstanceKeys);}
+    virtual NavNodePtr _CreateECPropertyGroupingNode(Utf8StringCR connectionId, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR groupedInstanceKeys) const override {return CreateECPropertyGroupingNode(connectionId, ecClass, ecProperty, label, imageId, groupingValue, isRangeGrouping, groupedInstanceKeys);}
+    virtual NavNodePtr _CreateDisplayLabelGroupingNode(Utf8StringCR connectionId, Utf8CP label, GroupedInstanceKeysListCR groupedInstanceKeys) const override {return CreateDisplayLabelGroupingNode(connectionId, label, groupedInstanceKeys);}
+    virtual NavNodePtr _CreateCustomNode(Utf8StringCR connectionId, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const override {return CreateCustomNode(connectionId, label, description, imageId, type);}
 
 public:
-    ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, BeSQLite::EC::ECDbCR, ECClassId, BeSQLite::EC::ECInstanceId, Utf8CP label) const;
-    ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, BeSQLite::BeGuidCR, IECInstanceCR, Utf8CP label) const;
-    ECPRESENTATION_EXPORT void InitECClassGroupingNode(JsonNavNodeR, BeSQLite::BeGuidCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT void InitECRelationshipGroupingNode(JsonNavNodeR, BeSQLite::BeGuidCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT void InitECPropertyGroupingNode(JsonNavNodeR, BeSQLite::BeGuidCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT void InitDisplayLabelGroupingNode(JsonNavNodeR, BeSQLite::BeGuidCR, Utf8CP label, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT void InitCustomNode(JsonNavNodeR, BeSQLite::BeGuidCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
-    ECPRESENTATION_EXPORT void InitFromJson(JsonNavNodeR, BeSQLite::EC::ECDbCR, rapidjson::Document&&) const;
+    ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, IConnectionCR, ECClassId, BeSQLite::EC::ECInstanceId, Utf8CP label) const;
+    ECPRESENTATION_EXPORT void InitECInstanceNode(JsonNavNodeR, Utf8StringCR, IECInstanceCR, Utf8CP label) const;
+    ECPRESENTATION_EXPORT void InitECClassGroupingNode(JsonNavNodeR, Utf8StringCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT void InitECRelationshipGroupingNode(JsonNavNodeR, Utf8StringCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT void InitECPropertyGroupingNode(JsonNavNodeR, Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT void InitDisplayLabelGroupingNode(JsonNavNodeR, Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT void InitCustomNode(JsonNavNodeR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
+    ECPRESENTATION_EXPORT void InitFromJson(JsonNavNodeR, IConnectionCR, rapidjson::Document&&) const;
 
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(BeSQLite::EC::ECDbCR, ECClassId, BeSQLite::EC::ECInstanceId, Utf8CP label) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(BeSQLite::BeGuidCR, IECInstanceCR, Utf8CP label) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECClassGroupingNode(BeSQLite::BeGuidCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECRelationshipGroupingNode(BeSQLite::BeGuidCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECPropertyGroupingNode(BeSQLite::BeGuidCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateDisplayLabelGroupingNode(BeSQLite::BeGuidCR, Utf8CP label, GroupedInstanceKeysListCR) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateCustomNode(BeSQLite::BeGuidCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateFromJson(BeSQLite::EC::ECDbCR, rapidjson::Document&&) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(IConnectionCR, ECClassId, BeSQLite::EC::ECInstanceId, Utf8CP label) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(Utf8StringCR, IECInstanceCR, Utf8CP label) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECClassGroupingNode(Utf8StringCR, ECClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECRelationshipGroupingNode(Utf8StringCR, ECRelationshipClassCR, Utf8CP label, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateECPropertyGroupingNode(Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateDisplayLabelGroupingNode(Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateCustomNode(Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateFromJson(IConnectionCR, rapidjson::Document&&) const;
 };
 typedef JsonNavNodesFactory const& JsonNavNodesFactoryCR;
 

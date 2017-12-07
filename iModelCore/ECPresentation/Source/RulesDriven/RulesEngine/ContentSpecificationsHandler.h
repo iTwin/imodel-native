@@ -43,6 +43,8 @@ struct ContentSpecificationsHandler
     struct Context
     {
     private:
+        IConnectionManagerCR m_connections;
+        IConnectionCR m_connection;
         PresentationRuleSetCR m_ruleset;
         Utf8CP m_preferredDisplayType;
         ECSchemaHelper const& m_helper;
@@ -53,9 +55,11 @@ struct ContentSpecificationsHandler
         bmap<ECClassCP, bvector<RelatedClass>> m_handledNavigationPropertiesPaths;
 
     public:
-        Context(ECSchemaHelper const& helper, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType) 
-            : m_helper(helper), m_ruleset(ruleset), m_preferredDisplayType(preferredDisplayType)
+        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType) 
+            : m_helper(helper), m_connections(connections), m_connection(connection), m_ruleset(ruleset), m_preferredDisplayType(preferredDisplayType)
             {}
+        IConnectionManagerCR GetConnections() const {return m_connections;}
+        IConnectionCR GetConnection() const {return m_connection;}
         PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
         Utf8CP GetPreferredDisplayType() const {return m_preferredDisplayType;}
         void SetPreferredDisplayType(Utf8CP value) {m_preferredDisplayType = value;}
