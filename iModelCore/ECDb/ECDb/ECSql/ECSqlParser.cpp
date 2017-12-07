@@ -26,14 +26,14 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
 
     if (parseTree == nullptr || !error.empty())
         {
-        GetIssueReporter().Report("Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
+        Issues().Report("Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
         return nullptr;
         }
 
     if (!parseTree->isRule())
         {
         BeAssert(false && "ECSQL grammar has changed, but parser wasn't adopted.");
-        GetIssueReporter().Report("ECSQL grammar has changed, but parser wasn't adopted.");
+        Issues().Report("ECSQL grammar has changed, but parser wasn't adopted.");
         return nullptr;
         }
 
@@ -81,12 +81,12 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
             }
 
             case OSQLParseNode::manipulative_statement:
-                GetIssueReporter().Report("Manipulative statements are not supported.");
+                Issues().Report("Manipulative statements are not supported.");
                 return nullptr;
 
             default:
                 BeAssert(false && "Not a valid statement");
-                GetIssueReporter().Report("Not a valid statement");
+                Issues().Report("Not a valid statement");
                 return nullptr;
         };
 
@@ -161,44 +161,45 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSele
     if (SUCCESS != ParseSelection(selectClauseExp, parseNode->getChild(2)))
         return ERROR;
 
-    OSQLParseNode const* table_exp = parseNode->getChild(3);
-    if (table_exp == nullptr)
+    OSQLParseNode const* tableExpNode = parseNode->getChild(3);
+    if (tableExpNode == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
 
+    BeAssert(tableExpNode->count() == 7);
     std::unique_ptr<FromExp> fromExp = nullptr;
-    if (SUCCESS != ParseFromClause(fromExp, table_exp->getChild(0)))
+    if (SUCCESS != ParseFromClause(fromExp, tableExpNode->getChild(0)))
         return ERROR;
 
     std::unique_ptr<WhereExp> whereExp = nullptr;
-    if (SUCCESS != ParseWhereClause(whereExp, table_exp->getChild(1)))
+    if (SUCCESS != ParseWhereClause(whereExp, tableExpNode->getChild(1)))
         return ERROR;
 
     std::unique_ptr<GroupByExp> groupByExp = nullptr;
-    if (SUCCESS != ParseGroupByClause(groupByExp, table_exp->getChild(2)))
+    if (SUCCESS != ParseGroupByClause(groupByExp, tableExpNode->getChild(2)))
         return ERROR;
 
     std::unique_ptr<HavingExp> havingExp = nullptr;
-    if (SUCCESS != ParseHavingClause(havingExp, table_exp->getChild(3)))
+    if (SUCCESS != ParseHavingClause(havingExp, tableExpNode->getChild(3)))
         return ERROR;
 
     std::unique_ptr<OrderByExp> orderByExp = nullptr;
-    if (SUCCESS != ParseOrderByClause(orderByExp, table_exp->getChild(5)))
+    if (SUCCESS != ParseOrderByClause(orderByExp, tableExpNode->getChild(4)))
         return ERROR;
 
     std::unique_ptr<LimitOffsetExp> limitOffsetExp = nullptr;
-    if (SUCCESS != ParseLimitOffsetClause(limitOffsetExp, table_exp->getChild(6)))
+    if (SUCCESS != ParseLimitOffsetClause(limitOffsetExp, tableExpNode->getChild(5)))
         return ERROR;
 
     std::unique_ptr<OptionsExp> optionsExp = nullptr;
-    if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, table_exp->getChild(7)))
+    if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, tableExpNode->getChild(6)))
         return ERROR;
 
     if (selectClauseExp == nullptr || fromExp == nullptr)
         {
-        GetIssueReporter().Report("ECSQL without select clause or from clause is invalid.");
+        Issues().Report("ECSQL without select clause or from clause is invalid.");
         return ERROR;
         }
 
@@ -232,7 +233,7 @@ BentleyStatus ECSqlParser::ParseSelection(std::unique_ptr<SelectClauseExp>& exp,
     if (!SQL_ISRULE(parseNode, scalar_exp_commalist))
         {
         BeAssert(false && "Wrong grammar");
-        GetIssueReporter().Report("Wrong grammar");
+        Issues().Report("Wrong grammar");
         return ERROR;
         }
 
@@ -263,7 +264,7 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     if (!SQL_ISRULE(parseNode, derived_column))
         {
         BeAssert(false && "Wrong grammar");
-        GetIssueReporter().Report("Wrong grammar");
+        Issues().Report("Wrong grammar");
         return ERROR;
         }
 
@@ -294,7 +295,7 @@ BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementE
     insertExp = nullptr;
     //insert does not support polymorphic classes. Passing false therefore.
     std::unique_ptr<ClassNameExp> classNameExp = nullptr;
-    BentleyStatus stat = ParseTableNode(classNameExp, parseNode.getChild(2), ECSqlType::Insert, false);
+    BentleyStatus stat = ParseTableNode(classNameExp, *parseNode.getChild(2), ECSqlType::Insert);
     if (SUCCESS != stat)
         return stat;
 
@@ -334,7 +335,7 @@ BentleyStatus ECSqlParser::ParseUpdateStatementSearched(std::unique_ptr<UpdateSt
 
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
-        GetIssueReporter().Report("ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        Issues().Report("ECSQL UPDATE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ERROR;
         }
 
@@ -400,7 +401,7 @@ BentleyStatus ECSqlParser::ParseDeleteStatementSearched(std::unique_ptr<DeleteSt
 
     if (classRefExp->GetType() != Exp::Type::ClassName)
         {
-        GetIssueReporter().Report("ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
+        Issues().Report("ECSQL DELETE statements only support ECClass references as target. Subqueries or join clauses are not supported.");
         return ERROR;
         }
 
@@ -523,55 +524,7 @@ BentleyStatus ECSqlParser::ParseColumnRefCommalist(std::unique_ptr<PropertyNameL
     return SUCCESS;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseFold(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
-    {
-    if (!SQL_ISRULE(parseNode, fold))
-        {
-        BeAssert(false && "Wrong grammar. Expecting fold");
-        return ERROR;
-        }
 
-    //first node is LOWER | UPPER, second is (, third is arg, fourth is )
-    const size_t childCount = parseNode->count();
-    if (childCount != 4)
-        {
-        BeAssert(false && "fold is expected to have 4 children");
-        return ERROR;
-        }
-
-    const uint32_t functionNameTokenId = parseNode->getChild(0)->getTokenID();
-    Utf8CP functionName = nullptr;
-    switch (functionNameTokenId)
-        {
-            case SQL_TOKEN_LOWER:
-                functionName = "LOWER";
-                break;
-            case SQL_TOKEN_UPPER:
-                functionName = "UPPER";
-                break;
-
-            default:
-            {
-            BeAssert(false && "Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
-            GetIssueReporter().Report("Wrong grammar. Only LOWER or UPPER are valid function names for fold rule.");
-            return ERROR;
-            }
-        }
-
-    std::unique_ptr<FunctionCallExp> foldExp = std::make_unique<FunctionCallExp>(Utf8String(functionName));
-
-    OSQLParseNode const* argNode = parseNode->getChild(2);
-    std::unique_ptr<ValueExp> valueExp = nullptr;
-    if (SUCCESS != ParseValueExp(valueExp, argNode))
-        return ERROR;
-
-    foldExp->AddArgument(std::move(valueExp));
-    exp = std::move(foldExp);
-    return SUCCESS;
-    }
 
 
 //-----------------------------------------------------------------------------------------
@@ -630,13 +583,12 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<PropertyNameExp>& exp,
     return ParsePropertyPath(exp, parseNode->getFirst());
     }
 
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseParameter(std::unique_ptr<ValueExp>& exp, OSQLParseNode const* parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, parameter) && parseNode->count() == 3)
+    if (!SQL_ISRULE(parseNode, parameter))
         {
         BeAssert(false && "Wrong grammar");
         return ERROR;
@@ -655,7 +607,7 @@ BentleyStatus ECSqlParser::ParseParameter(std::unique_ptr<ValueExp>& exp, OSQLPa
         if (!paramTokenValue.Equals("?"))
             {
             BeAssert(paramTokenValue.Equals("?") && "Invalid grammar. Only : or ? allowed as parameter tokens");
-            GetIssueReporter().Report("Invalid grammar. Only : or ? allowed as parameter tokens");
+            Issues().Report("Invalid grammar. Only : or ? allowed as parameter tokens");
             return ERROR;
             }
         }
@@ -734,7 +686,7 @@ BentleyStatus ECSqlParser::ParseCastSpec(std::unique_ptr<ValueExp>& exp, OSQLPar
         BeAssert(castTargetNode->getChild(1)->getNodeType() == SQL_NODE_ARRAY_INDEX);
         if (!castTargetNode->getChild(1)->getTokenValue().empty())
             {
-            GetIssueReporter().Report("Invalid syntax for CAST target array type. Array type must be specified with empty square brackets.");
+            Issues().Report("Invalid syntax for CAST target array type. Array type must be specified with empty square brackets.");
             return ERROR;
             }
         }
@@ -790,7 +742,7 @@ BentleyStatus ECSqlParser::ParseFctSpec(std::unique_ptr<ValueExp>& exp, OSQLPars
     if (functionName.empty())
         {
         const uint32_t tokenId = functionNameNode->getTokenID();
-        GetIssueReporter().Report("Function with token ID %" PRIu32 " not yet supported.", tokenId);
+        Issues().Report("Function with token ID %" PRIu32 " not yet supported.", tokenId);
         return ERROR;
         }
 
@@ -914,7 +866,7 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OS
 
             default:
             {
-            GetIssueReporter().Report("Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
+            Issues().Report("Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
             return ERROR;
             }
         }
@@ -1118,7 +1070,7 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(std::unique_ptr<ValueExp>& exp,
         if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
             return LiteralValueExp::Create(exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo(ECN::PRIMITIVETYPE_DateTime));
 
-        GetIssueReporter().Report("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
+        Issues().Report("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
         return ERROR;
         }
 
@@ -1160,7 +1112,7 @@ BentleyStatus ECSqlParser::ParseFromClause(std::unique_ptr<FromExp>& exp, OSQLPa
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQLParseNode const* parseNode, ECSqlType ecsqlType) const
     {
-    if (SQL_ISRULE(parseNode, qualified_join) || SQL_ISRULE(parseNode, ecrelationship_join))
+    if (SQL_ISRULE(parseNode, OSQLParseNode::Rule::qualified_join) || SQL_ISRULE(parseNode, OSQLParseNode::Rule::ecrelationship_join))
         {
         std::unique_ptr<JoinExp> joinExp = nullptr;
         if (SUCCESS != ParseJoinedTable(joinExp, parseNode))
@@ -1177,13 +1129,13 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
         }
 
     OSQLParseNode const* opt_only = parseNode->getChild(0);
-    OSQLParseNode const* second = parseNode->getChild(1);
+    OSQLParseNode const* secondNode = parseNode->getChild(1);
 
     const bool isPolymorphic = !(opt_only->getTokenID() == SQL_TOKEN_ONLY);
-    if (SQL_ISRULE(second, table_node))
+    if (SQL_ISRULE(secondNode, OSQLParseNode::Rule::table_node_with_opt_member_func_call))
         {
         std::unique_ptr<ClassNameExp> classNameExp = nullptr;
-        if (SUCCESS != ParseTableNode(classNameExp, second, ecsqlType, isPolymorphic))
+        if (SUCCESS != ParseTableNodeWithOptMemberCall(classNameExp, *secondNode, ecsqlType, isPolymorphic))
             return ERROR;
 
         OSQLParseNode const* table_primary_as_range_column = parseNode->getChild(2);
@@ -1206,10 +1158,10 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
         return SUCCESS;
         }
 
-    if (SQL_ISRULE(second, subquery))
+    if (SQL_ISRULE(secondNode, OSQLParseNode::Rule::subquery))
         {
         std::unique_ptr<SubqueryExp> subqueryExp = nullptr;
-        if (SUCCESS != ParseSubquery(subqueryExp, second))
+        if (SUCCESS != ParseSubquery(subqueryExp, secondNode))
             return ERROR;
 
         OSQLParseNode const* range_variable = parseNode->getChild(2/*range_variable*/);
@@ -1271,6 +1223,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
         return ERROR;
         }
 
+    BeAssert(parseNode->count() == 7);
     std::unique_ptr<ClassRefExp> from_table_ref = nullptr;
     if (SUCCESS != ParseTableRef(from_table_ref, parseNode->getChild(0/*table_ref*/), ECSqlType::Select))
         return ERROR;
@@ -1285,7 +1238,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
 
     //TODO: need to decide whether we support ONLY in USING clause.
     std::unique_ptr<ClassNameExp> table_node = nullptr;
-    if (SUCCESS != ParseTableNode(table_node, parseNode->getChild(5/*table_node*/), ECSqlType::Select, true))
+    if (SUCCESS != ParseTableNodeWithOptMemberCall(table_node, *parseNode->getChild(5/*table_node_with_opt_member_call*/), ECSqlType::Select, true))
      return ERROR;
 
     OSQLParseNode const* op_relationship_direction = parseNode->getChild(6/*op_relationship_direction*/);
@@ -1505,84 +1458,181 @@ BentleyStatus ECSqlParser::ParseNamedColumnsJoin(std::unique_ptr<NamedProperties
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OSQLParseNode const* parseNode, ECSqlType ecsqlType, bool isPolymorphic) const
+BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OSQLParseNode const& tableNode, ECSqlType ecsqlType) const
     {
     exp = nullptr;
 
-    if (!SQL_ISRULE(parseNode, table_node))
+    if (!SQL_ISRULE(&tableNode, table_node))
         {
         BeAssert(false && "Wrong grammar. Expecting table_node");
         return ERROR;
         }
 
-    OSQLParseNode const* first = parseNode->getChild(0);
-    BeAssert(first != nullptr);
-    Utf8StringCP catalogName = nullptr;
-    Utf8StringCP schemaName = nullptr;
-    Utf8StringCP className = nullptr;
-    if (SUCCESS != ParseFullyQualifiedClassName(catalogName, schemaName, className, *first))
-        return ERROR;
+    BeAssert(tableNode.count() == 1);
+    OSQLParseNode const& nameNode = *tableNode.getChild(0);
+    Utf8CP tableSpaceName = nullptr;
 
-    BeAssert(className != nullptr && schemaName != nullptr);
+    OSQLParseNode const* qualifiedClassNameNode = nullptr;
+    if (SQL_ISRULE(&nameNode, OSQLParseNode::tablespace_qualified_class_name))
+        {
+        tableSpaceName = nameNode.getChild(0)->getTokenValue().c_str();
+        qualifiedClassNameNode = nameNode.getChild(2);
+        }
+    else if (SQL_ISRULE(&nameNode, OSQLParseNode::qualified_class_name))
+        qualifiedClassNameNode = &nameNode;
+    else
+        {
+        BeAssert(false && "Wrong grammar. First child of table_node must either be qualified_class_name or tablespace_qualified_class_name");
+        return ERROR;
+        }
+
+    BeAssert(qualifiedClassNameNode->count() == 3);
+
+    Utf8StringCP schemaName = &qualifiedClassNameNode->getChild(0)->getTokenValue();
+    OSQLParseNode const& classNameNode = *qualifiedClassNameNode->getChild(2);
+    BeAssert(classNameNode.count() == 1);
+    Utf8StringCP className = &classNameNode.getChild(0)->getTokenValue();
+    BeAssert(className != nullptr && !className->empty() && schemaName != nullptr && !schemaName->empty());
+
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
-    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, *schemaName, *className, ecsqlType, isPolymorphic))
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, false))
         return ERROR;
 
-    exp = std::make_unique<ClassNameExp>(*className, *schemaName, catalogName, classNameExpInfo, isPolymorphic);
+    exp = std::make_unique<ClassNameExp>(*className, *schemaName, tableSpaceName, classNameExpInfo, false, nullptr);
     return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    09/2016
+// @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseFullyQualifiedClassName(Utf8StringCP& catalogName, Utf8StringCP& schemaName, Utf8StringCP& className, OSQLParseNode const& parseNode) const
+BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<ClassNameExp>& exp, OSQLParseNode const& tableNode, ECSqlType ecsqlType, bool isPolymorphic) const
     {
-    catalogName = nullptr;
-    schemaName = nullptr;
-    className = nullptr;
+    exp = nullptr;
 
-    switch (parseNode.getKnownRuleID())
+    if (!SQL_ISRULE(&tableNode, OSQLParseNode::Rule::table_node_with_opt_member_func_call))
         {
-            case OSQLParseNode::catalog_name:
-            {
-            //parseNode
-            //   child 0: catalog name
-            //   child 2: 
-            //        child 0: schema name
-            //        child 2:
-            //             child 0: class name
-            catalogName = &parseNode.getChild(0)->getTokenValue();
-            OSQLParseNode const* schemaNameNode = parseNode.getChild(2);
+        BeAssert(false && "Wrong grammar. Expecting table_node_with_opt_member_func_call");
+        return ERROR;
+        }
 
-            schemaName = &schemaNameNode->getChild(0)->getTokenValue();
-            className = &schemaNameNode->getChild(2)->getChild(0)->getTokenValue();
-            return SUCCESS;
-            }
+    OSQLParseNode const* pathNode = tableNode.getFirst();
+    if (!SQL_ISRULE(pathNode, OSQLParseNode::Rule::table_node_path))
+        {
+        BeAssert(false && "Wrong grammar. Expecting table_node_path");
+        return ERROR;
+        }
 
-            case OSQLParseNode::schema_name:
+    const size_t pathLength = pathNode->count();
+    if (pathLength < 2 || pathLength > 4)
+        {
+        Issues().Report("Invalid ECSQL class expression: Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+        return ERROR;
+        }
+
+    OSQLParseNode const* memberFunctionNode = nullptr;
+    std::vector<Utf8StringCP> entryNames;
+    entryNames.reserve(pathLength);
+
+    for (size_t i = 0; i < pathLength; i++)
+        {
+        OSQLParseNode const* entryNode = pathNode->getChild(i);
+        if (!SQL_ISRULE(entryNode, OSQLParseNode::Rule::table_node_path_entry))
             {
-            //parseNode
-            //     child 0: schema name
-            //     child 2:
-            //          child 0: class name
-            schemaName = &parseNode.getChild(0)->getTokenValue();
-            className = &parseNode.getChild(2)->getChild(0)->getTokenValue();
-            return SUCCESS;
-            }
-            case OSQLParseNode::table_name:
-            {
-            //parseNode
-            //     child 0: class name
-            GetIssueReporter().Report("Invalid ECClass expression '%s'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>",
-                                      parseNode.getChild(0)->getTokenValue().c_str());
+            BeAssert(false && "Wrong grammar. Expecting table_node_path_entry");
             return ERROR;
             }
-            default:
-                BeAssert(false && "Wrong Grammar. Expecting schema_name or catalog_name");
-                return ERROR;
 
-        };
+        OSQLParseNode const* optMemberFunctionNode = entryNode->getChild(1);
+        if (!optMemberFunctionNode->isLeaf())
+            {
+            if (i == pathLength - 1)
+                {
+                memberFunctionNode = entryNode;
+                }
+            else
+                {
+                Issues().Report("Invalid ECSQL class expression. Class member function calls must appear after the class. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+                return ERROR;
+                }
+            }
+
+        entryNames.push_back(&entryNode->getFirst()->getTokenValue());
+        }
+    BeAssert(entryNames.size() == pathLength);
+    BeAssert(pathLength >= 2 && "already checked for above");
+    const size_t classNameNodeIx = memberFunctionNode != nullptr ? pathLength - 2 : pathLength - 1;
+    BeAssert(pathNode->getChild(classNameNodeIx) != nullptr);
+    const int schemaNameNodeIx = (int) classNameNodeIx - 1;
+    const int tableSpaceNodeIx = schemaNameNodeIx - 1;
+    if (schemaNameNodeIx < 0)
+        {
+        Issues().Report("Invalid ECSQL class expression. Cannot specify a class name without schema name or alias. Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]");
+        return ERROR;
+        }
+    BeAssert(tableSpaceNodeIx <= 0);
+
+    Utf8StringCP className = entryNames[classNameNodeIx];
+    Utf8StringCP schemaName = entryNames[schemaNameNodeIx];
+    Utf8CP tableSpaceName = tableSpaceNodeIx == 0 ? entryNames[tableSpaceNodeIx]->c_str() : nullptr;
+
+    std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, isPolymorphic))
+        return ERROR;
+
+    std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
+    if (memberFunctionNode != nullptr)
+        {
+        if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *memberFunctionNode))
+            return ERROR;
+        }
+
+    exp = std::make_unique<ClassNameExp>(*className, *schemaName, tableSpaceName, classNameExpInfo, isPolymorphic, std::move(memberFuncCall));
+    return SUCCESS;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+-----------------+---------------+------
+BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>& memberFunCallExp, OSQLParseNode const& parseNode) const
+    {
+    if (!SQL_ISRULE(&parseNode, OSQLParseNode::table_node_path_entry))
+        {
+        BeAssert(false && "Wrong grammar. Expecting table_node_path_entry");
+        return ERROR;
+        }
+
+    BeAssert(parseNode.count() == 2);
+    OSQLParseNode const* argsNode = parseNode.getChild(1);
+    BeAssert(argsNode != nullptr);
+    if (argsNode->isLeaf())
+        {
+        BeAssert(false && "ParseNode passed to ParseMemberFunctionCall is expected to have a non-empty second child node");
+        return ERROR;
+        }
+
+    BeAssert(argsNode->count() == 3);
+
+    Utf8StringCR functionName = parseNode.getChild(0)->getTokenValue();
+    memberFunCallExp = std::make_unique<MemberFunctionCallExp>(functionName);
+    OSQLParseNode const* argListNode = argsNode->getChild(1);
+    BeAssert(SQL_ISRULE(argListNode, OSQLParseNode::Rule::function_args_commalist));
+    for (size_t i = 0; i < argListNode->count(); i++)
+        {
+        std::unique_ptr<ValueExp> argument_expr = nullptr;
+        if (SUCCESS != ParseFunctionArg(argument_expr, *argListNode->getChild(i)))
+            return ERROR;
+
+        Utf8String err;
+        if (memberFunCallExp->AddArgument(std::move(argument_expr), err) != SUCCESS)
+            {
+            Issues().Report(err.c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
@@ -1855,7 +1905,7 @@ BentleyStatus ECSqlParser::ParseInPredicate(std::unique_ptr<BooleanExp>& exp, OS
     if (SQL_ISRULE(firstChildNode, in_predicate_part_2))
         {
         BeAssert(false);
-        GetIssueReporter().Report("IN predicate without left-hand side property not supported.");
+        Issues().Report("IN predicate without left-hand side property not supported.");
         return ERROR;
         }
 
@@ -2089,7 +2139,7 @@ BentleyStatus ECSqlParser::ParseComparison(BooleanSqlOperator& op, OSQLParseNode
         {
         if (parseNode->count() == 4 /*SQL_TOKEN_IS sql_not SQL_TOKEN_DISTINCT SQL_TOKEN_FROM*/)
             {
-            GetIssueReporter().Report("'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
+            Issues().Report("'IS [NOT] DISTINCT FROM' operator not supported in ECSQL.");
             return ERROR;
             }
         if (parseNode->count() == 2 /*SQL_TOKEN_IS sql_not*/)
@@ -2478,7 +2528,7 @@ BentleyStatus ECSqlParser::ParseSelectStatement(std::unique_ptr<SelectStatementE
 
         if (!single_select->IsCoreSelect())
             {
-            GetIssueReporter().Report("SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
+            Issues().Report("SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
             return ERROR;
             }
 
@@ -2532,8 +2582,6 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseDatetimeValueExp(valueExp, parseNode);
                 case OSQLParseNode::factor:
                     return ParseFactor(valueExp, parseNode);
-                case OSQLParseNode::fold:
-                    return ParseFold(valueExp, parseNode);
                 case OSQLParseNode::general_set_fct:
                     return ParseGeneralSetFct(valueExp, parseNode);
                 case OSQLParseNode::fct_spec:
@@ -2639,8 +2687,6 @@ Utf8CP ECSqlParser::SqlDataTypeKeywordToString(sal_uInt32 keywordId)
                 return "BOOLEAN";
             case SQL_TOKEN_DATE:
                 return "DATE";
-            case SQL_TOKEN_DATETIME:
-                return "DATETIME";
             case SQL_TOKEN_DOUBLE:
                 return "DOUBLE";
             case SQL_TOKEN_FLOAT:
@@ -2713,37 +2759,41 @@ void ECSqlParseContext::PopArg() { m_finalizeParseArgs.pop_back(); }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp)
+BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP tableSpaceName, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp)
     {
     BeAssert(!schemaNameOrAlias.empty());
-    ECClassCP resolvedClass = m_ecdb.Schemas().GetClass(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect);
 
-    if (resolvedClass == nullptr)
+    ClassMap const* classMap = m_ecdb.Schemas().GetDispatcher().GetClassMap(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect, tableSpaceName);
+    if (classMap == nullptr)
         {
-        Issues().Report("ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
+        if (Utf8String::IsNullOrEmpty(tableSpaceName))
+            Issues().Report("ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
+        else
+            Issues().Report("ECClass '%s.%s.%s' does not exist or could not be loaded.", tableSpaceName, schemaNameOrAlias.c_str(), className.c_str());
+
         return ERROR;
         }
 
-    auto it = m_classNameExpInfoList.find(resolvedClass->GetECSqlName().c_str());
+    Utf8String fullyQualifiedClassName;
+    //it is fine if tableSpaceName is nullptr (which means any table space) as the given class will always be found in the same table space even
+    //if a class with the same name exists in more than one table space
+    fullyQualifiedClassName.Sprintf("%s.%s", tableSpaceName, classMap->GetClass().GetFullName());
+    auto it = m_classNameExpInfoList.find(fullyQualifiedClassName);
     if (it != m_classNameExpInfoList.end())
         {
         classNameExpInfo = it->second;
         return SUCCESS;
         }
 
-    ClassMap const* map = m_ecdb.Schemas().GetDbMap().GetClassMap(*resolvedClass);
-    if (map == nullptr)
-        return ERROR;
-
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*map, ecsqlType, isPolymorphicExp));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*classMap, ecsqlType, isPolymorphicExp));
     if (!policy.IsSupported())
         {
         Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
 
-    classNameExpInfo = ClassNameExp::Info::Create(*map);
-    m_classNameExpInfoList[resolvedClass->GetECSqlName().c_str()] = classNameExpInfo;
+    classNameExpInfo = ClassNameExp::Info::Create(*classMap);
+    m_classNameExpInfoList[fullyQualifiedClassName] = classNameExpInfo;
     return SUCCESS;
     }
 

@@ -41,13 +41,46 @@ DbResult ECDb::Impl::OnDbOpening() const
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                10/2016
+// @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::OnDbClose() const
+DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
     {
-    ClearECDbCache();
-    m_sqlFunctions.clear();
-    UnregisterBuiltinFunctions();
+    ECDb::OpenParams const* ecdbParams = dynamic_cast<ECDb::OpenParams const*> (&params);
+    ChangeSummaryCacheMode changeSummaryCacheMode = ChangeSummaryCacheMode::DoNotAttach;
+    if (ecdbParams != nullptr)
+        changeSummaryCacheMode = ecdbParams->GetChangeSummaryCacheMode();
+
+    if (changeSummaryCacheMode != ChangeSummaryCacheMode::DoNotAttach)
+        {
+        PERFLOG_START("ECDb", "Open> Attach ChangeSummary cache file");
+        //attach before a potential profile upgrade happens, so that the profile upgrade can update tables in the change summary cache file as well
+        const DbResult r = m_changeSummaryManager.AttachChangeSummaryCacheFile(changeSummaryCacheMode == ChangeSummaryCacheMode::AttachAndCreateIfNotExists);
+        if (BE_SQLITE_OK != r)
+            return r;
+        PERFLOG_FINISH("ECDb", "Open> Attach ChangeSummary cache file");
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const
+    {
+    DbTableSpace tableSpace(tableSpaceName);
+    if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
+        return BE_SQLITE_OK; //only need to react to attached ECDb files
+
+    return m_schemaManager->GetDispatcher().AddManager(tableSpace) == SUCCESS ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::OnDbDetached(Utf8CP tableSpaceName) const
+    {
+    return SUCCESS == m_schemaManager->GetDispatcher().RemoveManager(DbTableSpace(tableSpaceName)) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //--------------------------------------------------------------------------------------
@@ -105,14 +138,14 @@ BentleyStatus ECDb::Impl::DetermineMaxInstanceIdForBriefcase(ECInstanceId& maxId
         return ERROR;
 
     Statement primaryTableStmt;
-    if (BE_SQLITE_OK != primaryTableStmt.Prepare(m_ecdb, "SELECT t.Id, t.Name, c.Name FROM " TABLE_Table " t JOIN " TABLE_Column " c ON t.Id=c.TableId WHERE t.Type=" SQLVAL_DbTable_Type_Primary " AND c.ColumnKind=" SQLVAL_DbColumn_Kind_ECInstanceId))
+    if (BE_SQLITE_OK != primaryTableStmt.Prepare(m_ecdb, "SELECT t.Id, t.Name, c.Name FROM main." TABLE_Table " t JOIN main." TABLE_Column " c ON t.Id=c.TableId WHERE t.Type=" SQLVAL_DbTable_Type_Primary " AND c.ColumnKind=" SQLVAL_DbColumn_Kind_ECInstanceId))
         return ERROR;
 
     Statement ignoreTableStmt;
     if (ecClassIgnoreList != nullptr)
         {
-        if (BE_SQLITE_OK != ignoreTableStmt.Prepare(m_ecdb, "SELECT 1 FROM " TABLE_Class " c JOIN " TABLE_PropertyMap " pm ON c.Id=pm.ClassId "
-                                                    "JOIN " TABLE_Column " col ON col.Id=pm.ColumnId "
+        if (BE_SQLITE_OK != ignoreTableStmt.Prepare(m_ecdb, "SELECT 1 FROM main." TABLE_Class " c JOIN main." TABLE_PropertyMap " pm ON c.Id=pm.ClassId "
+                                                    "JOIN main." TABLE_Column " col ON col.Id=pm.ColumnId "
                                                     "WHERE col.TableId=? AND InVirtualSet(?,c.Id) LIMIT 1"))
             return ERROR;
         }
@@ -162,7 +195,7 @@ BentleyStatus ECDb::Impl::DetermineMaxIdForBriefcase(BeBriefcaseBasedId& maxId, 
         return ERROR;
 
     Utf8String sql;
-    sql.Sprintf("SELECT max(%s) FROM %s WHERE %s >= ? AND %s < ?", idColName, tableName, idColName, idColName);
+    sql.Sprintf("SELECT max([%s]) FROM [%s] WHERE [%s] >= ? AND [%s] < ?", idColName, tableName, idColName, idColName);
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
@@ -230,19 +263,21 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ClearECDbCache() const
+void ECDb::Impl::ClearECDbCache(Utf8CP tableSpace) const
     {
     BeMutexHolder lock(m_mutex);
-
-    if (m_schemaManager != nullptr)
-        m_schemaManager->ClearCache();
-
-    const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {
         m_ecdb.DropAppData(*appDataKey);
         }
+
+    if (m_schemaManager != nullptr)
+        m_schemaManager->ClearCache(tableSpace);
+
+    const_cast<ChangeSummaryManager&>(m_changeSummaryManager).ClearCache();
+
+    const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
@@ -291,14 +326,12 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
     }
 
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::RegisterBuiltinFunctions() const
     {
-    m_ecdb.AddFunction(Base64ToBlobSqlFunction::GetSingleton());
-    m_ecdb.AddFunction(BlobToBase64SqlFunction::GetSingleton());
+    m_changeSummaryManager.RegisterSqlFunctions();
     }
 
 //---------------------------------------------------------------------------------------
@@ -309,8 +342,7 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (!m_ecdb.IsDbOpen())
         return;
 
-    m_ecdb.RemoveFunction(Base64ToBlobSqlFunction::GetSingleton());
-    m_ecdb.RemoveFunction(BlobToBase64SqlFunction::GetSingleton());
+    m_changeSummaryManager.UnregisterSqlFunction();
     }
 
 //---------------------------------------------------------------------------------------
@@ -405,7 +437,7 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
+BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpaceName, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
     {
     if (blobIO.IsValid())
         return ERROR;
@@ -420,11 +452,11 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
     //all this method does is to determine the table and column name for the given class name and property access string.
     //the code is verbose because serious validation is done to ensure that the BlobIO is only used for ECProperties
     //that store BLOB values in a single column.
-    ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
+    ClassMap const* classMap = m_ecdb.Schemas().GetDispatcher().GetClassMap(ecClass, tableSpaceName);
     if (classMap == nullptr || classMap->GetType() == ClassMap::Type::NotMapped)
         {
-        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s'. Its ECClass is not mapped to a table.",
-                   ecClass.GetFullName(), propertyAccessString);
+        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s' (Table space: %s). Cannot find class map for the ECClass.",
+                   ecClass.GetFullName(), propertyAccessString, Utf8String::IsNullOrEmpty(tableSpaceName) ? "any" : tableSpaceName);
         return ERROR;
         }
 
@@ -461,7 +493,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
         return ERROR;
         }
 
-    return blobIO.Open(m_ecdb, col.GetTable().GetName().c_str(), col.GetName().c_str(), ecinstanceId.GetValue(), writable) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    return blobIO.Open(m_ecdb, col.GetTable().GetName().c_str(), col.GetName().c_str(), ecinstanceId.GetValue(), writable, tableSpaceName) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //--------------------------------------------------------------------------------------

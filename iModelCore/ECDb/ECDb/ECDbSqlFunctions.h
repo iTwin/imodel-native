@@ -10,37 +10,51 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+#define ECSQLFUNC_Changes "Changes"
+#define SQLFUNC_ChangedValue "ChangedValue"
+#define SQLFUNC_ChangedValueStateToOpCode "ChangedValueStateToOpCode"
+
+
 //=======================================================================================
-// TEXT BlobToBase64(BLOB blob)
-// @bsiclass                                                   Krischan.Eberle   11/16
+//! INT ChangedValueStateToOpCode(ChangedValueState TEXT|INT)
+//!
+//! @note Internal helper SQL function for Changes ECSQL function. Not intended for public use
+// @bsiclass                                                   Affan.Khan        11/17
 //=======================================================================================
-struct BlobToBase64SqlFunction final : ScalarFunction
+struct ChangedValueStateToOpCodeSqlFunction final : ScalarFunction
     {
     private:
-        static BlobToBase64SqlFunction* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
+        static ChangedValueStateToOpCodeSqlFunction* s_singleton;  //no need to release a static non-POD variable (Bentley C++ coding standards)
 
-        BlobToBase64SqlFunction() : ScalarFunction("BlobToBase64", 1, DbValueType::TextVal) {}
+        ChangedValueStateToOpCodeSqlFunction() : ScalarFunction(SQLFUNC_ChangedValueStateToOpCode, 1, DbValueType::IntegerVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        static BlobToBase64SqlFunction& GetSingleton();
+        ~ChangedValueStateToOpCodeSqlFunction() {}
+
+        static ChangedValueStateToOpCodeSqlFunction& GetSingleton();
     };
 
-
 //=======================================================================================
-// BLOB Base64ToBlob(TEXT base64Str)
-// @bsiclass                                                   Krischan.Eberle   11/16
+//! BLOB ChangedValue(InstanceChangeId INT, PropertyAccessString TEXT, ChangedValueState INT|TEXT, FallbackValue BLOB)
+//!
+//! @note Internal helper SQL function for Changes ECSQL function. Not intended for public use
+// @bsiclass                                                   Affan.Khan         11/17
 //=======================================================================================
-struct Base64ToBlobSqlFunction final : ScalarFunction
+struct ChangedValueSqlFunction final : ScalarFunction
     {
     private:
-        static Base64ToBlobSqlFunction* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
+        ECDbCR m_ecdb;
+        ECSqlStatementCache m_statementCache;
 
-        Base64ToBlobSqlFunction() : ScalarFunction("Base64ToBlob", 1, DbValueType::BlobVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
-        static Base64ToBlobSqlFunction& GetSingleton();
+        explicit ChangedValueSqlFunction(ECDbCR ecdb) : ScalarFunction(SQLFUNC_ChangedValue, 4, DbValueType::BlobVal), m_ecdb(ecdb), m_statementCache(5) {}
+        ~ChangedValueSqlFunction() {}
+
+        void ClearCache() { m_statementCache.Empty(); }
     };
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

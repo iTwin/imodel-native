@@ -55,6 +55,7 @@ struct TestHelper final
         ECSqlStatus PrepareECSql(Utf8CP ecsql) const { ECSqlStatement stmt;  return stmt.Prepare(m_ecdb, ecsql); }
         Utf8String ECSqlToSql(Utf8CP ecsql) const;
         DbResult ExecuteECSql(Utf8CP ecsql) const;
+        JsonValue ExecuteSelectECSql(Utf8CP ecsql) const;
         DbResult ExecuteInsertECSql(ECInstanceKey&, Utf8CP ecsql) const;
 
         MapStrategyInfo GetMapStrategy(ECN::ECClassId) const;
@@ -70,6 +71,8 @@ struct TestHelper final
         //! Retrieves a mapped table. This is not equivalent to the physical tables in the ECDb file.
         Table GetMappedTable(Utf8StringCR tableName) const;
 
+        bool TableSpaceExists(Utf8CP dbTableSpace) const;
+
         //! Checks whether a physical table with the specified name exists in the ECDb file
         bool TableExists(Utf8CP dbTableName) const { return m_ecdb.TableExists(dbTableName); }
         //! Checks whether a physical column with the specified name exists in the ECDb file
@@ -80,20 +83,20 @@ struct TestHelper final
         int GetColumnCount(Utf8CP dbTableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, dbTableName); return (int) cols.size(); }
 
         //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
-        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn) const;
+        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn, Utf8CP dbSchemaName = nullptr) const;
 
         //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
         //! onDeleteAction and onUpdateAction must also match
-        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn, Utf8CP onDeleteAction, Utf8CP onUpdateAction) const;
+        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn, Utf8CP onDeleteAction, Utf8CP onUpdateAction, Utf8CP dbSchemaName = nullptr) const;
 
         //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
-        Utf8String GetForeignKeyConstraintDdl(Utf8CP dbTableName, Utf8CP foreignKeyColumn) const;
+        Utf8String GetForeignKeyConstraintDdl(Utf8CP dbTableName, Utf8CP foreignKeyColumn, Utf8CP dbSchemaName = nullptr) const;
 
         //!logs the issues if there are any
-        Utf8String GetDdl(Utf8CP entityName, Utf8CP entityType = "table") const;
-        Utf8String GetIndexDdl(Utf8StringCR indexName) const { return GetDdl(indexName.c_str(), "index"); }
-        bool IndexExists(Utf8StringCR indexName) const { return !GetDdl(indexName.c_str(), "index").empty(); }
-        std::vector<Utf8String> GetIndexNamesForTable(Utf8StringCR dbTableName) const;
+        Utf8String GetDdl(Utf8CP entityName, Utf8CP dbSchemaName = nullptr, Utf8CP entityType = "table") const;
+        Utf8String GetIndexDdl(Utf8StringCR indexName, Utf8CP dbSchemaName = nullptr) const { return GetDdl(indexName.c_str(), dbSchemaName, "index"); }
+        bool IndexExists(Utf8StringCR indexName, Utf8CP dbSchemaName = nullptr) const { return !GetDdl(indexName.c_str(), dbSchemaName, "index").empty(); }
+        std::vector<Utf8String> GetIndexNamesForTable(Utf8StringCR dbTableName, Utf8CP dbSchemaName = nullptr) const;
     };
 
 //=======================================================================================    
@@ -114,25 +117,35 @@ struct TestUtilities final
         static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
         static BentleyStatus ParseJson(rapidjson::Document& json, Utf8StringCR jsonStr) { return json.Parse<0>(jsonStr.c_str()).HasParseError() ? ERROR : SUCCESS; }
 
+        static Json::Value DbValueToJson(DbValue const& v)
+            {
+            switch (v.GetValueType())
+                {
+                    case DbValueType::BlobVal:
+                    {
+                    Utf8String base64Str;
+                    Base64Utilities::Encode(base64Str, (Byte const*) v.GetValueBlob(), (size_t) v.GetValueBytes());
+                    return Json::Value(base64Str);
+                    }
+
+                    case DbValueType::FloatVal:
+                        return Json::Value(v.GetValueDouble());
+                    case DbValueType::IntegerVal:
+                        return Json::Value(v.GetValueInt64());
+                    case DbValueType::TextVal:
+                        return Json::Value(v.GetValueText());
+                    case DbValueType::NullVal:
+                        return Json::Value(Json::ValueType::nullValue);
+
+                    default:
+                        BeAssert(false && "Unhandled DbValueType value");
+                        return Json::Value(Json::ValueType::nullValue);
+                }
+            };
         //! Use this method to compare to double values in tests as comparing them directly often fails due to floating point inaccuracies
         static bool Equals(double lhs, double rhs) { return fabs(lhs - rhs) <= BeNumerical::ComputeComparisonTolerance(lhs, rhs); }
     };
 
-//=======================================================================================    
-// @bsiclass                                                 Krischan.Eberle     10/2017
-//=======================================================================================    
-struct ComparableJsonCppValue final
-    {
-public:
-    JsonValueCR m_value;
-
-    explicit ComparableJsonCppValue(JsonValueCR json) : m_value(json) {}
-
-    bool operator==(ComparableJsonCppValue const& rhs) const;
-    bool operator!=(ComparableJsonCppValue const& rhs) const { return !(*this == rhs); }
-    };
-
-void PrintTo(ComparableJsonCppValue const&, std::ostream*);
 
 //=======================================================================================    
 //! Utility to populate an ECInstance with random values

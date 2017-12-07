@@ -213,6 +213,7 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             }
         else
             {
+            //WIP: Need to change the grammar to allow specifying cast targets from other table spaces
             ECClassCP targetType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetClassName(), SchemaLookupMode::AutoDetect);
             if (targetType == nullptr)
                 {
@@ -311,6 +312,118 @@ Utf8String CastExp::_ToString() const
 
     str.append("]");
     return str;
+    }
+
+//****************************** MemberFunctionCallExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MemberFunctionCallExp::ValidateArgument(ValueExp const& arg, Utf8StringR msg)
+    {
+    std::vector<Exp const*> expList;
+    expList = arg.Find (Exp::Type::PropertyName, true);
+    if (!expList.empty())
+        {
+        msg.Sprintf("Invalid MemberFunctionCall expression '%s'. Argument %s is invalid. A MemberFunctionCall expression cannot not contain a PropertyName expression. ", 
+                    m_functionName.c_str(), expList.front()->ToString().c_str());
+        
+        return ERROR;
+        }
+
+    expList = arg.Find(Exp::Type::Select, true);
+    if (!expList.empty())
+        {
+        msg.Sprintf("Invalid MemberFunctionCall expression '%s'. Argument %s is invalid. MemberFunctionCall expression cannot not contain SubQueries.",
+                    m_functionName.c_str(), expList.front()->ToString().c_str());
+
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+    if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
+        {
+        FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());
+        if (funcSig == nullptr)
+            {
+            ctx.Issues().Report("Unknown member function '%s'", m_functionName.c_str());
+            return Exp::FinalizeParseStatus::Error;
+            }
+        
+        if (funcSig->SetParameterType(GetChildrenR()) != SUCCESS)
+            {
+            ctx.Issues().Report("Error in function call '%s' - Varying argument list cannot be parameterized.", m_functionName.c_str());
+            return Exp::FinalizeParseStatus::Error;
+            }
+
+        Utf8String err;
+        if (funcSig->Verify(err, GetChildren()) != SUCCESS)
+            {
+            ctx.Issues().Report("Error in function call '%s' - %s", m_functionName.c_str(), err.c_str());
+            return Exp::FinalizeParseStatus::Error;
+            }
+
+        SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+        return FinalizeParseStatus::Completed;
+        }
+
+    return FinalizeParseStatus::NotCompleted;
+    }
+    
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void MemberFunctionCallExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql(".");
+    ctx.AppendToECSql(m_functionName).AppendToECSql("(");
+    bool isFirstItem = true;
+    for (Exp const* argExp : GetChildren())
+        {
+        if (!isFirstItem)
+            ctx.AppendToECSql(",");
+
+        ctx.AppendToECSql(*argExp);
+        isFirstItem = false;
+        }
+
+    ctx.AppendToECSql(")");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String MemberFunctionCallExp::_ToString() const
+    {
+    return Utf8String("MemberFunctionCall [Function: ").append(m_functionName).append("]");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool MemberFunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
+    {
+    //we don't have metadata about function args, so use a default type if the arg is a parameter
+    parameterExp.SetTargetExpInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+    return true;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MemberFunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argument, Utf8StringR error)
+    {
+    if (ValidateArgument(*argument, error) != SUCCESS)
+        return ERROR;
+
+    AddChild(move(argument));
+    return SUCCESS;
     }
 
 //****************************** FunctionCallExp *****************************************
@@ -421,8 +534,20 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("any"))
         return PRIMITIVETYPE_Boolean;
 
+    if (functionName.EqualsIAscii("changes"))
+        return PRIMITIVETYPE_Long;
+
+    if (functionName.EqualsIAscii("char"))
+        return PRIMITIVETYPE_String;
+
     if (functionName.EqualsIAscii("count"))
         return PRIMITIVETYPE_Long;
+
+    if (functionName.EqualsIAscii("date"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("datetime"))
+        return PRIMITIVETYPE_String;
 
     if (functionName.EqualsIAscii("every"))
         return PRIMITIVETYPE_Boolean;
@@ -438,6 +563,54 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
 
     if (functionName.EqualsIAscii("instr"))
         return PRIMITIVETYPE_Integer;
+
+    if (functionName.EqualsIAscii("json"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_array"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_array_length"))
+        return PRIMITIVETYPE_Long;
+
+    if (functionName.EqualsIAscii("json_extract"))
+        return PRIMITIVETYPE_String; // must be type 'Any'
+
+    if (functionName.EqualsIAscii("json_group_array"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_group_object"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_insert"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_object"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_quote"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_remove"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_replace"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_set"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_type"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("json_valid"))
+        return PRIMITIVETYPE_Boolean;
+
+    if (functionName.EqualsIAscii("julianday"))
+        return PRIMITIVETYPE_Double;
+
+    if (functionName.EqualsIAscii("last_insert_rowid"))
+        return PRIMITIVETYPE_Long;
 
     if (functionName.EqualsIAscii("length"))
         return PRIMITIVETYPE_Long;
@@ -457,6 +630,12 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("quote"))
         return PRIMITIVETYPE_String;
 
+    if (functionName.EqualsIAscii("printf"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("random"))
+        return PRIMITIVETYPE_Long;
+
     if (functionName.EqualsIAscii("randomblob"))
         return PRIMITIVETYPE_Binary;
 
@@ -465,6 +644,9 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
 
     if (functionName.EqualsIAscii("replace"))
         return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("round"))
+        return PRIMITIVETYPE_Double;
 
     if (functionName.EqualsIAscii("rtrim"))
         return PRIMITIVETYPE_String;
@@ -475,10 +657,34 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("soundex"))
         return PRIMITIVETYPE_String;
 
-    if (functionName.EqualsIAscii("substr"))
+    if (functionName.EqualsIAscii("sqlite_compileoption_get"))
         return PRIMITIVETYPE_String;
 
+    if (functionName.EqualsIAscii("sqlite_compileoption_used"))
+        return PRIMITIVETYPE_Boolean;
+
+    if (functionName.EqualsIAscii("sqlite_source_id"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("sqlite_version"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("strftime"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("substr"))
+        return PRIMITIVETYPE_String;
+    
+    if (functionName.EqualsIAscii("time"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("total_changes"))
+        return PRIMITIVETYPE_Long;
+
     if (functionName.EqualsIAscii("trim"))
+        return PRIMITIVETYPE_String;
+
+    if (functionName.EqualsIAscii("typeof"))
         return PRIMITIVETYPE_String;
 
     if (functionName.EqualsIAscii("unicode"))
@@ -494,7 +700,8 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringC
     if (functionName.EqualsIAscii("invirtualset"))
         return PRIMITIVETYPE_Boolean;
 
-    //all other functions get the default return type
+    //all other functions get the default return type 
+    //WIP: Need to deal with functions that return different types
     return ECN::PRIMITIVETYPE_Double;
     }
 
@@ -1010,7 +1217,6 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
     return FinalizeParseStatus::Completed;
     }
 
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1045,4 +1251,583 @@ Utf8String UnaryValueExp::_ToString() const
     return str;
     }
 
+//****************************** FunctionSignatureSet *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void FunctionSignatureSet::Declare(Utf8CP signature, Utf8CP description)
+    {
+    std::unique_ptr<FunctionSignature> sig = FunctionSignature::Parse(signature, description);
+    if (sig == nullptr)
+        {
+        BeAssert(false && "Fail to parse FunctionSignature");
+        return;
+        }
+
+    if (Find(sig->Name().c_str()) != nullptr)
+        {
+        BeAssert(false && "Function with same name already exist");
+        return;
+        }
+
+    m_funtionSigs.insert(std::make_pair(sig->Name().c_str(), std::move(sig)));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+FunctionSignature const* FunctionSignatureSet::Find(Utf8CP name) const
+    {
+    auto itor = m_funtionSigs.find(name);
+    if (itor != m_funtionSigs.end())
+        return itor->second.get();
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+FunctionSignatureSet& FunctionSignatureSet::GetInstance()
+    {
+
+    static FunctionSignatureSet funtionSet;
+    if (funtionSet.m_funtionSigs.empty())
+        {
+        funtionSet.LoadDefinitions();
+        }
+
+    return funtionSet;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void FunctionSignatureSet::LoadDefinitions()
+    {
+    //scoped funtion
+    Declare("::" ECSQLFUNC_Changes "(changesetId:integer, operation:any):resultset");
+    ////global funtion
+    Declare("abs(value:numeric):numeric");
+    Declare("hex(value:blob):string");
+    Declare("ifnull(x:any,y:any):any");
+    Declare("length(v:any):any");
+    Declare("max(x:any,y:any,...):any");
+    Declare("random():integer");
+    Declare("randomblob(n:integer):blob");
+    Declare("soundex(x:string):string");
+    Declare("coalesce(x:any,y:any,...):any");
+    Declare("instr(x:string,y:string):string");
+    Declare("like(x:string,y:string, optional z:string):integer");
+    Declare("lower(x:string):string");
+    Declare("nullif(x:any,y:any):any");
+    Declare("quote(x:string):string");
+    Declare("round(x:double,optional y:double):double");
+    }
+
+
+//****************************** FunctionSignature *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+FunctionSignature::Arg const* FunctionSignature::FindArg(Utf8CP name) const
+    {
+    for (std::unique_ptr<Arg>const & existingArg : m_args)
+        if (existingArg->Name().EqualsI(name))
+            return existingArg.get();
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus FunctionSignature::SetName(Utf8CP name)
+    {
+    if (Utf8String::IsNullOrEmpty(name))
+        return ERROR;
+
+    m_name = name;
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void FunctionSignature::SetDescription(Utf8CP name)
+    {
+    m_description = name;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<FunctionSignature::Arg const*> FunctionSignature::Args() const
+    {
+    std::vector<Arg const*> args;
+    for (std::unique_ptr<Arg> const& arg : m_args)
+        args.push_back(arg.get());
+
+    return args;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus FunctionSignature::SetReturnType(ValueType type, bool member)
+    {
+    if (type == ValueType::Resultset && !member)
+        return ERROR;
+
+    if(member && type == ValueType::Resultset)
+       m_scope = FunctionScope::Class;
+    else if (member && type != ValueType::Resultset)
+        m_scope = FunctionScope::Property;
+    else 
+        m_scope = FunctionScope::Global;
+
+    m_returnType = type;
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus FunctionSignature::Append(Utf8CP name, ValueType type, bool optional)
+    {
+    if (Utf8String::IsNullOrEmpty(name))
+        return ERROR;
+
+    if (Enum::Contains(type, ValueType::Resultset))
+        return ERROR;
+
+    std::unique_ptr<Arg> arg(new Arg(name, type, optional));
+    Arg* last = !m_args.empty() ? m_args.back().get() : nullptr;
+    if (last != nullptr && last->IsOptional() && !optional)
+        return ERROR;
+
+    if (last != nullptr && last->IsVariadic())
+        return ERROR;
+    
+    if (arg->IsVariadic() && optional)
+        return ERROR;
+
+    //arg with same name should not exist
+    if (FindArg(name) != nullptr)
+        return ERROR;
+
+    //optional and varying cannot be together
+    if (OptionalArgCount() > 0 && arg->IsVariadic())
+        return ERROR;
+
+    m_args.push_back(std::move(arg));
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+Utf8CP FunctionSignature::ValueTypeToString(ValueType type)
+    {
+    if (type == ValueType::String) return "string";
+    if (type == ValueType::Integer) return "integer";
+    if (type == ValueType::Float) return "float";
+    if (type == ValueType::Blob) return "blob";
+    if (type == ValueType::Resultset) return "resultset";
+    if (type == ValueType::Numeric) return "numeric";
+    if (type == ValueType::Any) return "any";
+    BeAssert(false);
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static  
+BentleyStatus FunctionSignature::Parse(std::unique_ptr<FunctionSignature>& funcSig, Utf8CP signature, Utf8CP description)
+    {
+    Utf8String temp = Utf8String(signature).Trim();   
+    bool member = temp.StartsWith("::");
+    if (member)
+        temp = temp.substr(2);
+
+    if (temp.StartsWith(":"))
+        return ERROR;
+
+    const size_t posOpenParenthesis = temp.find("(");
+    const size_t posCloseParenthesis = temp.find(")");
+    if (posOpenParenthesis == Utf8String::npos || posCloseParenthesis == Utf8String::npos)
+        return ERROR;
+
+    if (posCloseParenthesis < posOpenParenthesis)
+        return ERROR;
+
+    Utf8String functionName = temp.substr(0, posOpenParenthesis);
+    funcSig = std::unique_ptr<FunctionSignature>(new FunctionSignature());
+    if (funcSig->SetName(functionName.c_str()) != SUCCESS)
+        return ERROR;
+
+    funcSig->SetDescription(description);
+
+    //check for return type
+    if (temp.size() > posCloseParenthesis)
+        {
+        Utf8String funTypeStr = temp.substr(posCloseParenthesis + 1);
+        funTypeStr.Trim();
+        if (funTypeStr.size() > 0)
+            {
+            if (funTypeStr[0] != ':')
+                return ERROR;
+
+            Utf8String funcType = funTypeStr.substr(1);
+            funcType.Trim();
+
+            ValueType vtype;
+            if (!ParseValueType(vtype, funcType.c_str()))
+                return ERROR;
+
+            if (funcSig->SetReturnType(vtype, member) != SUCCESS)
+                return ERROR;
+            }
+        }
+
+    const Utf8String argListStr = temp.substr(posOpenParenthesis + 1, posCloseParenthesis - posOpenParenthesis - 1);
+    bvector<Utf8String> argList;
+    BeStringUtilities::Split(argListStr.c_str(), ",", argList);
+    for (Utf8StringR argStr : argList)
+        {
+        argStr.Trim();
+        if (argStr.empty())
+            return ERROR;
+
+        bvector<Utf8String> argFmt;
+        BeStringUtilities::Split(argStr.c_str(), " ", argFmt);
+        bool optional = false;
+        if (argFmt.empty())
+            return ERROR;
+
+        int paramIdx = 0;
+        if (argFmt.size() == 2)
+            {
+            Utf8StringR optionalStr = argFmt.at(0).Trim();
+            if (!optionalStr.EqualsIAscii("optional"))
+                return ERROR;
+
+            paramIdx = 1;
+            optional = true;
+            }
+
+        Utf8StringR nameAndTypeStr = argFmt.at(paramIdx).Trim();
+        if (nameAndTypeStr == "...")
+            {
+            if (funcSig->Append(nameAndTypeStr.c_str(), ValueType::Any, optional) != SUCCESS)
+                return ERROR;
+            }
+        else
+            {
+            bvector<Utf8String> argType;
+            BeStringUtilities::Split(nameAndTypeStr.c_str(), ":", argType);
+            if (argType.size() != 2)
+                return ERROR;
+
+            Utf8StringR argNameStr = argType.at(0).Trim();
+            Utf8StringR argTypeStr = argType.at(1).Trim();
+            ValueType vtype;
+            if (!ParseValueType(vtype, argTypeStr.c_str()))
+                return ERROR;
+
+            if (funcSig->Append(argNameStr.c_str(), vtype, optional) != SUCCESS)
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String FunctionSignature::ToString() const
+    {
+    Utf8String str;
+    if (m_scope != FunctionScope::Global)
+        str.append("::");
+
+    str.append(m_name);
+    str.append(" (");
+    bool first = true;
+    for (Arg const* arg : Args())
+        {
+        if (!first)
+            str.append(", ");
+        else
+            first = false;
+
+        if (arg->IsOptional())
+            str.append("optional ");
+
+        str.append(arg->Name());
+        if (!arg->IsVariadic())
+            {
+            str.append(":");
+            str.append(ValueTypeToString(arg->Type()));
+            }
+        }
+
+    str.append("):");
+    str.append(ValueTypeToString(m_returnType));
+    return str;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+bool FunctionSignature::ParseValueType(ValueType& type, Utf8CP str)
+    {
+    if (BeStringUtilities::StricmpAscii("string", str) == 0)
+        {
+        type = ValueType::String;
+        return true;
+        }
+
+    else if (BeStringUtilities::StricmpAscii("integer", str) == 0 ||
+        BeStringUtilities::StricmpAscii("int", str) == 0)
+        {
+        type = ValueType::Integer;
+        return true;
+        }
+    else if (BeStringUtilities::StricmpAscii("float", str) == 0 ||
+        BeStringUtilities::StricmpAscii("double", str) == 0 ||
+        BeStringUtilities::StricmpAscii("real", str) == 0)
+        {
+        type = ValueType::Float;
+        return true;
+        }
+    else if (BeStringUtilities::StricmpAscii("blob", str) == 0)
+        {
+        type = ValueType::Blob;
+        return true;
+        }
+    else if (BeStringUtilities::StricmpAscii("resultset", str) == 0)
+        {
+        type = ValueType::Resultset;
+        return true;
+        }
+    else if (BeStringUtilities::StricmpAscii("numeric", str) == 0)
+        {
+        type = ValueType::Numeric;
+        return true;
+        }
+    else if (BeStringUtilities::StricmpAscii("any", str) == 0)
+        {
+        type = ValueType::Any;
+        return true;
+        }
+
+    return false;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus FunctionSignature::SetParameterType(Exp::Collection& argExps) const
+    {
+    const std::vector<Arg const*> args = Args();
+    int i = 0;
+    int j = 0;
+    do
+        {
+        Arg const* arg = args[i];
+        ValueExp& test = const_cast<ValueExp&>(argExps[j]->GetAs<ValueExp>());          
+        if (test.GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::Unset && test.IsParameterExp())
+            {
+            if (arg->IsVariadic())
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            if (arg->Type() == FunctionSignature::ValueType::String)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_String));
+            else if (arg->Type() == FunctionSignature::ValueType::Blob)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
+            else if (arg->Type() == FunctionSignature::ValueType::Float ||
+                     arg->Type() == FunctionSignature::ValueType::Numeric)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Double));
+            else if (arg->Type() == FunctionSignature::ValueType::Integer)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+            else if (arg->Type() == FunctionSignature::ValueType::Any)
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Long));
+            else
+                test.SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_Binary));
+            }
+
+        j++;
+        i++;
+        } while (j < argExps.size() && i < args.size());
+
+        return SUCCESS;
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus FunctionSignature::Verify(Utf8StringR err, Exp::Collection const& argExps) const
+    {
+    const std::vector<Arg const*> args = Args();
+    const int required = RequiredArgCount();
+    const int optional = OptionalArgCount();
+    const bool varying = HasVariadicArg();
+
+    if (args.empty() && !argExps.empty())
+        {
+        err = "Function take no argument";
+        return ERROR;
+        }
+
+    if (required > argExps.size())
+        {
+        err = "Not enough arguments supplied";
+        return ERROR;
+        }
+
+    if (!varying)
+        {
+        if (argExps.size() > optional + required)
+            {
+            err = "Too many arguments";
+            return ERROR;
+            }
+
+        }
+
+    if (argExps.empty())
+        return SUCCESS;
+
+    int i = 0;
+    int j = 0;
+    do
+        {
+        Arg const* arg = args[i];
+        ValueExp const* test = argExps[j]->GetAsCP<ValueExp>();
+        ECSqlTypeInfo const& testType = test->GetTypeInfo();
+        const bool primtive =
+            testType.IsNull() ||
+            testType.IsBoolean() ||
+            testType.IsString() ||
+            testType.IsDateTime() ||
+            testType.IsBinary() ||
+            testType.IsGeometry() ||
+            testType.IsNumeric() ||
+            testType.IsExactNumeric() ||
+            testType.IsApproximateNumeric();
+
+        if (!primtive)
+            {
+            err = "Expecting primitive argument to funtion";
+            return ERROR;
+            }
+
+        if (arg->IsVariadic())
+            {
+            j++;
+            continue;
+            }
+
+        if (arg->Type() == ValueType::String)
+            if (!test->GetTypeInfo().IsString())
+                {
+                err.Sprintf("Argument '%s' Expecting primitive argument to funtion", arg->Name().c_str());
+                return ERROR;
+                }
+
+        if (arg->Type() == ValueType::Blob)
+            if (!testType.IsBinary() || !testType.IsGeometry())
+                {
+                err.Sprintf("Argument '%s' Expecting binary argument to funtion", arg->Name().c_str());
+                return ERROR;
+                }
+
+        if (arg->Type() == ValueType::Integer)
+            if (!testType.IsExactNumeric())
+                {
+                err.Sprintf("Argument '%s' Expecting integer argument to funtion", arg->Name().c_str());
+                return ERROR;
+                }
+
+        if (arg->Type() == ValueType::Float)
+            if (!testType.IsApproximateNumeric())
+                {
+                err.Sprintf("Argument '%s' Expecting float argument to funtion", arg->Name().c_str());
+                return ERROR;
+                }
+
+        if (arg->Type() == ValueType::Numeric)
+            if (!testType.IsNumeric())
+                {
+                err.Sprintf("Argument '%s' Expecting numeric argument to funtion", arg->Name().c_str());
+                return ERROR;
+                }
+
+        j++;
+        i++;
+        } while (j < argExps.size() && i < args.size());
+
+        return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+int FunctionSignature::RequiredArgCount() const
+    {
+    int i = 0;
+    for (std::unique_ptr<Arg> const& arg : m_args)
+        if (arg->IsOptional() || arg->IsVariadic())
+            return i;
+        else
+            i++;
+
+    return i;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+int FunctionSignature::OptionalArgCount() const
+    {
+    int i = 0;
+    for (std::unique_ptr<Arg> const& arg : m_args)
+        if (arg->IsOptional())
+            i++;
+
+    return i;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool FunctionSignature::HasVariadicArg() const
+    {
+    for (std::unique_ptr<Arg> const& arg : m_args)
+        if (arg->IsVariadic())
+            return true;
+
+    return false;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       10/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+std::unique_ptr<FunctionSignature> FunctionSignature::Parse(Utf8CP signature, Utf8CP description)
+    {
+    std::unique_ptr<FunctionSignature> sig;
+    BentleyStatus bs = Parse(sig, signature, description);
+    BeAssert(bs == SUCCESS);
+    if (bs != SUCCESS)
+        return nullptr;
+
+    return sig;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

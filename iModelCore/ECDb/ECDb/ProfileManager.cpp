@@ -73,35 +73,6 @@ DbResult ProfileManager::CheckProfileVersion(bool& fileIsAutoUpgradable, Profile
     return ECDb::CheckProfileVersion(fileIsAutoUpgradable, GetExpectedVersion(), actualProfileVersion, GetMinimumSupportedVersion(), openModeIsReadOnly, PROFILENAME);
     }
 
-//=======================================================================================
-//! Whenever a profile upgrade needs to rename or remove tables/columns
-//! a ProfileUpgradeContext is needed which prepares SQLite accordingly, 
-//! e.g. foreign key enforcement is disabled during upgrade to not invalidate foreign key
-//! constraints when altering tables.
-// @bsiclass                                                 Krischan.Eberle      07/2013
-//+===============+===============+===============+===============+===============+======
-struct ProfileUpgradeContext final: NonCopyableClass
-    {
-    private:
-        ECDbR m_ecdb;
-        Savepoint& m_defaultTransaction;
-        bool m_isDefaultTransOpen;
-        bool m_rollbackOnDestruction;
-        DbResult m_beginTransError;
-
-        void DisableForeignKeyEnforcement();
-        void EnableForeignKeyEnforcement() const;
-    public:
-        ProfileUpgradeContext(ECDbR ecdb, Savepoint& defaultTransaction);
-        ~ProfileUpgradeContext();
-
-        //! Be default the upgrade transaction is rolled back when the context is destroyed.
-        //! Be calling this method, the transaction is committed when the context is destroyed.
-       // void SetCommitAfterUpgrade() { m_rollbackOnDestruction = false; }
-
-     //   DbResult GetBeginTransError() const { return m_beginTransError; }
-    };
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
@@ -125,7 +96,7 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForProfileUpgrade(ecdb))
         {
-        LOG.errorv("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
+        LOG.error("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
         }
 
@@ -220,12 +191,6 @@ DbResult ProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, ECDb
     if (BE_SQLITE_ROW == ecdb.QueryProperty(currentVersionString, GetProfileVersionPropertySpec()))
         {
         profileVersion.FromJson(currentVersionString.c_str());
-        return BE_SQLITE_OK;
-        }
-
-    if (ecdb.TableExists("ec_Schema"))
-        {
-        profileVersion = ProfileVersion(1, 0, 0, 0);
         return BE_SQLITE_OK;
         }
 
@@ -482,11 +447,11 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Table
                            "(Id INTEGER PRIMARY KEY,"
                            "ParentTableId INTEGER REFERENCES " TABLE_Table "(Id) ON DELETE CASCADE,"
-                           "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
+                           "Name TEXT UNIQUE NOT NULL COLLATE NOCASE," //ECDb requires table names to be unique even across other db schema names
                            "Type INTEGER NOT NULL,"
                            "ExclusiveRootClassId INTEGER REFERENCES " TABLE_Class "(Id) ON DELETE SET NULL,"
-                           "UpdatableViewName TEXT)"); //UpdatableViewName is not used right now
-if (BE_SQLITE_OK != stat)
+                           "UpdatableViewName TEXT)"); //UpdatableViewName is not used anymore -> WIP_NEXTGEN_DELETE
+    if (BE_SQLITE_OK != stat)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON " TABLE_Table "(ParentTableId);"
@@ -576,67 +541,5 @@ if (BE_SQLITE_OK != stat)
                            "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " TABLE_ClassHierarchyCache "(BaseClassId);");
     }
 
-
-//*************************************** ECDbProfileManager::ProfileUpgradeContext *************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ProfileUpgradeContext::ProfileUpgradeContext(ECDbR ecdb, Savepoint& defaultTransaction)
-    : m_ecdb(ecdb), m_defaultTransaction(defaultTransaction), m_isDefaultTransOpen(defaultTransaction.IsActive()), m_rollbackOnDestruction(true)
-    {
-    DisableForeignKeyEnforcement();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ProfileUpgradeContext::~ProfileUpgradeContext()
-    {
-    EnableForeignKeyEnforcement();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-void ProfileUpgradeContext::DisableForeignKeyEnforcement()
-    {
-    if (m_isDefaultTransOpen)
-        m_defaultTransaction.Commit(nullptr);
-
-    //Need to use TryExecuteSql which calls SQLite directly without any checks (Calling ExecuteSql would
-    //check that a transaction is active which we explicity must not have for setting this pragma)
-    auto stat = m_ecdb.TryExecuteSql("PRAGMA foreign_keys=OFF;");
-    if (stat != BE_SQLITE_OK)
-        {
-        LOG.error("ECDb profile upgrade: Disabling foreign key enforcement in SQLite failed.");
-        BeAssert(false);
-        }
-
-    // Start a transaction in immediate mode
-    m_beginTransError = m_defaultTransaction.Begin(BeSQLiteTxnMode::Immediate);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-void ProfileUpgradeContext::EnableForeignKeyEnforcement() const
-    {
-    if (m_rollbackOnDestruction)
-        m_defaultTransaction.Cancel();
-    else
-        m_defaultTransaction.Commit(nullptr);
-
-    //Need to use TryExecuteSql which calls SQLite directly without any checks (Calling ExecuteSql would
-    //check that a transaction is active which we explicity must not have for setting this pragma)
-    auto stat = m_ecdb.TryExecuteSql("PRAGMA foreign_keys=ON;");
-    if (stat != BE_SQLITE_OK)
-        {
-        LOG.error("ECDb profile upgrade: Re-enabling foreign key enforcement in SQLite failed.");
-        BeAssert(false);
-        }
-
-    if (m_isDefaultTransOpen)
-        m_defaultTransaction.Begin();
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

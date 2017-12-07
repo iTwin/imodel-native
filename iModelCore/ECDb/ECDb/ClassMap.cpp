@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ClassMap.h"
 #include <algorithm>
-#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -18,8 +16,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
-ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)
-    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this), m_state(ObjectState::New)
+ClassMap::ClassMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)
+    : m_type(type), m_ecdb(ecdb), m_schemaManager(manager), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy), m_propertyMaps(*this), m_state(ObjectState::New)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::make_unique<TablePerHierarchyHelper>(*this);
@@ -35,7 +33,8 @@ DbTable& ClassMap::GetPrimaryTable() const
 
     for (DbTable* table : GetTables())
         {
-        if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
+        DbTable::Type tableType = table->GetType();
+        if (tableType == DbTable::Type::Primary || tableType == DbTable::Type::Existing || tableType == DbTable::Type::Virtual)
             return *table;
         }
 
@@ -53,9 +52,11 @@ DbTable& ClassMap::GetJoinedOrPrimaryTable() const
     DbTable* primaryTable = nullptr;
     for (DbTable* table : m_tables)
         {
-        if (table->GetType() == DbTable::Type::Joined)
+        DbTable::Type type = table->GetType();
+
+        if (type == DbTable::Type::Joined)
             joinedTable = table;
-        else if (table->GetType() == DbTable::Type::Primary || table->GetType() == DbTable::Type::Existing || table->GetType() == DbTable::Type::Virtual)
+        else if (type == DbTable::Type::Primary || type == DbTable::Type::Existing || type == DbTable::Type::Virtual)
             primaryTable = table;
 
         if (joinedTable != nullptr)
@@ -213,12 +214,12 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     //triggerName.Sprintf("%s_%s_SetCurrentTimeStamp", tableName, currentTimeStampColName);
     triggerName.Sprintf("%s_CurrentTimeStamp", tableName);
     Utf8String body;
-    body.Sprintf("BEGIN UPDATE %s SET %s=" CURRENTIMESTAMP_SQLEXP " WHERE %s=new.%s; END", tableName, currentTimeStampColName, instanceIdColName, instanceIdColName);
+    body.Sprintf("BEGIN UPDATE [%s] SET [%s]=" CURRENTIMESTAMP_SQLEXP " WHERE [%s]=new.[%s]; END", tableName, currentTimeStampColName, instanceIdColName, instanceIdColName);
 
     Utf8String whenCondition;
-    whenCondition.Sprintf("old.%s=new.%s AND old.%s!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
+    whenCondition.Sprintf("old.[%s]=new.[%s] AND old.[%s]!=" CURRENTIMESTAMP_SQLEXP, currentTimeStampColName, currentTimeStampColName, currentTimeStampColName);
 
-    return table.AddTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
+    return table.AddTrigger(triggerName, DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -256,14 +257,14 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
+            ClassMap const* baseClassMap = GetSchemaManager().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false);
                 return ClassMappingStatus::Error;
                 }
 
-            if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
+            if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                 tphBaseClassMaps.push_back(baseClassMap);
             }
         }
@@ -356,7 +357,7 @@ BentleyStatus ClassMap::Save(SchemaImportContext& importCtx, DbMapSaveContext& c
         {
         for (ECClassCP baseClass : GetClass().GetBaseClasses())
             {
-            ClassMap* baseClassMap = const_cast<ClassMap*>(GetDbMap().GetClassMap(*baseClass));
+            ClassMap* baseClassMap = const_cast<ClassMap*>(GetSchemaManager().GetClassMap(*baseClass));
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false && "Failed to find baseClass map");
@@ -399,7 +400,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     std::set<DbTable*> overflowTables;
     if (!dbLoadCtx.HasMappedProperties())
         {
-        SetTable(*const_cast<DbTable*>(GetDbMap().GetDbSchema().GetNullTable()));
+        SetTable(*const_cast<DbTable*>(GetSchemaManager().GetDbSchema().GetNullTable()));
         return SUCCESS;
         }
 
@@ -435,7 +436,7 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
     if (mapColumnsList == nullptr)
         return ERROR;
 
-        //Load ECInstanceId================================================
+    //Load ECInstanceId================================================
     RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::CreateInstance(*this, *mapColumnsList);
     if (ecInstanceIdPropertyMap == nullptr)
         {
@@ -475,16 +476,15 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
-            ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
+            ClassMap const* baseClassMap = GetSchemaManager().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
                 return ERROR;
 
-            if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
+            if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                 tphBaseClassMaps.push_back(baseClassMap);
             }
         }
    
-    //bvector<ECPropertyCP> failedToLoadProperties;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         DataPropertyMap const*  tphBaseClassPropMap = nullptr;
@@ -554,8 +554,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
 
         //! ECSchema update added new property for which we need to save property map
         DbMapSaveContext ctx(m_ecdb);
-        //First make sure table is updated on disk. The table must already exist for this operation to work.
-        if (GetDbMap().GetDbSchema().UpdateTableInDb(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
+        if (GetSchemaManager().GetDbSchema().UpdateTable(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
             {
             BeAssert(false && "Failed to save table");
             return ERROR;
@@ -607,7 +606,7 @@ IssueReporter const& ClassMap::Issues() const { return m_ecdb.GetImpl().Issues()
 //------------------------------------------------------------------------------------------
 StorageDescription const& ClassMap::GetStorageDescription() const
     {
-    return GetDbMap().GetLightweightCache().GetStorageDescription(*this);
+    return GetSchemaManager().GetLightweightCache().GetStorageDescription(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -619,7 +618,7 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
     std::vector<ClassMap const*> derivedClassMaps;
     for (ECClassCP derivedClass : derivedClasses)
         {
-        if (ClassMap const* derivedClassMap = GetDbMap().GetClassMap(*derivedClass))
+        if (ClassMap const* derivedClassMap = GetSchemaManager().GetClassMap(*derivedClass))
             derivedClassMaps.push_back(derivedClassMap);
         }
 
@@ -632,9 +631,9 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
 //------------------------------------------------------------------------------------------
 BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
     {
-    if (GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy)
+    if (!GetMapStrategy().IsTablePerHierarchy())
         {
-        BeAssert(GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+        BeAssert(GetMapStrategy().IsTablePerHierarchy());
         return ERROR;
         }
 
@@ -684,7 +683,7 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
         ctx.EndSaving(*this);
         }
 
-    for (ClassMapCP derviedClassMap : GetDerivedClassMaps())
+    for (ClassMap const* derviedClassMap : GetDerivedClassMaps())
         if (derviedClassMap)
             const_cast<ClassMap*>(derviedClassMap)->SetOverflowTable(overflowTable);
 
@@ -767,7 +766,7 @@ ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
 //---------------------------------------------------------------------------------------
 ClassMappingStatus NotMappedClassMap::_Map(ClassMappingContext& ctx)
     {
-    DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
+    DbTable const* nullTable = GetSchemaManager().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
     return ClassMappingStatus::Success;
     }
@@ -777,7 +776,7 @@ ClassMappingStatus NotMappedClassMap::_Map(ClassMappingContext& ctx)
 //---------------------------------------------------------------------------------------
 BentleyStatus NotMappedClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
     {
-    DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
+    DbTable const* nullTable = GetSchemaManager().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
     return SUCCESS;
     }

@@ -19,16 +19,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ChangeIteratorImpl.cpp" />
+    <ClCompile Include="ChangeSummaryExtractor.cpp" />
     <ClCompile Include="ChangeSummaryImpl.cpp" />
+    <ClCompile Include="ChangeSummaryManager.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
-    <ClCompile Include="DbMap.cpp" />
     <ClCompile Include="DbMappingManager.cpp" />
     <ClCompile Include="DbMapValidator.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
+    <ClCompile Include="DbUtilities.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
@@ -116,6 +119,7 @@
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
     <ClCompile Include="SchemaManager.cpp" />
+    <ClCompile Include="SchemaManagerDispatcher.cpp" />
     <ClCompile Include="SchemaPersistenceHelper.cpp" />
     <ClCompile Include="SchemaReader.cpp" />
     <ClCompile Include="SchemaValidator.cpp" />
@@ -124,6 +128,7 @@
     <ClCompile Include="ViewGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicAPI\ECDb\ChangeIterator.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
@@ -139,16 +144,19 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\SchemaManager.h" />
+    <ClInclude Include="ChangeIteratorImpl.h" />
+    <ClInclude Include="ChangeSummaryExtractor.h" />
     <ClInclude Include="ChangeSummaryImpl.h" />
+    <ClInclude Include="ChangeSummaryManager.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
-    <ClInclude Include="DbMap.h" />
     <ClInclude Include="DbMappingManager.h" />
     <ClInclude Include="DbMapValidator.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />
+    <ClInclude Include="DbUtilities.h" />
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
@@ -220,6 +228,7 @@
     <ClInclude Include="PropertyMapVisitor.h" />
     <ClInclude Include="RelationshipClassMap.h" />
     <ClInclude Include="SchemaImportContext.h" />
+    <ClInclude Include="SchemaManagerDispatcher.h" />
     <ClInclude Include="SchemaPersistenceHelper.h" />
     <ClInclude Include="SchemaReader.h" />
     <ClInclude Include="SchemaValidator.h" />
@@ -241,10 +250,11 @@
     <None Include="ECSql\parser\sqlflex.l" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
-    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
+    <Xml Include="ECSchemas\ECDbChangeSummaries.01.00.00.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
+    <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml" />
   </ItemGroup>

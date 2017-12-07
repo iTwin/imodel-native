@@ -6,95 +6,187 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include <Bentley/Base64Utilities.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BlobToBase64SqlFunction* BlobToBase64SqlFunction::s_singleton = nullptr;
+
+//************************************************************************************
+// ChangedValueStateToOpCodeSqlFunction
+//************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
+// @bsimethod                                   Affan.Khan                       11/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BlobToBase64SqlFunction& BlobToBase64SqlFunction::GetSingleton()
+ChangedValueStateToOpCodeSqlFunction* ChangedValueStateToOpCodeSqlFunction::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ChangedValueStateToOpCodeSqlFunction& ChangedValueStateToOpCodeSqlFunction::GetSingleton()
     {
     if (s_singleton == nullptr)
-        s_singleton = new BlobToBase64SqlFunction();
+        s_singleton = new ChangedValueStateToOpCodeSqlFunction();
 
     return *s_singleton;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
+// @bsimethod                                   Affan.Khan                       11/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void BlobToBase64SqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
-    DbValue const& blobArg = args[0];
-    if (blobArg.IsNull())
+    DbValue const& stateValue = args[0];
+    if (stateValue.GetValueType() != DbValueType::IntegerVal && stateValue.GetValueType() != DbValueType::TextVal)
+        {
+        ctx.SetResultError("Argument 1 of function " SQLFUNC_ChangedValueStateToOpCode " is expected to be the ChangedValueState and must be of integer or text type and cannot be null");
+        return;
+        }
+
+    const bool isIntegerVal = stateValue.GetValueType() == DbValueType::IntegerVal;
+    Nullable<ChangedValueState> state;
+    if (isIntegerVal)
+        state = ChangeSummaryManager::ToChangedValueState(stateValue.GetValueInt());
+    else
+        state = ChangeSummaryManager::ToChangedValueState(stateValue.GetValueText());
+
+    Nullable<ChangeOpCode> opCode;
+    if (state.IsNull() || (opCode = ChangeSummaryManager::DetermineOpCodeFromChangedValueState(state.Value())).IsNull())
+        {
+        Utf8String msg;
+        if (isIntegerVal)
+            msg.Sprintf("Argument 1 of function " SQLFUNC_ChangedValueStateToOpCode " has an invalid ChangedValueState value (%d)", stateValue.GetValueInt());
+        else
+            msg.Sprintf("Argument 1 of function " SQLFUNC_ChangedValueStateToOpCode " has an invalid ChangedValueState value (%s)", stateValue.GetValueText());
+
+        ctx.SetResultError(msg.c_str());
+        return;
+        }
+        
+    ctx.SetResultInt(Enum::ToInt(opCode.Value()));
+    }
+
+//************************************************************************************
+// ChangedValueSqlFunction
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan              11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    //Decode and verify parameters
+    DbValue const& instanceChangeIdValue = args[0];
+    if (instanceChangeIdValue.GetValueType() != DbValueType::IntegerVal)
+        {
+        ctx.SetResultError("Argument 1 of function " SQLFUNC_ChangedValue " is expected to be the InstanceChange ECInstanceId and must be of integer type and cannot be null");
+        return;
+        }
+
+    const ECInstanceId instanceChangeId = instanceChangeIdValue.GetValueId<ECInstanceId>();
+
+    DbValue const& accessStringValue = args[1];
+    if (accessStringValue.GetValueType() != DbValueType::TextVal)
+        {
+        ctx.SetResultError("Argument 2 of function " SQLFUNC_ChangedValue " is expected to be the property access string and must be of text type and cannot be null");
+        return;
+        }
+
+    Utf8CP accessString = accessStringValue.GetValueText();
+
+    DbValue const& changedValueStateValue = args[2];
+    if (changedValueStateValue.GetValueType() != DbValueType::IntegerVal && changedValueStateValue.GetValueType() != DbValueType::TextVal)
+        {
+        ctx.SetResultError("Argument 3 of function " SQLFUNC_ChangedValue " is expected to be the ChangedValueState and must be of integer or text type and cannot be null");
+        return;
+        }
+
+    const bool stateIsIntegerVal = changedValueStateValue.GetValueType() == DbValueType::IntegerVal;
+    Nullable<ChangedValueState> state;
+    if (stateIsIntegerVal)
+        state = ChangeSummaryManager::ToChangedValueState(changedValueStateValue.GetValueInt());
+    else
+        state = ChangeSummaryManager::ToChangedValueState(changedValueStateValue.GetValueText());
+
+    if (state.IsNull())
+        {
+        Utf8String msg;
+        if (stateIsIntegerVal)
+            msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid ChangedValueState value (%d)", changedValueStateValue.GetValueInt());
+        else
+            msg.Sprintf("Argument 3 of function " SQLFUNC_ChangedValue " has an invalid ChangedValueState value (%s)", changedValueStateValue.GetValueText());
+
+        ctx.SetResultError(msg.c_str());
+        return;
+        }
+
+    DbValue const& fallbackValue = args[3];
+
+
+    Utf8CP ecsql = nullptr;
+    if (state == ChangedValueState::BeforeUpdate || state == ChangedValueState::BeforeDelete)
+        ecsql = "SELECT RawOldValue, TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+    else
+        ecsql = "SELECT RawNewValue, TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+
+    CachedECSqlStatementPtr stmt = m_statementCache.GetPreparedStatement(m_ecdb, ecsql);
+    if (stmt == nullptr)
+        {
+        Utf8String msg;
+        msg.Sprintf("SQL function " SQLFUNC_ChangedValue " failed: could not prepare ECSQL '%s'.", ecsql);
+        ctx.SetResultError(msg.c_str());
+        return;
+        }
+
+    stmt->BindId(1, instanceChangeId);
+    stmt->BindText(2, accessString, IECSqlBinder::MakeCopy::No);
+
+    if (stmt->Step() != BE_SQLITE_ROW)
+        {
+        ctx.SetResultValue(fallbackValue);
+        return;
+        }
+
+    if (stmt->IsValueNull(0))
         {
         ctx.SetResultNull();
         return;
         }
 
-    Byte const* blob = static_cast<Byte const*> (blobArg.GetValueBlob());
-    const int byteCount = blobArg.GetValueBytes();
-    BeAssert(byteCount >= 0);
-    Utf8String str;
-    Base64Utilities::Encode(str, blob, (size_t) byteCount);
-    ctx.SetResultText(str.c_str(), (int) str.length(), Context::CopyData::Yes);
-    }
+    Utf8CP valType = stmt->GetValueText(1);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Base64ToBlobSqlFunction* Base64ToBlobSqlFunction::s_singleton = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Base64ToBlobSqlFunction& Base64ToBlobSqlFunction::GetSingleton()
-    {
-    if (s_singleton == nullptr)
-        s_singleton = new Base64ToBlobSqlFunction();
-
-    return *s_singleton;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-void Base64ToBlobSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    DbValue const& base64Arg = args[0];
-
-    if (base64Arg.IsNull())
+    if (BeStringUtilities::StricmpAscii("integer", valType) == 0)
         {
-        ctx.SetResultNull();
+        ctx.SetResultInt64(stmt->GetValueInt64(0));
         return;
         }
 
-    Utf8CP base64Str = base64Arg.GetValueText();
-    if (!Base64Utilities::MatchesAlphabet(base64Str))
+    if (BeStringUtilities::StricmpAscii("real", valType) == 0)
         {
-        Utf8String error;
-        error.Sprintf("Invalid argument for SQL function %s: '%s' is not a valid base64 string.", GetName(), base64Str);
-        ctx.SetResultError(error.c_str());
+        ctx.SetResultDouble(stmt->GetValueDouble(0));
         return;
         }
 
-    int base64StrLen = base64Arg.GetValueBytes();
-    if (base64StrLen < 0)
-        base64StrLen = (int) strlen(base64Str);
-    
-    ByteStream blob;
-    Base64Utilities::Decode(blob, base64Str, (size_t) base64StrLen);
-    ctx.SetResultBlob(blob.data(), (int) blob.size(), DbFunction::Context::CopyData::Yes);
+    if (BeStringUtilities::StricmpAscii("text", valType) == 0)
+        {
+        Utf8CP strVal = stmt->GetValueText(0);
+        const int len = (int) strlen(strVal);
+        ctx.SetResultText(strVal, len, Context::CopyData::Yes);
+        return;
+        }
+
+    if (BeStringUtilities::StricmpAscii("blob", valType) == 0)
+        {
+        int blobSize = -1;
+        void const* blob = stmt->GetValueBlob(0, &blobSize);
+        ctx.SetResultBlob(blob, blobSize, Context::CopyData::Yes);
+        return;
+        }
+
+    Utf8String msg;
+    msg.Sprintf("SQL function " SQLFUNC_ChangedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType);
+    ctx.SetResultError(msg.c_str());
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

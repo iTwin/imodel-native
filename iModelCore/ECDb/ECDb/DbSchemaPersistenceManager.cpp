@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "SqlNames.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -19,19 +18,19 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
     PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHierarchyCache);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHierarchyCache))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHierarchyCache))
         return ERROR;
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(
                     "WITH RECURSIVE "
                      "  BaseClassList(ClassId, BaseClassId, Level, Ordinal) AS "
                      "  ("
-                     "  SELECT Id, Id, 1, 0 FROM ec_Class "
+                     "  SELECT Id, Id, 1, 0 FROM main." TABLE_Class
                      "  UNION "
                      "  SELECT DCL.ClassId, BC.BaseClassId, DCL.Level + 1, COALESCE(NULLIF(BC.Ordinal, 0), DCL.Ordinal) "
-                     "  FROM BaseClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId "
+                     "  FROM BaseClassList DCL INNER JOIN main. " TABLE_ClassHasBaseClasses " BC ON BC.ClassId = DCL.BaseClassId "
                      "  )"
-                     "INSERT INTO " TABLE_ClassHierarchyCache " "
+                     "INSERT INTO main." TABLE_ClassHierarchyCache " "
                      "SELECT DISTINCT NULL Id, ClassId, BaseClassId FROM BaseClassList ORDER BY Ordinal DESC, Level DESC;"))
         {
         return ERROR;
@@ -48,18 +47,17 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
     PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHasTablesCache))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." TABLE_ClassHasTablesCache))
         return ERROR;
 
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("INSERT INTO " TABLE_ClassHasTablesCache " "
-                                        "SELECT NULL, ec_ClassMap.ClassId, ec_Table.Id FROM ec_PropertyMap "
-                                        "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-                                        "          INNER JOIN ec_ClassMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
-                                        "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-                                        "    WHERE ec_ClassMap.MapStrategy <>  " SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable
-                                        "          AND ec_ClassMap.MapStrategy <>  " SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable
-                                        "          AND ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId " = 0 "
-                                        "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id"))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("INSERT INTO main." TABLE_ClassHasTablesCache " "
+                                        "SELECT NULL,cm.ClassId,t.Id FROM main." TABLE_PropertyMap " pm"
+                                        " INNER JOIN main." TABLE_Column " c ON c.Id=pm.ColumnId"
+                                        " INNER JOIN main." TABLE_ClassMap " cm ON cm.ClassId=pm.ClassId"
+                                        " INNER JOIN main." TABLE_Table " t ON t.Id=c.TableId"
+                                        " WHERE c.ColumnKind & " SQLVAL_DbColumn_Kind_ECClassId "=0 AND "
+                                        "   cm.MapStrategy NOT IN(" SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable "," SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ")"
+                                        " GROUP BY cm.ClassId, t.Id"))
         return ERROR;
 
     PERFLOG_FINISH("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
@@ -75,10 +73,8 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
     if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
 
-    Utf8CP tableName = table.GetName().c_str();
-
     CreateOrUpdateTableResult mode;
-    if (ecdb.TableExists(tableName))
+    if (DbUtilities::TableExists(ecdb, table.GetName().c_str()))
         mode = IsTableChanged(ecdb, table) ? CreateOrUpdateTableResult::Updated : CreateOrUpdateTableResult::WasUpToDate;
     else
         mode = CreateOrUpdateTableResult::Created;
@@ -116,19 +112,15 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    const std::vector<DbColumn const*> columns = table.FindAll(PersistenceType::Physical);
-    if (columns.empty())
-        {
-        BeAssert(false && "Table have no persisted columns");
-        return ERROR;
-        }
-
-    Utf8String ddl("CREATE TABLE [");
-    ddl.append(table.GetName()).append("](");
+    Utf8String ddl("CREATE TABLE ");
+    ddl.append("[").append(table.GetName()).append("](");
 
     bool isFirstCol = true;
-    for (DbColumn const* col : columns)
+    for (DbColumn const* col : table.GetColumns())
         {
+        if (col->GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
         if (!isFirstCol)
             ddl.append(", ");
 
@@ -136,6 +128,12 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
             return ERROR;
 
         isFirstCol = false;
+        }
+
+    if (isFirstCol)
+        {
+        BeAssert(false && "Table doesn't have any columns");
+        return ERROR;
         }
 
     // Append constraints;
@@ -168,7 +166,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 
     if (ecdb.ExecuteDdl(ddl.c_str()) != BE_SQLITE_OK)
         {
-        ecdb.GetImpl().Issues().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
+        ecdb.GetImpl().Issues().Report("Failed to create table %s: %s [%s]", table.GetName().c_str(), ecdb.GetLastError().c_str(), ddl.c_str());
         return ERROR;
         }
 
@@ -187,33 +185,8 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    Utf8CP tableName = table.GetName().c_str();
-    DbSchema::EntityType type = DbSchema::GetEntityType(ecdb, tableName);
-    if (type == DbSchema::EntityType::None)
-        {
-        BeAssert(false && "Table is expected to exist already");
-        return ERROR;
-        }
-
-    //! Object type is view and exist in db. Action = DROP it and recreate it.
-    if (type == DbSchema::EntityType::View)
-        {
-        Utf8String sql("DROP VIEW [");
-        sql.append(tableName).append("]");
-        auto r = ecdb.ExecuteSql(sql.c_str());
-        if (r != BE_SQLITE_OK)
-            {
-            ecdb.GetImpl().Issues().Report("Failed to drop view '%s'", tableName);
-            return ERROR;
-            }
-
-        return CreateTable(ecdb, table);
-        }
-
-    BeAssert(type == DbSchema::EntityType::Table);
-
     bvector<Utf8String> existingColumnNamesInDb;
-    if (!ecdb.GetColumns(existingColumnNamesInDb, tableName))
+    if (!ecdb.GetColumns(existingColumnNamesInDb, table.GetName().c_str()))
         {
         BeAssert(false && "Failed to get column list for table");
         return ERROR;
@@ -233,7 +206,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
     //compute new columns;
     for (DbColumn const* col : columns)
         {
-        if (existingColumnNamesInDbSet.find(col->GetName().c_str()) == existingColumnNamesInDbSet.end())
+        if (existingColumnNamesInDbSet.find(col->GetName()) == existingColumnNamesInDbSet.end())
             newColumns.push_back(col);
         }
 
@@ -353,8 +326,8 @@ BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
         {
-        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
-                                       ecdb.GetLastError().c_str());
+        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s [%s]", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+                                       ecdb.GetLastError().c_str(), ddl.c_str());
 
         return ERROR;
         }
@@ -379,12 +352,11 @@ BentleyStatus DbSchemaPersistenceManager::BuildCreateIndexDdl(Utf8StringR ddl, U
         comparableIndexDef.assign("u ");
         }
 
-    Utf8CP indexName = index.GetName().c_str();
-    Utf8CP tableName = index.GetTable().GetName().c_str();
+    Utf8StringCR tableName = index.GetTable().GetName();
     Utf8String columnsDdl;
     AppendColumnNamesToDdl(columnsDdl, index.GetColumns());
 
-    ddl.append("INDEX [").append(indexName).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
+    ddl.append("INDEX [").append(index.GetName()).append("] ON [").append(tableName).append("](").append(columnsDdl).append(")");
     comparableIndexDef.append(tableName).append("(").append(columnsDdl).append(")");
 
     Utf8String whereClause;
@@ -471,7 +443,8 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         return ERROR;
         }
 
-    ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecclass);
+    //during schema import always use MainDbMap
+    ClassMap const* classMap = ecdb.Schemas().Main().GetClassMap(*ecclass);
     if (classMap == nullptr)
         {
         BeAssert(false);
@@ -521,11 +494,11 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
     {
     for (DbTrigger const* trigger : table.GetTriggers())
         {
-        if (TriggerExistsInDb(ecdb, *trigger))
+        if (TriggerExists(ecdb, *trigger))
             {
             if (failIfExists)
                 {
-                ecdb.GetImpl().Issues().Report("Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
+                ecdb.GetImpl().Issues().Report("Trigger %s already exists on table %s.", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str());
                 return ERROR;
                 }
 
@@ -552,7 +525,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 
         if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
             {
-            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
+            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName().c_str(), trigger->GetTable().GetName().c_str(),
                                                           ecdb.GetLastError().c_str());
             return ERROR;
             }
@@ -565,9 +538,9 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 //static
-bool DbSchemaPersistenceManager::TriggerExistsInDb(ECDbCR ecdb, DbTrigger const& trigger)
+bool DbSchemaPersistenceManager::TriggerExists(ECDbCR ecdb, DbTrigger const& trigger)
     {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from sqlite_master WHERE type='trigger' and name=?");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from main.sqlite_master WHERE type='trigger' and name=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -685,30 +658,45 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
         ddl.append(" ON UPDATE ").append(ForeignKeyDbConstraint::ActionTypeToSql(fkConstraint.GetOnUpdateAction()));
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR ecdb, Utf8StringCR tableName)
+BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR ecdb, Utf8StringCR tableName, Utf8CP tableSpace)
     {
-    colInfos.clear();
-    Utf8String sql("PRAGMA table_info('");
-    sql.append(tableName).append("')");
+    if (Utf8String::IsNullOrEmpty(tableSpace))
+        {
+        std::vector<Utf8String> tableSpaces;
+        if (SUCCESS != DbUtilities::GetTableSpaces(tableSpaces, ecdb))
+            return ERROR;
 
-    Statement stmt;
-    if (stmt.Prepare(ecdb, sql.c_str()) != BE_SQLITE_OK)
+        for (Utf8StringCR tableSpace : tableSpaces)
+            {
+            if (SUCCESS != RunPragmaTableInfo(colInfos, ecdb, tableName, tableSpace.c_str()))
+                return ERROR;
+
+            if (!colInfos.empty()) // table found, no need to continue in other table spaces
+                return SUCCESS;
+            }
+
+        return SUCCESS;
+        }
+
+    colInfos.clear();
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("PRAGMA [%s].table_info('%s')", tableSpace, tableName.c_str()).c_str());
+    if (stmt == nullptr)
         return ERROR;
 
-    while (stmt.Step() == BE_SQLITE_ROW)
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
-        Utf8String colName(stmt.GetValueText(1));
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(1), "name") == 0);
+        Utf8String colName(stmt->GetValueText(1));
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(2), "type") == 0);
         Utf8String colTypeName;
-        if (!stmt.IsColumnNull(2))
-            colTypeName.assign(stmt.GetValueText(2));
+        if (!stmt->IsColumnNull(2))
+            colTypeName.assign(stmt->GetValueText(2));
 
         DbColumn::Type colType = DbColumn::Type::Any;
         if (!colTypeName.empty())
@@ -734,76 +722,20 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColum
                 colType = DbColumn::Type::Boolean;
             }
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
-        const bool colIsNotNull = stmt.GetValueBoolean(3);
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(3), "notnull") == 0);
+        const bool colIsNotNull = stmt->GetValueBoolean(3);
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(4), "dflt_value") == 0);
         Utf8String colDefaultValue;
-        if (!stmt.IsColumnNull(4))
-            colDefaultValue.assign(stmt.GetValueText(4));
+        if (!stmt->IsColumnNull(4))
+            colDefaultValue.assign(stmt->GetValueText(4));
 
-        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
-        const int pkOrdinal = stmt.GetValueInt(5); //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
+        BeAssert(BeStringUtilities::StricmpAscii(stmt->GetColumnName(5), "pk") == 0);
+        const int pkOrdinal = stmt->GetValueInt(5); //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
 
         colInfos.push_back(SqliteColumnInfo(colName, colType, pkOrdinal, colIsNotNull, colDefaultValue));
         }
 
     return SUCCESS;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-//static
-bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetTableDefNamesAndIds(ECDbCR ecdb, Utf8CP whereClause)
-    {
-    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> map;
-
-    CachedStatementPtr stmt = nullptr;
-    if (whereClause == nullptr)
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, Id FROM ec_Table");
-    else
-        {
-        Utf8String sql("SELECT Name, Id FROM ec_Table");
-        sql.append(" WHERE ").append(whereClause);
-        stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
-        }
-
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return map;
-        }
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        map[stmt->GetValueText(0)] = stmt->GetValueId<DbTableId>(1);
-        }
-
-    return map;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-//static
-bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetColumnNamesAndIds(ECDbCR ecdb, DbTableId tableId)
-    {
-    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> map;
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, Id FROM ec_Column WHERE TableId=?");
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return map;
-        }
-
-    stmt->BindId(1, tableId);
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        map[stmt->GetValueText(0)] = stmt->GetValueId<DbColumnId>(1);
-        }
-
-    return map;
-    }
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

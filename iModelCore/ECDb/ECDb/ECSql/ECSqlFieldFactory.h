@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <Bentley/NonCopyableClass.h>
-
 #include "ECSqlPrepareContext.h"
 #include "PropertyNameExp.h"
 #include "ECSqlField.h"

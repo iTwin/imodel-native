@@ -17,7 +17,7 @@ THREAD_MAIN_IMPL __Run(void* args);
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                       12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct BeThread : NonCopyableClass
+struct BeThread final
     {
     friend THREAD_MAIN_IMPL __Run(void* args);
     enum class State
@@ -29,13 +29,18 @@ struct BeThread : NonCopyableClass
         };
 
     private:
-        struct __ThreadArg : NonCopyableClass, IConditionVariablePredicate
+        struct __ThreadArg : IConditionVariablePredicate
             {
             private:
                 std::function<void(void)> m_worker;
                 intptr_t m_threadId;
                 BeAtomic<State> m_stat;
                 BeConditionVariable m_conditionalVar;
+
+                //not copyable
+                __ThreadArg(__ThreadArg const&) = delete;
+                __ThreadArg& operator=(__ThreadArg const&) = delete;
+
             private:
                 bool _TestCondition(struct BeConditionVariable &cv) override
                     {
@@ -60,7 +65,11 @@ struct BeThread : NonCopyableClass
     private:
         const static int DEFAULT_STACK_SIZE = 1024 * 1024 * 8 * 2;
         mutable std::unique_ptr<__ThreadArg> m_arg;
+        
         BeThread() {}
+        //not copyable
+        BeThread(BeThread const&) = delete;
+        BeThread& operator=(BeThread const&) = delete;
 
     public:
         BeThread(BeThread&& rhs) :m_arg(std::move(rhs.m_arg)) {}
@@ -272,7 +281,7 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
             for (int i = 0; i < 100; ++i)
                 {
                 ECDb db;
-                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
+                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
                 ECSqlStatement stmt;
                 ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECInstanceId, Name, NumberOfEmployees FROM stco.Company"));
@@ -342,7 +351,7 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_SQL)
             for (int i = 0; i < 100; ++i)
                 {
                 ECDb db;
-                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
+                ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(ecdbFileName, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
                 Statement stmt;
                 ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT Id, Name, NumberOfEmployees FROM sc_Company"));

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.00" description="Custom attributes that customize ECDb's ECSchema to database mapping." displayLabel="ECDb DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECCustomAttributeClass typeName="SchemaMap" description="Specifies a prefix for generated tables. If not specified, namespacePrefix of the ECSchema is used" modifier="Sealed" appliesTo="Schema">
-        <ECProperty propertyName="TablePrefix" typeName="string" description="The prefix should be 2-4 letters followed by an underbar, e.g. plnt_."/>
+    <ECCustomAttributeClass typeName="SchemaMap" modifier="Sealed" appliesTo="Schema">
+        <ECProperty propertyName="TablePrefix" typeName="string" description="Specifies a prefix for generated tables. If not specified, the alias of the ECSchema is used"/>
     </ECCustomAttributeClass>
     
     <ECCustomAttributeClass typeName="ClassMap" modifier="Sealed" appliesTo="EntityClass, RelationshipClass">
         <ECProperty propertyName="MapStrategy" typeName="string" description="Defines how the ECClass is mapped to table(s). Values: OwnTable (default), TablePerHierarchy, ExistingTable, NotMapped"/>
-        <ECProperty propertyName="TableName" typeName="string" description="If MapStrategy is ExistingTable provide the table name here"/>
-        <ECProperty propertyName="ECInstanceIdColumn" typeName="string" description="Optionally specify custom 'primary key' column which must be of type Int64."/>
+        <ECProperty propertyName="TableName" typeName="string" description="If MapStrategy is 'ExistingTable' provide the table name here. Must not be set in all other cases."/>
+        <ECProperty propertyName="ECInstanceIdColumn" typeName="string" description="Optionally specify the name of custom 'primary key' column which must be of type Int64."/>
     </ECCustomAttributeClass>
     
     <ECCustomAttributeClass typeName="JoinedTablePerDirectSubclass" description="Maps subclasses and their children to a joined table. Can only be applied to classes in a hierarchy using MapStrategy TablePerHierarchy." modifier="Sealed" appliesTo="EntityClass"/>

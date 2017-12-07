@@ -6,12 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECDbImpl.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2016
@@ -23,6 +21,7 @@ ECDb::ECDb() : Db(), m_pimpl(new Impl(*this)) {}
 //---------------+---------------+---------------+---------------+---------------+------
 ECDb::~ECDb() 
     { 
+    m_appData.Clear();
     if (m_pimpl != nullptr)
         {
         delete m_pimpl;
@@ -64,6 +63,17 @@ DbResult ECDb::_OnDbOpening()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbOpened(Db::OpenParams const& params)
+    {
+    DbResult stat = Db::_OnDbOpened(params);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return m_pimpl->OnDbOpened(params);
+    }
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_OnDbCreated(CreateParams const& params)
@@ -95,7 +105,13 @@ DbResult ECDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
 void ECDb::_OnDbClose()
     {
     BeAssert(m_pimpl != nullptr && "DbClose was called in destructor after pimpl was deleted.");
-    m_pimpl->OnDbClose();
+    if (m_pimpl != nullptr)
+        {
+        delete m_pimpl;
+        m_pimpl = nullptr;
+        }
+
+    m_pimpl = new Impl(*this);
     Db::_OnDbClose();
     }
 
@@ -119,6 +135,16 @@ DbResult ECDb::_VerifyProfileVersion(Db::OpenParams const& params)
 
     return m_pimpl->VerifyProfileVersion(params);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbAttached(Utf8CP fileName, Utf8CP dbAlias) const { return m_pimpl->OnDbAttached(fileName, dbAlias); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                03/2014
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbDetached(Utf8CP dbAlias) const { return m_pimpl->OnDbDetached(dbAlias); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2014
@@ -151,6 +177,35 @@ ECN::IECSchemaLocater& ECDb::GetSchemaLocater() const { return m_pimpl->GetSchem
 ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLocater(); }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::IsChangeSummaryCacheAttached() const { return m_pimpl->GetChangeSummaryManager().IsChangeSummaryCacheAttachedAndValid(); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::AttachChangeSummaryCache() const { return m_pimpl->GetChangeSummaryManager().AttachChangeSummaryCacheFile(true); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BeFileName ECDb::GetChangeSummaryCachePath() const { return ChangeSummaryManager::DetermineCachePath(*this); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+BeFileName ECDb::GetChangeSummaryCachePath(BeFileNameCR ecdbPath) { return ChangeSummaryManager::DetermineCachePath(ecdbPath); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options) const
+    {
+    return m_pimpl->GetChangeSummaryManager().Extract(changeSummaryKey, changeSet, options);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2015
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDb::Purge(PurgeMode mode) const { return m_pimpl->Purge(mode); }
@@ -176,15 +231,15 @@ void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnCl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2016
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
+BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
     {
-    return m_pimpl->OpenBlobIO(blobIO, ecClass, propertyAccessString, ecinstanceId, writable, writeToken);
+    return m_pimpl->OpenBlobIO(blobIO, tableSpace, ecClass, propertyAccessString, ecinstanceId, writable, writeToken);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
+void ECDb::ClearECDbCache(Utf8CP tableSpace) const { m_pimpl->ClearECDbCache(tableSpace); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012

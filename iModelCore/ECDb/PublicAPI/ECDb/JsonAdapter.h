@@ -10,7 +10,6 @@
 #include <ECDb/ECSqlStatement.h>
 #include <json/json.h>
 #include <rapidjson/BeRapidJson.h>
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -136,7 +135,7 @@ struct JsonECSqlBinder final
 //! @ingroup ECDbGroup
 //! @bsiclass                                                               08/2012
 //+===============+===============+===============+===============+===============+======
-struct JsonECSqlSelectAdapter final: NonCopyableClass
+struct JsonECSqlSelectAdapter final
     {
     public:
         enum class MemberNameCasing
@@ -168,6 +167,10 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         ECSqlStatementCR m_ecsqlStatement;
         FormatOptions m_formatOptions;
    
+        //not copyable
+        JsonECSqlSelectAdapter(JsonECSqlSelectAdapter const&) = delete;
+        JsonECSqlSelectAdapter& operator=(JsonECSqlSelectAdapter const&) = delete;
+
     public:
 
         //! Initializes a new JsonECSqlSelectAdapter instance for the specified ECSqlStatement. 
@@ -180,9 +183,10 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
         //! 
-        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
         //! The ECSQL select clause is what exclusively determines which property name value pairs
         //! the JSON will contain.
+        //!
+        //! The JSON returned is the @ref BentleyApi::ECN::ECJsonSystemNames "EC JSON format".
         //! The ECSQL system properties are converted to the respective EC JSON format system members:
         //! ECSQL  | JSON Format | JSON Format Data Type
         //! ------ | ------------| ---------------------
@@ -223,13 +227,19 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         //! The JSON member name will then be the alias instead of the full expression.
         //! @param [out] json current row as JSON object of property name value pairs
         //! @param[in] appendToJson If true, the JSON property name value pairs of the retrieved row will
-        //! be appended to @p json. In this case, @p json must have be a JSON object.
+        //! be appended to @p json. In this case, @p json must be a JSON object.
         //! If false, @p json will just contain the retrieved row data. If @p json contained
         //! members before the call, those will be cleared.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus GetRow(JsonValueR json, bool appendToJson = false) const;
 
-        //! Gets only the columns from the current row that refer to the specified ECClass
+        //! Gets the current row as JSON object with pairs of property name value for each
+        //! item in the ECSQL select clause that refer to the specified ECClass.
+        //!
+        //! The ECSQL select clause is what exclusively determines which property name value pairs
+        //! the JSON will contain.
+        //!
+        //! @see JsonECSqlSelectAdapter::GetRow for details on the ECJSON format.
         //!
         //! Example:
         //! Assume the ECSQL <c>SELECT Employee.ECInstanceId, Employee.Name, Employee.Age, Company.ECInstanceId, Company.Name FROM myschema.Employee JOIN myschema.Company USING myschema.CompanyEmploysEmployee</c>.
@@ -262,13 +272,17 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
 //! @ingroup ECDbGroup
 // @bsiclass                                                                09/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonReader final : NonCopyableClass
+struct JsonReader final
     {
     private:
         ECDbCR m_ecdb;
         mutable ECSqlStatement m_statement;
         JsonECSqlSelectAdapter::FormatOptions m_formatOptions;
         bool m_isValid = false;
+
+        //not copyable
+        JsonReader(JsonReader const&) = delete;
+        JsonReader& operator=(JsonReader const&) = delete;
 
         BentleyStatus Initialize(ECN::ECClassCR);
         BentleyStatus Initialize(ECN::ECClassId);
@@ -308,7 +322,7 @@ struct JsonReader final : NonCopyableClass
 //! @remarks The JSON must be in the @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON Format".
 //@bsiclass                                                                   02/2013
 //+===============+===============+===============+===============+===============+======
-struct JsonInserter final : NonCopyableClass
+struct JsonInserter final
     {
     private:
         struct BindingInfo final
@@ -338,6 +352,10 @@ struct JsonInserter final : NonCopyableClass
         mutable ECSqlStatement m_statement;
         bmap<Utf8CP, BindingInfo, CompareIUtf8Ascii> m_bindingMap;
         bool m_isValid = false;
+
+        //not copyable
+        JsonInserter(JsonInserter const&) = delete;
+        JsonInserter& operator=(JsonInserter const&) = delete;
 
         void Initialize(ECCrudWriteToken const* writeToken);
 
@@ -411,7 +429,7 @@ struct JsonInserter final : NonCopyableClass
 //! flexibility with the set of properties to be updated.
 //@bsiclass                                                           09/2017
 //+===============+===============+===============+===============+===============+======
-struct JsonUpdater final : NonCopyableClass
+struct JsonUpdater final
     {
     public:
         //=======================================================================================
@@ -521,6 +539,10 @@ struct JsonUpdater final : NonCopyableClass
         bmap<Utf8CP, BindingInfo, CompareIUtf8Ascii> m_bindingMap;
         int m_idParameterIndex = 0;
         bool m_isValid = false;
+
+        //not copyable
+        JsonUpdater(JsonUpdater const&) = delete;
+        JsonUpdater& operator=(JsonUpdater const&) = delete;
 
         BentleyStatus Initialize(bvector<Utf8CP> const* propertyNames, ECCrudWriteToken const*);
 

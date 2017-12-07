@@ -9,6 +9,8 @@
 //__BENTLEY_INTERNAL_ONLY__
 #include <ECDb/ECDb.h>
 
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 #define ECSCHEMA_ECDbSystem "ECDbSystem"
 #define ECSCHEMA_ALIAS_ECDbSystem "ecdbsys"
 
@@ -33,7 +35,6 @@
 #define ECDBSYS_PROP_PointY "Y"
 #define ECDBSYS_PROP_PointZ "Z"
 
-BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      12/2016
@@ -143,11 +144,15 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbSystemSchemaHelper final : NonCopyableClass
+struct ECDbSystemSchemaHelper final
     {
     public:
         ECDb const& m_ecdb;
         mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo const*> m_byPropIdCache;
+
+        //not copyable
+        ECDbSystemSchemaHelper(ECDbSystemSchemaHelper const&) = delete;
+        ECDbSystemSchemaHelper& operator=(ECDbSystemSchemaHelper const&) = delete;
 
         BentleyStatus InitializeCache() const;
 

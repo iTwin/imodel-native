@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
-#include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -20,8 +19,13 @@ struct SchemaValidator final
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      04/2014
         //+===============+===============+===============+===============+===============+======
-        struct ValidBaseClassesRule final : NonCopyableClass
+        struct ValidBaseClassesRule final
             {
+        private:
+            //not copyable
+            ValidBaseClassesRule(ValidBaseClassesRule const&) = delete;
+            ValidBaseClassesRule& operator=(ValidBaseClassesRule const&) = delete;
+
         public:
             ValidBaseClassesRule() {}
             bool Validate(SchemaImportContext const&, IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
@@ -30,9 +34,13 @@ struct SchemaValidator final
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      04/2014
         //+===============+===============+===============+===============+===============+======
-        struct ValidRelationshipRule final : NonCopyableClass
+        struct ValidRelationshipRule final
             {
             private:
+                //not copyable
+                ValidRelationshipRule(ValidRelationshipRule const&) = delete;
+                ValidRelationshipRule& operator=(ValidRelationshipRule const&) = delete;
+
                 bool ValidateConstraint(IssueReporter const&, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR) const;
 
             public:
@@ -43,9 +51,13 @@ struct SchemaValidator final
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      04/2014
         //+===============+===============+===============+===============+===============+======
-        struct ValidPropertyRule final : NonCopyableClass
+        struct ValidPropertyRule final
             {
             private:
+                //not copyable
+                ValidPropertyRule(ValidPropertyRule const&) = delete;
+                ValidPropertyRule& operator=(ValidPropertyRule const&) = delete;
+
                 bool ValidatePropertyName(IssueReporter const&, ECN::ECClassCR, ECN::ECPropertyCR) const;
                 bool ValidatePropertyStructType(IssueReporter const&, ECN::ECStructClassCR, ECN::ECPropertyCR) const;
 

@@ -18,6 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define LOG (ECDbLogger::Get())
 
+
 //=======================================================================================
 //! ECSQL statement types
 // @bsienum                                                Krischan.Eberle      12/2013
@@ -71,7 +72,6 @@ public:
     template<typename TEnum>
     static bool Intersects(TEnum lhs, TEnum rhs) { return (ToInt<TEnum>(lhs) & ToInt<TEnum>(rhs)) != 0; }
     };
-
 
 //=======================================================================================
 // For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII

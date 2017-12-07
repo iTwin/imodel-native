@@ -9,6 +9,7 @@
 #include <ECDb/ECDb.h>
 #include <ECDb/SchemaManager.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
+#include "ChangeSummaryManager.h"
 #include "ProfileManager.h"
 #include "IssueReporter.h"
 
@@ -19,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! (PIMPL idiom)
 // @bsiclass                                                Krischan.Eberle      12/2014
 //+===============+===============+===============+===============+===============+======
-struct ECDb::Impl final : NonCopyableClass
+struct ECDb::Impl final
     {
 friend struct ECDb;
 
@@ -70,7 +71,7 @@ private:
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<SchemaManager> m_schemaManager;
-
+    ChangeSummaryManager m_changeSummaryManager;
     SettingsManager m_settingsManager;
 
     StatementCache m_sqliteStatementCache;
@@ -83,10 +84,14 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_sqliteStatementCache(50), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
-        { 
-        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); 
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_changeSummaryManager(ecdb), m_sqliteStatementCache(50), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
+        {
+        m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
         }
+
+    //not copyable
+    Impl(Impl const&) = delete;
+    Impl& operator=(Impl const&) = delete;
 
     DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
 
@@ -105,12 +110,15 @@ private:
 
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
-    BentleyStatus OpenBlobIO(BlobIO&, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const*) const;
+    BentleyStatus OpenBlobIO(BlobIO&, Utf8CP tableSpace, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const*) const;
 
-    void ClearECDbCache() const;
+    void ClearECDbCache(Utf8CP tableSpace = nullptr) const;
     DbResult OnDbOpening() const;
+    DbResult OnDbOpened(Db::OpenParams const&) const;
     DbResult OnDbCreated() const;
-    void OnDbClose() const;
+    DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
+    DbResult OnDbDetached(Utf8CP tableSpaceName) const;
+
     DbResult OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId);
     void OnDbChangedByOtherConnection() const { ClearECDbCache(); }
     DbResult VerifyProfileVersion(Db::OpenParams const& params) const { return ProfileManager::UpgradeProfile(m_ecdb, params); }
@@ -132,6 +140,8 @@ public:
 
     CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
     BeBriefcaseBasedIdSequence const& GetInstanceIdSequence() const { return m_idSequenceManager.GetSequence(s_instanceIdSequenceKey); }
+
+    ChangeSummaryManager const& GetChangeSummaryManager() const { return m_changeSummaryManager; }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      03/2017
 //+===============+===============+===============+===============+===============+======
-struct IECSqlPreparedStatement : NonCopyableClass
+struct IECSqlPreparedStatement
     {
     protected:
         ECDb const& m_ecdb;
@@ -30,6 +30,10 @@ struct IECSqlPreparedStatement : NonCopyableClass
     private:
         Utf8String m_ecsql;
         ECDb::Impl::ClearCacheCounter m_preparationClearCacheCounter;
+
+        //not copyable
+        IECSqlPreparedStatement(IECSqlPreparedStatement const&) = delete;
+        IECSqlPreparedStatement& operator=(IECSqlPreparedStatement const&) = delete;
 
         virtual ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) = 0;
         virtual IECSqlBinder& _GetBinder(int parameterIndex) const = 0;
@@ -260,7 +264,7 @@ struct ECSqlSelectPreparedStatement final : SingleECSqlPreparedStatement
 struct ECSqlInsertPreparedStatement final : CompoundECSqlPreparedStatement
     {
 private:
-    struct PrepareInfo final : NonCopyableClass
+    struct PrepareInfo final
         {
         public:
             struct PropNameValueInfo
@@ -283,6 +287,10 @@ private:
             //Holds all tables per parameter index
             bmap<uint32_t, bset<DbTable const*>> m_parameterIndexInTables;
             bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> m_perTableStatements;
+
+            //not copyable
+            PrepareInfo(PrepareInfo const&) = delete;
+            PrepareInfo& operator=(PrepareInfo const&) = delete;
 
         public:
             PrepareInfo(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
@@ -310,7 +318,7 @@ private:
             void AddLeafStatement(SingleContextTableECSqlPreparedStatement const& stmt, DbTable const& table) { m_perTableStatements[&table] = &stmt; }
         };
 
-    struct ECInstanceKeyHelper final : NonCopyableClass
+    struct ECInstanceKeyHelper final
             {
             public:
                 enum class Mode
@@ -321,7 +329,7 @@ private:
                     UserProvidedOtherExp
                     };
 
-                struct UpdateHook final : NonCopyableClass
+                struct UpdateHook final 
                     {
                     private:
                         struct Callback final : DataUpdateCallback
@@ -345,6 +353,10 @@ private:
                         ECDb const& m_ecdb;
                         Callback m_callback;
 
+                        //not copyable
+                        UpdateHook(UpdateHook const&) = delete;
+                        UpdateHook& operator=(UpdateHook const&) = delete;
+
                     public:
                         explicit UpdateHook(ECDb const& ecdb) : m_ecdb(ecdb) { m_ecdb.AddDataUpdateCallback(m_callback); }
                         ~UpdateHook() { m_ecdb.RemoveDataUpdateCallback(); }
@@ -354,9 +366,14 @@ private:
             private:
                 ECSqlSystemPropertyInfo const* m_sysPropInfo = nullptr;
                 Mode m_mode = Mode::NotUserProvided;
+                DbTableSpace const* m_tableSpace = nullptr;
                 ECN::ECClassId m_classId;
                 ProxyECInstanceIdECSqlBinder* m_idProxyBinder = nullptr; //in case user specified parametrized id expression
                 mutable ECInstanceId m_generatedECInstanceId;
+
+                //not copyable
+                ECInstanceKeyHelper(ECInstanceKeyHelper const&) = delete;
+                ECInstanceKeyHelper& operator=(ECInstanceKeyHelper const&) = delete;
 
                 static Mode DetermineMode(int& expIx, ECSqlSystemPropertyInfo const&, PrepareInfo const&);
 
@@ -375,6 +392,7 @@ private:
                 ECN::ECClassId GetClassId() const { return m_classId; }
                 bool IsEndTableRelationshipInsert() const { return *m_sysPropInfo != ECSqlSystemPropertyInfo::ECInstanceId(); }
                 bool MustGenerateECInstanceId() const;
+                DbTableSpace const& GetTableSpace() const { BeAssert(m_tableSpace != nullptr); return *m_tableSpace; }
                 //Is not null in case user specified parametrized id expression
                 ProxyECInstanceIdECSqlBinder* GetIdProxyBinder() const { return m_idProxyBinder; }
                 Mode GetMode() const { return m_mode; }
@@ -401,7 +419,7 @@ private:
 struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
     {
     private:
-        struct PrepareInfo final : NonCopyableClass
+        struct PrepareInfo final
             {
         private:
             ECSqlPrepareContext& m_ctx;
@@ -416,6 +434,10 @@ struct ECSqlUpdatePreparedStatement final : CompoundECSqlPreparedStatement
             //Holds all tables per parameter index
             bmap<uint32_t, bset<DbTable const*>> m_parameterIndexInTables;
             bmap<DbTable const*, SingleContextTableECSqlPreparedStatement const*> m_perTableStatements;
+
+            //not copyable
+            PrepareInfo(PrepareInfo const&) = delete;
+            PrepareInfo& operator=(PrepareInfo const&) = delete;
 
         public:
             PrepareInfo(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp) 

@@ -13,28 +13,39 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+
+
+//****************************************************************************************
+//SchemaPersistenceHelper
+//****************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     06/2017
 //---------------------------------------------------------------------------------------
-ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaNameOrAlias, SchemaLookupMode mode)
+ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, SchemaLookupMode mode)
     {
-    Utf8CP sql = nullptr;
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT Id FROM main." TABLE_Schema);
+    else
+        sql.Sprintf("SELECT Id FROM [%s]." TABLE_Schema, tableSpace.GetName().c_str());
+
     switch (mode)
         {
             case SchemaLookupMode::ByName:
-                sql = "SELECT Id FROM ec_Schema WHERE Name=?";
+                sql.append(" WHERE Name=?1");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql = "SELECT Id FROM ec_Schema WHERE Alias=?";
+                sql.append(" WHERE Alias=?1");
                 break;
 
             default:
-                sql = "SELECT Id FROM ec_Schema WHERE (Name=?1 OR Alias=?1)";
+                sql.append(" WHERE (Name=?1 OR Alias=?1)");
                 break;
         }
 
-    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement(sql);
+    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement(sql.c_str());
     if (stmt == nullptr)
         return ECSchemaId();
 
@@ -49,9 +60,14 @@ ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaNameOrAl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     06/2017
 //---------------------------------------------------------------------------------------
-std::vector<ECSchemaId> SchemaPersistenceHelper::GetSchemaIds(ECDbCR ecdb, Utf8StringVirtualSet const& schemaNames)
+std::vector<ECSchemaId> SchemaPersistenceHelper::GetSchemaIds(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8StringVirtualSet const& schemaNames)
     {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Schema WHERE InVirtualSet(?,Name)");
+    CachedStatementPtr stmt = nullptr;
+    if (tableSpace.IsMain())
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM main." TABLE_Schema " WHERE InVirtualSet(?,Name)");
+    else
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Schema " WHERE InVirtualSet(?,Name)", tableSpace.GetName().c_str()).c_str());
+
     if (stmt == nullptr)
         return std::vector<ECSchemaId>();
 
@@ -70,9 +86,14 @@ std::vector<ECSchemaId> SchemaPersistenceHelper::GetSchemaIds(ECDbCR ecdb, Utf8S
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle      06/2017
 //---------------------------------------------------------------------------------------
-Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, ECN::ECSchemaId schemaId)
+Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, DbTableSpace const& tableSpace, ECN::ECSchemaId schemaId)
     {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM ec_Schema WHERE Id=?");
+    CachedStatementPtr stmt = nullptr;
+    if (tableSpace.IsMain())
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM main." TABLE_Schema " WHERE Id=?");
+    else
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Name FROM [%s]." TABLE_Schema " WHERE Id=?", tableSpace.GetName().c_str()).c_str());
+
     if (stmt == nullptr)
         return Utf8String();
 
@@ -87,9 +108,14 @@ Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, ECN::ECSchemaId s
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    04/2016
 //---------------------------------------------------------------------------------------
-bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
+bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaName)
     {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?");
+    CachedStatementPtr stmt = nullptr;
+    if (tableSpace.IsMain())
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM main." TABLE_Schema " WHERE Name=?");
+    else
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM [%s]." TABLE_Schema " WHERE Name=?", tableSpace.GetName().c_str()).c_str());
+
     if (stmt == nullptr)
         return false;
 
@@ -100,26 +126,6 @@ bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8C
         return false;
 
     key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                    04/2016
-//---------------------------------------------------------------------------------------
-bool SchemaPersistenceHelper::TryGetSchemaKeyAndId(SchemaKey& key, ECSchemaId& id, ECDbCR ecdb, Utf8CP schemaName)
-    {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=?");
-    if (stmt == nullptr)
-        return false;
-
-    if (BE_SQLITE_OK != stmt->BindText(1, schemaName, Statement::MakeCopy::No))
-        return false;
-
-    if (stmt->Step() != BE_SQLITE_ROW)
-        return false;
-
-    key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
-    id = stmt->GetValueId<ECSchemaId>(4);
     return true;
     }
 
@@ -127,9 +133,14 @@ bool SchemaPersistenceHelper::TryGetSchemaKeyAndId(SchemaKey& key, ECSchemaId& i
 // @bsimethod                                                    Krischan.Eberle   09/2016
 //---------------------------------------------------------------------------------------
 //static
-ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, ECSchemaId schemaId, Utf8CP className)
+ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR ecdb, DbTableSpace const& tableSpace, ECSchemaId schemaId, Utf8CP className)
     {
-    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?");
+    CachedStatementPtr stmt = nullptr;
+    if (tableSpace.IsMain())
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM main." TABLE_Class " WHERE SchemaId=? AND Name=?");
+    else
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Class " WHERE SchemaId=? AND Name=?", tableSpace.GetName().c_str()).c_str());
+
     if (stmt == nullptr)
         return ECClassId();
 
@@ -149,25 +160,30 @@ ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, ECSchemaId schemaId, Ut
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
-ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, SchemaLookupMode lookupMode)
+ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP className, SchemaLookupMode lookupMode)
     {
-    Utf8CP sql = nullptr;
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT c.Id FROM main." TABLE_Class " c JOIN main." TABLE_Schema " s ON c.SchemaId = s.Id");
+    else
+        sql.Sprintf("SELECT c.Id FROM [%s]." TABLE_Class " c JOIN [%s]." TABLE_Schema " s ON c.SchemaId = s.Id", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
     switch (lookupMode)
         {
             case SchemaLookupMode::ByName:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Name=? AND c.Name=?";
+                sql.append(" WHERE s.Name=?1 AND c.Name=?2");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Alias=? AND c.Name=?";
+                sql.append(" WHERE s.Alias=?1 AND c.Name=?2");
                 break;
 
             default:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE (s.Name=?1 OR s.Alias=?1) AND c.Name=?2";
+                sql.append(" WHERE (s.Name=?1 OR s.Alias=?1) AND c.Name=?2");
                 break;
         }
 
-    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     if (stmt == nullptr)
         return ECClassId();
 
@@ -182,24 +198,30 @@ ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, Utf8CP schemaNameOrAlia
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   01/2016
 //---------------------------------------------------------------------------------------
-ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, Utf8CP schemaNameOrAlias, Utf8CP enumName, SchemaLookupMode lookupMode)
+ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP enumName, SchemaLookupMode lookupMode)
     {
-    Utf8CP sql = nullptr;
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT e.Id FROM main." TABLE_Enumeration " e, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT e.Id FROM [%s]." TABLE_Enumeration " e, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
     switch (lookupMode)
         {
             case SchemaLookupMode::ByName:
-                sql = "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? AND e.Name=?";
+                sql.append(" WHERE e.SchemaId=s.Id AND s.Name=?1 AND e.Name=?2");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql = "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Alias=? AND e.Name=?";
+                sql.append(" WHERE e.SchemaId=s.Id AND s.Alias=?1 AND e.Name=?2");
                 break;
 
             default:
-                sql = "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND e.Name=?2";
+                sql.append(" WHERE e.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND e.Name=?2");
                 break;
         }
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     if (stmt == nullptr)
         return ECEnumerationId();
 
@@ -216,25 +238,30 @@ ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, Utf8CP sc
 // @bsimethod                                                    Krischan.Eberle 06/2016
 //---------------------------------------------------------------------------------------
 //static
-KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaNameOrAlias, Utf8CP koqName, SchemaLookupMode lookupMode)
+KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP koqName, SchemaLookupMode lookupMode)
     {
-    Utf8CP sql = nullptr;
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT koq.Id FROM main." TABLE_KindOfQuantity " koq, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT koq.Id FROM [%s]." TABLE_KindOfQuantity " koq, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
     switch (lookupMode)
         {
             case SchemaLookupMode::ByName:
-                sql = "SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? AND koq.Name=?";
+                sql.append(" WHERE koq.SchemaId=s.Id AND s.Name=?1 AND koq.Name=?2");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql = "SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Alias=? AND koq.Name=?";
+                sql.append(" WHERE koq.SchemaId=s.Id AND s.Alias=?1 AND koq.Name=?2");
                 break;
 
             default:
-                sql = "SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND koq.Name=?2";
+                sql.append(" WHERE koq.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND koq.Name=?2");
                 break;
         }
 
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     if (stmt == nullptr)
         return KindOfQuantityId();
 
@@ -251,24 +278,30 @@ KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8C
 // @bsimethod                                                    Krischan.Eberle 06/2017
 //---------------------------------------------------------------------------------------
 //static
-PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, Utf8CP schemaNameOrAlias, Utf8CP catName, SchemaLookupMode lookupMode)
+PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP catName, SchemaLookupMode lookupMode)
     {
-    Utf8CP sql = nullptr;
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT cat.Id FROM main." TABLE_PropertyCategory " cat, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT cat.Id FROM [%s]." TABLE_PropertyCategory " cat, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
     switch (lookupMode)
         {
             case SchemaLookupMode::ByName:
-                sql = "SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND s.Name=? AND cat.Name=?";
+                sql.append(" WHERE cat.SchemaId=s.Id AND s.Name=?1 AND cat.Name=?2");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql = "SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND s.Alias=? AND cat.Name=?";
+                sql.append(" WHERE cat.SchemaId=s.Id AND s.Alias=?1 AND cat.Name=?2");
                 break;
 
             default:
-                sql = "SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND cat.Name=?2";
+                sql.append(" WHERE cat.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND cat.Name=?2");
                 break;
         }
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     if (stmt == nullptr)
         return PropertyCategoryId();
 
@@ -284,9 +317,14 @@ PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, U
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, ECClassId ecClassId, Utf8CP propertyName)
+ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassId ecClassId, Utf8CP propertyName)
     {
-    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Property WHERE ClassId=? AND Name=?");
+    CachedStatementPtr stmt = nullptr;
+    if (tableSpace.IsMain())
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM main." TABLE_Property " WHERE ClassId=? AND Name=?");
+    else
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Property " WHERE ClassId=? AND Name=?", tableSpace.GetName().c_str()).c_str());
+
     if (stmt == nullptr)
         return ECPropertyId();
 
@@ -306,25 +344,33 @@ ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, ECClassId ecClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propertyName, SchemaLookupMode mode)
+ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propertyName, SchemaLookupMode mode)
     {
-    Utf8CP sql = nullptr;
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT p.Id FROM main." TABLE_Property " p JOIN main." TABLE_Class " c ON p.ClassId=c.Id JOIN main." TABLE_Schema " s ON c.SchemaId=s.Id");
+    else
+        {
+        Utf8CP tableSpaceName = tableSpace.GetName().c_str();
+        sql.Sprintf("SELECT p.Id FROM [%s]." TABLE_Property " p JOIN [%s]." TABLE_Class " c ON p.ClassId=c.Id JOIN [%s]." TABLE_Schema " s ON c.SchemaId=s.Id", tableSpaceName, tableSpaceName, tableSpaceName);
+        }
+
     switch (mode)
         {
             case SchemaLookupMode::ByName:
-                sql = "SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=?1 AND c.Name=?2 AND p.Name=?3";
+                sql.append(" WHERE c.SchemaId = s.Id AND s.Name=?1 AND c.Name=?2 AND p.Name=?3");
                 break;
 
             case SchemaLookupMode::ByAlias:
-                sql = "SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Alias=?1 AND c.Name=?2 AND p.Name=?3";
+                sql.append(" WHERE c.SchemaId = s.Id AND s.Alias=?1 AND c.Name=?2 AND p.Name=?3");
                 break;
 
             default:
-                sql = "SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name=?1 OR s.Alias=?1) AND c.Name=?2 AND p.Name=?3";
+                sql.append(" WHERE c.SchemaId = s.Id AND (s.Name=?1 OR s.Alias=?1) AND c.Name=?2 AND p.Name=?3");
                 break;
         }
 
-    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     if (stmt == nullptr)
         return ECPropertyId();
 

@@ -131,6 +131,29 @@ DbResult TestHelper::ExecuteECSql(Utf8CP ecsql) const
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     03/17
 //+---------------+---------------+---------------+---------------+---------------+------
+JsonValue TestHelper::ExecuteSelectECSql(Utf8CP ecsql) const
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
+        return JsonValue(Json::nullValue);
+
+    JsonValue resultSet(Json::arrayValue);
+    JsonECSqlSelectAdapter adapter(stmt);
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Json::Value row;
+        if (SUCCESS != adapter.GetRow(row))
+            return JsonValue(Json::nullValue);
+
+        resultSet.m_value.append(row);
+        }
+
+    return resultSet;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
     {
     ECSqlStatement stmt;
@@ -228,7 +251,7 @@ MapStrategyInfo TestHelper::GetMapStrategy(ECClassId classId) const
 Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        R"sql(SELECT t.Id, t.Type, parent.Name, t.ExclusiveRootClassId
+        R"sql(SELECT t.Id,t.Type,parent.Name,t.ExclusiveRootClassId
                 FROM ec_Table t LEFT JOIN ec_Table parent ON parent.Id = t.ParentTableId
                 WHERE t.Name=?)sql");
 
@@ -244,8 +267,8 @@ Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
         return Table();
 
     BeInt64Id tableId = stmt->GetValueId<BeInt64Id>(0);
-
     Table::Type type = (Table::Type) stmt->GetValueInt(1);
+
     Utf8CP parentTableName = nullptr;
     if (!stmt->IsColumnNull(2))
         parentTableName = stmt->GetValueText(2);
@@ -305,12 +328,33 @@ Column TestHelper::GetColumnFromCurrentRow(Utf8StringCR tableName, Statement& st
                   checkConstraint, defaultConstraint, collation, kind, ordinalInPk);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool TestHelper::TableSpaceExists(Utf8CP tableSpace) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("pragma database_list");
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        if (BeStringUtilities::StricmpAscii(tableSpace, stmt->GetValueText(1)) == 0)
+            return true;
+        }
+
+    return false;
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String TestHelper::GetDdl(Utf8CP entityName, Utf8CP entityType) const
+Utf8String TestHelper::GetDdl(Utf8CP entityName, Utf8CP dbSchemaName, Utf8CP entityType) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE");
+    CachedStatementPtr stmt;
+    if (Utf8String::IsNullOrEmpty(dbSchemaName))
+        stmt = m_ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE");
+    else
+        stmt = m_ecdb.GetCachedStatement(Utf8PrintfString("SELECT sql FROM [%s].sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE", dbSchemaName).c_str());
+
     if (stmt == nullptr)
         return Utf8String();
 
@@ -330,16 +374,19 @@ Utf8String TestHelper::GetDdl(Utf8CP entityName, Utf8CP entityType) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName) const
+std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName, Utf8CP dbSchemaName) const
     {
     std::vector<Utf8String> indexNames;
 
+    Utf8String sql;
+    if (Utf8String::IsNullOrEmpty(dbSchemaName))
+        sql.assign("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE");
+    else
+        sql.Sprintf("SELECT name FROM [%s].sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE", dbSchemaName);
+
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE"))
-        {
-        BeAssert(false && "Preparation failed");
-        return indexNames;
-        }
+    if (BE_SQLITE_OK != stmt.TryPrepare(m_ecdb, sql.c_str()))
+        return indexNames; //e.g. if table space is not attached
 
     if (BE_SQLITE_OK != stmt.BindText(1, tableName, Statement::MakeCopy::No))
         {
@@ -358,9 +405,9 @@ std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnName) const
+bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnName, Utf8CP dbSchemaName) const
     {
-    Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName);
+    Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName, dbSchemaName);
 
     Utf8String fkSearchString;
     fkSearchString.Sprintf("FOREIGN KEY([%s]", foreignKeyColumnName);
@@ -370,9 +417,9 @@ bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnNam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnName, Utf8CP onDeleteAction, Utf8CP onUpdateAction) const
+bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnName, Utf8CP onDeleteAction, Utf8CP onUpdateAction, Utf8CP dbSchemaName) const
     {
-    Utf8String fkConstraintDdl = GetForeignKeyConstraintDdl(tableName, foreignKeyColumnName);
+    Utf8String fkConstraintDdl = GetForeignKeyConstraintDdl(tableName, foreignKeyColumnName, dbSchemaName);
     if (fkConstraintDdl.empty())
         return false;
 
@@ -404,9 +451,9 @@ bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnNam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String TestHelper::GetForeignKeyConstraintDdl(Utf8CP tableName, Utf8CP foreignKeyColumnName) const
+Utf8String TestHelper::GetForeignKeyConstraintDdl(Utf8CP tableName, Utf8CP foreignKeyColumnName, Utf8CP dbSchemaName) const
     {
-    Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName);
+    Utf8String ddl = TestHelper(m_ecdb).GetDdl(tableName, dbSchemaName);
 
     bvector<Utf8String> tokens;
     BeStringUtilities::Split(ddl.c_str(), ",", tokens);
@@ -485,79 +532,7 @@ BentleyStatus TestUtilities::ReadFile(Utf8StringR fileContent, BeFileNameCR file
     return SUCCESS;
     }
 
-//**************************************************************************************
-// ComparableJsonCppValue
-//**************************************************************************************
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle     10/17
-//---------------------------------------------------------------------------------------
-bool ComparableJsonCppValue::operator==(ComparableJsonCppValue const& rhs) const
-    {
-    if (m_value.type() != rhs.m_value.type())
-        return false;
-
-    switch (m_value.type())
-        {
-            case Json::ValueType::arrayValue:
-            {
-            if (m_value.size() != rhs.m_value.size())
-                return false;
-
-            for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
-                {
-                if (ComparableJsonCppValue(m_value[i]) != ComparableJsonCppValue(rhs.m_value[i]))
-                    return false;
-                }
-
-            return true;
-            }
-            case Json::ValueType::booleanValue:
-                return m_value.asBool() == rhs.m_value.asBool();
-
-            case Json::ValueType::intValue:
-                return m_value.asInt64() == rhs.m_value.asInt64();
-
-            case Json::ValueType::nullValue:
-                return m_value.isNull() == rhs.m_value.isNull();
-
-            case Json::ValueType::objectValue:
-            {
-            bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
-            if (lhsMemberNames.size() != rhs.m_value.size())
-                return false;
-
-            for (Utf8StringCR memberName : lhsMemberNames)
-                {
-                if (!rhs.m_value.isMember(memberName))
-                    return false;
-
-                if (ComparableJsonCppValue(m_value[memberName]) != ComparableJsonCppValue(rhs.m_value[memberName]))
-                    return false;
-                }
-
-            return true;
-            }
-
-            case Json::ValueType::realValue:
-                return TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
-
-            case Json::ValueType::stringValue:
-                return strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
-
-            case Json::ValueType::uintValue:
-                return m_value.asUInt64() == rhs.m_value.asUInt64();
-
-            default:
-                BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
-                return false;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  10/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(ComparableJsonCppValue const& json, std::ostream* os) { *os << json.m_value.ToString(); }
 
 //**************************************************************************************
 // ECInstancePopulator

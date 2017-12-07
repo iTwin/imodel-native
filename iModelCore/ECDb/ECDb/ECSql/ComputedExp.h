@@ -31,12 +31,11 @@ private:
 protected:
     explicit ComputedExp(Type type) : Exp(type), m_hasParentheses(false) {}
 
-    void SetTypeInfo (ECSqlTypeInfo const& typeInfo) {m_typeInfo = typeInfo;}
     void SetHasParentheses() { m_hasParentheses = true; }
 
 public:
     virtual ~ComputedExp () {}
-
+    void SetTypeInfo(ECSqlTypeInfo const& typeInfo) { m_typeInfo = typeInfo; }
     bool HasParentheses() const { return m_hasParentheses; }
     ECSqlTypeInfo const& GetTypeInfo () const {return m_typeInfo;}
     };

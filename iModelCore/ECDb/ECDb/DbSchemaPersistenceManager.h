@@ -10,7 +10,6 @@
 #include "DbSchema.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //======================================================================================
 //! Represents one row of the result set when running the SQLite pragma table_info
 // @bsiclass                                                 Affan.Khan         06/2016
@@ -26,7 +25,8 @@ struct SqliteColumnInfo final
 
     public:
         SqliteColumnInfo(Utf8StringCR name, DbColumn::Type type, int pkordinal, bool isnotnull, Utf8StringCR defaultConstraint)
-            :m_name(name), m_type(type), m_pkordinal(pkordinal), m_isnotnull(isnotnull), m_defaultConstraint(defaultConstraint) {}
+            :m_name(name), m_type(type), m_pkordinal(pkordinal), m_isnotnull(isnotnull), m_defaultConstraint(defaultConstraint)
+            {}
 
         DbColumn::Type GetType() const { return m_type; }
         Utf8StringCR GetName() const { return m_name; }
@@ -38,7 +38,7 @@ struct SqliteColumnInfo final
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbSchemaPersistenceManager final : public NonCopyableClass
+struct DbSchemaPersistenceManager final
     {
 public:
     enum class CreateOrUpdateTableResult
@@ -50,10 +50,9 @@ public:
         Error = 5
         };
 
-    
 private:
-    DbSchemaPersistenceManager();
-    ~DbSchemaPersistenceManager();
+    DbSchemaPersistenceManager() = delete;
+    ~DbSchemaPersistenceManager() = delete;
 
     static bool IsTableChanged(ECDbCR, DbTable const&);
 
@@ -62,7 +61,7 @@ private:
     static BentleyStatus AlterTable(ECDbCR, DbTable const&, std::vector<DbColumn const*> const& columnsToAdd);
 
     static BentleyStatus CreateTriggers(ECDbCR, DbTable const&, bool failIfExists);
-    static bool TriggerExistsInDb(ECDbCR, DbTrigger const&);
+    static bool TriggerExists(ECDbCR, DbTrigger const&);
 
     static BentleyStatus AppendColumnDdl(Utf8StringR ddl, DbColumn const&);
     //!@param[in] singleFkColumn must not be nullptr if @p embedInColumnDdl is true
@@ -74,6 +73,9 @@ private:
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
 public:
+
+    static BentleyStatus RunPragmaTableInfo(std::vector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName, Utf8CP tableSpace = nullptr);
+
     static BentleyStatus CreateIndex(ECDbCR, DbIndex const&, Utf8StringCR ddl);
 
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
@@ -82,30 +84,14 @@ public:
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 
-    static BentleyStatus RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName);
-
-    static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
-    static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
-
-    template<typename TId>
-    static TId GetLastInsertedId(ECDbCR ecdb)
-        {
-        const int64_t id = ecdb.GetLastInsertRowId();
-        if (id <= 0)
-            {
-            BeAssert(false && "Could not retrieve last inserted row id from SQLite");
-            return TId();
-            }
-
-        return TId((uint64_t) id);
-        }
-
+ 
     //!Safe method to cast an integer value to the MapStrategy enum.
     //!It makes sure the integer is a valid value for the enum.
     static Nullable<MapStrategy> ToMapStrategy(int val)
         {
         if (val == Enum::ToInt(MapStrategy::NotMapped) || val == Enum::ToInt(MapStrategy::OwnTable) || val == Enum::ToInt(MapStrategy::TablePerHierarchy) ||
-            val == Enum::ToInt(MapStrategy::ExistingTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable))
+            val == Enum::ToInt(MapStrategy::ExistingTable) ||
+            val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable) || val == Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable))
             return Enum::FromInt<MapStrategy>(val);
 
         return Nullable<MapStrategy>();

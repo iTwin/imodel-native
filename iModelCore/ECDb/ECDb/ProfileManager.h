@@ -12,6 +12,9 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//for ECDb related entries in the be_Prop table
+#define ECDB_PROPSPEC_NAMESPACE "ec_Db"
+
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      12/2012
 //+===============+===============+===============+===============+===============+======
@@ -23,25 +26,27 @@ private:
     ~ProfileManager();
 
     static DbResult CreateProfileTables(ECDbCR);
-    //! Reads the version of the ECDb profile of the given ECDb file
-    //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
-    //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR);
     //! @param onProfileCreation true if this method is called during profile creation. false if 
     //! called during profile upgrade
     static DbResult AssignProfileVersion(ECDbR, bool onProfileCreation);
 
-    //! Expected version of the ECDb profile for this version of the ECDb API.
-    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 0, 1); }
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
     static ProfileVersion GetMinimumSupportedVersion() { return ProfileVersion(4, 0, 0, 0); }
 
     static DbResult RunUpgraders(ECDbCR);
 
-    static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", "ec_Db"); }
-    static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", "ec_Db"); }
+    static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
+    static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
 
 public:
+    //! Expected version of the ECDb profile for this version of the ECDb API.
+    static ProfileVersion GetExpectedVersion() { return ProfileVersion(4, 0, 0, 1); }
+
+    //! Reads the version of the ECDb profile of the given ECDb file
+    //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
+    //! ECDb file, i.e. does not have the ECDb profile
+    static DbResult ReadProfileVersion(ProfileVersion& profileVersion, ECDbCR);
+
     //! Creates the ECDb profile in the specified ECDb file.
     //! @remarks In case of success the outermost transaction is committed.
     //!     In case of error, the outermost transaction is rolled back.
@@ -76,6 +81,19 @@ public:
     //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
     //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
     static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly);
+
+    static bset<Utf8CP, CompareIUtf8Ascii> GetBuiltinSchemaNames()
+        { 
+        bset<Utf8CP, CompareIUtf8Ascii> names;
+        names.insert("ECDbChangeSummaries");
+        names.insert("ECDbFileInfo");
+        names.insert("ECDbMap");
+        names.insert("ECDbMeta");
+        names.insert("ECDbSchemaPolicies");
+        names.insert("ECDbSystem");
+        return names;
+        }
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

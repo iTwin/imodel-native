@@ -67,6 +67,15 @@ bool ClassNameExp::_ContainsProperty(Utf8StringCR propertyName) const
     return propertyMap != nullptr;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassNameExp::ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8CP tableSpace, std::shared_ptr<Info> info, bool isPolymorphic, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall)
+    : RangeClassRefExp(Type::ClassName, isPolymorphic), m_className(className), m_schemaAlias(schemaAlias), m_tableSpace(tableSpace), m_info(info)
+    {
+    if (memberFuntionCall)
+        AddChild(std::move(memberFuntionCall));
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -85,8 +94,8 @@ Utf8StringCR ClassNameExp::_GetId() const
 Utf8String ClassNameExp::GetFullName() const
     {
     Utf8String fullName;
-    if (!m_catalogName.empty())
-        fullName.append("[").append(m_catalogName).append("].");
+    if (!m_tableSpace.empty())
+        fullName.append("[").append(m_tableSpace).append("].");
 
     if (!m_schemaAlias.empty())
         fullName.append("[").append(m_schemaAlias).append("].");
@@ -101,8 +110,8 @@ Utf8String ClassNameExp::GetFullName() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String ClassNameExp::_ToString() const
     {
-    Utf8String str("ClassName [Catalog: ");
-    str.append(m_catalogName).append(", Schema alias: ").append(m_schemaAlias);
+    Utf8String str("ClassName [TableSpace: ");
+    str.append(m_tableSpace.empty() ? "-" : m_tableSpace).append(", Schema alias: ").append(m_schemaAlias);
     str.append(", Class: ").append(m_className).append(", Alias: ").append(GetAlias()).append("]");
     return str;
     }

@@ -15,10 +15,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
-struct SystemPropertyExpIndexMap : NonCopyableClass
+struct SystemPropertyExpIndexMap
     {
     private:
         bmap<ECSqlSystemPropertyInfo const*, size_t> m_sysPropIndexMap;
+
+        //not copyable
+        SystemPropertyExpIndexMap(SystemPropertyExpIndexMap const&) = delete;
+        SystemPropertyExpIndexMap& operator=(SystemPropertyExpIndexMap const&) = delete;
 
     public:
         SystemPropertyExpIndexMap() {}

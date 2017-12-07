@@ -129,7 +129,7 @@ struct FSRTests : public ::testing::Test
             Json::Value newInstanceJson, instanceJson;
             ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(newInstanceJson, *newInstance, nullptr, true));
             ASSERT_EQ(SUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, nullptr, true));
-            ASSERT_EQ(ComparableJsonCppValue(newInstanceJson), ComparableJsonCppValue(instanceJson)) << ecSql.GetUtf8CP() << " " << newInstance->GetInstanceId().c_str() << "!=" << instance->GetInstanceId().c_str();
+            ASSERT_EQ(JsonValue(newInstanceJson), JsonValue(instanceJson)) << ecSql.GetUtf8CP() << " " << newInstance->GetInstanceId().c_str() << "!=" << instance->GetInstanceId().c_str();
             }
         }
     };

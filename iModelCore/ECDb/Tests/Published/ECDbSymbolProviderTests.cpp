@@ -525,7 +525,7 @@ TEST_F(ECDbExpressionSymbolContextTests, SymbolsAreInjectedWhenDeserializingSche
     // reopen ECDb
     BeFileName ecdbPath(m_ecdb.GetDbFileName(), true);
     m_ecdb.CloseDb();
-    m_ecdb.OpenBeSQLiteDb(ecdbPath, BeSQLite::Db::OpenParams(BeSQLite::Db::OpenMode::Readonly));
+    m_ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly));
 
     ECSqlStatement selectStmt;
     ASSERT_TRUE(selectStmt.Prepare(m_ecdb, "SELECT * FROM test2.ClassC WHERE ECInstanceId = ?").IsSuccess());

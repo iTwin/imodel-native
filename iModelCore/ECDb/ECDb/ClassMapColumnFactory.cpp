@@ -49,15 +49,15 @@ void ColumnMaps::Insert(Utf8StringCR accessString, DbColumn const& column, bool 
 //-----------------------------------------------------------------------------------------
 BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap)
     {
-    ECDbCR ecdb = classMap.GetDbMap().GetECDb();
     ECClassCR  contextClass = classMap.GetClass();
     if (!contextClass.HasBaseClasses())
         return SUCCESS;
 
-    std::vector<ClassMapCP> baseClasses;
+    TableSpaceSchemaManager const& schemaManager = classMap.GetSchemaManager(); //class hierarchy is always in a single table space
+    std::vector<ClassMap const*> baseClasses;
     for (ECClassCP baseClass : contextClass.GetBaseClasses())
         {
-        ClassMap const* baseClassMap = ecdb.Schemas().GetDbMap().GetClassMap(*baseClass);
+        ClassMap const* baseClassMap = schemaManager.GetClassMap(*baseClass);
         if (baseClassMap == nullptr)
             {
             BeAssert(false && "Expecting class map for primary base class to exist and never null");
@@ -82,12 +82,13 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
 //-----------------------------------------------------------------------------------------
 BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, ClassMap const& contextClassMap)
     {
-    ECDbCR ecdb = contextClassMap.GetDbMap().GetECDb();
-    ECDerivedClassesList const& derivedClasses = ecdb.Schemas().GetDerivedClasses(contextClassMap.GetClass());
-    DbMap const& dbMap = ecdb.Schemas().GetDbMap();
-    for (ECN::ECClassCP derivedClass : derivedClasses)
+    TableSpaceSchemaManager const& schemaManager = contextClassMap.GetSchemaManager(); //class hierarchy is always in a single table space
+    if (SUCCESS != schemaManager.LoadDerivedClasses(contextClassMap.GetClass()))
+        return ERROR;
+
+    for (ECN::ECClassCP derivedClass : contextClassMap.GetClass().GetDerivedClasses())
         {
-        if (ClassMapCP derivedClassMap = dbMap.GetClassMap(*derivedClass))
+        if (ClassMap const* derivedClassMap = schemaManager.GetClassMap(*derivedClass))
             {
             DbTable const& primTable = derivedClassMap->GetPrimaryTable();
             if (primTable.GetType() == DbTable::Type::Virtual)
@@ -570,9 +571,9 @@ DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ct
         }
     else if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().size() == 1)
         {
-        DbTable::LinkNode const* overflowTable = m_primaryOrJoinedTable->GetLinkNode().GetChildren()[0];
-        if (overflowTable->GetType() == DbTable::Type::Overflow)
-            m_overflowTable = &overflowTable->GetTableR();
+        DbTable::LinkNode const* overflowTableNode = m_primaryOrJoinedTable->GetLinkNode().GetChildren()[0];
+        if (overflowTableNode->GetTable().GetType() == DbTable::Type::Overflow)
+            m_overflowTable = &overflowTableNode->GetTableR();
         }
     
     if (m_overflowTable == nullptr)
@@ -689,11 +690,6 @@ ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps()
 
     return m_columnMaps;
     }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
 
 
 

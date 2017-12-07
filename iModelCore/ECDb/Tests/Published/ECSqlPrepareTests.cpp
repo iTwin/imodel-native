@@ -1398,7 +1398,6 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE Random()"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE Hex(Bi)"));
     //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE -I = -123"));
@@ -2254,7 +2253,6 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE Random()"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE Hex(Bi)"));
     //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE -I = -123"));
@@ -2613,7 +2611,6 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE ?"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE Random()"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE Hex(Bi)"));
     //unary operator
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE -I = -123"));

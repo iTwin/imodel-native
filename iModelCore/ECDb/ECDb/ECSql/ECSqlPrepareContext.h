@@ -20,10 +20,11 @@ struct IECSqlPreparedStatement;
 struct SingleECSqlPreparedStatement;
 struct SingleContextTableECSqlPreparedStatement;
 
+
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan    06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlPrepareContext final : NonCopyableClass
+struct ECSqlPrepareContext final
     {
     public:
         //=======================================================================================
@@ -114,6 +115,9 @@ struct ECSqlPrepareContext final : NonCopyableClass
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
 
+        //not copyable
+        ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
+        ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
 
     public:
         explicit ECSqlPrepareContext(IECSqlPreparedStatement&);

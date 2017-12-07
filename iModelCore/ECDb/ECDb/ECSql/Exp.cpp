@@ -310,66 +310,6 @@ Utf8String PropertyPath::ToString(bool escape, bool includeArrayIndexes /*= true
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifedPath, ECDbCR ecdb)
-    {
-    resolvedPropertyPath.Clear();
-    bvector<Utf8String> subParts;
-    BeStringUtilities::Split(qualifedPath.c_str(), ":", nullptr, subParts);
-    if (subParts.size() != 3)
-        {
-        BeAssert(false && "Invalid qualified path");
-        return ERROR;
-        }
-
-    Utf8StringCR schemaName = subParts.at(0);
-    Utf8StringCR className = subParts.at(1);
-    Utf8StringCR propertyPath = subParts.at(2);
-
-    bvector<Utf8String> propertyNames;
-    BeStringUtilities::Split(propertyPath.c_str(), ".", nullptr, propertyNames);
-    for (Utf8StringCR propertyName : propertyNames)
-        {
-        resolvedPropertyPath.Push(propertyName);
-        }
-
-    ECClassCP targetClass = ecdb.Schemas().GetClass(schemaName, className, SchemaLookupMode::AutoDetect);
-    if (targetClass == nullptr)
-        {
-        BeAssert(false && "Failed to find ECClass");
-        return ERROR;
-        }
-
-    ClassMap const* targetClassMap = ecdb.Schemas().GetDbMap().GetClassMap(*targetClass);
-    if (targetClassMap == nullptr)
-        {
-        BeAssert(false && "No class map found for class.");
-        return ERROR;
-        }
-
-    return resolvedPropertyPath.Resolve(*targetClassMap);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PropertyPath::TryGetQualifiedPath(Utf8StringR qualifiedPath) const
-    {
-    if (m_classMap == nullptr)
-        {
-        BeAssert(false && "Invalid property path");
-        return ERROR;
-        }
-
-    qualifiedPath.assign(GetClassMap()->GetClass().GetFullName());
-    qualifiedPath.append(":");
-    qualifiedPath.append(ToString(false));
-    return SUCCESS;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 void PropertyPath::Reset()
     {
     m_classMap = nullptr;

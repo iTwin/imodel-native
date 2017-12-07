@@ -61,6 +61,7 @@
     - <b>ECSchema management</b> capabilities (e.g. importing or updating ECSchemas into an @ref ECDbFile "ECDb file",
     retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::SchemaManager and @ref ECDbECSchemaRules))
     - Internally maps %EC data to SQLite tables and columns
+    - Accessing the history of changes to the EC data (see @ref ECDbChangeSummaries)
 
     @section ECDbMapping ECSQL hides away the database mapping of EC data
     A key feature of @ref ECSQLOverview "ECSQL" is that it <b>targets the
@@ -96,6 +97,7 @@
     - @ref ECSQLSamples
     - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business
     data in the @ref ECDbFile "ECDb file".
+    - @ref ECDbChangeSummaries
     - @ref ECDbECSchemaRules
     - @ref ECDbSchemaMappingCustomization
     - @ref ECDbCreatingECDbFromScratch
@@ -113,7 +115,7 @@
     @li @subpage ECSQLOverview
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
-    @li @subpage ECDbTransactions
+    @li @subpage ECDbChangeSummaries
     @li @subpage ECDbSchemas
     @li @subpage ECDbECSchemaImportAndUpgrade
     @li @subpage ECDbECSchemaRules
@@ -122,6 +124,7 @@
     @li @subpage ECDbNavigationProperties
     @li @subpage ECDbSchemaMappingCustomization
     @li @subpage ECDbFileInfo
+    @li @subpage ECDbTransactions
     @li @subpage ECDbCreatingECDbFromScratch
     @li @subpage ECDbCodeSamples
     @see @ref ECDbOverview
@@ -188,6 +191,7 @@
     @section ECDbBuiltInSchemas Built-in schemas
     Every ECDb file comes with the following ECSchemas already included. That means you don't have to import them anymore:
     
+    - %ECDbChangeSummaries (see also @ref ECDbChangeSummaries)
     - %ECDbFileInfo (see also @ref ECDbFileInfo)
     - %ECDbMeta
     - %ECDbMap
@@ -601,7 +605,7 @@
         The primary key column must either be called @b Id or its name must be specified in the @b ECInstanceIdColumn ECProperty.
         <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
     - @b TableName (optional, required for MapStrategies @em ExistingTable):
-    Specify a table name for this class for the MapStrategy.
+         Specify a table name for this class for the MapStrategy.
     - @b ECInstanceIdColumn (optional): Specify a name for the ECInstanceId column. If not specified, ECDb picks @b Id as default ECInstanceId column name.
 
     Description of the DbIndexList properties:
@@ -793,6 +797,50 @@
     @see @ref ECDbOverview
     */
 
+    /**
+    @page ECDbChangeSummaries Change Summaries
+    
+    ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called change summaries.
+    ECDb persists them locally in a <b>change summary cache %ECDb file</b> next to the actual %ECDb file, so that they can be accessed across sessions.
+    
+    The <b>change summary cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeSummaryCache. Alternatively, you
+    can have it attached when opening the primary %ECDb by specify the respective @ref BentleyApi::BeSQLite::EC::ECDb::OpenParams "open parameter".
+
+    Once attached the change summary cache file is visible in ECSQL under the table space @b @c changesummaries.
+
+    ### Querying into the change summaries
+    You can use ECSQL against the @b ECDbChangeSummaries ECSchema to find out what ECInstances and what properties in them have changed 
+    in a given changeset. The @b ECDbChangeSummaries ECSchema is built into every <b>ChangeSummary cache %ECDb file</b>. Once attached
+    the entities of that schema can be referenced by the table space mentioned above.
+
+    Example:
+
+        SELECT ChangedInstance.Id, OpCode FROM changesummaries.change.InstanceChange WHERE Summary.Id=?
+
+    ### Querying for the changed values
+    Whereas ECDbChangeSummaries ECSchema yields information about what ECInstances and what properties have changed, querying for the actual
+    changed values is done with the ECSQL function @b Changes.
+
+    Syntax:
+
+        SELECT ... FROM MySchema.MyClass.<b>Changes</b>(ChangeSummaryId, ChangedValueState) ...
+
+    ChangeSummaryId: The ECInstanceId of the ChangeSummary instance created by BentleyApi::BeSQLite::ECECDb::ExtractChangeSummary.
+    ChangedValueState: corresponds to the values of the enum @ref BentleyApi::BeSQLite::EC::ChangedValueState "ChangedValueState".
+    
+    @note You can format the ChangedValueState in the ECSQL either by the enum's integral values or by the enum value's name. The following
+    two ECSQL statements are equivalent:
+        
+        SELECT ... FROM MySchema.MyClass.Changes(12, 1)
+    or
+        SELECT ... FROM MySchema.MyClass.Changes(12, 'AfterInsert')
+
+    ### Notes when specifying ChangedValueStatue::BeforeUpdate or ChangedValueStatue::AfterUpdate
+    For any select clause item whose value has not changed in the specified change summary, the value of the current state of the file is returned. The function does @b NOT 
+    return the value it was at the revision the change summary referred to.
+    
+    @see @ref ECDbOverview
+    */
 
 
     /**

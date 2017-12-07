@@ -29,6 +29,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ECInstanceAdapter.h \
                 $(publicApiDir)JsonAdapter.h \
                 $(publicApiDir)ChangeSummary.h \
+                $(publicApiDir)ChangeIterator.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h
 
 ECDbAllHeaders = \
@@ -40,7 +41,8 @@ ECDbAllHeaders = \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)ECDbSqlFunctions.h \
-                $(baseDir)DbMap.h \
+                $(baseDir)DbUtilities.h \
+                $(baseDir)SchemaManagerDispatcher.h \
                 $(baseDir)DbMapValidator.h \
                 $(baseDir)DbMappingManager.h \
                 $(baseDir)ClassMap.h \
@@ -61,6 +63,9 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbSystemSchemaHelper.h \
                 $(baseDir)ECDbMapSchemaHelper.h \
                 $(baseDir)PolicyManager.h \
+                $(baseDir)ChangeIteratorImpl.h \
+                $(baseDir)ChangeSummaryManager.h \
+                $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
                 $(baseDir)ECSql/Parser/SqlTypes.h \
@@ -151,9 +156,9 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)JsonPersistenceHelper$(oext):                             $(baseDir)JsonPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)DbUtilities$(oext):                                       $(baseDir)DbUtilities.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)DbMap$(oext):                                             $(baseDir)DbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)JsonPersistenceHelper$(oext):                             $(baseDir)JsonPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbMappingManager$(oext):                                  $(baseDir)DbMappingManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -187,11 +192,13 @@ $(o)IssueReporter$(oext):                                     $(baseDir)IssueRep
 
 $(o)SchemaPersistenceHelper$(oext):                           $(baseDir)SchemaPersistenceHelper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)SchemaManager$(oext):                                     $(baseDir)SchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaManagerDispatcher$(oext):                           $(baseDir)SchemaManagerDispatcher.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)SchemaReader$(oext):                                      $(baseDir)SchemaReader.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaWriter$(oext):                                      $(baseDir)SchemaWriter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SchemaManager$(oext):                                     $(baseDir)SchemaManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaImportContext$(oext):                               $(baseDir)SchemaImportContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -210,6 +217,12 @@ $(o)ECDbMapSchemaHelper$(oext):                               $(baseDir)ECDbMapS
 $(o)ECInstanceFinder$(oext):                                  $(baseDir)ECInstanceFinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ViewGenerator$(oext):                                     $(baseDir)ViewGenerator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSummaryManager$(oext):                              $(baseDir)ChangeSummaryManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSummaryExtractor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ChangeIteratorImpl$(oext):                                $(baseDir)ChangeIteratorImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryImpl$(oext):                                 $(baseDir)ChangeSummaryImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -459,6 +472,9 @@ $(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)E
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbSchemaPolicies.01.00.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/ECDb/ECDbChangeSummaries.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbChangeSummaries.01.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------

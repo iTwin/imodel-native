@@ -26,11 +26,15 @@ struct SingleECSqlPreparedStatement;
 struct ECSqlBinder : IECSqlBinder
     {
     public:
-        struct SqlParamNameGenerator final : NonCopyableClass
+        struct SqlParamNameGenerator final
             {
         private:
             Utf8String m_nameRoot;
             int m_currentSuffix = 0;
+
+            //not copyable
+            SqlParamNameGenerator(SqlParamNameGenerator const&) = delete;
+            SqlParamNameGenerator& operator=(SqlParamNameGenerator const&) = delete;
 
         public:
             SqlParamNameGenerator(ECSqlPrepareContext& ctx, Utf8CP nameRoot) : m_nameRoot(nameRoot) 
@@ -117,7 +121,7 @@ struct ECSqlBinderFactory final
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    08/2013
 //+===============+===============+===============+===============+===============+======
-struct ECSqlParameterMap : NonCopyableClass
+struct ECSqlParameterMap final
     {
     private:
         std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
@@ -126,6 +130,10 @@ struct ECSqlParameterMap : NonCopyableClass
 
         std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
         std::vector<ECSqlBinder*> m_bindersToCallOnStep;
+
+        //not copyable
+        ECSqlParameterMap(ECSqlParameterMap const&) = delete;
+        ECSqlParameterMap& operator=(ECSqlParameterMap const&) = delete;
 
         bool Contains(int& ecsqlParameterIndex, Utf8StringCR ecsqlParameterName) const;
 

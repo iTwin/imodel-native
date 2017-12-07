@@ -30,7 +30,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             BeFileName dbPath(dbFileName);
             m_ecdb.CloseDb();
             ASSERT_FALSE(m_ecdb.IsDbOpen());
-            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::Readonly)));
+            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
             ASSERT_TRUE(m_ecdb.IsDbOpen());
             }
 
@@ -39,7 +39,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
         //+---------------+---------------+---------------+---------------+---------------+------
         DbResult OpenBesqliteDb(Utf8CP dbPath)
             {
-            return m_ecdb.OpenBeSQLiteDb(dbPath, Db::OpenParams(Db::OpenMode::ReadWrite));
+            return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
             }
 
         //---------------------------------------------------------------------------------------
@@ -7286,7 +7286,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
     AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Removing KindOfQuantity from an ECArrayProperty");
 
     //Verifying the property no longer has KOQ
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length");
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
@@ -7337,7 +7337,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
     AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Removing KindOfQuantity from an ECProperty");
 
     //Verifying the property no longer has KOQ
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length");
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);

@@ -238,6 +238,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
     if (SingleSelectStatementExp const* stmt = static_cast<SingleSelectStatementExp const*>(exp.FindParent(Exp::Type::SingleSelect)))
         isRowConstructor = stmt->IsRowConstructor();
 
+    std::vector<Utf8String> & resultSet = const_cast<DerivedPropertyExp&>(exp).SqlResultSetR();
     if (!isRowConstructor)
         {
         Utf8String alias = exp.GetColumnAlias();
@@ -247,7 +248,10 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
         if (!alias.empty())
             {
             if (nativeSqlSnippets.size() == 1)
+                {
                 nativeSqlSnippets.front().AppendSpace().AppendEscaped(alias.c_str());
+                resultSet.push_back(alias);
+                }
             else
                 {
                 int idx = 0;
@@ -257,12 +261,20 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
                     postfix.clear();
                     postfix.Sprintf("%s_%d", alias.c_str(), idx);
                     idx++;
+                    resultSet.push_back(postfix);
                     snippet.AppendSpace().AppendEscaped(postfix.c_str());
                     }
                 }
             }
+        else
+            {
+            for (NativeSqlBuilder& snippet : nativeSqlSnippets)
+                {
+                resultSet.push_back(snippet.GetSql());
+                }
+            }
         }
-
+    
     if (ctx.GetCurrentScope().IsRootScope())
         {
         ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(nativeSqlSnippets.size() - snippetCountBefore);

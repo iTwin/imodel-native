@@ -44,6 +44,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define COL_DEFAULTNAME_SourceId "SourceId"
 #define COL_DEFAULTNAME_TargetId "TargetId"
 
+#define TABLESPACE_Main "main"
+#define TABLESPACE_Temp "temp"
+#define TABLESPACE_ChangeSummaries "changesummaries"
+
 //The SQLVAL_xxx defines are meant to be only used in SQL strings. Potential redundancy
 //is ok to avoid the expensiveness of compose strings at runtime using expensive methods like Utf8String.Sprintf
 //although the SQL string is actually literal.
@@ -205,8 +209,5 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_Point2d == 0x701 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_Point3d == 0x801 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_String == 0x901, "Persisted Enum has changed: ECN::PrimitiveType.");
-
-//The SQL returns the issues as JSON string. JSON in a CSV file means that the double quotes must be escaped by preceding
-//them with another double quote
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

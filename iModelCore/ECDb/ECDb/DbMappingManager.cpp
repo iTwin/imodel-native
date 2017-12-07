@@ -11,485 +11,6 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//******************************************************************************************************
-// ForeignKeyPartitionView::Partition
-//******************************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-void ForeignKeyPartitionView::Partition::SetFromECClassIdColumn(DbColumn const* column)
-    {
-    SetColumn(m_fkInfo.GetPersistedEnd() == PersistedEnd::TargetTable ? ColumnId::SourceECClassId : ColumnId::TargetECClassId, column);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-bool ForeignKeyPartitionView::Partition::IsConcrete() const
-    {
-    for (DbColumn const* col : m_cols)
-        if (!col)
-            return false;
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-bool ForeignKeyPartitionView::Partition::IsPhysical() const
-    {
-    return GetECInstanceIdColumn().GetTable().GetType() != DbTable::Type::Virtual;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-uint64_t ForeignKeyPartitionView::Partition::QuickHash64(Utf8CP str, uint64_t mix)
-    {
-    const uint64_t mulp = 2654435789;
-    mix ^= 104395301;
-    while (*str)
-        mix += (*str++ * mulp) ^ (mix >> 23);
-
-    return mix ^ (mix << 37);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-DbColumn const* ForeignKeyPartitionView::Partition::GetColumn(ColumnId columnId) const
-    {
-    return m_cols[(int) columnId];
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus ForeignKeyPartitionView::Partition::SetColumn(ColumnId columnId, DbColumn const* column)
-    {
-    m_cols[(int) columnId] = column;
-    UpdateHash();
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-void ForeignKeyPartitionView::Partition::UpdateHash()
-    {
-    m_hashCode = 0;
-    for (DbColumn const* col : m_cols)
-        if (col)
-            {
-            m_hashCode = QuickHash64(col->GetTable().GetName().c_str(), m_hashCode);
-            m_hashCode = QuickHash64(col->GetName().c_str(), m_hashCode);
-            }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-ForeignKeyPartitionView::Partition::Partition(ForeignKeyPartitionView const& fkInfo)
-    :m_fkInfo(fkInfo), m_hashCode(0), m_cols(), m_persisted(false)
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ForeignKeyPartitionView::Partition> ForeignKeyPartitionView::Partition::Create(ForeignKeyPartitionView const& info, DbColumn const& navId, DbColumn const& navRelECClassId)
-    {
-    DbTable const& table = navId.GetTable();
-    if (&table != &navRelECClassId.GetTable())
-        return nullptr;
-
-    std::unique_ptr<Partition> partition = std::unique_ptr<Partition>(new Partition(info));
-    DbColumn const* instanceId = table.FindFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* classId = table.FindFirst(DbColumn::Kind::ECClassId);
-    if (instanceId == nullptr || classId == nullptr)
-        return nullptr;
-
-    if (partition->SetColumn(ColumnId::ECInstanceId, instanceId) == ERROR)
-        return nullptr;
-
-    const bool persistedInSource = info.GetPersistedEnd() == PersistedEnd::SourceTable;
-    //ToECInstanceId
-    if (partition->SetColumn((persistedInSource ? ColumnId::SourceECInstanceId : ColumnId::TargetECInstanceId), instanceId) == ERROR)
-        return nullptr;
-
-    //ToECClassId
-    if (partition->SetColumn(persistedInSource ? ColumnId::SourceECClassId : ColumnId::TargetECClassId, classId) == ERROR)
-        return nullptr;
-
-    if (partition->SetColumn(ColumnId::ECClassId, &navRelECClassId) == ERROR)
-        return nullptr;
-
-    //FromECInstanceId
-    if (partition->SetColumn(persistedInSource ? ColumnId::TargetECInstanceId : ColumnId::SourceECInstanceId, &navId) == ERROR)
-        return nullptr;
-
-    return partition;
-    }
-
-
-//******************************************************************************************************
-// ForeignKeyPartitionView
-//******************************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-ForeignKeyPartitionView::ForeignKeyPartitionView(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy)
-    :m_ecdb(ecdb), m_relationshipClass(relationship), m_mapStrategy(mapStrategy)
-    {
-    BeAssert(m_mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable ||
-             m_mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus ForeignKeyPartitionView::GetMapStrategy(MapStrategy& mapStrategy, ECDbCR ecdb, ECN::ECRelationshipClassCR rel)
-    {
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT MapStrategy FROM " TABLE_ClassMap " WHERE ClassId=?");
-    stmt->BindId(1, rel.GetId());
-    if (stmt->Step() == BE_SQLITE_DONE)
-        return ERROR;
-
-    mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::CreateReadonly(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship)
-    {
-    MapStrategy mapStrategy;
-    if (GetMapStrategy(mapStrategy, ecdb, relationship) != SUCCESS)
-        return nullptr;
-
-    BeAssert(mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable ||
-             mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable);
-
-    return Create(ecdb, relationship, mapStrategy, true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy)
-    {
-    MapStrategy persistedMapStrategy;
-    if (GetMapStrategy(persistedMapStrategy, ecdb, relationship) == SUCCESS)
-        {
-        BeAssert(mapStrategy == persistedMapStrategy);
-        if (mapStrategy != persistedMapStrategy)
-            return nullptr;
-        }
-
-    return Create(ecdb, relationship, mapStrategy, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy, bool readonly)
-    {
-    enum class PropertyMapKind
-        {
-        Id = 1,
-        RelEClassId = 2,
-        Unknown = 3,
-        };
-
-    Utf8CP sql =
-        "SELECT DISTINCT "
-        "       CASE (SUBSTR (PP.AccessString, INSTR(PP.AccessString, '.') + 1)) WHEN 'Id'  THEN 1 WHEN 'RelECClassId'THEN 2 ELSE 3 END PropertyMapKind, "
-        "       T.Name,"
-        "       C.Name "
-        "FROM   ec_Property P "
-        "       INNER JOIN ec_PropertyPath PP ON PP.RootPropertyId = P.Id "
-        "       INNER JOIN ec_PropertyMap PM ON PM.PropertyPathId = PP.Id "
-        "       INNER JOIN ec_Column C ON C.Id = PM.ColumnId "
-        "       INNER JOIN ec_Table T ON T.Id = C.TableId "
-        "WHERE  P.NavigationRelationshipClassId = ? ORDER BY T.Id, PM.ClassId, PropertyMapKind";
-
-
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
-    if (stmt == nullptr || BE_SQLITE_OK != stmt->BindId(1, GetRootClass(relationship).GetId()))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    std::unique_ptr<ForeignKeyPartitionView> partitionView(new ForeignKeyPartitionView(ecdb, relationship, mapStrategy));
-    DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        PropertyMapKind idPropertyMapKind = Enum::FromInt<PropertyMapKind>(stmt->GetValueInt(0));
-        if (idPropertyMapKind != PropertyMapKind::Id)
-            return nullptr;
-
-        Utf8CP tableName = stmt->GetValueText(1);
-        DbTable const* table = dbSchema.FindTable(tableName);
-        if (table == nullptr)
-            return nullptr;
-
-        DbColumn const* refIdCol = table->FindColumn(stmt->GetValueText(2));
-        if (refIdCol == nullptr)
-            return nullptr;
-
-        //now step to next row which is expected to be RelECClassId col
-        if (stmt->Step() != BE_SQLITE_ROW)
-            return nullptr;
-
-        PropertyMapKind relECClassIdPropertyMapKind = Enum::FromInt<PropertyMapKind>(stmt->GetValueInt(0));
-        if (relECClassIdPropertyMapKind != PropertyMapKind::RelEClassId)
-            return nullptr;
-
-        Utf8CP relECClassIdTableName = stmt->GetValueText(1);
-        if (!table->GetName().EqualsIAscii(relECClassIdTableName))
-            return nullptr;
-
-        DbColumn const* refRelECClassIdCol = table->FindColumn(stmt->GetValueText(2));
-        if (refRelECClassIdCol == nullptr)
-            return nullptr;
-
-        std::unique_ptr<Partition> partition = Partition::Create(*partitionView, *refIdCol, *refRelECClassIdCol);
-        if (partition == nullptr)
-            return nullptr;
-
-        partition->MarkPersisted();
-        if (partitionView->Insert(std::move(partition)) != SUCCESS)
-            return nullptr;
-        }
-
-    if (partitionView->UpdateFromECClassIdColumn() != SUCCESS)
-        return nullptr;
-
-    partitionView->m_readonly = readonly;
-    return partitionView;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-ECN::ECRelationshipClassCR ForeignKeyPartitionView::GetRootClass(ECN::ECRelationshipClassCR ecRelationshipClass)
-    {
-    if (!ecRelationshipClass.HasBaseClasses())
-        return ecRelationshipClass;
-
-    BeAssert(ecRelationshipClass.GetBaseClasses().size() == 1 && ecRelationshipClass.GetBaseClasses().front()->GetRelationshipClassCP() != nullptr);
-    return GetRootClass(*ecRelationshipClass.GetBaseClasses().front()->GetRelationshipClassCP());
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-std::vector<ForeignKeyPartitionView::Partition const*> ForeignKeyPartitionView::GetPartitions(bool onlyPhysical, bool onlyConcrete) const
-    {
-    std::vector<Partition const*> result;
-    for (std::unique_ptr<Partition> const& partition : m_partitions)
-        {
-        if (onlyPhysical && !partition->IsPhysical())
-            continue;
-
-        if (onlyConcrete && !partition->IsConcrete())
-            continue;
-
-        result.push_back(partition.get());
-        }
-
-    return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-std::vector<ForeignKeyPartitionView::Partition const*> ForeignKeyPartitionView::GetPartitions(DbTable const& table, bool onlyPhysical, bool onlyConcrete) const
-    {
-    std::vector<Partition const*> result;
-    for (Partition const* partition : GetPartitions(onlyPhysical, onlyConcrete))
-        {
-        if (partition->GetECInstanceIdColumn().GetTable() == table)
-            result.push_back(partition);
-        }
-
-    return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus ForeignKeyPartitionView::UpdateFromECClassIdColumn()
-    {
-    BeAssert(Readonly() == false);
-    if (Readonly())
-        return ERROR;
-
-    DbColumn const* fromECClassIdColumn;
-    if (TryGetFromECClassIdColumn(fromECClassIdColumn) != SUCCESS)
-        return ERROR;
-
-    for (std::unique_ptr<Partition> const& partition : m_partitions)
-        partition->SetFromECClassIdColumn(fromECClassIdColumn);
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-bool ForeignKeyPartitionView::Contains(ForeignKeyPartitionView::Partition const& partition) const
-    {
-    for (std::unique_ptr<Partition> const& existingPartition : m_partitions)
-        if (partition.GetHashCode() == existingPartition->GetHashCode())
-            return true;
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-ForeignKeyPartitionView::Partition const* ForeignKeyPartitionView::FindCompatiblePartiton(NavigationPropertyMap const& navigationPropertyMap) const
-    {
-    for (std::unique_ptr<Partition> const& partition : m_partitions)
-        {
-        if (!navigationPropertyMap.GetClassMap().IsMappedTo(partition->GetECInstanceIdColumn().GetTable()))
-            continue;
-
-        NavigationInfo navColumns = partition->GetNavigationColumns();
-        if (navigationPropertyMap.GetClassMap().GetColumnFactory().IsColumnInUse(navColumns.GetIdColumn()))
-            continue;
-
-        if (navigationPropertyMap.GetClassMap().GetColumnFactory().IsColumnInUse(navColumns.GetRelECClassIdColumn()))
-            continue;
-
-        return partition.get();
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus ForeignKeyPartitionView::Insert(std::unique_ptr<Partition> partition)
-    {
-    BeAssert(Readonly() == false);
-    if (Readonly())
-        return ERROR;
-
-    BeAssert(partition != nullptr);
-    if (partition == nullptr)
-        return ERROR;
-
-    const bool contains = Contains(*partition);
-    BeAssert(contains == false);
-    if (contains)
-        return ERROR;
-
-    m_partitions.push_back(std::move(partition));
-    if (m_updateFromECClassIdColumnOnInsert)
-        return UpdateFromECClassIdColumn();
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-BentleyStatus ForeignKeyPartitionView::TryGetFromECClassIdColumn(DbColumn const*& column) const
-    {
-    DbTable const* otherEndTable = nullptr;
-    if (SUCCESS != TryGetOtherEndTable(otherEndTable, m_ecdb, m_relationshipClass, m_mapStrategy))
-        return ERROR;
-
-    column = otherEndTable != nullptr ? otherEndTable->FindFirst(DbColumn::Kind::ECClassId) : nullptr;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-//static
-BentleyStatus ForeignKeyPartitionView::TryGetOtherEndTable(DbTable const*& otherEndTable, ECDbCR ecdb,  ECRelationshipClassCR relationshipClass, MapStrategy strategy)
-    {
-    if (strategy != MapStrategy::ForeignKeyRelationshipInSourceTable &&
-        strategy != MapStrategy::ForeignKeyRelationshipInTargetTable)
-        {
-        BeAssert(false && " May only call this for end table relationships");
-        return ERROR;
-        }
-
-    ECRelationshipConstraintCR otherEndConstraint = ECRelationshipEnd::ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
-    Utf8CP sql = otherEndConstraint.GetIsPolymorphic() ?
-        "SELECT DISTINCT CHT.TableId FROM ec_RelationshipConstraintClass RCC "
-        "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id=RCC.ConstraintId "
-        "       INNER JOIN ec_Table T ON T.Id=CHT.TableId "
-        "       INNER JOIN ec_cache_ClassHierarchy CH ON CH.BaseClassId=RCC.ClassId "
-        "       INNER JOIN ec_cache_ClassHasTables CHT ON CHT.ClassId=CH.ClassId "
-        "WHERE  RC.RelationshipClassId = ? "
-        "       AND RC.RelationshipEnd=? AND T.Type!=" SQLVAL_DbTable_Type_Joined " AND T.Type!=" SQLVAL_DbTable_Type_Overflow
-        :
-    "SELECT DISTINCT CHT.TableId FROM ec_RelationshipConstraintClass RCC "
-        "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id=RCC.ConstraintId "
-        "       INNER JOIN ec_Table T ON T.Id=CHT.TableId "
-        "       INNER JOIN ec_cache_ClassHasTables CHT ON CHT.ClassId=RCC.ClassId "
-        "WHERE  RC.RelationshipClassId=? "
-        "       AND RC.RelationshipEnd=? AND T.Type!=" SQLVAL_DbTable_Type_Joined " AND T.Type!=" SQLVAL_DbTable_Type_Overflow;
-
-    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    stmt->BindId(1, GetRootClass(relationshipClass).GetId());
-    const ECRelationshipEnd otherEnd = strategy == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
-    stmt->BindInt(2, Enum::ToInt(otherEnd));
-
-    std::vector<DbTable const*> list;
-    std::vector<DbTable const*> nvlist;
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        if (DbTable const* table = ecdb.Schemas().GetDbMap().GetDbSchema().FindTable(stmt->GetValueId<DbTableId>(0)))
-            {
-            list.push_back(table);
-            if (table->GetType() != DbTable::Type::Virtual)
-                nvlist.push_back(table);
-            }
-        else
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        }
-
-    if (!nvlist.empty())
-        {
-        if (nvlist.size() > 1)
-            return ERROR;
-
-        otherEndTable = nvlist[0];
-        return SUCCESS;
-        }
-
-    if (list.size() > 1)
-        return ERROR;
-
-    if (list.empty())
-        otherEndTable = nullptr;
-    else
-        otherEndTable = list[0];
-
-    return SUCCESS;
-    }
-
 
 //******************************************************************************************************
 // DbMappingManager::Classes
@@ -642,7 +163,6 @@ RefCountedPtr<Point2dPropertyMap>  DbMappingManager::Classes::MapPoint2dProperty
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
- 
 RefCountedPtr<Point3dPropertyMap>  DbMappingManager::Classes::MapPoint3dProperty(Context& ctx, ECN::PrimitiveECPropertyCR property, CompoundDataPropertyMap const* compoundPropMap, Utf8StringCR accessString, DbColumn::CreateParams const& colCreateParams)
     {
     if (property.GetType() != PRIMITIVETYPE_Point3d)
@@ -867,10 +387,10 @@ ClassMappingStatus DbMappingManager::Classes::MapNavigationProperty(SchemaImport
     FkRelationshipMappingInfo* fkRelInfo = nullptr;
     if (!ctx.GetFkRelationshipMappingInfos().TryGet(fkRelInfo, navRel->GetId()))
         {
-        if (ClassMappingStatus::Success != ctx.GetDbMap().MapClass(ctx, *navRel))
+        if (ClassMappingStatus::Success != ctx.GetSchemaManager().MapClass(ctx, *navRel))
                 return ClassMappingStatus::Error;
 
-         ClassMap const* relClassMap = ctx.GetDbMap().GetClassMap(*navRel);
+         ClassMap const* relClassMap = ctx.GetSchemaManager().GetClassMap(*navRel);
          if (relClassMap == nullptr)
              {
              BeAssert(false);
@@ -966,6 +486,12 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
         return ERROR;
         }
 
+    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
+        {
+        importCtx.Issues().Report("Failed to map ECClass %s. It is mapped using the 'ExistingTable' strategy but also has the DbIndexList custom attribute. Indexes cannot be created in this case.", ecClass.GetFullName());
+        return ERROR;
+        }
+
     bool addPropsAreNotNullWhereExp = false;
     if (!indexCA.GetWhereClause().IsNull())
         {
@@ -1012,7 +538,7 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
         DbTable const& table = classMap.GetJoinedOrPrimaryTable();
         GetColumnsPropertyMapVisitor columnVisitor(table);
         propertyMap->AcceptVisitor(columnVisitor);
-        if (table.GetType() != DbTable::Type::Virtual && columnVisitor.GetVirtualColumnCount() > 0)
+        if (table.GetType() == DbTable::Type::Virtual || columnVisitor.GetVirtualColumnCount() > 0)
             {
             importCtx.Issues().Report("DbIndex custom attribute '%s' on ECClass '%s' is invalid: "
                           "The specified ECProperty '%s' cannot be used in the index as it is not mapped to a column (aka virtual column).",
@@ -1059,7 +585,7 @@ BentleyStatus DbMappingManager::Classes::DetermineColumnInfoForPrimitiveProperty
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Unset;
 
-    IssueReporter const& issues = classMap.GetDbMap().GetECDb().GetImpl().Issues();
+    IssueReporter const& issues = classMap.GetSchemaManager().Issues();
     PropertyMapCustomAttribute customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
@@ -1156,7 +682,7 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
     if (linkTableRelationshipMapCA.IsValid() || (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1) ||
         relClass.GetPropertyCount() > 0)
         {
-        CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement("SELECT 1 FROM ec_Property WHERE NavigationRelationshipClassId=?");
+        CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement("SELECT 1 FROM main." TABLE_Property " WHERE NavigationRelationshipClassId=?");
         if (stmt == nullptr || BE_SQLITE_OK != stmt->BindId(1, relClass.GetId()))
             {
             BeAssert(false);
@@ -1182,7 +708,7 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
     const ECRelatedInstanceDirection navPropDir = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Target ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward;
 
     //finally check whether the relationship requires a nav prop. If it does but doesn't have one, we also fall back to a link table
-    CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement("SELECT ClassId, Name FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=? ORDER BY ClassId");
+    CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement("SELECT ClassId, Name FROM main.ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=? ORDER BY ClassId");
     if (stmt == nullptr)
         return ERROR;
 
@@ -1291,7 +817,7 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
 //---------------------------------------------------------------------------------------
 DbMappingManager::Classes::PropertyMapInheritanceMode DbMappingManager::Classes::GetPropertyMapInheritanceMode(MapStrategyExtendedInfo const& mapStrategyExtInfo)
     {
-    if (mapStrategyExtInfo.GetStrategy() != MapStrategy::TablePerHierarchy)
+    if (!mapStrategyExtInfo.IsTablePerHierarchy())
         return PropertyMapInheritanceMode::NotInherited;
 
     return PropertyMapInheritanceMode::Clone;
@@ -1458,7 +984,7 @@ BentleyStatus DbMappingManager::FkRelationships::FinishMapping(SchemaImportConte
     const ECRelationshipEnd referencedEnd = mappingInfo.GetReferencedEnd();
     ECRelationshipConstraintCR referencedEndConstraint = referencedEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
 
-    std::set<DbTable const*> referencedEndTables = ctx.GetDbMap().GetRelationshipConstraintPrimaryTables(ctx, referencedEndConstraint);
+    std::set<DbTable const*> referencedEndTables = ctx.GetSchemaManager().GetRelationshipConstraintPrimaryTables(ctx, referencedEndConstraint);
     if (referencedEndTables.size() > 1)
         {
         ctx.Issues().Report("Failed to map ECRelationshipClass '%s'. The referenced end maps to more than one table.", relClass.GetFullName());
@@ -1489,7 +1015,8 @@ DbColumn* DbMappingManager::FkRelationships::CreateRelECClassIdColumn(SchemaImpo
     const bool makeRelClassIdColNotNull = mappingInfo.IsPhysicalForeignKey() && fkCol.DoNotAllowDbNull();
 
     PersistenceType persType = PersistenceType::Physical;
-    if (fkTable.GetType() == DbTable::Type::Virtual || fkTable.GetType() == DbTable::Type::Existing || mappingInfo.GetRelationshipClass().GetClassModifier() == ECClassModifier::Sealed)
+    DbTable::Type fkTableType = fkTable.GetType();
+    if (fkTableType == DbTable::Type::Virtual || fkTableType == DbTable::Type::Existing || mappingInfo.GetRelationshipClass().GetClassModifier() == ECClassModifier::Sealed)
         persType = PersistenceType::Virtual;
 
     DbColumn* relClassIdCol = fkTable.FindColumnP(fkColInfo.GetRelClassIdColumnName().c_str());
@@ -1567,10 +1094,6 @@ DbColumn* DbMappingManager::FkRelationships::CreateForeignKeyColumn(FkRelationsh
     bool makeFkColNotNull = false;
     if (mappingInfo.IsPhysicalForeignKey())
         {
-        //WIP_CLEANUP This can be simplified a lot once we create this from the nav prop map because then we know the constraint class already:
-        //const bool isNavPropClassExclusiveRootClass = idCol.GetTable().HasExclusiveRootECClass() && idCol.GetTable().GetExclusiveRootECClassId() == propMap.GetClassMap().GetClass().GetId();
-        //bool makeFkColNotNull = propMap.CardinalityImpliesNotNull() && isNavPropClassExclusiveRootClass;
-
         bset<ECClassId> foreignEndConstraintClassIds;
         for (ECClassCP constraintClass : foreignEndConstraint.GetConstraintClasses())
             foreignEndConstraintClassIds.insert(constraintClass->GetId());
@@ -1601,6 +1124,7 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
         return ERROR; // logical key don't get fk constraints (by definition)
 
     ECRelationshipClassCR relClass = mappingInfo.GetRelationshipClass();
+
     Nullable<Utf8String> onDeleteActionStr;
     if (SUCCESS != mappingInfo.GetFkConstraintCA().TryGetOnDeleteAction(onDeleteActionStr))
         return ERROR;
@@ -1663,8 +1187,7 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
             }
 
         if (fkTable.GetType() == DbTable::Type::Existing || fkTable.GetType() == DbTable::Type::Virtual ||
-            referencedTable.GetType() == DbTable::Type::Virtual ||
-            fkCol.IsShared())
+            referencedTable.GetType() == DbTable::Type::Virtual || fkCol.IsShared())
             continue;
 
         DbColumn const* referencedColumnId = referencedTable.FindFirst(DbColumn::Kind::ECInstanceId);
@@ -1804,7 +1327,8 @@ Utf8CP FkRelationshipMappingInfo::RELECCLASSID_COLNAME_TOKEN = "RelECClassId";
 //---------------------------------------------------------------------------------------
 FkRelationshipMappingInfo::FkRelationshipMappingInfo(ECDbCR ecdb, ECN::ECRelationshipClassCR relClass, MapStrategy mapStrategy) : m_relClass(relClass)
     {
-    m_fkPartitionView = ForeignKeyPartitionView::Create(ecdb, m_relClass, mapStrategy);
+    //mapping only done in main table space
+    m_fkPartitionView = ForeignKeyPartitionView::Create(ecdb.Schemas().Main(), m_relClass, mapStrategy);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1869,6 +1393,7 @@ Utf8String FkRelationshipMappingInfo::ForeignKeyColumnInfo::DetermineRelClassIdC
     return relClassIdColName;
     }
 
+
 //*************************************************************************************
 //DbMappingManager::Tables
 //*************************************************************************************
@@ -1917,17 +1442,6 @@ BentleyStatus DbMappingManager::Tables::MapToTable(SchemaImportContext& ctx, Cla
                  else
                      classMap.AddTable(tphBaseClassMap->GetJoinedOrPrimaryTable());
                  }
-#if 0 //
-             for (DbTable const* table : classMap.GetTables())
-                 {
-                 DbTable::LinkNode const* overflowTableNode = table->GetLinkNode().FindOverflowTable();
-                 if (overflowTableNode != nullptr)
-                     {
-                     classMap.AddTable(overflowTableNode->GetTableR());
-                     break;
-                     }
-                 }
-#endif
              }
          }
 
@@ -1963,22 +1477,23 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
  DbTable* DbMappingManager::Tables::FindOrCreateTable(SchemaImportContext& ctx, ClassMap const& classMap, ClassMappingInfo const& info, DbTable::Type tableType, DbTable const* primaryTable)
      {
      BeAssert(!info.GetECInstanceIdColumnName().empty() && "should always be set (either to user value or default value) by this time");
-     const ECClassId exclusiveRootClassId = IsExclusiveRootClassOfTable(info) ? classMap.GetClass().GetId() : ECClassId();;
-     DbTable* table = ctx.GetECDb().Schemas().GetDbMap().GetDbSchema().FindTableP(info.GetTableName());
+     const ECClassId exclusiveRootClassId = IsExclusiveRootClassOfTable(info) ? classMap.GetClass().GetId() : ECClassId();
+
+     DbTable* table = ctx.GetSchemaManager().GetDbSchema().FindTableP(info.GetTableName());
      if (table != nullptr)
          {
          if (table->GetType() != tableType)
              {
-             ctx.Issues().Report("Table %s already used by another ECClass for a different mapping type.", table->GetName().c_str());
+             ctx.Issues().Report("Table %s is already used by another ECClass for a different mapping type.", table->GetName().c_str());
              return nullptr;
              }
 
+         
          if (table->HasExclusiveRootECClass())
              {
              BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-             ctx.Issues().Report("Table %s is exclusively used by the ECClass with Id %s and therefore "
-                                                 "cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
-                                                 table->GetName().c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
+             ctx.Issues().Report("Table %s is exclusively used by the ECClass with Id %s and therefore cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
+                                 table->GetName().c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
              return nullptr;
              }
 
@@ -2013,6 +1528,7 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
                  return nullptr;
          }
 
+     
      if (tableType != DbTable::Type::Existing)
          return CreateTableForOtherStrategies(ctx, classMap, info.GetTableName(), tableType, info.GetECInstanceIdColumnName(), classIdColPersistenceType, exclusiveRootClassId, primaryTable);
 
@@ -2022,17 +1538,21 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                Krischan.Eberle       11/2016
  //---------------------------------------------------------------------------------------
- 
- DbTable* DbMappingManager::Tables::CreateTableForOtherStrategies(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR tableName, DbTable::Type tableType, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
+  DbTable* DbMappingManager::Tables::CreateTableForOtherStrategies(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR tableName, DbTable::Type tableType, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
      {
-     if (ctx.GetECDb().TableExists(tableName.c_str()))
-         {
-         ctx.Issues().Report("Failed to map ECClass '%s'. It would be mapped to the table '%s' which already exists. Consider applying the 'ExistingTable' MapStrategy to the ECClass.",
-                                             classMap.GetClass().GetFullName(), tableName.c_str());
-         return nullptr;
-         }
+      if (DbUtilities::TableExists(ctx.GetECDb(), tableName.c_str(), TABLESPACE_Main))
+          {
+          ctx.Issues().Report("Failed to map ECClass '%s'. It would be mapped to table '%s' which exists already and was not created by ECDb. Mapping classes to pre-existing tables requires the MapStrategy 'ExistingTable'.",
+                              classMap.GetClass().GetFullName(), tableName.c_str());
+          return nullptr;
+          }
 
-     DbTable* table = ctx.GetECDb().Schemas().GetDbMap().GetDbSchemaR().AddTable(tableName.c_str(), tableType, exclusiveRootClassId, primaryTable);
+     DbTable* table = nullptr;
+     if (primaryTable != nullptr)
+        table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(tableName, tableType, exclusiveRootClassId, *primaryTable);
+     else
+        table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(tableName, tableType, exclusiveRootClassId);
+
      DbColumn* pkColumn = table->AddColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
      if (table->GetType() != DbTable::Type::Virtual)
          {
@@ -2050,28 +1570,28 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                    Affan.Khan        09/2014
  //---------------------------------------------------------------------------------------
- 
  DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECClassId exclusiveRootClassId)
      {
      BeAssert(!existingTableName.empty());
 
-     if (!ctx.GetECDb().TableExists(existingTableName.c_str()))
-         {
-         ctx.Issues().Report("Failed to map ECClass '%s'. The table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.",
-                                             classMap.GetClass().GetFullName(), existingTableName.c_str());
-         return nullptr;
-         }
-
-     DbTable* table = classMap.GetDbMap().GetDbSchemaR().AddTable(existingTableName, DbTable::Type::Existing, exclusiveRootClassId, nullptr);
-     if (table == nullptr)
-         return nullptr;
-
-     bvector<SqliteColumnInfo> existingColumnInfos;
-     if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(existingColumnInfos, classMap.GetDbMap().GetECDb(), existingTableName))
+     std::vector<SqliteColumnInfo> existingColumnInfos;
+     if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(existingColumnInfos, ctx.GetECDb(), existingTableName.c_str()) ||
+         existingColumnInfos.empty())
          {
          BeAssert(false && "Failed to get column informations");
          return nullptr;
          }
+
+     if (existingColumnInfos.empty())
+         {
+         ctx.Issues().Report("Failed to map ECClass '%s'. The table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.",
+                             classMap.GetClass().GetFullName(), existingTableName.c_str());
+         return nullptr;
+         }
+
+     DbTable* table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(existingTableName, DbTable::Type::Existing, exclusiveRootClassId);
+     if (table == nullptr)
+         return nullptr;
 
      if (!table->GetEditHandle().CanEdit())
          table->GetEditHandleR().BeginEdit();
@@ -2167,10 +1687,11 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
          return ERROR;
          }
 
-     if (SUCCESS != ctx.GetDbMap().GetDbSchema().LoadIndexDefs())
+     if (SUCCESS != ctx.GetSchemaManager().GetDbSchema().LoadIndexDefs())
          return ERROR;
 
-     return table.AddIndexDef(indexName, isUnique, columns, addIsNotNullWhereExp, isAutoGenerated, classId, applyToSubclassesIfPartial) != nullptr ? SUCCESS : ERROR;
+     table.AddIndexDef(std::make_unique<DbIndex>(table, indexName, isUnique, columns, addIsNotNullWhereExp, isAutoGenerated, classId, applyToSubclassesIfPartial));
+     return SUCCESS;
      }
 
  //---------------------------------------------------------------------------------------
@@ -2202,11 +1723,11 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
 
      Utf8String name(parentTable.GetName());
      name.append("_Overflow");
-     DbTable* overflowTable = ctx.GetECDb().Schemas().GetDbMap().GetDbSchema().FindTableP(name);
+     DbTable* overflowTable = ctx.GetSchemaManager().GetDbSchema().FindTableP(name);
      if (overflowTable != nullptr)
          return overflowTable;
 
-     overflowTable = ctx.GetECDb().Schemas().GetDbMap().GetDbSchemaR().AddTable(name, DbTable::Type::Overflow, ECClassId(), &parentTable);
+     overflowTable = ctx.GetSchemaManager().GetDbSchemaR().AddTable(name, DbTable::Type::Overflow, ECClassId(), parentTable);
      if (overflowTable == nullptr)
          return nullptr;
 
@@ -2233,23 +1754,9 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
  //---------------------------------------------------------------------------------------
  bool DbMappingManager::Tables::IsExclusiveRootClassOfTable(ClassMappingInfo const& mappingInfo)
      {
-     MapStrategy strategy = mappingInfo.GetMapStrategy().GetStrategy();
-     switch (strategy)
-         {
-             case MapStrategy::ExistingTable:
-                 //for existing table we also assume an exclusive root as ECDb only supports mapping a single ECClass to an existing table
-                 return true;
-
-                 //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.
-             case MapStrategy::OwnTable:
-                 return true;
-
-             case MapStrategy::ForeignKeyRelationshipInSourceTable:
-             case MapStrategy::ForeignKeyRelationshipInTargetTable:
-                 return true;
-             default:
-                 break;
-         }
+     //All but TPH maps to a single table for which the class is implicitly the exclusive root
+     if (!mappingInfo.GetMapStrategy().IsTablePerHierarchy())
+         return true;
 
      //For subclasses in a TablePerHierarchy, true must be returned for joined table root classes
      ClassMap const* tphBaseClassMap = mappingInfo.GetTphBaseClassMap();
@@ -2258,15 +1765,14 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
 
      //if base class is the direct parent of the joined table, this class is the
      //starting point of the joined table, so also the exclusive root (of the joined table)
-     BeAssert(tphBaseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
+     BeAssert(tphBaseClassMap->GetMapStrategy().IsTablePerHierarchy());
      return tphBaseClassMap->GetTphHelper()->IsParentOfJoinedTable();
      }
 
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                Krischan.Eberle      11/2015
  //---------------------------------------------------------------------------------------
- 
- BentleyStatus DbMappingManager::Tables::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR ecclass, Utf8CP tablePrefix)
+  BentleyStatus DbMappingManager::Tables::DetermineTableName(Utf8StringR tableName, ECN::ECClassCR ecclass, Utf8CP tablePrefix)
      {
      if (!Utf8String::IsNullOrEmpty(tablePrefix))
          tableName.assign(tablePrefix);
@@ -2283,8 +1789,7 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                Krischan.Eberle      11/2015
  //---------------------------------------------------------------------------------------
- 
- BentleyStatus DbMappingManager::Tables::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
+  BentleyStatus DbMappingManager::Tables::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR ecclass)
      {
      ECSchemaCR schema = ecclass.GetSchema();
      SchemaMapCustomAttribute customSchemaMap;

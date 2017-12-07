@@ -18,11 +18,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::Initialize() const
     {
-    if (SUCCESS != m_dbMap.GetDbSchema().LoadIndexDefs())
+    if (SUCCESS != GetDbSchema().LoadIndexDefs())
         return ERROR;
 
     //cache indexes by their columns for later validation
-    for (DbTable const* table : m_dbMap.GetDbSchema().Tables())
+    for (DbTable const* table : GetDbSchema().Tables())
         {
         for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
             {
@@ -34,7 +34,7 @@ BentleyStatus DbMapValidator::Initialize() const
         }
 
     Statement relStmt;
-    if (BE_SQLITE_OK != relStmt.Prepare(GetECDb(), "SELECT DISTINCT RelationshipClassId FROM ec_RelationshipConstraint"))
+    if (BE_SQLITE_OK != relStmt.Prepare(GetECDb(), "SELECT DISTINCT RelationshipClassId FROM main.ec_RelationshipConstraint"))
         {
         BeAssert(false);
         return ERROR;
@@ -50,7 +50,7 @@ BentleyStatus DbMapValidator::Initialize() const
             return ERROR;
             }
 
-        ClassMap const* classMap = m_dbMap.GetClassMap(*ecClass);
+        ClassMap const* classMap = GetSchemaManager().GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
             Issues().Report("Could not load class map for RelationshipECClass %s from the file.", ecClass->GetFullName());
@@ -84,7 +84,6 @@ BentleyStatus DbMapValidator::ValidateDbSchema() const
         {
         if (SUCCESS != ValidateDbTable(*table))
             return ERROR;
-
 
         for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
             {
@@ -148,9 +147,9 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
         {
             case DbTable::Type::Existing:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
-                Issues().Report("DbTable '%s' is if type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
+                Issues().Report("DbTable '%s' is of type 'Existing' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
                 }
 
@@ -165,7 +164,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Joined:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().Report("DbTable '%s' is if type 'Joined' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
@@ -195,7 +194,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Overflow:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().Report("DbTable '%s' is if type 'Overflow' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
@@ -226,7 +225,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Primary:
             {
-            if (!GetECDb().TableExists(table.GetName().c_str()))
+            if (!DbUtilities::TableExists(GetECDb(), table.GetName().c_str(), TABLESPACE_Main))
                 {
                 Issues().Report("DbTable '%s' is if type 'Primary' and therefore must exist in the file.", table.GetName().c_str());
                 return ERROR;
@@ -298,7 +297,7 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const
     {
-    DbTable::Type const tableType = column.GetTable().GetType();
+    DbTable::Type tableType = column.GetTable().GetType();
     if (!column.IsVirtual() && tableType != DbTable::Type::Virtual)
         {
         if (physicalColumns.find(column.GetName()) == physicalColumns.end())
@@ -477,7 +476,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
             return ERROR;
             }
 
-        ClassMap const* classMap = m_dbMap.GetClassMap(*ecClass);
+        ClassMap const* classMap = GetSchemaManager().GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
             BeAssert(false);
@@ -513,7 +512,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
 BentleyStatus DbMapValidator::ValidateDbMap() const
     {
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM " TABLE_Class))
+    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM main." TABLE_Class))
         {
         BeAssert(false);
         return ERROR;
@@ -525,7 +524,7 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         }
     const int classCount = stmt.GetValueInt(0);
     stmt.Finalize();
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM " TABLE_ClassMap))
+    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM main." TABLE_ClassMap))
         {
         BeAssert(false);
         return ERROR;
@@ -548,7 +547,7 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
     //store class maps from cache in local vector as validation might load more classes into the cache and
     //therefore invalidate the iterator
     std::vector<ClassMap const*> classMaps;
-    for (bpair<ECClassId, ClassMapPtr> const& entry : m_dbMap.GetClassMapCache())
+    for (auto& entry : GetSchemaManager().GetClassMapCache())
         {
         classMaps.push_back(entry.second.get());
         }
@@ -796,12 +795,13 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
             if (classMap.GetClass().HasBaseClasses())
                 {
                 ECClassCP baseClass = classMap.GetClass().GetBaseClasses()[0];
-                ClassMap const* baseClassMap = m_dbMap.GetClassMap(*baseClass);
+                ClassMap const* baseClassMap = GetSchemaManager().GetClassMap(*baseClass);
                 BeAssert(baseClassMap != nullptr);
 
                 if (baseClassMap->GetMapStrategy().IsTablePerHierarchy())
                     {
-                    Issues().Report("The class '%s' has the map strategy 'ExistingTable' but its base class is mapped with strategy 'TablePerHierarchy'. A class can only be mapped with 'ExistingTable' if its base class is mapped with strategy 'OwnTable'.", classMap.GetClass().GetFullName());
+                    Issues().Report("The class '%s' has the map strategy 'ExistingTable' but its base class is mapped with strategy '%s'. A class can only be mapped with 'ExistingTable' if its base class is mapped with strategy 'OwnTable'.", classMap.GetClass().GetFullName(),
+                                    MapStrategyExtendedInfo::ToString(baseClassMap->GetMapStrategy().GetStrategy()));
                     return ERROR;
                     }
                 }
@@ -831,9 +831,9 @@ BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) cons
             {
             if (!classMap.GetClass().IsRelationshipClass())
                 {
-                CachedStatementPtr stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT 1 FROM " TABLE_RelationshipConstraint " rc "
-                                                                                       "INNER JOIN " TABLE_ClassMap " relmap on rc.RelationshipClassId = relmap.ClassId "
-                                                                                       "INNER JOIN " TABLE_RelationshipConstraintClass " rcc ON rcc.ConstraintId = rc.Id "
+                CachedStatementPtr stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT 1 FROM main." TABLE_RelationshipConstraint " rc "
+                                                                                       "INNER JOIN main." TABLE_ClassMap " relmap on rc.RelationshipClassId = relmap.ClassId "
+                                                                                       "INNER JOIN main." TABLE_RelationshipConstraintClass " rcc ON rcc.ConstraintId = rc.Id "
                                                                                        "WHERE rcc.ClassId=? and relMap.MapStrategy<>" SQLVAL_MapStrategy_NotMapped);
                 if (stmt == nullptr)
                     {
@@ -902,7 +902,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipC
         }
 
     DbTable const* otherEndTable = nullptr;
-    if (SUCCESS != ForeignKeyPartitionView::TryGetOtherEndTable(otherEndTable, m_dbMap.GetECDb(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy()))
+    if (SUCCESS != ForeignKeyPartitionView::TryGetOtherEndTable(otherEndTable, GetSchemaManager(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy()))
         {
         Issues().Report("The class map for the foreign key type ECRelationshipClass '%s' maps to more than one table on the %s constraint.",
                         relMap.GetClass().GetFullName(), relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? "source" : "target");
@@ -961,7 +961,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(Relationship
         }
 
 
-    const std::set<DbTable const*> sourceTables = relMap.GetDbMap().GetRelationshipConstraintPrimaryTables(m_schemaImportContext, relMap.GetRelationshipClass().GetSource());
+    const std::set<DbTable const*> sourceTables = GetSchemaManager().GetRelationshipConstraintPrimaryTables(m_schemaImportContext, relMap.GetRelationshipClass().GetSource());
     if (sourceTables.size() > 1)
         {
         Utf8String tableStr;
@@ -980,7 +980,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(Relationship
         return ERROR;
         }
 
-    const std::set<DbTable const*> targetTables = relMap.GetDbMap().GetRelationshipConstraintPrimaryTables(m_schemaImportContext, relMap.GetRelationshipClass().GetTarget());
+    const std::set<DbTable const*> targetTables = GetSchemaManager().GetRelationshipConstraintPrimaryTables(m_schemaImportContext, relMap.GetRelationshipClass().GetTarget());
     if (targetTables.size() > 1)
         {
         Utf8String tableStr;
@@ -1199,7 +1199,7 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
     const MapStrategy expectedRelMapStrategy = NavigationPropertyMap::GetRelationshipEnd(navProp, NavigationPropertyMap::NavigationEnd::From) == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
     MapStrategy actualRelMapStrategy;
     {
-    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT MapStrategy FROM " TABLE_ClassMap " WHERE ClassId=?");
+    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT MapStrategy FROM main." TABLE_ClassMap " WHERE ClassId=?");
     if (stmt == nullptr)
         {
         BeAssert(false);

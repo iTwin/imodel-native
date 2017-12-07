@@ -76,7 +76,6 @@ TEST_F(ECDbTestFixture, Settings)
                 EXPECT_EQ(allowChangesetMergingIncompatibleSchemaImport, ecdb.GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
 
                 ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-
                 Utf8CP ecsql = "INSERT INTO ecdbf.ExternalFileInfo(Name) VALUES('foofile.txt')";
                 if (requiresECCrudWriteToken)
                     {
@@ -250,13 +249,16 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
     m_ecdb.CloseDb();
     }
 
+    ECDb::OpenParams openParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No);
     ECDb ecdb1;
-    DbResult result = ecdb1.OpenBeSQLiteDb(testECDbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No));
+    DbResult result = ecdb1.OpenBeSQLiteDb(testECDbPath, openParams);
     ASSERT_EQ(BE_SQLITE_OK, result);
     TestBusyRetry retry(3);
     retry.AddRef();
     ECDb ecdb2;
-    result = ecdb2.OpenBeSQLiteDb(testECDbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No, &retry));
+    openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No);
+    openParams.SetBusyRetry(&retry);
+    result = ecdb2.OpenBeSQLiteDb(testECDbPath, openParams);
     ASSERT_EQ(BE_SQLITE_OK, result);
 
     {
@@ -437,5 +439,6 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     guid.Invalidate();
     ASSERT_FALSE(guid.IsValid());
     }
+
 
 END_ECDBUNITTESTS_NAMESPACE

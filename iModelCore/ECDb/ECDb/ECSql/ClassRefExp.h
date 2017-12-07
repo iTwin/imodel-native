@@ -83,6 +83,7 @@ struct RangeClassInfo final
         RangeClassRefExp const& GetExp() const { BeAssert(IsValid()); return *m_exp; }
     };
 
+struct MemberFunctionCallExp;
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      03/2013
 //+===============+===============+===============+===============+===============+======
@@ -108,9 +109,9 @@ public:
 private:
     Utf8String m_className;
     Utf8String m_schemaAlias;
-    Utf8String m_catalogName;
+    Utf8String m_tableSpace;
     std::shared_ptr<Info> m_info;
-
+    
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
     bool _ContainsProperty(Utf8StringCR propertyName) const override;
@@ -119,21 +120,26 @@ private:
     Utf8String _ToString () const override;
 
 public:
-    ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8StringCP catalogName, std::shared_ptr<Info> info, bool isPolymorphic = true)
-        : RangeClassRefExp(Type::ClassName, isPolymorphic), m_className(className), m_schemaAlias(schemaAlias), m_info(info)
-        {
-        if (catalogName != nullptr)
-            m_catalogName = *catalogName;
-        }
-
+    ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8CP tableSpace, std::shared_ptr<Info> info, bool isPolymorphic = true, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall = nullptr);
     bool HasMetaInfo() const { return m_info != nullptr;}
     ClassNameExp::Info const& GetInfo() const { return *m_info;}
 
     Utf8String GetFullName() const;
-
+    Utf8StringCR GetTableSpace() const { return m_tableSpace; }
+    Utf8StringCR GetSchemaName() const { return m_schemaAlias; }
     Utf8StringCR GetClassName() const { return m_className;}
-    Utf8StringCR GetSchemaName() const { return m_schemaAlias;}
-    Utf8StringCR GetCatalogName() const { return m_catalogName;}
+
+    MemberFunctionCallExp const* GetMemberFunctionCallExp() const
+        {
+        if (GetChildren().empty())
+            return nullptr;
+
+        Exp const* childExp = GetChildren()[0];
+        if (childExp->GetType() != Exp::Type::MemberFunctionCall)
+            return nullptr;
+
+        return childExp->GetAsCP<MemberFunctionCallExp>();
+        }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

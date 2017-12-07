@@ -6,16 +6,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+#include <ECDb/ECDb.h>
 #include "ClassMap.h"
 #include "DbMappingManager.h"
-#include "DbSchemaPersistenceManager.h"
 #include <ECObjects/SchemaComparer.h>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2017
 //+===============+===============+===============+===============+===============+======
-struct SchemaPolicy : NonCopyableClass
+struct SchemaPolicy
     {
     enum class Type
         {
@@ -30,6 +31,11 @@ struct SchemaPolicy : NonCopyableClass
         bset<ECN::ECSchemaId> m_schemaExceptions;
         bset<ECN::ECClassId> m_classExceptions;
 
+    private:
+        SchemaPolicy(SchemaPolicy const&) = delete;
+        SchemaPolicy& operator=(SchemaPolicy const&) = delete;
+
+    protected:
         SchemaPolicy(Type type, ECN::ECSchemaId optingInSchemaId) : m_type(type), m_optingInSchemaId(optingInSchemaId) {}
 
         bool IsException(ECN::ECClassCR candidateClass) const;
@@ -119,6 +125,8 @@ struct SchemaPolicies final
         bool IsOptedIn(SchemaPolicy const*&, SchemaPolicy::Type) const;
     };
 
+struct MainSchemaManager;
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
@@ -132,6 +140,8 @@ struct SchemaImportContext final
         MappingEntities,
         MappingRelationships
         };
+
+    private:
         ECDbCR m_ecdb;
         SchemaManager::SchemaImportOptions m_options;
         Phase m_phase = Phase::ImportingSchemas;
@@ -140,9 +150,10 @@ struct SchemaImportContext final
         bset<ECN::ECClassId> m_classMapsToSave;
         FkRelationshipMappingInfo::Collection m_fkRelMappingInfos;
         SchemaPolicies m_schemaPolicies;
+        bset<Utf8CP, CompareIUtf8Ascii> m_builtinSchemaNames;
        
     public:
-        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options) {}
+        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options), m_builtinSchemaNames(ProfileManager::GetBuiltinSchemaNames()) {}
         SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
         Phase GetPhase() const { return m_phase; }
         void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
@@ -156,10 +167,14 @@ struct SchemaImportContext final
         SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
 
-        DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
+        bset<Utf8CP, CompareIUtf8Ascii> const& GetBuiltinSchemaNames() const { return m_builtinSchemaNames; }
+
+        MainSchemaManager const& GetSchemaManager() const;
         ECDbCR GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     };
+
+
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -167,21 +182,22 @@ struct SchemaImportContext final
 struct SchemaCompareContext final
     {
     private:
+        MainSchemaManager const& m_mainSchemaManager;
         bvector<ECN::ECSchemaCP> m_existingSchemas;
         bvector<ECN::ECSchemaCP> m_schemasToImport;
         ECN::SchemaChanges m_changes;
 
     public:
-        SchemaCompareContext() {}
+        SchemaCompareContext(MainSchemaManager const& mainSchemaManager) : m_mainSchemaManager(mainSchemaManager) {}
         ~SchemaCompareContext() {}
 
-        BentleyStatus Prepare(SchemaManager const&, bvector<ECN::ECSchemaCP> const& dependencyOrderedPrimarySchemas);
+        BentleyStatus Prepare(bvector<ECN::ECSchemaCP> const& dependencyOrderedPrimarySchemas);
         bvector<ECN::ECSchemaCP>  const& GetSchemasToImport() const { return m_schemasToImport; }
         ECN::SchemaChanges& GetChanges() { return m_changes; }
 
         ECN::ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
 
-        BentleyStatus ReloadContextECSchemas(SchemaManager const&);
+        BentleyStatus ReloadContextECSchemas();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

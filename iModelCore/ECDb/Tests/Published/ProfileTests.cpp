@@ -191,6 +191,8 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
             {ProfileVersion(4,0,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
             {ProfileVersion(4,0,0,2), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
             {ProfileVersion(4,0,0,2), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,0,3), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,0,3), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
             {ProfileVersion(4,0,1,0), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
             {ProfileVersion(4,0,1,0), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooNewForReadWrite, false},
             {ProfileVersion(4,1,0,0), Db::OpenMode::Readonly, BE_SQLITE_ERROR_ProfileTooNew, false},

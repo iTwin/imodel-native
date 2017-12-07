@@ -29,6 +29,7 @@ struct ValueExp : ComputedExp
     public:
         virtual ~ValueExp() {}
         bool IsConstant() const { return m_isConstant; }
+        
     };
 
 //=======================================================================================
@@ -178,8 +179,8 @@ struct FunctionCallExp final : ValueExp
     {
     private:
         Utf8String m_functionName;
-        bool m_isStandardSetFunction;
-        SqlSetQuantifier m_setQuantifier;
+        bool m_isStandardSetFunction = false;
+        SqlSetQuantifier m_setQuantifier = SqlSetQuantifier::NotSpecified;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
@@ -198,7 +199,131 @@ struct FunctionCallExp final : ValueExp
         BentleyStatus AddArgument(std::unique_ptr<ValueExp>);
     };
 
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan        10/2017
+//+===============+===============+===============+===============+===============+======
+struct MemberFunctionCallExp final : ValueExp
+    {
+    private:
+        Utf8String m_functionName;
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
+        void _ToECSql(ECSqlRenderContext&) const override;
+        Utf8String _ToString() const override;
+        BentleyStatus ValidateArgument(ValueExp const& arg, Utf8StringR msg);
+
+    public:
+        explicit MemberFunctionCallExp(Utf8StringCR functionName) : ValueExp(Type::MemberFunctionCall), m_functionName(functionName){}
+        virtual ~MemberFunctionCallExp() {}
+
+        Utf8StringCR GetFunctionName() const { return m_functionName; }
+        BentleyStatus AddArgument(std::unique_ptr<ValueExp>, Utf8StringR);
+    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      10/2017
+//+===============+===============+===============+===============+===============+======
+struct FunctionSignature final
+    {
+    enum class ValueType
+        {
+        String = 1,
+        Integer = 2,
+        Float = 4,
+        Blob = 8,
+        Resultset = 16,
+        Numeric = Integer | Float,
+        Any = String | Integer | Float | Blob
+        };
+
+    enum class FunctionScope
+        {
+        Class,
+        Property,
+        Global
+        };
+
+    struct Arg final
+        {
+        private:
+            Utf8String m_name;
+            ValueType m_type;
+            bool m_optional= false;
+
+            //not copyable
+            Arg(Arg const&) = delete;
+            Arg& operator=(Arg const&) = delete;
+
+        public:
+            Arg(Utf8CP name, ValueType type, bool optional) :m_name(name), m_type(type), m_optional(optional) {}
+            Utf8StringCR Name() const { return m_name; }
+            ValueType Type() const { return m_type; }
+            bool IsOptional() const { return m_optional; }
+            bool IsVariadic() const { return m_name == "..."; }
+        };
+
+    private:
+        Utf8String m_name;
+        FunctionScope m_scope;
+        std::vector<std::unique_ptr<Arg>> m_args;
+        ValueType m_returnType;
+        Utf8String m_description;
+
+
+        FunctionSignature() : m_returnType(ValueType::Any) {}
+        //not copyable
+        FunctionSignature(FunctionSignature const&) = delete;
+        FunctionSignature& operator=(FunctionSignature const&) = delete;
+
+        Arg const* FindArg(Utf8CP name) const;
+        BentleyStatus SetName(Utf8CP name);
+        void SetDescription(Utf8CP name);
+        BentleyStatus SetReturnType(ValueType type, bool member);
+        BentleyStatus Append(Utf8CP name, ValueType type, bool optional);
+        static  BentleyStatus Parse(std::unique_ptr<FunctionSignature>& funcSig, Utf8CP signature, Utf8CP description);
+        static bool ParseValueType(ValueType& type, Utf8CP str);
+        static Utf8CP ValueTypeToString(ValueType type);
+
+    public:
+        // signature = [::]<function-name>(<arg1>, arg2, ...)[:<return-type>]
+        // arg        = [optional] arg-name:<type > | ...
+        static std::unique_ptr<FunctionSignature> Parse(Utf8CP signature, Utf8CP description);
+
+        Utf8StringCR Name() const { return m_name; }
+        Utf8StringCR Description() const { return m_description; }
+        FunctionScope Scope() const { return m_scope; }
+        ValueType ReturnType() const { return m_returnType; }
+        int RequiredArgCount() const;
+        int OptionalArgCount() const;
+        bool HasVariadicArg() const;
+        std::vector<Arg const*> Args() const;
+        Utf8String ToString() const;
+        BentleyStatus Verify(Utf8StringR err, Exp::Collection const& argExps) const;
+        BentleyStatus SetParameterType(Exp::Collection& argExps) const;
+    };
+
+//=======================================================================================
+//! @bsiclass                                                Affan.Khan      10/2017
+//+===============+===============+===============+===============+===============+======
+struct FunctionSignatureSet final
+    {
+    private:
+        std::map<Utf8CP, std::unique_ptr<FunctionSignature>, CompareIUtf8Ascii> m_funtionSigs;
+
+        FunctionSignatureSet() {}
+        //not copyable
+        FunctionSignatureSet(FunctionSignatureSet const&) = delete;
+        FunctionSignatureSet& operator=(FunctionSignatureSet const&) = delete;
+
+        void Declare(Utf8CP signature, Utf8CP description = nullptr);
+        void LoadDefinitions();
+
+    public:
+        ~FunctionSignatureSet() {}
+        FunctionSignature const* Find(Utf8CP name) const;
+        static FunctionSignatureSet& GetInstance();
+    };
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======

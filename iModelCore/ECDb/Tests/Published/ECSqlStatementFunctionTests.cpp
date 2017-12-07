@@ -32,15 +32,21 @@ struct ECSqlStatementFunctionTestFixture : ECDbTestFixture
 TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 5));
+    ASSERT_EQ(SUCCESS, PopulateECDb(5));
+    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeSummaryCache());
+
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},
             {"SELECT ANY(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
             {"SELECT AVG(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT CHANGES() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT CHAR(123,124) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT COALESCE(I,L) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT COUNT(*) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT COUNT(ECInstanceId) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT COUNT(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT DATE('now') FROM ecsql.P LIMIT 1", ExpectedResult()}, //Not supported as DATE is a reserved token, and the ECSQL grammar only has one rule yet for DATE which is the DATE literal exp DATE '2000-01-01'
+            {"SELECT DATETIME('now') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT EVERY(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
             {"SELECT GLOB(S,'Sample') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
             {"SELECT GROUP_CONCAT(S) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_String)},
@@ -48,6 +54,22 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
             {"SELECT GROUP_CONCAT(DISTINCT S) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT HEX(Bi) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT INSTR(S,'str') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Integer)},
+            {"SELECT JSON(12.3) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_ARRAY(12.3, 1.3, 3) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_ARRAY_LENGTH('[1,2,3]') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
+            {"SELECT JSON_EXTRACT('{\"a\" : 12}','$.a') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_GROUP_ARRAY('[1,2,3]') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_GROUP_OBJECT('a','[1,2,3]') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_INSERT('{\"a\" : 12}','$.e',10) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_OBJECT('a',1,'b',2) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_QUOTE(123) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_REMOVE('{\"a\" : 12}','$.a') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_REPLACE('{\"a\" : 12}','$.a',10) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_SET('{\"a\" : 12}','$.a',10) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_TYPE('{\"a\" : 12}') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT JSON_VALID('{\"a\" : 12}') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
+            {"SELECT JULIANDAY('now') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT LAST_INSERT_ROWID() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT LENGTH(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT LOWER(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT LIKE(S,'Sample') FROM ecsql.P LIMIT 1", ExpectedResult()},//Not supported as LIKE is a reserved token, and the ECSQL grammar only has one rule yet for LIKe which is the standard X LIKE Y syntax
@@ -61,7 +83,8 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
             {"SELECT MIN(123, 125, 512) FROM ecsql.P LIMIT 1", ExpectedResult()},//Not supported as MIN(arg) is a dedicated ECSQL grammar rule
             {"SELECT NULLIF(I,123) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT QUOTE(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
-            {"SELECT RANDOM() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT PRINTF('%d',I) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT RANDOM() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT RANDOMBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             {"SELECT REGEXP(S, 'str') FROM ecsql.P LIMIT 1", ExpectedResult()},//Not supported as by default SQLite doesn't come with REGEXP impl
             {"SELECT REPLACE(S,'Sample','Simple') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
@@ -69,20 +92,29 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
             {"SELECT RTRIM(S, '$') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT SOME(B) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
             {"SELECT SOUNDEX(S) FROM ecsql.P LIMIT 1", ExpectedResult()}, //Only available if SQLite is compiled with SQLITE_SOUNDEX compile option
+            {"SELECT SQLITE_COMPILEOPTION_GET(0) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT SQLITE_COMPILEOPTION_USED(0) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Boolean)},
+            {"SELECT SQLITE_SOURCE_ID() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT SQLITE_VERSION() FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT STRFTIME('%J','now') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT SUBSTR(S,'a',3) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT SUM(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT TIME('now') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT TOTAL(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
+            {"SELECT TOTAL_CHANGES() FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT TRIM(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT TRIM(S, '$') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT TYPEOF(I) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT UNICODE('K') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT UPPER(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             {"SELECT ZEROBLOB(5) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
             //BeSQLite built-in functions
             {"SELECT 10 FROM ecsql.P WHERE NOT InVirtualSet(?,123)", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
-            //ECDb built-in functions
-            {"SELECT Base64ToBlob('Rm9vMTIzIQ==') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)},
-            {"SELECT BlobToBase64(RANDOMBLOB(5)) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            //ECDb built-in functions 
+            {"SELECT ChangedValue(1,'S','AfterInsert',NULL) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Binary)}, //only for ECDb internal use
+            {"SELECT ChangedValueStateToOpCode('BeforeUpdate') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)}, //only for ECDb internal use
+            {"SELECT ChangedValueStateToOpCode(2) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_Long)}, //only for ECDb internal use
         };
 
 
@@ -98,7 +130,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
         if (!expectedResult.m_isStepSupported)
             continue;
 
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << ecsql;
 
         ECN::ECTypeDescriptor const& actualColumnType = stmt.GetColumnInfo(0).GetDataType();
 
@@ -252,161 +284,6 @@ TEST_F(ECSqlStatementFunctionTestFixture, FunctionCallWithDistinct)
     ASSERT_STREQ("1,2,3", getStringScalar(m_ecdb, "SELECT group_concat(DISTINCT S) from ecsql.P").c_str());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                 11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementFunctionTestFixture, Base64Functions)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("base64functions.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 3));
-
-    BeGuid guid(true);
-    void const* expectedBlob = &guid;
-    Utf8String expectedBase64Str;
-    Base64Utilities::Encode(expectedBase64Str, static_cast<Byte const*> (expectedBlob), sizeof(BeGuid));
-
-    ECInstanceKey key;
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P(Bi, S) VALUES(:blobparam,BlobToBase64(:blobparam))"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(stmt.GetParameterIndex("blobparam"), expectedBlob, sizeof(BeGuid), IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-    }
-
-    //ECSQL
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsql.P WHERE ECInstanceId=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-
-    //select clause item 0
-    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(0)) << stmt.GetECSql();
-
-
-    //select clause item 1
-    int actualBlobSize = -1;
-    void const* actualBlob = stmt.GetValueBlob(1, &actualBlobSize);
-    ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << "Second select clause item in ECSQL " << stmt.GetECSql();
-    ASSERT_EQ(0, memcmp(expectedBlob, actualBlob, sizeof(BeGuid))) << "Second select clause item in ECSQL " << stmt.GetECSql();
-
-    //select clause item 2
-    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(2)) << stmt.GetECSql();
-
-    //select clause item 3
-    actualBlobSize = -1;
-    actualBlob = stmt.GetValueBlob(3, &actualBlobSize);
-    ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << "Fourth select clause item in ECSQL " << stmt.GetECSql();
-    ASSERT_EQ(0, memcmp(expectedBlob, actualBlob, sizeof(BeGuid))) << "Fourth select clause item in ECSQL " << stmt.GetECSql();
-    }
-
-    {
-    Utf8String ecsql;
-    ecsql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsql.P WHERE ECInstanceId=?", expectedBase64Str.c_str());
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-
-    //select clause item 3
-    int actualBlobSize = -1;
-    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(0, &actualBlobSize), sizeof(BeGuid))) << stmt.GetECSql();
-    ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << stmt.GetECSql();
-    }
-
-    //BeSQLite
-    {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT S, Bi, BlobToBase64(Bi), Base64ToBlob(S) FROM ecsqltest_P WHERE Id=?"));
-    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-
-    //select clause item 0
-    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(0)) << "SQL: " << stmt.GetSql();
-
-
-    //select clause item 1
-    ASSERT_EQ(sizeof(BeGuid), (size_t) stmt.GetColumnBytes(1)) << "SQL: " << stmt.GetSql();
-    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(1), sizeof(BeGuid))) << "SQL: " << stmt.GetSql();
-
-    //select clause item 2
-    ASSERT_STREQ(expectedBase64Str.c_str(), stmt.GetValueText(2)) << "SQL: " << stmt.GetSql();
-
-    //select clause item 3
-    ASSERT_EQ(sizeof(BeGuid), (size_t) stmt.GetColumnBytes(3)) << "SQL: " << stmt.GetSql();
-    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(3), sizeof(BeGuid))) << "SQL: " << stmt.GetSql();
-    }
-
-    {
-    Utf8String sql;
-    sql.Sprintf("SELECT Base64ToBlob('%s') FROM ecsqltest_P WHERE Id=?", expectedBase64Str.c_str());
-
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, sql.c_str()));
-    ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(1, key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-
-    ASSERT_EQ(sizeof(BeGuid), (size_t) stmt.GetColumnBytes(0)) << "SQL: " << stmt.GetSql();
-    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(0), sizeof(BeGuid))) << "SQL: " << stmt.GetSql();
-    }
-
-
-    //NULL input
-    {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsql.P LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
-    ASSERT_TRUE(ecsqlStmt.IsValueNull(0)) << ecsqlStmt.GetECSql();
-    ASSERT_TRUE(ecsqlStmt.IsValueNull(1)) << ecsqlStmt.GetECSql();
-    ASSERT_TRUE(ecsqlStmt.IsValueNull(2)) << ecsqlStmt.GetECSql();
-    ASSERT_TRUE(ecsqlStmt.IsValueNull(3)) << ecsqlStmt.GetECSql();
-
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT BlobToBase64(NULL), BlobToBase64(?), Base64ToBlob(NULL), Base64ToBlob(?) FROM ecsqltest_P LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_TRUE(stmt.IsColumnNull(0)) << stmt.GetSql();
-    ASSERT_TRUE(stmt.IsColumnNull(1)) << stmt.GetSql();
-    ASSERT_TRUE(stmt.IsColumnNull(2)) << stmt.GetSql();
-    ASSERT_TRUE(stmt.IsColumnNull(3)) << stmt.GetSql();
-    }
-
-    //invalid input
-    {
-    ECSqlStatement ecsqlStmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT BlobToBase64() FROM ecsql.P"));
-    ecsqlStmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT Base64ToBlob() FROM ecsql.P"));
-    ecsqlStmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT BlobToBase64(randomblob(10), 1000) FROM ecsql.P"));
-    ecsqlStmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, ecsqlStmt.Prepare(m_ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsql.P"));
-    ecsqlStmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(m_ecdb, "SELECT Base64ToBlob('a_d') FROM ecsql.P LIMIT 1")) << "invalid base64 string";
-    ASSERT_EQ(BE_SQLITE_ERROR, ecsqlStmt.Step()) << "invalid base64 string in ECSQL " << ecsqlStmt.GetECSql();
-    ecsqlStmt.Finalize();
-    BeTest::SetFailOnAssert(false);
-    {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT BlobToBase64() FROM ecsqltest_P"));
-    stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT Base64ToBlob() FROM ecsqltest_P"));
-    stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT BlobToBase64(randomblob(10), 133) FROM ecsqltest_P"));
-    stmt.Finalize();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Prepare(m_ecdb, "SELECT Base64ToBlob('ddd',12312) FROM ecsqltest_P"));
-    stmt.Finalize();
-
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Base64ToBlob('a_d') FROM ecsqltest_P LIMIT 1")) << "invalid base64 string";
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "invalid base64 string in ECSQL " << stmt.GetSql();
-    stmt.Finalize();
-
-    }
-    BeTest::SetFailOnAssert(true);
-    }
-
-    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/16
 //+---------------+---------------+---------------+---------------+---------------+------

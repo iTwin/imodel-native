@@ -79,7 +79,7 @@ struct PrimaryKeyDbConstraint;
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbColumn final: NonCopyableClass
+struct DbColumn final
     {
 public:
     enum class Type
@@ -102,7 +102,7 @@ public:
         SharedData = 4, //! shared data column
         };
 
-    struct Constraints final: NonCopyableClass
+    struct Constraints final
         {
         public:
             enum class Collation
@@ -114,14 +114,18 @@ public:
                 };
 
         private:
-            bool m_hasNotNullConstraint;
-            bool m_hasUniqueConstraint;
+            bool m_hasNotNullConstraint = false;
+            bool m_hasUniqueConstraint = false;
             Utf8String m_checkConstraint;
             Utf8String m_defaultValueConstraint;
-            Collation m_collation;
+            Collation m_collation = Collation::Unset;
+
+            //not copyable
+            Constraints(Constraints const&) = delete;
+            Constraints& operator=(Constraints const&) = delete;
 
         public:
-            Constraints() : m_hasNotNullConstraint(false), m_hasUniqueConstraint(false), m_collation(Collation::Unset) {}
+            Constraints() {}
 
             bool HasNotNullConstraint() const { return m_hasNotNullConstraint; }
             void SetNotNullConstraint() { m_hasNotNullConstraint = true; }
@@ -138,7 +142,7 @@ public:
             static bool TryParseCollationString(Collation&, Utf8StringCR);
         };
 
-    struct CreateParams final : NonCopyableClass
+    struct CreateParams final
         {
         private:
             Utf8String m_columnName;
@@ -146,6 +150,10 @@ public:
             bool m_addNotNullConstraint = false;
             bool m_addUniqueConstraint = false;
             Constraints::Collation m_collation = DbColumn::Constraints::Collation::Unset;
+
+            //not copyable
+            CreateParams(CreateParams const&) = delete;
+            CreateParams& operator=(CreateParams const&) = delete;
 
         public:
             CreateParams() {}
@@ -172,6 +180,10 @@ private:
     PersistenceType m_persistenceType;
     PrimaryKeyDbConstraint const* m_pkConstraint = nullptr;
    
+    //not copyable
+    DbColumn(DbColumn const&) = delete;
+    DbColumn& operator=(DbColumn const&) = delete;
+
 public:
     DbColumn(DbTable& table, Utf8StringCR name, Type type, Kind kind, PersistenceType persistenceType) : DbColumn(DbColumnId(), table, name, type, kind, persistenceType) {}
     DbColumn(DbColumnId id, DbTable& table, Utf8StringCR name, Type type, Kind kind, PersistenceType persistenceType)
@@ -211,7 +223,7 @@ public:
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbConstraint : NonCopyableClass
+struct DbConstraint
     {
 public:
     enum class Type
@@ -223,6 +235,10 @@ public:
 private:
     Type m_type;
     DbTable const& m_table;
+
+    //not copyable
+    DbConstraint(DbConstraint const&) = delete;
+    DbConstraint& operator=(DbConstraint const&) = delete;
 
 protected:
     DbConstraint(Type type, DbTable const& table) :m_type(type), m_table(table) {}
@@ -343,7 +359,7 @@ struct DbIndex final
 //======================================================================================
 // @bsiclass                                        muhammad.zaighum        01/2015
 //======================================================================================
-struct DbTrigger final : NonCopyableClass
+struct DbTrigger final
     {
 public:
     enum class Type
@@ -354,22 +370,26 @@ public:
 
 private:
     DbTable const& m_table;
-    Utf8String m_triggerName;
+    Utf8String m_name;
     Type m_type;
     Utf8String m_condition;
     Utf8String m_body;
 
     explicit DbTrigger(DbTable const& table) : m_table(table) {}
+    //not copyable
+    DbTrigger(DbTrigger const&) = delete;
+    DbTrigger& operator=(DbTrigger const&) = delete;
 
 public:
-    DbTrigger(Utf8CP triggerName, DbTable const& table, Type type, Utf8CP condition, Utf8CP body) : m_table(table), m_triggerName(triggerName), m_type(type), m_condition(condition), m_body(body) {}
+    DbTrigger(Utf8StringCR triggerName, DbTable const& table, Type type, Utf8StringCR condition, Utf8StringCR body) : m_table(table), m_name(triggerName), m_type(type), m_condition(condition), m_body(body) {}
 
     DbTable const& GetTable()const { return m_table; }
-    Utf8CP GetName()const { return m_triggerName.c_str(); }
+    Utf8StringCR GetName()const { return m_name; }
     Type GetType()const { return m_type; }
-    Utf8CP GetCondition()const { return m_condition.c_str(); }
-    Utf8CP GetBody()const { return m_body.c_str(); }
+    Utf8StringCR GetCondition()const { return m_condition; }
+    Utf8StringCR GetBody()const { return m_body; }
     };
+
 
 
 struct DbSchema;
@@ -377,32 +397,35 @@ struct DbSchema;
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbTable final : NonCopyableClass
+struct DbTable final
     {
 public:
     enum class Type
         {
         Primary = 0,
-        Joined = 1, //! Derived Table cannot exist without a primary table
+        Joined = 1, //! Joined Table cannot exist without a primary table
         Existing = 2, 
-        Overflow = 3, //! Derived table cannot exist without a primary or joined table
+        Overflow = 3, //! Overflow table cannot exist without a primary or joined table
         Virtual = 4 //for abstract classes not using TPH and mixins
         };
 
-    struct LinkNode final : NonCopyableClass
+    struct LinkNode final
         {
         private:
             DbTable const& m_table;
             LinkNode const* m_parent = nullptr;
             std::vector<LinkNode const*> m_children;
 
+            //not copyable
+            LinkNode(LinkNode const&) = delete;
+            LinkNode& operator=(LinkNode const&) = delete;
+
         public:
             LinkNode(DbTable const& thisTable, DbTable const* parent);
 
             DbTable const& GetTable() const { return m_table; }
             DbTable& GetTableR() const { return const_cast<DbTable&>(m_table); }
-            DbTable::Type GetType() const { return m_table.GetType(); }
-            bool IsChildTable() const { return GetType() == Type::Joined || GetType() == Type::Overflow; }
+            bool IsChildTable() const { return m_table.GetType() == Type::Joined || m_table.GetType() == Type::Overflow; }
 
             LinkNode const* GetParent() const { return m_parent; }
             std::vector<LinkNode const*> const& GetChildren() const { return m_children; }
@@ -411,10 +434,14 @@ public:
             BentleyStatus Validate() const;
         };
 
-    struct EditHandle final : NonCopyableClass
+    struct EditHandle final
         {
     private:
         bool m_canEdit = true;
+
+        //not copyable
+        EditHandle(EditHandle const&) = delete;
+        EditHandle& operator=(EditHandle const&) = delete;
 
     public:
         EditHandle() {}
@@ -427,9 +454,9 @@ public:
         };
 
 private:
-    ECDbCR m_ecdb;
     DbTableId m_id;
     Utf8String m_name;
+    DbTableSpace const& m_tableSpace;
     Type m_type;
     ECN::ECClassId m_exclusiveRootECClassId;
     std::map<Utf8CP, std::shared_ptr<DbColumn>, CompareIUtf8Ascii> m_columns;
@@ -446,12 +473,14 @@ private:
 
     EditHandle m_editHandle;
 
+    //not copyable
+    DbTable(DbTable const&) = delete;
+    DbTable& operator=(DbTable const&) = delete;
     DbColumn* AddColumn(DbColumnId, Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType);
-
     static Utf8CP GetSharedColumnNamePrefix(Type);
 
 public:
-    DbTable(ECDbCR ecdb, DbTableId id, Utf8StringCR name, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
+    DbTable(DbTableId id, Utf8StringCR name, DbTableSpace const&, Type, ECN::ECClassId exclusiveRootClass, DbTable const* parentTable);
     ~DbTable() {}
 
     bool operator==(DbTable const& rhs) const;
@@ -462,6 +491,7 @@ public:
     void SetId(DbTableId id) { BeAssert(!m_id.IsValid()); BeAssert(id.IsValid()); m_id = id; }
     bool HasId() const { return m_id.IsValid();}
     Utf8StringCR GetName() const { return m_name; }
+    DbTableSpace const& GetTableSpace() const { return m_tableSpace; }
     Type GetType() const { return m_type; }
     //!See ClassMap::DetermineIsExclusiveRootClassOfTable for the rules when a table has an exclusive root class
     bool HasExclusiveRootECClass() const { return m_exclusiveRootECClassId.IsValid(); }
@@ -471,8 +501,8 @@ public:
     DbColumn* FindColumnP(Utf8CP name) const;
     DbColumn const& GetECClassIdColumn() const { BeAssert(m_classIdColumn != nullptr); return *m_classIdColumn; }
     bvector<DbColumn const*> const& GetColumns() const { return m_orderedColumns; }
-    const std::vector<DbColumn const*> FindAll(PersistenceType) const;
-    const std::vector<DbColumn const*> FindAll(DbColumn::Kind) const;
+    std::vector<DbColumn const*> FindAll(PersistenceType) const;
+    std::vector<DbColumn const*> FindAll(DbColumn::Kind) const;
     DbColumn const* FindFirst(DbColumn::Kind) const;
 
     DbColumn* AddColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return AddColumn(DbColumnId(), name, type, kind, persistenceType); }
@@ -483,9 +513,9 @@ public:
     LinkNode const& GetLinkNode() const { return m_linkNode; }
 
     std::vector<std::unique_ptr<DbIndex>> const& GetIndexes() const { return m_indexes; }
-    DbIndex* AddIndexDef(Utf8StringCR indexName, bool isUnique, std::vector<DbColumn const*> const&, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId, bool applyToSubclassesIfPartial);
+    void AddIndexDef(std::unique_ptr<DbIndex>&& indexDef) { m_indexes.push_back(std::move(indexDef)); }
 
-    BentleyStatus AddTrigger(Utf8CP triggerName, DbTrigger::Type, Utf8CP condition, Utf8CP body);
+    BentleyStatus AddTrigger(Utf8StringCR triggerName, DbTrigger::Type, Utf8StringCR condition, Utf8StringCR body);
     std::vector<const DbTrigger*> GetTriggers() const;
 
     EditHandle& GetEditHandleR() { return m_editHandle; }
@@ -498,13 +528,16 @@ public:
     bool IsValid() const { return m_columns.size() > 0 && m_classIdColumn != nullptr; }
     };
 
+
+ struct TableSpaceSchemaManager;
+
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
-struct DbSchema final : NonCopyableClass
+struct DbSchema final
     {
 public:
-    struct TableCollection final
+   struct TableCollection final
         {
         public:
             struct const_iterator final : std::iterator<std::forward_iterator_tag, DbTable const*>
@@ -539,14 +572,14 @@ public:
                     const_iterator& operator++() { m_it++; return *this; }
                 };
         private:
-            ECDbCR m_ecdb;
+            DbTableSpace const& m_tableSpace;
             mutable std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> m_tableMapByName;
             mutable bmap<DbTableId, DbTable const*> m_cacheById;
 
         public:
-            explicit TableCollection(ECDbCR ecdb) : m_ecdb(ecdb) {}
+            explicit TableCollection(DbTableSpace const& tableSpace) : m_tableSpace(tableSpace) {}
 
-            DbTable* Add(DbTableId, Utf8StringCR name, DbTable::Type tableType, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
+            DbTable* Add(DbTableId, Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* parentTable);
             void Remove(Utf8StringCR tableName) const;
 
             DbTable const* Get(Utf8StringCR tableName) const;
@@ -560,34 +593,35 @@ public:
             void ClearCache() const { m_tableMapByName.clear(); m_cacheById.clear(); }
         };
 
-    enum class EntityType
-        {
-        None,
-        Table,
-        View,
-        Index,
-        Trigger
-        };
-
 private:
-    ECDbCR m_ecdb;
+    TableSpaceSchemaManager const& m_schemaManager;
+
     TableCollection m_tables;
     mutable bool m_indexDefsAreLoaded = false;
     mutable DbTable* m_nullTable = nullptr;
+
+    //not copyable
+    DbSchema(DbSchema const&) = delete;
+    DbSchema& operator=(DbSchema const&) = delete;
 
     DbTable* LoadTable(Utf8StringCR name) const;
     DbTable* LoadTable(DbTableId) const;
     BentleyStatus LoadColumns(DbTable&) const;
     BentleyStatus InsertTable(DbTable const&) const;
     BentleyStatus InsertColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;
-    BentleyStatus UpdateTable(DbTable const&) const;
     BentleyStatus UpdateColumn(DbColumn const&, int columnOrdinal, int primaryKeyOrdinal) const;
 
+    BentleyStatus LoadIndexDefs(std::vector<std::pair<DbTable*, std::unique_ptr<DbIndex>>>&, Utf8CP sqlWhereOrJoinClause) const;
+
+    CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
+
 public:
-    explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_tables(ecdb) {}
+    explicit DbSchema(TableSpaceSchemaManager const&);
     ~DbSchema() {}
+
     //! Create a table with a given name or if name is null a name will be generated
-    DbTable* AddTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
+    DbTable* AddTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId);
+    DbTable* AddTable(Utf8StringCR name, DbTable::Type, ECN::ECClassId exclusiveRootClassId, DbTable const& parentTable);
     TableCollection const& Tables() const { return m_tables; }
     DbTable const* FindTable(Utf8StringCR name) const;
     DbTable* FindTableP(Utf8StringCR name) const;
@@ -598,17 +632,14 @@ public:
     BentleyStatus SynchronizeExistingTables();
 
     //!Update existing table in db so any new columns added would be save to disk.
-    BentleyStatus UpdateTableInDb(DbTable const& table) const { return UpdateTable(table); }
+    BentleyStatus UpdateTable(DbTable const&) const;
+
     //!This function save or update table as required. It skip if a table is not loaded
     BentleyStatus SaveOrUpdateTables() const;
-
     BentleyStatus LoadIndexDefs() const;
     BentleyStatus PersistIndexDef(DbIndex const&) const;
 
-    ECDbCR GetECDb() const { return m_ecdb; }
     void ClearCache() const;
-
-    static EntityType GetEntityType(ECDbCR ecdb, Utf8CP name);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

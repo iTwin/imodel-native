@@ -497,24 +497,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         return ECSqlStatus::InvalidECSql;
         }
 
-    if (currentScopeECSqlType == ECSqlType::Select)
-        {
-        NativeSqlBuilder classViewSql;
-        if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.IsPolymorphic()))
-            {
-            BeAssert(false && "SELECT view generation failed during preparation of class name expression.");
-            return ECSqlStatus::Error;
-            }
-
-        classViewSql.AppendSpace().AppendEscaped(exp.GetId());
-        nativeSqlSnippets.push_back(classViewSql);
-
-        return ECSqlStatus::Success;
-        }
-
     DbTable const* table = nullptr;
     switch (currentScopeECSqlType)
         {
+            case ECSqlType::Select:
+            {
+            NativeSqlBuilder classViewSql;
+            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.IsPolymorphic(), exp.GetMemberFunctionCallExp()))
+                return ECSqlStatus::Error;
+
+            classViewSql.AppendSpace().AppendEscaped(exp.GetId());
+            nativeSqlSnippets.push_back(classViewSql);
+            return ECSqlStatus::Success;
+            }
+
             case ECSqlType::Insert:
             {
             BeAssert(!exp.IsPolymorphic());
@@ -544,7 +540,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     BeAssert(table != nullptr);
     BeAssert(table->GetType() != DbTable::Type::Virtual);
     NativeSqlBuilder nativeSqlSnippet;
-    nativeSqlSnippet.AppendEscaped(table->GetName().c_str());
+    nativeSqlSnippet.AppendEscaped(table->GetName());
     nativeSqlSnippets.push_back(nativeSqlSnippet);
     return ECSqlStatus::Success;
     }
@@ -1318,7 +1314,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgList(NativeSqlBuilder::List& argSqlSnippets, ECSqlPrepareContext& ctx, ValueExp const& functionCallExp)
     {
-    if (functionCallExp.GetType() != Exp::Type::FunctionCall)
+    if (functionCallExp.GetType() != Exp::Type::FunctionCall && functionCallExp.GetType() != Exp::Type::MemberFunctionCall)
         {
         BeAssert(false && "May not call PrepareFunctionArgList on an expression which is neither a FunctionCallExp nor a MemberFunctionCallExp");
         return ECSqlStatus::InvalidECSql;
@@ -1650,7 +1646,7 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
         }
 
     if (partition->NeedsECClassIdFilter())
-        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
+        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM [").append(classMap.GetSchemaManager().GetTableSpace().GetName()).append("]." TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
 
     return ECSqlStatus::Success;
     }

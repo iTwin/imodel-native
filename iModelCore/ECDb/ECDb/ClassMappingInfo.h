@@ -47,7 +47,7 @@ enum class RelationshipMappingType
 //! and relationships
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
-struct ClassMappingInfo final : NonCopyableClass
+struct ClassMappingInfo final
 {
 private:
     SchemaImportContext& m_ctx;
@@ -64,15 +64,16 @@ private:
     Utf8String m_ecInstanceIdColumnName;
     ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty = nullptr;
 
+    //not copyable
+    ClassMappingInfo(ClassMappingInfo const&) = delete;
+    ClassMappingInfo& operator=(ClassMappingInfo const&) = delete;
+
     BentleyStatus InitializeFromSchema();
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
     ClassMappingStatus EvaluateMapStrategy();
     BentleyStatus EvaluateRootClassMapStrategy();
     BentleyStatus EvaluateNonRootClassMapStrategy(ClassMap const& baseClassMap);
     BentleyStatus EvaluateNonRootClassTablePerHierarchyMapStrategy(ClassMap const& baseClassMap);
-
-    DbMap const& GetDbMap() const;
-    IssueReporter const& Issues() const;
 
     static ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap, ECDbCR, ECN::ECClassCR);
 
@@ -84,7 +85,7 @@ public:
 
     ECN::ECClassCR GetClass() const { return m_ecClass; }
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
-    ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
+    ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.IsTablePerHierarchy()); return m_tphBaseClassMap; }
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }

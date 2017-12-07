@@ -55,7 +55,7 @@ DbResult ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle     10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams)
+BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams const& openParams)
     {
     CloseECDb();
     if (schema.GetType() == SchemaItem::Type::File)
@@ -121,7 +121,7 @@ void ECDbTestFixture::CloseECDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan     02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDbTestFixture::OpenECDb(BeFileNameCR filePath, ECDb::OpenParams params)
+DbResult ECDbTestFixture::OpenECDb(BeFileNameCR filePath, ECDb::OpenParams const& params)
     {
     if (m_ecdb.IsDbOpen())
         return BE_SQLITE_ERROR;
@@ -137,10 +137,22 @@ DbResult ECDbTestFixture::ReopenECDb()
     if (!m_ecdb.IsDbOpen())
         return BE_SQLITE_ERROR;
 
-    BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     const bool isReadonly = m_ecdb.IsReadonly();
+    return ReopenECDb(ECDb::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan     02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDbTestFixture::ReopenECDb(ECDb::OpenParams const& openParams)
+    {
+    if (!m_ecdb.IsDbOpen())
+        return BE_SQLITE_ERROR;
+
+    BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     CloseECDb();
-    return OpenECDb(ecdbFileName, ECDb::OpenParams(isReadonly ? ECDb::OpenMode::Readonly : ECDb::OpenMode::ReadWrite));
+
+    return OpenECDb(ecdbFileName, openParams);
     }
 
 //---------------------------------------------------------------------------------------
@@ -167,10 +179,20 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
     BeFileName ecdbFilePath = BuildECDbPath(effectiveFileName.c_str());
     if (ecdbFilePath.DoesPathExist())
         {  // Delete any previously created file
-        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(ecdbFilePath.GetName()))
+        if (BeFileNameStatus::Success != ecdbFilePath.BeDeleteFile())
             {
             EXPECT_FALSE(true) << "Could not delete ecdb file " << ecdbFilePath.GetNameUtf8().c_str();
             return BE_SQLITE_ERROR;
+            }
+
+        BeFileName changeSummaryCachePath = ECDb::GetChangeSummaryCachePath(ecdbFilePath);
+        if (changeSummaryCachePath.DoesPathExist())
+            {
+            if (BeFileNameStatus::Success != changeSummaryCachePath.BeDeleteFile())
+                {
+                EXPECT_FALSE(true) << "Could not delete change summary cache file " << changeSummaryCachePath.GetNameUtf8().c_str();
+                return BE_SQLITE_ERROR;
+                }
             }
         }
 
@@ -192,13 +214,19 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
 // @bsimethod                                     Krischan.Eberle    10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams)
+DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams)
     {
     BeFileName clonePath;
     BeTest::GetHost().GetOutputRoot(clonePath);
     clonePath.AppendToPath(BeFileName(cloneFileName));
     BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(clonePath).c_str());
     BeFileName::BeCopyFile(seedFilePath, clonePath);
+
+    //clone ChangeSummaries cache file
+    BeFileName seedChangeSummariesCachePath = ECDb::GetChangeSummaryCachePath(seedFilePath);
+    if (seedChangeSummariesCachePath.DoesPathExist())
+        BeFileName::BeCopyFile(seedChangeSummariesCachePath, ECDb::GetChangeSummaryCachePath(clonePath));
+
     return clone.OpenBeSQLiteDb(clonePath, openParams);
     }
 
@@ -228,10 +256,11 @@ BentleyStatus ECDbTestFixture::PopulateECDb(int instanceCountPerClass)
 
     if (instanceCountPerClass > 0)
         {
-        bvector<ECN::ECSchemaCP> schemas = m_ecdb.Schemas().GetSchemas(true);
+        bvector<ECN::ECSchemaCP> schemas = m_ecdb.Schemas().GetSchemas();
         for (ECSchemaCP schema : schemas)
             {
-            if (schema->IsStandardSchema() || schema->IsSystemSchema() || schema->GetName().EqualsIAscii("ECDbFileInfo") || schema->GetName().EqualsIAscii("ECDbSystem"))
+            if (schema->IsStandardSchema() || schema->IsSystemSchema() || 
+                schema->GetName().EqualsIAscii("ECDbChangeSummaries") || schema->GetName().EqualsIAscii("ECDbFileInfo") || schema->GetName().EqualsIAscii("ECDbSystem"))
                 continue;
 
             if (SUCCESS != PopulateECDb(*schema, instanceCountPerClass))

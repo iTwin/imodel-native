@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-LightweightCache::LightweightCache(ECDb const& ecdb) : m_ecdb(ecdb) { Reset(); }
+LightweightCache::LightweightCache(TableSpaceSchemaManager const& manager) : m_schemaManager(manager) { Clear(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 08/2015
@@ -80,7 +80,12 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
         return itor->second;
 
     std::vector<ECN::ECClassId>& subset = m_classIdsPerTable[&tbl];
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ClassId FROM " TABLE_ClassHasTablesCache " WHERE TableId=?");
+    CachedStatementPtr stmt = nullptr;
+    if (m_schemaManager.IsMain())
+        stmt = GetCachedStatement("SELECT ClassId FROM main." TABLE_ClassHasTablesCache " WHERE TableId=?");
+    else
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT ClassId FROM [%s]." TABLE_ClassHasTablesCache " WHERE TableId=?", m_schemaManager.GetTableSpace().GetName().c_str()).c_str());
+
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -112,7 +117,12 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
         return itor->second;
 
     bset<DbTable const*>& subset = m_tablesPerClassId[classId];
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT TableId FROM " TABLE_ClassHasTablesCache " WHERE ClassId = ? ORDER BY TableId");
+    CachedStatementPtr stmt = nullptr;
+    if (m_schemaManager.IsMain())
+        stmt = GetCachedStatement("SELECT TableId FROM main." TABLE_ClassHasTablesCache " WHERE ClassId = ? ORDER BY TableId");
+    else
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT TableId FROM [%s]." TABLE_ClassHasTablesCache " WHERE ClassId = ? ORDER BY TableId", m_schemaManager.GetTableSpace().GetName().c_str()).c_str());
+
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -133,7 +143,7 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
         DbTableId tableId = stmt->GetValueId<DbTableId>(0);
         if (currentTableId != tableId)
             {
-            currentTable = m_ecdb.Schemas().GetDbMap().GetDbSchema().FindTable(tableId);
+            currentTable = m_schemaManager.GetDbSchema().FindTable(tableId);
             currentTableId = tableId;
             BeAssert(currentTable != nullptr);
             }
@@ -154,10 +164,11 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>& constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
-                                                                 "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-                                                                 "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True
-                                                                 " WHERE RC.RelationshipClassId=?");
+    Utf8CP tableSpace = m_schemaManager.GetTableSpace().GetName().c_str();
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM [%s].ec_RelationshipConstraintClass RCC"
+                                                                 "       INNER JOIN [%s].ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
+                                                                 "       LEFT JOIN [%s]." TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True
+                                                                 " WHERE RC.RelationshipClassId=?", tableSpace, tableSpace, tableSpace).c_str());
 
     if (stmt == nullptr)
         {
@@ -199,39 +210,38 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
 
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
 
+    Utf8CP tableSpace = m_schemaManager.GetTableSpace().GetName().c_str();
     bool isMixin = false;
         {
-        CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
-            "SELECT ca.ContainerId FROM " TABLE_Class " c "
-            " INNER JOIN " TABLE_CustomAttribute " ca ON ca.ClassId=c.Id "
-            " INNER JOIN " TABLE_Schema " s ON s.Id=c.SchemaId AND c.Name='IsMixin' AND s.Name='CoreCustomAttributes' "
-            "WHERE ca.ContainerId=?");
+        CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString(
+            "SELECT ca.ContainerId FROM [%s]." TABLE_Class " c "
+            " INNER JOIN [%s]." TABLE_CustomAttribute " ca ON ca.ClassId=c.Id "
+            " INNER JOIN [%s]." TABLE_Schema " s ON s.Id=c.SchemaId AND c.Name='IsMixin' AND s.Name='CoreCustomAttributes' "
+            "WHERE ca.ContainerId=?", tableSpace, tableSpace, tableSpace).c_str());
 
         BeAssert(stmt != nullptr);
         stmt->BindId(1, classId);
         isMixin = (stmt->Step() == BE_SQLITE_ROW);
         }
 
-    Utf8CP sql = isMixin ? "SELECT ch.ClassId, t.Name FROM " TABLE_ClassHasTablesCache " ct"
-        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
-        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
-        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
-        "WHERE ch.BaseClassId=?" 
-        :
-        "SELECT ch.ClassId, t.Name FROM " TABLE_ClassHasTablesCache " ct"
-        "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
-        "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
-        "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
-        "WHERE ch.BaseClassId=? AND t.Type<>" SQLVAL_DbTable_Type_Joined " AND t.Type<>" SQLVAL_DbTable_Type_Overflow;
+    Utf8String sql;
+    sql.Sprintf("SELECT ch.ClassId, t.Name FROM [%s]." TABLE_ClassHasTablesCache " ct"
+                    " INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
+                    " INNER JOIN [%s].ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
+                    " INNER JOIN [%s].ec_Table t ON t.Id = ct.TableId"
+                    " WHERE ch.BaseClassId=?", tableSpace, tableSpace, tableSpace, tableSpace);
 
-    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(sql);
+    if (!isMixin)
+        sql.append(" AND t.Type<>" SQLVAL_DbTable_Type_Joined " AND t.Type<>" SQLVAL_DbTable_Type_Overflow);
+
+    CachedStatementPtr stmt = GetCachedStatement(sql.c_str());
     BeAssert(stmt != nullptr);
     stmt->BindId(1, classId);
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId derivedClassId = stmt->GetValueId<ECClassId>(0);
         Utf8CP tableName = stmt->GetValueText(1);
-        DbTable const* table = m_ecdb.Schemas().GetDbMap().GetDbSchema().FindTable(tableName);
+        DbTable const* table = m_schemaManager.GetDbSchema().FindTable(tableName);
         BeAssert(table != nullptr);
         std::vector<ECClassId>& horizontalPartition = subset[table];
         if (derivedClassId == classId)
@@ -248,7 +258,7 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void LightweightCache::Reset()
+void LightweightCache::Clear()
     {
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
@@ -258,6 +268,10 @@ void LightweightCache::Reset()
     m_tablesPerClassId.clear();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle  12/2017
+//---------------------------------------------------------------------------------------
+CachedStatementPtr LightweightCache::GetCachedStatement(Utf8CP sql) const { return m_schemaManager.GetECDb().GetImpl().GetCachedSqliteStatement(sql); }
 
 
 //****************************************************************************************
@@ -296,7 +310,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
-        std::unique_ptr<ForeignKeyPartitionView> fkView = ForeignKeyPartitionView::CreateReadonly(classMap.GetDbMap().GetECDb(), relClassMap.GetRelationshipClass());
+        std::unique_ptr<ForeignKeyPartitionView> fkView = ForeignKeyPartitionView::CreateReadonly(classMap.GetSchemaManager(), relClassMap.GetRelationshipClass());
         if (fkView == nullptr)
             {
             BeAssert(false);
@@ -436,8 +450,7 @@ Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool i
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    02 / 2016
 //------------------------------------------------------------------------------------------
-Partition::Partition(Partition const& rhs)
-    : m_table(rhs.m_table), m_partitionClassIds(rhs.m_partitionClassIds),
+Partition::Partition(Partition const& rhs) : m_table(rhs.m_table), m_partitionClassIds(rhs.m_partitionClassIds),
     m_inversedPartitionClassIds(rhs.m_inversedPartitionClassIds), m_hasInversedPartitionClassIds(rhs.m_hasInversedPartitionClassIds)
     {}
 
@@ -460,8 +473,7 @@ Partition& Partition::operator=(Partition const& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-Partition::Partition(Partition&& rhs)
-    : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)),
+Partition::Partition(Partition&& rhs) : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)),
     m_inversedPartitionClassIds(std::move(rhs.m_inversedPartitionClassIds)), m_hasInversedPartitionClassIds(std::move(rhs.m_hasInversedPartitionClassIds))
     {
     //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
