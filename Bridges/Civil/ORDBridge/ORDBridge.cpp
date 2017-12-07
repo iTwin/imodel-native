@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ORDBridgeInternal.h"
 #include <windows.h>
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -201,10 +202,24 @@ void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-extern "C" Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
+extern "C" iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
     {
     BeAssert(0 == BeStringUtilities::Wcsicmp(bridgeName, ORDBridge::GetRegistrySubKey()));
     return new ORDBridge();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+extern "C" BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridge)
+    {
+    #if defined (BENTLEYCONFIG_PARASOLID)
+    if (PSolidKernelManager::IsSessionStarted())
+        PSolidKernelManager::StopSession();
+    #endif
+        
+    delete bridge;
+    return SUCCESS;
     }
 
 END_ORDBRIDGE_NAMESPACE

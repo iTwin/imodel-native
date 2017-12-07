@@ -47,7 +47,11 @@ static int runBridge(int argc, WCharCP argv[])
         return BentleyStatus::ERROR;
         }
 
-    return iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
+    auto retVal = iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
+
+    iModelBridge_releaseInstance(iModelBridgeP);
+
+    return retVal;
     }
 
 #if defined(__unix__)
