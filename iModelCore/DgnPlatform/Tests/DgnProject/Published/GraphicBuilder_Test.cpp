@@ -321,9 +321,9 @@ protected:
                 {
                 geom.Meshes().push_back(mesh);
                 if (contentRange.IsNull())
-                    contentRange = ElementAlignedBox3d(mesh->GetRange());
+                    contentRange = ElementAlignedBox3d(mesh->ComputeRange());
                 else
-                    contentRange.Extend(mesh->GetRange());
+                    contentRange.Extend(mesh->ComputeRange());
                 }
             }
 
@@ -440,8 +440,8 @@ void MeshBuilderTest::ExpectEqualMeshes(MeshCR base, MeshCR comp)
     EXPECT_EQ(base.Params().size(), comp.Params().size());
     EXPECT_EQ(base.Normals().size(), comp.Normals().size());
 
-    ExpectEqualRange(base.GetRange(), comp.GetRange());
-    ExpectEqualRange(base.GetUVRange(), comp.GetUVRange());
+    ExpectEqualRange(base.ComputeRange(), comp.ComputeRange());
+    ExpectEqualRange(base.ComputeUVRange(), comp.ComputeUVRange());
     EXPECT_TRUE(base.GetDisplayParams().IsEqualTo(comp.GetDisplayParams()));
 
     ExpectEqualColorTables(base.GetColorTable(), comp.GetColorTable());
