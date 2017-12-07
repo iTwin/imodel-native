@@ -155,6 +155,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         explicit GRIDELEMENTS_EXPORT ElevationGrid (T_Super::CreateParams const& params) : T_Super (params) {};
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid, GRIDELEMENTS_EXPORT)
+        friend struct ElevationGridHandler;
 
         //---------------------------------------------------------------------------------------
         // Creation
