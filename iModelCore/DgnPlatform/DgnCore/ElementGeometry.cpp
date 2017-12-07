@@ -3869,10 +3869,10 @@ Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR hit) const
+BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR hit) const
     {
     if (0 == hit.GetGeomDetail().GetGeometryStreamEntryId().GetIndex())
-        return nullptr;
+        return ERROR;
 
     switch (hit.GetSubSelectionMode())
         {
@@ -3881,7 +3881,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
             if (hit.GetGeomDetail().GetGeometryStreamEntryId().GetGeometryPartId().IsValid())
                 break;
 
-            return nullptr;
+            return ERROR;
             }
 
         case SubSelectionMode::Primitive:
@@ -3892,16 +3892,17 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
             if (nullptr != hit.GetGeomDetail().GetCurvePrimitive())
                 break;
 
-            return nullptr;
+            return ERROR;
             }
 
         default:
-            return nullptr;
+            return ERROR;
         }
 
     // Get the GeometryParams for this hit from the GeometryStream...
     GeometryCollection collection(*this);
-    Render::GraphicBuilderPtr graphic;
+    Render::GraphicBuilderPtr builder;
+    Render::GraphicPtr graphic;
 
     for (auto iter : collection)
         {
@@ -3915,10 +3916,11 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 {
                 GeometryParams geomParams(iter.GetGeometryParams());
 
-                graphic = context.CreateSceneGraphic(iter.GetSourceToWorld());
-                context.AddSubGraphic(*graphic, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
+                builder = context.CreateSceneGraphic(iter.GetSourceToWorld());
+                context.AddSubGraphic(*builder, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
 
-                return graphic->Finish();
+                graphic = builder->Finish();
+                break;
                 }
 
             case SubSelectionMode::Segment:
@@ -3953,8 +3955,8 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                         }
                     }
 
-                graphic = context.CreateSceneGraphic();
-                graphic->ActivateGraphicParams(graphicParams);
+                builder = context.CreateWorldOverlay();
+                builder->ActivateGraphicParams(graphicParams);
 
                 DSegment3d      segment;
                 CurveVectorPtr  curve;
@@ -3966,11 +3968,18 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                     curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
 
                 if (hit.GetViewport().Is3dView())
-                    graphic->AddCurveVectorR(*curve, false);
+                    builder->AddCurveVectorR(*curve, false);
                 else
-                    graphic->AddCurveVector2dR(*curve, false, geomParams.GetNetDisplayPriority());
+                    builder->AddCurveVector2dR(*curve, false, geomParams.GetNetDisplayPriority());
 
-                return graphic->Finish();
+                graphic = builder->Finish();
+
+                if (!graphic.IsValid())
+                    return ERROR;
+
+                context.AddWorldOverlay(*graphic); 
+
+                return SUCCESS;
                 }
 
             case SubSelectionMode::Primitive:
@@ -3979,23 +3988,23 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
 
                 if (geom.IsValid())
                     {
-                    if (!graphic.IsValid())
-                        graphic = context.CreateSceneGraphic(iter.GetGeometryToWorld());
+                    if (!builder.IsValid())
+                        builder = context.CreateSceneGraphic(iter.GetGeometryToWorld());
 
                     GeometryParams geomParams(iter.GetGeometryParams());
 
-                    context.CookGeometryParams(geomParams, *graphic);
-                    geom->AddToGraphic(*graphic);
+                    context.CookGeometryParams(geomParams, *builder);
+                    geom->AddToGraphic(*builder);
 
-                    if (iter.IsBRepPolyface())
-                        continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+                    if (!iter.IsBRepPolyface()) // NOTE: multi-symb BRep is Polyface per-symbology...need to draw all matching geometry...
+                        graphic = builder->Finish();
                     break;
                     }
 
                 DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
 
                 if (!geomPart.IsValid())
-                    return nullptr; // Shouldn't happen...
+                    return ERROR; // Shouldn't happen...
 
                 GeometryCollection partCollection(geomPart->GetGeometryStream(), context.GetDgnDb());
 
@@ -4012,25 +4021,39 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                     if (!partGeom.IsValid())
                         continue;
 
-                    if (!graphic.IsValid())
-                        graphic = context.CreateSceneGraphic(partIter.GetGeometryToWorld());
+                    if (!builder.IsValid())
+                        builder = context.CreateSceneGraphic(partIter.GetGeometryToWorld());
 
                     GeometryParams geomParams(partIter.GetGeometryParams());
 
-                    context.CookGeometryParams(geomParams, *graphic);
-                    partGeom->AddToGraphic(*graphic);
+                    context.CookGeometryParams(geomParams, *builder);
+                    partGeom->AddToGraphic(*builder);
 
-                    if (partIter.IsBRepPolyface())
-                        continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
-                    break;
+                    if (!partIter.IsBRepPolyface()) // NOTE: multi-symb BRep is Polyface per-symbology...need to draw all matching geometry...
+                        break;
                     }
 
-                return graphic->Finish(); // Done with part...
+                graphic = builder->Finish();
+                break;
                 }
             }
+
+        if (builder.IsValid() && !builder->IsOpen())
+            break;
         }
 
-    return graphic->Finish();
+    if (!graphic.IsValid())
+        {
+        if (builder.IsValid())
+            graphic = builder->Finish();
+
+        if (!graphic.IsValid())
+            return ERROR;
+        }
+
+    context.AddNormal(*graphic); // NEEDSWORK: z-fighting and symbology (since we don't control element hilite)...
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
