@@ -401,9 +401,9 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    bool Remove(IConnectionCR connection)
+    bool Remove(Utf8StringCR connectionId)
         {
-        auto iter = m_connections.find(connection.GetId());
+        auto iter = m_connections.find(connectionId);
         if (m_connections.end() == iter)
             return false;
 
@@ -574,7 +574,10 @@ void ConnectionManager::NotifyConnectionClosed(Utf8StringCR connectionId)
     // must broadcast before removing the connection
     BroadcastEvent(ConnectionEvent(*primaryConnection, false, ConnectionEventType::Closed));
 
+    // release the connection (it's still kept in m_activeConnections)
+    primaryConnection = nullptr;
+
     // note: Remove will block this thread until all proxy connections
     // are finished being used on other threads
-    m_activeConnections->Remove(*primaryConnection);
+    m_activeConnections->Remove(connectionId);
     }
