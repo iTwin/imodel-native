@@ -625,6 +625,7 @@ struct Strokes
     Strokes(DisplayParamsCR displayParams, bool disjoint, bool isPlanar) : m_displayParams(&displayParams), m_disjoint(disjoint), m_isPlanar(isPlanar) { }
 
     void Transform(TransformCR transform);
+    DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
 
 };
 
