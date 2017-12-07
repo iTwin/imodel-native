@@ -1514,14 +1514,11 @@ void Converter::_OnConversionComplete()
 #ifdef WIP_DUMP
     dumpParentAndChildren(*GetDgnDb().Elements().GetRootSubject(), 0);
 #endif
-
-    if (DgnDbApi::PSolidKernelManager::IsSessionStarted())
-        DgnDbApi::PSolidKernelManager::StopSession(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
++---------------+---------s------+---------------+---------------+---------------+------*/
 void Converter::CopyExpirationDate(DgnV8FileR dgnfile)
     {
     DgnV8Api::DgnFileLicense lic;
