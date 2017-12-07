@@ -226,7 +226,7 @@ void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
         Utf8String path(session.GetFile().GetPath());
-        session.GetFile().GetHandleR().CloseDb();
+        session.Reset();
         BimConsole::WriteLine("Closed '%s'.", path.c_str());
         }
     }

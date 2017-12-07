@@ -70,9 +70,13 @@ struct SessionFile
     protected:
         explicit SessionFile(Type type) : m_type(type) {}
 
+        void Finalize() 
+            {
+            if (m_changeTracker != nullptr)
+                m_changeTracker->EndTracking();
+            }
     public:
         virtual ~SessionFile() {}
-
         template<typename TSessionFile>
         TSessionFile const& GetAs() const
             {
@@ -110,7 +114,7 @@ struct BimFile final : SessionFile
 
     public:
         explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
-        ~BimFile() {}
+        ~BimFile() { Finalize(); }
         Dgn::DgnDbCR GetDgnDbHandle() const { BeAssert(IsOpen()); return *m_file; }
         Dgn::DgnDbR GetDgnDbHandleR() const { BeAssert(IsOpen()); return *m_file; }
     };
@@ -127,7 +131,7 @@ struct ECDbFile final : SessionFile
 
     public:
         ECDbFile() : SessionFile(Type::ECDb) {}
-        ~ECDbFile() {}
+        ~ECDbFile() { Finalize(); }
     };
 
 //---------------------------------------------------------------------------------------
@@ -143,7 +147,7 @@ struct BeSQLiteFile final : SessionFile
 
     public:
         BeSQLiteFile() : SessionFile(Type::BeSQLite) {}
-        ~BeSQLiteFile() {}
+        ~BeSQLiteFile() { Finalize(); }
     };
 
 //---------------------------------------------------------------------------------------
@@ -171,13 +175,14 @@ struct Session final
         ECDbIssueListener m_issueListener;
 
     public:
-        Session() : m_file(nullptr) {}
+        Session() {}
 
         bool IsFileLoaded(bool printMessageIfFalse = false) const;
         bool IsECDbFileLoaded(bool printMessageIfFalse = false) const;
         SessionFile const& GetFile() const { BeAssert(IsFileLoaded()); return *m_file; }
         SessionFile& GetFileR() { BeAssert(IsFileLoaded()); return *m_file; }
         BentleyStatus SetFile(std::unique_ptr<SessionFile>);
+        void Reset() { m_file = nullptr; m_issueListener.Reset(); }
         ECDbIssueListener const& GetIssues() const { return m_issueListener; }
     };
 
