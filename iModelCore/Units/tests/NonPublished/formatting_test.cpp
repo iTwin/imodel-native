@@ -172,8 +172,6 @@ TEST(FormattingTest, Preliminary)
     custJ = "{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"CustomDeg\", \"SpecName\" : \"CustomDeg\", \"SpecType\" : \"composite\"}";
     FormattingTestFixture::CustomFormatAnalyzer(123.25, "ARC_DEG", custJ);
 
-
-
     LOG.info("\n========Using Dynamic Formats================ (end) \n");
 
     FormattingTestFixture::NumericAccState (&nacc, "-23.45E-03_MM");
@@ -188,6 +186,11 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("ft");
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("IN");
     FormattingTestFixture::FormattingTestFixture::RegistryLookupUnitCITest("in");
+
+    EXPECT_TRUE( Utils::IsJsonCandidate("   {bbb}  "));
+    EXPECT_FALSE(Utils::IsJsonCandidate("   bbb   "));
+    EXPECT_FALSE(Utils::IsJsonCandidate("  {bbb  "));
+    EXPECT_FALSE(Utils::IsJsonCandidate(" bbb}  "));
     TearDownL10N();
     }
 
@@ -553,6 +556,9 @@ TEST(FormattingTest, PhysValues)
 
     Utf8String fusJ = fusYF.ToJsonString(false, true);
     LOG.infov("\nfusJ  %s\n", fusJ.c_str());
+
+    FormatUnitSet fusFromJ =
+        FormatUnitSet("{\"formatSpec\":{\"NumericFormat\":{\"barType\":\"Diagonal\",\"decPrec\":6,\"decimalSeparator\":\".\",\"formatTraits\":{\"AppendUnitName\":\"true\"},\"fractPrec\":32,\"minWidth\":0,\"presentType\":\"Fractional\",\"roundFactor\":0.0,\"signOpt\":\"OnlyNegative\",\"statSeparator\":\"+\",\"thousandSeparator\":\",\",\"uomSeparator\":\" \"},\"SpecAlias\":\"fract32u\",\"SpecName\":\"Fractional32U\",\"SpecType\":\"numeric\"},\"unitName\":\"FT\"}");
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);

@@ -76,6 +76,7 @@ BE_JSON_NAME(unitName)
 BE_JSON_NAME(unitLabel)
 BE_JSON_NAME(formatName)
 BE_JSON_NAME(formatSpec)
+BE_JSON_NAME(cloneData)
 BE_JSON_NAME(synonym)
 
 //CompositeValueSpec
@@ -713,18 +714,25 @@ struct FormatUnitSet
             }
 
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
-        UNITS_EXPORT FormatUnitSet(Utf8CP description);
+
+        // FT(real6)  FT|real6   FT|real6|  {formatName...}  {formatSpec...}
+        UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
+        UNITS_EXPORT void LoadJson(Json::Value jval);
+
         bool HasProblem() const { return m_problem.IsProblem(); }
         FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         Utf8String GetUnitName() const { return m_unitName; };
-        UNITS_EXPORT Utf8String ToText(bool useAlias) const;
+        UNITS_EXPORT Utf8String ToText(bool useAlias=true) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
         NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
         UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty) const;
         UNITS_EXPORT bool IsUnitComparable(Utf8CP unitName) const;
-        UNITS_EXPORT Json::Value ToJson(bool useAlias, bool verbose = false) const;
-        UNITS_EXPORT Utf8String ToJsonString(bool useAlias, bool verbose = false) const;
+
+        UNITS_EXPORT Json::Value ToJson(bool useAlias=true, bool verbose = false) const;
+        UNITS_EXPORT Json::Value ToJsonVerbose(bool useAlias = true) const;
+        UNITS_EXPORT Utf8String ToJsonString(bool useAlias=true, bool verbose = false) const;
+
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
         UNITS_EXPORT void LoadJsonData(Json::Value jval);

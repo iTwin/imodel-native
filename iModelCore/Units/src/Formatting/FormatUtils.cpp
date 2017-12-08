@@ -271,6 +271,46 @@ Utf8CP Utils::SkipBlanks(Utf8CP str)
     return str;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+Utf8Char Utils::GetFirstSignificantChar(Utf8CP str)
+    {
+    if (Utils::IsNameNullOrEmpty(str))
+        return '\0';
+    while (isspace(*str))
+        {
+        str++;
+        }
+    return *str;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+Utf8Char Utils::GetLastSignificantChar(Utf8CP str)
+    {
+    size_t len = Utils::IsNameNullOrEmpty(str)? 0 : strlen(str);
+    if(len == 0)
+        return '\0';
+    len--;
+    while (isspace(str[len]))
+        {
+        if (len > 1) 
+            len--;
+        else
+            return '\0';
+        }
+    return str[len];
+    }
+
+bool Utils::IsJsonCandidate(Utf8CP str)
+    {
+    if ((GetFirstSignificantChar(str) == '{') &&  (GetLastSignificantChar(str) == '}')  )
+        return true;
+    return false;
+    }
+
 Utf8String Utils::AccumulatorStateName(AccumulatorState state)
     {
     switch (state)
@@ -286,6 +326,9 @@ Utf8String Utils::AccumulatorStateName(AccumulatorState state)
         }
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
 Utf8String Utils::CharToString(Utf8Char c)
     {
     Utf8Char buf[2];
@@ -1212,6 +1255,62 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+void FormatUnitSet::LoadJson(Json::Value jval)
+    {
+    Utf8CP paramName;
+    Utf8String format;
+    bool cloneData = false;
+    bool local = false;
+
+    Init();
+    if (jval.empty())
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
+        return;
+        }
+    //str = jval.ToString();
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+            {
+            m_unitName = val.asString();
+            m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_unitName.c_str());
+            if (nullptr == m_unit)
+                {
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+                return;
+                }
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_formatName()) == 0)
+            {
+            format = val.asString();
+            if (format.empty())
+                m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
+            else
+                m_formatSpec = StdFormatSet::FindFormatSpec(format.c_str());
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_cloneData()) == 0)
+            cloneData = val.asBool();
+        else if (BeStringUtilities::StricmpAscii(paramName, json_formatSpec()) == 0)
+            {
+            m_localCopy.LoadJson(val);
+            m_formatSpec = &m_localCopy;
+            local = true;
+            }
+        }
+    // last check if the referenced data is to be copied locally
+    if (cloneData && !local && (nullptr != m_formatSpec))
+        {
+        m_localCopy.Clone(m_formatSpec);
+        m_formatSpec = &m_localCopy;
+        }
+    }
+
+//----------------------------------------------------------------------------------------
 //  The text string has format <unitName>(<formatName>)
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
@@ -1219,62 +1318,71 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
     {
     m_problem = FormatProblemDetail();
     description = Utils::SkipBlanks(description);
-    FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
-    FormattingWord fnam;
-    FormattingWord unit;
-    FormatDividerInstance fdt;
-    FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
-    int n = fdi.GetDivCount();
-    if (n == 2 && fdi.IsDivLast())
+    if (Utils::IsJsonCandidate(description))
         {
-        fnam = curs.ExtractLastEnclosure();
-        unit = curs.ExtractBeforeEnclosure();
-        }
-    else if (n == 1 && !fdi.IsDivLast())
-        {
-        int loc = fdi.GetFirstLocation();
-        if (loc > 0)
-            {
-            unit = curs.ExtractSegment(0, (size_t)loc-1);
-            fnam = curs.ExtractSegment((size_t)loc + 1, curs.GetTotalLength());
-            }
+        Json::Value jval (Json::objectValue);
+        Json::Reader::Parse(description, jval);
+        LoadJson(jval);
         }
     else
         {
-        fdi = FormatDividerInstance(description, '(');
-        n = fdi.GetDivCount();
-        if(n ==0)
-            unit = curs.ExtractSegment(0, curs.GetTotalLength());
-        if (fdi.BracketsMatched() && fdi.IsDivLast()) // there is a candidate for the format in parethesis
+        FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
+        FormattingWord fnam;
+        FormattingWord unit;
+        FormatDividerInstance fdt;
+        FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
+        int n = fdi.GetDivCount();
+        if (n == 2 && fdi.IsDivLast())
             {
-            unit = curs.ExtractLastEnclosure(); 
-            fdt = FormatDividerInstance(unit.GetText(), "/*");
-            if (fdt.GetDivCount() == 0) // it can be a format name
+            fnam = curs.ExtractLastEnclosure();
+            unit = curs.ExtractBeforeEnclosure();
+            }
+        else if (n == 1 && !fdi.IsDivLast())
+            {
+            int loc = fdi.GetFirstLocation();
+            if (loc > 0)
                 {
-                 fnam = unit;
-                 unit = curs.ExtractBeforeEnclosure();
-                }
-            else
-                {
-                unit = curs.ExtractSegment(0, curs.GetTotalLength());
+                unit = curs.ExtractSegment(0, (size_t)loc - 1);
+                fnam = curs.ExtractSegment((size_t)loc + 1, curs.GetTotalLength());
                 }
             }
-         // dividers are not found - we assume a Unit name only
-        }
-
-    if (Utf8String::IsNullOrEmpty(fnam.GetText()))
-        m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
-    else
-        m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
-    m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(unit.GetText());
-    if (nullptr == m_formatSpec)
-        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
-    else
-        {
-        if (nullptr == m_unit)
-            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
         else
-            m_unitName = Utf8String(m_unit->GetName());
+            {
+            fdi = FormatDividerInstance(description, '(');
+            n = fdi.GetDivCount();
+            if (n == 0)
+                unit = curs.ExtractSegment(0, curs.GetTotalLength());
+            if (fdi.BracketsMatched() && fdi.IsDivLast()) // there is a candidate for the format in parethesis
+                {
+                unit = curs.ExtractLastEnclosure();
+                fdt = FormatDividerInstance(unit.GetText(), "/*");
+                if (fdt.GetDivCount() == 0) // it can be a format name
+                    {
+                    fnam = unit;
+                    unit = curs.ExtractBeforeEnclosure();
+                    }
+                else
+                    {
+                    unit = curs.ExtractSegment(0, curs.GetTotalLength());
+                    }
+                }
+            // dividers are not found - we assume a Unit name only
+            }
+
+        if (Utf8String::IsNullOrEmpty(fnam.GetText()))
+            m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
+        else
+            m_formatSpec = StdFormatSet::FindFormatSpec(fnam.GetText());
+        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(unit.GetText());
+        if (nullptr == m_formatSpec)
+            m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
+        else
+            {
+            if (nullptr == m_unit)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+            else
+                m_unitName = Utf8String(m_unit->GetName());
+            }
         }
     }
 

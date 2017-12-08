@@ -415,7 +415,10 @@ struct Utils
     UNITS_EXPORT static Utf8String FormatSpecTypeToName(FormatSpecType type);
     UNITS_EXPORT static FormatSpecType NameToFormatSpecType(Utf8CP name);
     static Utf8CP GetCharsOrNull(Utf8StringCR str) { return str.empty() ? nullptr : str.c_str(); }
-    static Utf8CP SkipBlanks(Utf8CP str);
+    UNITS_EXPORT static Utf8CP SkipBlanks(Utf8CP str);
+    UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
+    UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
+    UNITS_EXPORT static bool IsJsonCandidate(Utf8CP str);
     //#endif
     };
 
