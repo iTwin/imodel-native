@@ -394,7 +394,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG250xProjectWiseRepositoryWithInva
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://mobilevm2.bentley.com/ws250";
-    Utf8String repositoryId = "Bentley.PW--PWDIVM4.bentley.com~3APW_10.00.03.10";
+    Utf8String repositoryId = "Bentley.PW--PWDIVM4.bentley.com~3APW10.00.03.30";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
