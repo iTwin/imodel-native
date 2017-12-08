@@ -36,7 +36,13 @@ baseDir = $(_MakeFilePath)
     %return
 %endif
 
+%ifdef IMODEL_JS_NODE_ADDON_PUBLISH
+    PUBLISH=publish
+%else
+    PUBLISH=print
+%endif
+
 always:
     |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir)
+    python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(PUBLISH) $(IMODEL_JS_NODE_ADDON_TAG)
