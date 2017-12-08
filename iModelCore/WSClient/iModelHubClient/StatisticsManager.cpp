@@ -212,7 +212,7 @@ void StatisticsManager::AddHasStatisticsSelect(Utf8StringR selectString, bvector
                     continue;
                 }
 
-            selectString.Sprintf("%s,@x.%s", selectString.c_str(), stringPropertyValue);
+            selectString.Sprintf("%s,@x.%s", selectString.c_str(), stringPropertyValue.c_str());
             }
         }
     selectString.Sprintf("%s&@x=%s-forward-%s", selectString.c_str(), ServerSchema::Relationship::HasStatistics, ServerSchema::Class::Statistics);

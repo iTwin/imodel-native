@@ -42,7 +42,7 @@ StatisticsInfoPtr StatisticsInfo::ParseFromRelated(WSObjectsReader::Instance ins
             Utf8String stringValue = properties[ServerSchema::Property::LastChangeSetPushDate].GetString();
             if (SUCCESS != DateTime::FromString(lastChangeSetPushDate, stringValue.c_str()))
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, "StatisticsInfo::ParseFromRelated",  "Failed to parse to DateTime from %s.", stringValue);
+                LogHelper::Log(SEVERITY::LOG_WARNING, "StatisticsInfo::ParseFromRelated",  "Failed to parse to DateTime from %s.", stringValue.c_str());
                 return nullptr;
                 }
             }
