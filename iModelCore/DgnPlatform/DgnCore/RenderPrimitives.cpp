@@ -2938,18 +2938,15 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
     {
-    constexpr double s_sizeToToleranceRatio = 0.25;
-    double tolerance;
-
     auto const& params = GetCreateParams();
     if (params.IsViewCoordinates())
         {
-        tolerance = 1.0;
+        return 0.25;
         }
     else if (nullptr == params.GetViewport())
         {
         BeAssert(!accum.GetGeometries().ContainsCurves() && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
-        tolerance = 20.0;
+        return 20.0;
         }
     else
         {
@@ -2958,10 +2955,8 @@ double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
 
         // NB: Geometry::CreateFacetOptions() will apply any scale factors from transform...no need to do it here.
         DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-        tolerance = params.GetViewport()->GetPixelSizeAtPoint(&pt);
+        return params.GetViewport()->GetPixelSizeAtPoint(&pt);
         }
-
-    return tolerance * s_sizeToToleranceRatio;
     }
 
 /*---------------------------------------------------------------------------------**//**
