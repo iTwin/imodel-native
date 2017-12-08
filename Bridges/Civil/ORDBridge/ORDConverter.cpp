@@ -920,12 +920,12 @@ void ORDConverter::ConvertORDData(Params& params)
         updateProjectExtents(*physicalModelPtr, params, true);
 
         if (params.isCreatingNewDgnDb)
-            {
             RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(*params.subjectCPtr, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
-            converterLib.OnCreateComplete();
-            }
-        else
-            converterLib.OnUpdateComplete();
+
+        // Infer deletions
+        params.changeDetectorP->DeleteElementsNotSeenInScope(params.fileScopeId);
+
+        converterLib._OnConversionComplete();
         }
     }
 

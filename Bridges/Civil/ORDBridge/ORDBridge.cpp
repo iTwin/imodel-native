@@ -170,9 +170,6 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     ORDConverter converter;
     converter.ConvertORDData(params);
 
-    // Infer deletions
-    changeDetectorPtr->DeleteElementsNotSeenInScope(fileScopeId);
-
     return BentleyStatus::SUCCESS;
     }
 
