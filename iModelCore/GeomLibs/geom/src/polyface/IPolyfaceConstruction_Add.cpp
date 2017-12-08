@@ -214,7 +214,8 @@ bvector<DVec3d>   &tangentA,
 bvector<size_t>   &indexB,
 bvector<DVec3d>   &tangentB,
 size_t numQuad,      // Can index to here inclusive
-bool alwaysSmooth
+bool alwaysSmooth,
+bool forceDoublePointsVisible = false
 )
     {
     size_t neighborIndex;
@@ -242,6 +243,9 @@ bool alwaysSmooth
         }
     assert (neighborIndex < tangentA.size () && neighborIndex < tangentB.size ());
     assert (index < tangentA.size () && index < tangentB.size ());
+    if (forceDoublePointsVisible
+        && (indexA[index] == indexA[neighborIndex] || indexB[index] == indexB[neighborIndex]))
+        return true;
     // If points only appear once internally, the tangent at index applies on both sides and it is smooth.
     if (indexA[index] != indexA[neighborIndex] && indexB[index] != indexB[neighborIndex])
         return false;
@@ -313,7 +317,8 @@ static void AddSmoothRuledQuads (IPolyfaceConstructionR builder,
     bvector<DVec3d>   &tangentB,
     bvector<DPoint2d> &uvB,
     double              nominalLength = 0.0,
-    bool alwaysSmooth = false
+    bool alwaysSmooth = false,
+    bool forceDoublePointsVisible = false
     )
     {
     if (indexA.empty() || indexB.empty())
@@ -332,8 +337,10 @@ static void AddSmoothRuledQuads (IPolyfaceConstructionR builder,
         size_t i1 = i0 + 1;
         if (!isDegenerateQuad (indexA, indexB, i0))
             {
-            bool leftVisible = IsVisibleRuleEdge (i0, false, indexA, tangentA, indexB, tangentB, numQuad, alwaysSmooth);
-            bool rightVisible = IsVisibleRuleEdge (i1, true,  indexA, tangentA, indexB, tangentB, numQuad, alwaysSmooth);
+            bool leftVisible = IsVisibleRuleEdge (i0, false, indexA, tangentA, indexB, tangentB, numQuad, alwaysSmooth,
+                forceDoublePointsVisible);
+            bool rightVisible = IsVisibleRuleEdge (i1, true,  indexA, tangentA, indexB, tangentB, numQuad, alwaysSmooth,
+                forceDoublePointsVisible);
             builder.AddPointIndexQuad (
                         indexA[i0], visibleA,
                         indexA[i1], rightVisible,
@@ -437,7 +444,8 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
     double              nominalLength,
     double            maxEdgeLength,
     double            angleRadians,
-    bool alwaysSmooth = false
+    bool alwaysSmooth = false,
+    bool forceDoublePointsVisible = false
     )
     {
     if (maxEdgeLength > 0.0 || angleRadians > 0)
@@ -481,7 +489,8 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
                     builder.FindOrAddPoints (pointD, pointD.size (), 0, indexD);
                     // assign indices.
                     }
-                AddSmoothRuledQuads (builder, i == 1, fractionC,  pointC, indexC, tangentC, paramC, i == numEdge, fractionD, pointD, indexD, tangentD, paramD, nominalLength, alwaysSmooth);
+                AddSmoothRuledQuads (builder, i == 1, fractionC,  pointC, indexC, tangentC, paramC, i == numEdge, fractionD, pointD, indexD, tangentD, paramD, nominalLength,
+                    alwaysSmooth, forceDoublePointsVisible);
                 pointC.swap (pointD);
                 indexC.swap (indexD);
                 tangentC.swap (tangentD);
@@ -491,7 +500,8 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
             }
         }
     // fall out if no splitting along the sweep ..
-    AddSmoothRuledQuads (builder, true, 0.0, pointA, indexA, tangentA, paramA, true, 1.0, pointB, indexB, tangentB, paramB, nominalLength, alwaysSmooth);
+    AddSmoothRuledQuads (builder, true, 0.0, pointA, indexA, tangentA, paramA, true, 1.0, pointB, indexB, tangentB, paramB, nominalLength,
+        alwaysSmooth, forceDoublePointsVisible);
     }
 
 
@@ -693,7 +703,8 @@ void AnnounceGridToBuilder (bool applyTolerances)
             maxLength,
             maxEdgeLength,
             angleTol,
-            false
+            false,
+            s_forceDoublePointsVisible
             );
         uvA.swap (uvB);
         }
@@ -2674,7 +2685,7 @@ void IPolyfaceConstruction::AddRuled (DEllipse3dR ellipse0, DEllipse3dR ellipse1
             EndFace_internal ();    
             }
         }
-    AddSmoothRuledQuads1 (*this, point[0], pointIndex[0], capTangent[0], paramA, point[1], pointIndex[1], capTangent[1], paramB, nominalLength, maxEdgeLength, angleTol, true);
+    AddSmoothRuledQuads1 (*this, point[0], pointIndex[0], capTangent[0], paramA, point[1], pointIndex[1], capTangent[1], paramB, nominalLength, maxEdgeLength, angleTol, true, false);
     EndFace_internal ();
     }
 
