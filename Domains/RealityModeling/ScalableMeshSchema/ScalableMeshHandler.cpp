@@ -1831,6 +1831,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
     assert(invertResult);
     
+    m_path = smFilename;
     if (m_smPtr->IsCesium3DTiles() && !(smFilename.ContainsI(L"realitydataservices") && smFilename.ContainsI(L"S3MXECPlugin")))
         {
         // The mesh likely comes from ProjectWiseContextShare, if it does then save that instead
