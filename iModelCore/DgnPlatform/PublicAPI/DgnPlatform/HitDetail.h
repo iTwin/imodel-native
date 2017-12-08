@@ -196,7 +196,7 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _Draw(ViewContextR context) const;
+    virtual void _Draw(DecorateContextR context) const;
     virtual void _SetHilited(bool) const;
 
 public:
@@ -210,7 +210,7 @@ public:
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
     bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
     Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
-    void Draw(ViewContextR context) const {_Draw(context);}
+    void Draw(DecorateContextR context) const {_Draw(context);}
     DGNPLATFORM_EXPORT Utf8String GetInfoString(Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT bool IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
@@ -369,7 +369,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    void _Draw(ViewContextR) const override;
+    void _Draw(DecorateContextR) const override;
     HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT void _SetHilited(bool) const override;
     DGNPLATFORM_EXPORT bool _IsSameHit(HitDetailCP otherHit) const override;

@@ -117,7 +117,6 @@ struct SolidKernelGeometry : Geometry
 {
 private:
     IBRepEntityPtr      m_entity;
-    BeMutex             m_mutex;
 
     SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db);
 
@@ -1392,8 +1391,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         {
         bool addNormals = facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount(),
              addParams = facetOptions.GetParamsRequired() && 0 == geom.GetParamCount(),
-             addFaceData = addParams && 0 == geom.GetFaceCount(),
-             addEdgeChains = facetOptions.GetEdgeChainsRequired() && 0 == geom.GetEdgeChainCount();
+             addFaceData = addParams && 0 == geom.GetFaceCount();
 
         if (addNormals)
             AddNormals(*polyface, facetOptions);
@@ -1407,8 +1405,8 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
             polyface->Triangulate(3);
 
-        if (addEdgeChains)
-            polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
+        // Not necessary to add edges chains -- edges will be generated from visibility flags later
+        // and decimation will not handle edge chains correctly.
         }
 
     return polyface;
@@ -1555,10 +1553,6 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
     PolyfaceList tilePolyfaces;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
-
-    // Cannot process the same solid entity simultaneously from multiple threads...
-    BeMutexHolder lock(m_mutex);
-
     DRange3d entityRange = m_entity->GetEntityRange();
     if (entityRange.IsNull())
         return tilePolyfaces;                                                                                                                                                                                                 

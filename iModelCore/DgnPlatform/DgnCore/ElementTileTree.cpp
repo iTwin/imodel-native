@@ -37,6 +37,11 @@ struct TileContext;
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
 
+// We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
+// That can't work for BReps because they are associated with a specific thread's partition.
+// In any case it wasn't much of an optimization as we still had to facet/stroke the geometry each time it was encountered.
+// #define CACHE_LARGE_GEOMETRY
+
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
 // With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
@@ -1126,7 +1131,12 @@ bool Loader::IsPastCollectionDeadline() const { return m_collectionDeadline.IsVa
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model.GetDgnDb(), transform, "", &system),
-    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()), m_cacheGeometry(m_is3d)
+    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()),
+#if defined(CACHE_LARGE_GEOMETRY)
+    m_cacheGeometry(m_is3d)
+#else
+    m_cacheGeometry(false)
+#endif
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
@@ -1869,14 +1879,12 @@ private:
 
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained) { AddPolyface(polyfaces, geom, geom.GetDisplayParams(), rangePixels, isContained); }
-    void AddPolyface(Polyface& polyface, GeometryR, DisplayParamsCR ,double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
-    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained) { AddStrokes(strokes, geom, geom.GetDisplayParams(), rangePixels, isContained); }
-    void AddStrokes(StrokesR, GeometryR, DisplayParamsCR, double rangePixels, bool isContained);
+    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
     Strokes ClipSegments(StrokesCR strokes) const;
     void ClipStrokes(StrokesR strokes) const;
     void ClipPoints(StrokesR strokes) const;
@@ -1986,23 +1994,13 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
         for (auto& polyface : polyfaces)
             {
             polyface.Transform(instanceTransform);
-#if defined(SHARE_GEOMETRY_PARTS)
-            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*polyface.m_displayParams, instance->GetDisplayParams());
-#else
-            DisplayParamsCPtr params = polyface.m_displayParams;
-#endif
-            AddPolyface(polyface, const_cast<GeometryR>(*instance), *params, rangePixels, isContained);
+            AddPolyface(polyface, const_cast<GeometryR>(*instance), rangePixels, isContained);
             }
 
         for (auto& strokeList : strokes)
             {
             strokeList.Transform(instanceTransform);
-#if defined(SHARE_GEOMETRY_PARTS)
-            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*strokeList.m_displayParams, instance->GetDisplayParams());
-#else
-            DisplayParamsCPtr params = strokeList.m_displayParams;
-#endif
-            AddStrokes(strokeList, *const_cast<GeometryP>(instance), *params, rangePixels, isContained);
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels, isContained);
             }
         }
     }
@@ -2036,7 +2034,7 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
     {
     PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
     if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
@@ -2046,7 +2044,10 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
+        {
+        BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
+        }
 
 #if defined(DISABLE_EDGE_GENERATION)
     auto edgeOptions = MeshEdgeCreationOptions::NoEdges;
@@ -2062,7 +2063,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
 
     if (isContained)
         {
-        AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
+        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
         }
     else
         {
@@ -2071,7 +2072,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, displayParams, edges, isPlanar, doVertexCluster);
+            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
         }
     }
 
@@ -2230,7 +2231,7 @@ void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
+void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained)
     {
     if (m_loadContext.WasAborted())
         return;
@@ -2241,6 +2242,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
+    DisplayParamsCR     displayParams = strokes.GetDisplayParams();
     MeshBuilderMap::Key key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
@@ -2669,7 +2671,7 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     try
         {
 #ifndef NDEBUG
-        static DgnElementId             s_debugId; // ((uint64_t) 1099511628078);
+        static DgnElementId             s_debugId; // ((uint64_t) 2877);
 
         if (s_debugId.IsValid() && s_debugId != elemId)
             return;

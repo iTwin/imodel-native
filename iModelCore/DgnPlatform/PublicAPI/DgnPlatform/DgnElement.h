@@ -2134,7 +2134,7 @@ protected:
     virtual GeometryStreamCR _GetGeometryStream() const = 0;
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _Stroke(ViewContextR, double pixelSize) const;
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const;
+    DGNPLATFORM_EXPORT virtual BentleyStatus _StrokeHit(DecorateContextR, HitDetailCR) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
     virtual bool _IsHilited() const {if (nullptr == ToElement()) return false; else return ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
@@ -2166,7 +2166,7 @@ public:
     DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
-    Render::GraphicPtr StrokeHit(ViewContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
+    BentleyStatus StrokeHit(DecorateContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
     DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR context, double pixelSize) const;
 
     SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}

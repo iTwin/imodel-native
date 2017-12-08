@@ -52,7 +52,7 @@ struct PSolidGoOutput
 //! @param[in] eyePoint The eye point (nullptr if parallel).
 //! @param[in] direction The direction toward the view (positive Z)
 //! @param[in] entityTag The input entity to compute silhouettes for.
-//! @param[in] entityTransform The entity transform (or nullptr).
+//! @param[in] entityTransform The entity transform (or nullptr). Currently does not support scale.
 //! @param[in] tolerance The curve chord tolerance.
 //! @remarks This method outputs silhouette curves through GO and is NOT thread safe.
 DGNPLATFORM_EXPORT static void ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, TransformCP entityTransform = nullptr, double tolerance = 0.0);
@@ -61,10 +61,9 @@ DGNPLATFORM_EXPORT static void ProcessSilhouettes(IParasolidWireOutput& output, 
 //! @param[in] output IParasolidWireOutput to process each hatch curve.
 //! @param[in] divisor The snap divisor to control how many hatch curves to output.
 //! @param[in] entityTag The input face entity to compute hatching for.
-//! @param[in] entityTransform The entity transform (or nullptr).
 //! @param[in] tolerance The tolerance for hatching of a parametric face.
 //! @remarks This method outputs face hatch curves through GO and is NOT thread safe.
-DGNPLATFORM_EXPORT static void ProcessFaceHatching(IParasolidWireOutput& output, int divisor, PK_FACE_t entityTag, TransformCP entityTransform = nullptr, double tolerance = 0.0);
+DGNPLATFORM_EXPORT static void ProcessFaceHatching(IParasolidWireOutput& output, int divisor, PK_FACE_t entityTag, double tolerance = 0.0);
 
 }; // PSolidGoOutput
 
