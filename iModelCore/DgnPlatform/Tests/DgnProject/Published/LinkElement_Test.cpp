@@ -313,7 +313,7 @@ TEST_F(LinkElementTest, RepositoryLinkCRUD)
 
     // Flush cache and re-check element
     {
-    db.Memory().PurgeUntil(0);
+    db.Elements().ClearCache();
     RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId1);
     EXPECT_TRUE(link.IsValid());
     EXPECT_STREQ(link->GetUrl(), testUrl);
@@ -328,7 +328,7 @@ TEST_F(LinkElementTest, RepositoryLinkCRUD)
     }
     // Flush cache and re-check element
     {
-    db.Memory().PurgeUntil(0);
+    db.Elements().ClearCache();
     RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId1);
     EXPECT_TRUE(link.IsValid());
     EXPECT_STREQ(link->GetUrl(), "http://www.facebook.com");
@@ -354,7 +354,7 @@ TEST_F(LinkElementTest, RepositoryLinkCRUD)
     }
     // Flush cache and re-check element
     {
-    db.Memory().PurgeUntil(0);
+    db.Elements().ClearCache();
     RepositoryLinkCPtr link = db.Elements().Get<RepositoryLink>(linkElementId2);
     EXPECT_TRUE(link.IsValid());
     EXPECT_STREQ(link->GetUrl(), testUrl);
