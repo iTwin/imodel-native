@@ -110,7 +110,7 @@ struct NodeUtils
             error.Set(Napi::String::New(env, "message"), Napi::String::New(env, msg));
         return error;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Sam.Wilson                      09/17
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -120,7 +120,7 @@ struct NodeUtils
         retObj.Set(Napi::String::New(env, "result"), goodVal);
         return retObj;
         }
-        
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Sam.Wilson                      09/17
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -319,7 +319,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
         {
         Json::Value m_jsonInstance; // input
         Utf8String m_insertedId; // output
-        
+
         InsertInstanceWorker(NodeAddonECDb *addon, std::string const& strInstance) : WorkerBase(addon, DbResult::BE_SQLITE_OK), m_jsonInstance(Json::Value::From(*strInstance, *strInstance + strInstance.Length())) {}
 
         static Napi::Value Start(const Napi::CallbackInfo& info)
@@ -380,7 +380,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
 
     struct ReadInstanceWorker : WorkerBase<DbResult>
         {
-        Json::Value m_jsonInstanceKey; // input   
+        Json::Value m_jsonInstanceKey; // input
         Json::Value m_jsonInstance; // output
 
         ReadInstanceWorker(NodeAddonECDb* db, std::string const& strInstanceKey) : WorkerBase(db, DbResult::BE_SQLITE_OK), m_jsonInstanceKey(Json::Value::From(*strInstanceKey, *strInstanceKey + strInstanceKey.Length())) {}
@@ -415,7 +415,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
 
     struct DeleteInstanceWorker : WorkerBase<DbResult>
         {
-        Json::Value m_jsonInstanceKey; // input  
+        Json::Value m_jsonInstanceKey; // input
 
         DeleteInstanceWorker(NodeAddonECDb* db, std::string const& strInstanceKey) : WorkerBase(db, DbResult::BE_SQLITE_OK), m_jsonInstanceKey(Json::Value::From(*strInstanceKey, *strInstanceKey + strInstanceKey.Length())) {}
 
@@ -443,7 +443,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
 
     struct ContainsInstanceWorker : WorkerBase<DbResult>
         {
-        Json::Value m_jsonInstanceKey; // input  
+        Json::Value m_jsonInstanceKey; // input
         bool m_containsInstance; // output
 
         ContainsInstanceWorker(NodeAddonECDb* db, std::string const& strInstanceKey) : WorkerBase(db, DbResult::BE_SQLITE_OK), m_jsonInstanceKey(Json::Value::From(*strInstanceKey, *strInstanceKey + strInstanceKey.Length())) {}
@@ -565,7 +565,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
                 m_status = BE_SQLITE_ERROR;
                 return;
                 }
-            
+
             m_status = AddonUtils::ExecuteStatement(m_instanceId, *stmt, m_isInsertStmt, m_bindings);
             }
 
@@ -574,13 +574,13 @@ struct NodeAddonECDb : Napi::ObjectWrap
             result = Napi::New(env, m_instanceId.c_str());
             return true;
             }
-        bool _HadError() override 
+        bool _HadError() override
             {
-            switch(m_status) 
+            switch(m_status)
                 {
-                case BE_SQLITE_OK: 
-                case BE_SQLITE_ROW: 
-                case BE_SQLITE_DONE: 
+                case BE_SQLITE_OK:
+                case BE_SQLITE_ROW:
+                case BE_SQLITE_DONE:
                     return false;
                 }
             return true;
@@ -590,7 +590,7 @@ struct NodeAddonECDb : Napi::ObjectWrap
 private:
     JsECDbPtr m_ecdb;
     mutable Utf8String m_lastECDbIssue;
-        
+
 public:
     NodeAddonECDb() : Napi::ObjectWrap<NodeAddonECDb>(), m_lastECDbIssue("") {}
     ~NodeAddonECDb() {}
@@ -673,7 +673,7 @@ struct SimpleRulesetLocater : RefCounted<RuleSetLocater>
 private:
     Utf8String m_rulesetId;
     mutable PresentationRuleSetPtr m_ruleset;
- 
+
 protected:
     SimpleRulesetLocater(Utf8String rulesetId) : m_rulesetId(rulesetId) {}
     int _GetPriority() const override {return 100;}
@@ -693,7 +693,7 @@ protected:
         if (nullptr == rulesetId || m_rulesetId.Equals(rulesetId))
             m_ruleset = nullptr;
         }
- 
+
 public:
     static RefCountedPtr<SimpleRulesetLocater> Create(Utf8String rulesetId) {return new SimpleRulesetLocater(rulesetId);}
 };
@@ -705,7 +705,7 @@ public:
 struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 {
     static Napi::FunctionReference s_constructor;
-    
+
     Dgn::DgnDbPtr m_dgndb;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
@@ -766,7 +766,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         DgnDbR GetDgnDb() { return *m_addondb->m_dgndb; }
 
-        void OnOK() override 
+        void OnOK() override
             {
             if (Env().IsExceptionPending())
                 {
@@ -813,7 +813,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
                 m_addondb->SetupPresentationManager();
             }
 
-        void OnOK() override 
+        void OnOK() override
             {
             Callback().MakeCallback(Receiver().Value(), {Napi::Number::New(Env(), (int)m_status)}); // just return the status value, since there is other "success" value.
             }
@@ -890,10 +890,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         {
         Json::Value m_opts;         // input
         Json::Value m_elementJson;  // ouput
-        
-        GetElementWorker(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR inOpts) : 
-            DgnDbWorkerBase(db, cb), 
-            m_opts(Json::Value::From(inOpts)) 
+
+        GetElementWorker(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR inOpts) :
+            DgnDbWorkerBase(db, cb),
+            m_opts(Json::Value::From(inOpts))
             {}
 
         void Execute() override
@@ -922,7 +922,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         {
         Json::Value m_opts;       // input
         Json::Value m_modelJson;  // ouput
-        
+
         GetModelWorker(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR inOpts) : DgnDbWorkerBase(db, cb), m_opts(Json::Value::From(inOpts)) {}
 
         void Execute() override
@@ -930,7 +930,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             REQUIRE_DB_TO_BE_OPEN
             m_status = AddonUtils::GetModel(m_modelJson, GetDgnDb(), m_opts);
             }
-        
+
         Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_modelJson.ToString().c_str());}
         };
 
@@ -960,12 +960,12 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         Napi::Object ret;
         if (BE_SQLITE_OK == result)
             SetupPresentationManager();
-            
+
         return Napi::Number::New(Env(), (int)result);
         }
 
     //=======================================================================================
-    //  Get cached imodels and their briefcase versions
+    //  Get cached imodel briefcases
     //! @bsiclass
     //=======================================================================================
     Napi::Value GetCachedBriefcaseInfosSync(const Napi::CallbackInfo& info)
@@ -977,6 +977,34 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         BeFileName cacheFile(cachePath.c_str(), true);
         DbResult result = AddonUtils::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
         return CreateBentleyReturnObject(result, Napi::String::New(Env(), cachedBriefcaseInfos.ToString().c_str()));
+        }
+
+    //=======================================================================================
+    //  Get information on the root subject of the BIM
+    //! @bsiclass
+    //=======================================================================================
+    Napi::Value GetRootSubjectInfo(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value rootSubjectInfo;
+        AddonUtils::GetRootSubjectInfo(rootSubjectInfo, *m_dgndb);
+        return Napi::String::New(Env(), rootSubjectInfo.ToString().c_str());
+        }
+
+    //=======================================================================================
+    //  Get extents of the BIM
+    //! @bsiclass
+    //=======================================================================================
+    Napi::Value GetExtents(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value extentsJson;
+        AddonUtils::GetExtents(extentsJson, *m_dgndb);
+        return Napi::String::New(Env(), extentsJson.ToString().c_str());
         }
 
     //=======================================================================================
@@ -1025,7 +1053,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         }
 
     //=======================================================================================
-    // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
+    // Gets a JSON description of the properties of an element, suitable for display in a property browser.
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
     // The property values are formatted according to formatting CAs.
@@ -1051,14 +1079,14 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
                 m_status = DgnDbStatus::BadElement;
                 return;
                 }
-                
+
             CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId FROM biscore.Element WHERE ECInstanceId = ?");
             if (!stmt.IsValid())
                 {
                 m_status = DgnDbStatus::SQLiteError;
                 return;
                 }
-                
+
             stmt->BindId(1, elemId);
             if (stmt->Step() != BE_SQLITE_ROW)
                 {
@@ -1076,7 +1104,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             if ( m_addondb->m_presentationManager == nullptr)
                 {
                 m_status = DgnDbStatus::BadArg;
-                return;                
+                return;
                 }
             ContentDescriptorCPtr descriptor = m_addondb->m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson());
             if (descriptor.IsNull())
@@ -1090,8 +1118,8 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             if (content.IsNull())
                 {
                 m_status = DgnDbStatus::BadArg;
-                return;                        
-                }                
+                return;
+                }
 
             rapidjson::StringBuffer buffer;
             rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -1141,13 +1169,13 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_rowsJson.ToString().c_str());}
 
-        bool _HadError() override 
+        bool _HadError() override
             {
-            switch(m_status) 
+            switch(m_status)
                 {
-                case BE_SQLITE_OK: 
-                case BE_SQLITE_ROW: 
-                case BE_SQLITE_DONE: 
+                case BE_SQLITE_OK:
+                case BE_SQLITE_ROW:
+                case BE_SQLITE_DONE:
                     return false;
                 }
             return true;
@@ -1219,7 +1247,34 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         auto bid = m_dgndb->GetBriefcaseId();
         return Napi::Number::New(Env(), bid.GetValue());
         }
-    
+
+    Napi::Value GetParentChangeSetId(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        RETURN_IF_HAD_EXCEPTION_SYNC
+        Utf8String parentRevId = m_dgndb->Revisions().GetParentRevisionId();
+        return Napi::String::New(Env(), parentRevId.c_str());
+        }
+
+    Napi::Value GetDbGuid(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        RETURN_IF_HAD_EXCEPTION_SYNC
+        BeGuid beGuid = m_dgndb->GetDbGuid();
+        return Napi::String::New(Env(), beGuid.ToString().c_str());
+        }
+
+    Napi::Value SetDbGuid(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, guidStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+        BeGuid guid;
+        guid.FromString(guidStr.c_str());
+        m_dgndb->ChangeDbGuid(guid);
+        return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
+        }
+
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
@@ -1233,6 +1288,9 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("closeDgnDb", &NodeAddonDgnDb::CloseDgnDb),
             InstanceMethod("setBriefcaseId", &NodeAddonDgnDb::SetBriefcaseId),
             InstanceMethod("getBriefcaseId", &NodeAddonDgnDb::GetBriefcaseId),
+            InstanceMethod("getParentChangeSetId", &NodeAddonDgnDb::GetParentChangeSetId),
+            InstanceMethod("getDbGuid", &NodeAddonDgnDb::GetDbGuid),
+            InstanceMethod("setDbGuid", &NodeAddonDgnDb::SetDbGuid),
             InstanceMethod("openBriefcaseSync", &NodeAddonDgnDb::OpenBriefcaseSync),
             InstanceMethod("saveChanges", &NodeAddonDgnDb::SaveChanges),
             InstanceMethod("importSchema", &NodeAddonDgnDb::ImportSchema),
@@ -1246,6 +1304,8 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),
             InstanceMethod("executeQuery", &NodeAddonDgnDb::StartExecuteQueryWorker),
             InstanceMethod("getCachedBriefcaseInfosSync", &NodeAddonDgnDb::GetCachedBriefcaseInfosSync),
+            InstanceMethod("getRootSubjectInfo", &NodeAddonDgnDb::GetRootSubjectInfo),
+            InstanceMethod("getExtents", &NodeAddonDgnDb::GetExtents),
         });
 
         target.Set("NodeAddonDgnDb", t);
@@ -1320,7 +1380,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         auto status = m_stmt->Prepare(db->GetDgnDb(), ecsqlStr.c_str());
         if (!status.IsSuccess())
             return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastEcdbIssue().c_str(), Env());
-            
+
         MUST_HAVE_M_STMT;                           // success post-condition
         return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
         }
@@ -1349,14 +1409,14 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         {
         MUST_HAVE_M_STMT;
         REQUIRE_ARGUMENT_STRING(0, valuesStr);
-        
+
         //BeSqliteDbMutexHolder serializeAccess(*db->m_addondb); // hold mutex, so that we have a chance to get last ECDb error message
 
         auto status = AddonUtils::JsonBinder::BindValues(*m_stmt, Json::Value::From(valuesStr));
 
         if (BSISUCCESS != status)
             return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastEcdbIssue().c_str(), Env());
-         
+
         return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
         }
 

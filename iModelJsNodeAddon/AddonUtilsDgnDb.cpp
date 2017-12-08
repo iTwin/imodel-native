@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AddonUtils.h"
 #include <Bentley/BeDirectoryIterator.h>
+#include <ECObjects/ECJsonUtilities.h>
 
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
@@ -350,16 +351,43 @@ void AddonUtils::CloseDgnDb(DgnDbR dgndb)
 DbResult AddonUtils::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath)
     {
     /*
-    * Structure of JSON:
-    *     <IModelId1>
-    *         <BriefcaseId1>
-    *             pathname
-    *             parentChangeSetId
-    *         <BriefcaseId2>
-    *         ...
-    *     <IModelId2>
-    *     ...
-    */
+     * Folder structure for cached imodels:
+     *  /assets/imodels/                => cachePath (can be specified)
+     *    iModelId1/                    => iModelPath
+     *      csets/                      => csetPath
+     *        csetId1.cs
+     *        csetid2.cs
+     *        ...
+     *      readOnly/
+     *        0/IModelName.bim
+     *        1/IModelName.bim
+     *        ...
+     *      readWrite/
+     *        briefcaseId1/IModelName.bim
+     *        briefcaseId2/IModelName.bim
+     *        ...
+     *    iModelId2/
+     *      ...
+     *
+     * Format of returned JSON:
+     *  {
+     *    "iModelId1": [
+     *      {
+     *        "pathname": "path to imodel",
+     *        "parentChangeSetId": "Id of parent change set",
+     *        "briefcaseId": "Id of brief case",
+     *        "readOnly": true or false
+     *      },
+     *      {
+     *        ...
+     *      },
+     *    ],
+     *    "iModelId2": [
+     *      ...
+     *    ]
+     * }
+     */
+
     BeFileName iModelPath;
     bool isDir;
     jsonBriefcaseInfos = Json::objectValue;
@@ -367,33 +395,76 @@ DbResult AddonUtils::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFi
         {
         if (!isDir)
             continue;
-        Json::Value jsonIModelBriefcases = Json::objectValue;
-        BeFileName briefcasePath;
-        for (BeDirectoryIterator briefcasePaths(iModelPath); briefcasePaths.GetCurrentEntry(briefcasePath, isDir, true /*fullpath*/) == SUCCESS; briefcasePaths.ToNext())
+        Json::Value jsonIModelBriefcases = Json::arrayValue;
+
+        BeFileName subFolderPath;
+        for (BeDirectoryIterator subFolderPaths(iModelPath); subFolderPaths.GetCurrentEntry(subFolderPath, isDir, true /*fullpath*/) == SUCCESS; subFolderPaths.ToNext())
             {
-            if (!isDir || briefcasePath.GetBaseName().Equals(L"csets"))
-                continue;
-            BeFileName briefcasePathname;
-            BeDirectoryIterator briefcasePathnames(briefcasePath);
-            if (briefcasePathnames.GetCurrentEntry(briefcasePathname, isDir, true /*fullpath*/) != SUCCESS)
+            if (!isDir)
                 continue;
 
-            DbResult result;
-            DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
-            DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
-            if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
+            BeFileName basePath = subFolderPath.GetBaseName();
+            bool isReadonly;
+            if (basePath.Equals(L"readOnly"))
+                isReadonly = true;
+            else if (basePath.Equals(L"readWrite"))
+                isReadonly = false;
+            else
+                continue;
+
+            BeFileName briefcasePath;
+            for (BeDirectoryIterator briefcasePaths(subFolderPath); briefcasePaths.GetCurrentEntry(briefcasePath, isDir, true /*fullpath*/) == SUCCESS; briefcasePaths.ToNext())
                 {
-                BeFileName::EmptyAndRemoveDirectory(briefcasePath);
-                continue;
-                }
+                BeFileName briefcasePathname;
+                BeDirectoryIterator briefcasePathnames(briefcasePath);
+                if (briefcasePathnames.GetCurrentEntry(briefcasePathname, isDir, true /*fullpath*/) != SUCCESS)
+                    continue;
 
-            Json::Value jsonBriefcase = Json::objectValue;
-            jsonBriefcase["pathname"] = briefcasePathname.GetNameUtf8();
-            jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
-            jsonIModelBriefcases[briefcasePath.GetBaseName().GetNameUtf8()] = jsonBriefcase;
+                DbResult result;
+                DgnDb::OpenParams openParams(Db::OpenMode::Readonly);
+                DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
+                if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
+                    {
+                    BeFileName::EmptyAndRemoveDirectory(briefcasePath);
+                    continue;
+                    }
+
+                Json::Value jsonBriefcase = Json::objectValue;
+                jsonBriefcase["pathname"] = briefcasePathname.GetNameUtf8();
+                jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
+                jsonBriefcase["briefcaseId"] = db->GetBriefcaseId().GetValue();
+                jsonBriefcase["readOnly"] = isReadonly;
+
+                jsonIModelBriefcases.append(jsonBriefcase);
+                }
             }
-        jsonBriefcaseInfos[iModelPath.GetBaseName().GetNameUtf8()] = jsonIModelBriefcases;
+            jsonBriefcaseInfos[iModelPath.GetBaseName().GetNameUtf8()] = jsonIModelBriefcases;
         }
 
     return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 12/17
+//---------------------------------------------------------------------------------------
+void AddonUtils::GetRootSubjectInfo(JsonValueR rootSubjectInfo, DgnDbCR dgndb)
+    {
+    SubjectCPtr rootSubject = dgndb.Elements().GetRootSubject();
+    rootSubjectInfo = Json::objectValue;
+    if (rootSubject.IsValid())
+        {
+        rootSubjectInfo["name"] = rootSubject->GetCode().GetValueUtf8CP();
+        rootSubjectInfo["description"] = rootSubject->GetDescription();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 12/17
+//---------------------------------------------------------------------------------------
+void AddonUtils::GetExtents(JsonValueR extentsJson, DgnDbCR dgndb)
+    {
+    AxisAlignedBox3d extents = dgndb.GeoLocation().GetProjectExtents();
+    extentsJson = Json::Value(Json::objectValue);
+    ECJsonUtilities::Point3dToJson(extentsJson["low"], extents.low);
+    ECJsonUtilities::Point3dToJson(extentsJson["high"], extents.high);
     }
