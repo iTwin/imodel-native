@@ -743,7 +743,7 @@ RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision
 RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream, bool containsSchemaChanges)
     {
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges);
-    if (result != BE_SQLITE_OK)
+    if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Could not apply/merge data changes in revision"))
         {
         BeAssert(false);
         return RevisionStatus::MergeError;
@@ -789,7 +789,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
                     mergeComment.append(revision.GetSummary());
                     }
 
-            result = SaveDataChanges(indirectChanges, mergeComment.c_str());
+                result = SaveDataChanges(indirectChanges, mergeComment.c_str());
                 if (BE_SQLITE_DONE != result)
                     {
                     BeAssert(false);
