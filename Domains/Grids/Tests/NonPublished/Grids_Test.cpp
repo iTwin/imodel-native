@@ -2584,13 +2584,13 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
         curveShape = CurveVector::CreateLinear(thisShape, CurveVector::BOUNDARY_TYPE_Outer);
         ++gridIteration;
         }
-    
-    OrthogonalGridCPtr floorGrid = OrthogonalGrid::CreateAndInsertBySurfaces(floorPlaneCurves, 
-                                                                                           bvector<CurveVectorPtr>(),
-                                                                                           OrthogonalGrid::CreateParams(m_model.get(),
-                                                                                                                               db.Elements().GetRootSubject()->GetElementId(),
-                                                                                                                               true,
-                                                                                                                               "Floor-Grid"));
+
+    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (m_model.get(),
+                                                                            db.Elements ().GetRootSubject ()->GetElementId (),
+                                                                            "Floor-Grid"),
+                                                                            floorPlaneCurves,
+                                                                            true);
+                                                                                            
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -2605,21 +2605,16 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     ElementIterator axesIterator = floorGrid->MakeAxesIterator();
     bvector<DgnElementId> axesIds = axesIterator.BuildIdList<DgnElementId>();
     int numAxes = axesIds.size();
-    ASSERT_TRUE(numAxes == 2) << "incorrect number of axes in floorGrid";
+    ASSERT_TRUE(numAxes == 1) << "incorrect number of axes in floorGrid";
 
     GridAxisCPtr horizontalAxis = db.Elements().Get<GridAxis>(axesIds[0]);
     ASSERT_TRUE(horizontalAxis.IsValid()) << "horizontal axis is not present";
 
-    GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
-    ASSERT_TRUE(verticalAxis.IsValid()) << "vertical axis is not present";
-
     int numHorizontal = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
-    int numVertical = verticalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
-    ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
+    ASSERT_TRUE(3 == numHorizontal) << "axis should contain 3 planes";
 
-    GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
     bvector<GridPlanarSurfacePtr> floorGridPlanes;
-    for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
+    for (DgnElementId planeId : horizontalAxis->MakeIterator().BuildIdList<DgnElementId>())
         {
         GridPlanarSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlanarSurface>(planeId);
         ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
@@ -2723,13 +2718,12 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
         curveShape = CurveVector::CreateLinear(thisShape, CurveVector::BOUNDARY_TYPE_Outer);
         ++gridIteration;
         }
-    
-    OrthogonalGridCPtr floorGrid = OrthogonalGrid::CreateAndInsertBySurfaces(floorPlaneCurves, 
-                                                                                           bvector<CurveVectorPtr>(),
-                                                                                           OrthogonalGrid::CreateParams(m_model.get(),
-                                                                                                                               db.Elements().GetRootSubject()->GetElementId(),
-                                                                                                                               true,
-                                                                                                                               "Floor-Grid"));
+
+    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (m_model.get (),
+                                                                              db.Elements ().GetRootSubject ()->GetElementId (),
+                                                                              "Floor-Grid"),
+                                                                              floorPlaneCurves,
+                                                                              true);
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -2744,21 +2738,16 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     ElementIterator axesIterator = floorGrid->MakeAxesIterator();
     bvector<DgnElementId> axesIds = axesIterator.BuildIdList<DgnElementId>();
     int numAxes = axesIds.size();
-    ASSERT_TRUE(numAxes == 2) << "incorrect number of axes in floorGrid";
+    ASSERT_TRUE(numAxes == 1) << "incorrect number of axes in floorGrid";
 
     GridAxisCPtr horizontalAxis = db.Elements().Get<GridAxis>(axesIds[0]);
     ASSERT_TRUE(horizontalAxis.IsValid()) << "horizontal axis is not present";
 
-    GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
-    ASSERT_TRUE(verticalAxis.IsValid()) << "vertical axis is not present";
-
     int numHorizontal = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
-    int numVertical = verticalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
-    ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
+    ASSERT_TRUE(3 == numHorizontal) << "axis should contain 3 planes";
 
-    GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
     bvector<GridPlanarSurfacePtr> floorGridPlanes;
-    for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
+    for (DgnElementId planeId : horizontalAxis->MakeIterator().BuildIdList<DgnElementId>())
         {
         GridPlanarSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlanarSurface>(planeId);
         ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";
@@ -2864,13 +2853,12 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
         curveShape = CurveVector::CreateLinear(thisShape, CurveVector::BOUNDARY_TYPE_Outer);
         ++gridIteration;
         }
-    
-    OrthogonalGridCPtr floorGrid = OrthogonalGrid::CreateAndInsertBySurfaces(floorPlaneCurves, 
-                                                                                           bvector<CurveVectorPtr>(),
-                                                                                           OrthogonalGrid::CreateParams(m_model.get(),
-                                                                                                                               db.Elements().GetRootSubject()->GetElementId(),
-                                                                                                                               true,
-                                                                                                                               "Floor-Grid"));
+
+    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (m_model.get (),
+                                                                              db.Elements ().GetRootSubject ()->GetElementId (),
+                                                                              "Floor-Grid"),
+                                                                              floorPlaneCurves,
+                                                                              true);
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -2885,21 +2873,16 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     ElementIterator axesIterator = floorGrid->MakeAxesIterator();
     bvector<DgnElementId> axesIds = axesIterator.BuildIdList<DgnElementId>();
     int numAxes = axesIds.size();
-    ASSERT_TRUE(numAxes == 2) << "incorrect number of axes in floorGrid";
+    ASSERT_TRUE(numAxes == 1) << "incorrect number of axes in floorGrid";
 
     GridAxisCPtr horizontalAxis = db.Elements().Get<GridAxis>(axesIds[0]);
     ASSERT_TRUE(horizontalAxis.IsValid()) << "horizontal axis is not present";
 
-    GridAxisCPtr verticalAxis = db.Elements().Get<GridAxis>(axesIds[1]);
-    ASSERT_TRUE(verticalAxis.IsValid()) << "vertical axis is not present";
-
     int numHorizontal = horizontalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
-    int numVertical = verticalAxis->MakeIterator().BuildIdList<DgnElementId>().size();
-    ASSERT_TRUE((0 == numHorizontal && 3 == numVertical) || (3 == numHorizontal && 0 == numVertical)) << "One the axes must be empty, the other should contai 3 planes";
+    ASSERT_TRUE(3 == numHorizontal) << "axis should contain 3 planes";
 
-    GridAxisCPtr floorAxis = (3 == numHorizontal) ? horizontalAxis : verticalAxis;
     bvector<GridPlanarSurfacePtr> floorGridPlanes;
-    for (DgnElementId planeId : floorAxis->MakeIterator().BuildIdList<DgnElementId>())
+    for (DgnElementId planeId : horizontalAxis->MakeIterator().BuildIdList<DgnElementId>())
         {
         GridPlanarSurfacePtr floorSurface = db.Elements().GetForEdit<GridPlanarSurface>(planeId);
         ASSERT_TRUE(floorSurface.IsValid()) << "Failed to get floor plane surface";

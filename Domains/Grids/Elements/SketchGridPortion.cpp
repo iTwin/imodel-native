@@ -1,4 +1,4 @@
-
+\
 #include <Grids/gridsApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
@@ -30,18 +30,11 @@ T_Super::CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 SketchGridPtr        SketchGrid::Create
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 Utf8CP          name
 )
     {
-    return new SketchGrid(GeometricElement3d::CreateParams(model.GetDgnDb(),
-                                                                  model.GetModelId(),
-                                                                  QueryClassId(model.GetDgnDb()),
-                                                                  DgnCategoryId(),
-                                                                  Placement3d(),
-                                                                  Dgn::DgnCode(model.GetDgnDb().CodeSpecs().QueryCodeSpecId(GRIDS_AUTHORITY_Grid),
-                                                                               model.GetModeledElementId(),
-                                                                               name)));
+    return new SketchGrid(Grid::CreateParams(&model, model.GetModeledElementId (), name, QueryClassId(model.GetDgnDb())));
     }
 
 

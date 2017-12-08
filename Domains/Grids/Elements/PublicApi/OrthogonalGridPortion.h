@@ -45,7 +45,7 @@ public:     //public - non-exported
         //! @param[in] createDimensions             true to create dimensions between planes
         //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
         CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, bool createDimensions, Utf8CP name) :
-            T_Super (DgnElement::CreateParams (model->GetDgnDb (), model->GetModelId (), QueryClassId (model->GetDgnDb ()), Dgn::DgnCode (model->GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid), modeledElementId, name))),
+            T_Super (model, modeledElementId, name, QueryClassId (model->GetDgnDb ())),
             m_model (model),
             m_createDimensions (createDimensions)
             {}
@@ -112,9 +112,6 @@ private:
     BE_PROP_NAME (DefaultStartExtentY)
     BE_PROP_NAME (DefaultEndExtentY)
 
-    static BentleyStatus            ValidateBySurfacesParams (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
-    static bool                     AreSurfacesCoplanar (bvector<CurveVectorPtr> const& surfaces);
-
     //! Creates horizontal and vertical orthogonal grid surfaces and inserts them
     //! @param[in] params               parameters for creating the grid portion
     //! @param[in] model                model to create grid surfaces in
@@ -143,8 +140,6 @@ protected:
     //! @param[in] distance distance between elements
     GRIDELEMENTS_EXPORT static void AddDimensionsToOrthogonalGrid(Grids::GridSurfacePtr element1, Grids::GridSurfacePtr element2, double distance);
 
-    BentleyStatus   CreateCoplanarGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisCR gridAxis, CreateParams const& params);
-
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid, GRIDELEMENTS_EXPORT)
 
@@ -155,13 +150,6 @@ public:
     //! @param[in]  params          grid parameters containing information about the grid. For more info look up CreateParams
     //! @return                     grid with gridsurfaces in submodel
     GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsert (StandardCreateParams const& params);
-
-    //! Creates orthogonal grid
-    //! @param[in]  xSurfaces   gridsurfaces in the X direction
-    //! @param[in]  ySurfaces   gridsurfaces in the Y direction
-    //! @param[in]  params      grid parameters containing information about the grid. For more info look up CreateParams
-    //! @return     grid with gridsurfaces in submodel
-    GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsertBySurfaces (bvector<CurveVectorPtr> const& xSurfaces, bvector<CurveVectorPtr> const& ySurfaces, CreateParams const& params);
 
     //---------------------------------------------------------------------------------------
     // Geometry modification
