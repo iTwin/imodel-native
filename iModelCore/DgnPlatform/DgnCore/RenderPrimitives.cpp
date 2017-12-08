@@ -1032,7 +1032,7 @@ bool VertexKey::operator<(VertexKeyCR rhs) const
     {
     // This primarily exists because VertexKey comparisons are quite slow in non-optimized builds and app teams complained...
     static_assert(1 == sizeof(DgnGeometryClass), "unexpected size");
-    static_assert(std::is_standard_layout_v<VertexKey>, "not standard layout");
+    static_assert(std::is_standard_layout<VertexKey>::value, "not standard layout");
     static_assert(0x00 == offsetof(VertexKey, m_param), "unexpected offset");
     static_assert(0x10 == offsetof(VertexKey, m_normalAndPos), "unexpected offset");
     static_assert(0x18 == offsetof(VertexKey, m_elemId), "unexpected offset");
