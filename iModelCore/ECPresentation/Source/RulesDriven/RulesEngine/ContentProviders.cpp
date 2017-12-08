@@ -427,7 +427,8 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
         ContentDescriptor::Property const* matchingProperty = contract->FindMatchingProperty(field, item.GetClass());
         if (nullptr == matchingProperty)
             {
-            BeAssert(false);
+            item.GetValues().AddMember(rapidjson::Value(field.GetName().c_str(), item.GetValues().GetAllocator()), rapidjson::Value(), item.GetValues().GetAllocator()); 
+            item.GetDisplayValues().AddMember(rapidjson::Value(field.GetName().c_str(), item.GetDisplayValues().GetAllocator()), rapidjson::Value(), item.GetDisplayValues().GetAllocator());
             return;
             }
         propertiesPerItemClass[item.GetClass()] = matchingProperty;
