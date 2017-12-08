@@ -81,9 +81,8 @@ enum Comparison { kLess, kGreater, kEqual };
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ExpectComparison(Comparison exp, VertexKeyCR lhs, VertexKeyCR rhs)
     {
-    VertexKey::Comparator comp;
-    bool less = comp(lhs, rhs);
-    bool grtr = comp(rhs, lhs);
+    bool less = lhs < rhs;
+    bool grtr = rhs < lhs;
     EXPECT_FALSE(less && grtr);
 
     switch (exp)

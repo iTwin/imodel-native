@@ -528,10 +528,10 @@ public:
         : VertexKey(point, feature, fillColor, nullptr != normal ? normal->Value() : 0, nullptr != normal, nullptr != param)
         {
         if (m_paramValid)
-            m_param = DPoint2d::From(*param);
+            m_param = DPoint2d::From(param->x, param->y);
         }
 
-    bool operator<(VertexKey const& rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(VertexKey const& rhs) const;
 
     QPoint3dCR GetPosition() const { return *reinterpret_cast<QPoint3dCP>(m_normalAndPos.m_data+1); }
     Feature GetFeature() const { return Feature(DgnElementId(m_elemId), DgnSubCategoryId(m_subcatId), m_class); }
