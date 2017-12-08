@@ -204,4 +204,55 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
         //! @param[in]  endExtent   new EndExtent for this PlanCartesianGridSurface
         GRIDELEMENTS_EXPORT void        SetEndExtent (double endExtent) { SetPropertyValue (prop_EndExtent (), endExtent); };
     };
+
+
+//=======================================================================================
+//! plan grid planar surface element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
+    {
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_ElevationGridSurface, GridPlanarSurface);
+    DEFINE_T_SUPER (GridPlanarSurface);
+    public:
+        struct CreateParams : T_Super::CreateParams
+            {
+            DEFINE_T_SUPER (ElevationGridSurface::T_Super::CreateParams);
+            double m_elevation;
+            CurveVectorPtr m_surface;
+
+            //! Creates create parameters for elevation grid
+            //! @param[in] model              model for the PlanCartesianGridSurface
+            CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId gridAxisId, CurveVectorR surface, double elevation) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxisId)
+                {
+                m_elevation = elevation;
+                m_surface = &surface;
+                }
+
+            //! Constructor from base params. Chiefly for internal use.
+            //! @param[in]      params   The base element parameters
+            //! @return 
+            explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
+                : T_Super (params)
+                {
+                }
+            };
+
+    private:
+
+    protected:
+        explicit GRIDELEMENTS_EXPORT ElevationGridSurface (CreateParams const& params);
+        friend struct ElevationGridSurfaceHandler;
+
+    public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface, GRIDELEMENTS_EXPORT)
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a ElevationGridSurface surface
+        //! @param[in]  params          parameters for creating ElevationGridSurface
+        //! Note: Only planar curve vectors pass as valid geometry
+        GRIDELEMENTS_EXPORT static  ElevationGridSurfacePtr Create (CreateParams const& params);
+
+    };
 END_GRIDS_NAMESPACE

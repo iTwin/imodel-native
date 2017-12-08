@@ -10,6 +10,7 @@ USING_NAMESPACE_BENTLEY_DGN
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridPlanarSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -257,7 +258,6 @@ CreateParams const& params,
 DgnExtrusionDetailCR extDetail
 ) : T_Super(params, ISolidPrimitive::CreateDgnExtrusion (extDetail)), IPlanGridSurface(*this, params, params.m_classId)
     {
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,7 +268,6 @@ PlanGridPlanarSurface::PlanGridPlanarSurface
 CreateParams const& params
 ) : T_Super(params), IPlanGridSurface(*this, params, params.m_classId)
     {
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -339,6 +338,35 @@ CreateParams const& params
 
     return gridSurface;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ElevationGridSurface::ElevationGridSurface
+(
+CreateParams const& params
+) : T_Super(params, params.m_surface)
+    {
+
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ElevationGridSurfacePtr             ElevationGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    ElevationGridSurfacePtr surface = new ElevationGridSurface (params);
+
+    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
+        return nullptr;
+    
+    return surface;
+    }
+
 
 END_GRIDS_NAMESPACE
 
