@@ -873,7 +873,7 @@ enum class BackgroundFill
     Outline = 2, //!< single color fill uses the view's background color and line color to draw an outline fill
 };
 
-enum class DgnGeometryClass
+enum class DgnGeometryClass : uint8_t
 {
     Primary      = 0,
     Construction = 1,
@@ -1888,7 +1888,7 @@ namespace Quantization
 
     constexpr double QuantizeDouble(double pos, double origin, double scale)
         {
-        return 0.5 + (pos - origin) * scale;
+        return std::max(0.0, std::min(RangeScale(), 0.5 + (pos - origin) * scale));
         }
 
     inline bool IsQuantizable(double pos, double origin, double scale)
@@ -1899,7 +1899,6 @@ namespace Quantization
     inline uint16_t Quantize(double pos, double origin, double scale)
         {
         double qpos = QuantizeDouble(pos, origin, scale);
-        BeAssert(IsInRange(qpos));
         return static_cast<uint16_t>(qpos);
         }
 
