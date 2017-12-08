@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceQuery.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -969,10 +969,8 @@ double PolyfaceQuery::LargestCoordinate () const
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceQuery::HasFacets () const
     {
-    // NEEDS WORK -- should be able to answer this without scanning !!!
-    size_t numFacet, maxPerFace;
-    numFacet = GetNumFacet (maxPerFace);
-    return numFacet > 0;
+    PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*this, false);
+    return visitor->AdvanceToNextFace();
     }
 
 
