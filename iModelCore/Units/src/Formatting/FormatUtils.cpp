@@ -1254,6 +1254,16 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData)
         }
     }
 
+FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
+    {
+    if (this != &other)
+        {
+
+        }
+    return *this;
+    }
+
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
@@ -1660,6 +1670,14 @@ void NamedFormatSpec::Clone(NamedFormatSpecCP other)
     m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());
     }
 
+NamedFormatSpec& NamedFormatSpec::operator=(const NamedFormatSpec& other)
+    {
+    if (this != &other)
+        Clone(other);
+        
+    return *this;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
@@ -1708,7 +1726,7 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-bool NamedFormatSpec::IsIdentical(NamedFormatSpec other) const
+bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
     {
     int cod = 0;
     while (0 == cod)

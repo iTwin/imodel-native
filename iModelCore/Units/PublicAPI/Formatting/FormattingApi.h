@@ -295,6 +295,7 @@ public:
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
+    UNITS_EXPORT NumericFormatSpec& operator=(const NumericFormatSpec& other);
 
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }   
@@ -649,6 +650,8 @@ public:
         UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
         UNITS_EXPORT void Clone(NamedFormatSpecCR other);
         UNITS_EXPORT void Clone(NamedFormatSpecCP other);
+        UNITS_EXPORT NamedFormatSpec& operator=(const NamedFormatSpec& other);
+
         UNITS_EXPORT void LoadJson(Json::Value jval);
         UNITS_EXPORT void LoadJson(Utf8CP jsonString);
         UNITS_EXPORT NamedFormatSpec();
@@ -677,7 +680,8 @@ public:
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
         PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
         UNITS_EXPORT Json::Value ToJson(bool verbose) const;
-        UNITS_EXPORT bool IsIdentical(NamedFormatSpec other) const;
+        UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
+      
     };
 
 //=======================================================================================
@@ -712,11 +716,20 @@ struct FormatUnitSet
             m_unit = other->m_unit;
             m_problem = FormatProblemDetail(other->m_problem);
             }
+        void Clone(FormatUnitSetCP other);
+        UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
 
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
 
-        // FT(real6)  FT|real6   FT|real6|  {formatName...}  {formatSpec...}
+
+
+
+        // FT   FT(real6)  FT|real6   FT|real6|  {formatName...}  {formatSpec...}
         UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
+
+
+
+
         UNITS_EXPORT void LoadJson(Json::Value jval);
 
         bool HasProblem() const { return m_problem.IsProblem(); }
@@ -738,6 +751,7 @@ struct FormatUnitSet
         UNITS_EXPORT void LoadJsonData(Json::Value jval);
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);
+        bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
     };
 
 

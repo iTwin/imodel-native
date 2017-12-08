@@ -33,32 +33,32 @@ BE_JSON_NAME(pitch)
 BE_JSON_NAME(roll)
 
 
-static void SetUpL10N() 
-    {
-    BeFileName sqlangFile;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-    sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-    BeFileName temporaryDirectory;
-    BeTest::GetHost().GetTempDir(temporaryDirectory);
-
-    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Shutdown();
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-    }
-
-static void TearDownL10N()
-    {
-    BeSQLite::L10N::Shutdown();
-    }
+//static void SetUpL10N() 
+//    {
+//    BeFileName sqlangFile;
+//    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
+//    sqlangFile.AppendToPath(L"sqlang");
+//    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
+//
+//    BeFileName temporaryDirectory;
+//    BeTest::GetHost().GetTempDir(temporaryDirectory);
+//
+//    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
+//    BeSQLite::L10N::Shutdown();
+//    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+//    }
+//
+//static void TearDownL10N()
+//    {
+//    BeSQLite::L10N::Shutdown();
+//    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Preliminary)
     {
-    SetUpL10N();
+    FormattingTestFixture::SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
     //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
@@ -191,7 +191,7 @@ TEST(FormattingTest, Preliminary)
     EXPECT_FALSE(Utils::IsJsonCandidate("   bbb   "));
     EXPECT_FALSE(Utils::IsJsonCandidate("  {bbb  "));
     EXPECT_FALSE(Utils::IsJsonCandidate(" bbb}  "));
-    TearDownL10N();
+    FormattingTestFixture::TearDownL10N();
     }
 
 //#ifdef _WIN32
@@ -212,7 +212,7 @@ TEST(FormattingTest, Preliminary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, StdFormatting)
     {
-    SetUpL10N();
+    FormattingTestFixture::SetUpL10N();
 
     Utf8String tes1 = "{AddSynonym:{UnitName:\"FT\", Synonym:\"'\"";
     Utf8String tes2 = tes1;
@@ -242,9 +242,30 @@ TEST(FormattingTest, StdFormatting)
     EXPECT_STREQ ("0000", numFmt.FormatIntegerToString(0, 4, false).c_str());
     numFmt.SetSignOption(Formatting::ShowSignOption::SignAlways);
     EXPECT_STREQ ("+00152", numFmt.FormatIntegerToString(152, 5, false).c_str());
-    TearDownL10N();
+    FormattingTestFixture::TearDownL10N();
     }
 
+TEST(FormattingTest, FullySpecifiedFUS)
+    {
+    LOG.infov("\n================  FullySpecifiedFUS (start) ===========================");
+    FormattingTestFixture::SetUpL10N();
+    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnitCI("M");
+    FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
+    BEU::Quantity const lenQ = BEU::Quantity(22.7, *metrUOM);
+
+    EXPECT_STREQ ("74 15/32ft", fusYF.FormatQuantity(lenQ, "").c_str());
+    Utf8String fusJ = fusYF.ToJsonString(false, true);
+    LOG.infov("\nfusJ  %s\n", fusJ.c_str());
+
+    FormatUnitSet fusFromJ =
+        FormatUnitSet("{\"unitName\":\"FT\",\"formatSpec\":{\"NumericFormat\":{\"barType\":\"Diagonal\",\"decPrec\":6,\"decimalSeparator\":\".\",\"formatTraits\":{\"AppendUnitName\":\"true\"},\"fractPrec\":32,\"minWidth\":0,\"presentType\":\"Fractional\",\"roundFactor\":0.0,\"signOpt\":\"OnlyNegative\",\"statSeparator\":\"+\",\"thousandSeparator\":\",\",\"uomSeparator\":\" \"},\"SpecAlias\":\"fract32u\",\"SpecName\":\"Fractional32U\",\"SpecType\":\"numeric\"}}");
+    Utf8String lenT = fusFromJ.FormatQuantity(lenQ, "").c_str();
+    LOG.infov("fusFromJ-lenT %s", lenT.c_str());
+    EXPECT_STREQ ("74 15/32ft", fusFromJ.FormatQuantity(lenQ, "").c_str());
+
+    FormattingTestFixture::TearDownL10N();
+    LOG.infov("================  FullySpecifiedFUS (end) ===========================\n");
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -483,7 +504,7 @@ TEST(FormattingTest, Pasring)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, PhysValues)
     {
-    SetUpL10N();
+    FormattingTestFixture::SetUpL10N();
 
     FormattingDividers fdiv = FormattingDividers("()[]{} ");
     EXPECT_TRUE(fdiv.IsDivider('('));
@@ -553,12 +574,6 @@ TEST(FormattingTest, PhysValues)
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
     //LOG.infov("FUS->Q  %s", fusYF.FormatQuantity(len).c_str());
     EXPECT_STREQ ("74 15/32ft", fusYF.FormatQuantity(len, "").c_str());
-
-    Utf8String fusJ = fusYF.ToJsonString(false, true);
-    LOG.infov("\nfusJ  %s\n", fusJ.c_str());
-
-    FormatUnitSet fusFromJ =
-        FormatUnitSet("{\"formatSpec\":{\"NumericFormat\":{\"barType\":\"Diagonal\",\"decPrec\":6,\"decimalSeparator\":\".\",\"formatTraits\":{\"AppendUnitName\":\"true\"},\"fractPrec\":32,\"minWidth\":0,\"presentType\":\"Fractional\",\"roundFactor\":0.0,\"signOpt\":\"OnlyNegative\",\"statSeparator\":\"+\",\"thousandSeparator\":\",\",\"uomSeparator\":\" \"},\"SpecAlias\":\"fract32u\",\"SpecName\":\"Fractional32U\",\"SpecType\":\"numeric\"},\"unitName\":\"FT\"}");
 
     QuantityTriadSpec atr = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
     QuantityTriadSpec atrU = QuantityTriadSpec(ang, degUOM, minUOM, secUOM);
@@ -663,7 +678,7 @@ TEST(FormattingTest, PhysValues)
     EXPECT_STREQ ("4068.7986 oz", NumericFormatSpec::StdFormatPhysValue("real4u", 115.3485, "KG", "OZM", nullptr, " ").c_str());
 
     //CompositeValueSpec cvs = CompositeValueSpec("MILE", "YRD", "FOOT", "INCH");
-    TearDownL10N();
+    FormattingTestFixture::TearDownL10N();
     }
 
 /*---------------------------------------------------------------------------------**//**

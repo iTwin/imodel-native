@@ -24,6 +24,28 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 //#define USE_TEST_FILE
 
 static void* testFile = nullptr;
+
+void FormattingTestFixture::SetUpL10N()
+    {
+    BeFileName sqlangFile;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
+    sqlangFile.AppendToPath(L"sqlang");
+    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
+
+    BeFileName temporaryDirectory;
+    BeTest::GetHost().GetTempDir(temporaryDirectory);
+
+    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
+    BeSQLite::L10N::Shutdown();
+    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+    }
+
+void FormattingTestFixture::TearDownL10N()
+    {
+    BeSQLite::L10N::Shutdown();
+    }
+
+
 /*=================================================================================**//**
 * @bsiclass                                     		David Fox-Rabinovitz 06/2017
 +===============+===============+===============+===============+===============+======*/

@@ -114,6 +114,19 @@ void NumericFormatSpec::CopySpec(NumericFormatSpecCR other)
      m_statSeparator = other.m_statSeparator;
      m_minWidth = other.m_minWidth;
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+NumericFormatSpec& NumericFormatSpec::operator=(const NumericFormatSpec& other)
+    {
+    if (this != &other)
+        {
+        CopySpec(other);
+        }
+    return *this;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -858,7 +871,7 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     BEU::Quantity temp = qty.ConvertTo(unitQ);
     char buf[64];
     FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
-    if(nullptr == useUnit)
+    if(nullptr == useUnit || !IsAppendUnit())
         return Utf8String(buf);
     Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel(), space);
     return txt;
