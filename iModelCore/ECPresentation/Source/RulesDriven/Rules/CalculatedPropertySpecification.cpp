@@ -24,7 +24,7 @@ bool CalculatedPropertiesSpecification::ReadXml(BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeInt32Value(m_priority, CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY))
         m_priority = 1000;
 
-    if (BEXML_Success != xmlNode->GetContent(m_value))
+    if (BEXML_Success != xmlNode->GetContent(m_value) || m_value.empty())
         return false;
 
     return true;

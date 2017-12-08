@@ -65,7 +65,6 @@
     <ClCompile Include="TestHelpers\IssueReporter.cpp" />
     <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
-    <ClCompile Include="Published\PresentationRules\PresentationRulesTests.cpp" />
     <ClCompile Include="Published\PresentationRules\PresentationRulesHashingTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ECExpressionsOptimizerTests.cpp" />
     <ClCompile Include="Published\PresentationRules\PropertyEditorRulesTests.cpp" />
@@ -77,6 +76,29 @@
     <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp" />
     <ClCompile Include="BackDoor\SelectionManager.cpp" />
     <ClCompile Include="Published\RulesEngine\RuleSetEmbedderTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\DisplayRelatedItemsSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentInstancesOfSpecificClassesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\CustomNodeSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\InstanceNodesOfSpecificClassesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\SelectedNodeInstancesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\RelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\RelatedInstanceSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentRelatedInstancesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\CheckBoxRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentModifierTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\SearchResultInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\StyleOverrideTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\AllInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ImageIdOverrideTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\UserSettingsGroupTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\LabelOverrideTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\SortingRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\GroupingRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ChildNodeRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\LocalizationResourceKeyDefinitionTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PresentationRuleSetTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />

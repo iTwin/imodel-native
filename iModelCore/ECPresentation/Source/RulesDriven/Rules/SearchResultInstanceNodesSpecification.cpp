@@ -94,7 +94,6 @@ void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode) cons
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
     
     CommonTools::WriteRulesToXmlNode<QuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications);
-    CommonTools::WriteRulesToXmlNode<QuerySpecification, QuerySpecificationList>(xmlNode, m_querySpecifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,7 +132,6 @@ void SearchResultInstanceNodesSpecification::AddQuerySpecification(QuerySpecific
 MD5 SearchResultInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) const
     {
     MD5 md5 = ChildNodeSpecification::_ComputeHash(parentHash);
-    QuerySpecificationList m_querySpecifications;
     md5.Add(&m_groupByClass, sizeof(m_groupByClass));
     md5.Add(&m_groupByLabel, sizeof(m_groupByLabel));
 
@@ -197,7 +195,7 @@ bool StringQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
     if (!QuerySpecification::_ReadXml(xmlNode))
         return false;
 
-    if (BEXML_Success != xmlNode->GetContent(m_query))
+    if (BEXML_Success != xmlNode->GetContent(m_query) || m_query.empty())
         return false;
 
     return true;
@@ -208,8 +206,9 @@ bool StringQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StringQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
-    QuerySpecification::_WriteXml(xmlNode);
-    xmlNode->SetContent(WString(m_query.c_str(), true).c_str());
+    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement(_GetXmlElementName());
+    QuerySpecification::_WriteXml(ruleNode);
+    ruleNode->SetContent(WString(m_query.c_str(), true).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -246,8 +245,9 @@ bool ECPropertyValueQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECPropertyValueQuerySpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
-    QuerySpecification::_WriteXml(xmlNode);
-    xmlNode->AddAttributeStringValue(ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName.c_str());
+    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement(_GetXmlElementName());
+    QuerySpecification::_WriteXml(ruleNode);
+    ruleNode->AddAttributeStringValue(ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME, m_parentPropertyName.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
