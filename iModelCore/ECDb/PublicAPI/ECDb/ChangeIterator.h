@@ -27,11 +27,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! It must be used only for cases of mining specific EC information from the ChangeSet-s 
 //! without incurring the performance penalty of creating change summaries. 
 //!
-//! Use ChangeSummary instead to get a consolidated view of the changed ECInstances and 
-//! ECRelationshipInstance-s - extracting and consolidating this information involves two 
-//! passes with this iterator.
+//! See ECDbChangeSummaries to get a consolidated view of the changed ECInstances and 
+//! ECRelationshipInstances
 //!
-//! @see ChangeSet, ChangeSummary
+//! @see @ref ECDbChangeSummaries, ChangeSet
 //! @ingroup ECDbGroup
 // @bsiclass                                               12/2016
 //=======================================================================================

@@ -307,8 +307,10 @@ public:
     //! Alternatively you can specify a corresponding ECDb::ChangeSummaryCacheMode so that the cache
     //! is attached at opening time already.
     //!
-    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChangeSummaries
+    //! @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
+    //! @see BentleyApi::BeSQLite::EC::ECDb::ChangeSummaryCacheMode
     ECDB_EXPORT DbResult AttachChangeSummaryCache() const;
 
     //! Gets the file path to the ChangeSummary cache file for this %ECDb file.
