@@ -163,7 +163,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual AsyncTaskPtr<ObjectsResult> GetObject
             (
             ObjectIdCR objectId,
-            DataOrigin origin,
+            RetrieveOptions retrieveOptions,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 

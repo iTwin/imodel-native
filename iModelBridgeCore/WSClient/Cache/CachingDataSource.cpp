@@ -312,9 +312,17 @@ ICancellationTokenPtr ct
 
             if (!openResult->IsSuccess())
                 {
-                LOG.errorv("CachingDataSource::OpenOrCreate() error: %s %s",
+                LOG.errorv(
+                    "CachingDataSource::OpenOrCreate() failed with error: '%s %s' for:\n"
+                    "file: '%s'\n"
+                    "repository: '%s'\n"
+                    "server: '%s'",
                     openResult->GetError().GetMessage().c_str(),
-                    openResult->GetError().GetDescription().c_str());
+                    openResult->GetError().GetDescription().c_str(),
+                    cacheFilePath.GetNameUtf8().c_str(),
+                    client->GetRepositoryId().c_str(),
+                    client->GetWSClient()->GetServerUrl().c_str()
+                    );
 
                 // Force close cache
                 if (nullptr != ds)
@@ -683,14 +691,13 @@ Utf8String CachingDataSource::GetObjectLabel(CacheTransactionCR txn, ECInstanceK
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetObject
+AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetObjectInternal
 (
 ObjectIdCR objectId,
 DataOrigin origin,
 ICancellationTokenPtr ct
 )
     {
-    ct = CreateCancellationToken(ct);
     auto result = std::make_shared <ObjectsResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
@@ -776,6 +783,77 @@ ICancellationTokenPtr ct
             {
             return *result;
             });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                          Viktorija Adomauskaite    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<CachingDataSource::ObjectsResult> CachingDataSource::GetObject
+(
+ObjectIdCR objectId,
+RetrieveOptions retrieveOptions,
+ICancellationTokenPtr ct
+)
+    {
+    ct = CreateCancellationToken(ct);
+
+    return GetObjectInternal(objectId, retrieveOptions.GetOrigin(), ct)->Then<CachingDataSource::ObjectsResult>([=](CachingDataSource::ObjectsResult& result)
+        {
+        if (!result.IsSuccess())
+            return result;
+
+        GetObjectInBackgroundIfNeeded(objectId, retrieveOptions, result, ct);
+
+        return result;
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                          Viktorija Adomauskaite    11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::GetObjectInBackgroundIfNeeded
+(
+ObjectIdCR objectId,
+RetrieveOptions retrieveOptions,
+CachingDataSource::ObjectsResult result,
+ICancellationTokenPtr ct
+)
+    {
+    if (!retrieveOptions.GetSyncNotifier())
+        return;
+
+    if (retrieveOptions.GetOrigin() != DataOrigin::CachedData && retrieveOptions.GetOrigin() != DataOrigin::CachedOrRemoteData)
+        return;
+
+    if (result.GetValue().GetOrigin() == DataOrigin::RemoteData)
+        return;
+
+    auto finalBackgroundSyncResult = std::make_shared <SyncResult>();
+    auto backgroundSyncTask = m_cacheAccessThread->ExecuteAsyncWithoutAttachingToCurrentTask([=]
+        {
+        if (ct->IsCanceled())
+            {
+            finalBackgroundSyncResult->SetError(Status::Canceled);
+            return;
+            }
+
+        GetObjectInternal(objectId, DataOrigin::RemoteData, ct)
+            ->Then(m_cacheAccessThread, [=](CachingDataSource::ObjectsResult& result)
+            {
+            if (!result.IsSuccess())
+                finalBackgroundSyncResult->SetError(result.GetError());
+            else if (result.GetValue().GetOrigin() == DataOrigin::RemoteData)
+                finalBackgroundSyncResult->SetSuccess(SyncStatus::Synced);
+            else
+                finalBackgroundSyncResult->SetSuccess(SyncStatus::NotModified);
+            });
+        })
+            ->Then<SyncResult>([=]
+            {
+            return *finalBackgroundSyncResult;
+            });
+
+        retrieveOptions.GetSyncNotifier()->AddTask(backgroundSyncTask);
     }
 
 /*--------------------------------------------------------------------------------------+

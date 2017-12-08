@@ -46,8 +46,6 @@ m_publicIdentityTokenProvider(std::make_shared<WrapperTokenProvider>(m_mutex, m_
 m_connectionClient(connectionClient)
     {
     m_auth = CreateAuthentication(ReadAuthenticationType());
-
-    CheckAndUpdateTokenNoLock();
     }
 
 /*--------------------------------------------------------------------------------------+

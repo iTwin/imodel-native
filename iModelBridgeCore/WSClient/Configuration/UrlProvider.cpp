@@ -36,7 +36,12 @@ uint32_t s_regionsId[3] = {
     0       // No region for PROD - use BUDDI non-regional URLs
     };
 
-// Managed urls
+// Managed urls.
+// ADDING NEW URL:
+//  Submit help request "I Need Something"-> "Be Connect" -> "Buddi" on help.bentley.com.
+//  Request should contain 3 URLs and their maching regions. See s_regionsId for using proper region.
+//  Got to buddi.bentley.com to dobule check if correct URLs were added.
+// Will log errors if buddi.bentley.com does not have required URL for given environment (region).
 bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
@@ -247,10 +252,6 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsPassiveAuthUrl(
     &s_urlRegistry
     );
 
-
-
-
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -333,12 +334,13 @@ Utf8String UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUr
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Utf8String> UrlProvider::CacheBuddiUrl(Utf8StringCR urlName)
     {
-    return s_buddi->GetUrl(urlName, s_regionsId[s_env])->Then<Utf8String>(s_thread, [=] (BuddiUrlResult result)
+    uint32_t region = s_regionsId[s_env];
+    return s_buddi->GetUrl(urlName, region)->Then<Utf8String>(s_thread, [=] (BuddiUrlResult result)
         {
         Utf8String url = result.GetValue();
         if (!result.IsSuccess() || url.empty())
             {
-            LOG.errorv("URL '%s' is not configured", urlName.c_str());
+            LOG.errorv("URL '%s' is not configured on buddi service for region '%d'. Will use fallback URL.", urlName.c_str(), region);
             return url;
             }
         Json::Value record;
