@@ -68,10 +68,7 @@ protected:
 
     virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const { return false; };
-    //! Sets gridsurface axis Id
-    //! @param[in] axisId to set
-    void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces)); };
-
+    
     static GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModelAxisClassId (Dgn::SpatialLocationModelCR model, GridAxisCR axis, Dgn::DgnClassId classId);
 
 protected:
@@ -119,6 +116,10 @@ public:
     //!Returns id of axis that has this surface
     //! @return axis id of the surface
     GRIDELEMENTS_EXPORT Dgn::DgnElementId GetAxisId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Axis ()); };
+
+    //! Sets gridsurface axis Id
+    //! @param[in] axisId to set
+    GRIDELEMENTS_EXPORT void SetAxisId(Dgn::DgnElementId axisId) { SetPropertyValue(prop_Axis(), axisId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces)); };
 
     //! Returns base curve of this surface
     //! @return a ptr to a curve vector of this surface
