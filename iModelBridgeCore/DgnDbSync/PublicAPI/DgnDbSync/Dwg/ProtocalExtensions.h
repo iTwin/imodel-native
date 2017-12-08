@@ -156,6 +156,37 @@ private:
     BentleyStatus   UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel);
     };  // DwgViewportExt
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          11/17
++===============+===============+===============+===============+===============+======*/
+class DwgLightExt : public DwgProtocalExtension
+    {
+public:
+    DEFINE_T_SUPER (DwgProtocalExtension)
+    DWGRX_DECLARE_MEMBERS (DwgLightExt)
+    DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgLightExt)
+
+    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+
+private:
+    mutable ProtocalExtensionContext*   m_toBimContext;
+    mutable DwgImporter*                m_importer;
+    mutable DwgDbLightP                 m_dwgLight;
+
+    BentleyStatus  CreateOrUpdateLightGlyph (ElementResultsR results, ElementInputsR inputs) const;
+    BentleyStatus  ConvertLightParameters (Lighting::ParametersR lightParams) const;
+    void    CreateDistantLightGlyph (GeometryBuilderR builder, double lightSize) const;
+    void    CreateSpotLightGlyph (GeometryBuilderR builder, double lightSize) const;
+    bool    IsLightGlyphDisplayed () const;
+    double  CalculateLightGlyphSize () const;
+    DVec3d  CalculateLightVector (TransformR lightTransform) const;
+    double  CalculateUnitArea (DwgDbLightingUnits lightingUnits) const;
+    double  ConvertCandelasToLumen () const;
+    ColorDef GetGlyphColor () const;
+    uint32_t GetGlyphWeight () const;
+    DgnStyleId GetGlyphLinestyle () const;
+    };  // DwgLightExt
+
 
 END_DGNDBSYNC_DWG_NAMESPACE
 //__PUBLISH_SECTION_END__

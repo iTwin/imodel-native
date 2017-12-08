@@ -119,6 +119,56 @@ DwgDbObjectId   DwgDbSymbolTableIterator::GetRecordId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgDbSymbolTableIterator::GetSkipHiddenLayers () const
+    {
+#ifdef DWGTOOLKIT_RealDwg
+    AcDbLayerTableIterator* layertableIter = dynamic_cast<AcDbLayerTableIterator*> (m_symbolTableIterator);
+    if (nullptr != layertableIter)
+        return layertableIter->getSkipHidden ();
+#endif
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgDbSymbolTableIterator::SetSkipHiddenLayers (bool skip)
+    {
+#ifdef DWGTOOLKIT_RealDwg
+    AcDbLayerTableIterator* layertableIter = dynamic_cast<AcDbLayerTableIterator*> (m_symbolTableIterator);
+    if (nullptr != layertableIter)
+        layertableIter->setSkipHidden (skip);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgDbSymbolTableIterator::GetSkipReconciledLayers () const
+    {
+#ifdef DWGTOOLKIT_RealDwg
+    AcDbLayerTableIterator* layertableIter = dynamic_cast<AcDbLayerTableIterator*> (m_symbolTableIterator);
+    if (nullptr != layertableIter)
+        return layertableIter->getSkipReconciled ();
+#endif
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgDbSymbolTableIterator::SetSkipReconciledLayers (bool skip)
+    {
+#ifdef DWGTOOLKIT_RealDwg
+    AcDbLayerTableIterator* layertableIter = dynamic_cast<AcDbLayerTableIterator*> (m_symbolTableIterator);
+    if (nullptr != layertableIter)
+        layertableIter->setSkipReconciled (skip);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbSymbolTableIterator::~DwgDbSymbolTableIterator ()
     {
 #if DWGTOOLKIT_RealDwg
@@ -319,6 +369,8 @@ bool            DwgDbLayerTableRecord::IsOff () const           { return T_Super
 bool            DwgDbLayerTableRecord::IsFrozen () const        { return T_Super::isFrozen(); }
 bool            DwgDbLayerTableRecord::IsLocked () const        { return T_Super::isLocked(); }
 bool            DwgDbLayerTableRecord::IsPlottable () const     { return T_Super::isPlottable(); }
+bool            DwgDbLayerTableRecord::IsHidden () const        { return T_Super::isHidden(); }
+bool            DwgDbLayerTableRecord::IsReconciled () const    { return T_Super::isReconciled(); }
 DwgDbObjectId   DwgDbLayerTableRecord::GetLinetypeId () const   { return T_Super::linetypeObjectId(); }
 DwgDbObjectId   DwgDbLayerTableRecord::GetLinetypeId (bool& ovrd, DwgDbObjectIdCR vpId) const { return DWGDB_CALLSDKMETHOD(T_Super::linetypeObjectId(vpId,&ovrd),T_Super::linetypeObjectId(vpId,ovrd)); }
 DwgDbObjectId   DwgDbLayerTableRecord::GetMaterialId () const   { return T_Super::materialId(); }
@@ -421,7 +473,9 @@ double         DwgDbViewportTableRecord::GetSnapAngle () const { return T_Super:
 SnapIsoPair    DwgDbViewportTableRecord::GetSnapPair () const { return static_cast<SnapIsoPair>(T_Super::snapPair()); }
 bool           DwgDbViewportTableRecord::IsSnapEnabled () const { return T_Super::snapEnabled(); }
 bool           DwgDbViewportTableRecord::IsIsometricSnapEnabled () const { return T_Super::isometricSnapEnabled(); }
-int16_t        DwgDbViewportTableRecord::GetGridMajor () const { return gridMajor(); }
+int16_t        DwgDbViewportTableRecord::GetGridMajor () const { return T_Super::gridMajor(); }
+double         DwgDbViewportTableRecord::GetBrightness () const { return T_Super::brightness(); }
+DwgCmColor     DwgDbViewportTableRecord::GetAmbientLightColor () const { return static_cast<DwgCmColor>(T_Super::ambientLightColor()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16

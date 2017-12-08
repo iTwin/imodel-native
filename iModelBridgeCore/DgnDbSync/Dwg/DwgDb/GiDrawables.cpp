@@ -22,11 +22,17 @@ USING_NAMESPACE_DWGDB
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiEdgeData, AcGiEdgeData)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiFaceData, AcGiFaceData)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiVertexData, AcGiVertexData)
+ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiMapper, AcGiMapper)
+ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiMaterialColor, AcGiMaterialColor)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiMaterialTexture, AcGiMaterialTexture)
+ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiMaterialMap, AcGiMaterialMap)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiImageFileTexture, AcGiImageFileTexture)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiGenericTexture, AcGiGenericTexture)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiMarbleTexture, AcGiMarbleTexture)
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiWoodTexture, AcGiWoodTexture)
+ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiTextStyle, AcGiTextStyle)
+ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiShadowParameters, AcGiShadowParameters)
+ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiLightAttenuation, AcGiLightAttenuation)
 
 #define RETURNTRUE                      return Adesk::kTrue;
 #define RETURNFALSE                     return Adesk::kFalse;
@@ -1377,15 +1383,16 @@ void            DwgGiDrawable::Draw (IDwgDrawGeometryR drawGeom, IDwgDrawOptions
         }
     }
 
-bool            DwgGiDrawable::IsValid () { return nullptr!=m_toolkitDrawable; }
-bool            DwgGiDrawable::IsPersistent () { return nullptr!=m_toolkitDrawable ? DWGDB_IsTrue(m_toolkitDrawable->isPersistent()) : false; }
-DwgDbObjectId   DwgGiDrawable::GetId () { return nullptr!=m_toolkitDrawable ? m_toolkitDrawable->id() : DWGDB_Type(ObjectId)::kNull; }
+bool            DwgGiDrawable::IsValid () const { return nullptr!=m_toolkitDrawable; }
+bool            DwgGiDrawable::IsPersistent () const { return nullptr!=m_toolkitDrawable ? DWGDB_IsTrue(m_toolkitDrawable->isPersistent()) : false; }
+DwgDbObjectId   DwgGiDrawable::GetId () const { return nullptr!=m_toolkitDrawable ? m_toolkitDrawable->id() : DWGDB_Type(ObjectId)::kNull; }
 DwgDbEntityP    DwgGiDrawable::GetEntityP () { return DwgDbEntity::cast(m_toolkitDrawable); }
 DwgDbLineP      DwgGiDrawable::GetLineP () { return DwgDbLine::cast(m_toolkitDrawable); }
 DwgDbCircleP    DwgGiDrawable::GetCircleP () { return DwgDbCircle::cast(m_toolkitDrawable); }
 DwgDbArcP       DwgGiDrawable::GetArcP () { return DwgDbArc::cast(m_toolkitDrawable); }
 DwgDbAttributeDefinitionP  DwgGiDrawable::GetAttributeDefinitionP ()  { return DwgDbAttributeDefinition::cast(m_toolkitDrawable); }
 DwgDbBlockTableRecordP     DwgGiDrawable::GetBlockP ()  { return DwgDbBlockTableRecord::cast(m_toolkitDrawable); }
+DwgGiDrawable::DrawableType DwgGiDrawable::GetDrawableType () const { return nullptr!=m_toolkitDrawable ? static_cast<DrawableType>(m_toolkitDrawable->drawableType()) : DrawableType::Geometry; }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1867,6 +1874,23 @@ Acad::ErrorStatus   AcGiImageFileTexture::copyFrom(const AcRxObject* other) { re
 Acad::ErrorStatus   AcGiMarbleTexture::copyFrom(const AcRxObject* other) { return __super::copyFrom(other); }
 Acad::ErrorStatus   AcGiWoodTexture::copyFrom(const AcRxObject* other) { return __super::copyFrom(other); }
 #endif
+
+
+DwgGiLightAttenuation::Type DwgGiLightAttenuation::GetType () const { return static_cast<Type>(T_Super::attenuationType()); }
+bool    DwgGiLightAttenuation::UseLimits () const { return T_Super::useLimits(); }
+double  DwgGiLightAttenuation::GetStartLimit () const { return T_Super::startLimit(); }
+double  DwgGiLightAttenuation::GetEndLimit () const { return T_Super::endLimit(); }
+
+bool   DwgGiShadowParameters::AreShadowsOn () const { return T_Super::shadowsOn(); }
+DwgGiShadowParameters::Type DwgGiShadowParameters::GetShadowType () const { return static_cast<Type>(T_Super::shadowType()); }
+uint16_t   DwgGiShadowParameters::GetShadowMapSize () const { return T_Super::shadowMapSize(); }
+uint8_t    DwgGiShadowParameters::GetShadowMapSoftness () const { return T_Super::shadowMapSoftness(); }
+uint16_t   DwgGiShadowParameters::GetShadowSamples () const { return T_Super::shadowSamples(); }
+bool   DwgGiShadowParameters::IsShapeVisible() const { return T_Super::shapeVisibility(); }
+DwgGiShadowParameters::Shape  DwgGiShadowParameters::GetExtendedLightShape() const { return static_cast<Shape>(T_Super::extendedLightShape()); }
+double DwgGiShadowParameters::GetExtendedLightLength() const { return  T_Super::extendedLightLength(); }
+double DwgGiShadowParameters::GetExtendedLightWidth() const { return T_Super::extendedLightWidth(); }
+double DwgGiShadowParameters::GetExtendedLightRadius() const { return T_Super::extendedLightRadius(); }
 
 
 #ifdef DWGTOOLKIT_OpenDwg
