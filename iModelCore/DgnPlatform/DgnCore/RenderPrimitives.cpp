@@ -1027,63 +1027,35 @@ bool TriangleKey::operator<(TriangleKeyCR rhs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
+* @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
+bool VertexKey::operator<(VertexKeyCR rhs) const
     {
-    // We never merge meshes where these differ...
-    BeAssert(lhs.m_normalValid == rhs.m_normalValid);
-    BeAssert(lhs.m_paramValid == rhs.m_paramValid);
+    // This primarily exists because VertexKey comparisons are quite slow in non-optimized builds and app teams complained...
+    static_assert(1 == sizeof(DgnGeometryClass), "unexpected size");
+    static_assert(std::is_standard_layout_v<VertexKey>, "not standard layout");
+    static_assert(0x00 == offsetof(VertexKey, m_param), "unexpected offset");
+    static_assert(0x10 == offsetof(VertexKey, m_normalAndPos), "unexpected offset");
+    static_assert(0x18 == offsetof(VertexKey, m_elemId), "unexpected offset");
+    static_assert(0x20 == offsetof(VertexKey, m_subcatId), "unexpected offset");
+    static_assert(0x28 == offsetof(VertexKey, m_fillColor), "unexpected offset");
+    static_assert(0x2C == offsetof(VertexKey, m_class), "unexpected offset");
+    static_assert(0x2D == offsetof(VertexKey, m_normalValid), "unexpected offset");
 
-    auto posCmp = memcmp(&lhs.m_position, &rhs.m_position, sizeof(uint16_t)*3);
-    if (0 != posCmp)
-        return posCmp < 0;
+    size_t offset = offsetof(VertexKey, m_normalAndPos) + m_normalValid ? 0 : sizeof(uint16_t);
+    size_t size = offsetof(VertexKey, m_normalValid) - offset;
+    auto cmp = memcmp(reinterpret_cast<uint8_t const*>(this)+offset, reinterpret_cast<uint8_t const*>(&rhs)+offset, size);
+    if (0 != cmp)
+        return cmp < 0;
 
-    COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
-    COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
-
-    if (lhs.m_normalValid)
-        COMPARE_VALUES(lhs.m_normal, rhs.m_normal);
-
-    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
-
-    constexpr double s_paramTolerance  = .1;
-    if (lhs.m_paramValid)
+    if (m_paramValid)
         {
-        BeAssert(rhs.m_paramValid);
-        COMPARE_VALUES_TOLERANCE (lhs.m_param.x, rhs.m_param.x, s_paramTolerance);
-        COMPARE_VALUES_TOLERANCE (lhs.m_param.y, rhs.m_param.y, s_paramTolerance);
+        constexpr double s_paramTolerance  = .1;
+        COMPARE_VALUES_TOLERANCE (m_param.x, rhs.m_param.x, s_paramTolerance);
+        COMPARE_VALUES_TOLERANCE (m_param.y, rhs.m_param.y, s_paramTolerance);
         }
 
-    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
-
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-VertexKey::VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal, DPoint2dCP param)
-    : m_position(point, qParams), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
-    {
-    if (m_normalValid)
-        m_normal.InitFrom(*normal);
-
-    if (m_paramValid)
-        m_param = *param;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-VertexKey::VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param)
-    : m_position(point), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
-    {
-    if (m_normalValid)
-        m_normal = *normal;
-
-    if (m_paramValid)
-        m_param = DPoint2d::From(*param);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1215,11 +1187,10 @@ uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     auto index = static_cast<uint32_t>(m_mesh->Verts().size());
     auto insertPair = verts.Insert(vertex, index);
     if (insertPair.second)
-        m_mesh->AddVertex(vertex.m_position, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
+        m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
 
     return insertPair.first->second;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
