@@ -136,7 +136,19 @@ void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SMNodeGroup::SaveTilesetToCache(Json::Value & tileset, const uint64_t& priorityNodeID, bool generateIDs)
     {
-    assert(tileset.isMember("root"));
+    assert(tileset.isMember("asset") && tileset.isMember("root"));
+
+    if (tileset["asset"].isMember("gltfUpAxis"))
+        {
+        auto gltfUpAxis = tileset["asset"]["gltfUpAxis"].asString();
+        if (gltfUpAxis == "Z") m_upAxis = UpAxis::Z;
+        else if (gltfUpAxis == "Y") m_upAxis = UpAxis::Y;
+        else if (gltfUpAxis == "X") m_upAxis = UpAxis::X;
+        else
+            {
+            BeAssert(false); // Unknown up axis for gltf
+            }
+        }
     if (generateIDs)
         {
         auto& currentSMHeader = m_tilesetRootNode["SMHeader"];

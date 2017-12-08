@@ -1436,10 +1436,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         if (cesiumNodeHeader.isMember("transform"))
             {
             auto& transform = cesiumNodeHeader["transform"];
-            m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
-                                                   transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
-                                                   transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
-            //m_transform = Transform::From(533459, 5212605, 0);
+            m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[4].asDouble(), transform[8].asDouble(), transform[12].asDouble(),
+                                                   transform[1].asDouble(), transform[5].asDouble(), transform[9].asDouble(), transform[13].asDouble(),
+                                                   transform[2].asDouble(), transform[6].asDouble(), transform[10].asDouble(), transform[14].asDouble());
             }
 
         if (cesiumNodeHeader.isMember("boundingVolume"))
@@ -1447,15 +1446,31 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             auto const& bv = cesiumNodeHeader["boundingVolume"];
             if (bv.isMember("box"))
                 {
+                header->m_nodeExtent.Init();
                 auto const& boundingBox = bv["box"];
+                bvector<DPoint3d> corners;
                 DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
-                DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
-                ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, center.x - direction.x);
-                ExtentOp<EXTENT>::SetYMin(header->m_nodeExtent, center.y - direction.y);
-                ExtentOp<EXTENT>::SetZMin(header->m_nodeExtent, center.z - direction.z);
-                ExtentOp<EXTENT>::SetXMax(header->m_nodeExtent, center.x + direction.x);
-                ExtentOp<EXTENT>::SetYMax(header->m_nodeExtent, center.y + direction.y);
-                ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + direction.z);
+
+                RotMatrix halfAxes = RotMatrix::FromRowValues(boundingBox[3].asDouble(), boundingBox[6].asDouble(), boundingBox[9].asDouble(),
+                                                                    boundingBox[4].asDouble(), boundingBox[7].asDouble(), boundingBox[10].asDouble(), 
+                                                                    boundingBox[5].asDouble(), boundingBox[8].asDouble(), boundingBox[11].asDouble());
+                
+                m_transform.Multiply(center, center);
+                
+                RotMatrix rotationScale = RotMatrix::From(m_transform);
+                rotationScale.productOf(&rotationScale, &halfAxes);
+                
+                auto transform = Transform::From(rotationScale, center);
+                corners.push_back(DPoint3d::From(-1.0, -1.0, -1.0));
+                corners.push_back(DPoint3d::From(-1.0, -1.0, 1.0));
+                corners.push_back(DPoint3d::From(-1.0, 1.0, -1.0));
+                corners.push_back(DPoint3d::From(1.0, -1.0, -1.0));
+                corners.push_back(DPoint3d::From(-1.0, 1.0, 1.0));
+                corners.push_back(DPoint3d::From(1.0, -1.0, 1.0));
+                corners.push_back(DPoint3d::From(1.0, 1.0, -1.0));
+                corners.push_back(DPoint3d::From(1.0, 1.0, 1.0));
+
+                header->m_nodeExtent.Extend(transform, corners);
                 }
             else
                 {
@@ -1471,22 +1486,35 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                 ExtentOp<EXTENT>::SetZMax(header->m_nodeExtent, center.z + radius);
                 }
 
-            m_transform.Multiply(header->m_nodeExtent, header->m_nodeExtent);
             header->m_contentExtentDefined = cesiumNodeHeader.isMember("content") && cesiumNodeHeader["content"].isMember("boundingVolume");
             if (header->m_contentExtentDefined)
                 {
                 auto const& contentBV = cesiumNodeHeader["content"]["boundingVolume"];
                 if (contentBV.isMember("box"))
                     {
+                    header->m_contentExtent.Init();
                     auto& boundingBox = contentBV["box"];
+                    bvector<DPoint3d> corners;
                     DPoint3d center = DPoint3d::From(boundingBox[0].asDouble(), boundingBox[1].asDouble(), boundingBox[2].asDouble());
-                    DPoint3d direction = DPoint3d::From(boundingBox[3].asDouble(), boundingBox[7].asDouble(), boundingBox[11].asDouble()); // assumes boxes are aligned with axes
-                    ExtentOp<EXTENT>::SetXMin(header->m_contentExtent, center.x - direction.x);
-                    ExtentOp<EXTENT>::SetYMin(header->m_contentExtent, center.y - direction.y);
-                    ExtentOp<EXTENT>::SetZMin(header->m_contentExtent, center.z - direction.z);
-                    ExtentOp<EXTENT>::SetXMax(header->m_contentExtent, center.x + direction.x);
-                    ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + direction.y);
-                    ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + direction.z);
+                    RotMatrix halfAxes = RotMatrix::FromRowValues(boundingBox[3].asDouble(), boundingBox[6].asDouble(), boundingBox[9].asDouble(),
+                                                                        boundingBox[4].asDouble(), boundingBox[7].asDouble(), boundingBox[10].asDouble(), 
+                                                                        boundingBox[5].asDouble(), boundingBox[8].asDouble(), boundingBox[11].asDouble());
+                    
+                    m_transform.Multiply(center, center);
+                    
+                    RotMatrix rotationScale = RotMatrix::From(m_transform);
+                    rotationScale.productOf(&rotationScale, &halfAxes);
+                    
+                    auto transform = Transform::From(rotationScale, center);
+                    corners.push_back(DPoint3d::From(-1.0, -1.0, -1.0));
+                    corners.push_back(DPoint3d::From(-1.0, -1.0, 1.0));
+                    corners.push_back(DPoint3d::From(-1.0, 1.0, -1.0));
+                    corners.push_back(DPoint3d::From(1.0, -1.0, -1.0));
+                    corners.push_back(DPoint3d::From(-1.0, 1.0, 1.0));
+                    corners.push_back(DPoint3d::From(1.0, -1.0, 1.0));
+                    corners.push_back(DPoint3d::From(1.0, 1.0, -1.0));
+                    corners.push_back(DPoint3d::From(1.0, 1.0, 1.0));
+                    header->m_contentExtent.Extend(transform, corners);
                     }
                 else
                     {
@@ -1501,13 +1529,13 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                     ExtentOp<EXTENT>::SetYMax(header->m_contentExtent, center.y + radius);
                     ExtentOp<EXTENT>::SetZMax(header->m_contentExtent, center.z + radius);
                     }
-                m_transform.Multiply(header->m_contentExtent, header->m_contentExtent);
                 }
             else
                 {
                 header->m_contentExtent = header->m_nodeExtent;
                 }
             }
+
         uint32_t idx = header->m_id.m_integerID;
 
         if (header->m_isTextured)
@@ -1821,7 +1849,8 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileM
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
     assert(m_nodeHeaderCache.count(nodeHeader->m_id.m_integerID) == 1);
-    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, m_settings->IsPublishing());
+    auto group = m_CesiumGroup->GetCache()->GetGroupForNodeIDFromCache(nodeHeader->m_id.m_integerID);
+    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, group, m_settings->IsPublishing());
     return true;
     }
 
@@ -1890,27 +1919,14 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         }
 
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
-
-    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
-    //if (s_stream_from_disk)
-    //    {
-    //    // Create base directory structure to store information if not already done
-    //    BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
-    //    path.AppendToPath(m_dataSourceURL.c_str());
-    //    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
-    //    assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
-    //    }
-    //else
-    //    {
-    //    // stream from azure
-    //    }
     }
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, bool isPublishing, bool compress)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup, bool isPublishing, bool compress)
     : m_dataSourceAccount(dataSourceAccount),
     m_nodeHeader(nodeHeader),
     m_jsonHeader(&header),
     m_dataType(type),
-    m_transform(transform)
+    m_transform(transform),
+    m_nodeGroup(nodeGroup)
     {
     switch (m_dataType)
         {
@@ -2115,14 +2131,6 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         }
     else
         {
-        if (m_jsonHeader->isMember("transform"))
-            {
-            auto& transform = (*m_jsonHeader)["transform"];
-            m_transform = Transform::FromRowValues(transform[0].asDouble(), transform[1].asDouble(), transform[2].asDouble(), transform[12].asDouble(),
-                                                   transform[4].asDouble(), transform[5].asDouble(), transform[6].asDouble(), transform[13].asDouble(),
-                                                   transform[8].asDouble(), transform[9].asDouble(), transform[10].asDouble(), transform[14].asDouble());
-            }
-
         Cesium3DTilesBase* pData = (Cesium3DTilesBase*)(DataTypeArray);
         assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0);
         assert(!m_nodeHeader->m_isTextured || (m_nodeHeader->m_isTextured && pData->m_uvData != 0 && pData->m_textureData != 0));
@@ -2165,10 +2173,9 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
             block->SetURL(DataSourceURL(dataURL.c_str()));
             block->SetDataSourceURL(m_dataSourceURL);
             block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
+            block->SetTransform(m_transform);
+            block->SetGltfUpAxis(m_nodeGroup->GetGltfUpAxis());
             block->Load(m_dataSourceAccount, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
-
-            // Apply transform on result
-            block->ApplyTransformOnPoints(m_transform);
             }
         }
     //assert(block->GetID() == blockID.m_integerID);
@@ -2321,6 +2328,16 @@ inline void StreamingDataBlock::SetDataSourcePrefix(const std::wstring & prefix)
 inline void StreamingDataBlock::SetDataSourceExtension(const std::wstring & extension)
     {
     m_extension = extension;
+    }
+
+inline void StreamingDataBlock::SetTransform(const Transform& transform)
+    {
+    m_transform = transform;
+    }
+
+inline void StreamingDataBlock::SetGltfUpAxis(UpAxis gltfUpAxis)
+    {
+    m_gltfUpAxis = gltfUpAxis;
     }
 
 void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize)
@@ -2654,32 +2671,48 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         {
         m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
         m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
-        auto transform = Transform::FromIdentity();
+        auto transform = m_transform;
         bool isTransformIdentity = true;
         if (!RTCExtension.isNull() && RTCExtension.isMember("center"))
             {
             auto center = RTCExtension["center"];
             Transform rtcTransform = Transform::From(center[0].asDouble(), center[1].asDouble(), center[2].asDouble());
-            transform = Transform::FromProduct(rtcTransform, transform);
-            isTransformIdentity = transform.IsIdentity();
+            transform = Transform::FromProduct(transform, rtcTransform);
             }
-        // NEEDS_WORK_SM_STREAMING : Ray's TilePublisher stores vertices using the Z-up convention while CC follows the 3DTiles spec which stores vertices using the Y-up convention
+        if (m_gltfUpAxis == UpAxis::Y)
+            {
+            auto transformAxes = Transform::FromRowValues(1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0);
+            transform = Transform::FromProduct(transform, transformAxes);
+            }
+        isTransformIdentity = transform.IsIdentity();
+
         if (points_are_quantized)
             {
             auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
-            // decode matrix is stored as column major
+            auto& decodeMinJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodedMin"];
+            auto& decodeMaxJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodedMax"];
 
-            //const FPoint3d scale = { decodeMatrixJson[0].asFloat(), decodeMatrixJson[5].asFloat(), decodeMatrixJson[10].asFloat() };
-            //const FPoint3d translate = { decodeMatrixJson[12].asFloat(), decodeMatrixJson[13].asFloat(), decodeMatrixJson[14].asFloat() };
-            const DPoint3d scale = { decodeMatrixJson[0].asDouble(), decodeMatrixJson[5].asDouble(), decodeMatrixJson[10].asDouble() };
-            const DPoint3d translate = { decodeMatrixJson[12].asDouble(), decodeMatrixJson[13].asDouble(), decodeMatrixJson[14].asDouble() };
+            DPoint3d decMin = { decodeMinJson[0].asDouble(), decodeMinJson[1].asDouble(), decodeMinJson[2].asDouble() };
+            DPoint3d decMax = { decodeMaxJson[0].asDouble(), decodeMaxJson[1].asDouble(), decodeMaxJson[2].asDouble() };
+
+            // decode matrix is stored as column major
+            auto decodeMatrix = Transform::FromRowValues(decodeMatrixJson[0].asDouble(), decodeMatrixJson[4].asDouble(), decodeMatrixJson[8].asDouble(), decodeMatrixJson[12].asDouble(),
+                                                         decodeMatrixJson[1].asDouble(), decodeMatrixJson[5].asDouble(), decodeMatrixJson[9].asDouble(), decodeMatrixJson[13].asDouble(), 
+                                                         decodeMatrixJson[2].asDouble(), decodeMatrixJson[6].asDouble(), decodeMatrixJson[10].asDouble(), decodeMatrixJson[14].asDouble());
 
             auto point_array = (uint16_t*)(buffer + point_buffer_pointer.offset);
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
-                DPoint3d point = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
-                m_tileData.m_pointData[i] = DPoint3d::From(point.x, -point.z, point.y);
-                if (!isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
+                DPoint3d point = DPoint3d::From(point_array[3 * i], point_array[3 * i + 1], point_array[3 * i + 2]);
+                decodeMatrix.Multiply(point, point);
+                if (point.x < decMin.x) point.x = decMin.x;
+                if (point.y < decMin.y) point.y = decMin.y;
+                if (point.z < decMin.z) point.z = decMin.z;
+                if (point.x > decMax.x) point.x = decMax.x;
+                if (point.y > decMax.y) point.y = decMax.y;
+                if (point.z > decMax.z) point.z = decMax.z;
+                if (!isTransformIdentity) transform.Multiply(point, point);
+                m_tileData.m_pointData[i] = point;
                 }
 
             }
@@ -2688,9 +2721,9 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             auto point_array = (float*)(buffer + point_buffer_pointer.offset);
             for (uint32_t i = 0; i < m_tileData.numPoints; i++)
                 {
-                // The 3DTiles spec suggests using y-up so convert those back to z-up here
-                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], -point_array[3 * i + 2], point_array[3 * i + 1]);
-                if (!isTransformIdentity) transform.Multiply(m_tileData.m_pointData[i], m_tileData.m_pointData[i]);
+                auto point = DPoint3d::From(point_array[3 * i], point_array[3 * i + 1], point_array[3 * i + 2]);
+                if (!isTransformIdentity) transform.Multiply(point, point);
+                m_tileData.m_pointData[i] = point;
                 }
             }
         }

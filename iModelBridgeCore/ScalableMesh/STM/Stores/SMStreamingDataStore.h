@@ -312,6 +312,10 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         void SetDataSourceExtension(const std::wstring& extension);
 
+        void SetTransform(const Transform& transform);
+
+        void SetGltfUpAxis(UpAxis gltfUpAxis);
+
         void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
 
         DPoint3d* GetPoints();
@@ -339,6 +343,9 @@ struct StreamingDataBlock : public bvector<uint8_t>
         std::wstring m_extension = L".bin";
         condition_variable m_pDataBlockCV;
         mutex m_pDataBlockMutex;
+        Transform m_transform;
+        UpAxis m_gltfUpAxis;
+
 
     private:
         struct Cesium3DTilesData : Cesium3DTilesBase
@@ -364,7 +371,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
 
-        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, bool isPublishing = false, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
         
         virtual ~SMStreamingNodeDataStore();
 

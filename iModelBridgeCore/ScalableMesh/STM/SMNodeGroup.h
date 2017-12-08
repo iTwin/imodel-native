@@ -368,6 +368,8 @@ FORWARD_DECL_GROUPING_STRATEGY(SMCesium3DTileStrategy);
     CREATE_GROUPING_STRATEGY_FRIENDSHIP(SMBentleyGroupingStrategy) \
     CREATE_GROUPING_STRATEGY_FRIENDSHIP(SMCesium3DTileStrategy)
 
+enum class UpAxis { X, Y, Z };
+
 class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
@@ -378,6 +380,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     private:
         bool   m_isLoaded = false;
         bool   m_isLoading = false;
+        UpAxis   m_upAxis = UpAxis::Y;
         uint32_t m_level = 0;
         size_t m_totalSize;
         uint32_t m_nLevels = 0;
@@ -447,6 +450,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         uint32_t GetLevel() { return m_level; }
 
         void SetLevel(const uint32_t& pi_NewID) { m_level = pi_NewID; }
+
+        UpAxis GetGltfUpAxis() { return m_upAxis; }
 
         void Append3DTile(const uint64_t& nodeID, const uint64_t& parentNodeID, const Json::Value& tile);
 
