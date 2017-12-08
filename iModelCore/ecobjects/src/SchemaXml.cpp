@@ -13,6 +13,26 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef bvector<bpair<ECClassP, BeXmlNodeP>>  ClassDeserializationVector;
 
+static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
+    "BaseElementSchema",
+    "BentleyDesignLinksPersistence",
+    "BentleyDesignLinksPresetnation",
+    "BentleyDrawingLinksPersistence",
+    "DetailSymbolExtender",
+    "DgnComponentSchema",
+    "DgnContentRelationshipSchema",
+    "DgnCustomAttributes",
+    "DgnElementSchema",
+    "DgnFileSchema",
+    "DgnindexQueryschema",
+    "DgnLevelSchema",
+    "DgnModelSchema",
+    "DgnPointCloudSchema",
+    "DgnTextStyleObjSchema",
+    "DgnVisualizationObjSchema",
+    "ExtendedElementSchema",
+    "MstnPropertyFormatter"
+    };
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -22,8 +42,11 @@ struct SchemaXmlReaderImpl
         BeXmlDomR               m_xmlDom;
         ECSchemaReadContextR    m_schemaContext;
         ECSchemaPtr m_conversionSchema;
+        bvector<Utf8String>     m_droppedPrefixes;
 
         bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
+        bool IsDgnV8DeliveredSchema(Utf8CP referencedECSchemaName);
+
         virtual bool ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut) = 0;
         virtual SchemaReadStatus _ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes);
         virtual SchemaReadStatus _ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
@@ -124,6 +147,20 @@ bool  SchemaXmlReaderImpl::IsOpenPlantPidCircularReferenceSpecialCase
     }
 
 //---------------------------------------------------------------------------------------
+// The DgnV8Converter ignores any Dgn system delivered schemas.  Unfortunately, we occasionally come across a 
+// domain schema that references one of these schemas and uses their classes as a base class.  
+// These schemas have absolutely no meaning in the bis world, so it is fine to bring the domain schema
+// in without those references.
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaXmlReaderImpl::IsDgnV8DeliveredSchema(Utf8CP referencedECSchemaName)
+    {
+
+    auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [referencedECSchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(referencedECSchemaName, dgnv8) == 0; });
+    return found != s_dgnV8DeliveredSchemas.end();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
@@ -175,6 +212,12 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
         // If the schema (uselessly) references itself, just skip it
         if (schemaOut->GetSchemaKey().m_schemaName.compare(key.m_schemaName) == 0)
             continue;
+
+        if (schemaOut->OriginalECXmlVersionLessThan(ECVersion::V3_0) && IsDgnV8DeliveredSchema(key.GetName().c_str()))
+            {
+            m_droppedPrefixes.push_back(alias);
+            continue;
+            }
 
         Utf8String schemaFullName = schemaOut->GetFullSchemaName();
         if (IsOpenPlantPidCircularReferenceSpecialCase(key.m_schemaName, schemaFullName))
@@ -318,7 +361,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
         {
         ecClass = classesIterator->first;
         classNode = classesIterator->second;
-        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, conversionSchema.get(), navigationProperties);
+        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, conversionSchema.get(), m_droppedPrefixes, navigationProperties);
         if (SchemaReadStatus::Success != status)
             {
             LOG.errorv("Failed to read class '%s' from schema '%s'", ecClass->GetName().c_str(), schemaOut->GetName().c_str());

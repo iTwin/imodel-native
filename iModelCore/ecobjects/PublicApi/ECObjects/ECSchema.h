@@ -1470,13 +1470,14 @@ protected:
     //! @param[in]  classNode       The XML DOM node to read
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
     //! @param[in]  conversionSchema  If there was a supplied schema to assist in converting from V2 to V3
+    //! @param[in]  droppedAliases  A list of aliases from referenced schemas that are no longer being referenced
     //! @param[out] navigationProperties A running list of all navigation properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties);
+    virtual SchemaReadStatus _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<Utf8String>& droppedAliases, bvector<NavigationECPropertyP>& navigationProperties);
 
     void _ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments);
 
-    SchemaReadStatus _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
+    SchemaReadStatus _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<Utf8String>& droppedAliases);
     SchemaReadStatus _ReadPropertyFromXmlAndAddToClass(ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName);
 
     virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
@@ -2471,7 +2472,7 @@ protected:
     SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
     SchemaWriteStatus _WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties) const override;
     SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
-    SchemaReadStatus _ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
+    SchemaReadStatus _ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<Utf8String>& droppedAliases, bvector<NavigationECPropertyP>& navigationProperties) override;
 
     ECRelationshipClassCP _GetRelationshipClassCP() const override {return this;}
     ECRelationshipClassP _GetRelationshipClassP()  override {return this;}

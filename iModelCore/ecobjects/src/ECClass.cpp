@@ -2013,7 +2013,7 @@ void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<Utf8String>& droppedAliases, bvector<NavigationECPropertyP>& navigationProperties)
     {
     bvector<Utf8String> comments;
 
@@ -2051,7 +2051,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, ECXML_BASE_CLASS_ELEMENT)))
             {
-            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema);
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema, droppedAliases);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -2169,7 +2169,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr            09/2012
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema)
+SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<Utf8String>& droppedAliases)
     {
     Utf8String qualifiedClassName;
     childNode->GetContent (qualifiedClassName);
@@ -2184,6 +2184,10 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
 
         return SchemaReadStatus::InvalidECSchemaXml;
         }
+
+    auto found = std::find_if(droppedAliases.begin(), droppedAliases.end(), [alias] (Utf8String dgnv8) ->bool { return dgnv8.EqualsIAscii(alias); });
+    if (found != droppedAliases.end())
+        return SchemaReadStatus::Success;
 
     ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP (alias);
     if (NULL == resolvedSchema)
@@ -4357,9 +4361,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<Utf8String>& droppedAliases, bvector<NavigationECPropertyP>& navigationProperties)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, navigationProperties);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, droppedAliases, navigationProperties);
     if (status != SchemaReadStatus::Success)
         return status;
 
