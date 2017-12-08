@@ -543,7 +543,7 @@ HitDetail::~HitDetail() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_Draw(ViewContextR context) const {context.VisitHit(*this);}
+void HitDetail::_Draw(DecorateContextR context) const {context.DrawHit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
@@ -903,7 +903,7 @@ void IntersectDetail::_SetHilited(bool newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_Draw(ViewContextR context) const
+void IntersectDetail::_Draw(DecorateContextR context) const
     {
     // start by drawing the first path normally
     T_Super::_Draw(context);

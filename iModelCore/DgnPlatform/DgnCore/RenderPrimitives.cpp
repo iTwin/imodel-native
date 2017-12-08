@@ -117,13 +117,8 @@ struct SolidKernelGeometry : Geometry
 {
 private:
     IBRepEntityPtr      m_entity;
-    BeMutex             m_mutex;
 
-    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
-        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
-        {
-        //
-        }
+    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db);
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
@@ -938,7 +933,7 @@ void Mesh::Features::SetIndices(bvector<uint32_t>&& indices)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Mesh::GetRange() const
+DRange3d Mesh::ComputeRange() const
     {
     DRange3d range = DRange3d::NullRange();
     auto const& points = Points();
@@ -952,7 +947,7 @@ DRange3d Mesh::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Mesh::GetUVRange() const
+DRange3d Mesh::ComputeUVRange() const
     {
     DRange3d range = DRange3d::NullRange();
     for (auto const& fpoint : m_uvParams)
@@ -1031,63 +1026,35 @@ bool TriangleKey::operator<(TriangleKeyCR rhs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
+* @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
+bool VertexKey::operator<(VertexKeyCR rhs) const
     {
-    // We never merge meshes where these differ...
-    BeAssert(lhs.m_normalValid == rhs.m_normalValid);
-    BeAssert(lhs.m_paramValid == rhs.m_paramValid);
+    // This primarily exists because VertexKey comparisons are quite slow in non-optimized builds and app teams complained...
+    static_assert(1 == sizeof(DgnGeometryClass), "unexpected size");
+    static_assert(std::is_standard_layout<VertexKey>::value, "not standard layout");
+    static_assert(0x00 == offsetof(VertexKey, m_param), "unexpected offset");
+    static_assert(0x10 == offsetof(VertexKey, m_normalAndPos), "unexpected offset");
+    static_assert(0x18 == offsetof(VertexKey, m_elemId), "unexpected offset");
+    static_assert(0x20 == offsetof(VertexKey, m_subcatId), "unexpected offset");
+    static_assert(0x28 == offsetof(VertexKey, m_fillColor), "unexpected offset");
+    static_assert(0x2C == offsetof(VertexKey, m_class), "unexpected offset");
+    static_assert(0x2D == offsetof(VertexKey, m_normalValid), "unexpected offset");
 
-    auto posCmp = memcmp(&lhs.m_position, &rhs.m_position, sizeof(uint16_t)*3);
-    if (0 != posCmp)
-        return posCmp < 0;
+    size_t offset = offsetof(VertexKey, m_normalAndPos) + m_normalValid ? 0 : sizeof(uint16_t);
+    size_t size = offsetof(VertexKey, m_normalValid) - offset;
+    auto cmp = memcmp(reinterpret_cast<uint8_t const*>(this)+offset, reinterpret_cast<uint8_t const*>(&rhs)+offset, size);
+    if (0 != cmp)
+        return cmp < 0;
 
-    COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
-    COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
-
-    if (lhs.m_normalValid)
-        COMPARE_VALUES(lhs.m_normal, rhs.m_normal);
-
-    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
-
-    constexpr double s_paramTolerance  = .1;
-    if (lhs.m_paramValid)
+    if (m_paramValid)
         {
-        BeAssert(rhs.m_paramValid);
-        COMPARE_VALUES_TOLERANCE (lhs.m_param.x, rhs.m_param.x, s_paramTolerance);
-        COMPARE_VALUES_TOLERANCE (lhs.m_param.y, rhs.m_param.y, s_paramTolerance);
+        constexpr double s_paramTolerance  = .1;
+        COMPARE_VALUES_TOLERANCE (m_param.x, rhs.m_param.x, s_paramTolerance);
+        COMPARE_VALUES_TOLERANCE (m_param.y, rhs.m_param.y, s_paramTolerance);
         }
 
-    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
-
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-VertexKey::VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal, DPoint2dCP param)
-    : m_position(point, qParams), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
-    {
-    if (m_normalValid)
-        m_normal.InitFrom(*normal);
-
-    if (m_paramValid)
-        m_param = *param;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-VertexKey::VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param)
-    : m_position(point), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
-    {
-    if (m_normalValid)
-        m_normal = *normal;
-
-    if (m_paramValid)
-        m_param = DPoint2d::From(*param);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1219,11 +1186,10 @@ uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     auto index = static_cast<uint32_t>(m_mesh->Verts().size());
     auto insertPair = verts.Insert(vertex, index);
     if (insertPair.second)
-        m_mesh->AddVertex(vertex.m_position, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
+        m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
 
     return insertPair.first->second;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -1425,8 +1391,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         {
         bool addNormals = facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount(),
              addParams = facetOptions.GetParamsRequired() && 0 == geom.GetParamCount(),
-             addFaceData = addParams && 0 == geom.GetFaceCount(),
-             addEdgeChains = facetOptions.GetEdgeChainsRequired() && 0 == geom.GetEdgeChainCount();
+             addFaceData = addParams && 0 == geom.GetFaceCount();
 
         if (addNormals)
             AddNormals(*polyface, facetOptions);
@@ -1440,8 +1405,8 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
             polyface->Triangulate(3);
 
-        if (addEdgeChains)
-            polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
+        // Not necessary to add edges chains -- edges will be generated from visibility flags later
+        // and decimation will not handle edge chains correctly.
         }
 
     return polyface;
@@ -1570,6 +1535,17 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
+        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)    
+    PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context)
@@ -1577,16 +1553,9 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
     PolyfaceList tilePolyfaces;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
-#if defined(WIP_PMARKS)
-    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
-#endif
-
-    // Cannot process the same solid entity simultaneously from multiple threads...
-    BeMutexHolder lock(m_mutex);
-
     DRange3d entityRange = m_entity->GetEntityRange();
     if (entityRange.IsNull())
-        return tilePolyfaces;
+        return tilePolyfaces;                                                                                                                                                                                                 
 
     double              rangeDiagonal = entityRange.DiagonalDistance();
     static double       s_minRangeRelTol = 1.0e-4;
@@ -1792,10 +1761,6 @@ bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayPara
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryAccumulator::Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
-    PSolidThreadUtil::WorkerThreadInnerMark innerMark;
-#endif
-
     DRange3d range = body.GetEntityRange();
     Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
     tf.Multiply(range, range);
@@ -2973,18 +2938,15 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
     {
-    constexpr double s_sizeToToleranceRatio = 0.25;
-    double tolerance;
-
     auto const& params = GetCreateParams();
     if (params.IsViewCoordinates())
         {
-        tolerance = 1.0;
+        return 0.25;
         }
     else if (nullptr == params.GetViewport())
         {
         BeAssert(!accum.GetGeometries().ContainsCurves() && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
-        tolerance = 20.0;
+        return 20.0;
         }
     else
         {
@@ -2993,10 +2955,8 @@ double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
 
         // NB: Geometry::CreateFacetOptions() will apply any scale factors from transform...no need to do it here.
         DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-        tolerance = params.GetViewport()->GetPixelSizeAtPoint(&pt);
+        return params.GetViewport()->GetPixelSizeAtPoint(&pt);
         }
-
-    return tolerance * s_sizeToToleranceRatio;
     }
 
 /*---------------------------------------------------------------------------------**//**

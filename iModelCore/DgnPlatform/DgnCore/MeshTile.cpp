@@ -991,7 +991,9 @@ private:
         , m_db(db)
 #endif
         {
-        //
+#if defined (BENTLEYCONFIG_PARASOLID)    
+        PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+#endif
         }
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
@@ -1346,9 +1348,8 @@ TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR f
 TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)    
-    // We need to generate facets in this threads parasolid partition so that we
-    // can roll them back correctly in the event of a server parasolid error.
-    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+    // Set mark so that we can roll back if severe error occurs.
+    PSolidThreadUtil::SetThreadPartitionMark();
 
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
@@ -2484,9 +2485,6 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
     {
     // We need to generate these in this threads parasolid partition so that we 
     // can roll them back correctly in the event of a server parasolid error.
-#if defined (BENTLEYCONFIG_PARASOLID)    
-    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
-#endif
 
     IBRepEntityPtr  clone = const_cast<IBRepEntityP>(&solid);
     DRange3d        range = clone->GetEntityRange();
@@ -2622,7 +2620,6 @@ private:
         }
 
     StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
-    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
 
     static Render::ViewFlags GetDefaultViewFlags()
         {
@@ -2720,43 +2717,6 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings 09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_PARASOLID) 
-static bool hasPartOrBRep(GeometrySourceCR source)
-    {
-    GeometryCollection collection(source);
-
-    for (auto iter : collection)
-        {
-        if (GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType() ||
-            GeometryCollection::Iterator::EntryType::GeometryPart == iter.GetEntryType())      
-            return true;
-        }
-
-    return false;
-    }
-#endif
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    // If the geometry has a parasolid BRep (or a part that may contain a BREP (TFS# 778151)) then create a mark so that work is done in this threads lightweight partition and
-    // error handling works properly..
-    PSolidThreadUtil::WorkerThreadInnerMarkPtr        innerMark;
-    if (hasPartOrBRep(source))
-        innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
-
-    Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
-    return WasAborted() ? nullptr : graphic;
-#else
-    return nullptr;
-#endif
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016

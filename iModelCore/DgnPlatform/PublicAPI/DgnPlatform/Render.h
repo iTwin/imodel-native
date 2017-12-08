@@ -873,7 +873,7 @@ enum class BackgroundFill
     Outline = 2, //!< single color fill uses the view's background color and line color to draw an outline fill
 };
 
-enum class DgnGeometryClass
+enum class DgnGeometryClass : uint8_t
 {
     Primary      = 0,
     Construction = 1,
@@ -1878,8 +1878,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPairList)
 namespace Quantization
 {
     constexpr double RangeScale() { return static_cast<double>(0xffff); }
-
-    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
+    constexpr double MaxScale() { return 1000000.0; } // 32-bit floats offer ~6.92 decimal digits of precision...
+    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : std::min(MaxScale(), RangeScale() / extent); }
 
     inline bool IsInRange(double quantizedPos)
         {
@@ -1888,7 +1888,7 @@ namespace Quantization
 
     constexpr double QuantizeDouble(double pos, double origin, double scale)
         {
-        return 0.5 + (pos - origin) * scale;
+        return std::max(0.0, std::min(RangeScale(), 0.5 + (pos - origin) * scale));
         }
 
     inline bool IsQuantizable(double pos, double origin, double scale)
@@ -1899,7 +1899,6 @@ namespace Quantization
     inline uint16_t Quantize(double pos, double origin, double scale)
         {
         double qpos = QuantizeDouble(pos, origin, scale);
-        BeAssert(IsInRange(qpos));
         return static_cast<uint16_t>(qpos);
         }
 
@@ -1953,7 +1952,7 @@ namespace Quantization
         void Assign(T const* points, size_t nPoints, Params const& params)
             {
             m_params = params;
-            assign(points, points+nPoints);
+            this->assign(points, points+nPoints);
             }
 
         //! Empty this list and change its quantization parameters

@@ -37,15 +37,11 @@ struct EXPORT_VTABLE_ATTRIBUTE SubjectViewController : SpatialViewController
     typedef bmap<DgnModelId, FeatureSymbologyOverrides::Appearance> SubjectColorMap;
 
 private:
-    SubjectColorMap     m_subjectColors;
-    DgnDbP              m_db;
-    ECSqlStatement*     m_elementToSubjectStmt;
-
-
+    SubjectColorMap                 m_subjectColors;
 protected:
     void _AddFeatureOverrides(Render::FeatureSymbologyOverrides&) const override;
-    SubjectCPtr GetParentJobSubject(DgnElementCP element);
-
+    void _OnAttachedToViewport(DgnViewportR) override;
+    void _OnDetachedFromViewport(DgnViewportR) override;
 public:
     //! Turns on/off all models and categories
     //! @param[in] visible true if visible
@@ -62,8 +58,10 @@ public:
     DGNPLATFORM_EXPORT bool     IsVisible(DgnModelId modelId) const;
 
     //! Constructor
-    DGNPLATFORM_EXPORT SubjectViewController(SpatialViewDefinition const& view, DgnDbP db, SubjectColorMap const& subjectColors);
+    DGNPLATFORM_EXPORT SubjectViewController(SpatialViewDefinition const& view, SubjectColorMap const& subjectColors);
     DGNPLATFORM_EXPORT ~SubjectViewController();
+
+    DGNPLATFORM_EXPORT void SetTransform(DgnModelIdSet const& modelIds, TransformCP transform);
 };
 
 END_BENTLEY_DGN_NAMESPACE

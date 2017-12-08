@@ -9,6 +9,7 @@
 #include <Bentley/SHA1.h>
 #include <BeSQLite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
+#include <ECDb/ChangeIterator.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 

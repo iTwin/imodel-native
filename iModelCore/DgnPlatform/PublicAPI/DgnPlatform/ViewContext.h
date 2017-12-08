@@ -124,7 +124,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledCurveVector(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR);
     DGNPLATFORM_EXPORT virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
@@ -183,7 +182,6 @@ public:
     Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, db, tf, clips);}
     void AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
-    StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
     Render::MaterialPtr GetMaterial(RenderMaterialId id) const { return _GetMaterial(id); }
 
 /** @name Coordinate Query and Conversion */
@@ -449,9 +447,9 @@ private:
     Render::GraphicBranch* m_viewlet = nullptr;
     Render::OvrGraphicParams m_ovrParams;
 
-    StatusInt VisitSheetHit(HitDetailCR hit);
+    BentleyStatus DrawNormalHit(HitDetailCR hit);
+    BentleyStatus DrawSheetHit(HitDetailCR hit);
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
-    StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
 
 public:
@@ -472,6 +470,9 @@ public:
 
     //! @private
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
+
+    //! @private
+    DGNPLATFORM_EXPORT BentleyStatus DrawHit(HitDetailCR hit);
 
     //! Display view coordinate graphic as background with smooth shading, default lighting, and z testing disabled. e.g., a sky box.
     DGNPLATFORM_EXPORT void SetViewBackground(Render::GraphicR graphic);

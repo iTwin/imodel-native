@@ -143,7 +143,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   05/13
     //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
+    struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::EC::ECDb::OpenParams
     {
         friend struct DgnDb;
 
@@ -159,7 +159,8 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database
         //! @param[in] schemaUpgradeOptions Options to upgrade the ECSchema-s in the database from registered domains, or revisions. 
-        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions schemaUpgradeOptions = SchemaUpgradeOptions()) : Db::OpenParams(openMode, startDefaultTxn), m_schemaUpgradeOptions(schemaUpgradeOptions) {}
+        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions schemaUpgradeOptions = SchemaUpgradeOptions()) : ECDb::OpenParams(openMode, startDefaultTxn), m_schemaUpgradeOptions(schemaUpgradeOptions)
+            {}
 
         SchemaUpgradeOptions& GetSchemaUpgradeOptionsR() { return m_schemaUpgradeOptions; }
         SchemaUpgradeOptions const& GetSchemaUpgradeOptions() const { return m_schemaUpgradeOptions; }
@@ -178,7 +179,6 @@ private:
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
-    static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
     BeSQLite::DbResult MergeSchemaRevisions(BeSQLite::Db::OpenParams const& params);
 
 protected:
@@ -310,6 +310,8 @@ public:
     //! compatible version number. 
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
+
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
 
     //! Inserts a new link table ECRelationship. 
     //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.

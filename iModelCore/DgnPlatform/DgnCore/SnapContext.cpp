@@ -609,6 +609,24 @@ bool _ProcessSolidPrimitive(ISolidPrimitiveCR primitive, SimplifyGraphic& graphi
                 TestCurveLocation(*curve, graphic);
                 }
             
+            DSegment3d  silhouette[2];
+
+            // NOTE: MicroStation's type 23 cone element always allowed it's silhouettes to be located/snapped to...continue doing so for historical reasons but with one caveat.
+            //       The center of the cursor *must* be over the cone face to actually identify it and not just within locate tolerance. This behavior difference is because we
+            //       no longer locate elements their silhouettes in PickContext (would need to do this using the mesh tiles or something in order to support all geometry types)...
+            if (detail.GetSilhouettes(silhouette[0], silhouette[1], graphic.GetViewToLocal()))
+                {
+                for (int iSilhouette = 0; iSilhouette < 2; ++iSilhouette)
+                    {
+                    if (0.0 == silhouette[iSilhouette].Length())
+                        continue;
+
+                    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(silhouette[iSilhouette]));
+
+                    TestCurveLocation(*curve, graphic);
+                    }
+                }
+
             return true;
             }
 
@@ -966,6 +984,7 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
     {
     SnapGraphicsProcessor&  m_processor;
     SimplifyGraphic&        m_graphic;
+    Transform               m_entityTransform;
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    BrienBastings   11/2017
@@ -974,12 +993,13 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
         {
         CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, hatchCurve.Clone());
 
+        curve->TransformInPlace(m_entityTransform);
         m_processor.TestCurveLocation(*curve, m_graphic);
 
         return (m_processor.m_snapContext.CheckStop() ? ERROR : SUCCESS);
         }
 
-    BRepFaceHatchProcessor(SnapGraphicsProcessor& processor, SimplifyGraphic& graphic) : m_processor(processor), m_graphic(graphic) {}
+    BRepFaceHatchProcessor(SnapGraphicsProcessor& processor, SimplifyGraphic& graphic, TransformCR entityTransform) : m_processor(processor), m_graphic(graphic), m_entityTransform(entityTransform) {}
 
     }; // BRepFaceHatchProcessor
 
@@ -1036,11 +1056,10 @@ bool _ProcessBody(IBRepEntityCR entity, SimplifyGraphic& graphic) override
 
     int divisor = m_snapContext.GetSnapDivisor();
 
-    BRepFaceHatchProcessor output(*this, graphic);
-    Transform entityTransform = entity.GetEntityTransform();
+    BRepFaceHatchProcessor output(*this, graphic, entity.GetEntityTransform());
 
-    PSolidGoOutput::ProcessFaceHatching(output, divisor, PSolidSubEntity::GetSubEntityTag(*closeEntity), &entityTransform);
-    
+    PSolidGoOutput::ProcessFaceHatching(output, divisor, PSolidSubEntity::GetSubEntityTag(*closeEntity));
+
     bvector<ISubEntityPtr> faceEdges;
 
     if (SUCCESS != BRepUtil::GetFaceEdges(faceEdges, *closeEntity))
@@ -1080,6 +1099,9 @@ void _OutputGraphics(ViewContextR context) override
         if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
             return;
         }
+
+    // Attach viewport from snap context for cone silhouettes...
+    context.Attach(m_snapContext.GetViewport(), _GetProcessPurpose());
 
     // Get the geometry for this hit from the GeometryStream...
     GeometryCollection collection(*source);

@@ -12,6 +12,9 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
+    if (m_viewController.IsValid())
+        m_viewController->_OnDetachedFromViewport(*this);
+
     SuspendViewport();
     m_viewController = nullptr;
     }

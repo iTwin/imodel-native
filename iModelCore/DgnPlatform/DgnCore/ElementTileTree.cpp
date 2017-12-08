@@ -14,6 +14,7 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
+
 // Define this if you want to generate a root tile containing geometry.
 // By default the root tile is empty unless it would contain relatively few elements, which enables us to:
 //  - reduce the number of elements per top-most tile; and
@@ -35,6 +36,11 @@ struct TileContext;
 
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
+
+// We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
+// That can't work for BReps because they are associated with a specific thread's partition.
+// In any case it wasn't much of an optimization as we still had to facet/stroke the geometry each time it was encountered.
+// #define CACHE_LARGE_GEOMETRY
 
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
@@ -81,6 +87,7 @@ constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a s
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
+constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
 static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 
@@ -743,6 +750,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
     return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
     }
 
+
 #ifdef TILECACHE_DEBUG
 static double s_displayTime = 5.0;   // Every 5 second.
 
@@ -792,13 +800,12 @@ void Display()
 static TileCacheStatistics       s_statistics;
 #endif
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
+#if defined (BENTLEYCONFIG_PARASOLID)    
     PSolidThreadUtil::WorkerThreadOuterMark outerMark;
 #endif
 
@@ -995,10 +1002,14 @@ BentleyStatus Loader::_LoadTile()
     // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
     if (isLeafInCache || geometry.IsComplete())
         {
-        if (geometry.IsEmpty() || !geometry.ContainsCurves())
-            tile.SetIsLeaf();
-        else if (isLeafInCache)
-            tile.SetZoomFactor(1.0);
+        // NB: Above a certain tolerance we must subdivide in order to avoid visible precision issues with quantized positions when zooming in.
+        if (geometry.IsEmpty() || tile.GetTolerance() <= s_maxLeafTolerance)
+            {
+            if (geometry.IsEmpty() || !geometry.ContainsCurves())
+                tile.SetIsLeaf();
+            else if (isLeafInCache)
+                tile.SetZoomFactor(1.0);
+            }
         }
 
     auto  system = GetRenderSystem();
@@ -1125,7 +1136,12 @@ bool Loader::IsPastCollectionDeadline() const { return m_collectionDeadline.IsVa
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model.GetDgnDb(), transform, "", &system),
-    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()), m_cacheGeometry(m_is3d)
+    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()),
+#if defined(CACHE_LARGE_GEOMETRY)
+    m_cacheGeometry(m_is3d)
+#else
+    m_cacheGeometry(false)
+#endif
     {
     // ###TODO: Play with this? Default of 20 seconds is ok for reality tiles which are cached...pretty short for element tiles.
     SetExpirationTime(BeDuration::Seconds(90));
@@ -1133,7 +1149,7 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     m_cache = model.GetDgnDb().ElementTileCache();
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
+#if defined (BENTLEYCONFIG_PARASOLID) 
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 #endif
 
@@ -1153,19 +1169,14 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
 
-        // This drastically reduces the time required to generate the root tile, so that the user sees *something* on the screen much sooner.
         range.ScaleAboutCenter(range, s_spatialRangeMultiplier);
         populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
         }
     else
         {
-        // ###TODO_ELEMENT_TILE: What happens if user later adds geometry outside initial range?
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))
-            {
-            // return nullptr; ###TODO_ELEMENT_TILE: Empty models exist...
             range = DRange3d::From(DPoint3d::FromZero());
-            }
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
@@ -1182,10 +1193,8 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
 #if defined (BENTLEYCONFIG_PARASOLID)
     PSolidKernelManager::StartSession();
 
-#if defined(WIP_PMARKS)
     if (s_psolidMainThreadMark.IsNull())
         s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
-#endif
 #endif
 
     RootPtr root = new Root(model, transform, system);
@@ -1696,7 +1705,7 @@ void Root::_OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents)
     // Note that currently we consider drawing outside of the project extents to be illegal.
     // Therefore we do not attempt to regenerate tiles to include geometry previously outside the extents, or exclude geometry previously within them.
     auto rootTile = static_cast<TileP>(GetRootTile().get());
-    if (Is3d() && nullptr != rootTile)
+    if (Is3d() && nullptr != rootTile && !m_ignoreChanges)
         {
         // ###TODO: What about non-spatial 3d models?
         Transform tfToTile;
@@ -1875,14 +1884,12 @@ private:
 
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyface(Polyface& polyfaces, GeometryR geom, double rangePixels, bool isContained) { AddPolyface(polyfaces, geom, geom.GetDisplayParams(), rangePixels, isContained); }
-    void AddPolyface(Polyface& polyface, GeometryR, DisplayParamsCR ,double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar, bool doVertexCluster);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
-    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained) { AddStrokes(strokes, geom, geom.GetDisplayParams(), rangePixels, isContained); }
-    void AddStrokes(StrokesR, GeometryR, DisplayParamsCR, double rangePixels, bool isContained);
+    void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained);
     Strokes ClipSegments(StrokesCR strokes) const;
     void ClipStrokes(StrokesR strokes) const;
     void ClipPoints(StrokesR strokes) const;
@@ -1992,23 +1999,13 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
         for (auto& polyface : polyfaces)
             {
             polyface.Transform(instanceTransform);
-#if defined(SHARE_GEOMETRY_PARTS)
-            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*polyface.m_displayParams, instance->GetDisplayParams());
-#else
-            DisplayParamsCPtr params = polyface.m_displayParams;
-#endif
-            AddPolyface(polyface, const_cast<GeometryR>(*instance), *params, rangePixels, isContained);
+            AddPolyface(polyface, const_cast<GeometryR>(*instance), rangePixels, isContained);
             }
 
         for (auto& strokeList : strokes)
             {
             strokeList.Transform(instanceTransform);
-#if defined(SHARE_GEOMETRY_PARTS)
-            DisplayParamsCPtr params = DisplayParams::CreateForGeomPartInstance(*strokeList.m_displayParams, instance->GetDisplayParams());
-#else
-            DisplayParamsCPtr params = strokeList.m_displayParams;
-#endif
-            AddStrokes(strokeList, *const_cast<GeometryP>(instance), *params, rangePixels, isContained);
+            AddStrokes(strokeList, *const_cast<GeometryP>(instance), rangePixels, isContained);
             }
         }
     }
@@ -2042,7 +2039,7 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
     {
     PolyfaceHeaderP polyface = tilePolyface.m_polyface.get();
     if (nullptr == polyface || 0 == polyface->GetPointIndexCount())
@@ -2052,7 +2049,10 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     bool doVertexCluster = !doDecimate && geom.DoVertexCluster() && rangePixels < GetVertexClusterThresholdPixels();
 
     if (doDecimate)
+        {
+        BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
         polyface->DecimateByEdgeCollapse(m_tolerance, 0.0);
+        }
 
 #if defined(DISABLE_EDGE_GENERATION)
     auto edgeOptions = MeshEdgeCreationOptions::NoEdges;
@@ -2066,13 +2066,9 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
 
-#if defined(DISABLE_CLIPPING)
-    isContained = true;
-#endif
-
     if (isContained)
         {
-        AddClippedPolyface(*polyface, elemId, displayParams, edges, isPlanar, doVertexCluster);
+        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
         }
     else
         {
@@ -2081,7 +2077,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, displayParams, edges, isPlanar, doVertexCluster);
+            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar, doVertexCluster);
         }
     }
 
@@ -2240,7 +2236,7 @@ void MeshGenerator::AddStrokes(StrokesList& strokes, GeometryR geom, double rang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR displayParams, double rangePixels, bool isContained)
+void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained)
     {
     if (m_loadContext.WasAborted())
         return;
@@ -2251,6 +2247,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
+    DisplayParamsCR     displayParams = strokes.GetDisplayParams();
     MeshBuilderMap::Key key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
@@ -2375,7 +2372,8 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         return Completion::Aborted;
 
     // Determine whether or not to subdivide this tile
-    if (!isPartialTile && m_geometries.IsComplete() && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
+    bool canSkipSubdivision = tile.GetTolerance() <= s_maxLeafTolerance;
+    if (canSkipSubdivision && !isPartialTile && m_geometries.IsComplete() && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
         {
         // If no elements were skipped and only a small number of elements exist within this tile's range:
         //  - Make it a leaf tile, if it contains no curved geometry; otherwise
@@ -2678,6 +2676,13 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     {
     try
         {
+#ifndef NDEBUG
+        static DgnElementId             s_debugId; // ((uint64_t) 2877);
+
+        if (s_debugId.IsValid() && s_debugId != elemId)
+            return;
+#endif
+
         if (!m_root.GetCachedGeometry(m_geometries, elemId, rangeDiagonalSquared))
             {
             m_curElemId = elemId;
@@ -2728,7 +2733,7 @@ void TileContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
     _CookGeometryParams(geomParams, graphicParams);
     AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams);
     }
-
+                                                                                                                                 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2771,36 +2776,12 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings 09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
-static bool hasPartOrBRep(GeometrySourceCR source)
-    {
-    Dgn::GeometryCollection collection(source);
-
-    for (auto iter : collection)
-        {
-        if (Dgn::GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType() ||
-            Dgn::GeometryCollection::Iterator::EntryType::GeometryPart == iter.GetEntryType())      
-            return true;
-        }
-
-    return false;
-    }
-#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) && defined(WIP_PMARKS)
-    PSolidThreadUtil::WorkerThreadInnerMarkPtr innerMark;
-    if (hasPartOrBRep(source))
-        innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
-#endif
-
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
     }

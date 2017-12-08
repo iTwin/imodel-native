@@ -911,7 +911,29 @@ void Root::DrawInView(SceneContextR context)
 DrawArgs Root::CreateDrawArgs(SceneContextR context)
     {
     auto now = BeTimePoint::Now();
-    return DrawArgs(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    return DrawArgs(context, GetDisplayTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform Root::GetDisplayTransform(RenderContextR context) const
+    {
+    auto transform = _GetTransform(context);
+    if (m_haveDisplayTransform)
+        transform = Transform::FromProduct(m_displayTransform, transform);
+
+    return transform;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::SetDisplayTransform(TransformCP tf)
+    {
+    m_haveDisplayTransform = nullptr != tf;
+    if (m_haveDisplayTransform)
+        m_displayTransform = *tf;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1438,10 +1460,18 @@ void Root::MarkDamaged(DRange3dCR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::SetIgnoreChanges(bool ignore) { m_ignoreChanges = ignore; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(range);
     _OnAddToRangeIndex(range, id);
     }
@@ -1451,6 +1481,9 @@ void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(range);
     _OnRemoveFromRangeIndex(range, id);
     }
@@ -1460,6 +1493,9 @@ void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(oldRange);
     MarkDamaged(newRange);
     _OnUpdateRangeIndex(oldRange, newRange, id);
@@ -1692,6 +1728,34 @@ PolyfaceHeaderPtr TriMeshTree::TriMesh::CreateParams::ToPolyface() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::TriMesh::CreateParams::FromTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, FPoint3d* fpts, DgnDbR db)
+    {
+    for (int i = 0; i < 4; i++)
+        {
+        fpts[i] = FPoint3d::From(corners.m_pts[i].x, corners.m_pts[i].y, corners.m_pts[i].z);
+        }
+    m_numPoints  = 4;
+    m_points     = fpts;
+    m_normals    = nullptr;
+
+    static int32_t indices[] = {0,1,2,2,1,3};
+    m_numIndices = 6;
+    m_vertIndex  = indices;
+
+    static FPoint2d textUV[] = 
+        {
+            {0.0f, 0.0f},
+            {1.0f, 0.0f},
+            {0.0f, 1.0f},
+            {1.0f, 1.0f},
+        };
+    m_textureUV = textUV;
+    m_texture = const_cast<Render::Texture*>(&tile);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::TriMeshArgs TriMeshTree::TriMesh::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
@@ -1849,7 +1913,7 @@ void TriMeshTree::Root::ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreatePar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mark.Schlosser   12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TriMeshTree::Root::_CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys)
+void TriMeshTree::Root::CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys)
     {
     if (nullptr != GetClipVector())
         {
