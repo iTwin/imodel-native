@@ -10,3 +10,1008 @@ SchemaDeserializationTest.CanLoadCaInstanceWhichAppearsBeforeCaDefinition
 
 #JsonEcInstanceWriter needs to take a class locater in order to resolve a rel class id into a rel class name in the JSON wire format
 NavigationPropertyValueTests.InstanceWithNavProp_Long
+
+SchemaLocalizationTests.SupplementingLocalizationSupplementalEC3
+
+    # TFS#792965
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:56,518 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'House:LengthKind' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:56,518 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'House.02.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:56,518 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML file: c:\build\outA\mds06t_2017-12-08_14-33-16\out\Winx64\Product\ECObjects-Gtest\Assets\SeedData\House.02.00.00.ecschema.xml
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [17] _C_specific_handler (0x7ffbb151bff0)
+    # [16] _chkstk (0x7ffbb9169f60)
+    # [15] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [14] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [13] BentleyB0200::ECNTests::SchemaLocalizationTests_SupplementingLocalizationSupplementalEC3_Test::TestBody (0x7ff70d4876f0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+KindOfQuantityTest.TestIncompatiblePersistenceAndPresentationUnits
+
+    # TFS#792976
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(146): error: Value of: koq->AddPresentationUnit("MG")
+    # Actual: true
+    # Expected: false
+    # The Unit MG is from the MASS Phenomenon which is different than the Persistence Unit.
+
+KindOfQuantityTest.KindOfQuantityTestTest
+
+    # TFS#793000
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,331 ERROR [0x00000f7c] ECObjectsNative - Failed to write schema because persistance FUS for KindOfQuantity 'MyKindOfQuantity' has problem: 'Unknown name of the unit'
+    # 2017-12-08 15:16:55,331 ERROR [0x00000f7c] ECObjectsNative - Invalid ECSchemaXML: KindOfQuantity element must contain a persistenceUnit attribute
+    # 2017-12-08 15:16:55,331 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="KindOfQuantitySchema" alias="koq" version="05.00.06" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeName=
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(45): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: status
+    # Which is: 4-byte object <02-00 00-00>
+
+KindOfQuantityTest.SerializeStandaloneChildKindOfQuantity
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,331 ERROR [0x00000f7c] ECObjectsNative - Failed to write schema because persistance UNIT for KindOfQuantity 'ExampleKoQ' has problem: 'Unknown name of the unit'
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(182): error:       Expected: SchemaWriteStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: koq->WriteJson(schemaJson, true)
+    # Which is: 4-byte object <03-00 00-00>
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(189): error: Value of: ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)
+    # Actual: false
+    # Expected: true
+    # Created Schema   (minified): {"$schema":"https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild","name":"ExampleKoQ","schema":"ExampleSchema","schemaChildType":"KindOfQuantity","schemaVersion":"03.01.00"}
+    # Test Data Schema (minified): {"$schema":"https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild","name":"ExampleKoQ","persistenceUnit":{"format":"DefaultReal","unit":"MM"},"precision":3.0,"presentationUnits":[{"format":"DefaultReal","unit":"IN"},{"format":"DefaultReal","unit":"MM"},{"format":"DefaultReal","unit":"CM"}],"schema":"ExampleSchema","schemaChildType":"KindOfQuantity","schemaVersion":"03.01.00"}
+    # Created Schema   (pretty):
+    # {
+    # "$schema" : "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+    # "name" : "ExampleKoQ",
+    # "schema" : "ExampleSchema",
+    # "schemaChildType" : "KindOfQuantity",
+    # "schemaVersion" : "03.01.00"
+    # }
+    # Test Data Schema (pretty):
+    # {
+    # "$schema" : "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemachild",
+    # "name" : "ExampleKoQ",
+    # "persistenceUnit" : {
+    # "format" : "DefaultReal",
+    # "unit" : "MM"
+    # },
+    # "precision" : 3.0,
+    # "presentationUnits" : [
+    # {
+    # "format" : "DefaultReal",
+    # "unit" : "IN"
+    # },
+    # {
+    # "format" : "DefaultReal",
+    # "unit" : "MM"
+    # },
+    # {
+    # "format" : "DefaultReal",
+    # "unit" : "CM"
+    # }
+    # ],
+    # "schema" : "ExampleSchema",
+    # "schemaChildType" : "KindOfQuantity",
+    # "schemaVersion" : "03.01.00"
+    # }
+
+UnitInstanceConversionTest.BasicTest
+
+    # TFS#792954
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [22] _C_specific_handler (0x7ffbb151bff0)
+    # [21] _chkstk (0x7ffbb9169f60)
+    # [20] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [19] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [18] BentleyB0200::ECN::obtainKindOfQuantity (0x7ffb9c1719a0)
+    # [17] BentleyB0200::ECN::UnitSpecificationConverter::Convert (0x7ffb9c1693e0)
+    # [16] BentleyB0200::ECN::ECSchemaConverter::ProcessCustomAttributeInstance (0x7ffb9c16f9d0)
+    # [15] BentleyB0200::ECN::ECSchemaConverter::ConvertPropertyLevel (0x7ffb9c16af10)
+    # [14] BentleyB0200::ECN::ECSchemaConverter::Convert (0x7ffb9c167720)
+    # [13] BentleyB0200::ECNTests::UnitInstanceConversionTest_BasicTest_Test::TestBody (0x7ff70d2fa1e0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+InstanceQuantityTests.GetQuantityFromDoubleWithKoqDefined
+
+    # TFS#792957
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'TestSchema:PipeLength' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'TestSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeNam
+    # c:\build\src\mds06t\ecobjects\test\Published\InstanceQuantityTests.cpp(34): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: ECSchema::ReadFromXmlString(schema, schemaXml, *context)
+    # Which is: 4-byte object <02-00 00-00>
+
+UnitSpecificationConversionTest.SameKOQMultiplePersistenceUnits
+
+    # TFS#793015
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [22] _C_specific_handler (0x7ffbb151bff0)
+    # [21] _chkstk (0x7ffbb9169f60)
+    # [20] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [19] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [18] BentleyB0200::ECN::obtainKindOfQuantity (0x7ffb9c1719a0)
+    # [17] BentleyB0200::ECN::UnitSpecificationConverter::Convert (0x7ffb9c1693e0)
+    # [16] BentleyB0200::ECN::ECSchemaConverter::ProcessCustomAttributeInstance (0x7ffb9c16f9d0)
+    # [15] BentleyB0200::ECN::ECSchemaConverter::ConvertPropertyLevel (0x7ffb9c16af10)
+    # [14] BentleyB0200::ECN::ECSchemaConverter::Convert (0x7ffb9c167720)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_SameKOQMultiplePersistenceUnits_Test::TestBody (0x7ff70d2fe530)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+KindOfQuantityDeserializationTest.ExpectSuccessWhenKindOfQuantityInherited
+
+    # TFS#793012
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,409 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'testSchema:MyKindOfQuantity' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:55,409 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'testSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:55,409 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version='1.0' encoding='UTF-8'?>
+    # <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+    # <ECEntityClass typeNam
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(379): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: status
+    # Which is: 4-byte object <02-00 00-00>
+    # ECSchema failed to deserialize.
+
+UnitSpecificationConversionTest.SchemaWithOldUnitSpecification_OnlyOnProperty
+
+    # TFS#792973
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:53,940 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [18] _C_specific_handler (0x7ffbb151bff0)
+    # [17] _chkstk (0x7ffbb9169f60)
+    # [16] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [15] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [14] BentleyB0200::ECNTests::validateUnitsInConvertedSchema (0x7ff70d304590)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_SchemaWithOldUnitSpecification_OnlyOnProperty_Test::TestBody (0x7ff70d300630)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+SchemaLocalizationTests.CustomStringsNotOverriddenEC3
+
+    # TFS#792965
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:56,550 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'House:LengthKind' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:56,550 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'House.02.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:56,550 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML file: c:\build\outA\mds06t_2017-12-08_14-33-16\out\Winx64\Product\ECObjects-Gtest\Assets\SeedData\House.02.00.00.ecschema.xml
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [17] _C_specific_handler (0x7ffbb151bff0)
+    # [16] _chkstk (0x7ffbb9169f60)
+    # [15] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [14] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [13] BentleyB0200::ECNTests::SchemaLocalizationTests_CustomStringsNotOverriddenEC3_Test::TestBody (0x7ff70d486b30)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+KindOfQuantityTest.AddRemovePresentationUnits
+
+    # TFS#792976
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(98): error:       Expected: "MILLIINCH"
+    # To be equal to: presUnitList.at(1).GetUnit()->GetName()
+    # Which is: "IN"
+
+SchemaValidatorTests.PropertyOverridesCannotChangePersistenceUnit
+
+    # TFS#793007
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:54,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'GoodSchema:Length' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:54,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'GoodSchema:OtherLength' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:54,971 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'GoodSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:54,971 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeName="BaseCla
+    # c:\build\src\mds06t\ecobjects\test\Published\ECSchemaValidatorTests.cpp(1251): error: Value of: schema.IsValid()
+    # Actual: false
+    # Expected: true
+
+KindOfQuantityDeserializationTest.ExpectSuccessWhenRoundtripKindOfQuantityUsingString
+
+    # TFS#793012
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,424 ERROR [0x00000f7c] ECObjectsNative - Failed to write schema because persistance FUS for KindOfQuantity 'MyKindOfQuantity' has problem: 'Unknown name of the unit'
+    # 2017-12-08 15:16:55,424 ERROR [0x00000f7c] ECObjectsNative - Invalid ECSchemaXML: KindOfQuantity element must contain a persistenceUnit attribute
+    # 2017-12-08 15:16:55,424 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="TestSchema" alias="ts" version="05.00.05" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeName="EntityClas
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(467): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: status3
+    # Which is: 4-byte object <02-00 00-00>
+
+UnitSpecificationConversionTest.BaseAndDerivedUnitsNotCompatibleFailsConversion
+
+    # TFS#792973
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [22] _C_specific_handler (0x7ffbb151bff0)
+    # [21] _chkstk (0x7ffbb9169f60)
+    # [20] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [19] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [18] BentleyB0200::ECN::obtainKindOfQuantity (0x7ffb9c1719a0)
+    # [17] BentleyB0200::ECN::UnitSpecificationConverter::Convert (0x7ffb9c1693e0)
+    # [16] BentleyB0200::ECN::ECSchemaConverter::ProcessCustomAttributeInstance (0x7ffb9c16f9d0)
+    # [15] BentleyB0200::ECN::ECSchemaConverter::ConvertPropertyLevel (0x7ffb9c16af10)
+    # [14] BentleyB0200::ECN::ECSchemaConverter::Convert (0x7ffb9c167720)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_BaseAndDerivedUnitsNotCompatibleFailsConversion_Test::TestBody (0x7ff70d2fac90)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+InstanceTests.TestJsonAndXmlInstanceCompatibility
+
+    # TFS#792983
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,253 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'BasicTest:AREA' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:55,253 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'BasicTest.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:55,253 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML file: c:\build\outA\mds06t_2017-12-08_14-33-16\out\Winx64\Product\ECObjects-Gtest\Assets\SeedData\BasicTest.ecschema.xml
+    # c:\build\src\mds06t\ecobjects\test\TestFixture\TestFixture.cpp(81): error: Value of: schema.IsValid()
+    # Actual: false
+    # Expected: true
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [18] _C_specific_handler (0x7ffbb151bff0)
+    # [17] _chkstk (0x7ffbb9169f60)
+    # [16] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [15] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [14] BentleyB0200::ECN::ECSchema::GetClassP (0x7ffb9c151d30)
+    # [13] BentleyB0200::ECNTests::InstanceTests_TestJsonAndXmlInstanceCompatibility_Test::TestBody (0x7ff70d3c34b0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+SchemaXmlSerializationTest.ExpectSuccessWithInheritedKindOfQuantities
+
+    # TFS#792952
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:56,596 ERROR [0x00000f7c] ECObjectsNative - Failed to write schema because persistance FUS for KindOfQuantity 'MyKindOfQuantity' has problem: 'Unknown name of the unit'
+    # 2017-12-08 15:16:56,596 ERROR [0x00000f7c] ECObjectsNative - Failed to write schema because persistance FUS for KindOfQuantity 'OverrideKindOfQuantity' has problem: 'Unknown name of the unit'
+    # 2017-12-08 15:16:56,596 ERROR [0x00000f7c] ECObjectsNative - XML Parsing error code 77 at line 20, column 1, parsing file 'file:/c:/build/outA/mds06t_2017-12-08_14-33-16/out/Winx64/Product/ECObjects-Gtest/run/Output/InheritedKOQ.01.00.00.ecschema.xml'. Premature end of data in tag ECSchema line 2
+    # ECSchema
+    # 2017-12-08 15:16:56,596 ERROR [0x00000f7c] ECObjectsNative - line 20, position 1
+    # c:\build\src\mds06t\ecobjects\test\Published\SchemaSerializationTests.cpp(373): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: readStatus
+    # Which is: 4-byte object <01-00 00-00>
+
+PropertyOverrideTests.TestKOQOverride
+
+    # TFS#792970
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # c:\build\src\mds06t\ecobjects\test\Published\PropertyTests.cpp(1622): error: Expected: (ECObjectsStatus::Success) != (b->AddBaseClass(*a)), actual: 4-byte object <00-00 00-00> vs 4-byte object <00-00 00-00>
+    # Should have failed to add since the property A:PrimProp has a kind of quantity with a different Phenomenon then B:PrimProp
+    # 2017-12-08 15:16:55,893 ERROR [0x00000f7c] ECObjectsNative - Cannot add class 'TestSchema:A' as a base class to 'TestSchema:B' because it already exists as a base class
+    # c:\build\src\mds06t\ecobjects\test\Published\PropertyTests.cpp(1624): error:       Expected: ECObjectsStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: b->AddBaseClass(*a)
+    # Which is: 4-byte object <0C-00 00-00>
+    # Failed even though the property Kind of Quantities are the same.
+    # c:\build\src\mds06t\ecobjects\test\Published\PropertyTests.cpp(1628): error:       Expected: ECObjectsStatus::KindOfQuantityNotCompatible
+    # Which is: 4-byte object <35-00 00-00>
+    # To be equal to: primPropOverride2->SetKindOfQuantity(temperature)
+    # Which is: 4-byte object <00-00 00-00>
+    # c:\build\src\mds06t\ecobjects\test\Published\PropertyTests.cpp(1647): error: Expected: (ECObjectsStatus::Success) != (b->AddBaseClass(*a)), actual: 4-byte object <00-00 00-00> vs 4-byte object <00-00 00-00>
+    # Should have failed to add since the property A:PrimArrProp has a kind of quantity with a different Phenomenon then B:PrimArrProp
+    # 2017-12-08 15:16:55,893 ERROR [0x00000f7c] ECObjectsNative - Cannot add class 'TestSchema:A' as a base class to 'TestSchema:B' because it already exists as a base class
+    # c:\build\src\mds06t\ecobjects\test\Published\PropertyTests.cpp(1649): error:       Expected: ECObjectsStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: b->AddBaseClass(*a)
+    # Which is: 4-byte object <0C-00 00-00>
+    # Failed even though the property Kind of Quantities are the same.
+    # c:\build\src\mds06t\ecobjects\test\Published\PropertyTests.cpp(1653): error:       Expected: ECObjectsStatus::KindOfQuantityNotCompatible
+    # Which is: 4-byte object <35-00 00-00>
+    # To be equal to: primArrPropOverride2->SetKindOfQuantity(temperature)
+    # Which is: 4-byte object <00-00 00-00>
+
+SchemaLocalizationTests.CopyingALocalizedSchemaEC3
+
+    # TFS#792965
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:56,518 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'House:LengthKind' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:56,518 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'House.02.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:56,518 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML file: c:\build\outA\mds06t_2017-12-08_14-33-16\out\Winx64\Product\ECObjects-Gtest\Assets\SeedData\House.02.00.00.ecschema.xml
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [17] _C_specific_handler (0x7ffbb151bff0)
+    # [16] _chkstk (0x7ffbb9169f60)
+    # [15] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [14] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [13] BentleyB0200::ECNTests::SchemaLocalizationTests_CopyingALocalizedSchemaEC3_Test::TestBody (0x7ff70d485dd0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+UnitSpecificationConversionTest.PersistenceUnitChange_WithPresentationUnits
+
+    # TFS#792973
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:54,096 ERROR [0x00000f7c] ECObjectsNative - The property OldUnits.01.00.00:Pipe.Length has a UnitSpecification but it does not resolve to a unit.
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [22] _C_specific_handler (0x7ffbb151bff0)
+    # [21] _chkstk (0x7ffbb9169f60)
+    # [20] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [19] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [18] BentleyB0200::ECN::obtainKindOfQuantity (0x7ffb9c1719a0)
+    # [17] BentleyB0200::ECN::UnitSpecificationConverter::Convert (0x7ffb9c1693e0)
+    # [16] BentleyB0200::ECN::ECSchemaConverter::ProcessCustomAttributeInstance (0x7ffb9c16f9d0)
+    # [15] BentleyB0200::ECN::ECSchemaConverter::ConvertPropertyLevel (0x7ffb9c16af10)
+    # [14] BentleyB0200::ECN::ECSchemaConverter::Convert (0x7ffb9c167720)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_PersistenceUnitChange_WithPresentationUnits_Test::TestBody (0x7ff70d2fcef0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+SchemaLocalizationTests.XmlSerializeALocalizedSchemaEC3
+
+    # TFS#792965
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:56,534 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'House:LengthKind' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:56,534 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'House.02.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:56,534 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML file: c:\build\outA\mds06t_2017-12-08_14-33-16\out\Winx64\Product\ECObjects-Gtest\Assets\SeedData\House.02.00.00.ecschema.xml
+    # c:\build\src\mds06t\ecobjects\test\Published\SchemaLocalizationTests.cpp(397): error:       Expected: true
+    # To be equal to: testSchema.IsValid()
+    # Which is: false
+    # Failed to load 'House' schema from disk
+
+SchemaVersionConversionTests.OldUnitsWithKoqNameConflicts
+
+    # TFS#793002
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:57,175 ERROR [0x00000f7c] ECObjectsNative - Cannot create kind of quantity 'LENGTH' because a named element the same identifier already exists in the schema
+    # 2017-12-08 15:16:57,175 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH_TestClass' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [18] _C_specific_handler (0x7ffbb151bff0)
+    # [17] _chkstk (0x7ffbb9169f60)
+    # [16] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [15] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [14] BentleyB0200::ECNTests::validateUnitsInConvertedSchema2 (0x7ff70d4caeb0)
+    # [13] BentleyB0200::ECNTests::SchemaVersionConversionTests_OldUnitsWithKoqNameConflicts_Test::TestBody (0x7ff70d4c86f0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+UnitSpecificationConversionTest.PersistenceAndPresentationUnitsNotCompatibleDropsPresentationUnit
+
+    # TFS#792973
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:54,003 ERROR [0x00000f7c] ECObjectsNative - The property OldUnits.01.00.00:Pipe.Length has a UnitSpecification but it does not resolve to a unit.
+    # 2017-12-08 15:16:54,003 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:DENSITY' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [17] _C_specific_handler (0x7ffbb151bff0)
+    # [16] _chkstk (0x7ffbb9169f60)
+    # [15] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [14] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_PersistenceAndPresentationUnitsNotCompatibleDropsPresentationUnit_Test::TestBody (0x7ff70d2fb150)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+PropertySerializationTest.KindOfQuantityAndExtendedTypeNameRoundtrip
+
+    # TFS#792971
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,878 ERROR [0x00000f7c] ECObjectsNative - Failed to write schema because persistance FUS for KindOfQuantity 'KoQ' has problem: 'Unknown name of the unit'
+    # 2017-12-08 15:16:55,878 ERROR [0x00000f7c] ECObjectsNative - Invalid ECSchemaXML: KindOfQuantity element must contain a persistenceUnit attribute
+    # 2017-12-08 15:16:55,878 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeName="TestEntity
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [18] _C_specific_handler (0x7ffbb151bff0)
+    # [17] _chkstk (0x7ffbb9169f60)
+    # [16] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [15] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [14] BentleyB0200::ECN::ECSchema::GetClassP (0x7ffb9c151d30)
+    # [13] BentleyB0200::ECNTests::PropertySerializationTest_KindOfQuantityAndExtendedTypeNameRoundtrip_Test::TestBody (0x7ff70d444aa0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+UnitSpecificationConversionTest.SchemaWithOldUnitSpecification_OnArrayProperty
+
+    # TFS#792973
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:53,456 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [18] _C_specific_handler (0x7ffbb151bff0)
+    # [17] _chkstk (0x7ffbb9169f60)
+    # [16] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [15] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [14] BentleyB0200::ECNTests::validateUnitsInConvertedSchema (0x7ff70d304590)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_SchemaWithOldUnitSpecification_OnArrayProperty_Test::TestBody (0x7ff70d2ffd90)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+InstanceQuantityTests.GetQuantityFromUnsupportedProperties
+
+    # TFS#792957
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'TestSchema:PipeLength' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'TestSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeNam
+    # c:\build\src\mds06t\ecobjects\test\Published\InstanceQuantityTests.cpp(83): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: ECSchema::ReadFromXmlString(schema, schemaXml, *context)
+    # Which is: 4-byte object <02-00 00-00>
+
+KindOfQuantityDeserializationTest.ExpectSuccessWhenKindOfQuantityIsAppliedToStructAndStructArrayPropertes
+
+    # TFS#793012
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,393 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'testSchema:MyKindOfQuantity' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:55,393 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'testSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:55,393 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version='1.0' encoding='UTF-8'?><ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>   <ECEntityClass typeName='A' modifier='abs
+    # c:\build\src\mds06t\ecobjects\test\Published\KindOfQuantityTests.cpp(337): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: status
+    # Which is: 4-byte object <02-00 00-00>
+    # ECSchema failed to deserialize.
+
+InstanceQuantityTests.SetQuantityToDoubleWithKoqDefined
+
+    # TFS#792957
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'TestSchema:PipeLength' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'TestSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:55,003 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeNam
+    # c:\build\src\mds06t\ecobjects\test\Published\InstanceQuantityTests.cpp(137): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: ECSchema::ReadFromXmlString(schema, schemaXml, *context)
+    # Which is: 4-byte object <02-00 00-00>
+
+InstanceQuantityTests.SetQuantityToUnsupportedProperties
+
+    # TFS#792957
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:55,018 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'TestSchema:PipeLength' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:55,018 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'TestSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:55,018 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeNam
+    # c:\build\src\mds06t\ecobjects\test\Published\InstanceQuantityTests.cpp(184): error:       Expected: SchemaReadStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: ECSchema::ReadFromXmlString(schema, schemaXml, *context)
+    # Which is: 4-byte object <02-00 00-00>
+
+UnitSpecificationConversionTest.SchemaWithOldUnitSpecifications
+
+    # TFS#792973
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:AREA' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:Banana' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:L2' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH_SHORT' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH_TestClass' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH_TestClass_KoqOnly' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:53,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:PRESSURE' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [18] _C_specific_handler (0x7ffbb151bff0)
+    # [17] _chkstk (0x7ffbb9169f60)
+    # [16] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [15] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [14] BentleyB0200::ECNTests::validateUnitsInConvertedSchema (0x7ff70d304590)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_SchemaWithOldUnitSpecifications_Test::TestBody (0x7ff70d300ed0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+SchemaJsonSerializationTest.SchemaWithChildren
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:56,612 ERROR [0x00000f7c] ECObjectsNative - Failed to write schema because persistance UNIT for KindOfQuantity 'ExampleKoQ' has problem: 'Unknown name of the unit'
+    # c:\build\src\mds06t\ecobjects\test\Published\SchemaSerializationTests.cpp(509): error:       Expected: SchemaWriteStatus::Success
+    # Which is: 4-byte object <00-00 00-00>
+    # To be equal to: schema->WriteToJsonValue(schemaJson)
+    # Which is: 4-byte object <03-00 00-00>
+    # c:\build\src\mds06t\ecobjects\test\Published\SchemaSerializationTests.cpp(516): error: Value of: ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)
+    # Actual: false
+    # Expected: true
+    # Created Schema   (minified): {"$schema":"https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema","alias":"ex","children":{"ExampleBaseEntity":{"schemaChildType":"EntityClass"},"ExampleCustomAttribute":{"appliesTo":"Schema, AnyProperty","modifier":"sealed","schemaChildType":"CustomAttributeClass"},"ExampleEntity":{"baseClass":"ExampleSchema.ExampleBaseEntity","description":"An example entity class.","label":"ExampleEntity","mixins":["ExampleSchema.ExampleMixinA","ExampleSchema.ExampleMixinB"],"modifier":"sealed","schemaChildType":"EntityClass"},"ExampleEnumeration":{"backingTypeName":"int","enumerators":[{"label":"None","value":1},{"label":"SomeVal","value":2},{"label":"AnotherVal","value":3}],"isStrict":true,"schemaChildType":"Enumeration"},"ExampleKoQ":{"schemaChildType":"KindOfQuantity"},"ExampleMixinA":{"appliesTo":"ExampleSchema.ExampleEntity","schemaChildType":"Mixin"},"ExampleMixinB":{"appliesTo":"ExampleSchema.ExampleEntity","schemaChildType":"Mixin"},"ExampleRelationship":{"modifier":"sealed","schemaChildType":"RelationshipClass","source":{"constraintClasses":["ExampleSchema.ExampleSource"],"multiplicity":"(0..1)","polymorphic":true,"roleLabel":"source roleLabel"},"strength":"embedding","strengthDirection":"forward","target":{"constraintClasses":["ExampleSchema.ExampleTarget"],"multiplicity":"(0..1)","polymorphic":true,"roleLabel":"target roleLabel"}},"ExampleSource":{"schemaChildType":"EntityClass"},"ExampleStruct":{"modifier":"sealed","properties":[{"extendedTypeName":"FooBar","label":"ExPrimitiveArray","maxOccurs":25,"maxValue":20,"minOccurs":10,"minValue":7,"name":"ExamplePrimitiveArray","propertyType":"PrimitiveArrayProperty","typeName":"int"}],"schemaChildType":"StructClass"},"ExampleTarget":{"schemaChildType":"EntityClass"}},"customAttributes":[{"className":"refSchemaA.SomeCustomAttributeClass"},{"className":"refSchemaB.AnotherCustomAttributeClass"}],"description":"The quick brown fox jumps over the lazy dog.","label":"Example Schema","name":"ExampleSchema","references":[{"name":"CoreCustomAttributes","version":"01.00.00"},{"name":"refSchemaA","version":"03.01.00"},{"name":"refSchemaB","version":"03.01.00"}],"version":"03.01.00"}
+    # Test Data Schema (minified): {"$schema":"https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema","alias":"ex","children":{"ExampleBaseEntity":{"schemaChildType":"EntityClass"},"ExampleCustomAttribute":{"appliesTo":"Schema, AnyProperty","modifier":"sealed","schemaChildType":"CustomAttributeClass"},"ExampleEntity":{"baseClass":"ExampleSchema.ExampleBaseEntity","description":"An example entity class.","label":"ExampleEntity","mixins":["ExampleSchema.ExampleMixinA","ExampleSchema.ExampleMixinB"],"modifier":"sealed","schemaChildType":"EntityClass"},"ExampleEnumeration":{"backingTypeName":"int","enumerators":[{"label":"None","value":1},{"label":"SomeVal","value":2},{"label":"AnotherVal","value":3}],"isStrict":true,"schemaChildType":"Enumeration"},"ExampleKoQ":{"persistenceUnit":{"format":"DefaultReal","unit":"MM"},"precision":3.0,"presentationUnits":[{"format":"DefaultReal","unit":"IN"},{"format":"DefaultReal","unit":"MM"},{"format":"DefaultReal","unit":"CM"}],"schemaChildType":"KindOfQuantity"},"ExampleMixinA":{"appliesTo":"ExampleSchema.ExampleEntity","schemaChildType":"Mixin"},"ExampleMixinB":{"appliesTo":"ExampleSchema.ExampleEntity","schemaChildType":"Mixin"},"ExamplePropertyCategory":{"priority":5,"schemaChildType":"PropertyCategory"},"ExampleRelationship":{"modifier":"sealed","schemaChildType":"RelationshipClass","source":{"constraintClasses":["ExampleSchema.ExampleSource"],"multiplicity":"(0..1)","polymorphic":true,"roleLabel":"source roleLabel"},"strength":"embedding","strengthDirection":"forward","target":{"constraintClasses":["ExampleSchema.ExampleTarget"],"multiplicity":"(0..1)","polymorphic":true,"roleLabel":"target roleLabel"}},"ExampleSource":{"schemaChildType":"EntityClass"},"ExampleStruct":{"modifier":"sealed","properties":[{"extendedTypeName":"FooBar","label":"ExPrimitiveArray","maxOccurs":25,"maxValue":20,"minOccurs":10,"minValue":7,"name":"ExamplePrimitiveArray","propertyType":"PrimitiveArrayProperty","typeName":"int"}],"schemaChildType":"StructClass"},"ExampleTarget":{"schemaChildType":"EntityClass"}},"customAttributes":[{"className":"refSchemaA.SomeCustomAttributeClass"},{"className":"refSchemaB.AnotherCustomAttributeClass"}],"description":"The quick brown fox jumps over the lazy dog.","label":"Example Schema","name":"ExampleSchema","references":[{"name":"CoreCustomAttributes","version":"01.00.00"},{"name":"refSchemaA","version":"03.01.00"},{"name":"refSchemaB","version":"03.01.00"}],"version":"03.01.00"}
+    # Created Schema   (pretty):
+    # {
+    # "$schema" : "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema",
+    # "alias" : "ex",
+    # "children" : {
+    # "ExampleBaseEntity" : {
+    # "schemaChildType" : "EntityClass"
+    # },
+    # "ExampleCustomAttribute" : {
+    # "appliesTo" : "Schema, AnyProperty",
+    # "modifier" : "sealed",
+    # "schemaChildType" : "CustomAttributeClass"
+    # },
+    # "ExampleEntity" : {
+    # "baseClass" : "ExampleSchema.ExampleBaseEntity",
+    # "description" : "An example entity class.",
+    # "label" : "ExampleEntity",
+    # "mixins" : [ "ExampleSchema.ExampleMixinA", "ExampleSchema.ExampleMixinB" ],
+    # "modifier" : "sealed",
+    # "schemaChildType" : "EntityClass"
+    # },
+    # "ExampleEnumeration" : {
+    # "backingTypeName" : "int",
+    # "enumerators" : [
+    # {
+    # "label" : "None",
+    # "value" : 1
+    # },
+    # {
+    # "label" : "SomeVal",
+    # "value" : 2
+    # },
+    # {
+    # "label" : "AnotherVal",
+    # "value" : 3
+    # }
+    # ],
+    # "isStrict" : true,
+    # "schemaChildType" : "Enumeration"
+    # },
+    # "ExampleKoQ" : {
+    # "schemaChildType" : "KindOfQuantity"
+    # },
+    # "ExampleMixinA" : {
+    # "appliesTo" : "ExampleSchema.ExampleEntity",
+    # "schemaChildType" : "Mixin"
+    # },
+    # "ExampleMixinB" : {
+    # "appliesTo" : "ExampleSchema.ExampleEntity",
+    # "schemaChildType" : "Mixin"
+    # },
+    # "ExampleRelationship" : {
+    # "modifier" : "sealed",
+    # "schemaChildType" : "RelationshipClass",
+    # "source" : {
+    # "constraintClasses" : [ "ExampleSchema.ExampleSource" ],
+    # "multiplicity" : "(0..1)",
+    # "polymorphic" : true,
+    # "roleLabel" : "source roleLabel"
+    # },
+    # "strength" : "embedding",
+    # "strengthDirection" : "forward",
+    # "target" : {
+    # "constraintClasses" : [ "ExampleSchema.ExampleTarget" ],
+    # "multiplicity" : "(0..1)",
+    # "polymorphic" : true,
+    # "roleLabel" : "target roleLabel"
+    # }
+    # },
+    # "ExampleSource" : {
+    # "schemaChildType" : "EntityClass"
+    # },
+    # "ExampleStruct" : {
+    # "modifier" : "sealed",
+    # "properties" : [
+    # {
+    # "extendedTypeName" : "FooBar",
+    # "label" : "ExPrimitiveArray",
+    # "maxOccurs" : 25,
+    # "maxValue" : 20,
+    # "minOccurs" : 10,
+    # "minValue" : 7,
+    # "name" : "ExamplePrimitiveArray",
+    # "propertyType" : "PrimitiveArrayProperty",
+    # "typeName" : "int"
+    # }
+    # ],
+    # "schemaChildType" : "StructClass"
+    # },
+    # "ExampleTarget" : {
+    # "schemaChildType" : "EntityClass"
+    # }
+    # },
+    # "customAttributes" : [
+    # {
+    # "className" : "refSchemaA.SomeCustomAttributeClass"
+    # },
+    # {
+    # "className" : "refSchemaB.AnotherCustomAttributeClass"
+    # }
+    # ],
+    # "description" : "The quick brown fox jumps over the lazy dog.",
+    # "label" : "Example Schema",
+    # "name" : "ExampleSchema",
+    # "references" : [
+    # {
+    # "name" : "CoreCustomAttributes",
+    # "version" : "01.00.00"
+    # },
+    # {
+    # "name" : "refSchemaA",
+    # "version" : "03.01.00"
+    # },
+    # {
+    # "name" : "refSchemaB",
+    # "version" : "03.01.00"
+    # }
+    # ],
+    # "version" : "03.01.00"
+    # }
+    # Test Data Schema (pretty):
+    # {
+    # "$schema" : "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema",
+    # "alias" : "ex",
+    # "children" : {
+    # "ExampleBaseEntity" : {
+    # "schemaChildType" : "EntityClass"
+    # },
+    # "ExampleCustomAttribute" : {
+    # "appliesTo" : "Schema, AnyProperty",
+    # "modifier" : "sealed",
+    # "schemaChildType" : "CustomAttributeClass"
+    # },
+    # "ExampleEntity" : {
+    # "baseClass" : "ExampleSchema.ExampleBaseEntity",
+    # "description" : "An example entity class.",
+    # "label" : "ExampleEntity",
+    # "mixins" : [ "ExampleSchema.ExampleMixinA", "ExampleSchema.ExampleMixinB" ],
+    # "modifier" : "sealed",
+    # "schemaChildType" : "EntityClass"
+    # },
+    # "ExampleEnumeration" : {
+    # "backingTypeName" : "int",
+    # "enumerators" : [
+    # {
+    # "label" : "None",
+    # "value" : 1
+    # },
+    # {
+    # "label" : "SomeVal",
+    # "value" : 2
+    # },
+    # {
+    # "label" : "AnotherVal",
+    # "value" : 3
+    # }
+    # ],
+    # "isStrict" : true,
+    # "schemaChildType" : "Enumeration"
+    # },
+    # "ExampleKoQ" : {
+    # "persistenceUnit" : {
+    # "format" : "DefaultReal",
+    # "unit" : "MM"
+    # },
+    # "precision" : 3.0,
+    # "presentationUnits" : [
+    # {
+    # "format" : "DefaultReal",
+    # "unit" : "IN"
+    # },
+    # {
+    # "format" : "DefaultReal",
+    # "unit" : "MM"
+    # },
+    # {
+    # "format" : "DefaultReal",
+    # "unit" : "CM"
+    # }
+    # ],
+    # "schemaChildType" : "KindOfQuantity"
+    # },
+    # "ExampleMixinA" : {
+    # "appliesTo" : "ExampleSchema.ExampleEntity",
+    # "schemaChildType" : "Mixin"
+    # },
+    # "ExampleMixinB" : {
+    # "appliesTo" : "ExampleSchema.ExampleEntity",
+    # "schemaChildType" : "Mixin"
+    # },
+    # "ExamplePropertyCategory" : {
+    # "priority" : 5,
+    # "schemaChildType" : "PropertyCategory"
+    # },
+    # "ExampleRelationship" : {
+    # "modifier" : "sealed",
+    # "schemaChildType" : "RelationshipClass",
+    # "source" : {
+    # "constraintClasses" : [ "ExampleSchema.ExampleSource" ],
+    # "multiplicity" : "(0..1)",
+    # "polymorphic" : true,
+    # "roleLabel" : "source roleLabel"
+    # },
+    # "strength" : "embedding",
+    # "strengthDirection" : "forward",
+    # "target" : {
+    # "constraintClasses" : [ "ExampleSchema.ExampleTarget" ],
+    # "multiplicity" : "(0..1)",
+    # "polymorphic" : true,
+    # "roleLabel" : "target roleLabel"
+    # }
+    # },
+    # "ExampleSource" : {
+    # "schemaChildType" : "EntityClass"
+    # },
+    # "ExampleStruct" : {
+    # "modifier" : "sealed",
+    # "properties" : [
+    # {
+    # "extendedTypeName" : "FooBar",
+    # "label" : "ExPrimitiveArray",
+    # "maxOccurs" : 25,
+    # "maxValue" : 20,
+    # "minOccurs" : 10,
+    # "minValue" : 7,
+    # "name" : "ExamplePrimitiveArray",
+    # "propertyType" : "PrimitiveArrayProperty",
+    # "typeName" : "int"
+    # }
+    # ],
+    # "schemaChildType" : "StructClass"
+    # },
+    # "ExampleTarget" : {
+    # "schemaChildType" : "EntityClass"
+    # }
+    # },
+    # "customAttributes" : [
+    # {
+    # "className" : "refSchemaA.SomeCustomAttributeClass"
+    # },
+    # {
+    # "className" : "refSchemaB.AnotherCustomAttributeClass"
+    # }
+    # ],
+    # "description" : "The quick brown fox jumps over the lazy dog.",
+    # "label" : "Example Schema",
+    # "name" : "ExampleSchema",
+    # "references" : [
+    # {
+    # "name" : "CoreCustomAttributes",
+    # "version" : "01.00.00"
+    # },
+    # {
+    # "name" : "refSchemaA",
+    # "version" : "03.01.00"
+    # },
+    # {
+    # "name" : "refSchemaB",
+    # "version" : "03.01.00"
+    # }
+    # ],
+    # "version" : "03.01.00"
+    # }
+
+SchemaVersionConversionTests.SchemaWithIsUnitSystemSchema_Attribute
+
+    # TFS#793002
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:57,190 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'OldUnits:LENGTH' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [18] _C_specific_handler (0x7ffbb151bff0)
+    # [17] _chkstk (0x7ffbb9169f60)
+    # [16] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [15] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [14] BentleyB0200::ECNTests::validateUnitsInConvertedSchema2 (0x7ff70d4caeb0)
+    # [13] BentleyB0200::ECNTests::SchemaVersionConversionTests_SchemaWithIsUnitSystemSchema_Attribute_Test::TestBody (0x7ff70d4c9950)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
+
+SchemaValidatorTests.KindOfQuantityShouldUseSIPersistenceUnits
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:54,971 ERROR [0x00000f7c] ECObjectsNative - Validation Error - KindOfQuantity 'BadSchema:BadKOQ' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-08 15:16:54,971 ERROR [0x00000f7c] ECObjectsNative - Schema validation failed for schema 'BadSchema.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-08 15:16:54,971 ERROR [0x00000f7c] ECObjectsNative - Failed to read XML from string (1st 200 characters approx.): <?xml version="1.0" encoding="UTF-8"?>
+    # <ECSchema schemaName="BadSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    # <ECEntityClass typeName="TestClas
+    # c:\build\src\mds06t\ecobjects\test\Published\ECSchemaValidatorTests.cpp(1184): error: Value of: schema.IsValid()
+    # Actual: false
+    # Expected: true
+
+UnitSpecificationConversionTest.PersistenceUnitChange
+
+    # TFS#792973
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
+    # 2017-12-08 15:16:54,096 ERROR [0x00000f7c] ECObjectsNative - The property OldUnits.01.00.00:Pipe.Length has a UnitSpecification but it does not resolve to a unit.
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [22] _C_specific_handler (0x7ffbb151bff0)
+    # [21] _chkstk (0x7ffbb9169f60)
+    # [20] RtlLookupFunctionEntry (0x7ffbb90d91a0)
+    # [19] KiUserExceptionDispatcher (0x7ffbb91690d0)
+    # [18] BentleyB0200::ECN::obtainKindOfQuantity (0x7ffb9c1719a0)
+    # [17] BentleyB0200::ECN::UnitSpecificationConverter::Convert (0x7ffb9c1693e0)
+    # [16] BentleyB0200::ECN::ECSchemaConverter::ProcessCustomAttributeInstance (0x7ffb9c16f9d0)
+    # [15] BentleyB0200::ECN::ECSchemaConverter::ConvertPropertyLevel (0x7ffb9c16af10)
+    # [14] BentleyB0200::ECN::ECSchemaConverter::Convert (0x7ffb9c167720)
+    # [13] BentleyB0200::ECNTests::UnitSpecificationConversionTest_PersistenceUnitChange_WithPresentationUnits_Test::TestBody (0x7ff70d2fcef0)
+    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff70d4f2e80)
+    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff70d4f2d10)
+    # [10] testing::Test::Run (0x7ff70d5032b0)
+    # [9] testing::TestInfo::Run (0x7ff70d5035c0)
+    # [8] testing::TestCase::Run (0x7ff70d5033d0)
+    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff70d503880)
+    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2f20)
+    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff70d4f2e00)
+    # [4] testing::UnitTest::Run (0x7ff70d503760)
+    # [3] main (0x7ff70d299480)
+    # [2] __scrt_common_main_seh (0x7ff70d511cac)
+    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
+    # [0] RtlUserThreadStart (0x7ffbb9130d30)
