@@ -38,32 +38,6 @@ static bool hasHandler(ECN::ECClassCR cls)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::AddRef() const
-    {
-    if (1 == m_refCount.IncrementAtomicPre(std::memory_order_relaxed) && IsPersistent())
-        GetDgnDb().Elements().OnReclaimed(*this); // someone just requested this previously unreferenced element
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::Release() const
-    {
-    uint32_t countWas = m_refCount.DecrementAtomicPost(std::memory_order_relaxed);
-    BeAssert(0 != countWas);
-    if (1 == countWas)
-        {
-        std::atomic_thread_fence(std::memory_order_acquire);
-        if (IsPersistent()) // is this element in the pool?
-            GetDgnDb().Elements().OnUnreferenced(*this); // yes, the last reference was just released, add to the unreferenced element count
-        else
-            delete this; // no, just delete it
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnElement::GetModel() const

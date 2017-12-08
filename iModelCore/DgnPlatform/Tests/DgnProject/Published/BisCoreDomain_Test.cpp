@@ -238,7 +238,7 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
 
     // ensure the the root Subject still exists
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache(); 
         SubjectCPtr subject = m_db->Elements().GetRootSubject();
         ASSERT_TRUE(subject.IsValid());
         }

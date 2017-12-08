@@ -897,7 +897,7 @@ TEST_F(DependencyRevisionTest, Merge)
     m_db->SaveChanges("Merge A");
     VerifyRootProperty(aId, 321);
     VerifyDependentProperties(cId, { 789, 0, 321, 456 });
-    EXPECT_TRUE(m_db->Memory().PurgeUntil(0));
+    m_db->Elements().ClearCache();
     VerifyRootProperty(aId, 321);
 
     UpdateRootProperty(654, bId);
