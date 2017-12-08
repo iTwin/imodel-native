@@ -476,6 +476,13 @@ enum class DwgDbAngularUnits
     Bearing                     = 4,
     };
 
+enum class DwgDbLightingUnits
+    {
+    None                        = 0,
+    American                    = 1,    // US lighting units (foot-candles)
+    International               = 2,    // International lighting units (lux)
+    };
+
 enum class DwgDbPlotStyleNameType
     {
     ByLayer                     = 0,

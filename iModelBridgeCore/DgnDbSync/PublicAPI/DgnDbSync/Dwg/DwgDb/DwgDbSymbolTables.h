@@ -85,11 +85,29 @@ public:
 public:
     DWGDB_EXPORT ~DwgDbSymbolTableIterator ();
 
+    //! Check if the iterator is valid
     DWGDB_EXPORT bool                   IsValid () const { return nullptr != m_symbolTableIterator; }
+    //! Set the iterator at begining of the table entries
     DWGDB_EXPORT void                   Start () { if (nullptr != m_symbolTableIterator) m_symbolTableIterator->start(); }
+    //! Move the iterator to next table entry
     DWGDB_EXPORT void                   Step () { if (nullptr != m_symbolTableIterator) m_symbolTableIterator->step(); }
+    //! Check if the iterator has reach the last table entry
+    //! @return     True, has reached end of the table; false, otherwise
     DWGDB_EXPORT bool                   Done () const { return nullptr != m_symbolTableIterator ? m_symbolTableIterator->done() : true; }
+    //! @return     The object ID of current table entry
     DWGDB_EXPORT DwgDbObjectId          GetRecordId () const;
+    //! Include or exclude hidden layers in the iterator.
+    //! @note   Valid only for layer tables, and using RealDWG toolkit.  Default to skip hidden layers.
+    //! param[in] skip  True to exclude hidden layers from the layer table iterator(default); false to include hidden layers.
+    DWGDB_EXPORT void   SetSkipHiddenLayers (bool skip);
+    //! Are hidden layers excluded in the layer table iterator?
+    DWGDB_EXPORT bool   GetSkipHiddenLayers () const;
+    //! Include or exclude reconciled layers in the iterator.
+    //! @note   Valid only for layer tables, and using RealDWG toolkit.  Default to skip reconciled layers.
+    //! param[in] skip  True to exclude reconciled layers from the layer table iterator(default); false to include hidden layers.
+    DWGDB_EXPORT void   SetSkipReconciledLayers (bool skip);
+    //! Are reconciled layers excluded in the layer table iterator?
+    DWGDB_EXPORT bool   GetSkipReconciledLayers () const;
     };  // DwgDbSymbolTableIterator
 
 /*=================================================================================**//**
@@ -204,6 +222,8 @@ public:
     DWGDB_EXPORT bool                       IsFrozen () const;
     DWGDB_EXPORT bool                       IsLocked () const;
     DWGDB_EXPORT bool                       IsPlottable () const;
+    DWGDB_EXPORT bool                       IsHidden () const;
+    DWGDB_EXPORT bool                       IsReconciled () const;
     DWGDB_EXPORT DwgDbObjectId              GetLinetypeId () const;
     DWGDB_EXPORT DwgDbObjectId              GetLinetypeId (bool& isOverridden, DwgDbObjectIdCR viewportId) const;
     DWGDB_EXPORT DwgDbObjectId              GetMaterialId () const;
@@ -270,6 +290,8 @@ public:
     DWGDB_EXPORT bool                       IsSnapEnabled () const;
     DWGDB_EXPORT bool                       IsIsometricSnapEnabled () const;
     DWGDB_EXPORT int16_t                    GetGridMajor () const;
+    DWGDB_EXPORT double                     GetBrightness () const;
+    DWGDB_EXPORT DwgCmColor                 GetAmbientLightColor () const;
     };  // DwgDbViewportTableRecord
 DWGDB_DEFINE_OBJECTPTR (ViewportTableRecord)
 

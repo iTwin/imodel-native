@@ -108,6 +108,7 @@ void        DwgImporter::RegisterProtocalExtensions ()
     DwgRasterImageExt::RxInit ();
     DwgPointCloudExExt::RxInit ();
     DwgViewportExt::RxInit ();
+    DwgLightExt::RxInit ();
 
     DwgRxClass::BuildClassHierarchy ();
 
@@ -122,5 +123,6 @@ void        DwgImporter::RegisterProtocalExtensions ()
     DwgRxClass::AddProtocolExtension (DwgDbRasterImage::SuperDesc(), protocalClass, DwgRasterImageExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbPointCloudEx::SuperDesc(), protocalClass, DwgPointCloudExExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbViewport::SuperDesc(), protocalClass, DwgViewportExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbLight::SuperDesc(), protocalClass, DwgLightExt::CreateObject());
     }
 

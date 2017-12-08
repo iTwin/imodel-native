@@ -107,6 +107,8 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetMaterialGlobalId () const;
     DWGDB_EXPORT DwgDbObjectId      GetNamedObjectsDictionaryId () const;   // The top level, main dictionary ID
     DWGDB_EXPORT DwgDbObjectId      GetObjectId (DwgDbHandleCR handle);
+    DWGDB_EXPORT DwgDbLightingUnits GetLightingUnits () const;
+    DWGDB_EXPORT bool               GetLightGlyphDisplay () const;
     };  // DwgDbDatabase
 
 /*=================================================================================**//**

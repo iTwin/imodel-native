@@ -243,6 +243,7 @@ struct DwgImporter
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
     friend class DwgViewportExt;
+    friend class DwgLightExt;
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DwgBridge";}
