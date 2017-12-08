@@ -78,7 +78,7 @@ struct AddonUtils
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value& props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);
     static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const& inOpts);
- 
+
     static JsECDbPtr CreateECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname);
     static JsECDbPtr OpenECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
@@ -92,6 +92,9 @@ struct AddonUtils
     static BeSQLite::DbResult ExecuteStatement(Utf8StringR instanceId, BeSQLite::EC::ECSqlStatement& stmt, bool isInsertStmt, JsonValueCR bindings);
     static Utf8String GetLastEcdbIssue();
     static BeSQLite::DbResult GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath);
+    static void GetRootSubjectInfo(JsonValueR rootSubjectInfo, DgnDbCR dgndb);
+    static void GetExtents(JsonValueR extentsJson, DgnDbCR dgndb);
+
 };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -6,7 +6,7 @@ import { DbResult } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 /* import { IModelStatus } from "@bentley/bentleyjs-core/lib/Bentley"; */
 
-/* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data 
+/* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
 interface IModelJsNodeAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
   /**
@@ -41,11 +41,19 @@ declare class NodeAddonDgnDb {
   constructor();
 
   /**
-   * TBD
-   * @param cachePath TBD
+   * Get information on all briefcases cached on disk
+   * @param cachePath Path to the root of the disk cache
    */
   getCachedBriefcaseInfosSync(cachePath: string): ErrorStatusOrResult<DbResult, string>;
- 
+
+  /** Get name and description of the root subject of this BIM as a JSON string ({name:, description: }) */
+  getRootSubjectInfo(): string;
+
+  /**
+   * Get the extents of this BIM as a JSON string ({low: {x:, y:, z:}, high: {x:, y:, z:}})
+   */
+  getExtents(): string;
+
   /**
    * Open a local BIM file.
    * @param dbname The full path to the BIM file in the local file system
@@ -61,7 +69,7 @@ declare class NodeAddonDgnDb {
    * @return non-zero error status if operation failed.
    */
   openDgnDbSync(dbname: string, mode: OpenMode): DbResult;
-  
+
   /** Close this BIM file. */
   closeDgnDb(): void;
 
@@ -73,6 +81,17 @@ declare class NodeAddonDgnDb {
 
   /** Get the briefcase ID of this BIM file. */
   getBriefcaseId(): number;
+
+  /** Get the Id of the last change set that was merged into or created from the Db. This is the parent for any new change sets that will be created from the BIM.
+   * @return Returns an empty string if the BIM is in it's initial state (with no change sets), or if it's a standalone briefcase disconnected from the Hub.
+   */
+  getParentChangeSetId(): string;
+
+  /* Get the GUID of the BIM file */
+  getDbGuid(): string;
+
+  /* Set the GUID of the BIM file */
+  setDbGuid(guid: string): DbResult;
 
   /**
    * TBD
@@ -206,7 +225,7 @@ declare class NodeAddonECSqlStatement {
     /** Dispose of the native ECSqlStatement object - call this when finished stepping a statement, but only if the statement is not shared. */
     dispose(): void;
 
-    /** Clear the bindings of this statement. See bindValues. 
+    /** Clear the bindings of this statement. See bindValues.
      * @return non-zero error status in case of failure.
      */
     clearBindings(): DbResult;
@@ -218,7 +237,7 @@ declare class NodeAddonECSqlStatement {
      */
     bindValues(valuesJson: string): StatusCodeWithMessage<DbResult>;
 
-    /** Step this statement to move to the next row.  
+    /** Step this statement to move to the next row.
      * @return BE_SQLITE_ROW if the step moved to a new row. BE_SQLITE_DONE if the step failed because there is no next row. Another non-zero error status if step failed because of an error.
     */
     step(): DbResult;

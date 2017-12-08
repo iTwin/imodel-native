@@ -213,11 +213,15 @@ DbResult AddonUtils::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, 
     if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
         return result;
 
-    BeBriefcaseId newBriefcaseId((uint32_t) briefcaseId);
-    if (db->IsMasterCopy())
+    BeBriefcaseId newBriefcaseId((uint32_t)briefcaseId);
+    if (db->GetBriefcaseId() != newBriefcaseId)
+        {
+        if (!EXPECTED_CONDITION(db->IsMasterCopy() && "Expected briefcase to be a master copy"))
+            return BE_SQLITE_ERROR;
         result = db->SetAsBriefcase(newBriefcaseId);
-    else if (!EXPECTED_CONDITION(db->GetBriefcaseId() == newBriefcaseId))
-        return BE_SQLITE_ERROR;
+        if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Couldn't setup the briefcase id"))
+            return BE_SQLITE_ERROR;
+        }
 
     if (changeSetTokens.size() == 0)
         {
