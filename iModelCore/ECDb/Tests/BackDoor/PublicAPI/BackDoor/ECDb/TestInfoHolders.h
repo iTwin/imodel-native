@@ -24,6 +24,7 @@ struct JsonValue final
         explicit JsonValue(Json::ValueType type) : m_value(type) {}
         explicit JsonValue(JsonValueCR json) : m_value(json) {}
         explicit JsonValue(Utf8CP json);
+        explicit JsonValue(Utf8StringCR json) : JsonValue(json.c_str()) {}
 
         bool operator==(JsonValue const& rhs) const;
         bool operator!=(JsonValue const& rhs) const { return !(*this == rhs); }

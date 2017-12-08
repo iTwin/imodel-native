@@ -14,16 +14,15 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! @deprecated Use ECDb::ExtractChangeSummary instead
-//!
-//! @private internal use only
 //! A custom function to test if an instance exists in the change set
+//! @deprecated Use BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary instead
+//! @private internal use only
 //! @e Example
 //!     SELECT el.ECInstanceId
 //!     FROM dgn.Element el
 //!     JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom
 //!     WHERE IsChangedInstance(:changeSummary, elg.ECClassId, elg.ECInstanceId)
-//! @bsiclass                                                 Ramanujam.Raman      08/2015
+//! @bsiclass                                                  08/2015
 //=======================================================================================
 struct IsChangedInstanceSqlFunction final : ScalarFunction
 {
@@ -40,11 +39,10 @@ struct ValuesTable;
 struct ChangeExtractor;
 
 //=======================================================================================
-//! @deprecated Use ECDb::ExtractChangeSummary instead
-//!
 //! Utility to interpret a set of changes to the database as EC instances. 
+//! @deprecated Use BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary instead
 //! 
-//! @remarks The utility iterates over the raw Sqlite changes to consolidate and extract 
+//! @remarks The utility iterates over the raw SQLite changes to consolidate and extract 
 //! information on the contained ECInstances and ECRelationshipInstances. 
 //! 
 //! Internally two passes are made over the changes with the @ref ChangeIterator. The
@@ -54,7 +52,7 @@ struct ChangeExtractor;
 //! 
 //! @see ChangeSet, ChangeIterator
 //! @ingroup ECDbGroup
-//! @bsiclass                                                 Ramanujam.Raman      07/2015
+//! @bsiclass                                                             07/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ChangeSummary
 {

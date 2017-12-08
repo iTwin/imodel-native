@@ -580,12 +580,12 @@ TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("GeneralWorkflow.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflow.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?> 
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
-            <ECEntityClass typeName="Foo">
+            <ECEntityClass typeName="Person">
                 <ECProperty propertyName="Name" typeName="string" />
-                <ECProperty propertyName="Size" typeName="int" />
+                <ECProperty propertyName="Age" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
@@ -593,51 +593,179 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(Name,Size) VALUES('Foo', 10)"));
+    ECInstanceKey maryKey, samKey;
+
+    //Changeset 1
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(maryKey, "INSERT INTO ts.Person(Name,Age) VALUES('Mery', 20)"));
     ASSERT_TRUE(tracker.HasChanges());
-    TestChangeSet revision1;
-    ASSERT_EQ(BE_SQLITE_OK, revision1.FromChangeTrack(tracker));
-    printf("Revision 1: %s\r\n", revision1.ToJson(m_ecdb).ToString().c_str());
+    TestChangeSet changeset1;
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
     tracker.Restart();
     ECInstanceKey changeSummary1Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, revision1));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1));
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Foo SET Name='Foo1'"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(Name,Size) VALUES('Foo2',20)"));
+    //Changeset 2
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Person SET Name='Mary'"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(samKey, "INSERT INTO ts.Person(Name,Age) VALUES('Sam',30)"));
     ASSERT_TRUE(tracker.HasChanges());
-    TestChangeSet revision2;
-    ASSERT_EQ(BE_SQLITE_OK, revision2.FromChangeTrack(tracker));
-    printf("Revision 2: %s\r\n", revision2.ToJson(m_ecdb).ToString().c_str());
+    TestChangeSet changeset2;
+    ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
+    //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary2Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, revision2));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2));
     tracker.Restart();
 
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Foo WHERE Name='Foo1'"));
+    //Changeset 3
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Person WHERE Name='Mary'"));
     ASSERT_TRUE(tracker.HasChanges());
-    TestChangeSet revision3;
-    ASSERT_EQ(BE_SQLITE_OK, revision3.FromChangeTrack(tracker));
+    TestChangeSet changeset3;
+    ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
     tracker.EndTracking();
-    printf("Revision 3: %s\r\n", revision3.ToJson(m_ecdb).ToString().c_str());
+    //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary3Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, revision3));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3));
 
-    EXPECT_EQ(JsonValue(R"json([{"Name":"Foo2", "Size":20}])json"), GetHelper().ExecuteSelectECSql("SELECT Name,Size FROM ts.Foo"));
+    Utf8String maryIdStr = maryKey.GetInstanceId().ToHexStr();
+    Utf8String samIdStr = samKey.GetInstanceId().ToHexStr();
 
-    //Revision 2
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Sam", "Age":30}])json", samIdStr.c_str())), 
+                        GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Age FROM ts.Person"));
+
+    //Changeset 1
+    Utf8String summary1IdStr = changeSummary1Key.GetInstanceId().ToString();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mery", "Age":20}])json", maryIdStr.c_str())),
+        GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeUpdate')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterUpdate')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeDelete')", summary1IdStr.c_str()).c_str()));
+
+
+    //Changeset 2
     Utf8String summary2IdStr = changeSummary2Key.GetInstanceId().ToString();
-    EXPECT_EQ(JsonValue(R"json([{"Name":"Foo2", "Size":20}])json"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue(R"json([{"Name":"Foo"}])json"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue(R"json([{"Name":"Foo1"}])json"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Sam", "Age":30}])json", samIdStr.c_str())),
+        GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mery"}])json", maryIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mary"}])json", maryIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str()));
 
-    //Revision 3
+    //Changeset 3
     Utf8String summary3IdStr = changeSummary3Key.GetInstanceId().ToString();
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'AfterInsert')", summary3IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue(R"json([{"Name":"Foo1", "Size":10}])json"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT Name,Size FROM ts.Foo.Changes(%s,'BeforeDelete')", summary3IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterInsert')", summary3IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Mary", "Age":20}])json", maryIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Age FROM ts.Person.Changes(%s,'BeforeDelete')", summary3IdStr.c_str()).c_str()));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  11/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithComplexProps)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithComplexProps.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="POI">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Location" typeName="Point2d" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey hallKey, stationKey, castleKey, lakeKey;
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Location) VALUES(?,?)"));
+
+    //Changeset 1
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "City Hall", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint2d(2, DPoint2d::From(100.0, 100.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(hallKey));
+    insertStmt.ClearBindings();
+    insertStmt.Reset();
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Station", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint2d(2, DPoint2d::From(200.0, 200.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(stationKey));
+    insertStmt.ClearBindings();
+    insertStmt.Reset();
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Castle", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint2d(2, DPoint2d::From(300.0, 300.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(castleKey));
+    insertStmt.ClearBindings();
+    insertStmt.Reset();
+
+    ASSERT_TRUE(tracker.HasChanges());
+    TestChangeSet changeset1;
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1));
+
+    //Changeset 2
+    tracker.Restart();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Lake", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint2d(2, DPoint2d::From(400.0, 400.0)));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(lakeKey));
+    insertStmt.ClearBindings();
+    insertStmt.Reset();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.POI WHERE Name='Station'"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.POI SET Name='County Hall', Location.X=150 WHERE Name='City Hall'"));
+    ASSERT_TRUE(tracker.HasChanges());
+    TestChangeSet changeset2;
+    ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
+    //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary2Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2));
+    tracker.EndTracking();
+
+    Utf8String hallIdStr = hallKey.GetInstanceId().ToHexStr();
+    Utf8String stationIdStr = stationKey.GetInstanceId().ToHexStr();
+    Utf8String castleIdStr = castleKey.GetInstanceId().ToHexStr();
+    Utf8String lakeIdStr = lakeKey.GetInstanceId().ToHexStr();
+
+    //Current state
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location": {"x": 150.0, "y":100.0}},
+                                                 {"id":"%s", "Name":"Castle", "Location": {"x": 300.0, "y":300.0}},
+                                                 {"id":"%s", "Name":"Lake", "Location": {"x": 400.0, "y":400.0}}])json",
+                                         hallIdStr.c_str(), castleIdStr.c_str(), lakeIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Location FROM ts.POI"));
+
+    //Changeset 1
+    Utf8String summary1IdStr = changeSummary1Key.GetInstanceId().ToString();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location": {"x":100.0, "y":100.0}},
+                                                 {"id":"%s", "Name":"Station", "Location": {"x":200.0, "y":200.0}},
+                                                 {"id":"%s", "Name":"Castle", "Location": {"x":300.0, "y":300.0}}])json", 
+                                         hallIdStr.c_str(), stationIdStr.c_str(), castleIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeUpdate')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterUpdate')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeDelete')", summary1IdStr.c_str()).c_str()));
+
+
+    //Changeset 2
+    Utf8String summary2IdStr = changeSummary2Key.GetInstanceId().ToString();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Lake", "Location":{"x": 400.0, "y":400.0}}])json", lakeIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location":{"x": 100.0, "y":0.0}}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location.X":100.0}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+    //This doesn't seem correct: It should return Location.Y=100 and not 0/null 
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location":{"x": 150.0, "y":0.0}}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    //This doesn't seem correct: It should return Location.Y=100 and not 0/null 
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location.X":150.0}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Station", "Location":{"x": 200.0, "y":200.0}}])json", stationIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str()));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/16

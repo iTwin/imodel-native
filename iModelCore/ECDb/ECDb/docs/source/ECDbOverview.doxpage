@@ -800,13 +800,20 @@
     /**
     @page ECDbChangeSummaries Change Summaries
     
-    ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called change summaries.
+    ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called <b>change summaries</b>.
     ECDb persists them locally in a <b>change summary cache %ECDb file</b> next to the actual %ECDb file, so that they can be accessed across sessions.
     
     The <b>change summary cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeSummaryCache. Alternatively, you
     can have it attached when opening the primary %ECDb by specify the respective @ref BentleyApi::BeSQLite::EC::ECDb::OpenParams "open parameter".
 
-    Once attached the change summary cache file is visible in ECSQL under the table space @b @c changesummaries.
+    Once attached the change summary cache file is visible in ECSQL under the table space @b changesummaries.
+
+    @see BentleyApi::BeSQLite::EC::ECDb::AttachChangeSummaryCache
+    @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
+    @see BentleyApi::BeSQLite::EC::ECDb::ChangeSummaryCacheMode
+    @see BentleyApi::BeSQLite::EC::ECDb::IsChangeSummaryCacheAttached
+    @see BentleyApi::BeSQLite::EC::ECDb::GetChangeSummaryCachePath
+    @see BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary
 
     ### Querying into the change summaries
     You can use ECSQL against the @b ECDbChangeSummaries ECSchema to find out what ECInstances and what properties in them have changed 
@@ -818,27 +825,226 @@
         SELECT ChangedInstance.Id, OpCode FROM changesummaries.change.InstanceChange WHERE Summary.Id=?
 
     ### Querying for the changed values
-    Whereas ECDbChangeSummaries ECSchema yields information about what ECInstances and what properties have changed, querying for the actual
+    Whereas the @b ECDbChangeSummaries ECSchema yields information about what ECInstances and what properties have changed, querying for the actual
     changed values is done with the ECSQL function @b Changes.
 
     Syntax:
 
-        SELECT ... FROM MySchema.MyClass.<b>Changes</b>(ChangeSummaryId, ChangedValueState) ...
+        SELECT ... FROM MySchema.MyClass.Changes(ChangeSummaryId, ChangedValueState) ...
 
-    ChangeSummaryId: The ECInstanceId of the ChangeSummary instance created by BentleyApi::BeSQLite::ECECDb::ExtractChangeSummary.
-    ChangedValueState: corresponds to the values of the enum @ref BentleyApi::BeSQLite::EC::ChangedValueState "ChangedValueState".
+
+    - %ChangeSummaryId: The ECInstanceId of the ChangeSummary instance created by BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary.
+    - %ChangedValueState: corresponds to the values of the enum @ref BentleyApi::BeSQLite::EC::ChangedValueState "ChangedValueState".
     
     @note You can format the ChangedValueState in the ECSQL either by the enum's integral values or by the enum value's name. The following
     two ECSQL statements are equivalent:
         
         SELECT ... FROM MySchema.MyClass.Changes(12, 1)
-    or
         SELECT ... FROM MySchema.MyClass.Changes(12, 'AfterInsert')
 
+
     ### Notes when specifying ChangedValueStatue::BeforeUpdate or ChangedValueStatue::AfterUpdate
-    For any select clause item whose value has not changed in the specified change summary, the value of the current state of the file is returned. The function does @b NOT 
-    return the value it was at the revision the change summary referred to.
+    For any property in the select clause item the value of which has not changed in the specified change summary, 
+    the <b>value of the current state of the file</b> is returned. The function does @b NOT return the value it was at the 
+    revision the change summary referred to.
+    If the row in the current state doesn't exist anymore (because it was deleted in subsequent changesets), null will be returned
+    for the unchanged values.
+    See @ref ECDbChangeSummariesExampleScenario for examples.
+
+    @section ECDbChangeSummariesExampleScenario Example Scenario
+
+    ### Example ECClass
+
+        <ECSchema schemaName="ACME" alias="acme" version="01.00.00">
+            <ECEntityClass typeName="Person">
+                <ECProperty propertyName="Name" typeName="string"/>
+                <ECProperty propertyName="Age" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>
+
+    ## Revision 1
     
+    - Insert a new Person (Id 1)
+
+    #### Result
+
+    Id  | Name | Age
+    --- | ---- | ---
+    1   | Mery | 20
+    
+
+    ## Revision 2
+    
+    - Update Name of Person (Id 1) from Mery to Mary
+    - Insert a new Person (Id 2)
+
+    #### Result
+
+    Id  | Name | Age
+    --- | ---- | ---
+    1   | Mary | 20
+    2   | Sam  | 30
+
+    ## Revision 3
+    
+    - Delete Person (Id 1)
+
+    #### Result
+
+    Id  | Name | Age
+    --- | ---- | ---
+    2   | Sam  | 30
+    
+
+    ## ECSQL Examples
+    
+    After having extracting change summaries for each of the three changesets the following ECSQL examples would return the following results.
+
+    ### ECSQL against ECDbChangeSummaries ECSchema
+
+    <table>
+    <tr><th>ECSQL</th><th>Result</th></tr>
+    <tr><td align="left" valign="top"><c>SELECT Summary.Id,ChangedInstance.Id,OpCode,IsIndirect FROM change.InstanceChange</c></td>
+        <td>
+        <table>
+            <tr><th>Summary.Id</th><th>ChangedInstance.Id</th><th>OpCode</th><th>IsIndirect</th></tr>
+            <tr><td>1</td><td>1</td><td>1 (Insert)</td><td>false</td></tr>
+            <tr><td>2</td><td>1</td><td>2 (Update)</td><td>false</td></tr>
+            <tr><td>2</td><td>2</td><td>1 (Insert)</td><td>false</td></tr>
+            <tr><td>3</td><td>1</td><td>4 (Delete)</td><td>false</td></tr>
+        </table>
+        @b Note 
+            - <c>ChangedInstance.Id</c> is the ECInstanceId of the changed instance, i.e. the changed @c Person instance in this example.
+            - The @c OpCode values refer to the @c OpCode %ECEnumeration as defined in the @b ECDbChangeSummaries ECSchema.
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT i.ChangedInstance.Id, p.AccessString, i.OpCode FROM change.PropertyValueChange p 
+        JOIN change.InstanceChange i USING change.InstanceChangeOwnsPropertyValueChanges 
+        WHERE i.Summary.Id = 2</c></td>
+        <td>
+        <table>
+            <tr><th>ChangedInstance.Id</th><th>AccessString</th><th>OpCode</th></tr>
+            <tr><td>1</td><td>Name</td><td>2 (Update)</td></tr>
+            <tr><td>2</td><td>Name</td><td>1 (Insert)</td></tr>
+            <tr><td>2</td><td>Age</td><td>1 (Insert)</td></tr>
+        </table>
+
+       The ECSQL returns the property values that have changed in the ChangeSummary with Id 2. For every property value change, the 
+        ECInstanceId of the respective class is returned as well as the OpCode. 
+        - Row #1 means that the @c Name of @c Person 1 was @b updated.
+        - Row #2 means that the @c Name of @c Person 2 was @b inserted.
+        - Row #3 means that the @c Age of @c Person 2 was @b inserted.
+        </td>
+     </tr>
+    </table>
+
+
+    ### ECSQL Function Changes 
+
+    <table>
+    <tr><th>ECSQL</th><th>Result</th></tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>2</td><td>Sam</td><td>30</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'AfterInsert')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mery</td><td>20</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'BeforeUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'AfterUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'AfterDelete')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+
+     <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'AfterInsert')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>2</td><td>Sam</td><td>30</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'BeforeUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mery</td><td>null</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'AfterUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mary</td><td>null</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'AfterDelete')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+
+     <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'AfterInsert')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'BeforeUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'AfterUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'AfterDelete')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mary</td><td>null</td></tr>
+        </table>
+        </td>
+     </tr>
+    </table>
+
+
     @see @ref ECDbOverview
     */
 
