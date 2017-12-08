@@ -192,6 +192,7 @@
     <ClCompile Include="iModelHubClient\Events\ChangeSetPostPushEvent.cpp" />
     <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp" />
     <ClCompile Include="iModelHubClient\MultiProgressCallbackHandler.cpp" />
+    <ClCompile Include="iModelHubClient\StatisticsInfo.cpp" />
     <ClCompile Include="iModelHubClient\UserInfo.cpp" />
     <ClCompile Include="iModelHubClient\UserInfoManager.cpp" />
     <ClCompile Include="iModelHubClient\Utils.cpp" />
@@ -224,6 +225,7 @@
     <ClCompile Include="Client\WSQuery.cpp" />
     <ClCompile Include="Client\WSRepository.cpp" />
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
+    <ClCompile Include="iModelHubClient\StatisticsManager.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp" />
@@ -298,6 +300,8 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ClientHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfoManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\CodeAdmin.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BreakHelper.h" />

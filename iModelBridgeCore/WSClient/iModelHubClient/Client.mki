@@ -44,7 +44,9 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/VersionInfo.h            \
                                 $(iModelHubClientMkiPublicApiDir)Client/UserInfo.h               \
-                                $(iModelHubClientMkiPublicApiDir)Client/UserInfoManager.h
+                                $(iModelHubClientMkiPublicApiDir)Client/UserInfoManager.h        \
+                                $(iModelHubClientMkiPublicApiDir)Client/StatisticsInfo.h         \
+                                $(iModelHubClientMkiPublicApiDir)Client/StatisticsManager.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -106,3 +108,6 @@ $(o)UserInfoManager$(oext)                 : $(iModelHubClientMkiSourceDir)UserI
 
 $(o)VersionsManager$(oext)                 : $(iModelHubClientMkiSourceDir)VersionsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)StatisticsInfo$(oext)                  : $(iModelHubClientMkiSourceDir)StatisticsInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)StatisticsManager$(oext)               : $(iModelHubClientMkiSourceDir)StatisticsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}

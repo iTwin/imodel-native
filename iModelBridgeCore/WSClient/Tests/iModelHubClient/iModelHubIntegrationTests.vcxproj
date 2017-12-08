@@ -97,6 +97,8 @@
     <ClCompile Include="Integration\IntegrationTestsHelper.cpp" />
     <ClCompile Include="Integration\MockHttpHandler.cpp" />
     <ClCompile Include="Integration\PerformanceTestHelper.cpp" />
+    <ClCompile Include="Integration\Statistics_Tests.cpp" />
+    <ClCompile Include="Integration\UserInfo_Tests.cpp" />
     <ClCompile Include="Integration\LRPJobBackdoorAPI.cpp" />
   </ItemGroup>
   <ItemGroup>

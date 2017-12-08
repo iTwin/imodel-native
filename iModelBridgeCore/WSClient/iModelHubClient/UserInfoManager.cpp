@@ -47,32 +47,30 @@ ICancellationTokenPtr cancellationToken
         return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UserInfoResult>
             ([=](const WSObjectsResult& result)
             {
-            if (result.IsSuccess())
+            if (!result.IsSuccess())
+                return UserInfoResult::Error(result.GetError());
+
+            auto userInfoInstances = result.GetValue().GetInstances();
+            if (userInfoInstances.IsEmpty())
                 {
-                auto userInfoInstances = result.GetValue().GetInstances();
-                if (userInfoInstances.IsEmpty())
-                    {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "User does not exist.");
-                    return UserInfoResult::Error(Error::Id::UserDoesNotExist);
-                    }
-                if (userInfoInstances.Size() > 1)
-                    {
-                    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Multiple users found.");
-                    return UserInfoResult::Error(Error::Id::Unknown);
-                    }
-                auto user = UserInfo::Parse(*userInfoInstances.begin());
-
-                BeMutexHolder lock(s_userInfoCacheMutex);
-                if (s_userInfoCache.find(user->GetId()) == s_userInfoCache.end())
-                    s_userInfoCache.Insert(user->GetId(), user);
-                lock.unlock();
-
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                return UserInfoResult::Success(user);
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "User does not exist.");
+                return UserInfoResult::Error(Error::Id::UserDoesNotExist);
                 }
+            if (userInfoInstances.Size() > 1)
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Multiple users found.");
+                return UserInfoResult::Error(Error::Id::Unknown);
+                }
+            auto user = UserInfo::Parse(*userInfoInstances.begin());
 
-            return UserInfoResult::Error(result.GetError());
+            BeMutexHolder lock(s_userInfoCacheMutex);
+            if (s_userInfoCache.find(user->GetId()) == s_userInfoCache.end())
+                s_userInfoCache.Insert(user->GetId(), user);
+            lock.unlock();
+
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+            return UserInfoResult::Success(user);
             });
         });
     }
@@ -97,24 +95,22 @@ ICancellationTokenPtr cancellationToken
             ->Then<UsersInfoResult>
             ([=](const WSObjectsResult& result)
             {
-            if (result.IsSuccess())
-                {
-                s_userInfoCacheMutex.lock();
-                bvector<UserInfoPtr> usersList;
-                s_userInfoCache.clear();
-                for (auto const& value : result.GetValue().GetInstances())
-                    {
-                    auto userInfo = UserInfo::Parse(value);
-                    usersList.push_back(userInfo);
-                    s_userInfoCache.Insert(userInfo->GetId(), userInfo);
-                    }
-                s_userInfoCacheMutex.unlock();
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                return UsersInfoResult::Success(usersList);
-                }
+            if (!result.IsSuccess())
+                return UsersInfoResult::Error(result.GetError());
 
-            return UsersInfoResult::Error(result.GetError());
+            s_userInfoCacheMutex.lock();
+            bvector<UserInfoPtr> usersList;
+            s_userInfoCache.clear();
+            for (auto const& value : result.GetValue().GetInstances())
+                {
+                auto userInfo = UserInfo::Parse(value);
+                usersList.push_back(userInfo);
+                s_userInfoCache.Insert(userInfo->GetId(), userInfo);
+                }
+            s_userInfoCacheMutex.unlock();
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
+            return UsersInfoResult::Success(usersList);
             });
         });
     }
@@ -151,38 +147,36 @@ ICancellationTokenPtr cancellationToken
         WSQuery query = WSQuery(ServerSchema::Schema::iModel, ServerSchema::Class::UserInfo);
         query.AddFilterIdsIn(locallyUnavailableUserObjects);
 
-        UsersInfoResultPtr queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr> > (([=] ()
+        UsersInfoResultPtr queryUsersResult = ExecuteAsync(ExecuteWithRetry<bvector<UserInfoPtr> > ([=] ()
             {
             //Execute query
             return m_repositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<UsersInfoResult>
                 ([=](const WSObjectsResult& result)
                 {
-                if (result.IsSuccess())
+                if (!result.IsSuccess())
+                    return UsersInfoResult::Error(result.GetError());
+
+                bvector<UserInfoPtr> usersList;
+                for (auto const& value : result.GetValue().GetInstances())
                     {
-                    bvector<UserInfoPtr> usersList;
-                    for (auto const& value : result.GetValue().GetInstances())
-                        {
-                        auto userInfo = UserInfo::Parse(value);
-                        usersList.push_back(userInfo);
-                        }
-                    return UsersInfoResult::Success(usersList);
+                    auto userInfo = UserInfo::Parse(value);
+                    usersList.push_back(userInfo);
                     }
-
-                return UsersInfoResult::Error(result.GetError());
+                return UsersInfoResult::Success(usersList);
                 });
-            })));
+            }));
 
-            if (!queryUsersResult->IsSuccess())
-                return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult->GetError()));
+        if (!queryUsersResult->IsSuccess())
+            return CreateCompletedAsyncTask<UsersInfoResult>(UsersInfoResult::Error(queryUsersResult->GetError()));
 
-            for (auto userInfo : queryUsersResult->GetValue())
-                {
-                usersList.push_back(userInfo);
-                BeMutexHolder lock(s_userInfoCacheMutex);
-                if (s_userInfoCache.find(userInfo->GetId()) == s_userInfoCache.end())
-                    s_userInfoCache.Insert(userInfo->GetId(), userInfo);
-                lock.unlock();
-                }
+        for (auto userInfo : queryUsersResult->GetValue())
+            {
+            usersList.push_back(userInfo);
+            BeMutexHolder lock(s_userInfoCacheMutex);
+            if (s_userInfoCache.find(userInfo->GetId()) == s_userInfoCache.end())
+                s_userInfoCache.Insert(userInfo->GetId(), userInfo);
+            lock.unlock();
+            }
         }
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();

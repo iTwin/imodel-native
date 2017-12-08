@@ -24,6 +24,7 @@
 #include <WebServices/iModelHub/Client/UserInfoManager.h>
 #include <WebServices/iModelHub/Client/VersionsManager.h>
 #include <WebServices/iModelHub/Client/ChangeSetCacheManager.h>
+#include <WebServices/iModelHub/Client/StatisticsManager.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -158,6 +159,7 @@ private:
     UserInfoManager            m_userInfoManager;
     VersionsManager            m_versionsManager;
     ChangeSetCacheManager      m_changeSetCacheManager;
+    StatisticsManager          m_statisticsManager;
 
     iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
@@ -433,6 +435,10 @@ public:
     //! @return UserInfo manager
     IMODELHUBCLIENT_EXPORT UserInfoManagerCR GetUserInfoManager() const { return m_userInfoManager; }
 
+    //! Gets StatisticsManager
+    //! @return Statistics manager
+    IMODELHUBCLIENT_EXPORT StatisticsManagerCR GetStatisticsManager() const { return m_statisticsManager; }
+
     //!< Gets RepositoryClient.
     //! @return Returns repository client
     //! @private
@@ -447,6 +453,7 @@ public:
         m_userInfoManager = UserInfoManager(client);
         m_versionsManager = VersionsManager(client, this);
         m_changeSetCacheManager = ChangeSetCacheManager(this);
+        m_statisticsManager = StatisticsManager(client);
         }
 
     //! Gets VersionsManager
