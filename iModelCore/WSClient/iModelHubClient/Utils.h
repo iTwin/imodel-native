@@ -58,6 +58,7 @@ namespace ServerSchema
         static Utf8CP UserDefinition = "UserDefinition";
         static Utf8CP Version = "Version";
         static Utf8CP UserInfo = "UserInfo";
+        static Utf8CP Statistics = "Statistics";
         }
     namespace Relationship
         {
@@ -65,6 +66,7 @@ namespace ServerSchema
         static Utf8CP FileAccessKey = "FileAccessKey";
         static Utf8CP HasCreatorInfo = "HasCreatorInfo";
         static Utf8CP CumulativeChangeSet = "CumulativeChangeSet";
+        static Utf8CP HasStatistics = "HasStatistics";
         }
     namespace Property
         {
@@ -130,6 +132,10 @@ namespace ServerSchema
         static Utf8CP ChangeSetId = "ChangeSetId";
         static Utf8CP Surname = "Surname";
         static Utf8CP Email = "Email";
+        static Utf8CP BriefcasesCount = "BriefcasesCount";
+        static Utf8CP OwnedLocksCount = "OwnedLocksCount";
+        static Utf8CP PushedChangeSetsCount = "PushedChangeSetsCount";
+        static Utf8CP LastChangeSetPushDate = "LastChangeSetPushDate";
         }
     namespace ExtendedParameters
         {

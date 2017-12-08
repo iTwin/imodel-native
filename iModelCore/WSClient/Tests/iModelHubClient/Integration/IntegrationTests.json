@@ -1,15 +1,18 @@
 {
   "Environment": "DEV",
-  "ProjectId": "52a2af9e-1430-4a09-8b77-f168762863e6",
+  "ProjectId": "cb979041-3045-490c-a160-190f22d375ab",
   "Users": [
     {
-      "Password": "admin_password_please_change",
-      "Username": "admin_user_please_change",
+      "Password": "pmadm1",
+      "Username": "bistroATP_pmadm1@mailinator.com",
       "IsAdmin": true
     },
     {
-      "Password": "regular_password_please_change",
-      "Username": "regular_user_please_change"
+      "Password": "regular1",
+      "Username": "bistroATP_reg1@mailinator.com"
     }
-  ]
+  ],
+  "Host": "https://dev-imodelhubapi.bentley.com/",
+  "ProjectNr": "daa15ea8-e81f-4843-8589-94fa1a8c7f3e",
+  "Ims": true
 }

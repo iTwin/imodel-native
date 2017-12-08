@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/UserInfo.h>
-#include <DgnPlatform/TxnManager.h>
+//#include <DgnPlatform/TxnManager.h>
 #include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
