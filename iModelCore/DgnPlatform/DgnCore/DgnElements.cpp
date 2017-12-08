@@ -7,876 +7,91 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-typedef DgnElementCP* DgnElementH;
-
 BEGIN_BENTLEY_DGN_NAMESPACE
-/*=================================================================================**//**
-* @bsiclass                                                     KeithBentley    01/01
-+===============+===============+===============+===============+===============+======*/
-struct ElemIdRange
-{
-    uint64_t m_low, m_high;
-
-    void Init(uint64_t low, uint64_t high) {m_low = low; m_high  = high;}
-    void Extend(ElemIdRange const& range)
-        {
-        if (range.m_low < m_low)
-            m_low = range.m_low;
-        if (range.m_high > m_high)
-            m_high = range.m_high;
-        }
-
-    void Extend(uint64_t newKey)
-        {
-        if (newKey < m_low)
-            m_low = newKey;
-        if (newKey > m_high)
-            m_high = newKey;
-        }
-
-    bool Contains(uint64_t key) const {return (key >= m_low) &&(key <= m_high);}
-    bool Contains(ElemIdRange const& range) const {return (range.m_high <= m_high) && (range.m_low >= m_low);}
-};
-
-enum class ElemPurge {Kept=0, Deleted=1};
-
-struct ElemIdRangeNode;
-struct ElemIdLeafNode;
-
-typedef struct ElemIdRangeNode* ElemIdRangeNodeP;
-typedef ElemIdRangeNode const * ElemIdRangeNodeCP;
-typedef ElemIdRangeNodeP*       ElemIdRangeNodeH;
-typedef ElemIdRangeNodeP const* ElemIdRangeNodeCH;
-typedef bool(*T_NodeSortFunc)(ElemIdRangeNodeP, ElemIdRangeNodeP);
-typedef std::function<void(DgnElementCR)> T_VisitElemFunc;
-
-/*=================================================================================**//**
-* a node in the tree that has children
-* @bsiclass                                                     KeithBentley    01/01
-+===============+===============+===============+===============+===============+======*/
-struct ElemIdParent
-{
-    virtual ~ElemIdParent(){}
-    virtual void _IncreaseRange(ElemIdRange const&) = 0;
-    virtual void _AddChildNode(ElemIdRangeNodeP newNode) = 0;
-    virtual ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP me) const = 0;
-};
-
-/*=================================================================================**//**
-* every node in the tree must have this.
-* @bsiclass                                                     KeithBentley    12/97
-+===============+===============+===============+===============+===============+======*/
-struct ElemIdRangeNode
-{
-protected:
-    ElemIdTree&    m_treeRoot;              // pointer to root of tree. Needed for FreeNode
-    ElemIdParent*  m_parent;                // pointer to this node's immediate parent. Only necessary for iterators.
-    mutable ElemIdRange m_range;            // highest and lowest DgnElementId held in this node
-    uint64_t       m_lastUnreferenced;      // the "time" any entry from this node down last became garbage
-    int            m_nEntries;              // the total number of entries held in this node
-    bool           m_isLeaf;
-    mutable bool   m_allReferenced;         // if true, we know all of the entries from this node down hold no garbage elements
-    mutable bool   m_isSloppy;              // is m_range accurate? If not, we need to determine it.
-
-public:
-    ElemIdRangeNode(ElemIdTree& root, ElemIdParent* parent, bool leaf) : m_treeRoot(root),m_parent(parent),m_isLeaf(leaf) {m_nEntries=0; m_isSloppy=false; m_allReferenced=false; InitRange(); m_lastUnreferenced=0;}
-    virtual void _CalculateNodeRange() const = 0;
-    virtual void _Add(DgnElementCR entry, uint64_t counter) = 0;
-    virtual struct ElemIdLeafNode const* _GetFirstNode() const = 0;
-    virtual ElemPurge _Purge(uint64_t memTarget) = 0;
-    virtual ElemPurge _Drop(uint64_t key) = 0;
-    virtual void _Empty() = 0;
-    virtual void _Visit(T_VisitElemFunc) const = 0;
-
-    bool ContainsKey(uint64_t key) const {CheckSloppy(); return m_range.Contains(key);}
-    void SetParent(ElemIdParent* newParent) {m_parent = newParent;}
-    bool IsLeaf() const {return m_isLeaf;}
-    ElemIdParent const* GetParent() const {return m_parent;}
-    bool IsSloppy() const {return m_isSloppy;}
-    void CheckSloppy() const {if (IsSloppy())_CalculateNodeRange();}
-    int GetCount() const {return m_nEntries;}
-    void InitRange(uint64_t min, uint64_t max) const {m_range.Init(min, max); m_isSloppy = false;}
-    void InitRange() const {InitRange(ULLONG_MAX, 0);}
-    ElemIdRange const& GetExactNodeRange() const {CheckSloppy(); return m_range;}
-    void SetNodeRange(ElemIdRange const& range) const {m_range = range; m_isSloppy = false;}
-    void SetLastUnReferenced(uint64_t val) {m_lastUnreferenced=val; m_allReferenced=false;}
-    uint64_t GetLastUnReferenced() const {return m_lastUnreferenced;}
-    uint64_t GetLowestId() const {return m_range.m_low;}
-    bool AreAllReferenced() const {return m_allReferenced;}
-    DgnElementCP Find(uint64_t key, bool) const;
-};
-
-/*=================================================================================**//**
-// Leaf nodes only hold elements
-// @bsiclass                                                    Keith.Bentley   09/12
-+===============+===============+===============+===============+===============+======*/
-struct ElemIdLeafNode : ElemIdRangeNode
-{
-private:
-    DgnElementCP m_elems[NUM_LEAFENTRIES];
-
-    void CalculateLeafRange() const {if (0==m_nEntries) {InitRange(); return;} InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
-
-    ElemIdLeafNode const* _GetFirstNode() const override {return this;}
-    void _CalculateNodeRange() const override {CalculateLeafRange();}
-    void _Add(DgnElementCR entry, uint64_t counter) override;
-    ElemPurge _Purge(uint64_t) override;
-    ElemPurge _Drop(uint64_t key) override;
-    void _Empty() override;
-    void _Visit(T_VisitElemFunc) const override;
-
-public:
-    DgnElementCP GetEntry(int index) const {return m_elems[index];}
-    DgnElementCP const* FirstEntry() const {return m_elems;}
-    DgnElementCP const* LastEntry() const {return &m_elems[m_nEntries-1];}
-    ElemIdLeafNode(ElemIdTree& root, ElemIdParent* parent) : ElemIdRangeNode(root, parent, true) {}
-    void AddEntry(DgnElementCR entry);
-    void SplitLeafNode();
-    DgnElementCP FindLeaf(uint64_t key, bool) const;
-};
-
-/*=================================================================================**//**
-* an internal node either holds all Internal nodes, or all LeafNodes.
-* @bsiclass                                                     KeithBentley    12/97
-+===============+===============+===============+===============+===============+======*/
-struct ElemIdInternalNode : public ElemIdRangeNode, ElemIdParent
-{
-protected:
-    ElemIdRangeNodeP m_children[NUM_INTERNALENTRIES];
-
-    void _Add(DgnElementCR entry, uint64_t counter) override {SetLastUnReferenced(counter); ChooseBestNode(entry.GetElementId().GetValue())->_Add(entry, counter);}
-    void _IncreaseRange(ElemIdRange const&) override;
-    void _CalculateNodeRange() const override;
-    ElemIdLeafNode const* _GetFirstNode() const override {return (*FirstEntryC())->_GetFirstNode();}
-    ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP from) const override;
-    ElemPurge _Purge(uint64_t) override;
-    ElemPurge _Drop(uint64_t key) override;
-    void _Empty() override;
-    void _Visit(T_VisitElemFunc) const override;
-    void SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc);
-
-public:
-    void _AddChildNode(ElemIdRangeNodeP newNode) override;
-
-    ElemIdInternalNode(ElemIdTree& root, ElemIdParent* parent) : ElemIdRangeNode(root, parent, false) {}
-
-    ElemIdRangeNodeCH GetEntryC(int i) const {return m_children+i;}
-    ElemIdRangeNodeCH FirstEntryC() const {return GetEntryC(0);}
-    ElemIdRangeNodeCH LastEntryC() const {return GetEntryC(m_nEntries-1);}
-    ElemIdRangeNodeH GetEntry(int i) {return m_children+i;}
-    ElemIdRangeNodeH FirstEntry() {return GetEntry(0);}
-    ElemIdRangeNodeH LastEntry() {return GetEntry(m_nEntries-1);}
-    ElemIdRangeNodeP ChooseBestNode(uint64_t key);
-    bool Contains(ElemIdRangeNodeP child);
-    void SplitInternalNode();
-    DgnElementCP FindInternal(uint64_t key, bool) const;
-};
-
-struct MyStats : DgnElements::Statistics
-{
-    void Reset() {m_newElements=m_unReferenced=m_reReferenced=m_purged = 0 ;}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline DgnElementCP ElemIdRangeNode::Find(uint64_t key, bool setFreeEntryFlag) const
-   {
-   return m_isLeaf ?((ElemIdLeafNode const*) this)->FindLeaf(key,setFreeEntryFlag) : ((ElemIdInternalNode const*) this)->FindInternal(key,setFreeEntryFlag);
-   }
 
 //=======================================================================================
-// A tree of elements, sorted by DgnElementId. Elements are held in the tree, even if their refCount goes to 0 so they can be reclaimed
-// if they are needed again. Unreferenced elements are deleted when a "Purge" operation is performed, attempting to preferentially keep the most
-// recently released elements.
-// @bsiclass                                                    Keith.Bentley   09/12
+// Most Recently Used cache of DgnElements for a DgnDb. Holds the N most recently used 
+// elements for a DgnDb. As a newer element is added, the least recently used one is dropped 
+// if the cache holds more than the maximum size.
+// @bsiclass                                                    Keith.Bentley   12/17
 //=======================================================================================
-struct ElemIdTree : ElemIdParent
+struct ElementMRU 
 {
-    FixedSizePool1     m_leafPool;          // pool for allocating leaf nodes
-    FixedSizePool1     m_internalPool;      // pool for allocating internal nodes
-    ElemIdRangeNodeP   m_root;              // the root node. Starts as a leaf node for trees with less than 50 entries
-    DgnDbR             m_dgndb;
-    uint64_t           m_counter;           // always increasing, used to tell least recently accessed for garbage collection
-    MyStats            m_stats;
-    DgnElements::Totals m_totals;
+    struct ElemEntry : NonCopyableClass
+    {
+        uint64_t m_id;
+        DgnElementCPtr m_el;
+        ElemEntry(uint64_t id, DgnElementCPtr el) : m_id(id), m_el(el) {}
+    };
 
-    void _IncreaseRange(ElemIdRange const&) override {}
-    void _AddChildNode(ElemIdRangeNodeP newNode) override;
-    ElemIdLeafNode const* _NextSibling(ElemIdRangeNodeCP curr) const override {return nullptr;}
+    typedef std::list<ElemEntry> EntryList;
 
-    ElemIdInternalNode* NewInternalNode(ElemIdParent* parent) {return new((ElemIdInternalNode*) m_internalPool.malloc()) ElemIdInternalNode(*this, parent);}
-    ElemIdLeafNode* NewLeafNode(ElemIdParent* parent)         {return new((ElemIdLeafNode*) m_leafPool.malloc()) ElemIdLeafNode(*this, parent);}
-    void FreeNode(ElemIdRangeNodeP child, bool leaf);
+    EntryList m_list;
+    std::unordered_map<uint64_t, EntryList::iterator> m_map;
+    uint32_t m_maxSize;
 
-public:
-    ElemIdTree(DgnDbR project) : m_dgndb(project)
+    explicit ElementMRU(uint32_t size = 2000) : m_maxSize(size) {}
+    void SetMaxSize(uint32_t newSize) { m_maxSize = newSize; Purge(); }
+    void Clear() {m_map.clear(); m_list.clear();}
+    void MoveToFront(EntryList::iterator it) {m_list.splice(m_list.begin(), m_list, it);}
+
+    // add an element to the front of the MRU cache.
+    void AddElement(DgnElementCR el) 
         {
-        m_totals.m_entries        = 0;
-        m_totals.m_unreferenced   = 0;
-        m_totals.m_allocedBytes   = 0;
-        m_totals.m_extant         = 0;
-        m_counter           = 0;
-        m_leafPool.SetSize(sizeof(ElemIdLeafNode), 4);
-        m_internalPool.SetSize(sizeof(ElemIdInternalNode), 4);
-        m_root  = nullptr;
-        m_stats.Reset();
-        }
-
-    ~ElemIdTree() {Destroy();}
-
-    bool ContainsKey(DgnElementId key) {return (nullptr != FindElement(key, false));}
-    ElemIdRangeNodeP GetRoot() {return m_root;}
-    DgnElementP FindElement(DgnElementId key, bool setAccessed);
-    void AddElement(DgnElementCR);
-    void DropElement(DgnElementCR);
-    void KillElement(DgnElementCR el) {BeAssert(0 == el.GetRefCount()); RemoveElement(el); delete &el;}
-    void RemoveElement(DgnElementCR element);
-    void Purge(int64_t memTarget);
-    void Destroy();
-    void VisitElements(T_VisitElemFunc func) const {if (nullptr != m_root) m_root->_Visit(func);}
-};
-END_BENTLEY_DGN_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemPurge ElemIdLeafNode::_Drop(uint64_t key)
-    {
-    for (int begin=0, end=m_nEntries; begin < end;)
-        {
-        int index = begin +(end - begin - 1)/2;
-        uint64_t thisId = m_elems[index]->GetElementId().GetValue();
-        if (key < thisId)
-            end = index;
-        else if (thisId < key)
-            begin = ++index;
-        else
-            {
-            //  this is the entry to delete
-            DgnElementCP target = m_elems[index]; // save the target element
-            m_isSloppy = true; // we can't tell whether we may have dropped the first or last entry.
-
-            m_nEntries -= 1;
-            memmove(m_elems + index, m_elems + index + 1,(m_nEntries-index) * sizeof(DgnElementP));
-
-            // mark it as not in pool and adjust pool stats
-            m_treeRoot.RemoveElement(*target);
-            break;
-            }
-        }
-
-    return (0 == m_nEntries) ? ElemPurge::Deleted : ElemPurge::Kept;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemPurge ElemIdLeafNode::_Purge(uint64_t memTarget)
-    {
-    if (m_allReferenced || m_treeRoot.m_totals.m_allocedBytes < memTarget || 0 == m_treeRoot.m_totals.m_unreferenced)
-        return ElemPurge::Kept;
-
-    DgnElementH curr = m_elems;
-    DgnElementH used = curr;
-    DgnElementH end = m_elems + m_nEntries;
-
-    unsigned killedIndex = 0;
-    DgnElementCP killed[NUM_LEAFENTRIES];
-
-    for (;curr < end; ++curr)
-        {
-        if (0 == (*curr)->GetRefCount()) // is the element garbage?
-            {
-            //  Do not kill the element here.  If the element's app data holds a reference to another
-            //  element, killing the element here may cause the reference
-            //  count of that element to go to zero. We don't want that to happen until the tree is in a
-            //  consistent state.
-            killed[killedIndex++] = *curr;
-            BeAssert(killedIndex <= NUM_LEAFENTRIES);
-            }
-        else
-            *(used++) = *curr;
-        }
-
-    m_isSloppy = true;           // we can't tell whether we may have dropped the first or last entry.
-    m_allReferenced = true;      // since we know we've eliminated any garbage entries, mark this node as "all referenced"
-    m_nEntries =(int)(used - m_elems);
-
-    // this call deletes the element data, and all its AppData. It also keeps the total element/bytes count up to date.
-    for (unsigned i = 0; i < killedIndex; i++)
-        m_treeRoot.KillElement(*killed[i]);
-
-    return (0 == m_nEntries) ? ElemPurge::Deleted : ElemPurge::Kept;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* copy entries from one arry into another and sort via a function
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdInternalNode::SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc)
-    {
-    memcpy(into, from, m_nEntries*sizeof(ElemIdRangeNodeP));
-    std::sort(into, into+m_nEntries, sortFunc);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool sortByAccessTime(ElemIdRangeNodeP n1, ElemIdRangeNodeP n2) {return n1->GetLastUnReferenced() < n2->GetLastUnReferenced();}
-static bool sortById(ElemIdRangeNodeP n1, ElemIdRangeNodeP n2) {return n1->GetLowestId() < n2->GetLowestId();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemPurge ElemIdInternalNode::_Drop(uint64_t key)
-    {
-    for (unsigned index = 0; index <(unsigned)m_nEntries; ++index)
-        {
-        ElemIdRangeNodeP node = m_children[index];
-        ElemIdRange const& currRange = node->GetExactNodeRange();
-
-        if (key >= currRange.m_low && key <= currRange.m_high)
-            {
-            if (ElemPurge::Deleted != node->_Drop(key))
-                {
-                //  Should we compute m_allReferenced -- maybe call AreAllRefenced
-                return ElemPurge::Kept;
-                }
-
-            m_nEntries -= 1;
-            memmove(m_children + index, m_children + index + 1,(m_nEntries-index) * sizeof(ElemIdRangeNodeP));
-            m_treeRoot.FreeNode(node, node->IsLeaf());    // child was deleted
-
-            return (0 == m_nEntries) ? ElemPurge::Deleted : ElemPurge::Kept;
-            }
-        }
-
-    BeAssert(false);
-    return ElemPurge::Kept;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemPurge ElemIdInternalNode::_Purge(uint64_t memTarget)
-    {
-    if (m_allReferenced || m_treeRoot.m_totals.m_allocedBytes < memTarget || 0 == m_treeRoot.m_totals.m_unreferenced)
-        return ElemPurge::Kept;
-
-    // We want to attempt to purge garbage, starting with the least-recently-accessed nodes.
-    // Copy the list into a new array and sort by lastaccess time.
-    ElemIdRangeNodeP purgeOrder[NUM_INTERNALENTRIES];
-    SortInto(purgeOrder, m_children, sortByAccessTime);
-
-    ElemIdRangeNodeH curr = purgeOrder;
-    ElemIdRangeNodeH used = purgeOrder; // used to squeeze out deleted nodes.
-    ElemIdRangeNodeH end = curr + m_nEntries;
-
-    m_allReferenced = true;  // start out marking this node as completely filled. If we hit any children with garbage, we turn this off.
-    unsigned nPurgeList = 0;
-    ElemIdRangeNodeP purgeList[NUM_INTERNALENTRIES];
-    for (;curr < end; ++curr)
-        {
-        ElemIdRangeNodeP node = *curr;
-        if (ElemPurge::Deleted == node->_Purge(memTarget))
-            //  Do not free the node here. Subsequent iterations may kill an element that holds a reference
-            //  to another element and that may trigger logic that searches the tree.  The nodes can't be freed until
-            //  we are done purging.
-            purgeList[nPurgeList++] = node;
-        else
-            {
-            if (!node->AreAllReferenced())
-                m_allReferenced = false;  // if any node below is isn't completely full, we're not either
-
-            *(used++) = node;
-            }
-        }
-
-    m_isSloppy = true;
-
-    // we've now potentially dropped entries in this node. See what happened
-    int nLeft =(int)(used - purgeOrder);
-    if (m_nEntries == nLeft)
-        return ElemPurge::Kept;      // we didn't drop any, we're done
-
-    // we dropped some but not all entries. Get the remaining ones from the "purgeOrder" array and put them back into child array,
-    // sorted by their DgnElementId range
-    m_nEntries = nLeft; // make sure this happens before sort!
-    if (0 != nLeft)
-        SortInto(m_children, purgeOrder, sortById);
-
-    for (unsigned purgeIndex = 0; purgeIndex < nPurgeList; ++purgeIndex)
-        m_treeRoot.FreeNode(purgeList[purgeIndex], purgeList[purgeIndex]->IsLeaf());    // child was deleted, we free and and don't copy into "used"
-
-    return 0==nLeft ? ElemPurge::Deleted : ElemPurge::Kept;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::DropElement(DgnElementCR element)
-    {
-    if (nullptr == m_root ||(ElemPurge::Deleted != m_root->_Drop(element.GetElementId().GetValue())))
-        return;
-
-    // tree is now empty
-    FreeNode(m_root, m_root->IsLeaf());
-    m_root = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* remove garbage (refCount==0) elements from the tree, until we have at most "memTarget" bytes used by this pool.
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::Purge(int64_t memTarget)
-    {
-    if (memTarget < 0)
-        memTarget = 0;
-
-    if (nullptr == m_root || (ElemPurge::Deleted != m_root->_Purge(memTarget)))
-        return;
-
-    // all of the elements were garbage. The tree is now empty.
-    FreeNode(m_root, m_root->IsLeaf());
-    m_root = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* add an element to this node, sorted by DgnElementId
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdLeafNode::AddEntry(DgnElementCR entry)
-    {
-    int index = m_nEntries;
-    uint64_t key = entry.GetElementId().GetValue();
-
-    if (key < m_range.m_high)
-        {
-        // binary search for position to put new entry
-        for (int begin=0, end=m_nEntries; begin < end;)
-            {
-            index = begin +(end - begin - 1)/2;
-            uint64_t thisId = m_elems[index]->GetElementId().GetValue();
-            if (key < thisId)
-                end = index;
-            else if (thisId < key)
-                begin = ++index;
-            else
-                {
-                BeAssert(false); // duplicate keys!
-                break;
-                }
-            }
-
-        DgnElementCP const*  tEntry = m_elems + index;
-        memmove((void*)(tEntry+1), tEntry,(m_nEntries-index) * sizeof(DgnElementP));
-        }
-
-    m_elems[index] = &entry;
-    m_nEntries++;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdLeafNode::_Add(DgnElementCR entry, uint64_t counter)
-    {
-    // since elements are always unreferenced when we add them to the tree, this correctly marks this node as not "allUnreferenced"
-    SetLastUnReferenced(counter);
-
-    if (m_isSloppy)
-        CalculateLeafRange();
-
-    AddEntry(entry);
-
-    uint64_t key;
-    if (!m_range.Contains(key = entry.GetElementId().GetValue()))
-        {
-        m_range.Extend(key);
-        m_parent->_IncreaseRange(m_range);
-        }
-
-    if (NUM_LEAFENTRIES == GetCount())
-        SplitLeafNode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP ElemIdLeafNode::FindLeaf(uint64_t key, bool setFreeEntryFlag) const
-    {
-    if (setFreeEntryFlag) // this means that the last reference to an element in this node was just released.
-        m_allReferenced = false;
-
-    for (int begin=0, end=m_nEntries; begin < end;)
-        {
-        int index = begin +(end - begin - 1)/2;
-        uint64_t thisId = m_elems[index]->GetElementId().GetValue();
-        if (key < thisId)
-            end = index;
-        else if (thisId < key)
-            begin = index + 1;
-        else
-            return m_elems[index];
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdLeafNode::SplitLeafNode()
-    {
-    if (nullptr == m_parent)
-        return;
-
-    ElemIdLeafNode*   newNode = m_treeRoot.NewLeafNode(m_parent);
-    newNode->m_lastUnreferenced = m_lastUnreferenced;
-
-    int numEntries  = GetCount();
-    int start       =(numEntries -(numEntries / 5)) + 1;
-
-    for (int i = start; i < numEntries; i++)
-        newNode->AddEntry(*GetEntry(i));
-
-    m_nEntries = start;
-    m_allReferenced = false;
-    CalculateLeafRange();
-
-    newNode->_CalculateNodeRange();
-    m_parent->_AddChildNode(newNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemIdRangeNodeP ElemIdInternalNode::ChooseBestNode(uint64_t key)
-    {
-    if (m_isSloppy)
-        _CalculateNodeRange();
-
-    if (key >= m_range.m_high)
-        return *LastEntry();
-
-    if (key <= m_range.m_low)
-        return *FirstEntry();
-
-    ElemIdRangeNodeP lastNode = nullptr;
-    uint64_t    distance, lastDist = ULLONG_MAX;
-
-    for (ElemIdRangeNodeH curr = FirstEntry(), last = LastEntry(); curr <= last ; ++curr)
-        {
-        ElemIdRange const& thisRange = (*curr)->GetExactNodeRange();
-
-        if (key >= thisRange.m_low)
-            {
-            if (key <= thisRange.m_high)
-                return *curr;
-
-            lastDist =(key - thisRange.m_high);
-            lastNode = *curr;
-            }
-        else
-            {
-            distance =(thisRange.m_low - key);
-            return (distance < lastDist) ? *curr : lastNode;
-            }
-        }
-
-    return lastNode;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCP ElemIdInternalNode::FindInternal(uint64_t key, bool setFreeEntryFlag) const
-    {
-    if (setFreeEntryFlag) // this means that the last reference to an element in this node was just released.
-        m_allReferenced = false;
-
-    for (int begin=0, end=m_nEntries; begin < end;)
-        {
-        int index = begin +(end - begin - 1)/2;
-
-        ElemIdRange const& thisRange = m_children[index]->GetExactNodeRange();
-
-        if (key < thisRange.m_low)
-            end = index;
-        else if (thisRange.m_high < key)
-            begin = index + 1;
-        else
-            return m_children[index]->Find(key, setFreeEntryFlag);
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ElemIdInternalNode::Contains(ElemIdRangeNodeP child)
-    {
-    // this isn't sorted by child address, can't use binary search
-    for (ElemIdRangeNodeH curr = FirstEntry(), last = LastEntry(); curr <= last ; ++curr)
-        {
-        if (*curr == child)
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdInternalNode::_AddChildNode(ElemIdRangeNodeP newNode)
-    {
-    if (Contains(newNode))
-        return;
-
-    newNode->SetParent(this);
-
-    ElemIdRange const& range = newNode->GetExactNodeRange();
-    m_range.Extend(range);
-
-    int index = 0;
-    for (; index <m_nEntries; index++)
-        {
-        ElemIdRange const& thisRange = m_children[index]->GetExactNodeRange();
-
-        if (range.m_high <= thisRange.m_low)
-            {
-            memmove((void*) &m_children[index+1], &m_children[index],(m_nEntries-index) * sizeof(ElemIdRangeNodeP));
-            break;
-            }
-        }
-
-    m_children[index] = newNode;
-    if (NUM_INTERNALENTRIES == ++m_nEntries)
-        SplitInternalNode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdInternalNode::_IncreaseRange(ElemIdRange const& range)
-    {
-    if (m_isSloppy)
-        _CalculateNodeRange();
-    else
-        {
-        if (m_range.Contains(range))
+        if (0 == m_maxSize)
             return;
-
-        m_range.Extend(range);
-        }
-
-    m_parent->_IncreaseRange(m_range);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdInternalNode::SplitInternalNode()
-    {
-    if (nullptr == m_parent)
-        return;
-
-    ElemIdInternalNode*  newNode = m_treeRoot.NewInternalNode(m_parent);
-    int                 nEntries = GetCount();
-    int                 start =(nEntries -(nEntries/4)) + 1;
-
-    newNode->m_lastUnreferenced = m_lastUnreferenced;
-
-    for (int i = start; i < nEntries; i++)
-        newNode->_AddChildNode(m_children[i]);
-
-    m_nEntries = start;
-    _CalculateNodeRange();
-
-    m_parent->_AddChildNode(newNode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdInternalNode::_CalculateNodeRange() const
-    {
-    InitRange();
-
-    for (ElemIdRangeNodeCH curr = FirstEntryC(), last = LastEntryC(); curr <= last ; ++curr)
-        {
-        ElemIdRange const& currRange = (*curr)->GetExactNodeRange();
-        m_range.Extend(currRange);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemIdLeafNode const* ElemIdInternalNode::_NextSibling(ElemIdRangeNodeCP from) const
-    {
-    for (ElemIdRangeNodeCH curr = FirstEntryC(), last = LastEntryC(); curr <= last ; ++curr)
-        {
-        if (from == *curr)
+    
+        uint64_t id = el.GetElementId().GetValue();
+        auto iter = m_map.find(id);
+        if (iter != m_map.end()) 
             {
-            if (++curr > last)
-                {
-                ElemIdRangeNodeCP mySibling = m_parent->_NextSibling(this);
-                return (nullptr == mySibling) ? nullptr : mySibling->_GetFirstNode();
-                }
+            iter->second->m_el = &el;
+            MoveToFront(iter->second);
+            return;
+            }
 
-            return (*curr)->_GetFirstNode();
+        m_list.emplace_front(id, &el);
+        m_map[id] = m_list.begin();
+        Purge();
+        }
+
+    // look for the element in the MRU cache. If found, move it to most recent
+    DgnElementCP FindElement(DgnElementId eid) 
+        {
+        auto id = eid.GetValue();
+        auto iter = m_map.find(id);
+        if (iter == m_map.end()) 
+            return nullptr;
+
+        MoveToFront(iter->second);
+        return iter->second->m_el.get();
+        }
+
+    // drop an element from MRU cache.
+    bool DropElement(DgnElementId eid) 
+        {
+        auto id = eid.GetValue();
+        auto iter = m_map.find(id);
+        if (iter == m_map.end()) 
+            return false;
+
+        m_list.erase(iter->second);
+        m_map.erase(iter);
+        return true;
+        }
+
+    // purge MRU cache until it is less than the maximum size.
+    void Purge() 
+        {
+        while (m_map.size() > m_maxSize) 
+            {
+            m_map.erase(m_list.back().m_id);
+            m_list.pop_back();
             }
         }
+};
 
-    BeAssert(false);
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::AddElement(DgnElementCR element)
-    {
-    if (nullptr == m_root)
-        m_root = NewLeafNode(this);
-
-    ++m_totals.m_entries;
-    if (0 == element.GetRefCount())
-       ++m_totals.m_unreferenced;
-
-    BeAssert(m_totals.m_entries >= m_totals.m_unreferenced);
-    m_root->_Add(element, ++m_counter);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::RemoveElement(DgnElementCR element)
-    {
-    BeAssert(0 != m_totals.m_entries);
-    --m_totals.m_entries;
-
-    if (0 == element.GetRefCount())
-        {
-        BeAssert(0 != m_totals.m_unreferenced);
-        --m_totals.m_unreferenced;
-        }
-
-    BeAssert(m_totals.m_entries >= m_totals.m_unreferenced);
-    ++m_stats.m_purged;
-
-    m_dgndb.Elements().ChangeMemoryUsed(0 - (int32_t) element._GetMemSize());
-    element.SetPersistent(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP ElemIdTree::FindElement(DgnElementId key, bool setFreeFlag)
-    {
-    if ((nullptr == m_root) || !m_root->ContainsKey(key.GetValueUnchecked()))
-        return nullptr;
-
-    return const_cast<DgnElementP>(m_root->Find(key.GetValueUnchecked(), setFreeFlag));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::FreeNode(ElemIdRangeNodeP child, bool leaf)
-    {
-    if (leaf)
-        m_leafPool.free(child);
-    else
-        m_internalPool.free(child);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::_AddChildNode(ElemIdRangeNodeP newNode)
-    {
-    ElemIdRangeNodeP     currentRoot = m_root;
-    ElemIdInternalNode*  newRoot;
-
-    newRoot = new((ElemIdInternalNode*) m_internalPool.malloc()) ElemIdInternalNode(*this, this);
-    newRoot->_AddChildNode(newNode);
-
-    newNode->GetExactNodeRange();
-
-    if (nullptr != currentRoot)
-        newRoot->_AddChildNode(currentRoot);
-
-    m_root = newRoot;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdLeafNode::_Empty()
-    {
-    DgnElementH end = m_elems + m_nEntries;
-
-    for (DgnElementH curr = m_elems; curr < end; ++curr)
-        m_treeRoot.KillElement(**curr);
-
-    m_nEntries = 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdLeafNode::_Visit(T_VisitElemFunc func) const
-    {
-    DgnElementCP const* end = m_elems + m_nEntries;
-    for (DgnElementCP const* curr = m_elems; curr < end; ++curr)
-        func(**curr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdInternalNode::_Empty()
-    {
-    ElemIdRangeNodeH end = m_children + m_nEntries;
-
-    for (ElemIdRangeNodeH curr = m_children; curr < end; ++curr)
-        (*curr)->_Empty();
-
-    m_nEntries = 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdInternalNode::_Visit(T_VisitElemFunc func) const
-    {
-    ElemIdRangeNodeP const* end = m_children + m_nEntries;
-    for (ElemIdRangeNodeP const* curr = m_children; curr < end; ++curr)
-        (*curr)->_Visit(func);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::Destroy()
-    {
-    if (m_root)
-        m_root->_Empty(); // this frees all of the elements and their data
-
-    BeAssert(0==m_totals.m_extant);       // make sure nobody has any DgnElements around from this DgnDb
-    BeAssert(0==m_totals.m_allocedBytes); // we should have returned all the memory too.
-    BeAssert(0==m_totals.m_entries);
-    BeAssert(0==m_totals.m_unreferenced);
-
-    m_root = nullptr;
-    m_leafPool.purge_memory_and_reinitialize();
-    m_internalPool.purge_memory_and_reinitialize();
-    }
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
@@ -884,6 +99,7 @@ void ElemIdTree::Destroy()
 DgnElements::~DgnElements() 
     {
     Destroy(); 
+    BeAssert(0 == m_extant);       // make sure nobody has any DgnElements around from this DgnDb
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -891,48 +107,26 @@ DgnElements::~DgnElements()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::Destroy()
     {
-    BeMutexHolder _v_v(m_mutex);
-    m_tree->Destroy();
+    ClearCache();
     ClearECCaches();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
+* @bsimethod                                    Keith.Bentley                   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::ChangeMemoryUsed(int32_t delta) const
+void DgnElements::SetCacheSize(uint32_t newSize) 
     {
-    if (0==delta) // nothing happened, don't bother to get mutex
-        return;
-
-    BeMutexHolder _v(m_mutex);
-    m_tree->m_totals.m_allocedBytes += delta;
-    BeAssert(m_tree->m_totals.m_allocedBytes >= 0);
+    BeMutexHolder _v_v(m_mutex);
+    m_mruCache->SetMaxSize(newSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* an element that was previously garbage was just referenced
-* @bsimethod                                    Keith.Bentley                   09/12
+* @bsimethod                                    Keith.Bentley                   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::OnReclaimed(DgnElementCR el)
+void DgnElements::ClearCache() 
     {
     BeMutexHolder _v_v(m_mutex);
-    BeAssert(0 != m_tree->m_totals.m_unreferenced);
-    BeAssert(m_tree->m_totals.m_entries >= m_tree->m_totals.m_unreferenced);
-    --m_tree->m_totals.m_unreferenced;
-    ++m_tree->m_stats.m_reReferenced;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* an element that was previously referenced just became garbage
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::OnUnreferenced(DgnElementCR el)
-    {
-    BeMutexHolder _v_v(m_mutex);
-    m_tree->FindElement(el.GetElementId(), true);   // mark this entry as having purgable elements
-    ++m_tree->m_totals.m_unreferenced;
-    ++m_tree->m_stats.m_unReferenced;
-    BeAssert(m_tree->m_totals.m_entries >= m_tree->m_totals.m_unreferenced);
+    m_mruCache->Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -944,10 +138,7 @@ void DgnElements::AddToPool(DgnElementCR element) const
     BeAssert(!element.IsPersistent());
     element.SetPersistent(true);
 
-    ChangeMemoryUsed(element._GetMemSize());
-
-    m_tree->AddElement(element);
-    ++m_tree->m_stats.m_newElements;
+    m_mruCache->AddElement(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -955,24 +146,9 @@ void DgnElements::AddToPool(DgnElementCR element) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::DropFromPool(DgnElementCR element) const
     {
-    if (0 == element.GetRefCount())
-        {
-        BeAssert(false); // somebody else must own it or we cannot drop it from the pool
-        return;
-        }
-
     BeMutexHolder _v_v(m_mutex);
-    m_tree->DropElement(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t DgnElements::_Purge(uint64_t memTarget)
-    {
-    BeMutexHolder _v_v(m_mutex);
-    m_tree->Purge(memTarget);
-    return GetTotalAllocated();
+    element.SetPersistent(false);
+    m_mruCache->DropElement(element.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -981,7 +157,7 @@ uint64_t DgnElements::_Purge(uint64_t memTarget)
 DgnElementCP DgnElements::FindLoadedElement(DgnElementId id) const
     {
     BeMutexHolder _v_v(m_mutex);
-    return m_tree->FindElement(id, false);
+    return m_mruCache->FindElement(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -997,7 +173,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
+DgnElement::DgnElement(CreateParams const& params) :  m_elementId(params.m_id), 
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parent(params.m_parentId, params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
     m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0), m_structInstances(nullptr)
@@ -1005,7 +181,7 @@ DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(
 #if !defined (NDEBUG)    
     auto& elements = GetDgnDb().Elements();
     BeMutexHolder lock(elements.GetMutex());
-    ++elements.m_tree->m_totals.m_extant;  // only for detecting leaks
+    ++elements.m_extant;  // only for detecting leaks
 #endif
     }
 
@@ -1014,7 +190,6 @@ DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::~DgnElement()
     {
-    BeAssert(!IsPersistent());
     ClearAllAppData();
 
     if (nullptr != m_ecPropertyData)
@@ -1023,22 +198,17 @@ DgnElement::~DgnElement()
 #if !defined (NDEBUG)    
     auto& elements = GetDgnDb().Elements();
     BeMutexHolder lock(elements.GetMutex());
-    --elements.m_tree->m_totals.m_extant;
+    --elements.m_extant;
 #endif
     }
-
-DgnElements::Totals const& DgnElements::GetTotals() const {return m_tree->m_totals;}
-DgnElements::Statistics DgnElements::GetStatistics() const {return m_tree->m_stats;}
-void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
     {
-    m_tree.reset(new ElemIdTree(dgndb));
+    m_mruCache.reset(new ElementMRU());
     }
-
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                Ramanujam.Raman                    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1417,13 +587,7 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     BeAssert(0 != original.GetRefCount());
     BeAssert(original.IsPersistent());
 
-    // The pool can only hold immutable objects. We are about to change the original element which is now in the pool.
-    // To keep the pool's memory statistics valid, we must drop the element from the pool, modify it, and then add it back
-    // into the pool in its changed state. Attempting to track size changes here doesn't work since the element's class may 
-    // attempt to adjust the pool itself. 
-    DropFromPool(original);
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
-    AddToPool(original);
 
     original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
@@ -1747,4 +911,3 @@ CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) 
     // Not bothering to cache per class...use our general-purpose ECSql statement cache
     return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
     }
-

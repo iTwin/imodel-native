@@ -207,7 +207,7 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     ASSERT_TRUE(inserted.IsValid());
     } // make sure we release pointer to inserted
 
-    m_db->Memory().PurgeUntil(0); // to make sure we re-read the element from the db
+    m_db->Elements().ClearCache(); // to make sure we re-read the element from the db
 
     auto camera = m_db->Elements().Get<SpatialViewDefinition>(viewElement->GetElementId());
     ASSERT_TRUE(camera.IsValid());
@@ -427,7 +427,7 @@ TEST_F(CreateFromInstanceTests, SampleForHopen)
 
     // Re-load element to make sure it was inserted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         PhysicalElementCPtr testElement = m_db->Elements().Get<PhysicalElement>(testElementId);
         ASSERT_TRUE(testElement.IsValid());
         ASSERT_EQ(testElement->GetModelId(), model->GetModelId());
