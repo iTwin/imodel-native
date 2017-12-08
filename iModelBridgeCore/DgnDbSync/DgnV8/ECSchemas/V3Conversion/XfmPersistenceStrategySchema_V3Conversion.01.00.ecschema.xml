@@ -6,6 +6,176 @@
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="BUDGAS_G_ANODETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_BONDJUNCTIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_BONDWIRETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_CASINGTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_CONTROLLABLEFITTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_DISTRIBUTIONAREATEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_DRIPTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FEEDSTATIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FIELDOPERATIONSRECTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGCONNECTTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGCROSSTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGENDCAPTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGREDUCERTEXT" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FITTINGTRANSITIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_FLOWCONTROLLERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_LINEHEATERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_MAINTENANCEAREATEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_MAINTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_MEASUREPOINTTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_METERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_ODORIZERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_PIPELINEMARKERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_PRESSUREMONITORTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_PRESSUREREDVALVETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_RECTIFERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_REGULATORTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_RELIEFVALVETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_SCRUBBERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_SERVICETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_STRAINERTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_SUPPLYSTATIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_TESTPOINTTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDGAS_G_VALVETEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BUDMISC_DESIGNWORKLOCATIONTEXT1" isDomainClass="True" >
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="BuildingText" isDomainClass="True" >
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
