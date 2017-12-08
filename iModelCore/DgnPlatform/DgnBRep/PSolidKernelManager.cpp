@@ -2810,15 +2810,11 @@ DVec3dCR        direction           // => toward the view (positive Z)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Brien.Bastings                 11/2017
 //---------------------------------------------------------------------------------------
-void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, TransformCP entityTransform, double tolerance)
+void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, double tolerance)
     {
     PK_TRANSF_t viewTransformTag = PK_ENTITY_null;
-    PK_TRANSF_t entityTransformTag = PK_ENTITY_null;
 
     computeViewTransform(viewTransformTag, eyePoint, direction);
-
-    if (nullptr != entityTransform)
-        PSolidUtil::CreateTransf(entityTransformTag, *entityTransform); // NEEDSWORK: Scale isn't supported by PK_TOPOL_render_line for topol transform...
 
     PK_TOPOL_render_line_o_t options;
 
@@ -2834,13 +2830,10 @@ void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP
         }
  
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
-    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null == entityTransformTag ? PK_ENTITY_null : &entityTransformTag, viewTransformTag, &options);
+    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, viewTransformTag, &options);
     s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
 
     PK_ENTITY_delete(1, &viewTransformTag);
-
-    if (PK_ENTITY_null != entityTransformTag)
-        PK_ENTITY_delete(1, &entityTransformTag);
     }
 
 /*---------------------------------------------------------------------------------**//**
