@@ -84,6 +84,8 @@ $(o)ImportRaster$(oext)     : $(baseDir)ImportRaster.cpp $(DwgDepends) $(DgnDbSy
 
 $(o)ImportPointClouds$(oext): $(baseDir)ImportPointClouds.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)ImportLights$(oext)     : $(baseDir)ImportLights.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
@@ -135,6 +137,7 @@ LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
 
 LINKER_LIBRARIES        + $(ToolkitLibs)TD_Root$(libext)
 LINKER_LIBRARIES        + $(ToolkitLibs)TD_Alloc$(libext)
+LINKER_LIBRARIES        + $(ToolkitLibs)TD_Db$(libext)
 
 %elif $(DWGTOOLKIT) == "RealDwg"
     %if $(VendorVersion) == 2016

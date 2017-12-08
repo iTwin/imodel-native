@@ -239,6 +239,9 @@ private:
     double              m_viewTwistAngle;
     bool                m_isGridOn;
     bool                m_isUcsIconOn;
+    bool                m_isDefaultLightingOn;
+    double              m_brightness;
+    DwgCmColor          m_ambientLightColor;
     DwgDbObjectId       m_clipEntityId;
     DwgDbObjectId       m_backgroundId;
     DwgDbObjectId       m_visualStyleId;

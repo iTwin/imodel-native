@@ -18,11 +18,31 @@
 #include    <Teigha/Kernel/Include/Gi/GiImage.h>
 #include    <Teigha/Kernel/Include/Gi/GiClipBoundary.h>
 #include    <Teigha/Kernel/Include/Gi/GiMaterial.h>
+#include    <Teigha/Kernel/Include/Gi/GiLightTraits.h>
 #elif DWGTOOLKIT_RealDwg
 #include    <RealDwg/Base/acgi.h>
+#include    <RealDwg/Base/AcGiLightTraits.h>
 #else
     #error  "Must define DWGTOOLKIT!!!"
 #endif
+
+
+// declare common methods for DwgGiXxxxx classes which are Rx class in both Teigha and RealDWG!
+#define DWGGI_DECLARE_RX_MEMBERS(_classSuffix_)                         \
+    DEFINE_T_SUPER(DWGROOT_SUPER_CONSTRUCTOR(Gi##_classSuffix_##))      \
+    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGi##_classSuffix_##)
+
+#ifdef DWGTOOLKIT_OpenDwg
+// declare common methods for DwgGiXxxxx classes - these are base classes, rasther than Rx classes, in Teigha!
+#define DWGGI_DECLARE_BASE_MEMBERS(_classSuffix_)                       \
+    DEFINE_T_SUPER(DWGROOT_SUPER_CONSTRUCTOR(Gi##_classSuffix_##))
+
+#elif DWGTOOLKIT_RealDwg
+// declare common methods for DwgGiXxxxx classes - these are Rx class in RealDWG!
+#define DWGGI_DECLARE_BASE_MEMBERS(_classSuffix_)                       \
+    DWGGI_DECLARE_RX_MEMBERS(_classSuffix_)
+#endif
+
 
 BEGIN_DWGDB_NAMESPACE
 
@@ -82,11 +102,8 @@ enum class DwgGiVisibility
 class DwgGiEdgeData : public DWGGI_EXTENDCLASS(EdgeData)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiEdgeData))
+    DWGGI_DECLARE_BASE_MEMBERS (EdgeData)
     DWGROOTCLASS_ADD_CONSTRUCTORS (GiEdgeData)
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiEdgeData)
-#endif
 
     DWGDB_EXPORT uint8_t const*         GetVisibility () const;
     DWGDB_EXPORT int16_t const*         GetColors () const;
@@ -104,11 +121,8 @@ class DwgGiMapper;
 class DwgGiFaceData : public DWGGI_EXTENDCLASS(FaceData)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiFaceData))
+    DWGGI_DECLARE_BASE_MEMBERS (FaceData)
     DWGROOTCLASS_ADD_CONSTRUCTORS (GiFaceData)
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiFaceData)
-#endif
     
     DWGDB_EXPORT int16_t const*         GetColors () const;
     DWGDB_EXPORT DwgCmEntityColorCP     GetTrueColors () const;
@@ -126,11 +140,8 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiFaceData)
 class DwgGiVertexData : public DWGGI_EXTENDCLASS(VertexData)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiVertexData))
+    DWGGI_DECLARE_BASE_MEMBERS (VertexData)
     DWGROOTCLASS_ADD_CONSTRUCTORS (GiVertexData)
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiVertexData)
-#endif
 
     enum MappingChannel
         {
@@ -150,7 +161,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiVertexData)
 class DwgGiTextStyle : public DWGGI_EXTENDCLASS(TextStyle)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiTextStyle))
+    DWGGI_DECLARE_BASE_MEMBERS (TextStyle)
     DWGROOTCLASS_ADD_CONSTRUCTORS (GiTextStyle)
 
     DWGDB_EXPORT DwgDbStatus            GetFontInfo (DwgFontInfoR info) const;
@@ -355,7 +366,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiHatchPattern)
 class DwgGiMapper : public DWGGI_EXTENDCLASS(Mapper)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiMapper))
+    DWGGI_DECLARE_BASE_MEMBERS (Mapper)
     DWGROOTCLASS_ADD_CONSTRUCTORS (GiMapper)
 
     enum TransformBy    // == T_Super::AutoTransform
@@ -398,7 +409,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiMapper)
 class DwgGiMaterialColor : public DWGGI_EXTENDCLASS(MaterialColor)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiMaterialColor))
+    DWGGI_DECLARE_BASE_MEMBERS (MaterialColor)
     DWGROOTCLASS_ADD_CONSTRUCTORS (GiMaterialColor)
 
     enum ColorBy        // == T_Super::Method
@@ -419,10 +430,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiMaterialColor)
 class DwgGiImageFileTexture : public DWGGI_EXTENDCLASS(ImageFileTexture)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiImageFileTexture))
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiImageFileTexture)
-#endif
+    DWGGI_DECLARE_RX_MEMBERS (ImageFileTexture)
     DwgGiImageFileTexture (DWGGI_TypeCR(ImageFileTexture) t) { T_Super::operator=(t); }
 
     DWGDB_EXPORT DwgString          GetSourceFileName () const;
@@ -435,12 +443,10 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiImageFileTexture)
 class DwgGiGenericTexture : public DWGGI_EXTENDCLASS(GenericTexture)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiGenericTexture))
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiGenericTexture)
-#endif
-    DwgGiGenericTexture (DWGGI_TypeCR(GenericTexture) t) { T_Super::operator=(t); }
+    DWGGI_DECLARE_RX_MEMBERS (GenericTexture)
 
+    DwgGiGenericTexture () : T_Super() {}
+    DwgGiGenericTexture (DWGGI_TypeCR(GenericTexture) t) { T_Super::operator=(t); }
     }; // DwgGiGenericTexture
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiGenericTexture)
 
@@ -450,10 +456,9 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiGenericTexture)
 class DwgGiMarbleTexture : public DWGGI_EXTENDCLASS(MarbleTexture)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiMarbleTexture))
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiMarbleTexture)
-#endif
+    DWGGI_DECLARE_RX_MEMBERS (MarbleTexture)
+
+    DwgGiMarbleTexture () : T_Super() {}
     DwgGiMarbleTexture (DWGGI_TypeCR(MarbleTexture) t) { T_Super::operator=(t); }
     }; // DwgGiMarbleTexture
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiMarbleTexture)
@@ -464,10 +469,9 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiMarbleTexture)
 class DwgGiWoodTexture : public DWGGI_EXTENDCLASS(WoodTexture)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiWoodTexture))
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiWoodTexture)
-#endif
+    DWGGI_DECLARE_RX_MEMBERS (WoodTexture)
+
+    DwgGiWoodTexture () : T_Super() {}
     DwgGiWoodTexture (DWGGI_TypeCR(WoodTexture) t) { T_Super::operator=(t); }
     }; // DwgGiWoodTexture
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiWoodTexture)
@@ -478,11 +482,9 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiWoodTexture)
 class DwgGiMaterialTexture : public DWGGI_EXTENDCLASS(MaterialTexture)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiMaterialTexture))
-#ifdef DWGTOOLKIT_RealDwg
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGiMaterialTexture)
-#endif
+    DWGGI_DECLARE_RX_MEMBERS (MaterialTexture)
 
+    DwgGiMaterialTexture () : T_Super() {}
     DWGDB_EXPORT virtual bool operator==(const DwgGiMaterialTexture& t) const;
 
     // Image file:
@@ -500,7 +502,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiMaterialTexture)
 class DwgGiMaterialMap : public DWGGI_EXTENDCLASS(MaterialMap)
     {
 public:
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(GiMaterialMap))
+    DWGGI_DECLARE_BASE_MEMBERS (MaterialMap)
     DWGROOTCLASS_ADD_CONSTRUCTORS (GiMaterialMap)
 
     enum FilterBy       // == T_Super::Filter
@@ -524,6 +526,96 @@ public:
     }; // DwgGiMaterialMap
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiMaterialMap)
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          11/17
++===============+===============+===============+===============+===============+======*/
+class DwgGiLightAttenuation : public DWGGI_EXTENDCLASS(LightAttenuation)
+    {
+public:
+    DWGGI_DECLARE_BASE_MEMBERS (LightAttenuation)
+    DWGROOTCLASS_ADD_CONSTRUCTORS (GiLightAttenuation)
+
+    //! The attenuation type, or decay, of a point or spot light. A distant light has no attenuation.
+    enum Type
+        {
+        //! No attenuation; emitted light has the same brightness (intensity) regardless of the distance to the source.
+        None =      0,
+        //! The attenuation is the inverse of the linear distance from the light. 
+        InverseLinear,
+        //! The attenuation is the inverse of the square of the distance from the light. 
+        InverseSquare
+        };
+
+    //! Get the type of the attenuation of a point or spot light
+    DWGDB_EXPORT Type   GetType () const;
+    //! Are the start and end limits used?
+    DWGDB_EXPORT bool   UseLimits () const;
+    //! Get the distance from the light source where light begins to affect the model; objects closer than this are not affected by the light.
+    DWGDB_EXPORT double GetStartLimit () const;
+    //! Get the distance from the light source beyond which the light has no affect.
+    DWGDB_EXPORT double GetEndLimit () const;
+    };  // DwgGiLightAttenuation
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiLightAttenuation)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          11/17
++===============+===============+===============+===============+===============+======*/
+class DwgGiShadowParameters : public DWGGI_EXTENDCLASS(ShadowParameters)
+    {
+public:
+    DWGGI_DECLARE_BASE_MEMBERS (ShadowParameters)
+    DWGROOTCLASS_ADD_CONSTRUCTORS (GiShadowParameters)
+
+    //! Shadowing methods
+    enum Type
+        {
+        RayTraced = 0,
+        Mapped,
+        Sampled,
+        };  // Type
+
+    //! The shape of the extended light source
+    enum Shape
+        {
+        Linear  = 0,
+        Rectangle,
+        Disk,
+        Cylinder,
+        Sphere
+        };  // Shape
+
+    //! Are shadows casted by the light?
+    DWGDB_EXPORT bool   AreShadowsOn () const;
+    //! Get the method used to calculate shadows cast by this light.
+    //! @return RayTraced - shadows are calculated using a ray-trace algorithmm, Mapped - shadow maps are created for each light, or Sampled - the area-sampled shadow algorithm models the effect of extended light sources which typically exhibit penumbra.
+    DWGDB_EXPORT Type   GetShadowType () const;
+    //! Get the size of the shadow map, in pixels.
+    //! @note Only applies if shadow type is Mapped.
+    //! @return 64, 128, 256, 512, 1024, 2048, or 4096
+    DWGDB_EXPORT uint16_t   GetShadowMapSize () const;
+    //! Get the softness (or fuzziness) of the edge of the shadow. The value represents the number of pixels at the edge of the shadow that are blended into the underlying image.
+    //! @note Only applies if shadow type is Mapped.
+    //! @return The number of pixels at the edge of the shadow to blend.
+    DWGDB_EXPORT uint8_t    GetShadowMapSoftness () const;
+    //! The number of shadow rays to shoot for the light.
+    //! @note Only applies if shadow type is Sampled.
+    //! @return The number of shadow rays to shoot for the light.
+    DWGDB_EXPORT uint16_t   GetShadowSamples () const;
+    //! Determines if the light shape is visible in the rendering.
+    DWGDB_EXPORT bool   IsShapeVisible() const;
+    //! Get the shape of the extended light source. Valid only if shadow type is Sampled.
+    DWGDB_EXPORT Shape  GetExtendedLightShape() const;
+    //! Get the length of the extended light source.
+    //! @note Only applies if shadow type is Sampled, and light source shape is Linear, Rectangle or Cylinder.
+    DWGDB_EXPORT double GetExtendedLightLength() const;
+    //! Get the width of the extended light source.
+    //! @note Only applies if shadow type is Sampled, and light source shape is Rectangle.
+    DWGDB_EXPORT double GetExtendedLightWidth() const;
+    //! Get the radius of the extended light source.
+    //! @note Only applies if shadow type is Sampled, and light source shape is Disk, Cylinder or Sphere.
+    DWGDB_EXPORT double GetExtendedLightRadius() const;
+    };  // DwgGiShadowParameters
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiShadowParameters)
 
 
 /*=================================================================================**//**
@@ -549,9 +641,27 @@ public:
     DwgGiDrawable (AcGiDrawable* dr) : m_toolkitDrawable(dr) {}
 #endif
 
-    DWGDB_EXPORT bool                       IsValid ();
-    DWGDB_EXPORT bool                       IsPersistent ();
-    DWGDB_EXPORT DwgDbObjectId              GetId ();
+    enum DrawableType
+        {
+        Geometry                = 0,
+        DistantLight,
+        PointLight,
+        SpotLight,
+        AmbientLight,
+        SolidBackground,
+        GradientBackground,
+        ImageBackground,
+        GroundPlaneBackground,
+        Viewport,
+        WebLight,
+        SkyBackground,
+        ImageBasedLightingBackground
+        };  // DrawableType
+
+    DWGDB_EXPORT bool                       IsValid () const;
+    DWGDB_EXPORT bool                       IsPersistent () const;
+    DWGDB_EXPORT DwgDbObjectId              GetId () const;
+    DWGDB_EXPORT DrawableType               GetDrawableType () const;
     DWGDB_EXPORT DwgDbEntityP               GetEntityP ();
     DWGDB_EXPORT DwgDbLineP                 GetLineP ();
     DWGDB_EXPORT DwgDbCircleP               GetCircleP ();

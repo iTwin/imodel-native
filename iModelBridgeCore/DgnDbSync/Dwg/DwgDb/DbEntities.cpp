@@ -21,6 +21,7 @@ DWGDB_ENTITY_DEFINE_MEMBERS(Polyline)
 DWGDB_ENTITY_DEFINE_MEMBERS(2dPolyline)
 DWGDB_ENTITY_DEFINE_MEMBERS(3dPolyline)
 DWGDB_ENTITY_DEFINE_MEMBERS(Hatch)
+DWGDB_ENTITY_DEFINE_MEMBERS(Light)
 DWGDB_ENTITY_DEFINE_MEMBERS(Region)
 DWGDB_ENTITY_DEFINE_MEMBERS(Solid)
 DWGDB_ENTITY_DEFINE_MEMBERS(Shape)
@@ -34,95 +35,6 @@ DWGDB_ENTITY_DEFINE_MEMBERS(RasterImage)
 DWGDB_ENTITY_DEFINE_MEMBERS(PointCloudEx)
 DWGDB_ENTITY_DEFINE_MEMBERS(Viewport)
 
-
-
-uint16_t            DwgDbEntity::GetColorIndex () const { return static_cast<uint16_t>(T_Super::colorIndex()); }
-DwgCmColor          DwgDbEntity::GetColor () const { return static_cast<DwgCmColor>(T_Super::color()); }
-DwgCmEntityColor    DwgDbEntity::GetEntityColor () const { return static_cast<DwgCmEntityColor>(T_Super::entityColor()); }
-DwgDbObjectId       DwgDbEntity::GetLayerId () const { return T_Super::layerId(); }
-DwgDbObjectId       DwgDbEntity::GetLinetypeId () const { return T_Super::linetypeId(); }
-double              DwgDbEntity::GetLinetypeScale () const { return T_Super::linetypeScale(); }
-DwgDbLineWeight     DwgDbEntity::GetLineweight () const { return DWGDB_UPWARDCAST(LineWeight)(T_Super::lineWeight()); }
-DwgDbObjectId       DwgDbEntity::GetMaterialId () const { return T_Super::materialId(); }
-DwgTransparency     DwgDbEntity::GetTransparency () const { return T_Super::transparency(); }
-DwgDbVisibility     DwgDbEntity::GetVisibility () const { return static_cast<DwgDbVisibility>(T_Super::visibility()); }
-void                DwgDbEntity::List () const { T_Super::list(); }
-DwgGiDrawablePtr    DwgDbEntity::GetDrawable () { return new DwgGiDrawable(T_Super::drawable()); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgDbEntity::GetEcs (TransformR ecs) const
-    {
-    DWGGE_Type(Matrix3d)  geMatrix;
-
-#ifdef DWGTOOLKIT_OpenDwg
-    geMatrix = T_Super::getEcs ();
-#elif DWGTOOLKIT_RealDwg
-    T_Super::getEcs (geMatrix);
-#endif
-
-    return Util::GetTransform (ecs, geMatrix);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     DwgDbEntity::GetGripPoints (DPoint3dArrayR points, DwgDbIntArrayP snapModes, DwgDbIntArrayP geomIds) const
-    {
-    DWGGE_Type(Point3dArray)    acPoints;
-    DwgDbStatus                 status = DwgDbStatus::FirstDwgDbError;
-
-#ifdef DWGTOOLKIT_OpenDwg
-
-    status = ToDwgDbStatus(T_Super::getGripPoints(acPoints));
-
-#elif DWGTOOLKIT_RealDwg
-    AcDbIntArray                acModes;
-    AcDbIntArray                acGeomIds;
-
-    status = ToDwgDbStatus(T_Super::getGripPoints(acPoints, acModes, acGeomIds));
-
-    if (DwgDbStatus::Success == status)
-        {
-        if (nullptr != snapModes)
-            {
-            for (int i = 0; i < acModes.length(); i++)
-                snapModes->push_back (acModes.at(i));
-            }
-        if (nullptr != geomIds)
-            {
-            for (int i = 0; i < acGeomIds.length(); i++)
-                geomIds->push_back (acGeomIds.at(i));
-            }
-        }
-#endif
-
-    if (DwgDbStatus::Success == status)
-        {
-        size_t      nPoints = static_cast <size_t> (acPoints.length());
-        for (size_t i = 0; i < nPoints; i++)
-            points.push_back (Util::DPoint3dFrom(acPoints.at(static_cast<int>(i))));
-        }
-    return  status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     DwgDbEntity::GetRange (DRange3dR range) const
-    {
-    DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents)    extents;
-
-    DwgDbStatus status = ToDwgDbStatus (T_Super::getGeomExtents(extents));
-
-    if (DwgDbStatus::Success == status)
-        range = Util::DRange3dFrom (extents);
-    else
-        range.Init ();
-
-    return  status;
-    }
 
 
 DPoint3d    DwgDbLine::GetStartPoint () const { return Util::DPoint3dFrom(T_Super::startPoint()); }
@@ -257,20 +169,6 @@ double     DwgDbPolyline::GetBulgeAt (size_t index) const
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void       DwgDbPolyline::GetEcs (TransformR ecs) const
-    {
-    DWGGE_Type(Matrix3d)    matrix;
-#ifdef DWGTOOLKIT_OpenDwg
-    matrix =  T_Super::getEcs ();
-#elif DWGTOOLKIT_RealDwg
-    T_Super::getEcs (matrix);
-#endif
-    Util::GetTransform (ecs, matrix);
-    }
-
 bool       DwgDbPolyline::IsClosed () const { return DWGDB_IsTrue(T_Super::isClosed()); }
 size_t     DwgDbPolyline::GetNumPoints () const { return T_Super::numVerts(); }
 bool       DwgDbPolyline::HasWidth () const { return DWGDB_IsTrue(T_Super::hasWidth()); }
@@ -293,19 +191,6 @@ bool       DwgDb2dPolyline::GetConstantWidth (double& width) const
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void       DwgDb2dPolyline::GetEcs (TransformR ecs) const
-    {
-    DWGGE_Type(Matrix3d)    matrix;
-#ifdef DWGTOOLKIT_OpenDwg
-    matrix =  T_Super::getEcs ();
-#elif DWGTOOLKIT_RealDwg
-    T_Super::getEcs (matrix);
-#endif
-    Util::GetTransform (ecs, matrix);
-    }
 bool       DwgDb2dPolyline::IsClosed () const { return DWGDB_IsTrue(T_Super::isClosed()); }
 double     DwgDb2dPolyline::GetElevation () const { return T_Super::elevation(); }
 double     DwgDb2dPolyline::GetThickness () const { return T_Super::thickness(); }
@@ -801,6 +686,8 @@ bool           DwgDbViewport::IsIsometricSnapEnabled () const { return T_Super::
 int16_t        DwgDbViewport::GetGridMajor () const { return gridMajor(); }
 bool           DwgDbViewport::IsLayerFrozen (DwgDbObjectIdCR layerId) const { return T_Super::isLayerFrozenInViewport(layerId); }
 double         DwgDbViewport::GetCustomScale () const { return T_Super::customScale(); }
+double         DwgDbViewport::GetBrightness () const { return T_Super::brightness(); }
+DwgCmColor     DwgDbViewport::GetAmbientLightColor () const { return static_cast<DwgCmColor>(T_Super::ambientLightColor()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
@@ -1188,19 +1075,6 @@ DwgDbStatus     DwgDbPointCloudEx::TraversePointData (IPointsProcessor* processo
 #endif  // DWGTOOLKIT_
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgDbPointCloudEx::GetEcs (TransformR out) const
-    {
-    DWGGE_Type(Matrix3d)    ecs;
-#ifdef DWGTOOLKIT_OpenDwg
-    ecs = T_Super::getEcs ();
-#elif DWGTOOLKIT_RealDwg
-    T_Super::getEcs (ecs);
-#endif
-    Util::GetTransform (out, ecs);
-    }
 DPoint3d        DwgDbPointCloudEx::GetLocation () const { return Util::DPoint3dFrom(T_Super::location()); }
 double          DwgDbPointCloudEx::GetScale () const { return T_Super::scale(); }
 double          DwgDbPointCloudEx::GetRotation () const { return T_Super::rotation(); }
@@ -1274,9 +1148,93 @@ DwgDbStatus     DwgDbFace::GetVertexAt (DPoint3dR point, uint16_t index) const
         point = Util::DPoint3dFrom (gePoint);
     return  status;
     }
-bool            DwgDbFace::IsPlanar () const { return   T_Super::isPlanar(); }
 
 DPoint3d        DwgDbText::GetPosition () const { return Util::DPoint3dFrom(T_Super::position()); }
 DVec3d          DwgDbText::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double          DwgDbText::GetThickness () const { return T_Super::thickness(); }
 DwgString       DwgDbText::GetTextString () const { return DWGDB_CALLSDKMETHOD(T_Super::textString(),T_Super::textStringConst()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbLight::GetLampColorRGB (RgbFactor& rgb) const
+    {
+    DWGGI_Type(ColorRGB) giRgb;
+    DwgDbStatus status = DwgDbStatus::Success;
+
+#ifdef DWGTOOLKIT_OpenDwg
+    giRgb = T_Super::lampColorRGB ();
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::lampColorRGB(giRgb));
+#endif
+    rgb = RgbFactor::From (giRgb.red, giRgb.green, giRgb.blue);
+    return  status;
+    }
+
+DwgDbStatus DwgDbLight::GetResultingColor (DwgCmColorR color) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    color = T_Super::resultingColor ();
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::resultingColor(color));
+#endif
+    return  status;
+    }
+
+DwgDbStatus DwgDbLight::GetWebFile (DwgStringR webFile) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    webFile = T_Super::webFile ();
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::webFile(webFile));
+#endif
+    return  status;
+    }
+
+DwgDbStatus DwgDbLight::GetWebRotation (DVec3dR rotation) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    rotation = Util::DVec3dFrom (T_Super::webRotation());
+#elif DWGTOOLKIT_RealDwg
+    AcGeVector3d rot;
+    status = ToDwgDbStatus (T_Super::webRotation(rot));
+    if (status == DwgDbStatus::Success)
+        rotation = Util::DVec3dFrom (rot);
+#endif
+    return  status;
+    }
+
+DwgDbStatus DwgDbLight::GetShadowParameters (DwgGiShadowParametersR shadow) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    shadow = T_Super::shadowParameters ();
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::shadowParameters(shadow));
+#endif
+    return  status;
+    }
+bool    DwgDbLight::IsOn () const { return T_Super::isOn(); }
+DwgDbStatus DwgDbLight::SetOn(bool on) { DwgDbStatus st=DwgDbStatus::Success; DWGDB_CALLSDKMETHOD(T_Super::setOn(on), st=ToDwgDbStatus(T_Super::setOn(on))); return st; }
+DwgString   DwgDbLight::GetName () const { return T_Super::name(); }
+double      DwgDbLight::GetFalloffAngle () const { return T_Super::falloffAngle(); }
+double      DwgDbLight::GetHotspotAngle () const { return T_Super::hotspotAngle(); }
+DwgGiDrawable::DrawableType DwgDbLight::GetLightType () const { return static_cast<DwgGiDrawable::DrawableType>(T_Super::lightType()); }
+DwgGiLightAttenuationCR DwgDbLight::GetLightAttenuation () const { return static_cast<DwgGiLightAttenuationCR>(T_Super::lightAttenuation()); }
+DwgCmColor  DwgDbLight::GetLightColor () const { return static_cast<DwgCmColor>(T_Super::lightColor()); }
+double      DwgDbLight::GetIntensity () const { return T_Super::intensity(); }
+double      DwgDbLight::GetPhysicalIntensity() const { return T_Super::physicalIntensity(); }
+DwgDbLight::IntensityBy DwgDbLight::GetPhysicalIntensityMethod () const { return static_cast<IntensityBy>(T_Super::physicalIntensityMethod()); }
+DPoint3d    DwgDbLight::GetPosition () const { return Util::DPoint3dFrom(T_Super::position()); }
+DPoint3d    DwgDbLight::GetTargetLocation () const { return Util::DPoint3dFrom(T_Super::targetLocation()); }
+bool        DwgDbLight::HasTarget () const { return T_Super::hasTarget(); }
+DVec3d      DwgDbLight::GetLightDirection () const { return Util::DVec3dFrom(T_Super::lightDirection()); }
+double      DwgDbLight::GetIlluminanceDistance() const { return T_Super::illuminanceDistance(); }
+DwgDbLight::LampColorBy DwgDbLight::GetLampColorType () const { return static_cast<LampColorBy>(T_Super::lampColorType()); }
+double DwgDbLight::GetLampColorTemperature () const { return T_Super::lampColorTemp(); }
+DwgDbLight::PresetColor DwgDbLight::GetPresetLampColor () const { return static_cast<PresetColor>(T_Super::lampColorPreset()); }
+DwgDbLight::GlyphDisplay DwgDbLight::GetGlyphDisplay () const { return static_cast<GlyphDisplay>(T_Super::glyphDisplay()); }
+bool   DwgDbLight::IsPlottable () const { return T_Super::isPlottable(); }

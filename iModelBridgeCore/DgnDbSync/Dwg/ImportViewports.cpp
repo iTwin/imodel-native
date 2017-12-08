@@ -39,6 +39,9 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportTableRecor
     m_isUcsIconOn = viewportRecord.IsUcsIconEnabled ();
     m_backgroundId = viewportRecord.GetBackground ();
     m_visualStyleId = viewportRecord.GetVisualStyle ();
+    m_isDefaultLightingOn = viewportRecord.IsDefaultLightingOn ();
+    m_brightness = viewportRecord.GetBrightness ();
+    m_ambientLightColor = viewportRecord.GetAmbientLightColor ();
     m_customScale = 1.0;
     m_backgroundColor = ColorDef::Black ();
     m_isPrivate = false;
@@ -74,6 +77,9 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
     m_visualStyleId = viewportEntity.GetVisualStyle ();
     m_customScale = viewportEntity.GetCustomScale ();
     m_backgroundColor = ColorDef::White ();
+    m_isDefaultLightingOn = viewportEntity.IsDefaultLightingOn ();
+    m_brightness = viewportEntity.GetBrightness ();
+    m_ambientLightColor = viewportEntity.GetAmbientLightColor ();
     m_isPrivate = false;
     m_transform = importer.GetRootTransform ();
     m_inputViewport = DwgDbObject::Cast (&viewportEntity);
@@ -163,14 +169,19 @@ void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnV
         if (focalLength < 0.25)
             focalLength = 0.25;
 
+        /*-------------------------------------------------------------------------------
+        Calculation of perspective view delta in MicroStation had 35*focalLength/lensLength,
+        where focalLength was in UOR's and lensLength in unconverted DWG units. Here all of
+        the view parameters have been converted to meters.
+        -------------------------------------------------------------------------------*/
         if (aspectRatio > 1.0)
             {
-            delta.x = 35.0 * focalLength / m_lensLength;
+            delta.x = 0.9 * focalLength / m_lensLength;
             delta.y = delta.x / aspectRatio;
             }
         else
             {
-            delta.y = 35.0 * focalLength / m_lensLength;
+            delta.y = 0.9 * focalLength / m_lensLength;
             delta.x = delta.y * aspectRatio;
             }
 
@@ -342,8 +353,10 @@ void            ViewportFactory::ComputeSpatialDisplayStyle (DisplayStyle3dR dis
     {
     ViewFlags   viewFlags;
     DwgHelper::SetViewFlags (viewFlags, m_isGridOn, m_isUcsIconOn, m_backgroundId.IsValid(), true, m_isFrontClipped, m_isBackClipped, m_importer.GetDwgDb());
-
     DwgHelper::UpdateViewFlagsFromVisualStyle (viewFlags, m_visualStyleId);
+
+    // only when default lighting is turned off, the source lights become effective:
+    viewFlags.SetShowSourceLights (!m_isDefaultLightingOn);
 
     displayStyle.SetViewFlags (viewFlags);
 
@@ -353,6 +366,19 @@ void            ViewportFactory::ComputeSpatialDisplayStyle (DisplayStyle3dR dis
     enviromentDisplay.m_skybox.m_enabled = false;
 
     displayStyle.SetBackgroundColor (m_backgroundColor);
+
+    // set ambient light
+    Lighting::Parameters    light;
+    if (m_brightness > 0.0)
+        {
+        light.SetType (Lighting::LightType::Ambient);
+        light.SetIntensity (m_brightness);
+        light.SetColor (ColorDef(m_ambientLightColor.GetRGB()));
+        displayStyle.SetSceneLight (light);
+        }
+
+    // set scene brightness
+    displayStyle.SetSceneBrightness (m_brightness);
     }
 
 /*---------------------------------------------------------------------------------**//**

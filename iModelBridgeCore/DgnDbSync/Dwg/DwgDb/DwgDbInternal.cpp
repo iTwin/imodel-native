@@ -113,6 +113,7 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     acrxLoadModule (L"AcDbPointCloudObj.dbx", 0);
     // demand loading image OE resulted in a RealDWG2017 crash - TFS 615432
     acrxLoadModule (L"acISMobj21.dbx", 0);
+    acrxLoadModule (L"AcSceneOE.dbx", 0);
 
     AcDbRasterImage::rxInit ();
     AcDbRasterImageDef::rxInit ();
@@ -121,6 +122,7 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
 
     DwgDbRasterImage::rxInit ();
     DwgDbPointCloudEx::rxInit ();
+    DwgDbLight::rxInit ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -184,6 +186,7 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgResBuf::rxUninit ();
 
     DwgDbPointCloudEx::rxUninit ();
+    DwgDbLight::rxUninit ();
 
     // Un-register private DwgGi class extensions
     UnRegisterDwgGiExtensions ();
