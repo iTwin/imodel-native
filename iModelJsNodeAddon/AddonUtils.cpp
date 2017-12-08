@@ -637,6 +637,31 @@ DbResult AddonUtils::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
+DbResult AddonUtils::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
+    {
+    if (!pathname.DoesPathExist())
+        return BE_SQLITE_NOTFOUND;
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), *schemaContext);
+    if (SchemaReadStatus::Success != schemaStatus)
+        return BE_SQLITE_ERROR;
+
+    bvector<ECSchemaCP> schemas;
+    schemas.push_back(schema.get());
+    SchemaStatus status = dgndb.ImportSchemas(schemas);
+    if (status != SchemaStatus::Success)
+        return DgnDb::SchemaStatusToDbResult(status, true);
+
+    return dgndb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
 ECClassCP AddonUtils::GetClassFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
     {
     return ECJsonUtilities::GetClassFromClassNameJson(jsonInstance[ECJsonUtilities::json_className()], ecdb.GetClassLocater());

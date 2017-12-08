@@ -105,8 +105,14 @@ declare class NodeAddonDgnDb {
 
   /**
    * Import an EC schema.
+   * There are a number of restrictions when importing schemas into a briefcase. 
+   * When importing into a briefcse, this function will acquire the schema lock. That means that that briefcase must be at the tip of the revision
+   * history in iModelHub. If not, this function will return SchemaLockFailed.
+   * Importing or upgrading a schema into a briefcase must be done in isolation from all other kinds of changes. That means two things:
+   * there must be no pending local changes. All local changes must be pushed to iModelHub. This function will return SchemaImportFailed if that is not true.
+   * Also, the caller must push the results of this function to iModelHub before making other changes to the briefcase.
    * @param schemaPathname The full path to the .xml file in the local file system.
-   * @return non-zero error status if the operation failed.
+   * @return non-zero error status if the operation failed, including SchemaImportFailed if the schema is invalid.
    */
   importSchema(schemaPathname: string): DbResult;
 
@@ -139,11 +145,32 @@ declare class NodeAddonDgnDb {
   updateElementSync(elemProps: string): IModelStatus;
 
   /**
-   * Insert an element.
+   * Delete an element.
    * @param elemIdJson The element's ID, in stringified JSON format
    * @return non-zero error status if the operation failed.
    */
   deleteElementSync(elemIdJson: string): IModelStatus;
+
+  /**
+   * Insert a model.
+   * @param modelProps The model's properties, in stringified JSON format.
+   * @return non-zero error status if the operation failed.
+   */
+  insertModelSync(modelProps: string): ErrorStatusOrResult<IModelStatus, string>;
+
+  /**
+   * Update a model.
+   * @param modelProps The model's properties, in stringified JSON format.
+   * @return non-zero error status if the operation failed.
+   */
+  updateModelSync(modelProps: string): IModelStatus;
+
+  /**
+   * Delete a model.
+   * @param modelIdJson The model's ID, in stringified JSON format
+   * @return non-zero error status if the operation failed.
+   */
+  deleteModelSync(modelIdJson: string): IModelStatus;
 
   /**
    * Format an element's properties, suitable for display to the user.

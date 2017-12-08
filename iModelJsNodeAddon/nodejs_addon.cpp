@@ -705,15 +705,19 @@ public:
 struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 {
     static Napi::FunctionReference s_constructor;
-
+    
     Dgn::DgnDbPtr m_dgndb;
+    ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
     NodeAddonDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonDgnDb>(info)
         {
         }
 
-    ~NodeAddonDgnDb() {}
+    ~NodeAddonDgnDb() 
+        {
+        TearDownPresentationManager();
+        }
 
     DgnDbR GetDgnDb() {return *m_dgndb;}
 
@@ -729,10 +733,19 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         {
         BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir, tempDir)));
-        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-		m_presentationManager->GetConnections().NotifyConnectionOpened(*m_dgndb);
+        RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
+        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
+        m_connections.NotifyConnectionOpened(*m_dgndb);
+        }
+
+    void TearDownPresentationManager()
+        {
+        if (m_presentationManager == nullptr)
+            return;
+        IECPresentationManager::RegisterImplementation(nullptr);
+        m_presentationManager.reset();
         }
 
     Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NodeUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
@@ -1053,7 +1066,52 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         }
 
     //=======================================================================================
-    // Gets a JSON description of the properties of an element, suitable for display in a property browser.
+    // insert a new Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value InsertModelSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
+        Json::Value elemIdJsonObj;
+        auto status = AddonUtils::InsertModel(elemIdJsonObj, GetDgnDb(), elemProps);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
+        }
+
+    //=======================================================================================
+    // update an existing Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value UpdateModelSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
+        auto status = AddonUtils::UpdateModel(GetDgnDb(), elemProps);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    //=======================================================================================
+    // delete an existing Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value DeleteModelSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, elemIdStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        auto status = AddonUtils::DeleteModel(GetDgnDb(), elemIdStr);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    //=======================================================================================
+    // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
     // The property values are formatted according to formatting CAs.
@@ -1104,17 +1162,18 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             if ( m_addondb->m_presentationManager == nullptr)
                 {
                 m_status = DgnDbStatus::BadArg;
-                return;
+                return;                
                 }
-            ContentDescriptorCPtr descriptor = m_addondb->m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson());
+            ContentDescriptorCPtr descriptor = m_addondb->m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson()).get();
             if (descriptor.IsNull())
                 {
                 m_status = DgnDbStatus::BadArg;
+                return;
                 }
             PageOptions pageOptions;
             pageOptions.SetPageStart(0);
             pageOptions.SetPageSize(0);
-            ContentCPtr content = m_addondb->m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson());
+            ContentCPtr content = m_addondb->m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson()).get();
             if (content.IsNull())
                 {
                 m_status = DgnDbStatus::BadArg;
@@ -1212,12 +1271,13 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, schemaPathnameStrObj);
         RETURN_IF_HAD_EXCEPTION_SYNC
         BeFileName schemaPathname(schemaPathnameStrObj.c_str(), true);
-        auto stat = AddonUtils::ImportSchema(GetDgnDb(), schemaPathname);
+        auto stat = AddonUtils::ImportSchemaDgnDb(GetDgnDb(), schemaPathname);
         return Napi::Number::New(Env(), (int)stat);
         }
 
     void CloseDgnDb(const Napi::CallbackInfo& info)
         {
+        TearDownPresentationManager();
         AddonUtils::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
         }
@@ -1299,6 +1359,9 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("insertElementSync", &NodeAddonDgnDb::InsertElementSync),
             InstanceMethod("updateElementSync", &NodeAddonDgnDb::UpdateElementSync),
             InstanceMethod("deleteElementSync", &NodeAddonDgnDb::DeleteElementSync),
+            InstanceMethod("insertModelSync", &NodeAddonDgnDb::InsertModelSync),
+            InstanceMethod("updateModelSync", &NodeAddonDgnDb::UpdateModelSync),
+            InstanceMethod("deleteModelSync", &NodeAddonDgnDb::DeleteModelSync),
             InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::StartGetElementPropertiesForDisplayWorker),
             InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::StartGetECClassMetaData),
             InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),

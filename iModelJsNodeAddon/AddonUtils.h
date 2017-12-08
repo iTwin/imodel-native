@@ -74,11 +74,15 @@ struct AddonUtils
     static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value& props);
     static DgnDbStatus UpdateElement(DgnDbR db, Json::Value& props);
     static DgnDbStatus DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static DgnDbStatus InsertModel(JsonValueR results, DgnDbR db, Json::Value& props);
+    static DgnDbStatus UpdateModel(DgnDbR db, Json::Value& props);
+    static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);
     static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const& inOpts);
 
     static JsECDbPtr CreateECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname);
     static JsECDbPtr OpenECDb(BeSQLite::DbResult& dbres, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
+    static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
     static BeSQLite::DbResult InsertInstance(Utf8StringR insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::DbResult UpdateInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::DbResult ReadInstance(JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
