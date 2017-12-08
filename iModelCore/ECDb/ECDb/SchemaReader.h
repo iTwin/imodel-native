@@ -127,7 +127,7 @@ struct SchemaReader final
                 PropertyCategoryDbEntry* Find(ECN::PropertyCategoryId id) const;
                 ECN::ECClassId Find(Utf8StringCR schemaName, Utf8StringCR className) const;
                 bool HasClassEntry(ECN::ECClassId id) const;
-                bool InsertNullClassEntry(ECN::ECClassId id) const;
+                void SetClassEntryToNull(ECN::ECClassId id) const;
                 bool Insert(std::unique_ptr<SchemaDbEntry> entry) const;
                 bool Insert(std::unique_ptr<ClassDbEntry> entry) const;
                 bool Insert(std::unique_ptr<EnumDbEntry> entry) const;

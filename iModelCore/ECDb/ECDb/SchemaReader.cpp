@@ -314,7 +314,7 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
         {
         //set the cache entry to nullptr if the class could not be loaded so that future calls will return nullptr without querying into the DB
         //(It is not expected that a future call will succeed, so returning nullptr is correct)
-        m_cache.InsertNullClassEntry(ecClassId);
+        m_cache.SetClassEntryToNull(ecClassId);
         return nullptr;
         }
 
@@ -2088,10 +2088,10 @@ bool SchemaReader::ReaderCache::HasClassEntry(ECN::ECClassId id) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        07/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool SchemaReader::ReaderCache::InsertNullClassEntry(ECN::ECClassId id) const
+void SchemaReader::ReaderCache::SetClassEntryToNull(ECN::ECClassId id) const
     {
     BeAssert(id.IsValid());
-    auto itor = m_classCache.insert(std::make_pair(id, nullptr));
-    return itor.second;
+    m_classCache[id] = nullptr;
+    
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
