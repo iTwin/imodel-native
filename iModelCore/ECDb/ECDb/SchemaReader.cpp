@@ -14,6 +14,25 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+SchemaReader::SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaManager(manager), m_cache(manager.GetECDb()) 
+    {}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<BeMutexHolder> SchemaReader::LockECDb() const
+    {
+    return std::unique_ptr<BeMutexHolder>(new BeMutexHolder(GetECDb().GetImpl().GetMutex()));
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<BeSqliteDbMutex> SchemaReader::LockDb() const
+    {
+    return std::unique_ptr<BeSqliteDbMutex>(new BeSqliteDbMutex(const_cast<ECDb&>(GetECDb())));
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -146,12 +165,28 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     if (!ecClassId.IsValid())
         return nullptr;
 
-    ECClassP classFromCache = nullptr;
-    if (TryGetClassFromCache(classFromCache, ecClassId))
-        return classFromCache;
+    {
+    auto lockECDb = LockECDb();
+    ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
+    if (cacheEntry == nullptr)
+        {
+        //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
+        //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
+        //can be returned right away.
+        if (m_cache.HasClassEntry(ecClassId))
+            return nullptr;
+        }
+    else
+        return cacheEntry->m_cachedClass;
+    }
+
+    auto lockDb = LockDb();
+    auto lockECDb = LockECDb();
+    
+    if (ClassDbEntry* cacheEntry = m_cache.Find(ecClassId))
+        return cacheEntry->m_cachedClass;
 
     ECDbExpressionSymbolContext symbolsContext(GetECDb());
-
     const int schemaIdColIx = 0;
     const int nameColIx = 1;
     const int displayLabelColIx = 2;
@@ -159,7 +194,7 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     const int typeColIx = 4;
     const int modifierColIx = 5;
     const int relStrengthColIx = 6;
-    const int relStrengthDirColIx = 7;
+    const int relStrengthDirColIx = 7;  
     const int caContainerTypeIx = 8;
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType FROM [%s]." TABLE_Class " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
@@ -182,6 +217,9 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     SchemaDbEntry* schemaKey = nullptr;
     if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
         return nullptr;
+
+    BeAssert(schemaKey != nullptr);
+    BeAssert(schemaKey->m_cachedSchema.IsValid());
 
     ECSchemaR schema = *schemaKey->m_cachedSchema;
 
@@ -270,44 +308,18 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     BeAssert(stmt->Step() == BE_SQLITE_DONE);
     stmt = nullptr; //to release it, so that it can be reused without repreparation
 
-                    //cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
-    m_classCache[ecClassId] = std::make_unique<ClassDbEntry>(*ecClass);
-
+    //cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
+    m_cache.Insert(std::unique_ptr<ClassDbEntry>(new ClassDbEntry(*ecClass)));
     if (SUCCESS != LoadClassComponentsFromDb(ctx, *ecClass))
         {
         //set the cache entry to nullptr if the class could not be loaded so that future calls will return nullptr without querying into the DB
         //(It is not expected that a future call will succeed, so returning nullptr is correct)
-        m_classCache[ecClassId] = nullptr;
+        m_cache.InsertNullClassEntry(ecClassId);
         return nullptr;
         }
 
     schemaKey->m_loadedTypeCount++;
     return ecClass;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        05/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaReader::TryGetClassFromCache(ECClassP& ecClass, ECClassId ecClassId) const
-    {
-    if (!ecClassId.IsValid())
-        return false;
-
-    auto it = m_classCache.find(ecClassId);
-    if (it != m_classCache.end())
-        {
-        //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
-        //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
-        //can be returned right away.
-        if (it->second == nullptr)
-            ecClass = nullptr;
-        else
-            ecClass = it->second->m_cachedClass;
-
-        return true;
-        }
-
-    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -378,20 +390,15 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
 ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, SchemaLookupMode lookupMode) const
     {
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
-    auto outerIt = m_classIdCache.find(schemaName);
-    if (outerIt != m_classIdCache.end())
+    ECClassId ecClassId = m_cache.Find(schemaName, className);
+    if (!ecClassId.IsValid())
         {
-        bmap<Utf8String, ECClassId, CompareIUtf8Ascii> const& classIdMap = outerIt->second;
-        auto innerIt = classIdMap.find(className);
-        if (innerIt != classIdMap.end())
-            return innerIt->second;
+        ecClassId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), schemaName.c_str(), className.c_str(), lookupMode);
+
+        //add id to cache (only if valid class id to avoid overflow of the cache)
+        if (ecClassId.IsValid())
+            m_cache.Insert(schemaName, className, ecClassId);
         }
-
-    ECClassId ecClassId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), schemaName.c_str(), className.c_str(), lookupMode);
-
-    //add id to cache (only if valid class id to avoid overflow of the cache)
-    if (ecClassId.IsValid())
-        m_classIdCache[schemaName][className] = ecClassId;
 
     return ecClassId;
     }
@@ -563,14 +570,24 @@ ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
     {
-    auto itor = m_classCache.find(ecClassId);
-    if (itor != m_classCache.end())
+    {
+    auto lockECDb = LockECDb();
+    if (ClassDbEntry* entry = m_cache.Find(ecClassId))
         {
-        if (itor->second->m_ensureDerivedClassesExist)
+        if (entry->m_ensureDerivedClassesExist)
             return SUCCESS;
 
-        //Just mark is loaded as code that ensure has very rare chance of ever failing
-        itor->second->m_ensureDerivedClassesExist = true;
+        }
+    }
+
+    auto dbLock = LockDb();
+    auto lockECDb = LockECDb();
+    if (ClassDbEntry* entry = m_cache.Find(ecClassId))
+        {
+        if (entry->m_ensureDerivedClassesExist)
+            return SUCCESS;
+
+        entry->m_ensureDerivedClassesExist = true;
         }
 
     Context ctx;
@@ -608,12 +625,14 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx, ECEnumerationId enumId) const
     {
-    auto enumEntryIt = m_enumCache.find(enumId);
-    if (enumEntryIt != m_enumCache.end())
+    {
+    auto lockECDb = LockECDb();
+    if (EnumDbEntry* entry = m_cache.Find(enumId))
         {
-        ecEnum = enumEntryIt->second->m_cachedEnum;
+        ecEnum = entry->m_cachedEnum;
         return SUCCESS;
         }
+    }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -622,6 +641,14 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
     const int typeColIx = 4;
     const int isStrictColIx = 5;
     const int valuesColIx = 6;
+
+    auto dbLock = LockDb();
+    auto lockECDb = LockECDb();
+    if (EnumDbEntry* entry = m_cache.Find(enumId))
+        {
+        ecEnum = entry->m_cachedEnum;
+        return SUCCESS;
+        }
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM [%s]." TABLE_Enumeration " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -667,7 +694,7 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
         return ERROR;
 
     //cache the enum
-    m_enumCache[enumId] = std::unique_ptr<EnumDbEntry>(new EnumDbEntry(enumId, *ecEnum));
+    m_cache.Insert(std::unique_ptr<EnumDbEntry>(new EnumDbEntry(enumId, *ecEnum)));
 
     schemaKey->m_loadedTypeCount++;
     return SUCCESS;
@@ -679,12 +706,14 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ctx, KindOfQuantityId koqId) const
     {
-    auto koqEntryIt = m_koqCache.find(koqId);
-    if (koqEntryIt != m_koqCache.end())
+    {
+    auto lockECDb = LockECDb();
+    if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
         {
-        koq = koqEntryIt->second->m_cachedKoq;
+        koq = entry->m_cachedKoq;
         return SUCCESS;
         }
+    }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -693,6 +722,14 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     const int persUnitColIx = 4;
     const int relErrorColIx = 5;
     const int presUnitColIx = 6;
+
+    auto dbLock = LockDb();
+    auto lockECDb = LockECDb();
+    if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
+        {
+        koq = entry->m_cachedKoq;
+        return SUCCESS;
+        }
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM [%s]." TABLE_KindOfQuantity " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -744,8 +781,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
         }
 
     //cache the koq
-    m_koqCache[koqId] = std::unique_ptr<KindOfQuantityDbEntry>(new KindOfQuantityDbEntry(koqId, *koq));
-
+    m_cache.Insert(std::unique_ptr<KindOfQuantityDbEntry>(new KindOfQuantityDbEntry(koqId, *koq)));
     schemaKey->m_loadedTypeCount++;
     return SUCCESS;
     }
@@ -755,18 +791,28 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context& ctx, PropertyCategoryId catId) const
     {
-    auto catEntryIt = m_propCategoryCache.find(catId);
-    if (catEntryIt != m_propCategoryCache.end())
+    {
+    auto lockECDb = LockECDb();
+    if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
         {
-        cat = catEntryIt->second->m_cachedCategory;
+        cat = entry->m_cachedCategory;
         return SUCCESS;
         }
+    }
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
     const int displayLabelColIx = 2;
     const int descriptionColIx = 3;
     const int priorityColIx = 4;
+
+    auto dbLock = LockDb();
+    auto lockECDb = LockECDb();
+    if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
+        {
+        cat = entry->m_cachedCategory;
+        return SUCCESS;
+        }
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,Priority FROM [%s]." TABLE_PropertyCategory " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -808,8 +854,7 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
         cat->SetPriority(prio.Value());
 
     //cache the category
-    m_propCategoryCache[catId] = std::unique_ptr<PropertyCategoryDbEntry>(new PropertyCategoryDbEntry(catId, *cat));
-
+    m_cache.Insert(std::unique_ptr<PropertyCategoryDbEntry>(new PropertyCategoryDbEntry(catId, *cat)));
     schemaKey->m_loadedTypeCount++;
     return SUCCESS;
     }
@@ -819,14 +864,25 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECSchemaId ecSchemaId) const
     {
-    auto schemaIterator = m_schemaCache.find(ecSchemaId);
-    if (schemaIterator != m_schemaCache.end())
+    {
+    auto lockECDb = LockECDb();
+    if (schemaEntry = m_cache.Find(ecSchemaId))
         {
-        BeAssert(schemaIterator->second->m_cachedSchema != nullptr);
-        schemaEntry = schemaIterator->second.get();
+        BeAssert(schemaEntry->m_cachedSchema != nullptr);
+        return SUCCESS;
+        }
+    }
+
+    auto dbLock = LockDb();
+    auto lockECDb = LockECDb();
+    if (schemaEntry = m_cache.Find(ecSchemaId))
+        {
+        BeAssert(schemaEntry->m_cachedSchema != nullptr);
         return SUCCESS;
         }
 
+    //Following method is not by itself thread safe as it write to cache but 
+    //this is the only call to it which is thread safe.
     if (SUCCESS != LoadSchemaFromDb(schemaEntry, ecSchemaId))
         return ERROR;
 
@@ -907,12 +963,8 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
     //Enure all reference schemas also loaded
     for (auto& refSchemaKey : ecSchemaKey->m_cachedSchema->GetReferencedSchemas())
         {
-        SchemaDbEntry* key = nullptr;
         ECSchemaId referenceECSchemaId = refSchemaKey.second->GetId();
-        auto schemaIterator = m_schemaCache.find(referenceECSchemaId);
-        if (schemaIterator != m_schemaCache.end())
-            key = schemaIterator->second.get();
-
+        SchemaDbEntry* key = m_cache.Find(referenceECSchemaId);
         if (SUCCESS != LoadSchemaEntitiesFromDb(key, ctx, fullyLoadedSchemas))
             return ERROR;
         }
@@ -1042,9 +1094,8 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
     if (!Utf8String::IsNullOrEmpty(description))
         schema->SetDescription(description);
 
-    std::unique_ptr<SchemaDbEntry> schemaEntryPtr = std::unique_ptr<SchemaDbEntry>(new SchemaDbEntry(schema, typesInSchema));
-    schemaEntry = schemaEntryPtr.get();
-    m_schemaCache[ecSchemaId] = std::move(schemaEntryPtr);
+    schemaEntry = new SchemaDbEntry(schema, typesInSchema);
+    m_cache.Insert(std::unique_ptr<SchemaDbEntry>(schemaEntry));   
     return SUCCESS;
     }
 
@@ -1821,12 +1872,7 @@ CachedStatementPtr SchemaReader::GetCachedStatement(Utf8CP sql) const { return G
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaReader::ClearCache() const
     {
-    m_classIdCache.clear();
-    m_enumCache.clear();
-    m_koqCache.clear();
-    m_propCategoryCache.clear();
-    m_classCache.clear();
-    m_schemaCache.clear();
+    m_cache.Clear();
     }
 
 
@@ -1862,5 +1908,190 @@ BentleyStatus SchemaReader::Context::Postprocess(SchemaReader const& reader) con
 
     return ctx.Postprocess(reader);
     }
+//////////////////////////////SchemaReader::ReaderCache////////////////////////////////////
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+void SchemaReader::ReaderCache::Clear() const
+    {
+    BeMutexHolder lockECDb(m_ecdb.GetImpl().GetMutex());
+    m_classIdCache.clear();
+    m_enumCache.clear();
+    m_koqCache.clear();
+    m_propCategoryCache.clear();
+    m_classCache.clear();
+    m_schemaCache.clear();
+    }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+SchemaDbEntry* SchemaReader::ReaderCache::Find(ECN::ECSchemaId id) const
+    {
+    auto itor = m_schemaCache.find(id);
+    if (itor != m_schemaCache.end())
+        return itor->second.get();
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<SchemaDbEntry> entry) const
+    {
+    BeAssert(entry != nullptr);
+    const ECN::ECSchemaId id = entry->GetId();
+    BeAssert(id.IsValid());
+    auto itor = m_schemaCache.insert(std::make_pair(id, std::move(entry)));
+    return itor.second;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+ClassDbEntry* SchemaReader::ReaderCache::Find(ECN::ECClassId id) const
+    {
+    auto itor = m_classCache.find(id);
+    if (itor != m_classCache.end())
+        return itor->second.get();
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<ClassDbEntry> entry) const
+    {
+    BeAssert(entry != nullptr);
+    const ECN::ECClassId id = entry->m_classId;
+    BeAssert(id.IsValid());
+    auto itor = m_classCache.insert(std::make_pair(id, std::move(entry)));
+    return itor.second;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+EnumDbEntry* SchemaReader::ReaderCache::Find(ECN::ECEnumerationId id) const
+    {
+    auto itor = m_enumCache.find(id);
+    if (itor != m_enumCache.end())
+        return itor->second.get();
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<EnumDbEntry> entry) const
+    {
+    BeAssert(entry != nullptr);
+    const ECN::ECEnumerationId id = entry->m_enumId;
+    BeAssert(id.IsValid());
+
+    auto itor = m_enumCache.insert(std::make_pair(id, std::move(entry)));
+    return itor.second;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+KindOfQuantityDbEntry* SchemaReader::ReaderCache::Find(ECN::KindOfQuantityId id) const
+    {
+    auto itor = m_koqCache.find(id);
+    if (itor != m_koqCache.end())
+        return itor->second.get();
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<KindOfQuantityDbEntry> entry) const
+    {
+    BeAssert(entry != nullptr);
+    const ECN::KindOfQuantityId id = entry->m_koqId;
+    BeAssert(id.IsValid());
+
+    auto itor = m_koqCache.insert(std::make_pair(id, std::move(entry)));
+    return itor.second;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+PropertyCategoryDbEntry* SchemaReader::ReaderCache::Find(ECN::PropertyCategoryId id) const
+    {
+    auto itor = m_propCategoryCache.find(id);
+    if (itor != m_propCategoryCache.end())
+        return itor->second.get();
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::Insert(std::unique_ptr<PropertyCategoryDbEntry> entry) const
+    {
+    BeAssert(entry != nullptr);
+    const ECN::PropertyCategoryId id = entry->m_categoryId;
+    BeAssert(id.IsValid());
+
+    auto itor = m_propCategoryCache.insert(std::make_pair(id, std::move(entry)));
+    return itor.second;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+ECN::ECClassId SchemaReader::ReaderCache::Find(Utf8StringCR schemaName, Utf8StringCR className) const
+    {
+    auto itorA = m_classIdCache.find(schemaName);
+    if (itorA == m_classIdCache.end())
+        return ECN::ECClassId();
+
+    bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>& classes = itorA->second;
+    auto itorB = classes.find(className);
+    if (itorB == classes.end())
+        return ECN::ECClassId();
+
+
+    return itorB->second;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const
+    {
+    BeAssert(id.IsValid());
+    BeAssert(!schemaName.empty());
+    BeAssert(!className.empty());
+    m_classIdCache[schemaName][className] = id;
+    return true;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::HasClassEntry(ECN::ECClassId id) const
+    {
+    BeAssert(id.IsValid());
+    return m_classCache.find(id) != m_classCache.end();
+    }
+    
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+bool SchemaReader::ReaderCache::InsertNullClassEntry(ECN::ECClassId id) const
+    {
+    BeAssert(id.IsValid());
+    auto itor = m_classCache.insert(std::make_pair(id, nullptr));
+    return itor.second;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
