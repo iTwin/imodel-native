@@ -1037,8 +1037,6 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
 
     ConvertElementList(v8Model.GetControlElementsP(), v8mm);
     ConvertElementList(v8Model.GetGraphicElementsP(), v8mm);
-
-    GetDgnDb().Memory().PurgeUntil(1024 * 1024);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1357,7 +1355,6 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
             }
         }
 
-    GetDgnDb().Memory().PurgeUntil(1024 * 1024);
     return BentleyApi::SUCCESS;
     }
 

@@ -208,8 +208,6 @@ void TiledFileConverter::_ConvertElementsInModel(ResolvedModelMapping const& v8m
     
     ConvertElementList(v8Model.GetControlElementsP(), v8mm);
     ConvertElementList(v8Model.GetGraphicElementsP(), v8mm);
-
-    GetDgnDb().Memory().PurgeUntil(1024*1024);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -359,7 +357,7 @@ void TiledFileConverter::_OnFileComplete(DgnV8FileR v8File)
         prov.Update();
         }
 
-    GetDgnDb().Memory().PurgeUntil(0);
+    GetDgnDb().Elements().ClearCache();
     }
 
 /*---------------------------------------------------------------------------------**//**
