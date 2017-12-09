@@ -1273,7 +1273,19 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
     {
     if (this != &other)
         {
+        if (other.m_formatSpec == &other.m_localCopy)
+            {
+            m_localCopy.Clone(other.m_localCopy);
+            m_formatSpec = &m_localCopy;
+            }
+        else
+            {
+            m_formatSpec = other.m_formatSpec;
+            }
 
+        m_unitName = other.m_unitName;
+        m_unit = other.m_unit;
+        m_problem = FormatProblemDetail(other.m_problem);
         }
     return *this;
     }
