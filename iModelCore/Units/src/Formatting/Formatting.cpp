@@ -98,7 +98,7 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
     m_minWidth = 0;
     }
 
-void NumericFormatSpec::CopySpec(NumericFormatSpecCR other)
+void NumericFormatSpec::Clone(NumericFormatSpecCR other)
     {
     m_roundFactor = other.m_roundFactor;
     m_presentationType = other.m_presentationType;
@@ -122,7 +122,7 @@ NumericFormatSpec& NumericFormatSpec::operator=(const NumericFormatSpec& other)
     {
     if (this != &other)
         {
-        CopySpec(other);
+        Clone(other);
         }
     return *this;
     }

@@ -1231,7 +1231,14 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
     else if (nullptr == m_unit)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
     else
+        {
+        if (cloneData)
+            {
+            m_localCopy.Clone(m_formatSpec);
+            m_formatSpec = &m_localCopy;
+            }
         m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -1250,7 +1257,15 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData)
         if (nullptr == m_unit)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
         else
+            {
             m_unitName = unitName;
+            if (cloneData)
+                {
+                m_localCopy.Clone(m_formatSpec);
+                m_formatSpec = &m_localCopy;
+                }
+            m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
+            }
         }
     }
 
@@ -1649,7 +1664,7 @@ void NamedFormatSpec::Clone(NamedFormatSpecCR other)
     m_alias = other.m_alias;
     m_description = other.m_description;
     m_displayLabel = other.m_displayLabel;
-    m_numericSpec.CopySpec(other.m_numericSpec);
+    m_numericSpec.Clone(other.m_numericSpec);
     m_compositeSpec.Clone(other.m_compositeSpec);
     m_specType = other.m_specType;
     m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
@@ -1664,7 +1679,7 @@ void NamedFormatSpec::Clone(NamedFormatSpecCP other)
     m_alias = other->m_alias;
     m_description = other->m_description;
     m_displayLabel = other->m_displayLabel;
-    m_numericSpec.CopySpec(other->m_numericSpec);
+    m_numericSpec.Clone(other->m_numericSpec);
     m_compositeSpec.Clone(other->m_compositeSpec);
     m_specType = other->m_specType;
     m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());

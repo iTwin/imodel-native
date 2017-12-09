@@ -277,7 +277,7 @@ private:
     void LoadJson(Json::Value jval);
 public:
     UNITS_EXPORT void DefaultInit(size_t precision);
-    UNITS_EXPORT void CopySpec(NumericFormatSpecCR other);
+    UNITS_EXPORT void Clone(NumericFormatSpecCR other);
     NumericFormatSpec() { DefaultInit( FormatConstant::DefaultDecimalPrecisionIndex()); }
     NumericFormatSpec(size_t precision) { DefaultInit(precision); }
     NumericFormatSpec(NumericFormatSpecCP other) :
@@ -721,17 +721,24 @@ struct FormatUnitSet
 
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
 
-
-
-
-        // FT   FT(real6)  FT|real6   FT|real6|  {formatName...}  {formatSpec...}
+        //!The 'descriptor' argument is a text string in several formats as follows:
+        //! for compatibility with the obsolete KOQ def's it may consist of only a unit name, e.g. FT
+        //!    since FUS consists of two components: the reference to the Unit and a reference to a format specification,
+        //!      the DefaultReal format will be used in this case
+        //! the most commont descriptor consists of two names: the Unit Name and the Format Name, e.g. FT(real6)
+        //! For supporting the usgae of comples Unit Names a "vertical bar" can be used as a separator
+        //!   between the Unit Name and the Format Name as in FT|real6 The closing vertical bar delimiting
+        //!    the Format Name is not required if the Format Name is terminated with the "end-of-line"
+        //!     However, the Fomat Name can be also delimited by the "vertical bar" as in: FT|real6|
+        //! The descriptor can be also a JSON-string enclosed in the "curvy brackets"
+        //! There are two types of this JSON-string which are currently supported:
+        //!  A short one consists of the unitName and formatName. The optional cloneData boolean value 
+        //!    indicates that the format spec should be cloned into the newly created FUS. The default 
+        //!      value of the cloneData parameter if "false"
+        //! the long one consists of the unitName and formatSpec that contains the full description of this Spec
         UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
 
-
-
-
         UNITS_EXPORT void LoadJson(Json::Value jval);
-
         bool HasProblem() const { return m_problem.IsProblem(); }
         FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
