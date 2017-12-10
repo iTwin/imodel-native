@@ -1084,6 +1084,31 @@ void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool do
         }
     }
 
+void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result)
+    {
+    LOG.info("\n=========== StandaloneFUSTest=============");
+    BEU::UnitCP uom = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
+    if (nullptr == uom)
+        {
+        LOG.infov("Invalid Unit Name %s", unitName);
+        return;
+        }
+    Utf8Char buf[256];
+    sprintf(buf, "%s(%s)", fusUnitName, formatName);
+    FormatUnitSet fus = FormatUnitSet(buf);
+    BEU::Quantity qty = BEU::Quantity(dval, *uom);
+    Utf8String qtyT = fus.FormatQuantity(qty, "");
+    LOG.infov("qty value: %s (expected %s)", qtyT.c_str(), result);
+    EXPECT_STREQ (result, fus.FormatQuantity(qty, "").c_str());
+    Utf8String fusJ = fus.ToJsonString(false, true);
+    LOG.infov("\nfusJ  %s\n", fusJ.c_str());
+    FormatUnitSet fusFromJ = FormatUnitSet(fusJ.c_str());
+    qtyT = fusFromJ.FormatQuantity(qty, "");
+    EXPECT_STREQ (result, qtyT.c_str());
+    LOG.infov("restored qty value: %s (expected %s)", qtyT.c_str(), result);
+    LOG.info("=========== StandaloneFUSTest=============\n");
+    }
+
 
 
 END_BENTLEY_FORMATTEST_NAMESPACE

@@ -249,7 +249,20 @@ TEST(FormattingTest, FullySpecifiedFUS)
     {
     LOG.infov("\n================  FullySpecifiedFUS (start) ===========================");
     FormattingTestFixture::SetUpL10N();
-    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnitCI("M");
+    
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "FT", "fract32u", "74 15/32ft");
+
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "FT", "real4u", "74.4751ft");
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "FT", "fi8", "74' 5 3/4\"");
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "IN", "real", "893.700787");
+
+    /*FormattingTestFixture::ShowQuantity(22.7, "M", "FT", "real4u", "");
+    FormattingTestFixture::ShowQuantity(22.7, "M", "FT", "fi8", "");
+    FormattingTestFixture::ShowQuantity(22.7, "M", "IN", "real", "");*/
+
+
+    //M(real4u);FT(fi8);FT(real4u);IN(real)"/>
+   /* BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnitCI("M");
     FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
     BEU::Quantity const lenQ = BEU::Quantity(22.7, *metrUOM);
 
@@ -261,7 +274,7 @@ TEST(FormattingTest, FullySpecifiedFUS)
         FormatUnitSet("{\"unitName\":\"FT\",\"formatSpec\":{\"NumericFormat\":{\"barType\":\"Diagonal\",\"decPrec\":6,\"decimalSeparator\":\".\",\"formatTraits\":{\"AppendUnitName\":\"true\"},\"fractPrec\":32,\"minWidth\":0,\"presentType\":\"Fractional\",\"roundFactor\":0.0,\"signOpt\":\"OnlyNegative\",\"statSeparator\":\"+\",\"thousandSeparator\":\",\",\"uomSeparator\":\" \"},\"SpecAlias\":\"fract32u\",\"SpecName\":\"Fractional32U\",\"SpecType\":\"numeric\"}}");
     Utf8String lenT = fusFromJ.FormatQuantity(lenQ, "").c_str();
     LOG.infov("fusFromJ-lenT %s", lenT.c_str());
-    EXPECT_STREQ ("74 15/32ft", fusFromJ.FormatQuantity(lenQ, "").c_str());
+    EXPECT_STREQ ("74 15/32ft", fusFromJ.FormatQuantity(lenQ, "").c_str());*/
 
     FormattingTestFixture::TearDownL10N();
     LOG.infov("================  FullySpecifiedFUS (end) ===========================\n");
