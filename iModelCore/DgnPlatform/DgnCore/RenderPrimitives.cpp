@@ -1134,7 +1134,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
     {
-    MeshPolyline    newPolyline(startDistance, FPoint3d::From(rangeCenter));
+    MeshPolyline    newPolyline(startDistance, rangeCenter);
 
     for (auto& point : points)
         {
@@ -1148,7 +1148,7 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, FPoint3dCR rangeCenter)
+void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
     {
     MeshPolyline newPolyline(startDistance, rangeCenter);
     for (auto const& point : points)

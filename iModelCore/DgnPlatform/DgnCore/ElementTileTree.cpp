@@ -857,7 +857,6 @@ folly::Future<BentleyStatus> Loader::_ReadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T> static bool areEqual(T const& lhs, T const& rhs) { return lhs == rhs; }
 template <> bool areEqual(DisplayParamsCR lhs, DisplayParamsCR rhs) { return lhs.IsEqualTo(rhs); }
-template <> bool areEqual(FPoint2d const& lhs, FPoint2d const& rhs) { return bsiFPoint2d_pointEqual(&lhs, &rhs); }
 template <> bool areEqual(MeshPolyline const& lhs, MeshPolyline const& rhs) { return areEqual(lhs.GetIndices(), rhs.GetIndices()); }
 
 /*---------------------------------------------------------------------------------**//**
