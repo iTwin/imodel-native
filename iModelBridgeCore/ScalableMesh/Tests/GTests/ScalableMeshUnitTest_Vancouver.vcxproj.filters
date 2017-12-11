@@ -36,5 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
+    <Text Include="..\..\..\ScalableMesh-Data\displayQueryTestCases.txt" />
+    <Text Include="..\..\..\ScalableMesh-Data\list.txt" />
   </ItemGroup>
 </Project>

@@ -290,6 +290,71 @@ DisplayQueryTester::~DisplayQueryTester()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayQueryTester::VerifyDisplayNodeFunctions(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes) const
+    {    
+    for (auto& node : meshNodes)
+        { 
+        bvector<SmCachedDisplayMesh*>  cachedMeshes;
+        bvector<bpair<bool, uint64_t>> textureIds;
+        
+        StatusInt status = node->GetCachedMeshes(cachedMeshes, textureIds);
+
+        ASSERT_EQ(status == SUCCESS, true);
+
+        if (textureIds.size() > 0)
+            {
+            bvector<SmCachedDisplayTexture*> cachedTextures; 
+            bvector<uint64_t>                textureRequestIds;
+
+            size_t nbValidTextures = 0;
+
+            for (auto& id : textureIds)
+                {
+                if (id.first)
+                    nbValidTextures++;
+                }
+            
+            StatusInt statusGetTextures = node->GetCachedTextures(cachedTextures, textureRequestIds);            
+            
+            ASSERT_EQ(statusGetTextures == SUCCESS, true);
+            EXPECT_EQ(textureIds.size() == textureRequestIds.size(), true);
+            EXPECT_EQ(cachedTextures.size() == nbValidTextures, true);           
+            }
+
+        node->SetIsInVideoMemory(false);
+        
+        IScalableMeshCachedDisplayNodePtr displayNodePtr(IScalableMeshCachedDisplayNode::Create(node->GetNodeId(), m_smPtr.get()));
+        }    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayQueryTester::VerifyCurrentlyViewedNodesFunctions(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes) 
+    {
+    bvector<IScalableMeshNodePtr> viewedNodes;
+
+    m_smPtr->GetCurrentlyViewedNodes(viewedNodes);
+
+    EXPECT_EQ(viewedNodes.size() == 0, true);
+
+    for (auto& node : meshNodes)
+        {
+        viewedNodes.push_back(node.get());
+        }
+    
+    m_smPtr->SetCurrentlyViewedNodes(viewedNodes);
+
+    viewedNodes.clear();
+
+    m_smPtr->GetCurrentlyViewedNodes(viewedNodes);
+
+    EXPECT_EQ(viewedNodes.size() == meshNodes.size(), true);    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                 11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayQueryTester::DoQuery()
@@ -333,7 +398,13 @@ void DisplayQueryTester::DoQuery()
     
     bvector<IScalableMeshCachedDisplayNodePtr> meshNodes;
     bvector<IScalableMeshCachedDisplayNodePtr> overviewMeshNodes;
-    
+
+
+    bvector<IScalableMeshNodePtr> currentlyViewedNodes;
+
+    m_smPtr->GetCurrentlyViewedNodes(currentlyViewedNodes);
+    EXPECT_EQ(currentlyViewedNodes.size() == 0, true);
+        
     status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
     EXPECT_EQ(status == SUCCESS, true);
     
@@ -341,6 +412,10 @@ void DisplayQueryTester::DoQuery()
     EXPECT_EQ(status == SUCCESS, true);
                             
     int nbReturnedNodes = (int)meshNodes.size();
+
+    VerifyDisplayNodeFunctions(meshNodes);
+    VerifyDisplayNodeFunctions(overviewMeshNodes);
+    VerifyCurrentlyViewedNodesFunctions(meshNodes);
 
     overviewMeshNodes.clear();
     meshNodes.clear();
