@@ -713,7 +713,7 @@ void PublisherContext::_AddBatchTableAttributes(Json::Value& batchTableJson, Fea
 void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part)
     {
     PublishTileData     featureTableData, partData;
-    bvector<uint32_t>   attributeIndices;
+    bvector<uint16_t>   attributeIndices;
     bool                rotationPresent = false;
 
     featureTableData.m_json["INSTANCES_LENGTH"] = part->Instances().size();
@@ -813,7 +813,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
             }
 
         featureTableData.m_json["BATCH_ID"]["byteOffset"] = featureTableData.BinaryDataSize();
-        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint32_t));
+        featureTableData.AddBinaryData(attributeIndices.data(), attributeIndices.size()*sizeof(uint16_t));
         }
 
     featureTableData.PadBinaryDataToBoundary(4);
@@ -4128,6 +4128,10 @@ bool PublisherContext::CategoryOnInAnyView(DgnCategoryId categoryId, PublisherCo
     for (auto& subCategoryId : subCategoryIds)
         {
         auto const& subcategory = DgnSubCategory::Get(GetDgnDb(), subCategoryId);
+
+        if (!subcategory.IsValid())
+            continue;
+
         auto        subName = subcategory->GetSubCategoryName();
 
         anySubCategories = true;
