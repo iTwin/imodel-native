@@ -220,7 +220,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
 
     // flush cache to make sure FunctionalTypes were inserted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         for (int32_t i=0; i<_countof(functionalTypeId); i++)
             {
             TestFunctionalTypePtr funcType = m_db->Elements().GetForEdit<TestFunctionalType>(functionalTypeId[i]);
@@ -236,7 +236,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
 
     // flush cache to make sure FunctionalTypes were updated properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         for (int32_t i=0; i<_countof(functionalTypeId); i++)
             {
             TestFunctionalTypeCPtr funcType = m_db->Elements().Get<TestFunctionalType>(functionalTypeId[i]);
@@ -270,7 +270,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
 
     // flush cache to make sure the FunctionalComponent's FunctionalType was inserted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         TestComponentPtr component = m_db->Elements().GetForEdit<TestComponent>(testComponentId);
         ASSERT_TRUE(component.IsValid());
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
@@ -282,7 +282,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
 
     // flush cache to make sure the FunctionalComponent's FunctionalType was updated properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         TestComponentPtr component = m_db->Elements().GetForEdit<TestComponent>(testComponentId);
         ASSERT_TRUE(component.IsValid());
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
@@ -294,7 +294,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
 
     // flush cache to make sure the FunctionalComponent's FunctionalType was cleared properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         TestComponentCPtr component = m_db->Elements().Get<TestComponent>(testComponentId);
         ASSERT_TRUE(component.IsValid());
         ASSERT_FALSE(component->GetFunctionalType().IsValid());
@@ -340,7 +340,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
         }
 
     // flush cache to make sure the elements were inserted properly
-    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ClearCache();
 
     for (int i=0; i<_countof(breakdownId); i++)
         {

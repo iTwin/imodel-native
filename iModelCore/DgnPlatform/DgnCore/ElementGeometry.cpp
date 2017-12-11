@@ -16,32 +16,6 @@
 
 using namespace flatbuffers;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
-    {
-    Render::TexturePtr tx;
-    auto sys = GetRenderSystem();
-    if (nullptr != sys)
-        tx = sys->_CreateTexture(image);
-
-    return tx;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const
-    {
-    Render::TexturePtr tx;
-    auto sys = GetRenderSystem();
-    if (nullptr != sys)
-        tx = sys->_CreateTexture(source, bottomUp);
-
-    return tx;
-    }
-
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3871,14 +3845,18 @@ Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR hit) const
     {
-    if (0 == hit.GetGeomDetail().GetGeometryStreamEntryId().GetIndex())
+    GeometryStreamEntryId elemEntryId = hit.GetGeomDetail().GetGeometryStreamEntryId();
+
+    if (0 == elemEntryId.GetIndex())
         return ERROR;
 
-    switch (hit.GetSubSelectionMode())
+    SubSelectionMode subMode = hit.GetSubSelectionMode();
+
+    switch (subMode)
         {
         case SubSelectionMode::Part:
             {
-            if (hit.GetGeomDetail().GetGeometryStreamEntryId().GetGeometryPartId().IsValid())
+            if (elemEntryId.GetGeometryPartId().IsValid())
                 break;
 
             return ERROR;
@@ -3907,10 +3885,10 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...
-        if (hit.GetGeomDetail().GetGeometryStreamEntryId() != iter.GetGeometryStreamEntryId())
+        if (elemEntryId != iter.GetGeometryStreamEntryId())
             continue;
 
-        switch (hit.GetSubSelectionMode())
+        switch (subMode)
             {
             case SubSelectionMode::Part:
                 {
@@ -3967,19 +3945,10 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
                 else
                     curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
 
-                if (hit.GetViewport().Is3dView())
-                    builder->AddCurveVectorR(*curve, false);
-                else
-                    builder->AddCurveVector2dR(*curve, false, geomParams.GetNetDisplayPriority());
+                builder->AddCurveVectorR(*curve, false);
 
                 graphic = builder->Finish();
-
-                if (!graphic.IsValid())
-                    return ERROR;
-
-                context.AddWorldOverlay(*graphic); 
-
-                return SUCCESS;
+                break;
                 }
 
             case SubSelectionMode::Primitive:
@@ -4010,10 +3979,12 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
 
                 partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
 
+                GeometryStreamEntryId partEntryId = hit.GetGeomDetail().GetGeometryStreamEntryId(true); // pass true to compare part geometry index...
+
                 for (auto partIter : partCollection)
                     {
-                    // Quick exclude of part geometry that didn't generate the hit...pass true to compare part geometry index...
-                    if (hit.GetGeomDetail().GetGeometryStreamEntryId(true) != partIter.GetGeometryStreamEntryId())
+                    // Quick exclude of part geometry that didn't generate the hit...
+                    if (partEntryId != partIter.GetGeometryStreamEntryId())
                         continue;
 
                     GeometricPrimitivePtr partGeom = partIter.GetGeometryPtr();
@@ -4051,7 +4022,35 @@ BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR h
             return ERROR;
         }
 
-    context.AddNormal(*graphic); // NEEDSWORK: z-fighting and symbology (since we don't control element hilite)...
+    // Use branch to push geometry towards eye and to override color from normal flash for primitive/part sub-selection...
+    double      offsetDist = context.GetPixelSizeAtPoint(&hit.GetHitPoint());
+    DVec3d      offsetDir;
+    DPoint3d    viewPt[2];
+    Transform   offsetTrans;
+
+    viewPt[0].Init(0.5, 0.5, 0.0);
+    viewPt[1].Init(0.5, 0.5, 1.0);
+
+    context.NpcToWorld(viewPt, viewPt, 2);
+    offsetDir.DifferenceOf(viewPt[1], viewPt[0]);
+    offsetDir.ScaleToLength(4.0 * offsetDist);
+    offsetTrans.InitFrom(offsetDir);
+
+    ColorDef color = context.GetViewport()->GetHiliteColor();
+    Render::OvrGraphicParams ovrParams;
+
+    if (SubSelectionMode::Segment != subMode)
+        {
+        ovrParams.SetLineColor(color);
+        ovrParams.SetFillColor(color);
+        ovrParams.SetLineTransparency(0x64);
+        ovrParams.SetFillTransparency(0x64);
+        }
+
+    GraphicBranch branch;
+
+    branch.Add(*graphic);
+    context.AddWorldDecoration(*context.CreateBranch(branch, context.GetDgnDb(), offsetTrans), &ovrParams);
 
     return SUCCESS;
     }

@@ -206,7 +206,8 @@ public:
     //! @return RevisionStatus::Success if the revision was successfully merged, error status otherwise. 
     DGNPLATFORM_EXPORT RevisionStatus MergeRevision(DgnRevisionCR revision);
 
-    //! Get the Id of the last revision that was merged into or created from the Db. This is the parent for any new revisions that will be created. 
+    //! Get the Id of the last revision that was merged into or created from the BIM. This is the parent for any new revisions that will be created from the BIM.
+	//! @remarks Returns an empty string if the BIM is in it's initial state (with no revisions), or if it's a standalone briefcase disconnected from the Hub.
     DGNPLATFORM_EXPORT Utf8String GetParentRevisionId() const;
 
     //! Start creating a new revision from the changes saved to the Db

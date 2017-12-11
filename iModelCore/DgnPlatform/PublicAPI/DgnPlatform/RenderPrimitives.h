@@ -489,28 +489,55 @@ public:
 //=======================================================================================
 struct VertexKey
 {
-    DPoint2d            m_param;
-    uint32_t            m_fillColor = 0;
-    Feature             m_feature;
-    QPoint3d            m_position;
-    OctEncodedNormal    m_normal;
-    bool                m_normalValid;
-    bool                m_paramValid;
-
-    VertexKey() { }
-    VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr);
-    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param);
-
-    OctEncodedNormalCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
-    DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
-
-    //=======================================================================================
-    // @bsistruct                                                   Paul.Connelly   12/16
-    //=======================================================================================
-    struct Comparator
+private:
+    struct NormalAndPosition
     {
-        DGNPLATFORM_EXPORT bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
+        uint16_t    m_data[4];
+
+        NormalAndPosition() { }
+        NormalAndPosition(QPoint3dCR pos, uint16_t normal)
+            {
+            m_data[0] = normal;
+            m_data[1] = pos.x;
+            m_data[2] = pos.y;
+            m_data[3] = pos.z;
+            }
     };
+
+    DPoint2d            m_param;            // 0
+    NormalAndPosition   m_normalAndPos;     // 10
+    uint64_t            m_elemId;           // 18
+    uint64_t            m_subcatId;         // 20
+    uint32_t            m_fillColor;        // 28
+    DgnGeometryClass    m_class;            // 2C
+    bool                m_normalValid;      // 2D
+    bool                m_paramValid;       // 2E
+
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, uint16_t normal, bool normalValid, bool paramValid)
+        : m_normalAndPos(point, normal), m_elemId(feature.GetElementId().GetValueUnchecked()), m_subcatId(feature.GetSubCategoryId().GetValueUnchecked()),
+        m_fillColor(fillColor), m_class(feature.GetClass()), m_normalValid(normalValid), m_paramValid(paramValid) { }
+public:
+    VertexKey() { }
+    VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr)
+        : VertexKey(QPoint3d(point, qParams), feature, fillColor, nullptr != normal ? OctEncodedNormal::From(*normal).Value() : 0, nullptr != normal, nullptr != param)
+        {
+        if (m_paramValid)
+            m_param = *param;
+        }
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param)
+        : VertexKey(point, feature, fillColor, nullptr != normal ? normal->Value() : 0, nullptr != normal, nullptr != param)
+        {
+        if (m_paramValid)
+            m_param = DPoint2d::From(param->x, param->y);
+        }
+
+    DGNPLATFORM_EXPORT bool operator<(VertexKey const& rhs) const;
+
+    QPoint3dCR GetPosition() const { return *reinterpret_cast<QPoint3dCP>(m_normalAndPos.m_data+1); }
+    Feature GetFeature() const { return Feature(DgnElementId(m_elemId), DgnSubCategoryId(m_subcatId), m_class); }
+    uint32_t GetFillColor() const { return m_fillColor; }
+    OctEncodedNormalCP GetNormal() const { return m_normalValid ? reinterpret_cast<OctEncodedNormalCP>(m_normalAndPos.m_data) : nullptr; }
+    DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
 };
 
 //=======================================================================================
@@ -526,7 +553,7 @@ struct TriangleKey
     bool operator<(TriangleKeyCR rhs) const;
 };
 
-typedef bmap<VertexKey, uint32_t, VertexKey::Comparator> VertexMap;
+typedef bmap<VertexKey, uint32_t> VertexMap;
 typedef bset<TriangleKey> TriangleSet;
 
 //=======================================================================================
@@ -564,7 +591,7 @@ public:
 
     DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor, bool requireNormals);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
-    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, FPoint3dCR rangeCenter);
+    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();
 
@@ -877,7 +904,7 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 
     bool Init(MeshPolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance(), line.GetRangeCenter()); }
         
-    bool Init (bvector<uint32_t> const& indices, double startDistance, FPoint3dCR rangeCenter)
+    bool Init (bvector<uint32_t> const& indices, double startDistance, DPoint3dCR rangeCenter)
         {
         Reset();
 

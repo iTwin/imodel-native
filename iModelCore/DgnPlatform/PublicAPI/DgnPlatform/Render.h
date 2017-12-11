@@ -873,7 +873,7 @@ enum class BackgroundFill
     Outline = 2, //!< single color fill uses the view's background color and line color to draw an outline fill
 };
 
-enum class DgnGeometryClass
+enum class DgnGeometryClass : uint8_t
 {
     Primary      = 0,
     Construction = 1,
@@ -1878,17 +1878,16 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPairList)
 namespace Quantization
 {
     constexpr double RangeScale() { return static_cast<double>(0xffff); }
-    constexpr double MaxScale() { return 1000000.0; } // 32-bit floats offer ~6.92 decimal digits of precision...
-    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : std::min(MaxScale(), RangeScale() / extent); }
+    constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
 
     inline bool IsInRange(double quantizedPos)
         {
         return quantizedPos >= 0.0 && quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
         }
 
-    constexpr double QuantizeDouble(double pos, double origin, double scale)
+    inline /*constexpr*/ double QuantizeDouble(double pos, double origin, double scale)
         {
-        return 0.5 + (pos - origin) * scale;
+        return std::max(0.0, std::min(RangeScale(), 0.5 + (pos - origin) * scale));
         }
 
     inline bool IsQuantizable(double pos, double origin, double scale)
@@ -1899,7 +1898,6 @@ namespace Quantization
     inline uint16_t Quantize(double pos, double origin, double scale)
         {
         double qpos = QuantizeDouble(pos, origin, scale);
-        BeAssert(IsInRange(qpos));
         return static_cast<uint16_t>(qpos);
         }
 
@@ -1974,7 +1972,7 @@ namespace Quantization
         DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
         //! Return the point at the specified index, unquantized as a vector type.
         DVec UnquantizeAsVector(size_t index) const { BeAssert(index < this->size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
-        //! Return the point at the specified index
+        //! Return the point at the specified index.
         FPoint Unquantize32(size_t index) const { return ToFPoint(Unquantize(index)); }
 
         //! Requantize all the points in this list to the new parameters, and update the list's parameters.
@@ -2257,11 +2255,11 @@ struct IndexedPolylineArgs
     {
         uint32_t const* m_vertIndex = nullptr;
         uint32_t        m_numIndices = 0;
-        float           m_startDistance = 0.0;
-        FPoint3d        m_rangeCenter;
+        double          m_startDistance = 0.0;
+        DPoint3d        m_rangeCenter;
 
         Polyline() { }
-        Polyline(uint32_t const* indices, uint32_t numIndices, float startDistance, FPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+        Polyline(uint32_t const* indices, uint32_t numIndices, double startDistance, DPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
     };
 
     QPoint3dCP          m_points = nullptr;
@@ -2310,18 +2308,18 @@ struct MeshPolyline
 {
 private:
     bvector<uint32_t>   m_indices;
-    float               m_startDistance;
-    FPoint3d            m_rangeCenter;
+    double              m_startDistance;
+    DPoint3d            m_rangeCenter;
 
 public:
     MeshPolyline () : m_startDistance(0.0) { }
-    MeshPolyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-    MeshPolyline (float startDistance, FPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+    MeshPolyline (double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+    MeshPolyline (double startDistance, DPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
 
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
-    float GetStartDistance() const { return m_startDistance; }
-    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
+    double GetStartDistance() const { return m_startDistance; }
+    DPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
     
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }

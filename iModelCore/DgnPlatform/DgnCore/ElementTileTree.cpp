@@ -87,6 +87,7 @@ constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a s
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
+constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
 static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 
@@ -856,7 +857,6 @@ folly::Future<BentleyStatus> Loader::_ReadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T> static bool areEqual(T const& lhs, T const& rhs) { return lhs == rhs; }
 template <> bool areEqual(DisplayParamsCR lhs, DisplayParamsCR rhs) { return lhs.IsEqualTo(rhs); }
-template <> bool areEqual(FPoint2d const& lhs, FPoint2d const& rhs) { return bsiFPoint2d_pointEqual(&lhs, &rhs); }
 template <> bool areEqual(MeshPolyline const& lhs, MeshPolyline const& rhs) { return areEqual(lhs.GetIndices(), rhs.GetIndices()); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1001,10 +1001,14 @@ BentleyStatus Loader::_LoadTile()
     // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
     if (isLeafInCache || geometry.IsComplete())
         {
-        if (geometry.IsEmpty() || !geometry.ContainsCurves())
-            tile.SetIsLeaf();
-        else if (isLeafInCache)
-            tile.SetZoomFactor(1.0);
+        // NB: Above a certain tolerance we must subdivide in order to avoid visible precision issues with quantized positions when zooming in.
+        if (geometry.IsEmpty() || tile.GetTolerance() <= s_maxLeafTolerance)
+            {
+            if (geometry.IsEmpty() || !geometry.ContainsCurves())
+                tile.SetIsLeaf();
+            else if (isLeafInCache)
+                tile.SetZoomFactor(1.0);
+            }
         }
 
     auto  system = GetRenderSystem();
@@ -2367,7 +2371,8 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         return Completion::Aborted;
 
     // Determine whether or not to subdivide this tile
-    if (!isPartialTile && m_geometries.IsComplete() && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
+    bool canSkipSubdivision = tile.GetTolerance() <= s_maxLeafTolerance;
+    if (canSkipSubdivision && !isPartialTile && m_geometries.IsComplete() && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
         {
         // If no elements were skipped and only a small number of elements exist within this tile's range:
         //  - Make it a leaf tile, if it contains no curved geometry; otherwise

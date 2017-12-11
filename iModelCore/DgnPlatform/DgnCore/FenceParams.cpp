@@ -313,10 +313,12 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gra
     graphic.ProcessAsCurvePrimitives(curves, filled);
 
     // If already detected overlap (or not a region/filled in wireframe), can skip interior check... 
-    if (m_fp.HasOverlaps() || !curves.IsAnyRegionType() || LocateSurfacesPref::Never == m_fp.GetLocateInteriors())
+    if (m_fp.HasOverlaps() || !curves.IsAnyRegionType())
         return true;
 
-    if (LocateSurfacesPref::ByView == m_fp.GetLocateInteriors() && RenderMode::Wireframe == GetViewFlags().GetRenderMode() && !filled)
+    // NOTE: For normal 3d views we must always test interiors to properly support surfaces/solids, but for 2d (or 3d locked to top) we can
+    //       just test "visible" interiors. Going to play it safe for now and opt for visible interiors only for 2d and 3d locked to top.
+    if (RenderMode::Wireframe == GetViewFlags().GetRenderMode() && !filled && (!Is3dView() || (m_viewport && !m_viewport->GetViewController().Allow3dManipulations())))
         return true;
 
     Transform worldToLocal, localToWorld = graphic.GetLocalToWorldTransform();
@@ -617,7 +619,6 @@ DgnViewportP    FenceParams::GetViewport() const {BeAssert(m_viewport && "Fence 
 void            FenceParams::SetOverlapMode(bool val) {m_overlapMode = val;}
 void            FenceParams::SetClipMode(FenceClipMode val) {m_clipMode = val;}
 void            FenceParams::SetClip(ClipVectorCR clip) {m_clip = ClipVector::CreateCopy(clip);}
-void            FenceParams::SetLocateInteriors(LocateSurfacesPref interiors) {m_locateInteriors = interiors;}
 bool            FenceParams::HasOverlaps() const {return m_hasOverlaps;}
 bool            FenceParams::AllowOverlaps() const {return m_overlapMode;}
 
@@ -878,7 +879,6 @@ FenceParams::FenceParams()
     m_onTolerance       = .25;    // The traditional UOR tolerance...
     m_viewport          = nullptr;
     m_clipMode          = FenceClipMode::None;
-    m_locateInteriors   = LocateSurfacesPref::Never;
     m_hasOverlaps       = false;
     m_fenceRangeNPC.Init();
     }
@@ -894,7 +894,6 @@ FenceParams::FenceParams(FenceParamsP fpP)
     m_clipMode          = fpP->m_clipMode;
     m_clip              = fpP->m_clip;
     m_fenceRangeNPC     = fpP->m_fenceRangeNPC;
-    m_locateInteriors   = fpP->m_locateInteriors;
     m_hasOverlaps       = false;
     }
 

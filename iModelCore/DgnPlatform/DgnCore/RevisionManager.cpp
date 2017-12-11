@@ -1159,47 +1159,20 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
-    if (m_dgndb.IsReadonly())
-        {
-        BeAssert(false && "Cannot merge changes into a Readonly database");
-        return RevisionStatus::CannotMergeIntoReadonly;
-        }
-
-    if (m_dgndb.IsMasterCopy())
-        {
-        BeAssert(false && "Cannot merge changes into the Master copy of a database");
-        return RevisionStatus::CannotMergeIntoMaster;
-        }
+    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
+    PRECONDITION(!m_dgndb.IsMasterCopy() && "Cannot merge changes into the Master copy of a database", RevisionStatus::CannotMergeIntoMaster);
 
     TxnManagerR txnMgr = m_dgndb.Txns();
 
-    if (txnMgr.HasChanges())
-        {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        return RevisionStatus::HasUncommittedChanges;
-        }
-
-    if (txnMgr.InDynamicTxn())
-        {
-        BeAssert(false && "Cannot merge revisions if in the middle of a dynamic transaction");
-        return RevisionStatus::InDynamicTransaction;
-        }
-
-    if (IsCreatingRevision())
-        {
-        BeAssert(false && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first");
-        return RevisionStatus::IsCreatingRevision;
-        }
+    PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", RevisionStatus::HasUncommittedChanges);
+    PRECONDITION(!txnMgr.InDynamicTxn() && "Cannot merge revisions if in the middle of a dynamic transaction", RevisionStatus::InDynamicTransaction);
+    PRECONDITION(!IsCreatingRevision() && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first", RevisionStatus::IsCreatingRevision)
 
     RevisionStatus status = revision.Validate(m_dgndb);
     if (RevisionStatus::Success != status)
         return status;
 
-    if (GetParentRevisionId() != revision.GetParentId())
-        {
-        BeAssert(false && "Parent of revision should match the parent revision id of the Db");
-        return RevisionStatus::ParentMismatch;
-        }
+    PRECONDITION(GetParentRevisionId() == revision.GetParentId() && "Parent of revision should match the parent revision id of the Db", RevisionStatus::ParentMismatch);
 
     return txnMgr.MergeRevision(revision);
     }
