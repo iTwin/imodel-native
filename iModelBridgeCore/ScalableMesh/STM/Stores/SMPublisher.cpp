@@ -374,13 +374,13 @@ SM3SMPublisher::SMNodeEditPromisePtr SM3SMPublisher::AddWorkItem(IScalableMeshNo
 bool SM3SMPublisher::IsNodeClippedOut(IScalableMeshNodePtr sourceNode)
     {
     auto sourceRange = sourceNode->GetNodeExtent();
-    if (sourceRange.isNull() || sourceRange.isEmpty()) return true;
+    if (sourceRange.IsNull() || sourceRange.IsEmpty()) return true;
     for (auto const& clipRangeInfo : m_clipRanges)
         {
         BeAssert(clipRangeInfo.m_clip != nullptr);
         if (clipRangeInfo.m_clip->IsMask())
             {
-            if (sourceRange.isContained(&clipRangeInfo.m_range))
+            if (sourceRange.IsContained(clipRangeInfo.m_range))
                 {
                 bvector<DPoint3d> intersectPoints(12);
                 for (auto const& convexPlanes : *clipRangeInfo.m_clip->GetMaskPlanes())

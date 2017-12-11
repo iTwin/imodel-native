@@ -50,8 +50,10 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
        if (pImageURL != nullptr && HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
             {
             pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+#ifdef VANCOUVER_API
             HRFVirtualEarthFile& rasterFile = static_cast<HRFVirtualEarthFile&>(*pRasterFile);
             rasterFile.ActivateDgnDb06Mode();            
+#endif
             }    
         else
             {
