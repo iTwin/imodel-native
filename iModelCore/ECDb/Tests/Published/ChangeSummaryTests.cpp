@@ -361,6 +361,147 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
         }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionInput.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo2">
+                <ECProperty propertyName="Dt" typeName="dateTime" />
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo1(S,I) VALUES('hello',123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo2(Dt,Origin.X,Origin.Y) VALUES(CURRENT_TIMESTAMP,1.0,1.0)"));
+
+    TestChangeSet changeset1;
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+
+    ECInstanceKey summary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary1Key, changeset1));
+
+    tracker.Restart();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Foo1 SET I=124"));
+
+    TestChangeSet changeset2;
+    ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
+
+    ECInstanceKey summary2Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary2Key, changeset2));
+
+    tracker.Restart();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Foo2"));
+
+    TestChangeSet changeset3;
+    ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
+
+    ECInstanceKey summary3Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary3Key, changeset3));
+
+    tracker.EndTracking();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    ECSqlStatement foo1ChangesStmt, foo2ChangesStmt;
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo1.Changes(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.Prepare(m_ecdb, "SELECT * FROM ts.Foo2.Changes(?,?)"));
+
+    std::vector<ChangedValueState> changedValueStates {ChangedValueState::AfterInsert, ChangedValueState::BeforeUpdate, ChangedValueState::AfterUpdate, ChangedValueState::BeforeDelete};
+    std::vector<Utf8CP> changedValueStateStrings {"AfterInsert", "BeforeUpdate", "AfterUpdate", "BeforeDelete"};
+
+    for (ChangedValueState state : changedValueStates)
+        {
+        //summary id unbound
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int) state));
+        ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
+        foo1ChangesStmt.Reset();
+        foo1ChangesStmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindInt(2, (int) state));
+        ASSERT_EQ(BE_SQLITE_DONE, foo2ChangesStmt.Step());
+        foo2ChangesStmt.Reset();
+        foo2ChangesStmt.ClearBindings();
+
+        //summary id which does not exist
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int) state));
+        ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
+        foo1ChangesStmt.Reset();
+        foo1ChangesStmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindInt(2, (int) state));
+        ASSERT_EQ(BE_SQLITE_DONE, foo2ChangesStmt.Step());
+        foo2ChangesStmt.Reset();
+        foo2ChangesStmt.ClearBindings();
+        }
+
+    for (Utf8CP state : changedValueStateStrings)
+        {
+        //summary id unbound
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindText(2, state, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
+        foo1ChangesStmt.Reset();
+        foo1ChangesStmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindText(2, state, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, foo2ChangesStmt.Step());
+        foo2ChangesStmt.Reset();
+        foo2ChangesStmt.ClearBindings();
+
+        //summary id which does not exist
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
+        ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindText(2, state, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, foo1ChangesStmt.Step());
+        foo1ChangesStmt.Reset();
+        foo1ChangesStmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindId(1, ECInstanceId((uint64_t) 1111111111)));
+        ASSERT_EQ(ECSqlStatus::Success, foo2ChangesStmt.BindText(2, state, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(BE_SQLITE_DONE, foo2ChangesStmt.Step());
+        foo2ChangesStmt.Reset();
+        foo2ChangesStmt.ClearBindings();
+        }
+
+    //Invalid states
+    //first try with a valid state to ensure that the statement does return something with correct input
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, summary1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, (int) ChangedValueState::AfterInsert));
+    ASSERT_EQ(BE_SQLITE_ROW, foo1ChangesStmt.Step());
+    foo1ChangesStmt.Reset();
+    foo1ChangesStmt.ClearBindings();
+
+    //first try with a valid state to ensure that the statement does return something with correct input
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, summary1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindText(2, "AfterInsert", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ROW, foo1ChangesStmt.Step());
+    foo1ChangesStmt.Reset();
+    foo1ChangesStmt.ClearBindings();
+
+    //now try invalid states
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, summary1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindInt(2, 5555555));
+    ASSERT_EQ(BE_SQLITE_ERROR, foo1ChangesStmt.Step());
+    foo1ChangesStmt.Reset();
+    foo1ChangesStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindId(1, summary1Key.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, foo1ChangesStmt.BindText(2, "Insert", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_ERROR, foo1ChangesStmt.Step());
+    foo1ChangesStmt.Reset();
+    foo1ChangesStmt.ClearBindings();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
 //---------------------------------------------------------------------------------------
