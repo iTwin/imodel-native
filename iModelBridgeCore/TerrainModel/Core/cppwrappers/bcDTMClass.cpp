@@ -3158,16 +3158,16 @@ DTMStatusInt BcDTM::Transform (TransformCR trsfMatP)
         memcpy (dtmTransform, &trsfMatP, 12 * sizeof(double)) ;
     else
         {
-        Bentley::Transform transformTo;
-        Bentley::Transform transformFrom;
-        Bentley::Transform transform;
-        Bentley::Transform transform2;
+        BENTLEY_NAMESPACE_NAME::Transform transformTo;
+        BENTLEY_NAMESPACE_NAME::Transform transformFrom;
+        BENTLEY_NAMESPACE_NAME::Transform transform;
+        BENTLEY_NAMESPACE_NAME::Transform transform2;
 
         _dtmTransformHelper->GetTransformationFromDTM(transformFrom);
         _dtmTransformHelper->GetTransformationToDTM(transformTo);
 
-        transform = Bentley::Transform::FromProduct(trsfMatP, transformFrom);
-        transform2 = Bentley::Transform::FromProduct(transformTo, transform);
+        transform = BENTLEY_NAMESPACE_NAME::Transform::FromProduct(trsfMatP, transformFrom);
+        transform2 = BENTLEY_NAMESPACE_NAME::Transform::FromProduct(transformTo, transform);
         transform = transform2;
 
         memcpy (dtmTransform, &transform, 12 * sizeof(double)) ;
