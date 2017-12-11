@@ -17,7 +17,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
-        <ECStructArrayProperty propertyName="CardinalPoints" displayLabel = "Custom Cardinal Points" typeName="CardinalPointStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="CardinalPoints" displayLabel = "Cardinal Points" typeName="CardinalPointStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
     <ECEntityClass typeName="ConstantProfile" description="A Profile that does not varying along its length (unlike Varying Profile).">
         <BaseClass>Profile</BaseClass>
