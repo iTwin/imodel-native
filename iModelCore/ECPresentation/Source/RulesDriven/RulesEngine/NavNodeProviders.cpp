@@ -192,12 +192,12 @@ bvector<Utf8String> NavNodesProviderContext::GetRelatedSettingIds() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NavNodesProviderContext::GetPhysicalParentNode() const
+JsonNavNodeCPtr NavNodesProviderContext::GetPhysicalParentNode() const
     {
     if (nullptr == m_physicalParentNodeId)
         return nullptr;
 
-    NavNodeCPtr node = GetNodesCache().GetNode(*m_physicalParentNodeId);
+    JsonNavNodeCPtr node = GetNodesCache().GetNode(*m_physicalParentNodeId);
     BeAssert(node.IsValid());
     return node;
     }
@@ -205,12 +205,12 @@ NavNodeCPtr NavNodesProviderContext::GetPhysicalParentNode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr NavNodesProviderContext::GetVirtualParentNode() const
+JsonNavNodeCPtr NavNodesProviderContext::GetVirtualParentNode() const
     {
     if (nullptr == m_virtualParentNodeId)
         return nullptr;
 
-    NavNodeCPtr node = GetNodesCache().GetNode(*m_virtualParentNodeId);
+    JsonNavNodeCPtr node = GetNodesCache().GetNode(*m_virtualParentNodeId);
     BeAssert(node.IsValid());
     return node;
     }
@@ -218,7 +218,7 @@ NavNodeCPtr NavNodesProviderContext::GetVirtualParentNode() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NavNodesProviderContext::CreateProvider(NavNodesProviderContextR context, NavNodeCP parentNode) const
+NavNodesProviderPtr NavNodesProviderContext::CreateProvider(NavNodesProviderContextR context, JsonNavNodeCP parentNode) const
     {
     return m_providerFactory.CreateForVirtualParent(context, parentNode);
     }
@@ -274,16 +274,16 @@ void NavNodesProviderContext::SetChildNodeContext(NavNodesProviderContextCR othe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProviderContext::SetQueryContext(ECDbCR db, ECSqlStatementCache const& statementCache, CustomFunctionsInjector& customFunctions, IECDbUsedClassesListener* usedClassesListener)
+void NavNodesProviderContext::SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection, ECSqlStatementCache const& statementCache, CustomFunctionsInjector& customFunctions, IECDbUsedClassesListener* usedClassesListener)
     {
-    RulesDrivenProviderContext::SetQueryContext(db, statementCache, customFunctions);
+    RulesDrivenProviderContext::SetQueryContext(connections, connection, statementCache, customFunctions);
     
-    NavigationQueryBuilderParameters params(GetSchemaHelper(), GetRuleset(), GetUserSettings(), &GetUsedSettingsListener(),
+    NavigationQueryBuilderParameters params(GetSchemaHelper(), GetConnections(), GetConnection(), GetRuleset(), GetUserSettings(), &GetUsedSettingsListener(),
         GetECExpressionsCache(), *m_nodesCache, GetLocalState());
 
     if (nullptr != usedClassesListener)
         {
-        m_usedClassesListener = new ECDbUsedClassesListenerWrapper(db, *usedClassesListener);
+        m_usedClassesListener = new ECDbUsedClassesListenerWrapper(GetConnection(), *usedClassesListener);
         params.SetUsedClassesListener(m_usedClassesListener);
         }
 
@@ -297,7 +297,7 @@ void NavNodesProviderContext::SetQueryContext(NavNodesProviderContextCR other)
     {
     RulesDrivenProviderContext::SetQueryContext(other);
 
-    NavigationQueryBuilderParameters params(GetSchemaHelper(), GetRuleset(), GetUserSettings(), &GetUsedSettingsListener(),
+    NavigationQueryBuilderParameters params(GetSchemaHelper(), GetConnections(), GetConnection(), GetRuleset(), GetUserSettings(), &GetUsedSettingsListener(),
         GetECExpressionsCache(), *m_nodesCache, GetLocalState());
 
     if (nullptr != other.m_usedClassesListener)
@@ -367,7 +367,7 @@ bool NavNodesProviderContext::IsUpdatesDisabled(bool checkBase) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DataSourceInfo CreateDataSourceInfo(NavNodesProviderContextCR ctx)
     {
-    return DataSourceInfo(ctx.GetDb().GetDbGuid(), ctx.GetRuleset().GetRuleSetId(),
+    return DataSourceInfo(ctx.GetConnection().GetId(), ctx.GetRuleset().GetRuleSetId(),
         ctx.GetPhysicalParentNodeId(), ctx.GetVirtualParentNodeId());
     }
 
@@ -541,12 +541,28 @@ NavNodesProviderCR NavNodesProvider::GetRootBaseProvider() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NavNodesProvider::FinalizeNodes()
+    {
+    size_t count = GetNodesCount();
+    for (size_t i = 0; i < count; ++i)
+        {
+        if (GetContext().GetCancelationToken().IsCanceled())
+            return;
+
+        JsonNavNodePtr node;
+        GetNode(node, i);
+        FinalizeNode(*node, false);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomNodesProvider::CustomNodesProvider(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification) 
     : NavNodesProvider(context), m_specification(specification)
-    {
-    }
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2015
@@ -565,7 +581,7 @@ void CustomNodesProvider::Initialize()
             return;
             }
 
-        BeGuid connectionId = GetContext().IsQueryContext() ? GetContext().GetDb().GetDbGuid() : BeGuid();
+        Utf8String connectionId = GetContext().IsQueryContext() ? GetContext().GetConnection().GetId() : "";
         Utf8String type(m_specification.GetNodeType().c_str());
         Utf8String imageId(m_specification.GetImageId().c_str());
         Utf8String label(m_specification.GetLabel().c_str());
@@ -660,7 +676,7 @@ size_t CustomNodesProvider::_GetNodesCount() const
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds) 
-    : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetDb(), context.GetStatementCache(), query), 
+    : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetConnection(), context.GetStatementCache(), query), 
     m_executorIndex(0), m_inProvidersRequest(false), m_usedClassIds(usedClassIds)
     { }
 
@@ -857,6 +873,24 @@ static DataSourceFilter GetSpecificationFilter(IHierarchyCache const& nodesCache
     return filtersBuilder.GetFilter();
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct QueryBasedNodesProvider::Savepoint
+    {
+    QueryBasedNodesProvider& m_provider;
+    IHierarchyCache::SavepointPtr m_cacheSavepoint;
+    Savepoint(QueryBasedNodesProvider& provider)
+        : m_provider(provider), m_cacheSavepoint(provider.GetContext().GetNodesCache().CreateSavepoint())
+        {}
+    void Cancel()
+        {
+        m_cacheSavepoint->Cancel();
+        m_provider.m_executorIndex = 0;
+        m_provider.GetDataSourceInfo().SetDataSourceId(0);
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -866,8 +900,10 @@ void QueryBasedNodesProvider::Initialize()
         return;
 
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[QueryBasedNodesProvider] Initialize", NativeLogging::LOG_TRACE);
-    
-    NavNodeCPtr virtualParent = GetContext().GetVirtualParentNode();
+    JsonNavNodeCPtr virtualParent = GetContext().GetVirtualParentNode();
+
+    // create a savepoint so we can roll back if canceled
+    Savepoint savepoint(*this);
 
     // cache data source before getting the nodes
     SetDataSourceInfo(CreateDataSourceInfo(GetContext()));
@@ -876,24 +912,37 @@ void QueryBasedNodesProvider::Initialize()
     DataSourceRelatedSettingsUpdater updater(GetDataSourceInfo(), GetContext());
 
     // set up the custom functions context
-    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
-        GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData());
+    CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), 
+        GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), GetContext().GetECExpressionsCache(), 
+        GetContext().GetNodesFactory(), GetContext().GetUsedClassesListener(), virtualParent.get(), &m_query->GetExtendedData());
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
+
+    // read the nodes
+    m_executor.ReadRecords(&GetContext().GetCancelationToken());
 
     // create providers for each node
     JsonNavNodePtr node;
     GetNodeProvidersR().reserve(m_executor.GetNodesCount());
     while ((node = m_executor.GetNode(m_executorIndex++)).IsValid())
         {
+        NavNodeExtendedData extendedData(*node);
+        extendedData.SetRulesetId(GetContext().GetRuleset().GetRuleSetId().c_str());
         if (nullptr != GetContext().GetPhysicalParentNodeId())
             node->SetParentNodeId(*GetContext().GetPhysicalParentNodeId());
         if (nullptr != GetContext().GetVirtualParentNodeId())
-            NavNodeExtendedData(*node).SetVirtualParentId(*GetContext().GetVirtualParentNodeId());        
+            extendedData.SetVirtualParentId(*GetContext().GetVirtualParentNodeId());        
         if (GetContext().IsRootNodeContext() && GetContext().GetRootNodeRule().GetAutoExpand())
             node->SetIsExpanded(true);
 
         GetContext().GetNodesCache().Cache(*node, true);
+        
+        if (GetContext().GetCancelationToken().IsCanceled())
+            {
+            savepoint.Cancel();
+            LoggingHelper::LogMessage(Log::Navigation, "[QueryBasedNodesProvider] Initialization canceled", NativeLogging::LOG_DEBUG);
+            return;
+            }
 
         NavNodesProviderPtr provider = CreateProvider(*node);
         AddProvider(*provider);
@@ -1034,7 +1083,7 @@ bvector<NavigationQueryPtr> QueryBasedSpecificationNodesProvider::CreateQueries(
 
     if (GetContext().IsChildNodeContext())
         {
-        NavNodeCPtr parent = GetContext().GetVirtualParentNode();
+        JsonNavNodeCPtr parent = GetContext().GetVirtualParentNode();
         if (parent.IsNull())
             {
             BeAssert(false);
@@ -1282,7 +1331,7 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
     int bindingIndex = 1;
     if (nullptr != GetContext().GetVirtualParentNodeId())
         stmt->BindUInt64(bindingIndex++, *GetContext().GetVirtualParentNodeId());
-    stmt->BindGuid(bindingIndex++, GetContext().GetDb().GetDbGuid());
+    stmt->BindText(bindingIndex++, GetContext().GetConnection().GetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
 
     while (BE_SQLITE_ROW == stmt->Step())
@@ -1313,7 +1362,7 @@ void SQLiteCacheNodesProvider::InitializeNodes()
 
         rapidjson::Document json;
         json.Parse(serializedNode);
-        JsonNavNodePtr node = GetContext().GetNodesFactory().CreateFromJson(GetContext().GetDb(), std::move(json));
+        JsonNavNodePtr node = GetContext().GetNodesFactory().CreateFromJson(GetContext().GetConnection(), std::move(json));
         if (node.IsNull())
             continue;
 
@@ -1423,7 +1472,7 @@ void CachedHierarchyLevelProvider::InitDatasourceIds(uint64_t const* physicalPar
     int bindingIndex = 1;
     if (nullptr != physicalParentNodeId && 0 != *physicalParentNodeId)
         stmt->BindUInt64(bindingIndex++, *physicalParentNodeId);
-    stmt->BindGuid(bindingIndex++, GetContext().GetDb().GetDbGuid());
+    stmt->BindText(bindingIndex++, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
 
     m_datasourceIds.clear();
@@ -1516,7 +1565,7 @@ CachedStatementPtr CachedVirtualNodeChildrenProvider::_GetNodesStatement() const
     int bindingIndex = 1;
     if (nullptr != GetContext().GetPhysicalParentNodeId())
         stmt->BindUInt64(bindingIndex++, *GetContext().GetPhysicalParentNodeId());
-    stmt->BindGuid(bindingIndex++, GetContext().GetDb().GetDbGuid());
+    stmt->BindText(bindingIndex++, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
 
     return stmt;
@@ -1549,7 +1598,7 @@ CachedStatementPtr CachedVirtualNodeChildrenProvider::_GetCountStatement() const
     int bindingIndex = 1;
     if (nullptr != GetContext().GetPhysicalParentNodeId())
         stmt->BindUInt64(bindingIndex++, *GetContext().GetPhysicalParentNodeId());
-    stmt->BindGuid(bindingIndex++, GetContext().GetDb().GetDbGuid());
+    stmt->BindText(bindingIndex++, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
 
     return stmt;
@@ -1581,7 +1630,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
         return nullptr;
         }
 
-    stmt->BindGuid(1, GetContext().GetDb().GetDbGuid());
+    stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     return stmt;
     }
@@ -1604,8 +1653,8 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() c
         BeAssert(false);
         return nullptr;
         }
-
-    stmt->BindGuid(1, GetContext().GetDb().GetDbGuid());
+    
+    stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     return stmt;
     }

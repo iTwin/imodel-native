@@ -219,7 +219,6 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClass_ChildrenQuery
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "MyLabel");
-    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     
     AllInstanceNodesSpecification spec(1, false, false, false, true, false, "Basic1");
@@ -264,7 +263,6 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel)
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel_ChildrenQuery)
     {
     JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode("MyLabel");
-    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, true, "Basic1");
@@ -293,7 +291,6 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_Class
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "MyLabel");
-    parentNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*parentNode, false);
     
     AllInstanceNodesSpecification spec(1, false, false, false, true, true, "Basic1");
@@ -323,7 +320,6 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_Label
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "Class Grouping Node");
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("Label Grouping Node");
-    classGroupingNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*classGroupingNode, false);
     labelGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*labelGroupingNode, false);
@@ -359,7 +355,6 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_RecursiveNodeRelationships
     
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
     TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*instance);
-    instanceNode->SetParentNodeId(TestNodesHelper::CreateNodeId());
     m_nodesCache.Cache(*instanceNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, "Basic3");

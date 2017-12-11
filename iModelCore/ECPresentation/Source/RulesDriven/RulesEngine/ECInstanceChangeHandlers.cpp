@@ -41,10 +41,10 @@ static bool CanHandle(ECClassChangeHandlerChecksCache& cache,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(ECDbR connection, bvector<ChangedECInstanceInfo> const& infos, Utf8CP propertyAccessor, ECValueCR value)
+bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(IConnectionCR connection, bvector<ChangedECInstanceInfo> const& infos, Utf8CP propertyAccessor, ECValueCR value)
     {
     bvector<ECInstanceChangeResult> results;
-    if (connection.IsReadonly())
+    if (connection.IsReadOnly())
         {
         results.resize(infos.size(), ECInstanceChangeResult::Error(GetErrorMessage(RulesEngineL10N::GetNameSpace(), RulesEngineL10N::ERROR_ECInstanceChangeResult_ConnectionReadOnly())));
         LoggingHelper::LogMessage(Log::Update, "The connection is read-only - can not change ECInstances.", NativeLogging::LOG_WARNING);
@@ -58,9 +58,9 @@ bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(ECDbR connecti
         bool didSucceed = false;
         for (IECInstanceChangeHandlerPtr const& handler : m_handlers)
             {
-            if (CanHandle(checksCache, *handler, connection, info.GetPrimaryInstanceClass()))
+            if (CanHandle(checksCache, *handler, connection.GetDb(), info.GetPrimaryInstanceClass()))
                 {
-                ECInstanceChangeResult result = handler->Change(connection, info, propertyAccessor, value);
+                ECInstanceChangeResult result = handler->Change(connection.GetDb(), info, propertyAccessor, value);
                 if (SUCCESS == result.GetStatus())
                     {
                     results.push_back(result);
@@ -78,7 +78,7 @@ bvector<ECInstanceChangeResult> ECInstanceChangesDirector::Handle(ECDbR connecti
         didSucceedAny |= didSucceed;
         }
     if (didSucceedAny)
-        connection.SaveChanges();
+        connection.GetDb().SaveChanges();
     return results;
     }
 

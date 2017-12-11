@@ -6,6 +6,7 @@ NavigationQueryBuilderTests.InstancesOfSpecificClasses_ShowEmptyGroups          
 RulesDrivenECPresentationManagerNavigationTests.InstancesOfSpecificClassesNodes_ShowEmptyGroups # Placeholder for a missing feature.
 NavigationQueryBuilderTests.AllRelatedInstanceNodes_GroupByRelationship                         # Placeholder for a missing feature.
 NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationshipGroupingNodes   # Placeholder for a missing feature.
+RulesDrivenECPresentationManagerRequestCancelationTests.*                                       # Ignored until ECPresentation multithreading issues are resolved on imodeljs
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention

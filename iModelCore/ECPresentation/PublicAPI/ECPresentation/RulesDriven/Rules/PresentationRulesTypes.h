@@ -66,6 +66,7 @@ enum RequiredRelationDirection : unsigned;
 enum class RelationshipMeaning;
 
 typedef RefCountedPtr<PresentationRuleSet>    		PresentationRuleSetPtr;
+typedef RefCountedPtr<PresentationRuleSet const>    PresentationRuleSetCPtr;
 typedef bvector<RootNodeRuleP>                      RootNodeRuleList;
 typedef bvector<ChildNodeRuleP>                     ChildNodeRuleList;
 typedef bvector<ContentRuleP>                       ContentRuleList;

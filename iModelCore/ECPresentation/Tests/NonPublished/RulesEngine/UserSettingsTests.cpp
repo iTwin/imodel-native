@@ -20,9 +20,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +===============+===============+===============+===============+===============+======*/
 struct UserSettingsTests : ::testing::Test
     {  
-#ifdef USER_SETTINGS_LOCALSTATE
     TestLocalState m_localState;
-#endif
     UserSettingsManager* m_settingsManager;
     
     void SetUp() override
@@ -30,11 +28,8 @@ struct UserSettingsTests : ::testing::Test
         BeFileName temporaryDirectory;
         BeTest::GetHost().GetTempDir(temporaryDirectory);
 
-        m_settingsManager = new UserSettingsManager(temporaryDirectory);        
-        
-#ifdef USER_SETTINGS_LOCALSTATE
+        m_settingsManager = new UserSettingsManager(temporaryDirectory);
         m_settingsManager->SetLocalState(&m_localState);
-#endif
         }
 
     void TearDown() override
@@ -45,7 +40,6 @@ struct UserSettingsTests : ::testing::Test
     UserSettings& GetSettings() {return m_settingsManager->GetSettings("UserSettingsTests");}
     };
 
-#ifdef USER_SETTINGS_LOCALSTATE
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -433,23 +427,17 @@ TEST_F(UserSettingsTests, HasValueReturnsTrueWhenTheresAValue)
     ASSERT_TRUE(GetSettings().HasSetting("int"));
     ASSERT_TRUE(GetSettings().HasSetting("string"));
     }
-#endif
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2017
 +===============+===============+===============+===============+===============+======*/
 struct UserSettingsRoundtripTests : UserSettingsTests
     {  
-#ifdef USER_SETTINGS_LOCALSTATE
     StubLocalState m_localState;
-#endif
     void SetUp() override
         {
-        UserSettingsTests::SetUp();
-        
-#ifdef USER_SETTINGS_LOCALSTATE
+        UserSettingsTests::SetUp();        
         m_settingsManager->SetLocalState(&m_localState);
-#endif
         }
     };
 

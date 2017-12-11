@@ -23,9 +23,9 @@ struct ContentClassesLocater
         ECExpressionsCache& m_ecexpressionsCache;
         INavNodeLocater const& m_nodesLocater;
     public:
-        Context(ECSchemaHelper const& helper, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, 
+        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection,  PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, 
             IUserSettings const& settings, ECExpressionsCache& expressionsCache, INavNodeLocater const& nodesLocater)
-            : ContentSpecificationsHandler::Context(helper, ruleset, preferredDisplayType), m_settings(settings), m_nodesLocater(nodesLocater), m_ecexpressionsCache(expressionsCache)
+            : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, preferredDisplayType), m_settings(settings), m_nodesLocater(nodesLocater), m_ecexpressionsCache(expressionsCache)
             {}
         IUserSettings const& GetUserSettings() const {return m_settings;}
         ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}

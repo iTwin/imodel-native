@@ -25,6 +25,8 @@ struct QueryExecutorTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
     
+    TestConnectionManager m_connections;
+    IConnectionPtr m_connection;
     ECSqlStatementCache m_statementCache;
     RelatedPathsCache m_relatedPathsCache;
     ECExpressionsCache m_expressionsCache;
@@ -34,6 +36,7 @@ struct QueryExecutorTests : ::testing::Test
     CustomFunctionsInjector* m_customFunctionsInjector;
     DefaultCategorySupplier m_categorySupplier;
     TestPropertyFormatter const* m_propertyFormatter;
+    ECSchemaHelper m_schemaHelper;
     
     ECEntityClassCP m_widgetClass;
     ECEntityClassCP m_gadgetClass;
@@ -43,13 +46,15 @@ struct QueryExecutorTests : ::testing::Test
     static void SetUpTestCase();
     static void TearDownTestCase();
     
-    QueryExecutorTests() : m_statementCache(1) {}
+    QueryExecutorTests() : m_statementCache(1), m_schemaHelper(s_project->GetECDb(), &m_relatedPathsCache, &m_statementCache) {}
 
     void SetUp() override
         {
         Localization::Init();
-        m_customFunctionsInjector = new CustomFunctionsInjector(s_project->GetECDb());
+        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
+        m_customFunctionsInjector = new CustomFunctionsInjector(m_connections, s_project->GetECDb());
         m_ruleset = PresentationRuleSet::CreateInstance("QueryExecutorTests", 1, 0, false, "", "", "", false);
+
         m_widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget")->GetEntityClassCP();
         m_gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget")->GetEntityClassCP();
         m_sprocketClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Sprocket")->GetEntityClassCP();

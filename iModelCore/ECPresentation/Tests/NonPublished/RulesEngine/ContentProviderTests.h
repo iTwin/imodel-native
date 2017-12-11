@@ -22,7 +22,9 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct ContentProviderTests : public ::testing::Test
     {
     static ECDbTestProject* s_project;
-    static CustomFunctionsInjector* s_customFunctions;
+    CustomFunctionsInjector* m_customFunctions;
+    TestConnectionManager m_connections;
+    IConnectionPtr m_connection;
     ECSqlStatementCache m_statementCache;
     PresentationRuleSetPtr m_ruleset;
     JsonNavNodesFactory m_nodesFactory;
@@ -38,10 +40,12 @@ struct ContentProviderTests : public ::testing::Test
     ECClassCP m_gadgetClass;
     ECClassCP m_sprocketClass;
     
-    ContentProviderTests() : m_statementCache(5) {}
+    ContentProviderTests() 
+        : m_statementCache(5), m_locaterManager(m_connections)
+        {}
 
-    public: static void SetUpTestCase();
-    public: static void TearDownTestCase();
+    static void SetUpTestCase();
+    static void TearDownTestCase();
     
     void SetUp() override;
     void TearDown() override;

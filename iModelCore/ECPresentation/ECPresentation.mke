@@ -35,7 +35,7 @@ always:
 PchCompiland        = $(SourceDirectory)ECPresentationPch.cpp
 PchOutputDir        = $(o)Pch/
 PchExtraOptions     = -Zm160
-PchArgumentsDepends = $(ECPresentationMakefiles)
+PchArgumentsDepends = $(ECPresentationDependencies)
 %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts =% $(UsePrecompiledHeaderOptions)
@@ -68,5 +68,6 @@ LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki

@@ -86,7 +86,7 @@ private:
     INodesProviderFactoryCR m_nodesProviderFactory;
 
 private:
-    NavNodesProviderPtr CreateProvider(BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&) const;
+    NavNodesProviderPtr CreateProvider(IConnectionCR, HierarchyLevelInfo const&) const;
     void SynchronizeLists(NavNodesDataSource const& oldDs, size_t& oldIndex, NavNodesDataSource const& newDs, size_t& newIndex) const;
     void CompareDataSources(bvector<IUpdateTaskPtr>&, UpdateContext&, NavNodesProviderCR oldProvider, NavNodesProviderR newProvider) const;
     void CompareNodes(bvector<IUpdateTaskPtr>&, UpdateContext&, JsonNavNodeCR oldNode, NavNodesProviderCR newProvider, JsonNavNodeR newNode) const;
@@ -100,7 +100,7 @@ public:
     HierarchyUpdater(UpdateTasksFactory const& tasksFactory, NodesCache& nodesCache, INodesProviderContextFactoryCR contextFactory, INodesProviderFactoryCR providerFactory)
         : m_tasksFactory(tasksFactory), m_nodesCache(nodesCache), m_contextFactory(contextFactory), m_nodesProviderFactory(providerFactory)
         {}
-    void Update(bvector<IUpdateTaskPtr>&, UpdateContext&, BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
+    void Update(bvector<IUpdateTaskPtr>&, UpdateContext&, IConnectionCR, HierarchyLevelInfo const&, HierarchyLevelInfo const&) const;
 };
 
 /*=================================================================================**//**
@@ -110,7 +110,7 @@ struct UpdateTasksFactory
 {
 private:
     mutable IUpdateRecordsHandler* m_recordsHandler;
-    SelectionManagerP m_selectionManager;
+    ISelectionManager* m_selectionManager;
     NodesCache* m_nodesCache;
     
 public:
@@ -118,11 +118,11 @@ public:
         : m_nodesCache(nodesCache), m_recordsHandler(recordsHandler), m_selectionManager(nullptr)
         {}
     void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_recordsHandler = handler;}
-    void SetSelectionManager(SelectionManagerP manager) {m_selectionManager = manager;}
+    void SetSelectionManager(ISelectionManager* selectionManager) {m_selectionManager = selectionManager;}
 
     // hierarchy-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemapNodeIdsTask(bmap<uint64_t, uint64_t> const&) const;
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, BeSQLite::EC::ECDbCR, HierarchyLevelInfo const&) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, IConnectionCR, HierarchyLevelInfo const&) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemoveDataSourceTask(BeSQLite::BeGuidCR removalId) const;
 
     // content-related update tasks
@@ -133,48 +133,46 @@ public:
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(FullUpdateRecord) const;
 
     // selection-related tasks
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshSelectionTask(ECDbCR, bmap<uint64_t, uint64_t>&) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshSelectionTask(IConnectionCR, bmap<uint64_t, uint64_t>&) const;
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +===============+===============+===============+===============+===============+======*/
-struct UpdateHandler : ECInstanceChangeEventSource::IEventHandler, IECDbClosedListener
+struct UpdateHandler
 {
 private:
     NodesCache* m_nodesCache;
     ContentCache* m_contentCache;
-    IConnectionCacheCR m_connections;
+    IConnectionManagerCR m_connections;
     UpdateTasksFactory m_tasksFactory;
-    SelectionManagerP m_selectionManager;
+    ISelectionManager* m_selectionManager;
     IECExpressionsCacheProvider& m_ecexpressionsCacheProvider;
     RefCountedPtr<IUpdateRecordsHandler> m_updateRecordsHandler;
     HierarchyUpdater* m_hierarchyUpdater;
 
 private:
-    bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, BeSQLite::EC::ECDbCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
+    bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
     bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, Utf8CP rulesetId, Utf8CP settingId) const;
     void AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext&, bvector<HierarchyLevelInfo> const&) const;
     void AddTask(bvector<IUpdateTaskPtr>& tasks, IUpdateTask& task) const;
     void AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, IUpdateTask& task) const;
     void ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const;
     void DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies = true, bool updateContent = true) const;
-    bvector<HierarchyLevelInfo> GetAffectedHierarchyLevels(BeSQLite::EC::ECDbCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
-
-protected:
-    void _OnConnectionClosed(BeSQLite::EC::ECDbCR) override;
-    ECPRESENTATION_EXPORT void _OnECInstancesChanged(BeSQLite::EC::ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) override;
-
+    bvector<HierarchyLevelInfo> GetAffectedHierarchyLevels(IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
+    
 public:
-    ECPRESENTATION_EXPORT UpdateHandler(NodesCache*, ContentCache*, IConnectionCacheCR, INodesProviderContextFactoryCR, 
+    ECPRESENTATION_EXPORT UpdateHandler(NodesCache*, ContentCache*, IConnectionManagerCR, INodesProviderContextFactoryCR, 
         INodesProviderFactoryCR, IECExpressionsCacheProvider&);
     ECPRESENTATION_EXPORT ~UpdateHandler();
-    void SetSelectionManager(SelectionManagerP manager) {m_selectionManager = manager; m_tasksFactory.SetSelectionManager(manager);}
+    UpdateTasksFactory const& GetTasksFactory() const {return m_tasksFactory;}
+    void SetSelectionManager(ISelectionManager* selectionManager) {m_selectionManager = selectionManager; m_tasksFactory.SetSelectionManager(selectionManager);}
     void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_updateRecordsHandler = handler; m_tasksFactory.SetRecordsHandler(handler);}
+
     void NotifyRulesetDisposed(PresentationRuleSetCR ruleset);
     void NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId);
     void NotifyCategoriesChanged();
-    UpdateTasksFactory const& GetTasksFactory() const {return m_tasksFactory;}
+    void NotifyECInstancesChanged(IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

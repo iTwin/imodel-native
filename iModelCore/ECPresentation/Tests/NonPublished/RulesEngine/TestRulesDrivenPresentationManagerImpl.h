@@ -1,0 +1,242 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/NonPublished/RulesEngine/TestRulesDrivenPresentationManagerImpl.h $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <UnitTests/BackDoor/ECPresentation/ECPresentationTest.h>
+#include "../../../Source/RulesDriven/RulesEngine/PresentationManagerImpl.h"
+
+BEGIN_ECPRESENTATIONTESTS_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::Impl
+{
+    typedef std::function<INavNodesDataSourcePtr(IConnectionCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetRootNodes;
+    typedef std::function<size_t(IConnectionCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetRootNodesCount;
+    typedef std::function<INavNodesDataSourcePtr(IConnectionCR, NavNodeCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetChildNodes;
+    typedef std::function<size_t(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetChildNodesCount;
+    typedef std::function<bool(IConnectionCR, NavNodeCR, NavNodeKeyCR, NavigationOptions const&, ICancelationTokenCR)> Handler_HasChild;
+    typedef std::function<NavNodeCPtr(IConnectionCR, NavNodeCR, NavigationOptions const&, ICancelationTokenCR)> Handler_GetParent;
+    typedef std::function<NavNodeCPtr(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_GetNode;
+    typedef std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, NavigationOptions const&, ICancelationTokenCR)> Handler_GetFilteredNodes;
+    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeChecked;
+    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeUnchecked;
+    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeExpanded;
+    typedef std::function<void(IConnectionCR, uint64_t nodeId, ICancelationTokenCR)> Handler_OnNodeCollapsed;
+    typedef std::function<void(IConnectionCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnAllNodesCollapsed;
+    
+    typedef std::function<bvector<SelectClassInfo>(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentClasses;
+    typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
+    typedef std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, ContentOptions const&, ICancelationTokenCR)> Handler_GetContent;
+    typedef std::function<size_t(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentSetSize;
+    
+    typedef std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR)> Handler_SaveValueChange;
+    
+    typedef std::function<void()> Handler_OnUpdateRecordsHandlerChanged;
+    typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceRegistered;
+    typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceUnregister;
+    typedef std::function<void()> Handler_OnCategoriesChanged;
+    typedef std::function<void(ISelectionManager*, ISelectionManager*)> Handler_OnSelectionManagerChanged;
+
+private:
+    Handler_GetRootNodes m_rootNodesHandler;
+    Handler_GetRootNodesCount m_rootNodesCountHandler;
+    Handler_GetChildNodes m_childNodesHandler;
+    Handler_GetChildNodesCount m_childNodesCountHandler;
+    Handler_HasChild m_hasChildHandler;
+    Handler_GetParent m_getParentHandler;
+    Handler_GetNode m_getNodeHandler;
+    Handler_GetFilteredNodes m_filteredNodesHandler;
+    Handler_OnNodeChecked m_nodeCheckedHandler;
+    Handler_OnNodeUnchecked m_nodeUncheckedHandler;
+    Handler_OnNodeExpanded m_nodeExpandedHandler;
+    Handler_OnNodeCollapsed m_nodeCollapsedHandler;
+    Handler_OnAllNodesCollapsed m_allNodesCollapsedHandler;
+    
+    Handler_GetContentClasses m_contentClassesHandler;
+    Handler_GetContentDescriptor m_contentDescriptorHandler;
+    Handler_GetContent m_contentHandler;
+    Handler_GetContentSetSize m_contentSetSizeHandler;
+    
+    Handler_SaveValueChange m_saveValueChangeHandler;
+    
+    Handler_OnUpdateRecordsHandlerChanged m_updateRecordsHandlerChangedHandler;
+    Handler_OnECInstanceChangeEventSourceRegistered m_ecInstanceChangeEventSourceRegisteredHandler;
+    Handler_OnECInstanceChangeEventSourceUnregister m_ecInstanceChangeEventSourceUnregisterHandler;
+    Handler_OnCategoriesChanged m_categoriesChangedHandler;
+    Handler_OnSelectionManagerChanged m_selectionManagerChangedHandler;
+        
+protected:
+    INavNodesDataSourcePtr _GetRootNodes(IConnectionCR connection, PageOptionsCR pageOptions, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_rootNodesHandler)
+            return m_rootNodesHandler(connection, pageOptions, options, cancelationToken);
+        return nullptr;
+        }
+    size_t _GetRootNodesCount(IConnectionCR connection, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_rootNodesCountHandler)
+            return m_rootNodesCountHandler(connection, options, cancelationToken);
+        return 0;
+        }
+    INavNodesDataSourcePtr _GetChildren(IConnectionCR connection, NavNodeCR parent, PageOptionsCR pageOptions, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_childNodesHandler)
+            return m_childNodesHandler(connection, parent, pageOptions, options, cancelationToken);
+        return nullptr;
+        }
+    size_t _GetChildrenCount(IConnectionCR connection, NavNodeCR parent, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_childNodesCountHandler)
+            return m_childNodesCountHandler(connection, parent, options, cancelationToken);
+        return 0;
+        }
+    bool _HasChild(IConnectionCR connection, NavNodeCR parent, NavNodeKeyCR childKey, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_hasChildHandler)
+            return m_hasChildHandler(connection, parent, childKey, options, cancelationToken);
+        return false;
+        }
+    NavNodeCPtr _GetParent(IConnectionCR connection, NavNodeCR child, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_getParentHandler)
+            return m_getParentHandler(connection, child, options, cancelationToken);
+        return nullptr;
+        }
+    NavNodeCPtr _GetNode(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_getNodeHandler)
+            return m_getNodeHandler(connection, nodeId, cancelationToken);
+        return nullptr;
+        }
+    bvector<NavNodeCPtr> _GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_filteredNodesHandler)
+            return m_filteredNodesHandler(connection, filterText, options, cancelationToken);
+        return bvector<NavNodeCPtr>();
+        }
+    void _OnNodeChecked(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_nodeCheckedHandler)
+            return m_nodeCheckedHandler(connection, nodeId, cancelationToken);
+        }
+    void _OnNodeUnchecked(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_nodeUncheckedHandler)
+            return m_nodeUncheckedHandler(connection, nodeId, cancelationToken);
+        }
+    void _OnNodeExpanded(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_nodeExpandedHandler)
+            return m_nodeExpandedHandler(connection, nodeId, cancelationToken);
+        }
+    void _OnNodeCollapsed(IConnectionCR connection, uint64_t nodeId, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_nodeCollapsedHandler)
+            return m_nodeCollapsedHandler(connection, nodeId, cancelationToken);
+        }
+    void _OnAllNodesCollapsed(IConnectionCR connection, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_allNodesCollapsedHandler)
+            return m_allNodesCollapsedHandler(connection, options, cancelationToken);
+        }
+
+    bvector<SelectClassInfo> _GetContentClasses(IConnectionCR connection, Utf8CP displayType, bvector<ECClassCP> const& inputClasses, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_contentClassesHandler)
+            return m_contentClassesHandler(connection, displayType, inputClasses, options, cancelationToken);
+        return bvector<SelectClassInfo>();
+        }
+    ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR connection, Utf8CP displayType, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_contentDescriptorHandler)
+            return m_contentDescriptorHandler(connection, displayType, selectionInfo, options, cancelationToken);
+        return nullptr;
+        }
+    ContentCPtr _GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_contentHandler)
+            return m_contentHandler(connection, descriptor, selectionInfo, pageOptions, options, cancelationToken);
+        return nullptr;
+        }
+    size_t _GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+        {
+        if (m_contentSetSizeHandler)
+            return m_contentSetSizeHandler(connection, descriptor, selectionInfo, options, cancelationToken);
+        return 0;
+        }
+
+    bvector<ECInstanceChangeResult> _SaveValueChange(IConnectionCR connection, bvector<ChangedECInstanceInfo> const& changedInstances, Utf8CP propertyAccessor, ECValueCR value) override 
+        {
+        if (m_saveValueChangeHandler)
+            return m_saveValueChangeHandler(connection, changedInstances, propertyAccessor, value);
+        return bvector<ECInstanceChangeResult>();
+        }
+
+    void _OnUpdateRecordsHandlerChanged() override
+        {
+        if (m_updateRecordsHandlerChangedHandler)
+            m_updateRecordsHandlerChangedHandler();
+        }
+    void _OnECInstanceChangeEventSourceRegistered(ECInstanceChangeEventSource& source) override
+        {
+        if (m_ecInstanceChangeEventSourceRegisteredHandler)
+            m_ecInstanceChangeEventSourceRegisteredHandler(source);
+        }
+    void _OnECInstanceChangeEventSourceUnregister(ECInstanceChangeEventSource& source) override
+        {
+        if (m_ecInstanceChangeEventSourceUnregisterHandler)
+            m_ecInstanceChangeEventSourceUnregisterHandler(source);
+        }
+    void _OnCategoriesChanged() override
+        {
+        if (m_categoriesChangedHandler)
+            m_categoriesChangedHandler();
+        }
+    void _OnSelectionManagerChanged(ISelectionManager* before, ISelectionManager* after) override
+        {
+        if (m_selectionManagerChangedHandler)
+            m_selectionManagerChangedHandler(before, after);
+        }
+
+public:
+    TestRulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, IConnectionManagerCR connections, Paths const& paths)
+        : RulesDrivenECPresentationManager::Impl(dependenciesFactory, connections, paths)
+        {}
+
+    void SetRootNodesHandler(Handler_GetRootNodes handler) {m_rootNodesHandler = handler;}
+    void SetRootNodesCountHandler(Handler_GetRootNodesCount handler) {m_rootNodesCountHandler = handler;}
+    void SetChildNodesHandler(Handler_GetChildNodes handler) {m_childNodesHandler = handler;}
+    void SetChildNodesCountHandler(Handler_GetChildNodesCount handler) {m_childNodesCountHandler = handler;}
+    void SetHasChildHandler(Handler_HasChild handler) {m_hasChildHandler = handler;}
+    void SetGetParentHandler(Handler_GetParent handler) {m_getParentHandler = handler;}
+    void SetGetNodeHandler(Handler_GetNode handler) {m_getNodeHandler = handler;}
+    void SetGetFilteredNodesHandler(Handler_GetFilteredNodes handler) {m_filteredNodesHandler = handler;}
+    void SetNodeCheckedHandler(Handler_OnNodeChecked handler) {m_nodeCheckedHandler = handler;}
+    void SetNodeUncheckedHandler(Handler_OnNodeUnchecked handler) {m_nodeUncheckedHandler = handler;}
+    void SetNodeExpandedHandler(Handler_OnNodeExpanded handler) {m_nodeExpandedHandler = handler;}
+    void SetNodeCollapsedHandler(Handler_OnNodeCollapsed handler) {m_nodeCollapsedHandler = handler;}
+    
+    void SetContentClassesHandler(Handler_GetContentClasses handler) {m_contentClassesHandler = handler;}
+    void SetContentDescriptorHandler(Handler_GetContentDescriptor handler) {m_contentDescriptorHandler = handler;}
+    void SetContentHandler(Handler_GetContent handler) {m_contentHandler = handler;}
+    void SetContentSetSizeHandler(Handler_GetContentSetSize handler) {m_contentSetSizeHandler = handler;}
+    
+    void SetSaveValueChangeHandler(Handler_SaveValueChange handler) {m_saveValueChangeHandler = handler;}
+    
+    void SetUpdateRecordsHandlerChangedHandler(Handler_OnUpdateRecordsHandlerChanged handler) {m_updateRecordsHandlerChangedHandler = handler;}
+    void SetSetECInstanceChangeEventSourceRegisteredHandler(Handler_OnECInstanceChangeEventSourceRegistered handler) {m_ecInstanceChangeEventSourceRegisteredHandler = handler;}
+    void SetECInstanceChangeEventSourceUnregisterHandler(Handler_OnECInstanceChangeEventSourceUnregister handler) {m_ecInstanceChangeEventSourceUnregisterHandler = handler;}
+    void SetCategoriesChangedHandler(Handler_OnCategoriesChanged handler) {m_categoriesChangedHandler = handler;}
+    void SetSelectionManagerChangedHandler(Handler_OnSelectionManagerChanged handler) {m_selectionManagerChangedHandler = handler;}
+};
+
+END_ECPRESENTATIONTESTS_NAMESPACE

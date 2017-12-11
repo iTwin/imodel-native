@@ -19,7 +19,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct HierarchyLevelInfo
 {
 private:
-    BeSQLite::BeGuid m_connectionId;
+    Utf8String m_connectionId;
     Utf8String m_rulesetId;
     uint64_t const* m_physicalParentNodeId;
 private:
@@ -41,12 +41,12 @@ public:
         {
         SetParentNodeId(other.m_physicalParentNodeId);
         }
-    HierarchyLevelInfo(BeSQLite::BeGuid connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId)
+    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId)
         : m_connectionId(connectionId), m_rulesetId(rulesetId)
         {
         SetParentNodeId(physicalParentNodeId);
         }
-    HierarchyLevelInfo(BeSQLite::BeGuid connectionId, Utf8String rulesetId, uint64_t physicalParentNodeId)
+    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, uint64_t physicalParentNodeId)
         : m_connectionId(connectionId), m_rulesetId(rulesetId)
         {
         SetParentNodeId(&physicalParentNodeId);
@@ -67,7 +67,7 @@ public:
         SetParentNodeId(other.m_physicalParentNodeId);
         return *this;
         }
-    bool IsValid() const {return m_connectionId.IsValid();}
+    bool IsValid() const {return !m_connectionId.empty();}
     bool operator<(HierarchyLevelInfo const& other) const
         {
         if (nullptr == m_physicalParentNodeId && nullptr != other.m_physicalParentNodeId)
@@ -92,7 +92,7 @@ public:
             && (nullptr == m_physicalParentNodeId && nullptr == other.m_physicalParentNodeId
                 || nullptr != m_physicalParentNodeId && nullptr != other.m_physicalParentNodeId && *m_physicalParentNodeId == *other.m_physicalParentNodeId);
         }
-    BeSQLite::BeGuidCR GetConnectionId() const {return m_connectionId;}
+    Utf8StringCR GetConnectionId() const {return m_connectionId;}
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}
     uint64_t const* GetPhysicalParentNodeId() const {return m_physicalParentNodeId;}
     void SetPhysicalParentNodeId(uint64_t id) {DELETE_AND_CLEAR(m_physicalParentNodeId); SetParentNodeId(&id);}
@@ -120,13 +120,13 @@ public:
         {
         other.m_virtualParentNodeId = nullptr;
         }
-    DataSourceInfo(BeSQLite::BeGuid connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
+    DataSourceInfo(Utf8String connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
         : HierarchyLevelInfo(connectionId, rulesetId, physicalParentNodeId), m_datasourceId(0), m_virtualParentNodeId(nullptr)
         {
         if (nullptr != virtualParentNodeId)
             m_virtualParentNodeId = new uint64_t(*virtualParentNodeId);
         }
-    DataSourceInfo(uint64_t datasourceId, BeSQLite::BeGuid connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
+    DataSourceInfo(uint64_t datasourceId, Utf8String connectionId, Utf8String rulesetId, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
         : HierarchyLevelInfo(connectionId, rulesetId, physicalParentNodeId), m_datasourceId(datasourceId), m_virtualParentNodeId(nullptr)
         {
         if (nullptr != virtualParentNodeId)

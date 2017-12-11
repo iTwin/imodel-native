@@ -16,6 +16,7 @@
 #include <regex>
 #include "ECSchemaHelper.h"
 #include "CustomFunctions.h"
+#include "NavNodesCache.h"
 
 //=======================================================================================
 // @bsiclass                                                Grigas.Petraitis    01/2017
@@ -115,10 +116,10 @@ public:
 struct NodeECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 {
 private:
-    NavNodeCPtr m_node;
-    NodeECInstanceContextEvaluator(NavNodeCR node) : m_node(&node) {}
+    JsonNavNodeCPtr m_node;
+    NodeECInstanceContextEvaluator(JsonNavNodeCR node) : m_node(&node) {}
 public:
-    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(NavNodeCR node) {return new NodeECInstanceContextEvaluator(node);}
+    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(JsonNavNodeCR node) {return new NodeECInstanceContextEvaluator(node);}
     ExpressionContextPtr _GetContext() override
         {
         InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
@@ -183,9 +184,9 @@ struct NodeSymbolsProvider : IECSymbolProvider
 {
     struct Context : ProviderContext
         {
-        ECDbCR m_connection;
-        NavNodeCPtr m_node;
-        Context(ECDbCR connection, NavNodeCP node) : m_connection(connection), m_node(node) {}
+        IConnectionCR m_connection;
+        JsonNavNodeCPtr m_node;
+        Context(IConnectionCR connection, JsonNavNodeCP node) : m_connection(connection), m_node(node) {}
         };
 
 private:
@@ -211,7 +212,7 @@ private:
             }
 
         Context const& ctx = *(Context*)context;
-        if (ctx.m_node.IsNull() || !ctx.m_connection.IsDbOpen())
+        if (ctx.m_node.IsNull() || !ctx.m_connection.IsOpen())
             {
             evalResult.InitECValue().SetBoolean(false);
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "NodeSymbolsProvider::IsOfClass: Result: false (node is null or connection is closed)");
@@ -233,7 +234,7 @@ private:
             return ExpressionStatus::Success;
             }
         
-        ECClassCP nodeClass = ctx.m_connection.Schemas().GetClass(extendedData.GetECClassId());
+        ECClassCP nodeClass = ctx.m_connection.GetDb().Schemas().GetClass(extendedData.GetECClassId());
         if (nullptr == nodeClass)
             {
             BeAssert(false);
@@ -275,12 +276,12 @@ protected:
             }
         else
             {
-            NavNodeCR node = *m_context.m_node;
+            JsonNavNodeCR node = *m_context.m_node;
             NavNodeExtendedData nodeExtendedData(node);
 
             ECClassCP nodeClass = nullptr;
             if (nodeExtendedData.HasECClassId())
-                nodeClass = m_context.m_connection.Schemas().GetClass(nodeExtendedData.GetECClassId());
+                nodeClass = m_context.m_connection.GetDb().Schemas().GetClass(nodeExtendedData.GetECClassId());
 
             context.AddSymbol(*ValueSymbol::Create("IsNull", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("Type", ECValue(node.GetType().c_str(), false)));
@@ -309,7 +310,7 @@ protected:
                     case ECRelatedInstanceDirection::Forward:  relationshipDirection = "Forward"; break;
                     }
                 
-                ECClassCP parentClass = m_context.m_connection.Schemas().GetClass(nodeExtendedData.GetParentECClassId());
+                ECClassCP parentClass = m_context.m_connection.GetDb().Schemas().GetClass(nodeExtendedData.GetParentECClassId());
                 context.AddSymbol(*ValueSymbol::Create("ParentClassName", ECValue(parentClass->GetName().c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("ParentSchemaName", ECValue(parentClass->GetSchema().GetName().c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("RelationshipDirection", ECValue(relationshipDirection.c_str(), true)));
@@ -345,15 +346,15 @@ struct NodeContextEvaluator : PropertySymbol::ContextEvaluator
 {
 private:
     RulesEngineRootSymbolsContext& m_rootContext;
-    ECDbCR m_connection;
+    IConnectionCR m_connection;
     INavNodeLocaterCR m_locater;
     NavNodeKeyCP m_key;
     SymbolExpressionContextPtr m_context;
-    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
+    NodeContextEvaluator(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
         : m_rootContext(rootContext), m_connection(connection), m_locater(locater), m_key(key), m_context(nullptr)
         {}
 public:
-    static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, ECDbCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
+    static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, INavNodeLocaterCR locater, NavNodeKeyCP key)
         {
         return new NodeContextEvaluator(rootContext, connection, locater, key);
         }
@@ -362,7 +363,7 @@ public:
         if (m_context.IsValid())
             return m_context;
 
-        NavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(m_connection, *m_key) : nullptr;
+        JsonNavNodeCPtr node = (nullptr != m_key) ? m_locater.LocateNode(m_connection, *m_key) : nullptr;
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();
@@ -620,7 +621,8 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     bvector<NavNodeExtendedData::RelatedInstanceKey> relatedInstanceKeys = extendedData.GetRelatedInstanceKeys();
     for (NavNodeExtendedData::RelatedInstanceKey const& key : relatedInstanceKeys)
         {
-        rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create(key.GetAlias(), *ECInstanceContextEvaluator::Create(params.GetConnection(), key.GetInstanceKey())));
+        rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create(key.GetAlias(), 
+            *ECInstanceContextEvaluator::Create(params.GetConnection().GetDb(), key.GetInstanceKey())));
         }
 
     // ECInstance methods
@@ -633,7 +635,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tautvydas.Zinys                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(NavNodePtr const& thisNode, IUserSettings const& userSettings)
+ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(JsonNavNodeCR thisNode, IUserSettings const& userSettings)
     {
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
 
@@ -642,7 +644,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
     userSettingsSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // this
-    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(*thisNode)));
+    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("this", *NodeECInstanceContextEvaluator::Create(thisNode)));
 
     // ECInstance methods
     ECInstanceMethodSymbolsProvider ecInstanceMethods;

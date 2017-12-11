@@ -62,6 +62,7 @@ struct TestSelectionListener : ISelectionChangesListener
 struct SelectionTests : ::testing::Test
     {
     static ECDbTestProject* s_project;
+    TestConnectionManager m_connections;
     TestSelectionListener m_listener;
     SelectionManagerP m_manager;
     
@@ -79,8 +80,9 @@ struct SelectionTests : ::testing::Test
 
     void SetUp() override
         {
-        m_manager = new SelectionManager();
+        m_manager = new SelectionManager(m_connections);
         m_manager->AddListener(m_listener);
+        m_connections.NotifyConnectionOpened(s_project->GetECDb());
         }
 
     void TearDown() override
@@ -206,75 +208,13 @@ TEST_F(SelectionTests, ClearsSelectionWhenConnectionIsClosed)
     }
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                08/2016
-+===============+===============+===============+===============+===============+======*/
-struct RemapTestSyncHandler : SelectionSyncHandler
-    {
-    std::function<void(bmap<uint64_t, uint64_t> const&)> m_onSelectedNodesRemapped;
-    void SetOnSelectedNodesRemappedHandler(std::function<void(bmap<uint64_t, uint64_t> const&)> handler) {m_onSelectedNodesRemapped = handler;}
-
-    rapidjson::Document _CreateSelectionEventExtendedData() const override {return rapidjson::Document();}
-    SyncDirection _GetSyncDirection() const override {return SyncDirection::Both;}
-    void _OnSelectedNodesRemapped(bmap<uint64_t, uint64_t> const& remapInfo) override
-        {
-        if (nullptr != m_onSelectedNodesRemapped)
-            m_onSelectedNodesRemapped(remapInfo);
-        }
-    };
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Grigas.Petraitis                10/2017
-//---------------------------------------------------------------------------------------
-TEST_F(SelectionTests, RemappingNodeIdsCallsSyncHandlersWithRemappedIds)
-    {
-    // create selection of 3 node keys
-    NavNodeKeyList keys = {
-        TestNodeKey::Create("type 1"),
-        ECInstanceNodeKey::Create(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)),
-        TestNodeKey::Create("type 2")
-        };
-    for (NavNodeKeyCPtr key : keys)
-        m_manager->AddToSelection(s_project->GetECDb(), "", false, *NavNodeKeyListContainer::Create(keys));
-    ASSERT_EQ(3, m_manager->GetSelection(s_project->GetECDb())->size());
-
-    // create remap info for one key
-    uint64_t selectedKeyBefore = keys[0]->AsDisplayLabelGroupingNodeKey()->GetNodeId();
-    uint64_t selectedKeyAfter = s_keyIdCounter++;
-    uint64_t unselectedKeyBefore = s_keyIdCounter++;
-    uint64_t unselectedKeyAfter = s_keyIdCounter++;
-    bmap<uint64_t, uint64_t> remapInfo;
-    remapInfo[selectedKeyBefore] = selectedKeyAfter; // simulate remapping selected key
-    remapInfo[unselectedKeyBefore] = unselectedKeyAfter; // simulate remapping unselected key
-
-    // set up the selection handler
-    bool handlerCalled = false;
-    RefCountedPtr<RemapTestSyncHandler> syncHandler = new RemapTestSyncHandler();
-    syncHandler->SetOnSelectedNodesRemappedHandler([&](bmap<uint64_t, uint64_t> const& remapInfo)
-        {
-        ASSERT_EQ(1, remapInfo.size());
-        EXPECT_EQ(selectedKeyBefore, remapInfo.begin()->first);
-        EXPECT_EQ(selectedKeyAfter, remapInfo.begin()->second);
-        handlerCalled = true;
-        });
-    m_manager->AddSyncHandler(*syncHandler);
-
-    // do remap
-    BackDoor::SelectionManager::RemapNodeIds(*m_manager, remapInfo);
-
-    // verify remap succeeded by making sure the keys[0] changed to the right value
-    EXPECT_EQ(selectedKeyAfter, keys[0]->AsDisplayLabelGroupingNodeKey()->GetNodeId());
-
-    // verify sync handler was called
-    EXPECT_TRUE(handlerCalled);
-    }
-
-/*=================================================================================**//**
 * @bsiclass                                     Tautvydas.Zinys                    09/2016
 +===============+===============+===============+===============+===============+======*/
 struct MultipleECDbSelectionTest : ::testing::Test
     {
     static ECDbTestProject* s_project1;
     static ECDbTestProject* s_project2;
+    TestConnectionManager m_connections;
     SelectionManagerP m_manager;
 
     static void SetUpTestCase()
@@ -295,7 +235,9 @@ struct MultipleECDbSelectionTest : ::testing::Test
 
     void SetUp() override
         {
-        m_manager = new SelectionManager();
+        m_manager = new SelectionManager(m_connections);
+        m_connections.NotifyConnectionOpened(s_project1->GetECDb());
+        m_connections.NotifyConnectionOpened(s_project2->GetECDb());
         }
 
     void TearDown() override
@@ -391,3 +333,4 @@ TEST_F(MultipleECDbSelectionTest, ClearSelection)
     ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->empty());
     ASSERT_TRUE(m_manager->GetSelection(s_project2->GetECDb())->empty());
     }
+

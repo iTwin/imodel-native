@@ -80,18 +80,20 @@ void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& l
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, Utf8StringCR ecexpression)
+void UsedClassesHelper::NotifyListenerWithUsedClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, Utf8StringCR ecexpression)
     {
-    ECDbUsedClassesListenerWrapper wrapper(schemaHelper.GetDb(), listener);
+    ECSchemaHelper schemaHelper(connection.GetDb(), nullptr, nullptr);
+    ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithUsedClasses(wrapper, schemaHelper, ecexpressionsCache, ecexpression);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECSchemaHelper const& schemaHelper, ECExpressionsCache& ecexpressionsCache, PresentationRuleSetCR ruleset)
+void UsedClassesHelper::NotifyListenerWithRulesetClasses(IECDbUsedClassesListener& listener, ECExpressionsCache& ecexpressionsCache, IConnectionCR connection, PresentationRuleSetCR ruleset)
     {
-    ECDbUsedClassesListenerWrapper wrapper(schemaHelper.GetDb(), listener);
+    ECSchemaHelper schemaHelper(connection.GetDb(), nullptr, nullptr);
+    ECDbUsedClassesListenerWrapper wrapper(connection, listener);
     NotifyListenerWithRulesetClasses(wrapper, schemaHelper, ecexpressionsCache, ruleset);
     }
 
@@ -117,7 +119,7 @@ struct NavigationQueryBuilder::SpecificationsVisitor : PresentationRuleSpecifica
 {
 private:
     NavigationQueryBuilder const& m_queryBuilder;
-    NavNodeCP m_parentNode;
+    JsonNavNodeCP m_parentNode;
     RootNodeRuleCP m_rootNodeRule;
     ChildNodeRuleCP m_childNodeRule;
     bvector<NavigationQueryPtr> m_queries;
@@ -149,7 +151,7 @@ public:
     SpecificationsVisitor(NavigationQueryBuilder const& queryBuilder, RootNodeRuleCR rule) 
         : m_queryBuilder(queryBuilder), m_rootNodeRule(&rule), m_parentNode(nullptr), m_childNodeRule(nullptr) 
         {}
-    SpecificationsVisitor(NavigationQueryBuilder const& queryBuilder, ChildNodeRuleCR rule, NavNodeCP parentNode) 
+    SpecificationsVisitor(NavigationQueryBuilder const& queryBuilder, ChildNodeRuleCR rule, JsonNavNodeCP parentNode) 
         : m_queryBuilder(queryBuilder), m_rootNodeRule(nullptr), m_parentNode(parentNode), m_childNodeRule(&rule) 
         {}
     bvector<NavigationQueryPtr> const& GetQueries() const {return m_queries;}
@@ -158,7 +160,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(ChildNodeRuleCR rule, ChildNodeSpecificationCR spec, NavNodeCR parentNode) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(ChildNodeRuleCR rule, ChildNodeSpecificationCR spec, JsonNavNodeCR parentNode) const
     {
     BeAssert(m_params.GetNodesCache().GetNode(parentNode.GetNodeId()).IsValid());
     SpecificationsVisitor visitor(*this, rule, &parentNode);
@@ -1054,8 +1056,8 @@ private:
     NavigationQueryBuilderParameters const& m_queryBuilderParams;
     ChildNodeSpecificationCR m_specification;
     Utf8StringCR m_specificationHash;
-    NavNodeCP m_parentNode;
-    NavNodeCPtr m_parentInstanceNode;
+    JsonNavNodeCP m_parentNode;
+    JsonNavNodeCPtr m_parentInstanceNode;
 
     GroupingHandlersList m_groupingHandlers;
     GroupingHandler* m_parentGrouping;
@@ -1076,7 +1078,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void Init(NavNodeCP node)
+    void Init(JsonNavNodeCP node)
         {
         m_parentNode = node;
         m_parentInstanceNode = m_parentNode;
@@ -1106,8 +1108,9 @@ private:
             m_groupingHandlers.push_back(new DisplayLabelGroupingHandler(m_specification.GetDoNotSort()));
 
         GroupingSpecificationsVisitor visitor(m_groupingHandlers, m_schemaHelper, m_specification.GetDoNotSort());
-        RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationHash, m_schemaHelper.GetDb(), GetQueryBuilderParams().GetRuleset(), 
-            GetQueryBuilderParams().GetUserSettings(), GetQueryBuilderParams().GetUsedSettingsListener(), GetQueryBuilderParams().GetECExpressionsCache());
+        RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationHash, m_queryBuilderParams.GetConnections(), 
+            m_queryBuilderParams.GetConnection(), GetQueryBuilderParams().GetRuleset(), GetQueryBuilderParams().GetUserSettings(), 
+            GetQueryBuilderParams().GetUsedSettingsListener(), GetQueryBuilderParams().GetECExpressionsCache());
         bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
         for (GroupingRuleCP rule : groupingRules)
             {
@@ -1193,7 +1196,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void ResolveGroupingRelationship()
         {
-        RefCountedPtr<NavNode const> node = const_cast<NavNodeP>(m_parentNode);
+        JsonNavNodeCPtr node = m_parentNode;
         while (node.IsValid() && SpecificationMatches(*node))
             {
             if (node->GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode))
@@ -1235,35 +1238,35 @@ private:
         }
 
 public:
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, AllInstanceNodesSpecificationCR specification) 
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, JsonNavNodeCP node, Utf8StringCR specificationHash, AllInstanceNodesSpecificationCR specification) 
         : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
         Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(false, specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, AllRelatedInstanceNodesSpecificationCR specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, JsonNavNodeCP node, Utf8StringCR specificationHash, AllRelatedInstanceNodesSpecificationCR specification)
         : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
         Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(specification.GetGroupByRelationship(), specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, RelatedInstanceNodesSpecificationCR specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, JsonNavNodeCP node, Utf8StringCR specificationHash, RelatedInstanceNodesSpecificationCR specification)
         : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
         Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(specification.GetGroupByRelationship(), specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, InstanceNodesOfSpecificClassesSpecificationCR specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, JsonNavNodeCP node, Utf8StringCR specificationHash, InstanceNodesOfSpecificClassesSpecificationCR specification)
         : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
         Init(node);
         if (!specification.GetHideNodesInHierarchy())
             ResolveGrouping(false, specification.GetGroupByClass(), specification.GetGroupByLabel());
         }
-    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, NavNodeCP node, Utf8StringCR specificationHash, SearchResultInstanceNodesSpecificationCR specification)
+    GroupingResolver(ECSchemaHelper const& schemaHelper, NavigationQueryBuilderParameters const& params, JsonNavNodeCP node, Utf8StringCR specificationHash, SearchResultInstanceNodesSpecificationCR specification)
         : m_schemaHelper(schemaHelper), m_queryBuilderParams(params), m_specification(specification), m_specificationHash(specificationHash)
         {
         Init(node);
@@ -1277,8 +1280,8 @@ public:
             delete handler;
         }
     
-    NavNodeCP GetParentNode() const {return m_parentNode;}
-    NavNodeCP GetParentInstanceNode() const {return m_parentInstanceNode.get();}
+    JsonNavNodeCP GetParentNode() const {return m_parentNode;}
+    JsonNavNodeCP GetParentInstanceNode() const {return m_parentInstanceNode.get();}
     NavigationQueryBuilderParameters const& GetQueryBuilderParams() const {return m_queryBuilderParams;}
     ChildNodeSpecificationCR GetSpecification() const {return m_specification;}
     Utf8StringCR GetSpecificationHash() const {return m_specificationHash;}
@@ -1443,16 +1446,18 @@ struct IQueryContext : RefCountedBase
 private:
     IQueryContextPtr m_base;
     ECSchemaHelper const* m_schemaHelper;
+    IConnectionManagerCP m_connections;
+    IConnectionCP m_connection;
     PresentationRuleSetCP m_ruleset;
-    NavNodeCP m_parentNode;
-    NavNodeCP m_parentInstanceNode;
+    JsonNavNodeCP m_parentNode;
+    JsonNavNodeCP m_parentInstanceNode;
 
 protected:
-    IQueryContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, NavNodeCP parentNode, NavNodeCP parentInstanceNode) 
-        : m_schemaHelper(&schemaHelper), m_ruleset(&ruleset), m_parentNode(parentNode), m_parentInstanceNode(parentInstanceNode)
+    IQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
+        : m_schemaHelper(&schemaHelper), m_connections(&connections), m_connection(&connection), m_ruleset(&ruleset), m_parentNode(parentNode), m_parentInstanceNode(parentInstanceNode)
         {}
     IQueryContext(IQueryContext& base) 
-        : m_base(&base), m_schemaHelper(nullptr), m_ruleset(nullptr), m_parentNode(nullptr), m_parentInstanceNode(nullptr)
+        : m_base(&base), m_connections(nullptr), m_connection(nullptr), m_schemaHelper(nullptr), m_ruleset(nullptr), m_parentNode(nullptr), m_parentInstanceNode(nullptr)
         {}
     IQueryContextPtr GetBaseContext() const {return m_base;}
 
@@ -1466,9 +1471,11 @@ public:
     void DiscardQueries() {_DiscardQueries(); }
     NavigationQueryPtr GetQuery() const {return _GetQuery();}
     ECSchemaHelper const& GetSchemaHelper() const {return m_base.IsValid() ? m_base->GetSchemaHelper() : *m_schemaHelper;}
+    IConnectionManagerCR GetConnections() const {return m_base.IsValid() ? m_base->GetConnections() : *m_connections;}
+    IConnectionCR GetConnection() const {return m_base.IsValid() ? m_base->GetConnection() : *m_connection;}
     PresentationRuleSetCR GetRuleset() const {return m_base.IsValid() ? m_base->GetRuleset() : *m_ruleset;}
-    NavNodeCP GetParentNode() const {return m_base.IsValid() ? m_base->GetParentNode() : m_parentNode;}
-    NavNodeCP GetParentInstanceNode() const {return m_base.IsValid() ? m_base->GetParentInstanceNode() : m_parentInstanceNode;}
+    JsonNavNodeCP GetParentNode() const {return m_base.IsValid() ? m_base->GetParentNode() : m_parentNode;}
+    JsonNavNodeCP GetParentInstanceNode() const {return m_base.IsValid() ? m_base->GetParentInstanceNode() : m_parentInstanceNode;}
     NavigationQueryContractPtr GetContract(SelectQueryInfo const& selectInfo) const {return _GetContract(selectInfo);}
 };
 
@@ -1483,8 +1490,8 @@ private:
 
 protected:
     BaseQueryContext(IQueryContext& base) : IQueryContext(base) {}
-    BaseQueryContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, NavNodeCP parentNode, NavNodeCP parentInstanceNode) 
-        : IQueryContext(schemaHelper, ruleset, parentNode, parentInstanceNode) 
+    BaseQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
+        : IQueryContext(schemaHelper, connections, connection, ruleset, parentNode, parentInstanceNode) 
         {}
     bvector<NavigationQueryPtr> const& GetIncludedQueries() const {return m_queriesIncluded;}
     bvector<NavigationQueryPtr> const& GetExcludedQueries() const {return m_queriesExcluded;}
@@ -1524,8 +1531,8 @@ protected:
 struct ECInstanceQueryContext : BaseQueryContext
 {
 protected:
-    ECInstanceQueryContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, NavNodeCP parentNode, NavNodeCP parentInstanceNode) 
-        : BaseQueryContext(schemaHelper, ruleset, parentNode, parentInstanceNode)
+    ECInstanceQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode) 
+        : BaseQueryContext(schemaHelper, connections, connection, ruleset, parentNode, parentInstanceNode)
         {}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override
         {
@@ -1567,8 +1574,8 @@ private:
         {
         if (nullptr == m_sortingRules)
             {
-            RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash, GetSchemaHelper().GetDb(), 
-                GetRuleset(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
+            RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash, 
+                GetConnections(), GetConnection(), GetRuleset(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
             m_sortingRules = new bvector<SortingRuleCP>(RulesPreprocessor::GetSortingRules(params));
             }
         return *m_sortingRules;
@@ -1625,10 +1632,10 @@ private:
         }
     
 protected:
-    ECInstanceSortingQueryContext(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, 
+    ECInstanceSortingQueryContext(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, 
         IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, 
-        NavNodeCP parentNode, NavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash) 
-        : ECInstanceQueryContext(schemaHelper, ruleset, parentNode, parentInstanceNode), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), 
+        JsonNavNodeCP parentNode, JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash) 
+        : ECInstanceQueryContext(schemaHelper, connections, connection, ruleset, parentNode, parentInstanceNode), m_userSettings(userSettings), m_usedSettingsListener(usedSettingsListener), 
         m_ecexpressionsCache(ecexpressionsCache), m_sortingRules(nullptr), m_doNotSort(doNotSort), m_specificationHash(specicificationHash)
         {}
     ~ECInstanceSortingQueryContext() {DELETE_AND_CLEAR(m_sortingRules);}
@@ -1796,11 +1803,12 @@ protected:
         }
 
 public:
-    static IQueryContextPtr Create(ECSchemaHelper const& schemaHelper, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, 
-        IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, NavNodeCP parentNode, 
-        NavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
+    static IQueryContextPtr Create(ECSchemaHelper const& schemaHelper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, IUserSettings const& userSettings, 
+        IUsedUserSettingsListener* usedSettingsListener, ECExpressionsCache& ecexpressionsCache, JsonNavNodeCP parentNode, 
+        JsonNavNodeCP parentInstanceNode, bool doNotSort, Utf8StringCR specicificationHash)
         {
-        return new ECInstanceSortingQueryContext(schemaHelper, ruleset, userSettings, usedSettingsListener, ecexpressionsCache, parentNode, parentInstanceNode, doNotSort, specicificationHash);
+        return new ECInstanceSortingQueryContext(schemaHelper, connections, connection, ruleset, userSettings, usedSettingsListener, 
+            ecexpressionsCache, parentNode, parentInstanceNode, doNotSort, specicificationHash);
         }
 };
 
@@ -2134,7 +2142,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 static MultiQueryContextPtr CreateQueryContext(GroupingResolver const& resolver, bool isSearchContext = false)
     {
-    IQueryContextPtr context = ECInstanceSortingQueryContext::Create(resolver.GetSchemaHelper(), resolver.GetQueryBuilderParams().GetRuleset(), 
+    IQueryContextPtr context = ECInstanceSortingQueryContext::Create(resolver.GetSchemaHelper(), resolver.GetQueryBuilderParams().GetConnections(),
+        resolver.GetQueryBuilderParams().GetConnection(), resolver.GetQueryBuilderParams().GetRuleset(), 
         resolver.GetQueryBuilderParams().GetUserSettings(), resolver.GetQueryBuilderParams().GetUsedSettingsListener(), 
         resolver.GetQueryBuilderParams().GetECExpressionsCache(), resolver.GetParentNode(), resolver.GetParentInstanceNode(), 
         resolver.GetSpecification().GetDoNotSort(), resolver.GetSpecificationHash());
@@ -2321,7 +2330,7 @@ static void CallbackOnRuleClasses(bvector<RuleType const*> const& rules, ECSchem
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo>& selectInfos, GroupingResolver const& resolver, 
-    NavNodeCP parentNode, NavigationQueryBuilderParameters const& params)
+    JsonNavNodeCP parentNode, NavigationQueryBuilderParameters const& params)
     {
     bvector<RuleInfo> customizationRuleInfos;
 
@@ -2336,8 +2345,9 @@ static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo
             }
         }
 
-    RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationHash(), resolver.GetSchemaHelper().GetDb(), 
-        params.GetRuleset(), params.GetUserSettings(), params.GetUsedSettingsListener(), params.GetECExpressionsCache());
+    RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationHash(),
+        params.GetConnections(), params.GetConnection(), params.GetRuleset(), params.GetUserSettings(), 
+        params.GetUsedSettingsListener(), params.GetECExpressionsCache());
     CallbackOnRuleClasses<SortingRule>(RulesPreprocessor::GetSortingRules(preprocessorParams), params.GetSchemaHelper(), 
         [&customizationRuleInfos](SortingRuleCR rule, ECEntityClassCR ecClass)
         {
@@ -2400,7 +2410,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(SearchResultInsta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     return GetQueries(&parentNode, specification, rule);
     }
@@ -2408,7 +2418,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, AllRelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR parentNode, AllRelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetAlwaysReturnsChildren(),
         specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(), specification.GetGroupByRelationship(),
@@ -2426,7 +2436,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, RelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR parentNode, RelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     if (specification.GetRelatedClassNames().empty() && specification.GetRelationshipClassNames().empty())
         {
@@ -2441,7 +2451,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     return GetQueries(&parentNode, specification, rule);
     }
@@ -2449,7 +2459,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCR parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     return GetQueries(&parentNode, specification, rule);
     }
@@ -2625,8 +2635,8 @@ static void ApplyInstanceFilter(ComplexNavigationQuery& query, SelectQueryInfo c
 
     if (nullptr != params.GetUsedClassesListener())
         {
-        UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(), params.GetSchemaHelper(),
-            params.GetECExpressionsCache(), instanceFilter);
+        UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(),
+            params.GetSchemaHelper(), params.GetECExpressionsCache(), instanceFilter);
         }
     }
 
@@ -2646,13 +2656,13 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     NavigationQueryBuilderParameters const& params, NavNodeCR parentInstanceNode, Utf8StringCR instanceFilter,
     bool groupByContract)
     {
-    RefCountedPtr<IECInstance const> parentInstance = parentInstanceNode.GetInstance();
+    ECInstanceKeyCR parentInstanceKey = parentInstanceNode.GetKey().AsECInstanceNodeKey()->GetInstanceKey();
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->SelectContract(contract, "this");
     query->From(*selectInfo.GetSelectClass(), selectInfo.GetSelectPolymorphically(), "this");
     query->Join(selectInfo.GetRelatedClassPath(), false);
-    query->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(parentInstance->GetInstanceId())});
+    query->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(parentInstanceKey.GetInstanceId())});
     ApplyInstanceFilter(*query, selectInfo, params, instanceFilter, nullptr);
 
     if (groupByContract)
@@ -2670,7 +2680,7 @@ static ComplexNavigationQueryPtr CreateQuery(NavigationQueryContract& contract, 
     // note: isPreviousRelationshipForward considers "this -> related" relationship direction, but the property in extended data
     // should tell about "related -> this" direction
     query->GetResultParametersR().GetNavNodeExtendedDataR().SetRelationshipDirection(selectInfo.GetRelatedClassPath().front().IsForwardRelationship() ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(parentInstance->GetClass().GetId());
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetParentECClassId(parentInstanceKey.GetClassId());
     
     return query;
     }
@@ -2693,7 +2703,7 @@ static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQuery
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP parentNode, AllInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
@@ -2753,7 +2763,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP parentNode, RelatedInstanceNodesSpecification const& specification, Utf8StringCR specificationHash, ChildNodeRuleCR rule) const
     {
     Utf8String supportedSchemas = GetSupportedSchemas(specification);
     if (supportedSchemas.empty())
@@ -2766,19 +2776,19 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
 
     // this specification can be used only if parent node is ECInstance node
-    if (nullptr == groupingResolver.GetParentInstanceNode() || groupingResolver.GetParentInstanceNode()->GetInstance().IsNull())
+    if (nullptr == groupingResolver.GetParentInstanceNode() || nullptr == groupingResolver.GetParentInstanceNode()->GetKey().AsECInstanceNodeKey())
         {
         LoggingHelper::LogMessage(Log::Navigation, "AllRelatedInstanceNodes and RelatedInstanceNodes specifications can only be used "
             "if parent node or any of of its ancestor nodes is an ECInstance node", NativeLogging::LOG_ERROR);
         return bvector<NavigationQueryPtr>();
         }
 
-    // get the root instance
-    RefCountedPtr<IECInstance const> rootInstance = groupingResolver.GetParentInstanceNode()->GetInstance();
+    // get the root instance key
+    ECInstanceKeyCR rootInstanceKey = groupingResolver.GetParentInstanceNode()->GetKey().AsECInstanceNodeKey()->GetInstanceKey();
 
     // get the root instance class
-    ECEntityClassCP rootClass = rootInstance->GetClass().GetEntityClassCP();
-    if (nullptr == rootClass)
+    ECClassCP rootClass = m_params.GetSchemaHelper().GetECClass(rootInstanceKey.GetClassId());
+    if (nullptr == rootClass || nullptr == rootClass->GetEntityClassCP())
         {
         BeAssert(false);
         return bvector<NavigationQueryPtr>();
@@ -2797,7 +2807,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
             RelatedClassPath path;
             path.push_back(RelatedClass(*rootClass, *relationshipEnd, *groupingRelationship, isForwardJoin, nullptr, relationshipAlias.c_str()));
             SelectQueryInfo selectInfo = CreateSelectInfo(m_params.GetSchemaHelper(), *queryContext, 
-                *rootClass, path, SelectionPurpose::Include, specification);
+                *rootClass->GetEntityClassCP(), path, SelectionPurpose::Include, specification);
 
             NavigationQueryContractPtr contract = queryContext->GetContract(selectInfo);
             if (contract.IsNull())
@@ -2833,7 +2843,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
         for (bpair<RelatedClassPath, bool> const& pair : relationshipClassPaths)
             {
             selectInfos.push_back(CreateSelectInfo(m_params.GetSchemaHelper(), *queryContext, 
-                *rootClass, pair.first, pair.second ? SelectionPurpose::Include : SelectionPurpose::Exclude, specification));
+                *rootClass->GetEntityClassCP(), pair.first, pair.second ? SelectionPurpose::Include : SelectionPurpose::Exclude, specification));
             if (pair.second)
                 hasIncludes = true;
             }
@@ -2866,7 +2876,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP parentNode, InstanceNodesOfSpecificClassesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     GroupingResolver groupingResolver(m_params.GetSchemaHelper(), m_params, parentNode, specification.GetHash(), specification);
     MultiQueryContextPtr queryContext = CreateQueryContext(groupingResolver);
@@ -2947,6 +2957,54 @@ private:
             inputUppercase = inputUppercase.erase(pos);
             }
         }
+    
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            11/2017
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    ECValue GetPropertyValue(ECInstanceKeyCR instanceKey, Utf8StringCR propertyName)
+        {
+        ECClassCP ecClass = m_helper.GetECClass(instanceKey.GetClassId());
+        if (nullptr == ecClass)
+            {
+            BeAssert(false);
+            return ECValue();
+            }
+        ECPropertyCP prop = ecClass->GetPropertyP(propertyName.c_str());
+        if (nullptr == prop)
+            {
+            BeAssert(false);
+            LoggingHelper::LogMessage(Log::Navigation, "ECClass does not have a property with the specified name", NativeLogging::LOG_ERROR);
+            return ECValue();
+            }
+        if (!prop->GetIsPrimitive())
+            {
+            BeAssert(false);
+            LoggingHelper::LogMessage(Log::Navigation, "Can only get value of primitive properties", NativeLogging::LOG_ERROR);
+            return ECValue();
+            }
+
+        Utf8String query = Utf8String("SELECT ").append(prop->GetName());
+        query.append(" FROM ").append(ecClass->GetECSqlName());
+        query.append(" WHERE ECInstanceId = ?");
+        
+        ECSqlStatement stmt;
+        if (!stmt.Prepare(m_helper.GetDb(), query.c_str()).IsSuccess())
+            {
+            BeAssert(false);
+            LoggingHelper::LogMessage(Log::Navigation, "Failed to get ECProperty value for ECPropertyValueQuerySpecification", NativeLogging::LOG_ERROR);
+            return ECValue();
+            }
+        stmt.BindId(1, instanceKey.GetInstanceId());
+
+        DbResult result = stmt.Step();
+        if (BE_SQLITE_ROW != result)
+            {
+            BeAssert(false);
+            return ECValue();
+            }
+
+        return ValueHelpers::GetECValueFromSqlValue(prop->GetAsPrimitiveProperty()->GetType(), stmt.GetValue(0));
+        }
 
 protected:
     /*-----------------------------------------------------------------------------**//**
@@ -2990,13 +3048,7 @@ protected:
             return;
             }
 
-        ECValue propertyValue;
-        if (ECObjectsStatus::Success != m_parentNode->GetInstance()->GetValue(propertyValue, queryProperty->GetName().c_str()))
-            {
-            BeAssert(false);
-            LoggingHelper::LogMessage(Log::Navigation, "Failed to get ECProperty value for ECPropertyValueQuerySpecification", NativeLogging::LOG_ERROR);
-            return;
-            }
+        ECValue propertyValue = GetPropertyValue(m_parentNode->GetKey().AsECInstanceNodeKey()->GetInstanceKey(), queryProperty->GetName());
         if (!propertyValue.IsString())
             {
             BeAssert(false);
@@ -3031,7 +3083,7 @@ static Utf8String GetQuery(ECSchemaHelper const& helper, QuerySpecification cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(NavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
+bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP parentNode, SearchResultInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
     if (specification.GetQuerySpecifications().empty())
         {

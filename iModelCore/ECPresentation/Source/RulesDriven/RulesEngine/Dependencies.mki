@@ -52,7 +52,10 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)ContentClassesLocater.h                \
                                 $(RulesEngineSourceDirectory)ContentSpecificationsHandler.h         \
                                 $(RulesEngineSourceDirectory)PropertyInfoStore.h                    \
-                                $(RulesEngineSourceDirectory)ECExpressionOptimizer.h
+                                $(RulesEngineSourceDirectory)ECExpressionOptimizer.h                \
+                                $(RulesEngineSourceDirectory)UsedClassesListener.h                  \
+                                $(RulesEngineSourceDirectory)PresentationManagerImpl.h              \
+                                $(RulesEngineSourceDirectory)SingleThreadQueueExecutor.h
 
 RulesEngineXliffHeaders       = $(XliffsDirectory)RulesEngine.xliff.h
 

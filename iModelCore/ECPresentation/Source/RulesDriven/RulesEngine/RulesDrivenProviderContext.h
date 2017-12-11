@@ -37,6 +37,7 @@ private:
     RelatedPathsCache& m_relatedPathsCache;
     ECExpressionsCache& m_ecexpressionsCache;
     JsonNavNodesFactory const& m_nodesFactory;
+    ICancelationTokenCP m_cancelationToken;
     
     // localization context
     bool m_isLocalizationContext;
@@ -44,8 +45,9 @@ private:
     
     // ECDb context
     bool m_isQueryContext;
-    BeSQLite::EC::ECDb const* m_db;
-    BeSQLite::EC::ECSqlStatementCache const* m_statementCache;
+    IConnectionManagerCP m_connections;
+    IConnectionCP m_connection;
+    ECSqlStatementCache const* m_statementCache;
     ECSchemaHelper* m_schemaHelper;
 
 private:
@@ -55,7 +57,7 @@ protected:
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
     
-    ECPRESENTATION_EXPORT void SetQueryContext(BeSQLite::EC::ECDbCR, BeSQLite::EC::ECSqlStatementCache const&, CustomFunctionsInjector&);
+    ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&);
     ECPRESENTATION_EXPORT void SetQueryContext(RulesDrivenProviderContextCR other);
 
 public:
@@ -69,6 +71,8 @@ public:
     bvector<Utf8String> GetRelatedSettingIds() const;
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}
+    ECPRESENTATION_EXPORT ICancelationTokenCR GetCancelationToken() const;
+    void SetCancelationToken(ICancelationTokenCP token) {m_cancelationToken = token;}
     
     // localization context
     ECPRESENTATION_EXPORT void SetLocalizationContext(ILocalizationProvider const& provider);
@@ -78,8 +82,10 @@ public:
 
     // ECDb context
     bool IsQueryContext() const {return m_isQueryContext;}
-    BeSQLite::EC::ECDbR GetDb() const {BeAssert(IsQueryContext()); return const_cast<BeSQLite::EC::ECDbR>(*m_db);}
-    BeSQLite::EC::ECSqlStatementCache const& GetStatementCache() const {BeAssert(IsQueryContext()); return *m_statementCache;}
+    IConnectionManagerCR GetConnections() const {BeAssert(IsQueryContext()); return *m_connections;}
+    IConnectionCR GetConnection() const {BeAssert(IsQueryContext()); return *m_connection;}
+    ECDbR GetDb() const {BeAssert(IsQueryContext()); return GetConnection().GetDb();}
+    ECSqlStatementCache const& GetStatementCache() const {BeAssert(IsQueryContext()); return *m_statementCache;}
     ECSchemaHelper const& GetSchemaHelper() const {BeAssert(IsQueryContext()); return *m_schemaHelper;}
 };
 

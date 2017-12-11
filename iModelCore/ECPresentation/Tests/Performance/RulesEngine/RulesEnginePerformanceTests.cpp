@@ -31,7 +31,7 @@ void RulesEnginePerformanceTests::SetUp()
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDirectory);
     BeTest::GetHost().GetTempDir(temporaryDirectory);
     ECSchemaReadContext::Initialize(assetsDirectory);
-    m_manager = new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
+    m_manager = new RulesDrivenECPresentationManager(m_connections, RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
     ECSchemaReadContext::Initialize(assetsDirectory);
     // set up presentation manager
     PresentationRuleSetPtr ruleset = _SupplyRuleset();
@@ -56,7 +56,7 @@ void RulesEnginePerformanceTests::SetUp()
         BeAssert(false);
         return;
         }
-    m_manager->GetConnections().NotifyConnectionOpened(m_project);
+    m_connections.NotifyConnectionOpened(m_project);
 
     // we want to make sure all schemas in the dataset are fully loaded so that's not included in our performance test results
     m_project.Schemas().GetSchemas(true);

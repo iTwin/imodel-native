@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/IECPresentationManager.h>
@@ -31,20 +31,12 @@ USING_NAMESPACE_BENTLEY_EC
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_USERSETTINGS       LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".UserSettings"
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_LOCALIZATION       LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Localization"
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_UPDATE             LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Update"
-
-struct NodesCache;
-struct ContentCache;
-struct ECExpressionsCache;
-struct JsonNavNodesFactory;
-struct CustomFunctionsInjector;
+#define LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE_THREADS            LOGGER_NAMESPACE_ECPRESENTATION_RULESENGINE ".Threads"
 
 //__PUBLISH_SECTION_END__
-typedef RefCountedPtr<struct INavNodesDataSource> INavNodesDataSourcePtr;
-typedef RefCountedPtr<struct NavNodesDataSource> NavNodesDataSourcePtr;
-typedef RefCountedPtr<struct SpecificationContentProvider> SpecificationContentProviderPtr;
-struct ContentProviderKey;
+#define RULES_ENGINE_FORCE_SINGLE_THREAD
+struct IRulesDrivenECPresentationManagerDependenciesFactory;
 //__PUBLISH_SECTION_START__
-typedef RefCountedPtr<struct SpecificationContentProvider const> SpecificationContentProviderCPtr;
 
 //=======================================================================================
 //! Rules-driven presentation manager implementation which uses presentation rules for 
@@ -52,15 +44,15 @@ typedef RefCountedPtr<struct SpecificationContentProvider const> SpecificationCo
 //! @ingroup GROUP_RulesDrivenPresentation
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager, IRulesetCallbacksHandler, IUserSettingsChangeListener, ISelectionChangesListener, IConnectionsListener
+struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager
 {
-    struct ECDbStatementsCache;
-    struct ECDbRelatedPathsCache;
-    struct RulesetECExpressionsCache;
-    struct UsedClassesListener;
-    struct NodesProviderContextFactory;
-    struct NodesProviderFactory;
-    struct IECInstanceChangeHandlerComparer;
+    struct Impl;
+    struct CancelableTasksStore;
+    struct ConnectionManagerWrapper;
+    struct SelectionManagerWrapper;
+    struct RulesetLocaterManagerWrapper;
+    struct UserSettingsManagerWrapper;
+    struct ECInstanceChangeEventSourceWrapper;
     
     //===================================================================================
     //! An object that stores paths used by RulesDrivenECPresentationManager
@@ -80,7 +72,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     };
 
     //===================================================================================
-    //! A helper class to help create the extended options JSON object for rules-driven 
+    //! A helper class to help create the extended options JSON object for rules-driven
     //! presentation manager's navigation-related request functions.
     // @bsiclass                                    Grigas.Petraitis            03/2015
     //===================================================================================
@@ -121,9 +113,9 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Set the rule target tree.
         void SetRuleTargetTree(RuleTargetTree ruleTargetTree) {AddMember(OPTION_NAME_RuleTargetTree, (int)ruleTargetTree);}
         };
-     
+
     //===================================================================================
-    //! A helper class to help create the extended options JSON object for rules-driven 
+    //! A helper class to help create the extended options JSON object for rules-driven
     //! presentation manager's content-related request functions.
     // @bsiclass                                    Grigas.Petraitis            03/2015
     //===================================================================================
@@ -143,7 +135,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting content.
         ContentOptions(Utf8StringCR rulesetId) : ContentOptions(rulesetId.c_str()) {}
-        
+
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
         //! Get the ruleset ID.
@@ -153,130 +145,102 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         };
 
 private:
-    RuleSetLocaterManager m_locaters;
-    UserSettingsManager m_userSettings;
-    IJsonLocalState const* m_localState;
-    JsonNavNodesFactory const* m_nodesFactory;
-    NodesProviderContextFactory const* m_nodesProviderContextFactory;
-    NodesProviderFactory const* m_nodesProviderFactory;
-    CustomFunctionsInjector* m_customFunctions;
-    mutable NodesCache* m_nodesCache;
-    mutable ContentCache* m_contentCache;
-    ECDbStatementsCache* m_statementCache;
-    ECDbRelatedPathsCache* m_relatedPathsCache;
-    RulesetECExpressionsCache* m_rulesetECExpressionsCache;
-    bset<IECInstanceChangeHandlerPtr, IECInstanceChangeHandlerPtrComparer> m_ecInstanceChangeHandlers;
-    bvector<ECInstanceChangeEventSourcePtr> m_ecInstanceChangeEventSources;
-    UpdateHandler* m_updateHandler;
-    UsedClassesListener* m_usedClassesListener;
-    SelectionManager* m_selectionManager;
-    IPropertyCategorySupplier* m_categorySupplier;
-    IECPropertyFormatter const* m_ecPropertyFormatter;
-    ILocalizationProvider const* m_localizationProvider;
-    bmap<ECDb const*, RuleSetLocaterPtr> m_embeddedRuleSetLocaters;
+    Impl* m_impl;
+    folly::Executor* m_executor;
+    CancelableTasksStore* m_cancelableTasks;
+    ConnectionManagerWrapper* m_connectionsWrapper;
+    SelectionManagerWrapper* m_selectionProviderWrapper;
+    bvector<ECInstanceChangeEventSourceWrapper*> m_ecInstanceChangeEventSourceWrappers;
     
-//__PUBLISH_SECTION_END__
-private:
-    INavNodesDataSourcePtr GetCachedDataSource(ECDbR, JsonValueCR);
-    INavNodesDataSourcePtr GetCachedDataSource(ECDbR, NavNodeCR parent, JsonValueCR);
-    SpecificationContentProviderCPtr GetContentProvider(ECDbR, ContentProviderKey const&, SelectionInfo const&, ContentOptions const&);
-    SpecificationContentProviderPtr GetContentProvider(ECDbR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&);
-    ECPRESENTATION_EXPORT NodesCache& GetNodesCacheR() const;
-    IPropertyCategorySupplier& GetCategorySupplier() const;
-    ILocalizationProvider const& GetLocalizationProvider() const;
-    void OnConnection(ECDbCR) const;
-    void TraverseNodes(ECDbR, JsonValueCR, DataContainer<NavNodeCPtr>);
-    
-public:
-    NodesCache const& GetNodesCache() const {return GetNodesCacheR();}
-    NodesCache& GetNodesCache() {return GetNodesCacheR();}
-    UpdateHandler& GetUpdateHandler() const {return *m_updateHandler;}
-
-//__PUBLISH_SECTION_START__
 protected:
-    // IRulesetCallbacksHandler
-    ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR) override;
-    ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR) override;
-
-    // ISelectionChangesListener
-    ECPRESENTATION_EXPORT void _OnSelectionChanged(SelectionChangedEventCR) override;
-
-    // IUserSettingsChangeListener
-    ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
-
-    // IConnectionListener
-    ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
-    
     // IECPresentationManager: Navigation
-    ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetRootNodes(ECDbR, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT size_t _GetRootNodesCount(ECDbR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT virtual DataContainer<NavNodeCPtr> _GetChildren(ECDbR, NavNodeCR, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT size_t _GetChildrenCount(ECDbR, NavNodeCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT bool _HasChild(ECDbR, NavNodeCR, NavNodeKeyCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT NavNodeCPtr _GetParent(ECDbR, NavNodeCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT NavNodeCPtr _GetNode(ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> _GetFilteredNodes(ECDbR connection, Utf8CP filterText, JsonValueCR jsonOptions) override;
-    ECPRESENTATION_EXPORT void _OnNodeChecked(ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnNodeUnchecked(ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnNodeExpanded(ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnNodeCollapsed(ECDbR, uint64_t nodeId) override;
-    ECPRESENTATION_EXPORT void _OnAllNodesCollapsed(ECDbR, JsonValueCR options) override;
-    
-    // IECPresentationManager: Content
-    ECPRESENTATION_EXPORT bvector<SelectClassInfo> _GetContentClasses(ECDbR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR) override;
-    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(ECDbR, Utf8CP preferredDisplayType, SelectionInfo const&, JsonValueCR) override;
-    ECPRESENTATION_EXPORT ContentCPtr _GetContent(ECDbR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) override;
-    ECPRESENTATION_EXPORT size_t _GetContentSetSize(ECDbR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override;
-    
-    // IECPresentationManager: Updating
-    ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> _SaveValueChange(ECDbR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, NavNodeKeyCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR, Utf8CP filterText, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR, uint64_t nodeId) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR) override;
 
+    // IECPresentationManager: Content
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP preferredDisplayType, SelectionInfo const&, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override;
+
+    // IECPresentationManager: Updating
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR) override;
+
+//__PUBLISH_SECTION_END__
+public:
+    folly::Executor& GetExecutor() const {return *m_executor;}
+    ECPRESENTATION_EXPORT IUserSettingsManager& GetUserSettings() const;
+    Impl& GetImpl() const {return *m_impl;}
+    ECPRESENTATION_EXPORT void SetImpl(Impl&);
+    ECPRESENTATION_EXPORT std::unique_ptr<IRulesDrivenECPresentationManagerDependenciesFactory> CreateDependenciesFactory();
+    
+//__PUBLISH_SECTION_START__
 public:
     //! Constructor.
+    //! @param[in] connections Connection manager used by this presentation manager.
     //! @param[in] paths Application paths provider.
     //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep this enabled unless being used
     //! for testing.
-    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(Paths const& paths, bool disableDiskCache = false);
+    ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache = false);
 
     //! Destructor.
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManager();
 
     //! Get the ruleset locater manager.
-    ECPRESENTATION_EXPORT RuleSetLocaterManager& GetLocaters();
+    ECPRESENTATION_EXPORT IRulesetLocaterManager& GetLocaters();
 
     //! Get the user settings manager.
     //! @note Local state must be set for user settings to work.
     //! @see SetLocalState
     ECPRESENTATION_EXPORT IUserSettings& GetUserSettings(Utf8CP rulesetId) const;
-    IUserSettingsManager const& GetUserSettingsManager() const {return m_userSettings;}
 
     //! Set the local state to use for storing user settings.
-    ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState&);
-    
-    //! Set the selection manager. 
-    //! @details Selection manager is used to listen for selection events and invalidate caches 
+    ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState*);
+
+    //! Set the selection manager.
+    //! @details Selection manager is used to listen for selection events and invalidate caches
     //! that depend on selection.
-    ECPRESENTATION_EXPORT void SetSelectionManager(SelectionManagerP);
+    ECPRESENTATION_EXPORT void SetSelectionManager(ISelectionManager*);
     
+    //! Get the selection manager used by presentation manager.
+    ECPRESENTATION_EXPORT ISelectionManager* GetSelectionManager() const;
+
     //! Set custom localization provider. By default BeSQLite::L10N is used.
     ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const*);
+
+    //! Get localization provider used by this presentation manager.
+    ECPRESENTATION_EXPORT ILocalizationProvider const& GetLocalizationProvider() const;
 
 /** @name Property Formatting */
 /** @{ */
     //! Set the property formatter.
     //! @details Property formatter is used to format content display values.
-    void SetECPropertyFormatter(IECPropertyFormatter const* formatter) {m_ecPropertyFormatter = formatter;}
+    ECPRESENTATION_EXPORT void SetECPropertyFormatter(IECPropertyFormatter const* formatter);
 
     //! Get the property formatter.
     ECPRESENTATION_EXPORT IECPropertyFormatter const& GetECPropertyFormatter() const;
 /** @} */
-    
+
 /** @name Property Categories */
 /** @{ */
     //! Set the property category supplier. If null, the @ref DefaultCategorySupplier is used.
     //! @details The category supplier is responsible for determining category for an ECProperty.
-    void SetCategorySupplier(IPropertyCategorySupplier* supplier) {m_categorySupplier = supplier;}
-    
+    ECPRESENTATION_EXPORT void SetCategorySupplier(IPropertyCategorySupplier* supplier);
+
+    //! Get the property category supplier used by this presentation manager.
+    ECPRESENTATION_EXPORT IPropertyCategorySupplier& GetCategorySupplier() const;
+
     //! Should be called to force content controls request new categories for displayed content.
     ECPRESENTATION_EXPORT void NotifyCategoriesChanged();
 /** @} */
@@ -301,9 +265,9 @@ public:
     //! Unregister an ECInstanceChange events source.
     //! @see RegisterECInstanceChangeEventSource
     ECPRESENTATION_EXPORT void UnregisterECInstanceChangeEventSource(ECInstanceChangeEventSource&);
-    
+
     //! Register an update records handler.
-    ECPRESENTATION_EXPORT void RegisterUpdateRecordsHandler(IUpdateRecordsHandler*);
+    ECPRESENTATION_EXPORT void SetUpdateRecordsHandler(IUpdateRecordsHandler*);
 /** @} */
 };
 
@@ -325,7 +289,7 @@ struct RulesDrivenSelectionSyncHandler : SelectionSyncHandler
         {
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
         ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_UseSelectionScope;
-        
+
         //! Constructor. Creates a read-write accessor.
         SelectionExtendedData() : RapidJsonAccessor() {}
         //! Constructor. Creates a read-only accessor.
@@ -335,12 +299,12 @@ struct RulesDrivenSelectionSyncHandler : SelectionSyncHandler
         //! Copy constructor.
         SelectionExtendedData(SelectionExtendedData const& other) : RapidJsonAccessor(other) {}
         //! Constructor.
-        //! @param[in] rulesetId The ID of the ruleset which is used by the control that is firing 
+        //! @param[in] rulesetId The ID of the ruleset which is used by the control that is firing
         //! the selection change event.
         SelectionExtendedData(Utf8CP rulesetId) : RapidJsonAccessor() {SetRulesetId(rulesetId);}
         //! Constructor. Creates a read-only accessor for the specified selection change event.
         SelectionExtendedData(SelectionChangedEventCR evt) : RapidJsonAccessor(evt) {}
-        
+
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().IsObject() && GetJson().HasMember(OPTION_NAME_RulesetId);}
         //! Get the ruleset ID.
@@ -364,7 +328,7 @@ protected:
     //! Creates rules-driven presentation manager specific selection event extended
     //! data.
     ECPRESENTATION_EXPORT rapidjson::Document _CreateSelectionEventExtendedData() const override;
-        
+
 protected:
     //! Constructor.
     //! @param[in] rulesetId The ID of the default ruleset to use when requesting for

@@ -68,7 +68,7 @@ TEST_F(NavNodesDataSourceTests, ReturnsNodesFromProvider)
     {
     m_provider->SetGetNodeHandler([](JsonNavNodePtr& node, size_t index)
         {
-        node = s_nodesFactory.CreateCustomNode(BeGuid(true), "label", "description", "imageId", "type");
+        node = s_nodesFactory.CreateCustomNode("some connection id", "label", "description", "imageId", "type");
         return true;
         });
     ASSERT_TRUE(m_source->Get(0).IsValid());

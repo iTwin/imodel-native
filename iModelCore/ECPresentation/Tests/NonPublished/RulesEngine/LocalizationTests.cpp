@@ -12,7 +12,7 @@
 #include "../../../Source/RulesDriven/RulesEngine/LocalizationHelper.h"
 #include "TestHelpers.h"
 #include "TestLocalizationProvider.h"
-#include "CustomNodesProviderTests.h"
+#include "NodesProviderTests.h"
 #include "QueryExecutorTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -180,10 +180,17 @@ TEST_F(RulesEngineLocalizedStringTests, LocalizesRulesEngineStrings)
     EXPECT_TRUE(helper.LocalizeString(str));
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                10/2017
++===============+===============+===============+===============+===============+======*/
+struct CustomNodesProviderLocalizationTests : NodesProviderTests
+    {
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomNodesProviderTests, NodesLabelAndDescriptionAreLocalized)
+TEST_F(CustomNodesProviderLocalizationTests, NodesLabelAndDescriptionAreLocalized)
     {
     RootNodeRule rule;
     m_context->SetRootNodeContext(rule);
@@ -204,7 +211,7 @@ TEST_F(CustomNodesProviderTests, NodesLabelAndDescriptionAreLocalized)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomNodesProviderTests, NodesOverridenLabelIsLocalized)
+TEST_F(CustomNodesProviderLocalizationTests, NodesOverridenLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
@@ -227,7 +234,7 @@ TEST_F(CustomNodesProviderTests, NodesOverridenLabelIsLocalized)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomNodesProviderTests, NodesLabelIsLocalizedWithLocalizationResourceKeyDefinition)
+TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizationResourceKeyDefinition)
     {
     RootNodeRule rule;
     m_context->SetRootNodeContext(rule);
@@ -254,7 +261,7 @@ TEST_F(CustomNodesProviderTests, NodesLabelIsLocalizedWithLocalizationResourceKe
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomNodesProviderTests, NodesLabelIsLocalizedWithLocalizationResourceKeyDefinitionsDefaultValueWhenLocalizedStringIsNotFound)
+TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizationResourceKeyDefinitionsDefaultValueWhenLocalizedStringIsNotFound)
     {
     RootNodeRule rule;
     m_context->SetRootNodeContext(rule);
@@ -273,16 +280,23 @@ TEST_F(CustomNodesProviderTests, NodesLabelIsLocalizedWithLocalizationResourceKe
     EXPECT_STREQ("default_value", node->GetLabel().c_str());
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct QueryExecutorLocalizationTests : QueryExecutorTests
+    {
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, ECInstanceNodesLabelIsLocalized)
+TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test@"));});
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test@"));});
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -292,11 +306,13 @@ TEST_F(QueryExecutorTests, ECInstanceNodesLabelIsLocalized)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    ECSchemaHelper m_schemaHelper(s_project->GetECDbCR(), &m_relatedPathsCache, nullptr);    
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+
     EXPECT_TRUE(executor.GetNodesCount() > 0);
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
         {
@@ -310,15 +326,15 @@ TEST_F(QueryExecutorTests, ECInstanceNodesLabelIsLocalized)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, ECClassGroupingNodesLabelIsLocalized)
+TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     {
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsClassGroupingNode", 1, "\"@test@\"", ""));
 
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
     NavigationQueryContractPtr contract = ECClassGroupingNodesQueryContract::Create();
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -326,11 +342,12 @@ TEST_F(QueryExecutorTests, ECClassGroupingNodesLabelIsLocalized)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ClassGroupingNodes);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+
     EXPECT_TRUE(executor.GetNodesCount() > 0);
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
         {
@@ -344,18 +361,16 @@ TEST_F(QueryExecutorTests, ECClassGroupingNodesLabelIsLocalized)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, ECPropertyGroupingNodesLabelIsLocalized)
+TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     {
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsPropertyGroupingNode", 1, "\"@test@\"", ""));
 
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass);
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-
     PropertyGroup spec("", "", true, "IntProperty", "");
     NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_widgetClass, *m_widgetClass->GetPropertyP("IntProperty"), nullptr, spec, nullptr);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -363,10 +378,12 @@ TEST_F(QueryExecutorTests, ECPropertyGroupingNodesLabelIsLocalized)
     query->GroupByContract(*contract);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
     
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+
     EXPECT_TRUE(executor.GetNodesCount() > 0);
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
         {
@@ -380,14 +397,14 @@ TEST_F(QueryExecutorTests, ECPropertyGroupingNodesLabelIsLocalized)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(QueryExecutorTests, DisplayLabelGroupingNodesLabelIsLocalized)
+TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized)
     {
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
-    RulesEngineTestHelpers::DeleteInstances(*s_project, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test1@"));});
-    RulesEngineTestHelpers::InsertInstance(*s_project, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test2@"));});
+    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test1@"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test2@"));});
     
     NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -397,11 +414,12 @@ TEST_F(QueryExecutorTests, DisplayLabelGroupingNodesLabelIsLocalized)
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
-    ECSchemaHelper schemaHelper(s_project->GetECDbCR(), m_relatedPathsCache, nullptr);
-    CustomFunctionsContext ctx(schemaHelper, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
+    CustomFunctionsContext ctx(m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_expressionsCache, m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, s_project->GetECDb(), m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, m_statementCache, *query);
+    executor.ReadRecords();
+
     EXPECT_TRUE(executor.GetNodesCount() > 0);
     for (size_t i = 0; i < executor.GetNodesCount(); i++)
         {

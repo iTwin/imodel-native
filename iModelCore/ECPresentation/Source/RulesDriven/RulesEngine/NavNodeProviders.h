@@ -10,10 +10,9 @@
 #include "QueryExecutor.h"
 #include "RulesPreprocessor.h"
 #include "DataSourceInfo.h"
+#include "UsedClassesListener.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
-
-struct ECDbUsedClassesListenerWrapper;
 
 struct ECDbUsedClassesListenerWrapper;
 
@@ -70,15 +69,15 @@ public:
     // common
     RuleTargetTree GetTargetTree() const {return m_targetTree;}
     ECPRESENTATION_EXPORT IHierarchyCacheR GetNodesCache() const;
-    ECPRESENTATION_EXPORT NavNodeCPtr GetPhysicalParentNode() const;
+    ECPRESENTATION_EXPORT JsonNavNodeCPtr GetPhysicalParentNode() const;
     uint64_t const* GetPhysicalParentNodeId() const {return m_physicalParentNodeId;}
     void SetPhysicalParentNode(NavNodeCR node) {DELETE_AND_CLEAR(m_physicalParentNodeId); m_physicalParentNodeId = new uint64_t(node.GetNodeId());}
-    ECPRESENTATION_EXPORT NavNodeCPtr GetVirtualParentNode() const;
+    ECPRESENTATION_EXPORT JsonNavNodeCPtr GetVirtualParentNode() const;
     uint64_t const* GetVirtualParentNodeId() const {return m_virtualParentNodeId;}
     void SetVirtualParentNode(NavNodeCR node) {DELETE_AND_CLEAR(m_virtualParentNodeId); m_virtualParentNodeId = new uint64_t(node.GetNodeId());}
     NavNodesProviderCP GetBaseProvider() const {return m_baseProvider;}
     void SetBaseProvider(NavNodesProviderCR provider) {m_baseProvider = &provider;}
-    NavNodesProviderPtr CreateProvider(NavNodesProviderContextR, NavNodeCP parentNode) const;
+    NavNodesProviderPtr CreateProvider(NavNodesProviderContextR, JsonNavNodeCP parentNode) const;
     IUsedUserSettingsListener& GetUsedSettingsListener() const;
     bvector<Utf8String> GetRelatedSettingIds() const;
 
@@ -106,7 +105,7 @@ public:
     ChildNodeRuleCR GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return *m_childNodeRule;}
 
     // ECDb context
-    ECPRESENTATION_EXPORT void SetQueryContext(BeSQLite::EC::ECDbCR, BeSQLite::EC::ECSqlStatementCache const&, CustomFunctionsInjector&, IECDbUsedClassesListener*);
+    ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&, IECDbUsedClassesListener*);
     ECPRESENTATION_EXPORT void SetQueryContext(NavNodesProviderContextCR other);
     NavigationQueryBuilder& GetQueryBuilder() const {BeAssert(IsQueryContext()); return *m_queryBuilder;}
     IUsedClassesListener* GetUsedClassesListener() const;
@@ -123,12 +122,14 @@ public:
 struct INodesProviderContextFactory
 {
 protected:
-    virtual NavNodesProviderContextPtr _Create(BeSQLite::EC::ECDbCR, Utf8CP rulesetId, uint64_t const* parentNodeId, bool disableUpdates) const = 0;
+    virtual NavNodesProviderContextPtr _Create(IConnectionCR, Utf8CP rulesetId, uint64_t const* parentNodeId, 
+        ICancelationTokenCP, bool disableUpdates) const = 0;
 public:
     virtual ~INodesProviderContextFactory() {}
-    NavNodesProviderContextPtr Create(BeSQLite::EC::ECDbCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, bool disableUpdates = false) const 
+    NavNodesProviderContextPtr Create(IConnectionCR connection, Utf8CP rulesetId, uint64_t const* parentNodeId, 
+        ICancelationTokenCP cancelationToken = nullptr, bool disableUpdates = false) const 
         {
-        return _Create(connection, rulesetId, parentNodeId, disableUpdates);
+        return _Create(connection, rulesetId, parentNodeId, cancelationToken, disableUpdates);
         }
 };
 
@@ -163,12 +164,12 @@ struct NavNodesProvider : RefCountedBase
 private:
     NavNodesProviderContextPtr m_context;
     DataSourceInfo m_datasourceInfo;
+
 private:
     bool GetPositionOffsetInternal(size_t& offset, NavNodesProviderCR base, NavNodesProviderCR provider) const;
     
 protected:
     ECPRESENTATION_EXPORT NavNodesProvider(NavNodesProviderContextCR context);
-    NavNodesProviderContextR GetContextR() const {return *m_context;}
     DataSourceInfo& GetDataSourceInfo() {return m_datasourceInfo;}
     DataSourceInfo const& GetDataSourceInfo() const {return m_datasourceInfo;}
     void SetDataSourceInfo(DataSourceInfo info) {m_datasourceInfo = info;}
@@ -187,10 +188,12 @@ protected:
 
 public:
     virtual ~NavNodesProvider() {}
+    NavNodesProviderContextR GetContextR() const {return *m_context;}
     NavNodesProviderContextCR GetContext() const {return GetContextR();}
     MultiNavNodesProviderCP AsMultiProvider() const {return _AsMultiProvider();}
     EmptyNavNodesProviderCP AsEmptyProvider() const {return _AsEmptyProvider();}
     SingleNavNodeProviderCP AsSingleProvider() const {return _AsSingleProvider();}
+    ECPRESENTATION_EXPORT void FinalizeNodes();
     ECPRESENTATION_EXPORT bool GetNode(JsonNavNodePtr& node, size_t index) const;
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
     ECPRESENTATION_EXPORT bool HasNodes() const;
@@ -204,12 +207,12 @@ public:
 struct INodesProviderFactory
 {
 protected:
-    virtual NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR, NavNodeCP) const = 0;
-    virtual NavNodesProviderPtr _CreateForVirtualParent(NavNodesProviderContextR, NavNodeCP) const = 0;
+    virtual NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR, JsonNavNodeCP) const = 0;
+    virtual NavNodesProviderPtr _CreateForVirtualParent(NavNodesProviderContextR, JsonNavNodeCP) const = 0;
 public:
     virtual ~INodesProviderFactory() {}
-    NavNodesProviderPtr CreateForHierarchyLevel(NavNodesProviderContextR context, NavNodeCP parent) const {return _CreateForHierarchyLevel(context, parent);}
-    NavNodesProviderPtr CreateForVirtualParent(NavNodesProviderContextR context, NavNodeCP parent) const {return _CreateForVirtualParent(context, parent);}
+    NavNodesProviderPtr CreateForHierarchyLevel(NavNodesProviderContextR context, JsonNavNodeCP parent) const {return _CreateForHierarchyLevel(context, parent);}
+    NavNodesProviderPtr CreateForVirtualParent(NavNodesProviderContextR context, JsonNavNodeCP parent) const {return _CreateForVirtualParent(context, parent);}
 };
 
 /*=================================================================================**//**
@@ -268,10 +271,10 @@ struct EmptyNavNodesProvider : NavNodesProvider
 private:
     EmptyNavNodesProvider(NavNodesProviderContextCR context);
 protected:
-    virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return false;}
-    virtual bool _HasNodes() const override {return false;}
-    virtual size_t _GetNodesCount() const override {return 0;}
-    virtual EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
+    bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return false;}
+    bool _HasNodes() const override {return false;}
+    size_t _GetNodesCount() const override {return 0;}
+    EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
 public:
     static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextCR context)
         {
@@ -291,16 +294,16 @@ private:
         : NavNodesProvider(context), m_node(&node)
         {}
 protected:
-    virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const override
+    bool _GetNode(JsonNavNodePtr& node, size_t index) const override
         {
         if (0 != index)
             return false;
         node = m_node; 
         return true;
         }
-    virtual bool _HasNodes() const override {return true;}
-    virtual size_t _GetNodesCount() const override {return 1;}
-    virtual SingleNavNodeProviderCP _AsSingleProvider() const override {return this;}
+    bool _HasNodes() const override {return true;}
+    size_t _GetNodesCount() const override {return 1;}
+    SingleNavNodeProviderCP _AsSingleProvider() const override {return this;}
 public:
     static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context)
         {
@@ -400,6 +403,7 @@ struct QueryBasedNodesProvider : MultiNavNodesProvider
     struct DeletedExecutorNodeDiffTask;
     struct InsertedExecutorNodeDiffTask;
     struct UpdatedExecutorNodeDiffTask;
+    struct Savepoint;
 
     using NavNodesProvider::GetNode;
 
@@ -480,7 +484,6 @@ protected:
     SQLiteCacheNodesProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&);
     BeSQLite::Db& GetCache() const {return m_cache;}
     BeSQLite::StatementCache& GetStatements() const {return m_statements;}
-
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;

@@ -56,9 +56,13 @@ bool RelatedPathsCache::Key::operator<(Key const& other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaHelper::ECSchemaHelper(ECDbCR db, RelatedPathsCache& relatedPathsCache, ECSqlStatementCache const* statementCache)
-    : m_db(db), m_relatedPathsCache(relatedPathsCache), m_statementCache(statementCache), m_ownsStatementCache(nullptr == statementCache)
+ECSchemaHelper::ECSchemaHelper(ECDbCR db, RelatedPathsCache* relatedPathsCache, ECSqlStatementCache const* statementCache)
+    : m_db(db), 
+    m_relatedPathsCache(relatedPathsCache), m_ownsRelatedPathsCache(nullptr == relatedPathsCache), 
+    m_statementCache(statementCache), m_ownsStatementCache(nullptr == statementCache)
     {
+    if (nullptr == m_relatedPathsCache)
+        m_relatedPathsCache = new RelatedPathsCache();
     if (nullptr == m_statementCache)
         m_statementCache = new ECSqlStatementCache(10, "ECSchemaHelper");
     }
@@ -68,6 +72,8 @@ ECSchemaHelper::ECSchemaHelper(ECDbCR db, RelatedPathsCache& relatedPathsCache, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaHelper::~ECSchemaHelper()
     {
+    if (m_ownsRelatedPathsCache)
+        delete m_relatedPathsCache;
     if (m_ownsStatementCache)
         delete m_statementCache;
     }
@@ -1065,7 +1071,7 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
     {
     // look for cached results first
     RelatedPathsCache::Key key(options);
-    RelatedPathsCache::Result const* cacheResult = m_relatedPathsCache.Get(key);
+    RelatedPathsCache::Result const* cacheResult = m_relatedPathsCache->Get(key);
     if (nullptr != cacheResult)
         {
         for (auto const& pair : cacheResult->m_relationshipCounter)
@@ -1096,7 +1102,7 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
         }
     
     // cache
-    m_relatedPathsCache.Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
+    m_relatedPathsCache->Put(key, RelatedPathsCache::Result(paths, options.m_relationshipsUseCounter));
     return paths;
     }
 

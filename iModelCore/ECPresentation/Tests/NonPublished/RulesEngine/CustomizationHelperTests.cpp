@@ -22,10 +22,12 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Pranciskus.Ambrazas               03/2016
 +===============+===============+===============+===============+===============+======*/
-struct CustomizationHelperTests : ::testing::Test, IECExpressionsCacheProvider
+struct CustomizationHelperTests : ::testing::Test
 {
     static ECDbTestProject* s_project;
-    static CustomFunctionsInjector* s_customFunctions;
+    CustomFunctionsInjector* m_customFunctions;
+    TestConnectionManager m_connections;
+    IConnectionPtr m_connection;
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
     ECSqlStatementCache m_statementCache;
@@ -33,31 +35,31 @@ struct CustomizationHelperTests : ::testing::Test, IECExpressionsCacheProvider
     NavNodesProviderContextPtr m_context;
     TestNodesProviderFactory m_providerFactory;
     TestUserSettings m_settings;
-    JsonNavNodesFactory m_nodesFactory;
+    TestNodesFactory m_nodesFactory;
     TestNodesCache m_nodesCache;
 
-
-    CustomizationHelperTests() : m_statementCache(5) {}
+    CustomizationHelperTests() : m_statementCache(5), m_nodesFactory("CustomizationHelperTests") {}
     
     static void SetUpTestCase();
     static void TearDownTestCase();
-
-    virtual ECExpressionsCache& _Get(Utf8CP) override {return m_expressionsCache;}
-
+    
     void SetUp() override
         {
         if (!s_project->GetECDb().GetDefaultTransaction()->IsActive())
             s_project->GetECDb().GetDefaultTransaction()->Begin();
         
+        m_customFunctions = new CustomFunctionsInjector(m_connections, CustomizationHelperTests::s_project->GetECDb());
+        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests", 1, 0, false, "", "", "", false);
         m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
             m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
-        m_context->SetQueryContext(s_project->GetECDb(), m_statementCache, *s_customFunctions, nullptr);
+        m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions, nullptr);
         }
 
     void TearDown() override
         {
         s_project->GetECDb().GetDefaultTransaction()->Cancel();
+        DELETE_AND_CLEAR(m_customFunctions);
         }
 
     Utf8String GetDisplayLabel(IECInstanceCR instance)
@@ -70,16 +72,14 @@ struct CustomizationHelperTests : ::testing::Test, IECExpressionsCacheProvider
         }
 };
 ECDbTestProject* CustomizationHelperTests::s_project = nullptr;
-CustomFunctionsInjector* CustomizationHelperTests::s_customFunctions = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas               03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomizationHelperTests::SetUpTestCase()
     {
-    CustomizationHelperTests::s_project = new ECDbTestProject();
-    CustomizationHelperTests::s_project->Create("CustomizationHelperTests", "RulesEngineTest.01.00.ecschema.xml");
-    CustomizationHelperTests::s_customFunctions = new CustomFunctionsInjector(CustomizationHelperTests::s_project->GetECDb());
+    s_project = new ECDbTestProject();
+    s_project->Create("CustomizationHelperTests", "RulesEngineTest.01.00.ecschema.xml");
 
     BeFileName sqlangFile;
     BeTest::GetHost().GetDocumentsRoot(sqlangFile);
@@ -94,9 +94,7 @@ void CustomizationHelperTests::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomizationHelperTests::TearDownTestCase()
     {
-    DELETE_AND_CLEAR(CustomizationHelperTests::s_project);
-    DELETE_AND_CLEAR(CustomizationHelperTests::s_customFunctions);
-
+    DELETE_AND_CLEAR(s_project);
     BeSQLite::L10N::Shutdown();
     }
 
@@ -105,7 +103,7 @@ void CustomizationHelperTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CustomizationHelperTests, CustomizeNode_NodeWasCustomized)
     {
-    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(BeGuid(true), "label", "description", "imageId", "type");
+    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "label", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     }
@@ -117,7 +115,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyOnlyDescriptionOverride)
     {
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.Type=\"type\"", 1, "\"overridedLabel\"", "\"overridedDescription\"");
     m_ruleset->AddPresentationRule(*labelOverride);
-    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(BeGuid(true), "label", "description", "imageId", "type");
+    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "label", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("label", node->GetLabel().c_str());
@@ -131,7 +129,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLabelAndDescriptionOverride
     {
     LabelOverrideP labelOverride = new LabelOverride("ThisNode.Type=\"type\"", 1, "\"overridedLabel\"", "\"overridedDescription\"");
     m_ruleset->AddPresentationRule(*labelOverride);
-    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(BeGuid(true), "label", "description", "imageId", "type");
+    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "label", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, true);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("overridedLabel", node->GetLabel().c_str());
@@ -145,7 +143,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyStyleOverride)
     {
     StyleOverrideP styleOverride = new StyleOverride("ThisNode.Type=\"customType\"", 1, "\"overridedForeColor\"", "\"overridedBackColor\"", "\"overridedFontStyle\"");
     m_ruleset->AddPresentationRule(*styleOverride);
-    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(BeGuid(true), "label", "description", "imageId", "customType");
+    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "label", "description", "imageId", "customType");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("overridedForeColor", node->GetForeColor().c_str());
@@ -160,7 +158,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyImageIdOverride)
     {
     ImageIdOverrideP imageIdOverride = new ImageIdOverride("ThisNode.Type=\"customType\"", 1, "\"overridedImageId\"");
     m_ruleset->AddPresentationRule(*imageIdOverride);
-    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(BeGuid(true), "label", "description", "imageId", "customType");
+    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "label", "description", "imageId", "customType");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("overridedImageId", node->GetCollapsedImageId().c_str());
@@ -173,7 +171,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyCheckboxRules)
     {
     CheckBoxRuleP checkBoxRule = new CheckBoxRule("ThisNode.Type=\"customType\"", 1, false, "", false, false, "");
     m_ruleset->AddPresentationRule(*checkBoxRule);
-    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(BeGuid(true), "label", "description", "imageId", "customType");
+    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "label", "description", "imageId", "customType");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_TRUE(node->IsCheckboxVisible());
@@ -189,7 +187,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
     TestLocalizationProvider provider;
     provider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue) { localizedValue = "localized"; return true; });
     m_context->SetLocalizationContext(provider);
-    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(BeGuid(true), "@customLabel@", "description", "imageId", "type");
+    JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "@customLabel@", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("localized", node->GetLabel().c_str());
@@ -200,7 +198,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSymbols)
     {
-    JsonNavNodePtr parentNode = m_nodesFactory.CreateCustomNode(BeGuid(true), "Parent", "description", "imageId", "ParentType");
+    JsonNavNodePtr parentNode = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "Parent", "description", "imageId", "ParentType");
     m_nodesCache.Cache(*parentNode, false);
     uint64_t parentNodeId = parentNode->GetNodeId();
 
@@ -210,7 +208,7 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     childContext->SetQueryContext(*m_context);
     childContext->SetChildNodeContext(rule, *parentNode);
 
-    JsonNavNodePtr thisNode = m_nodesFactory.CreateCustomNode(BeGuid(true), "This", "description", "imageId", "ThisType");
+    JsonNavNodePtr thisNode = m_nodesFactory.CreateCustomNode(m_connection->GetId(), "This", "description", "imageId", "ThisType");
     NavNodeExtendedData(*thisNode).SetVirtualParentId(parentNodeId);
 
     StyleOverrideP styleOverride = new StyleOverride("ParentNode.Type=\"ParentType\"", 1, "\"overridenForeColor\"", "\"overridenBackColor\"", "\"overridenFontStyle\"");

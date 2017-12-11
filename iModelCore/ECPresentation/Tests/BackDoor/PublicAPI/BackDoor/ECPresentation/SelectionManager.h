@@ -16,16 +16,6 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 namespace BackDoor
     {
-    /*-----------------------------------------------------------------------------**//**
-    * @bsinamespace                             Grigas.Petraitis                10/2017
-    +-----------+---------------+---------------+---------------+---------------+------*/
-    namespace SelectionManager
-        {
-        /*-------------------------------------------------------------------------**//**
-        * @bsimethod                            Grigas.Petraitis                10/2017
-        +-------+---------------+---------------+---------------+---------------+------*/
-        void RemapNodeIds(ECPresentation::SelectionManager&, bmap<uint64_t, uint64_t> const&);
-        }
     }
 
 END_ECPRESENTATIONTESTS_NAMESPACE

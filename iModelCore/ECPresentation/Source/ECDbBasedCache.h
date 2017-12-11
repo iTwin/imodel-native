@@ -20,53 +20,34 @@ struct IECDbClosedListener
     friend struct ECDbClosedNotifier;
 
 private:
-    BeSQLite::Db::AppData::Key m_key;
     bset<ECDbClosedNotifier*> m_notifiers;
 
 protected:
     ECPRESENTATION_EXPORT virtual ~IECDbClosedListener();
+    virtual int _GetPriority() const {return 0;}
     virtual void _OnConnectionClosed(BeSQLite::EC::ECDbCR) = 0;
+
+public:
+    int GetPriority() const {return _GetPriority();}
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2016
 +===============+===============+===============+===============+===============+======*/
-struct ECDbClosedNotifier : BeSQLite::Db::AppData
+struct ECDbClosedNotifier : RefCountedBase
 {
 private:
+    int m_priority;
     IECDbClosedListener* m_listener;
     BeSQLite::EC::ECDbCR m_db;
-    ECDbClosedNotifier(IECDbClosedListener& listener, BeSQLite::EC::ECDbCR db, bool deleteOnClearCache) 
-        : m_listener(&listener), m_db(db)
-        {
-        db.AddAppData(m_listener->m_key, this, deleteOnClearCache);
-        }
-
+    ECPRESENTATION_EXPORT ECDbClosedNotifier(IECDbClosedListener& listener, BeSQLite::EC::ECDbCR db);
 public:
-    ~ECDbClosedNotifier()
-        {
-        if (nullptr != m_listener)
-            {
-            m_listener->_OnConnectionClosed(m_db);
-            m_listener->m_notifiers.erase(this);
-            }
-        }
+    ECPRESENTATION_EXPORT ~ECDbClosedNotifier();
+    IECDbClosedListener& GetListener() const {return *m_listener;}
     BeSQLite::EC::ECDbCR GetConnection() {return m_db;}
-    static ECDbClosedNotifier* Register(IECDbClosedListener& listener, BeSQLite::EC::ECDbCR db, bool deleteOnClearCache)
-        {
-        if (nullptr != db.FindAppData(listener.m_key))
-            return nullptr;
-
-        ECDbClosedNotifier* notifier = new ECDbClosedNotifier(listener, db, deleteOnClearCache);
-        listener.m_notifiers.insert(notifier);
-        return notifier;
-        }
-    void Unregister()
-        {
-        IECDbClosedListener* listener = m_listener;
-        m_listener = nullptr;
-        m_db.DropAppData(listener->m_key);
-        }
+    int GetPriority() const {return m_priority;}
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECDbClosedNotifier> Register(IECDbClosedListener&, BeSQLite::EC::ECDbCR, bool deleteOnClearCache);
+    ECPRESENTATION_EXPORT void Unregister();
 };
 
 /*=================================================================================**//**

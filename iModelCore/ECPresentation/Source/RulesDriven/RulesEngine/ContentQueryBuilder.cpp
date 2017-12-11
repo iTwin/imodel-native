@@ -16,15 +16,15 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ParsedSelectionInfo::ParsedSelectionInfo(NavNodeKeyListCR nodeKeys, INavNodeLocater const& nodesLocater, ECSchemaHelper const& helper)
+ParsedSelectionInfo::ParsedSelectionInfo(NavNodeKeyListCR nodeKeys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
-    Parse(nodeKeys, nodesLocater, helper);
+    Parse(nodeKeys, nodesLocater, connection, helper);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater const& nodesLocater, ECSchemaHelper const& helper)
+void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
     if (nullptr != nodeKey.AsDisplayLabelGroupingNodeKey() && !nodeKey.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
         {
@@ -50,7 +50,7 @@ void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater c
         }
         
     // Some grouping node
-    NavNodeCPtr node = nodesLocater.LocateNode(helper.GetDb(), nodeKey);
+    NavNodeCPtr node = nodesLocater.LocateNode(connection, nodeKey);
     if (node.IsNull())
         {
         BeAssert(false);
@@ -60,16 +60,16 @@ void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater c
     NavNodeExtendedData extendedData(*node);
     bvector<ECInstanceKey> groupedInstanceKeys = extendedData.GetGroupedInstanceKeys();
     for (ECInstanceKeyCR key : groupedInstanceKeys)
-        GetNodeClasses(*ECInstanceNodeKey::Create(key), nodesLocater, helper);
+        GetNodeClasses(*ECInstanceNodeKey::Create(key), nodesLocater, connection, helper);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ParsedSelectionInfo::Parse(NavNodeKeyListCR keys, INavNodeLocater const& nodesLocater, ECSchemaHelper const& helper)
+void ParsedSelectionInfo::Parse(NavNodeKeyListCR keys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
     for (NavNodeKeyCPtr const& key : keys)
-        GetNodeClasses(*key, nodesLocater, helper);
+        GetNodeClasses(*key, nodesLocater, connection, helper);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -174,7 +174,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedSelectionInfo const& selection)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetRuleset(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
         m_params.GetLocalizationProvider());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, selection);
@@ -215,7 +215,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedSelectionInfo const& selection)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetRuleset(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
         m_params.GetLocalizationProvider());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, selection);
@@ -270,7 +270,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClassesSpecificationCR specification, ContentDescriptorCR descriptor)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetRuleset(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
         m_params.GetLocalizationProvider());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification);
@@ -310,7 +310,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedContentField const& contentField)
     {
-    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetRuleset(), 
+    ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         ContentDisplayType::Undefined, m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
         m_params.GetLocalizationProvider());
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);

@@ -14,11 +14,11 @@
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentProviderKey::operator<(ContentProviderKey const& other) const
-    {
-    if (m_db < other.m_db)
+    {    
+    int connectionIdCompareResult = m_connectionId.compare(other.m_connectionId);
+    if (connectionIdCompareResult < 0)
         return true;
-
-    if (m_db > other.m_db)
+    if (connectionIdCompareResult > 0)
         return false;
 
     int rulesetIdCompareResult = m_rulesetId.compare(other.m_rulesetId);
@@ -54,9 +54,9 @@ template<typename ValueType> static void Erase(bmap<ContentProviderKey, ValueTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentCache::ClearCache(ECDbCR connection)
+void ContentCache::ClearCache(IConnectionCR connection)
     {
-    auto pred = [&](ContentProviderKey const& key){return &key.GetConnection() == &connection;};
+    auto pred = [&](ContentProviderKey const& key){return key.GetConnectionId().Equals(connection.GetId());};
     Erase(m_providers, pred);
     }
 
@@ -83,13 +83,13 @@ SpecificationContentProviderPtr ContentCache::GetProvider(ContentProviderKey con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<SpecificationContentProviderPtr> ContentCache::GetProviders(ECDbCR connection) const
+bvector<SpecificationContentProviderPtr> ContentCache::GetProviders(IConnectionCR connection) const
     {
     bvector<SpecificationContentProviderPtr> providers;
     for (auto pair : m_providers)
         {
         ContentProviderKey const& key = pair.first;
-        if (&key.GetConnection() == &connection)
+        if (key.GetConnectionId().Equals(connection.GetId()))
             providers.push_back(pair.second);
         }
     return providers;

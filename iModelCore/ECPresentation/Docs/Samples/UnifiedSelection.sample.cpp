@@ -13,8 +13,14 @@
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 //__PUBLISH_EXTRACT_END__
 
+
 static SelectionManager* m_manager = nullptr;
 static ISelectionChangesListener* m_selectionChangesListener = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Grigas.Petraitis                11/2017
+//---------------------------------------------------------------------------------------
+static IConnectionCache* GetConnectionsCache() {return nullptr;}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Grigas.Petraitis                08/2017
@@ -28,7 +34,7 @@ void setup()
     {
     //__PUBLISH_EXTRACT_START__ UnifiedSelectionSample_SetUp.sampleCode
     // Create the unified selection manager
-    m_manager = new SelectionManager();
+    m_manager = new SelectionManager(*GetConnectionsCache());
 
     // Register selection change listeners
     m_manager->AddListener(*m_selectionChangesListener);

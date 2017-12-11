@@ -11,7 +11,6 @@
 #include <ECPresentation/RulesDriven/Rules/PresentationRuleSet.h>
 #include "ECExpressionContextsProvider.h"
 #include "ECSchemaHelper.h"
-#include "../../ECDbBasedCache.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -74,6 +73,8 @@ struct CustomFunctionsContext : IUserSettingsChangeListener
 
 private:
     ECSchemaHelper const& m_schemaHelper;
+    IConnectionManagerCR m_connections;
+    IConnectionCR m_connection;
     PresentationRuleSetCR m_ruleset;
     JsonNavNodesFactory const& m_nodesFactory;
     IUserSettings const& m_userSettings;
@@ -81,15 +82,15 @@ private:
     ECExpressionsCache& m_ecexpressionsCache;
     ILocalizationProvider const* m_localizationProvider;
     IUsedClassesListener* m_usedClassesListener;
-    NavNodeCP m_parentNode;
+    JsonNavNodeCP m_parentNode;
     rapidjson::Value const* m_extendedData;
     bvector<FunctionCache> m_caches;
     bset<ICustomFunctionsContextListener*> m_listeners;
     IECPropertyFormatter const* m_propertyFormatter;
     
 public:
-    ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, PresentationRuleSetCR, IUserSettings const&, IUsedUserSettingsListener*,
-        ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, NavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr);
+    ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, IConnectionManagerCR, IConnectionCR, PresentationRuleSetCR, IUserSettings const&, IUsedUserSettingsListener*,
+        ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr);
     ECPRESENTATION_EXPORT ~CustomFunctionsContext();
 
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
@@ -97,13 +98,15 @@ public:
     void SetLocalizationProvider(ILocalizationProvider const& provider) {m_localizationProvider = &provider;}
     ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
     ECSchemaHelper const& GetSchemaHelper() const {return m_schemaHelper;}
+    IConnectionManagerCR GetConnections() const {return m_connections;}
+    IConnectionCR GetConnection() const {return m_connection;}
     PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     IUsedUserSettingsListener* GetUsedUserSettingsListener() const {return m_usedSettingsListener;}
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     IUsedClassesListener* GetUsedClassesListener() const {return m_usedClassesListener;}
-    NavNodeCP GetParentNode() const {return m_parentNode;}
+    JsonNavNodeCP GetParentNode() const {return m_parentNode;}
     rapidjson::Value const* GetQueryExtendedData() const {return m_extendedData;}
     IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
 
@@ -118,28 +121,29 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct CustomFunctionsInjector : ECDbBasedCache
+struct CustomFunctionsInjector : IConnectionsListener
 {
 private:
-    bset<BeSQLite::EC::ECDb const*> m_handledDbs;
+    IConnectionManagerCR m_connections;
+    bset<ECDb const*> m_handledDbs;
     bvector<ScalarFunction*> m_scalarFunctions;
     bvector<AggregateFunction*> m_aggregateFunctions;
 
 private:
     void CreateFunctions();
     void DestroyFunctions();
-    void RegisterInDb(BeSQLite::EC::ECDbCR);
-    void UnregisterFromDb(BeSQLite::EC::ECDbCR);
+    void RegisterInDb(ECDbCR);
+    void UnregisterFromDb(ECDbCR);
 
 protected:
-    void _ClearECDbCache(BeSQLite::EC::ECDbCR) override;
+    void _OnConnectionEvent(ConnectionEvent const&) override;
 
 public:
-    ECPRESENTATION_EXPORT CustomFunctionsInjector();
-    ECPRESENTATION_EXPORT CustomFunctionsInjector(BeSQLite::EC::ECDbR);
+    ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR);
+    ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR, ECDbR);
     ECPRESENTATION_EXPORT ~CustomFunctionsInjector();
-    ECPRESENTATION_EXPORT void OnConnection(BeSQLite::EC::ECDbCR);
-    bool Handles(BeSQLite::EC::ECDbCR connection) const {return m_handledDbs.end() != m_handledDbs.find(&connection);}
+    ECPRESENTATION_EXPORT void OnConnection(ECDbCR);
+    bool Handles(ECDbCR connection) const {return m_handledDbs.end() != m_handledDbs.find(&connection);}
     };
 
 /*=================================================================================**//**

@@ -64,6 +64,7 @@ enum class Log
     UserSettings,
     Localization,
     Update,
+    Threads,
     };
 
 /*=================================================================================**//**

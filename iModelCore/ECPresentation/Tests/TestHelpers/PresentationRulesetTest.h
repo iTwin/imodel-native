@@ -22,6 +22,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct PresentationRulesetTester
 {
 private:
+    ConnectionManager m_connections;
     RulesDrivenECPresentationManager* m_presentationManager;
     ECDb* m_db;
     IssueReporter m_issueReporter;
@@ -33,11 +34,10 @@ private:
     //! @param[in] node The node we read from the BIM file
     //! @param[in] tree The current array of node that contains our corresponding JSON node
     //! @param[in] index The index of the corresponding JSON node that we want to compare with node (the first argument)
-    //! @param[in] db The ECDb containing node (the first argument).
     //! @param[in] m_presentationManager The presentationManager used to navigate the DgnDb
     //! @param[in] simpleTest The NavigationOption created from a ruleSet
     //! @return the number of errors encountered in the comparison. Any errors will be logged
-    int CheckNode(NavNodeCR node, JsonValueCR tree, int index, ECDbR db, RulesDrivenECPresentationManager* m_presentationManager,
+    int CheckNode(NavNodeCR node, JsonValueCR tree, int index, RulesDrivenECPresentationManager* m_presentationManager,
                   RulesDrivenECPresentationManager::NavigationOptions simpleTest);
 
 public:
@@ -87,7 +87,7 @@ public:
     void SetECDb(ECDbR db);
 
     //! Set local state for RulesDrivenECPresentationManager
-    void SetLocalState(IJsonLocalState& localState) { m_presentationManager->SetLocalState(localState); };
+    void SetLocalState(IJsonLocalState& localState) { m_presentationManager->SetLocalState(&localState); };
 
     //! Set localization provider used by RulesDrivenECPresentationManager
     void SetLocalizationProvider(ILocalizationProvider const* provider) { m_presentationManager->SetLocalizationProvider(provider); };
@@ -97,9 +97,9 @@ public:
 
     //! @return A reference to the private UserSettings
     IUserSettings& GetUserSettings(Utf8CP rulesetId) { return m_presentationManager->GetUserSettings(rulesetId); }
-
+        
     //! @return A reference to the private ECDb
-    ECDbR GetDb() { return *m_db; }
+    ECDbR GetDb() {return *m_db;}
 
     //! @return A reference to the private IssueReporter
     IssueReporter& GetIssueReporter() { return m_issueReporter; };

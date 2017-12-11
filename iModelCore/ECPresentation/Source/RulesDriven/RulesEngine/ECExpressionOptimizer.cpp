@@ -56,6 +56,15 @@ bool DisplayTypeOptimizedExpression::_IsEqual(OptimizedExpression const& other) 
     }
 
 /*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            11/2017
++---------------+---------------+---------------+---------------+---------------+--*/
+IsOfClassOptimizedExpression::~IsOfClassOptimizedExpression()
+    {
+    if (nullptr != m_connections)
+        m_connections->DropListener(*this);
+    }
+
+/*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            08/2017
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
@@ -65,12 +74,14 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
         
     ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
     
-    auto cacheIter = m_cache.find(&params.GetConnection());
+    auto cacheIter = m_cache.find(&params.GetConnection().GetDb());
     if (m_cache.end() == cacheIter)
         {
-        ECDbClosedNotifier::Register(*this, params.GetConnection(), true);
-        ECClassCP expectedClass = params.GetConnection().Schemas().GetClass(m_schemaName, m_className);
-        cacheIter = m_cache.Insert(&params.GetConnection(), Cache(expectedClass)).first;
+        BeAssert(nullptr == m_connections || m_connections == &params.GetConnections());
+        m_connections = &params.GetConnections();
+        params.GetConnections().AddListener(*this);
+        ECClassCP expectedClass = params.GetConnection().GetDb().Schemas().GetClass(m_schemaName, m_className);
+        cacheIter = m_cache.Insert(&params.GetConnection().GetDb(), Cache(expectedClass)).first;
         }
     if (nullptr == cacheIter->second.m_expectedClass)
         return false;
@@ -80,7 +91,7 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
     if (resultsCache.end() != iter)
         return iter->second;
 
-    ECClassCP selectedClass = params.GetConnection().Schemas().GetClass(lookupClassId);
+    ECClassCP selectedClass = params.GetConnection().GetDb().Schemas().GetClass(lookupClassId);
     if (nullptr == selectedClass)
         return false;
 
@@ -92,9 +103,9 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis            10/2017
 +---------------+---------------+---------------+---------------+---------------+--*/
-void IsOfClassOptimizedExpression::_OnConnectionClosed(ECDbCR connection)
+void IsOfClassOptimizedExpression::_OnConnectionEvent(ConnectionEvent const& evt)
     {
-    m_cache.erase(&connection);
+    m_cache.erase(&evt.GetConnection().GetDb());
     }
 
 /*-----------------------------------------------------------------------------**//**
@@ -109,6 +120,15 @@ bool IsOfClassOptimizedExpression::_IsEqual(OptimizedExpression const& other) co
     }
 
 /*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            11/2017
++---------------+---------------+---------------+---------------+---------------+--*/
+ClassNameOptimizedExpression::~ClassNameOptimizedExpression()
+    {
+    if (nullptr != m_connections)
+        m_connections->DropListener(*this);
+    }
+
+/*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            08/2017
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
@@ -118,18 +138,20 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
 
     ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
 
-    auto cacheIter = m_resultsCache.find(&params.GetConnection());
+    auto cacheIter = m_resultsCache.find(&params.GetConnection().GetDb());
     if (m_resultsCache.end() == cacheIter)
         {
-        ECDbClosedNotifier::Register(*this, params.GetConnection(), true);
-        cacheIter = m_resultsCache.Insert(&params.GetConnection(), bmap<ECClassId, bool>()).first;
+        BeAssert(nullptr == m_connections || m_connections == &params.GetConnections());
+        m_connections = &params.GetConnections();
+        params.GetConnections().AddListener(*this);
+        cacheIter = m_resultsCache.Insert(&params.GetConnection().GetDb(), bmap<ECClassId, bool>()).first;
         }
     
     auto iter = cacheIter->second.find(lookupClassId);
     if (cacheIter->second.end() != iter)
         return iter->second;
 
-    ECClassCP selectedClass = params.GetConnection().Schemas().GetClass(lookupClassId);
+    ECClassCP selectedClass = params.GetConnection().GetDb().Schemas().GetClass(lookupClassId);
     if (nullptr == selectedClass)
         return false;
 
@@ -141,9 +163,9 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis            10/2017
 +---------------+---------------+---------------+---------------+---------------+--*/
-void ClassNameOptimizedExpression::_OnConnectionClosed(ECDbCR connection)
+void ClassNameOptimizedExpression::_OnConnectionEvent(ConnectionEvent const& evt)
     {
-    m_resultsCache.erase(&connection);
+    m_resultsCache.erase(&evt.GetConnection().GetDb());
     }
 
 /*-----------------------------------------------------------------------------**//**

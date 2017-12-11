@@ -47,9 +47,7 @@ void ECSchemaHelperTests::TearDownTestCase()
 //---------------------------------------------------------------------------------------
 void ECSchemaHelperTests::SetUp()
     {
-    // create the ECSchemaHelper instance
-    m_relatedPathsCache = new RelatedPathsCache();
-    m_helper = new ECSchemaHelper(s_project->GetECDbCR(), *m_relatedPathsCache, nullptr);
+    m_helper = new ECSchemaHelper(s_project->GetECDbCR(), nullptr, nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -58,7 +56,6 @@ void ECSchemaHelperTests::SetUp()
 void ECSchemaHelperTests::TearDown()
     {
     DELETE_AND_CLEAR(m_helper);
-    DELETE_AND_CLEAR(m_relatedPathsCache);
     }
 
 //---------------------------------------------------------------------------------------

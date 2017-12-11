@@ -10,43 +10,21 @@
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
 #include "ECDbTestProject.h"
+#include "TestHelpers.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                01/2016
-+===============+===============+===============+===============+===============+======*/
-struct TestRulesetCallbacksHandler : IRulesetCallbacksHandler
-    {
-    typedef std::function<void(PresentationRuleSetCR)> CallbackHandler;
-    CallbackHandler m_onCreatedHandler;
-    CallbackHandler m_onDisposedHandler;
-
-    void SetCreatedHandler(CallbackHandler const& handler) {m_onCreatedHandler = handler;}
-    void SetDisposedHandler(CallbackHandler const& handler) {m_onDisposedHandler = handler;}
-
-    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset) override
-        {
-        if (nullptr != m_onCreatedHandler)
-            m_onCreatedHandler(ruleset);
-        }
-    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset) override
-        {
-        if (nullptr != m_onDisposedHandler)
-            m_onDisposedHandler(ruleset);
-        }
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RulesetLocaterManager, LocateSupportedRulesets)
     {
+    TestConnectionManager connections;
     TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
-    RuleSetLocaterManager manager;
+    RuleSetLocaterManager manager(connections);
     manager.RegisterLocater(*locater);
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("EmptySupportedSchemas", 1, 0, false, "", "", "", false));
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("SupportedSchema", 1, 0, false, "", "SupportedSchema", "", false));
@@ -64,6 +42,7 @@ TEST(RulesetLocaterManager, LocateSupportedRulesets)
     ECDbTestProject project;
     project.Create("RulesetLocaterManager_LocateSupportedRulesets");
     project.GetECDb().Schemas().ImportSchemas(context->GetCache().GetSchemas());
+    connections.NotifyConnectionOpened(project.GetECDb());
 
     bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(project.GetECDbCR(), nullptr);
     ASSERT_EQ(3, rulesets.size());
@@ -79,12 +58,15 @@ TEST(RulesetLocaterManager, LocateSupportedRulesets)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RulesetLocaterManager, DisposesCachedRulesetsOnRulesetDispose)
     {
+    
+    TestConnectionManager connections;
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    RuleSetLocaterManager manager(connections);
+    manager.RegisterLocater(*locater);
+    
     ECDbTestProject project;
     project.Create("DisposesCachedRulesetsOnRulesetDispose");
-
-    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
-    RuleSetLocaterManager manager;
-    manager.RegisterLocater(*locater);
+    connections.NotifyConnectionOpened(project.GetECDb());
 
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
 
@@ -115,13 +97,15 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnRulesetDispose)
 * @betest                                       Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
-    {
+    {    
+    TestConnectionManager connections;
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    RuleSetLocaterManager manager(connections);
+    manager.RegisterLocater(*locater);
+    
     ECDbTestProject project;
     project.Create("DisposesCachedRulesetsOnConnectionClose");
-
-    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
-    RuleSetLocaterManager manager;
-    manager.RegisterLocater(*locater);
+    IConnectionPtr connection = connections.NotifyConnectionOpened(project.GetECDb());
 
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
 
@@ -139,8 +123,8 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
     // simulate connection close
-    project.GetECDb().CloseDb();
-    project.Open("DisposesCachedRulesetsOnConnectionClose");
+    connections.NotifyConnectionClosed(*connection);
+    connections.NotifyConnectionOpened(project.GetECDb());
     
     // verify we get a fresh version:
     rulesets = manager.LocateRuleSets(project.GetECDbCR(), "Test");
@@ -154,7 +138,8 @@ TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RulesetLocaterManager, InvalidateCacheForwardsCallToRegisteredLocaters)
     {
-    RuleSetLocaterManager manager;
+    TestConnectionManager connections;
+    RuleSetLocaterManager manager(connections);
     
     TestRuleSetLocaterPtr locater1 = TestRuleSetLocater::Create();
     locater1->AddRuleSet(*PresentationRuleSet::CreateInstance("1", 1, 0, false, "", "", "", false));
@@ -688,11 +673,13 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
 struct EmbeddedRuleSetLocaterTests : ::testing::Test
 {
     static ECDbTestProject* s_project;
+    IConnectionPtr m_connection;
     RuleSetEmbedder* m_embedder;
 
     void SetUp() override
         {
-        m_embedder = new RuleSetEmbedder(s_project->GetECDb());
+        m_connection = new TestConnection(s_project->GetECDb());
+        m_embedder = new RuleSetEmbedder(m_connection->GetDb());
         }
 
     void TearDown() override
@@ -720,7 +707,7 @@ ECDbTestProject* EmbeddedRuleSetLocaterTests::s_project = nullptr;
 TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_ConnectionWithoutEmbeddedFiles)
     {
     // create ruleset locater
-    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(s_project->GetECDb());
+    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(*m_connection);
 
     // validate no rulesets are located if connection doesn't have embedded rulesets.
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
@@ -739,7 +726,7 @@ TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_FindsRuleSet)
     m_embedder->Embed(*ruleset);
 
     // create ruleset locater
-    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(s_project->GetECDb());
+    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(*m_connection);
 
     // validate 1 ruleset was found in opened connection
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
@@ -761,7 +748,7 @@ TEST_F(EmbeddedRuleSetLocaterTests, DisposesAllCachedRulesetsWhenInvalidateReque
     m_embedder->Embed(*ruleset2);
 
     // create ruleset locater
-    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(s_project->GetECDb());
+    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(*m_connection);
 
     // verify 2 rulesets are located
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
