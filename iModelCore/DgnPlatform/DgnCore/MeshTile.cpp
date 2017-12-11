@@ -2876,7 +2876,8 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     polyface->DecimateByEdgeCollapse (tolerance, 0.0);
 
                 
-                MeshTileClipOutput     clipOutput;
+                MeshTileClipOutput  clipOutput;
+
                 if (doRangeTest)
                     polyface->ClipToRange(myTileRange, clipOutput, false);
                 else
@@ -2888,7 +2889,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 }
             }
 
-        if (!doSurfacesOnly)
+        if (!doSurfacesOnly && false)
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
         
