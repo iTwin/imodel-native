@@ -208,23 +208,15 @@ void IntegrationTestsBase::DeleteiModel(Utf8StringCR projectId, ClientCR client,
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             09/2016
 //---------------------------------------------------------------------------------------
-BeSQLite::BeGuid IntegrationTestsBase::ReplaceSeedFile(iModelConnectionPtr imodelConnection, DgnDbR db, bool changeGuid)
+BeSQLite::BeGuid IntegrationTestsBase::ReplaceSeedFile(iModelConnectionPtr imodelConnection, DgnDbR db)
     {
-    if (changeGuid)
-        {
-        BeSQLite::BeGuid newGuid;
-        newGuid.Create();
-        db.ChangeDbGuid(newGuid);
-        db.SaveChanges();
-        }
-
     auto fileName = db.GetFileName();
     ICancellationTokenPtr canc = SimpleCancellationToken::Create();
     FileInfoPtr fileInfo = FileInfo::Create(db, "Replacement description1");
     EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
-    EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, nullptr, canc)->GetResult());
-
-    return db.GetDbGuid();
+    auto newSeedFile = imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, nullptr, canc)->GetResult();
+    EXPECT_SUCCESS(newSeedFile);
+    return newSeedFile.GetValue()->GetFileId();
     }
 
 
@@ -328,7 +320,7 @@ BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfo
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis            06/2016
 //---------------------------------------------------------------------------------------
-void IntegrationTestsBase::InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount)
+BriefcasePtr IntegrationTestsBase::InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount)
     {
     BriefcasePtr briefcase = AcquireBriefcase(client, imodel);
 
@@ -347,6 +339,7 @@ void IntegrationTestsBase::InitializeWithChangeSets(ClientCR client, iModelInfoC
         EXPECT_SUCCESS(result);
         }
     db.BriefcaseManager().Relinquish();
+    return briefcase;
     }
 
 //---------------------------------------------------------------------------------------
