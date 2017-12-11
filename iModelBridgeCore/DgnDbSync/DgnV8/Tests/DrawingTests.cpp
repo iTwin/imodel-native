@@ -230,6 +230,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         ASSERT_TRUE(sheetModel.IsValid());
         countElements(*sheetModel, 2);
         countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 2);
+        ASSERT_TRUE(ILinkElementBase<RepositoryLink>::ElementHasLinks(*db, sheet->GetElementId()));
         }
     
     DoUpdate(m_dgnDbFileName, m_v8FileName);

@@ -1014,7 +1014,6 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
 
         modeledElementId = partition->GetElementId();
 
-        iModelBridge::InsertElementHasLinksRelationship(GetDgnDb(), partition->GetElementId(), GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
         }
     else
         {
@@ -1022,6 +1021,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "Unhandled model type");
         return DgnModelId();
         }
+    iModelBridge::InsertElementHasLinksRelationship(GetDgnDb(), modeledElementId, GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
 
     DgnModelPtr model = handler->Create(DgnModel::CreateParams(*m_dgndb, classId, modeledElementId, nullptr));
     if (!model.IsValid())
