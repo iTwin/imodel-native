@@ -467,10 +467,10 @@ TEST_F(iModelManagerTests, RecoverBriefcase)
     {
     // Create imodel and acquire a briefcase
     auto db = CreateTestDb("RecoverBriefcaseTest");
-    BeSQLite::BeGuid oldGuid = db->GetDbGuid();
     auto imodelInfo = CreateNewiModelFromDb(*m_client, *db);
     auto imodelConnection = ConnectToiModel(*m_client, imodelInfo);
     auto briefcase = IntegrationTestsBase::AcquireBriefcase(*m_client, *imodelInfo, true);
+    BeSQLite::BeGuid oldGuid = briefcase->GetDgnDb().GetDbGuid();
 
     // ReplaceSeedFile
     auto newGuid = ReplaceSeedFile(imodelConnection, *db);
