@@ -3207,9 +3207,6 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     if (resetPDSIZE)
         m_dwgdb->SetPDSIZE (currentPDSIZE);
         
-    // free memory
-    m_dgndb->Memory().PurgeUntil(1024 * 1024);
-    
     return BSISUCCESS;
     }
 
