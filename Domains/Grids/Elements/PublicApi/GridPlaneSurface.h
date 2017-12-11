@@ -239,11 +239,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
             };
 
     private:
+        BE_PROP_NAME (Elevation)
 
     protected:
         explicit GRIDELEMENTS_EXPORT ElevationGridSurface (CreateParams const& params);
         friend struct ElevationGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _SetPlacement (Dgn::Placement3dCR placement) override;
+        
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface, GRIDELEMENTS_EXPORT)
         //---------------------------------------------------------------------------------------
@@ -254,5 +257,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
         //! Note: Only planar curve vectors pass as valid geometry
         GRIDELEMENTS_EXPORT static  ElevationGridSurfacePtr Create (CreateParams const& params);
 
+        //! Gets Elevation of this ElevationGridSurface
+        //! @return Elevation of this ElevationGridSurface
+        GRIDELEMENTS_EXPORT double      GetElevation () const { return GetPropertyValueDouble (prop_Elevation ()); }
+
+        //! Sets Elevation of this ElevationGridSurface
+        //! @param[in]  Elevation   new Elevation for this ElevationGridSurface
+        GRIDELEMENTS_EXPORT void        SetElevation (double elevation) { SetPropertyValue (prop_Elevation (), elevation); };
     };
 END_GRIDS_NAMESPACE

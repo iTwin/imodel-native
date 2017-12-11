@@ -340,7 +340,7 @@ CreateParams const& params
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
+* @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElevationGridSurface::ElevationGridSurface
 (
@@ -352,7 +352,7 @@ CreateParams const& params
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
+* @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElevationGridSurfacePtr             ElevationGridSurface::Create
 (
@@ -367,6 +367,34 @@ CreateParams const& params
     return surface;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus    ElevationGridSurface::_SetPlacement
+(
+Placement3dCR placement
+)
+    {
+    GridCPtr grid = GetDgnDb ().Elements ().Get<Grid> (GetGridId ());
+
+    Placement3dCR currPlacement = grid->GetPlacement ();
+
+    Transform currTransInv, thatTrans, diffTrans;
+    currTransInv.InverseOf(currPlacement.GetTransform ());
+    thatTrans = placement.GetTransform ();
+    bsiTransform_multiplyTransformTransform (&diffTrans, &currTransInv, &thatTrans);
+
+    DPlane3d diffPlane;
+    bsiTransform_getOriginAndVectors (&diffTrans, &diffPlane.origin, NULL, NULL, &diffPlane.normal);
+
+    if (!DoubleOps::AlmostEqualFraction(abs(diffPlane.normal.z), 1.0))
+        return Dgn::DgnDbStatus::ValidationFailed;   //if the elevationsurface is rotated from Z axis, fail
+
+    //else recompute the elevation
+    SetElevation (diffPlane.origin.z);
+    return T_Super::_SetPlacement (placement);
+    }
 
 END_GRIDS_NAMESPACE
 
