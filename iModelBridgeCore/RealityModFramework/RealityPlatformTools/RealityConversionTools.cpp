@@ -543,6 +543,12 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     if (includeUnsetProps || (realityData.GetGroup().size() != 0))
         properties.push_back(RealityDataField::Group);
 
+    if (includeUnsetProps || realityData.IsHidden()) // Default (false) is considered unset
+        properties.push_back(RealityDataField::Hidden); 
+    
+    if (includeUnsetProps || realityData.HasDelegatePermissions()) // Default (false) is considered unset
+        properties.push_back(RealityDataField::DelegatePermissions);
+
     return RealityDataToJson(realityData, properties);
     }
 /*----------------------------------------------------------------------------------**//**
@@ -690,6 +696,14 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
             propertyString.append("\"Group\" : \"");
             propertyString.append(realityData.GetGroup());
             propertyString.append("\"");
+            break;
+        case RealityDataField::Hidden:
+            propertyString.append("\"Hidden\" : ");
+            propertyString.append(realityData.IsHidden() ? "true" : "false");
+            break;
+        case RealityDataField::DelegatePermissions:
+            propertyString.append("\"DelegatePermissions\" : ");
+            propertyString.append(realityData.HasDelegatePermissions() ? "true" : "false");
             break;
             }
         propertyVector.push_back(propertyString);

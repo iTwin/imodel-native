@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformToolsComplete/SimpleRDSApi.cpp $
+|     $Source: RealityPlatformToolsComplete/SimpleWSGBase.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "../RealityPlatformTools/SimpleRDSApi.cpp"
+#include "../RealityPlatformTools/SimpleWSGBase.cpp"
 #include <CCApi/CCPublic.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-Utf8String RDSRequestManager::MakeBuddiCall()
+Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     {
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
     CallStatus status = APIERR_SUCCESS;
@@ -58,10 +58,10 @@ Utf8String RDSRequestManager::MakeBuddiCall()
     wchar_t* buddiUrl;
     UINT32 strlen = 0;
 
-    CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &strlen);
+    CCApi_GetBuddiUrl(api, serviceName.c_str(), NULL, &strlen);
     strlen += 1;
     buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
-    CCApi_GetBuddiUrl(api, L"RealityDataServices", buddiUrl, &strlen);
+    CCApi_GetBuddiUrl(api, serviceName.c_str(), buddiUrl, &strlen);
 
     char* charServer = new char[strlen];
     wcstombs(charServer, buddiUrl, strlen);

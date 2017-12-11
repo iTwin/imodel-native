@@ -697,6 +697,8 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     m.Insert(RealityDataField::ModifiedTimestamp, "ModifiedTimestamp");
     m.Insert(RealityDataField::OwnedBy, "OwnedBy");
     m.Insert(RealityDataField::Group, "Group");
+    m.Insert(RealityDataField::Hidden, "Hidden");
+    m.Insert(RealityDataField::DelegatePermissions, "DelegatePermissions");
 
     return m;
     }
@@ -1271,7 +1273,7 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
         field = it.key();
         if(propertyString.length() > 0)
             propertyString.append(",");
-        if(field == RealityDataField::Streamed || field == RealityDataField::Listable || field == RealityDataField::Footprint)
+        if(field == RealityDataField::Streamed || field == RealityDataField::Listable || field == RealityDataField::Hidden || field == RealityDataField::DelegatePermissions || field == RealityDataField::Footprint)
             propertyString.append(Utf8PrintfString("\"%s\" : %s", s_propertyMap[field], properties[field]));
         else
             propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", s_propertyMap[field], properties[field]));

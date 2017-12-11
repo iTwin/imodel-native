@@ -1,53 +1,18 @@
 #include <RealityPlatform/RealityDataObjects.h>
 #include <RealityPlatformTools/WSGServices.h>
 #include <RealityPlatformTools/RealityDataService.h>
+#include <RealityPlatformTools/SimpleWSGBase.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
-
-typedef std::function<void(const char* pMsg)> RDS_FeedbackFunction;
-
-//=====================================================================================
-//! @bsiclass                                   Spencer.Mason              10/2017
-//! ConnectedResponse
-//! struct used to hold and return all pertinent elements regarding a server response.
-//=====================================================================================
-struct ConnectedResponse : public RawServerResponse
-    { 
-public:
-    Utf8String simpleMessage;
-    bool simpleSuccess;
-
-    //! Simple boolean representation of whether the operation was successful or not
-    REALITYDATAPLATFORM_EXPORT bool GetSuccess()               { return simpleSuccess; }
-
-    //! Will contain a user-friendly message, explaining what might have gone wrong with the request 
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSimpleMessage() { return simpleMessage; }
-    REALITYDATAPLATFORM_EXPORT void Clone(const RawServerResponse& raw);
-    };
 
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason              10/2017
 //! RDSRequestManager
 //! Entity that sets common variables for required for multiple requests
 //=====================================================================================
-struct RDSRequestManager
+struct RDSRequestManager : public WSGRequestManager
     {    
-    REALITYDATAPLATFORM_EXPORT void SetCallback(RDS_FeedbackFunction piFunc) { m_callback = piFunc; }
-    REALITYDATAPLATFORM_EXPORT void SetErrorCallback(RDS_FeedbackFunction piFunc) { m_errorCallback = piFunc; }
-    REALITYDATAPLATFORM_EXPORT static RDSRequestManager& GetInstance(RDS_FeedbackFunction errorCallback = nullptr);
-    REALITYDATAPLATFORM_EXPORT void Init();
-
-protected:
-    static RDSRequestManager*      s_instance;
-    REALITYDATAPLATFORM_EXPORT RDSRequestManager();
-    REALITYDATAPLATFORM_EXPORT RDSRequestManager(RDS_FeedbackFunction errorCallback);
-    REALITYDATAPLATFORM_EXPORT Utf8String MakeBuddiCall();
-    
-    void Report(Utf8String message);
-    void ReportError(Utf8String message);
-
-    RDS_FeedbackFunction    m_callback;
-    RDS_FeedbackFunction    m_errorCallback;
+    REALITYDATAPLATFORM_EXPORT static void Setup();
     };
 
 struct ConnectedNavNode : public NavNode

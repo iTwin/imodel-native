@@ -222,7 +222,9 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Listable": true,
                     "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
-                    "OwnedBy": "francis.boily@bentley.com"
+                    "OwnedBy": "francis.boily@bentley.com",
+                    "Hidden": false,
+                    "DelegatePermissions": false
                 },
                 "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
             },
@@ -280,7 +282,9 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Listable": true,
                     "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
-                    "OwnedBy": "francis.boily@bentley.com"
+                    "OwnedBy": "francis.boily@bentley.com",
+                    "Hidden": true,
+                    "DelegatePermissions": true
                 },
                 "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
             }
@@ -616,6 +620,8 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetModifiedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
+    ASSERT_EQ(realityData->IsHidden(), false);
+    ASSERT_EQ(realityData->HasDelegatePermissions(), false);
     DRange2dCR range = realityData->GetFootprintExtent();
     ASSERT_TRUE(std::abs(range.low.x - 24.7828757) < 0.000000001);
     ASSERT_TRUE(std::abs(range.low.y - 59.9224887) < 0.000000001);

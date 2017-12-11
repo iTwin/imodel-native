@@ -196,7 +196,7 @@ void Delete(Utf8String guid)
 
 int main(int argc, char *argv[])
     {
-    RDSRequestManager::GetInstance();
+    RDSRequestManager::Setup();
 
     Inspect();
     Utf8String guid = CreateUpload();

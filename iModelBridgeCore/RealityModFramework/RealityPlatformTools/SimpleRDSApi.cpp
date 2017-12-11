@@ -2,42 +2,9 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                10/2017
-//-------------------------------------------------------------------------------------
-void ConnectedResponse::Clone(const RawServerResponse& raw)
+void RDSRequestManager::Setup()
     {
-    header = raw.header;
-    body = raw.body;
-    responseCode = raw.responseCode;
-    toolCode = raw.toolCode;
-    status = raw.status;
-
-    simpleSuccess = (raw.toolCode == 0) && (raw.responseCode < 400);
-    simpleMessage = raw.body;
-    }
-
-RDSRequestManager* RDSRequestManager::s_instance = nullptr;
-
-RDSRequestManager& RDSRequestManager::GetInstance(RDS_FeedbackFunction errorCallback)
-    {
-    if (nullptr == s_instance)
-        s_instance = new RDSRequestManager(errorCallback);
-    return *s_instance;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                10/2017
-//-------------------------------------------------------------------------------------
-RDSRequestManager::RDSRequestManager(RDS_FeedbackFunction errorCallback)
-    {
-    m_errorCallback = errorCallback;
-    Init();
-    }
-
-void RDSRequestManager::Init()
-    {
-    Utf8String serverName = MakeBuddiCall();
+    Utf8String serverName = MakeBuddiCall(L"RealityDataServices");
     WSGServer server = WSGServer(serverName, false);
     
     RawServerResponse versionResponse = RawServerResponse();
@@ -49,24 +16,6 @@ void RDSRequestManager::Init()
         }
     
     RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX", "" /*WSGRequest::GetInstance().GetCertificatePath().GetNameUtf8()*/);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                10/2017
-//-------------------------------------------------------------------------------------
-void RDSRequestManager::Report(Utf8String message)
-    {
-    if(m_callback)
-        m_callback(message.c_str());
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                10/2017
-//-------------------------------------------------------------------------------------
-void RDSRequestManager::ReportError(Utf8String message)
-    {
-    if (m_errorCallback)
-        m_errorCallback(message.c_str());
     }
 
 ConnectedNavNode::ConnectedNavNode(const NavNode& node)

@@ -378,7 +378,9 @@ enum class RealityDataField
     CreatedTimestamp,
     ModifiedTimestamp,
     OwnedBy,
-    Group
+    Group,
+    Hidden,
+    DelegatePermissions
     };
 
 
