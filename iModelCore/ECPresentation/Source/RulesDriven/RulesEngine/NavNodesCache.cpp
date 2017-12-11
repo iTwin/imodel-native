@@ -1886,7 +1886,9 @@ JsonNavNodeCPtr NodesCache::LocateECInstanceNode(IConnectionCR connection, ECIns
         return nullptr;
 
     JsonNavNodeCPtr node = CreateNodeFromStatement(*stmt, m_nodesFactory, m_connections);
-    BeAssert(BE_SQLITE_DONE == stmt->Step());
+    // note: in case of ECInstance nodes there can be multiple nodes for the same key if there are
+    // multiple nodes in the hierarchy for the same ECInstance. 
+    //BeAssert(BE_SQLITE_DONE == stmt->Step());
     return node;
     }
 
