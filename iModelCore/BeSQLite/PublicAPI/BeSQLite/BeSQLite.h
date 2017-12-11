@@ -1163,7 +1163,7 @@ struct RTreeMatchFunction : DbFunction
 //! This interface should be implemented to supply the first argument to the BeSQLite function "InVirtualSet".
 //! It provides a way to use an in-memory "set of values" in an SQL statement, without having to create a temporary table.
 //! For example, to find rows of MyTable that have Owner=1 and Vendor in a list of vendors held in a memory, use the SQL statement:
-//! "SELECT * FROM MyTable WHERE Owner=1 AND InVirtualSet(?,Vendor)" and bind the first argument of InVirtualSet using BeSQLite::Statment::BindVirtualSet
+//! "SELECT * FROM MyTable WHERE Owner=1 AND InVirtualSet(?,Vendor)" and bind the first argument of InVirtualSet using BeSQLite::Statement::BindVirtualSet
 //! to an object that implements this interface, returning true for _IsInSet for the desired vendors.
 // @bsiclass                                                    Keith.Bentley   11/13
 //=======================================================================================
@@ -1737,7 +1737,7 @@ public:
     //! @param[in] size the number of bytes in data.
     //! @param[in] name the name by which the file was embedded.
     //! @param[in] lastModified the updated last-modified time to associate with the embedded file. May be nullptr. If Save is called after AddEntry, then it makes sense to pass nullptr.
-    //! If Save is called to update an existing entry, then it makes sense to update its last-modified time. If not specified, then the last-modified time of the embeded file (if any) is left unchanged.
+    //! If Save is called to update an existing entry, then it makes sense to update its last-modified time. If not specified, then the last-modified time of the embedded file (if any) is left unchanged.
     //! @param[in] compress if true, the file will be compressed as it is imported. This makes the Db smaller, but is also slower to import and later read.
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
@@ -1783,7 +1783,7 @@ enum class DefaultTxn : int
 //! <p><h2>Default Transactions</h2>
 //! When you create or open a BeSQLite::Db, you can optionally specify that you wish to open a "default transaction". Every BeSQLite::Db holds a
 //! Savepoint for this purpose. The default transaction Savepoint remains active for the lifecycle of the BeSQLite::Db, and can be
-//! committed and canceled using the Db::SaveChanges and Db::AbandonChanges methods, respectively.
+//! committed and canceled using the Db::   SaveChanges and Db::AbandonChanges methods, respectively.
 //! <p>
 //! Savepoints are auto-committed on destruction. If you wish to abandon the changes made in a Savepoint, you must call
 //! Savepoint::Cancel() on it before it is destroyed.
@@ -2151,11 +2151,11 @@ public:
 
         //! Use the BeSQLite::Db api on a "raw" SQLite file. This allows use of the BeSQLite api on SQLite databases it did not create.
         //! When BeSQLite::Db creates a database, it adds the BEDB_TABLE_Property and BEDB_TABLE_Local tables
-        //! for the Property and RepsitoryLocalValue methods. If you attempt to open a SQLite file that doesn't have those
+        //! for the Property and RepositoryLocalValue methods. If you attempt to open a SQLite file that doesn't have those
         //! tables, BeSQLite:Db::OpenBeSQLiteDb will fail with the status BE_SQLITE_ERROR_NoPropertyTable. When the "raw sqlite" flag
         //! is on, BeSQLite::Db::OpenBeSQLiteDb will not check for the presence of those tables, and BeSQLite::Db::CreateNewDb will not
         //! create those tables.
-        //! @note When this flag is on, all of the Property and RepsositoryLocalValue methods of BeSQLite::Db will fail.
+        //! @note When this flag is on, all of the Property and RepositoryLocalValue methods of BeSQLite::Db will fail.
         void SetRawSQLite() {m_rawSQLite=true;}
 
         //! Determine whether the "raw sqlite" flag is on or not
