@@ -700,7 +700,7 @@ TEST_F(DgnModelTests, ModelSelectorAndDelete)
 
     // Verify ModelSelector was persisted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         ModelSelectorCPtr modelSelector = m_db->Elements().Get<ModelSelector>(modelSelectorId);
         ASSERT_TRUE(modelSelector.IsValid());
         ASSERT_TRUE(modelSelector->ContainsModel(physicalModel1->GetModelId()));
@@ -710,7 +710,7 @@ TEST_F(DgnModelTests, ModelSelectorAndDelete)
 
     // Verify DgnModel::Delete is handled properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         ASSERT_EQ(DgnDbStatus::Success, physicalModel2->Delete());
         ModelSelectorCPtr modelSelector = m_db->Elements().Get<ModelSelector>(modelSelectorId);
         ASSERT_TRUE(modelSelector.IsValid());
@@ -723,7 +723,7 @@ TEST_F(DgnModelTests, ModelSelectorAndDelete)
 
     // Verify ModelSelector::Delete is handled properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         m_db->Elements().Delete(modelSelectorId);
         ASSERT_FALSE(m_db->Elements().Get<ModelSelector>(modelSelectorId).IsValid());
         ASSERT_EQ(0, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels)));

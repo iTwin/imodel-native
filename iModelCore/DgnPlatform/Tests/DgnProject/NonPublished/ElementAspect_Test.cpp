@@ -712,7 +712,7 @@ TEST_F(ElementAspectTests, PresentationRuleScenarios)
     // cause element to be reloaded
     DgnElementId elementId = element->GetElementId();
     element = nullptr;
-    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ClearCache();
     element = m_db->Elements().GetForEdit<TestElement>(elementId);
     ASSERT_TRUE(element.IsValid());
 
@@ -769,7 +769,7 @@ TEST_F(ElementAspectTests, PresentationRuleScenarios)
 
     // cause element to be reloaded
     element = nullptr;
-    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ClearCache();
     element = m_db->Elements().GetForEdit<TestElement>(elementId);
     ASSERT_TRUE(element.IsValid());
 

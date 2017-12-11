@@ -1885,7 +1885,7 @@ namespace Quantization
         return quantizedPos >= 0.0 && quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
         }
 
-    constexpr double QuantizeDouble(double pos, double origin, double scale)
+    inline /*constexpr*/ double QuantizeDouble(double pos, double origin, double scale)
         {
         return std::max(0.0, std::min(RangeScale(), 0.5 + (pos - origin) * scale));
         }
