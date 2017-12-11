@@ -337,7 +337,7 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnAppliedAddElement(DgnElementCR element) {}
 
-    //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was aplied to the DgnDb.
+    //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.

@@ -731,7 +731,7 @@ public:
 
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
-    //! Get the BIM's global origin. All spatial coordinates in the BIM are stored relative to its global origin.
+    //! Get the iModel's global origin. All spatial coordinates in the BIM are stored relative to its global origin.
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
     //! Update the project extents for this BIM
