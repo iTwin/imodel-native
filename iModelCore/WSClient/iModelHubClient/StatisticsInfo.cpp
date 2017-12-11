@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "WebServices\iModelHub\Client\StatisticsInfo.h"
+#include "WebServices/iModelHub/Client/StatisticsInfo.h"
 #include "Utils.h"
 #include "Logging.h"
 
