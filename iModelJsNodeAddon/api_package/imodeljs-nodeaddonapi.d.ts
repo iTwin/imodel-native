@@ -27,7 +27,9 @@ interface IModelJsNodeAddonStatusOnlyCallback<STATUS_TYPE> {
 }
 
 
-/** The return type of synchronous functions that may return an error or a successful result. */
+/**
+ * The return type of synchronous functions that may return an error or a successful result.
+ */
 interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
     /** Error from the operation. This property is defined if and only if the operation failed. */
     error?: StatusCodeWithMessage<ErrorCodeType>;
@@ -36,7 +38,9 @@ interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
     result?: ResultType;
 }
 
-/* The NodeAddonDgnDb class that is projected by the iModelJs node addon. */
+/**
+ * The NodeAddonDgnDb class that is projected by the iModelJs node addon. 
+ */
 declare class NodeAddonDgnDb {
   constructor();
 
@@ -46,51 +50,52 @@ declare class NodeAddonDgnDb {
    */
   getCachedBriefcaseInfosSync(cachePath: string): ErrorStatusOrResult<DbResult, string>;
 
-  /** Get name and description of the root subject of this BIM as a JSON string ({name:, description: }) */
+  /** Get name and description of the root subject of this iModel as a JSON string ({name:, description: }) */
   getRootSubjectInfo(): string;
 
   /**
-   * Get the extents of this BIM as a JSON string ({low: {x:, y:, z:}, high: {x:, y:, z:}})
+   * Get the project extents of this iModel.
    */
   getExtents(): string;
 
   /**
-   * Open a local BIM file.
-   * @param dbname The full path to the BIM file in the local file system
+   * Open a local iModel.
+   * @param dbname The full path to the iModel in the local file system
    * @param mode The open mode
-   * @param callback Invoked when the operation completes. The only argument is a status code indicating sucess or failure.
+   * @param callback Invoked when the operation completes. The only argument is a status code indicating success or failure.
    */
   openDgnDb(dbname: string, mode: OpenMode, callback: IModelJsNodeAddonStatusOnlyCallback<DbResult>): void;
 
   /**
-   * Open a local BIM file.
-   * @param dbname The full path to the BIM file in the local file system
+   * Open a local iModel.
+   * @param dbname The full path to the iModel in the local file system
    * @param mode The open mode
    * @return non-zero error status if operation failed.
    */
   openDgnDbSync(dbname: string, mode: OpenMode): DbResult;
 
-  /** Close this BIM file. */
+  /** Close this iModel. */
   closeDgnDb(): void;
 
   /**
-   * Set the briefcase ID of this BIM file.
-   * @param idvalue The briefcase ID value.
+   * Set the briefcase Id of this iModel.
+   * @param idvalue The briefcase Id value.
    */
   setBriefcaseId(idvalue: number): DbResult;
 
-  /** Get the briefcase ID of this BIM file. */
+  /** Get the briefcase Id of this iModel. */
   getBriefcaseId(): number;
 
-  /** Get the Id of the last change set that was merged into or created from the Db. This is the parent for any new change sets that will be created from the BIM.
-   * @return Returns an empty string if the BIM is in it's initial state (with no change sets), or if it's a standalone briefcase disconnected from the Hub.
+  /**
+   * Get the Id of the last change set that was merged into or created from the Db. This is the parent for any new change sets that will be created from the iModel.
+   * @return Returns an empty string if the iModel is in it's initial state (with no change sets), or if it's a standalone briefcase disconnected from the Hub.
    */
   getParentChangeSetId(): string;
 
-  /* Get the GUID of the BIM file */
+  /* Get the GUID of this iModel */
   getDbGuid(): string;
 
-  /* Set the GUID of the BIM file */
+  /* Set the GUID of this iModel */
   setDbGuid(guid: string): DbResult;
 
   /**
@@ -100,13 +105,17 @@ declare class NodeAddonDgnDb {
    */
   openBriefcaseSync(briefcaseToken: string, changeSetTokens: string): DbResult;
 
-  /** Save any pending changes to this BIM file.  @return non-zero error status if save failed. */
-  saveChanges(): DbResult;
+  /** 
+   * Save any pending changes to this iModel.  
+   * @param description optional description of changes
+   * @return non-zero error status if save failed. 
+   */
+  saveChanges(description?: string): DbResult;
 
   /**
    * Import an EC schema.
    * There are a number of restrictions when importing schemas into a briefcase. 
-   * When importing into a briefcse, this function will acquire the schema lock. That means that that briefcase must be at the tip of the revision
+   * When importing into a briefcase, this function will acquire the schema lock. That means that that briefcase must be at the tip of the revision
    * history in iModelHub. If not, this function will return SchemaLockFailed.
    * Importing or upgrading a schema into a briefcase must be done in isolation from all other kinds of changes. That means two things:
    * there must be no pending local changes. All local changes must be pushed to iModelHub. This function will return SchemaImportFailed if that is not true.
@@ -124,7 +133,7 @@ declare class NodeAddonDgnDb {
   getElement(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
 
   /**
-   * Get a model's properties
+   * Get the properties of a Model
    * @param opts Identifies the model
    * @param  callback Invoked when the operation completes. The 'result' argument is the model's properties in stringified JSON format.
    */
@@ -145,8 +154,8 @@ declare class NodeAddonDgnDb {
   updateElementSync(elemProps: string): IModelStatus;
 
   /**
-   * Delete an element.
-   * @param elemIdJson The element's ID, in stringified JSON format
+   * Delete an element from this iModel.
+   * @param elemIdJson The element's Id, in stringified JSON format
    * @return non-zero error status if the operation failed.
    */
   deleteElementSync(elemIdJson: string): IModelStatus;
@@ -167,14 +176,14 @@ declare class NodeAddonDgnDb {
 
   /**
    * Delete a model.
-   * @param modelIdJson The model's ID, in stringified JSON format
+   * @param modelIdJson The model's Id, in stringified JSON format
    * @return non-zero error status if the operation failed.
    */
   deleteModelSync(modelIdJson: string): IModelStatus;
 
   /**
    * Format an element's properties, suitable for display to the user.
-   * @param id The element's ID, in stringified JSON format
+   * @param id The element's Id, in stringified JSON format
    * @param callback Invoked when the operation completes. The 'result' argument is an object containing the object's properties, in stringified JSON format.
    */
   getElementPropertiesForDisplay(id: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
@@ -252,7 +261,6 @@ declare class NodeAddonECSqlStatement {
 
 declare class NodeAddonECDb {
     constructor();
-
     createDb(): void;
     openDb(): void;
     IsDbOpen(): void;

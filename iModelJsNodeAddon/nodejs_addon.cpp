@@ -1259,9 +1259,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     Napi::Value SaveChanges(const Napi::CallbackInfo& info)
         {
+        OPTIONAL_ARGUMENT_STRING(0, description);
         REQUIRE_DB_TO_BE_OPEN_SYNC
         RETURN_IF_HAD_EXCEPTION_SYNC
-        auto stat = GetDgnDb().SaveChanges();
+        auto stat = GetDgnDb().SaveChanges(description);
         return Napi::Number::New(Env(), (int)stat);
         }
 

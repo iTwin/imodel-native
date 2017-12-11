@@ -19,13 +19,13 @@ imodeljs-backend does have a package dependency on imodeljs-nodeaddonapi and is 
 
 # iModelJsNodeAddon
 
-The addon and its api are not in git. The code for the addon and the declaration of the api are in the hg repository called iModelJsNodeAddon. The addon is built by BentleyBuild. 
+The addon and its api are not in git. The code for the addon and the declaration of the api are in a Mercurial (hg) repository called iModelJsNodeAddon. The addon is built by BentleyBuild. 
 
 The addon and api packages are generated. See the iModelJsNodeAddon::MakePackages part.
 
 The generated addon and api packages are published by PRG using BentleyBuild.
 
-The addon api is defined by imodeljs-nodeaddonapi.d.ts. When you write addon code, you define JS classes and methods using the native node_addon_api. You must also declare the classes and methods in the imodeljs-nodeaddonapi.d.ts file. Yes, you must define the API twice -- once in native code and again in the d.ts file -- there is nothing to make this automatic or to check consistency -- you must do this manually.
+The addon api is defined by imodeljs-nodeaddonapi.d.ts. When you write addon code, you define JavaScript classes and methods using the native node_addon_api. You must also declare the classes and methods in the imodeljs-nodeaddonapi.d.ts file. Yes, you must define the API twice -- once in native code and again in the d.ts file -- there is nothing to make this automatic or to check consistency -- you must do this manually.
 
 imodeljs-nodeaddonapi.d.ts contains the (internal) documentation for the addon. This README file is also part of the addon api package, and it contains these build instructions.
 
@@ -33,22 +33,19 @@ The package version number for the addon and its api are stored in the file iMod
 
 # Changing and Publishing the Addon
 
-**Key point:** The addon packages and the api package must all be published with the same version number. 
+**Key point:** The addon packages and the api package must all be published with the same version number.
+
 **Key point:** The addon and imodeljs-nodeaddonapi.d.ts must be in sync.
 
 ## Build
 
 You can build the addon like this:
 
-`bb -siModelJsNodeAddon b`
-
-If you are making changes to the libraries that are used by the addon, such as DgnPlatform.dll, then you must add BuildAll to your build strategy, in order to build and link with your local build, rather than with LKGs, like this:
-
 `bb -s"iModelJsNodeAddon;BuildAll" b`
 
 To force a rebuild of individual parts, do this:
 
-`bb "iModelJsNodeAddon;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
+`bb -s"iModelJsNodeAddon;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
 
 ## Version
 
@@ -94,7 +91,7 @@ This example is for a windows build. Use whatever package names are displayed by
 
 When you bb build the MakePackages part,
 
-`bb -siModelJsNodeAddon re MakePackages`
+`bb -s"iModelJsNodeAddon;BuildAll" re MakePackages`
 
 That will print publishing instructions. For example:
 
@@ -113,7 +110,9 @@ PRG must ensure that there is a version of the addon for each platform for a giv
 ## Package Dependencies
 
 **Key point:** imodeljs-backend must depend on a specific minor version of the api.
+
 **Key point:** The minor version of imodeljs-backend must advance with the minor version of the api that it uses.
+
 **Key point:** Apps must depend on a specific minor version of imodeljs-backend.
 
 imodeljs-backend requires that apps deliver a compatible version of the addon. That means that, if imodeljs-backend moves up to a newer minor version of the api, then apps must move up to a newer version of the addon ... if they want to use the newer backend. 
