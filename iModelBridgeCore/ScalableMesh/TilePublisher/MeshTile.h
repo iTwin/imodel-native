@@ -159,7 +159,7 @@ enum class TileSource
     None,       //!< No IDs are associated with geometry in the tile
 };
 
-//#ifndef VANCOUVER_API
+#ifndef VANCOUVER_API
 //=======================================================================================
 //! A stream of bytes in a resizeable buffer. Released on destruction, never gets smaller.
 //! This class is more efficient than bvector<byte> since it does not initialize the memory to zeros.
@@ -239,7 +239,7 @@ struct ByteStream
         uint8_t const& operator[](size_t i) const { return data()[i]; }
         uint8_t& operator[](size_t i) { return data()[i]; }
     };
-//#endif
+#endif
 
 //=======================================================================================
 //! An uncompressed image in Rgb (3 bytes per pixel) or Rgba (4 bytes per pixel) format suitable for rendering.

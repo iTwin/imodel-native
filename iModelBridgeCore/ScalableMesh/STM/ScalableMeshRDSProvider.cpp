@@ -217,7 +217,6 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         CallStatus status = APIERR_SUCCESS;
         WString buddiUrl;
         UINT32 bufLen;
-        CallStatus status = APIERR_SUCCESS;
 
         CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
         wchar_t* buffer;
