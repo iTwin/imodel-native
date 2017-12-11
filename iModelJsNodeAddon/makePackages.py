@@ -28,8 +28,7 @@ def publishPackage(packagedir, doPublish, tag):
     if not doPublish:
         return;
 
-    if 0 != os.system(pubcmd):
-        exit(1);
+    os.system(pubcmd);
 
 # Replace ${macros} with values in specified file
 def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSION = None, DECL_FILE_NAME = None, NODE_ENGINES = None):
@@ -197,9 +196,9 @@ if __name__ == '__main__':
     packageVersionFileName = sys.argv[5]
     sourceDir = sys.argv[6]
     doPublish = (sys.argv[7].lower() == 'publish');
-    tag = None
-    if len(sys.argv) > 8:
-        tag = sys.argv[8];
+
+    # TBD: Pass a tag in or read it from a special file? How to prevent stale tags values?
+    tag = None;
 
     if outdirParent.endswith ('/') or outdirParent.endswith ('\\'):
         outdirParent = outdirParent[0:len(outdirParent)-1]
