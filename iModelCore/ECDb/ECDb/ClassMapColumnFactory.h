@@ -52,7 +52,7 @@ struct ColumnMaps
         void Debug() const
             {
             for (auto const& map : m_maps)
-                printf("[AccessSring=%s] [Column=%s]\n", map.first, map.second->GetName().c_str());
+                printf("[AccessString=%s] [Column=%s]\n", map.first, map.second->GetName().c_str());
             }
     };
 

@@ -662,9 +662,9 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithComplexProps)
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithComplexProps.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithPointProp.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?> 
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
             <ECEntityClass typeName="POI">
@@ -739,6 +739,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithComplexProps)
 
     //Changeset 1
     Utf8String summary1IdStr = changeSummary1Key.GetInstanceId().ToString();
+
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location": {"x":100.0, "y":100.0}},
                                                  {"id":"%s", "Name":"Station", "Location": {"x":200.0, "y":200.0}},
                                                  {"id":"%s", "Name":"Castle", "Location": {"x":300.0, "y":300.0}}])json", 
@@ -750,21 +751,249 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithComplexProps)
 
 
     //Changeset 2
+
+    //insert
+
     Utf8String summary2IdStr = changeSummary2Key.GetInstanceId().ToString();
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Lake", "Location":{"x": 400.0, "y":400.0}}])json", lakeIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location":{"x": 100.0, "y":0.0}}])json", hallIdStr.c_str())),
+
+    //update where only one component has changed
+
+    //before update:
+
+    //test with plain ECSQL to avoid JSON adapter processing.
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    EXPECT_STREQ("City Hall", stmt.GetValueText(1)) << stmt.GetECSql();
+    EXPECT_DOUBLE_EQ(100.0, stmt.GetValueDouble(2)) << stmt.GetECSql();
+    EXPECT_DOUBLE_EQ(100.0, stmt.GetValueDouble(3)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql();
+    stmt.Finalize();
+
+    //now with JSON adapter
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location":{"x": 100.0, "y":100.0}}])json", hallIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location.X":100.0}])json", hallIdStr.c_str())),
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Location.X":100.0, "Location.Y":100.0}])json", hallIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
-    //This doesn't seem correct: It should return Location.Y=100 and not 0/null 
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location":{"x": 150.0, "y":0.0}}])json", hallIdStr.c_str())),
+    
+
+    //after update:
+
+    //test with plain ECSQL to avoid JSON adapter processing.
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    EXPECT_STREQ("County Hall", stmt.GetValueText(1)) << stmt.GetECSql();
+    EXPECT_DOUBLE_EQ(150.0, stmt.GetValueDouble(2)) << stmt.GetECSql();
+    EXPECT_DOUBLE_EQ(100.0, stmt.GetValueDouble(3)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql();
+    stmt.Finalize();
+
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location":{"x": 150.0, "y":100.0}}])json", hallIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
-    //This doesn't seem correct: It should return Location.Y=100 and not 0/null 
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location.X":150.0}])json", hallIdStr.c_str())),
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"County Hall", "Location.X":150.0, "Location.Y":100.0}])json", hallIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location.X,Location.Y FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    
+    //delete
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Station", "Location":{"x": 200.0, "y":200.0}}])json", stationIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Location FROM ts.POI.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithStructProp.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECStructClass typeName="Location" modifier="Sealed">
+                <ECProperty propertyName="City" typeName="string" />
+                <ECProperty propertyName="Zip" typeName="int" />
+            </ECStructClass>
+            <ECEntityClass typeName="POI" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECStructProperty propertyName="Address" typeName="Location" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey hallKey, stationKey, castleKey;
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Address.City,Address.Zip) VALUES(?,?,?)"));
+
+    //Changeset 1
+    //Entry with intentionally wrong values which gets fixed in subsequent changesets
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Cty Hll", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, "Lndn", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, 10001));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(hallKey));
+    insertStmt.ClearBindings();
+    insertStmt.Reset();
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Station", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, "Paris", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, 20000));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(stationKey));
+    insertStmt.ClearBindings();
+    insertStmt.Reset();
+
+    ASSERT_TRUE(tracker.HasChanges());
+    TestChangeSet changeset1;
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1));
+
+    //Changeset 2
+    tracker.Restart();
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Castle", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, "Heidelberg", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, 30000));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(castleKey));
+    insertStmt.ClearBindings();
+    insertStmt.Reset();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.POI WHERE Name='Station'"));
+    //fix Name and Location.Zip of Hall entry
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.POI SET Name='City Hall', Address.Zip=10000 WHERE Name='Cty Hll'"));
+    ASSERT_TRUE(tracker.HasChanges());
+    TestChangeSet changeset2;
+    ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
+    //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary2Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2));
+
+    //Changeset 3
+    tracker.Restart();
+    //fix location name of Hall
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.POI SET Address.City='London' WHERE Address.City='Lndn'"));
+    ASSERT_TRUE(tracker.HasChanges());
+    TestChangeSet changeset3;
+    ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
+    //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary3Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3));
+    tracker.EndTracking();
+
+    Utf8String hallIdStr = hallKey.GetInstanceId().ToHexStr();
+    Utf8String stationIdStr = stationKey.GetInstanceId().ToHexStr();
+    Utf8String castleIdStr = castleKey.GetInstanceId().ToHexStr();
+
+    //Current state
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address": {"City": "London", "Zip":10000}},
+                                                 {"id":"%s", "Name":"Castle", "Address": {"City": "Heidelberg", "Zip":30000}}])json",
+                                         hallIdStr.c_str(), castleIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,Name,Address FROM ts.POI"));
+
+    //Changeset 1
+    Utf8String summary1IdStr = changeSummary1Key.GetInstanceId().ToString();
+
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Cty Hll", "Address": {"City": "Lndn", "Zip":10001}},
+                                                 {"id":"%s", "Name":"Station", "Address": {"City": "Paris", "Zip":20000}}])json",
+                                         hallIdStr.c_str(), stationIdStr.c_str(), castleIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterInsert')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary1IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeDelete')", summary1IdStr.c_str()).c_str()));
+
+
+    //Changeset 2
+
+    //insert
+
+    Utf8String summary2IdStr = changeSummary2Key.GetInstanceId().ToString();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Castle", "Address":{"City": "Heidelberg", "Zip":30000}}])json", castleIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterInsert')", summary2IdStr.c_str()).c_str()));
+
+    //update where only one component has changed
+
+    //before update:
+
+    //test with plain ECSQL to avoid JSON adapter processing.
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    EXPECT_STREQ("Cty Hll", stmt.GetValueText(1)) << stmt.GetECSql();
+    EXPECT_STREQ("London", stmt.GetValueText(2)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    EXPECT_EQ(10001, stmt.GetValueInt(3)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql();
+    stmt.Finalize();
+
+    //now with JSON adapter
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Cty Hll", "Address":{"City": "London", "Zip":10001}}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Cty Hll", "Address.City":"London", "Address.Zip":10001}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+
+
+    //after update:
+
+    //test with plain ECSQL to avoid JSON adapter processing.
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    EXPECT_STREQ("City Hall", stmt.GetValueText(1)) << stmt.GetECSql();
+    EXPECT_STREQ("London", stmt.GetValueText(2)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    EXPECT_EQ(10000, stmt.GetValueInt(3)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql();
+    stmt.Finalize();
+
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address":{"City": "London", "Zip":10000}}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address.City":"London", "Address.Zip":10000}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+
+    //delete
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Station", "Address":{"City": "Paris", "Zip":20000}}])json", stationIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeDelete')", summary2IdStr.c_str()).c_str()));
+
+    //Changeset 3
+
+    Utf8String summary3IdStr = changeSummary3Key.GetInstanceId().ToString();
+
+    //before update:
+
+    //test with plain ECSQL to avoid JSON adapter processing.
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    EXPECT_STREQ("City Hall", stmt.GetValueText(1)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    EXPECT_STREQ("Lndn", stmt.GetValueText(2)) << stmt.GetECSql();
+    EXPECT_EQ(10000, stmt.GetValueInt(3)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql();
+    stmt.Finalize();
+
+    //now with JSON adapter
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address":{"City": "Lndn", "Zip":10000}}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address.City":"Lndn", "Address.Zip":10000}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'BeforeUpdate')", summary3IdStr.c_str()).c_str()));
+
+
+    //after update:
+
+    //test with plain ECSQL to avoid JSON adapter processing.
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(hallKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    EXPECT_STREQ("City Hall", stmt.GetValueText(1)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    EXPECT_STREQ("London", stmt.GetValueText(2)) << stmt.GetECSql();
+    EXPECT_EQ(10000, stmt.GetValueInt(3)) << "Expected to be unchanged and therefore current value must be returned. " << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for " << stmt.GetECSql();
+    stmt.Finalize();
+
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address":{"City": "London", "Zip":10000}}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address.City":"London", "Address.Zip":10000}])json", hallIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()));
     }
 
 //---------------------------------------------------------------------------------------
