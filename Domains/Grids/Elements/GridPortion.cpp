@@ -343,8 +343,24 @@ bool createDimensions
         DPlane3d planeLast;
         for (CurveVectorPtr gridPlaneGeom : surfaces)
             {
-            GridPlanarSurfacePtr gridPlane = GridPlanarSurface::Create (*subModel, gridAxis, gridPlaneGeom);
-            BuildingLocks_LockElementForOperation (*gridPlane, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
+            Transform localToWorld, worldToLocal;
+            DRange3d range;
+            gridPlaneGeom->IsPlanar (localToWorld, worldToLocal, range);
+            DPlane3d geomPlane;
+            bsiTransform_getOriginAndVectors (&localToWorld, &geomPlane.origin, NULL, NULL, &geomPlane.normal);
+
+            if (!DoubleOps::AlmostEqualFraction (abs (geomPlane.normal.z), 1.0))
+                return BentleyStatus::ERROR;   //if the Z direction is not 1, fail
+
+            double elevation = geomPlane.origin.z;
+
+            Transform negatedElev = Transform::From(0.0, 0.0, -elevation);
+
+            CurveVectorPtr surface = gridPlaneGeom->Clone (negatedElev);
+
+            ElevationGridSurface::CreateParams params (*subModel, gridAxis, *surface, elevation);
+            ElevationGridSurfacePtr gridPlane = ElevationGridSurface::Create (params);
+            BuildingLocks_LockElementForOperation (*gridPlane, BeSQLite::DbOpcode::Insert, "Inserting ElevationSurface");
             gridPlane->Insert ();
             DPlane3d planeThis;
             planeThis = gridPlane->GetPlane ();

@@ -222,8 +222,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
 
             //! Creates create parameters for elevation grid
             //! @param[in] model              model for the PlanCartesianGridSurface
-            CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId gridAxisId, CurveVectorR surface, double elevation) :
-                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxisId)
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, CurveVectorR surface, double elevation) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId())
                 {
                 m_elevation = elevation;
                 m_surface = &surface;

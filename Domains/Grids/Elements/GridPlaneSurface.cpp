@@ -345,9 +345,12 @@ CreateParams const& params
 ElevationGridSurface::ElevationGridSurface
 (
 CreateParams const& params
-) : T_Super(params, params.m_surface)
+) : T_Super(params, params.m_surface.IsValid() ? params.m_surface->Clone (Transform::From(0.0, 0.0, params.m_elevation)) : params.m_surface)
     {
-
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetElevation (params.m_elevation);
+        }
     }
 
 
