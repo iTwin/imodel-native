@@ -929,9 +929,6 @@
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
         <RequiredRepository>BeGTest</RequiredRepository>
-        <RequiredRepository>BeTestAndroid</RequiredRepository>
-        <RequiredRepository>BeTestiOS</RequiredRepository>
-        <RequiredRepository>BeTestWinRT</RequiredRepository>
         <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
 
         <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />

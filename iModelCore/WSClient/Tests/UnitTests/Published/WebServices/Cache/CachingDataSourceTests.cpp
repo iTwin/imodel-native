@@ -3504,6 +3504,9 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataNetworkErrorsBackgroundSync_D
     EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, backgroundSyncResult.GetValue());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataNotModifiedBackgroundSync_DoesNotSyncInBackground)
     {
     auto ds = GetTestDataSourceV1();
