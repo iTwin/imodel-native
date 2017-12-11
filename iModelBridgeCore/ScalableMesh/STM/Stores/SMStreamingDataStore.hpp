@@ -1458,7 +1458,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                 m_transform.Multiply(center, center);
                 
                 RotMatrix rotationScale = RotMatrix::From(m_transform);
-                rotationScale.productOf(&rotationScale, &halfAxes);
+                rotationScale.InitProduct(rotationScale, halfAxes);
                 
                 auto transform = Transform::From(rotationScale, center);
                 corners.push_back(DPoint3d::From(-1.0, -1.0, -1.0));
@@ -1503,8 +1503,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                     m_transform.Multiply(center, center);
                     
                     RotMatrix rotationScale = RotMatrix::From(m_transform);
-                    rotationScale.productOf(&rotationScale, &halfAxes);
-                    
+                    rotationScale.InitProduct(rotationScale, halfAxes);
+
                     auto transform = Transform::From(rotationScale, center);
                     corners.push_back(DPoint3d::From(-1.0, -1.0, -1.0));
                     corners.push_back(DPoint3d::From(-1.0, -1.0, 1.0));
