@@ -292,7 +292,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
                                 ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
 
     viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql()).Append(" ON ").AppendEscaped(viewName);
-    viewSql.Append("." ECDBSYS_PROP_ECInstanceId "=" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId
+    viewSql.Append("." ECDBSYS_PROP_ECInstanceId "=" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceId
                    " WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
     viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
 

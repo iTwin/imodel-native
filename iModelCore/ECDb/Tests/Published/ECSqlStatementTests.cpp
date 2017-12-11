@@ -3993,8 +3993,7 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
 
     ECDbIssue lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.IsIssue()) << "After preparing invalid ECSQL.";
-    Utf8String actualLastStatusMessage = lastIssue.GetMessage();
-    ASSERT_STREQ(actualLastStatusMessage.c_str(), "Invalid ECClass expression 'blablabla'. ECClasses must always be fully qualified in ECSQL: <schema name or prefix>.<class name>");
+    ASSERT_STREQ("Invalid ECSQL class expression: Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", lastIssue.GetMessage());
 
     stmt.Finalize();
     ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "After successful call to Finalize";

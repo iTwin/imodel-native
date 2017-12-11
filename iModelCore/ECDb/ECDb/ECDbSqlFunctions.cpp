@@ -123,7 +123,6 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     DbValue const& fallbackValue = args[3];
 
-
     Utf8CP ecsql = nullptr;
     if (state == ChangedValueState::BeforeUpdate || state == ChangedValueState::BeforeDelete)
         ecsql = "SELECT RawOldValue, TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
