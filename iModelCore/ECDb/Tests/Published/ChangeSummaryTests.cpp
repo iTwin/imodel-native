@@ -948,6 +948,43 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
     {
+  /*  std::map<Utf8String, SchemaItem> testSchemas;
+    testSchemas["no shared cols, no joined table"] = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECStructClass typeName="Location" modifier="Sealed">
+                <ECProperty propertyName="City" typeName="string" />
+                <ECProperty propertyName="Zip" typeName="int" />
+            </ECStructClass>
+            <ECEntityClass typeName="POI" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECStructProperty propertyName="Address" typeName="Location" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    testSchemas["no shared cols, joined table"] = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECStructClass typeName="Location" modifier="Sealed">
+                <ECProperty propertyName="City" typeName="string" />
+                <ECProperty propertyName="Zip" typeName="int" />
+            </ECStructClass>
+            <ECEntityClass typeName="Base" modifier="None">
+                  <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECStructProperty propertyName="Address" typeName="Location" />
+            </ECEntityClass>
+            <ECEntityClass typeName="POI" modifier="None">
+                <ECStructProperty propertyName="Address" typeName="Location" />
+            </ECEntityClass>
+        </ECSchema>)xml");*/
+
     ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithStructProp.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?> 
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
@@ -1135,6 +1172,152 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"City Hall", "Address.City":"London", "Address.Zip":10000}])json", hallIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Address.City,Address.Zip FROM ts.POI.Changes(%s,'AfterUpdate')", summary3IdStr.c_str()).c_str()));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavProp.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Parent" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                            <OnDeleteAction>Cascade</OnDeleteAction>
+                        </ForeignKeyConstraint>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="embedding">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                    <Class class="Child" />
+                </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
+    TestChangeTracker tracker(m_ecdb);
+
+    ECInstanceKey parentKey, child1Key, child2Key;
+
+    //changeset 1
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
+    Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(child1Key, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id) VALUES('Child 1',%s)", parentIdStr.c_str()).c_str()));
+    Utf8String child1IdStr = child1Key.GetInstanceId().ToHexStr();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(child2Key, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id) VALUES('Child 2',%s)", parentIdStr.c_str()).c_str()));
+    Utf8String child2IdStr = child2Key.GetInstanceId().ToHexStr();
+
+    TestChangeSet changeset1;
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1));
+
+
+    //changeset 2
+    tracker.Restart();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql(Utf8PrintfString("UPDATE ts.Child SET Parent.Id=NULL WHERE ECInstanceId=%s", child1IdStr.c_str()).c_str()));
+    TestChangeSet changeset2;
+    ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
+    //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary2Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2));
+
+    //changeset 3
+    tracker.Restart();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Parent"));
+    TestChangeSet changeset3;
+    ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
+    //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummary3Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3));
+    tracker.EndTracking();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    //Verify current state
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Parent")) << "expected to be deleted in changeset 3";
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", child1IdStr.c_str())), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Child"))
+        << "1 left, other cascade deleted in changeset 3";
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT ECInstanceId FROM ts.Rel")) << "1 left, other cascade deleted in changeset 3";
+
+    //Verify change set 1
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId, Name, Parent FROM ts.Child.Changes(%s,'AfterInsert') ORDER BY Name", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json", 
+                                         parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert') ORDER BY TargetECInstanceId", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
+
+    //Verify change set 2
+    //after insert
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+
+    //before update 
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+        << "Expected: Parent before being nulled out; Name is unchanged -> current value";
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+        << "Nav prop was updated to null which means the rel was deleted and not updated";
+
+    //after update 
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1"}])json", child1IdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+        << "Expected: Parent being nulled out; Name is unchanged -> current value";
+
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
+        << "Nav prop was updated to null which means the rel was deleted and not updated";
+
+    //before delete
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
+
+    //Verify change set 3
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterInsert')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Rel.Changes(%s,'AfterUpdate')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", child2IdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Child.Changes(%s,'BeforeDelete')", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"}])json", parentIdStr.c_str(), child2IdStr.c_str())),
+              GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeDelete') ORDER BY TargetECInstanceId", changeSummary3Key.GetInstanceId().ToString().c_str()).c_str()));
+
     }
 
 //---------------------------------------------------------------------------------------
