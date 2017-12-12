@@ -119,6 +119,9 @@ Utf8String RangeHeaderValue::ToString() const
     return Utf8PrintfString("bytes=%" PRIu64 "-%" PRIu64, m_from, m_to);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ContentRangeHeaderValue::Parse(Utf8CP stringValue, ContentRangeHeaderValue& valueOut)
     {
     if (nullptr == stringValue)
@@ -178,7 +181,7 @@ Utf8String ContentRangeHeaderValue::ToString() const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2013
+* @bsimethod                                                    Vincas.Razma    10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus AuthenticationChallengeValue::Parse(Utf8CP stringValue, AuthenticationChallengeValue& valueOut)
     {
@@ -205,9 +208,15 @@ BentleyStatus AuthenticationChallengeValue::Parse(Utf8CP stringValue, Authentica
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2013
+* @bsimethod                                                    Vincas.Razma    10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String AuthenticationChallengeValue::ToString() const
     {
-    return "";
+    if (m_realm.empty())
+        return m_type;
+
+    if (m_type.empty())
+        return "";
+
+    return Utf8PrintfString("%s realm=\"%s\"", m_type.c_str(), m_realm.c_str());
     }

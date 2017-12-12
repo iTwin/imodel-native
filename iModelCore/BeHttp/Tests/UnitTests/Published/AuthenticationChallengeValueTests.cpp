@@ -78,3 +78,39 @@ TEST_F(AuthenticationChallengeValueTests, Parse_TypeAndRealm_TypeAndRealmSet)
     EXPECT_EQ("SomeType", value.GetType());
     EXPECT_EQ("Test realm here.", value.GetRealm());
     }
+
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AuthenticationChallengeValueTests, ToString_Default_Empty)
+    {
+    AuthenticationChallengeValue value;
+    EXPECT_EQ("", value.ToString());
+    }
+
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AuthenticationChallengeValueTests, ToString_TypeOnly_TypeReturned)
+    {
+    AuthenticationChallengeValue value("SomeType", "");
+    EXPECT_EQ("SomeType", value.ToString());
+    }
+
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AuthenticationChallengeValueTests, ToString_RealmOnly_EmptyReturnedForError)
+    {
+    AuthenticationChallengeValue value("", "TestRealm");
+    EXPECT_EQ("", value.ToString());
+    }
+
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AuthenticationChallengeValueTests, ToString_TypeAndRealm_FullFormatReturned)
+    {
+    AuthenticationChallengeValue value("SomeType", "Test realm here.");
+    EXPECT_EQ("SomeType realm=\"Test realm here.\"", value.ToString());
+    }
