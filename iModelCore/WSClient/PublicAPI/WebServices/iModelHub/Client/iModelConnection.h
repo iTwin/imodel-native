@@ -363,8 +363,8 @@ private:
 
     //! Initializes the changeSet.
     StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, 
-                                      bool relinquishCodesLocks, ICancellationTokenPtr cancellationToken,
-                                      IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None) const;
+                                      bool relinquishCodesLocks, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
+                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
     // Wait while bim file is initialized
     void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult, ICancellationTokenPtr cancellationToken = nullptr) const;

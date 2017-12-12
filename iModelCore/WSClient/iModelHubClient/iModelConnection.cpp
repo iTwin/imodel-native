@@ -2398,12 +2398,12 @@ bool                containsSchemaChanges
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::Push
 (
-Dgn::DgnRevisionPtr                changeSet,
-Dgn::DgnDbCR                       dgndb,
-bool                               relinquishCodesLocks,
-Http::Request::ProgressCallbackCR  callback,
-IBriefcaseManager::ResponseOptions options,
-ICancellationTokenPtr              cancellationToken
+Dgn::DgnRevisionPtr                 changeSet,
+Dgn::DgnDbCR                        dgndb,
+bool                                relinquishCodesLocks,
+Http::Request::ProgressCallbackCR   callback,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::Push";
@@ -2452,7 +2452,7 @@ ICancellationTokenPtr              cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken, options)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken)
                         ->Then([=](StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2482,7 +2482,7 @@ ICancellationTokenPtr              cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken, options)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken)
                         ->Then([=](StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2546,13 +2546,13 @@ FileTaskPtr iModelConnection::GetLatestSeedFile(ICancellationTokenPtr cancellati
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::InitializeChangeSet
 (
-Dgn::DgnRevisionPtr                changeSet,
-Dgn::DgnDbCR                       dgndb,
-JsonValueR                         pushJson,
-ObjectId                           changeSetObjectId,
-bool                               relinquishCodesLocks,
-ICancellationTokenPtr              cancellationToken,
-IBriefcaseManager::ResponseOptions options
+Dgn::DgnRevisionPtr                 changeSet,
+Dgn::DgnDbCR                        dgndb,
+JsonValueR                          pushJson,
+ObjectId                            changeSetObjectId,
+bool                                relinquishCodesLocks,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();

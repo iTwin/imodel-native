@@ -125,6 +125,16 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets, ICancellationTokenP
     return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(mergeStatus));
     }
 
+//TODO: remove. Now is used because an added options parameter to Push method breaks API.
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Gintare.Grazulyte             12/2017
+//---------------------------------------------------------------------------------------
+StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR uploadCallback, 
+                              ICancellationTokenPtr cancellationToken) const
+    {
+    Push(description, relinquishCodesLocks, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
@@ -270,6 +280,18 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
 
     }
 
+//TODO: remove. Now method is used because an added options parameter to PullMergeAndPush  method breaks API.
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Gintare.Grazulyte             12/2017
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
+                                              Http::Request::ProgressCallbackCR uploadCallback,
+                                              ICancellationTokenPtr cancellationToken,
+                                              int attemptsCount)
+    {
+    PullMergeAndPush(description, relinquishCodesLocks, downloadCallback, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, attemptsCount);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
@@ -407,7 +429,7 @@ int delay
         }
 
     m_lastPullMergeAndPushEvent = Event::EventType::UnknownEventType;
-    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, attemptsCount,
+    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, attemptsCount,
                                     attempt + 1, 0);
     }
 
