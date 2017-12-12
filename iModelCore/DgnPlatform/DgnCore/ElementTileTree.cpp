@@ -719,11 +719,14 @@ END_UNNAMED_NAMESPACE
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys)
     {
-#if !defined(DISABLE_PARTIAL_TILES)
+#if defined(DISABLE_PARTIAL_TILES)
+    if (nullptr != loads)
+        loads->ClearPartialTimeout();
+#else
     // We only create partial tiles for the 'root' tiles (the top-most displayable tiles) because they are the first tiles we generate for an empty view,
     // and can always be substituted while higher-resolution child tiles are being (fully) generated.
-    if (!tile.IsParentDisplayable() && nullptr != loads && loads->HasDeadline())
-        m_collectionDeadline = loads->GetDeadline();
+    if (nullptr != loads && loads->HasPartialTimeout() && tile.IsParentDisplayable())
+        loads->ClearPartialTimeout();
 #endif
     }
 
@@ -1115,7 +1118,6 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
 TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
-bool Loader::IsPastCollectionDeadline() const { return m_collectionDeadline.IsValid() && m_collectionDeadline.IsInPast(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
@@ -2513,15 +2515,19 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
         return SelectParent::No;
         }
 
-    // Ensure partial root tiles are completed before generating child tiles...
     // NB: We don't mark the partial tiles as 'ready'...wait until they are complete.
-    if (_IsPartial())
+    bool isPartial = _IsPartial();
+    if (isPartial)
         {
-        args.InsertMissing(*this);
-        if (_HasGraphics())
-            selected.push_back(this);
+        if (!_HasGraphics())
+            {
+            // Ensure we at least partially load this tile before children
+            args.InsertMissing(*this);
+            return SelectParent::No;
+            }
 
-        return SelectParent::No;
+        // We have enough graphics to draw *something* - follow normal logic.
+        // If this tile is appropriate for view will be enqueued for further refinement; otherwise we will skip to higher-resolution children.
         }
 
     bool tooCoarse = Visibility::TooCoarse == vis;
@@ -2579,7 +2585,7 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
 
 #define REQUIRE_ALL_CHILDREN_LOADED
 #if defined(REQUIRE_ALL_CHILDREN_LOADED)
-    if (ready)
+    if (ready || isPartial)
         {
         if (_HasGraphics())
             selected.push_back(this);

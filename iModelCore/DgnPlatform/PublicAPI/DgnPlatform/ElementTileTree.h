@@ -48,8 +48,6 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
-    BeTimePoint m_collectionDeadline;
-
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
     folly::Future<BentleyStatus> _GetFromSource() override;
@@ -64,9 +62,6 @@ private:
     TileR GetElementTile();
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
-
-    bool IsPastCollectionDeadline() const;
-    bool WantPartialTiles() const { return m_collectionDeadline.IsValid(); }
 };
 
 //=======================================================================================
@@ -76,13 +71,18 @@ struct LoadContext
 {
 private:
     LoaderCP    m_loader;
+    BeTimePoint m_deadline;
 public:
-    explicit LoadContext(LoaderCP loader) : m_loader(loader) { }
+    explicit LoadContext(LoaderCP loader) : m_loader(loader)
+        {
+        if (nullptr != loader && loader->WantPartialTiles() && loader->HasPartialTimeout())
+            m_deadline = BeTimePoint::Now() + loader->GetPartialTimeout();
+        }
 
     bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
     Dgn::Render::SystemP GetRenderSystem() const {return m_loader->GetRenderSystem();}
-    bool IsPastCollectionDeadline() const { return nullptr != m_loader && m_loader->IsPastCollectionDeadline(); }
-    bool WantPartialTiles() const { return nullptr != m_loader && m_loader->WantPartialTiles(); }
+    bool IsPastCollectionDeadline() const { return m_deadline.IsValid() && m_deadline.IsInPast(); }
+    bool WantPartialTiles() const { return m_deadline.IsValid(); }
 };
 
 //=======================================================================================
