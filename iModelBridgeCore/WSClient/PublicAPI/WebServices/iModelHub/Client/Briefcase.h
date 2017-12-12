@@ -94,12 +94,22 @@ public:
     //! @param[in] description ChangeSet description.
     //! @param[in] relinquishCodesLocks Delete all currently held locks and codes.
     //! @param[in] uploadCallback Upload progress callback.
-    //! @param[in] options.
+    //! @param[in] options
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error and pushed ChangeSet.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr, 
                                               IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
+                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Send the outgoing ChangeSets.
+    //! @param[in] description ChangeSet description.
+    //! @param[in] relinquishCodesLocks Delete all currently held locks and codes.
+    //! @param[in] uploadCallback Upload progress callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that returns success or an error and pushed ChangeSet.
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
+                                              Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                               ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Pull and merge incomming changeSets.
@@ -114,14 +124,28 @@ public:
     //! @param[in] relinquishCodesLocks Delete all currently held locks and codes.
     //! @param[in] downloadCallback Download progress callback.
     //! @param[in] uploadCallback Upload progress callback.
-    //! @param[in] options.
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
     IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
                                                               Http::Request::ProgressCallbackCR downloadCallback = nullptr,
                                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                                              IBriefcaseManager::ResponseOptions = IBriefcaseManager::ResponseOptions::None,
+                                                              ICancellationTokenPtr cancellationToken = nullptr,
+                                                              int attemptsCount = 1);
+
+    //! Pull and merge incomming ChangeSets and then send the outgoing ChangeSets.
+    //! @param[in] description ChangeSet description.
+    //! @param[in] relinquishCodesLocks Delete all currently held locks and codes.
+    //! @param[in] downloadCallback Download progress callback.
+    //! @param[in] uploadCallback Upload progress callback.
+    //! @param[in] options
+    //! @param[in] cancellationToken
+    //! @param[in] attemptsCount Maximum count of retries if fail.
+    //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
+                                                              Http::Request::ProgressCallbackCR downloadCallback = nullptr,
+                                                              Http::Request::ProgressCallbackCR uploadCallback = nullptr,
+                                                              IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
                                                               ICancellationTokenPtr cancellationToken = nullptr, 
                                                               int attemptsCount = 1);
 
