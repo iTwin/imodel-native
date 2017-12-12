@@ -20,10 +20,10 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="ILinearElementSourceProvidesILinearElements" strength="referencing" modifier="None">
-        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="provided by 1 ILinearElementSource">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="provides">
             <Class class="ILinearElementSource"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="provides N ILinearElements">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is provided by">
             <Class class="ILinearElement"/>
         </Target>
     </ECRelationshipClass>
@@ -44,10 +44,10 @@
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing" modifier="None" description="Relationship indicating the Linear-Element along which concrete instances mixing-in ILInearlyLocated are located.">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is the axis for N linearly-located entities">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="along">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N entities linearly located along 1 linear-element">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is axis along which are linearly located">
             <Class class="ILinearElement"/>
         </Target>
     </ECRelationshipClass>
@@ -79,19 +79,19 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ILinearlyLocatedOwnsAtLocations" strength="embedding" modifier="None" description="Relationship documenting multi-aspect ownership by concrete instances of ILinearlyLocated.">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N LinearlyReferencedLocations">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="is owned by">
             <Class class="LinearlyReferencedAtLocation"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ILinearlyLocatedOwnsFromToLocations" strength="embedding" modifier="None" description="Relationship documenting multi-aspect ownership by concrete instances of ILinearlyLocated.">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N LinearlyReferencedLocations">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="is owned by">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Target>
     </ECRelationshipClass>
@@ -120,26 +120,26 @@
         <ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyReferencedToPositionRefersToReferent" direction="Forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="LinearlyReferencedAtPositionRefersToReferent" strength="referencing" modifier="None" description="Relationship indicating the referent used by a particular linearly-referenced position.">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
             <Class class="LinearlyReferencedAtLocation"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by">
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="LinearlyReferencedFromPositionRefersToReferent" strength="referencing" modifier="None" description="Relationship indicating the referent used by a particular linearly-referenced position.">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by">
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="LinearlyReferencedToPositionRefersToReferent" strength="referencing" modifier="None" description="Relationship indicating the referent used by a particular linearly-referenced position.">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="1 IReferent used to linearly-locate N locations">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="N locations linearly located along 1 IReferent">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by">
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
