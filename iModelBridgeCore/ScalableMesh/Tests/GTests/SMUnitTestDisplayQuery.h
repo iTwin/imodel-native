@@ -33,6 +33,9 @@ class DisplayQueryTester
 
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 
+        void VerifyDisplayNodeFunctions(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes) const;
+        void VerifyCurrentlyViewedNodesFunctions(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes);
+
     public : 
 
         DisplayQueryTester();
