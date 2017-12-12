@@ -25,11 +25,8 @@ void StationRange::Extend(double value)
 //---------------------------------------------------------------------------------------
 void StationRange::Extend(StationRangeCR rhs)
     {
-    if (startStation > rhs.startStation)
-        startStation = rhs.startStation;
-
-    if (endStation < rhs.endStation)
-        endStation = rhs.endStation;
+    Extend(rhs.startStation);
+    Extend(rhs.endStation);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -52,6 +49,9 @@ double StationRange::SignedDistance(double station) const
 //---------------------------------------------------------------------------------------
 StationRangeOverlapDetail StationRange::Overlaps(StationRangeCR rhs) const
     {
+    if (!IsValid() || !rhs.IsValid())
+        return StationRangeOverlapDetail(StationRangeOverlap::InvalidRange);
+
     if (endStation < rhs.startStation)
         return StationRangeOverlapDetail(StationRangeOverlap::IsLeftOf);
     if (endStation == rhs.startStation)
@@ -82,17 +82,13 @@ StationRangeOverlapDetail StationRange::Overlaps(StationRangeCR rhs) const
 
         return StationRangeOverlapDetail(StationRangeOverlap::ContainsInclusive);
         }
-    if (startStation > rhs.startStation)
-        {
-        // RHS starts before
-        if (endStation < rhs.endStation)
-            return StationRangeOverlapDetail(StationRangeOverlap::IsFullyEncapsulatedIn);
-        if (endStation == rhs.endStation)
-            return StationRangeOverlapDetail(StationRangeOverlap::IsRightEncapsulatedIn);
 
-        return StationRangeOverlapDetail(StationRangeOverlap::IsRightOverlapOf);
-        }
+    // startStation > rhs.startStation
+    // RHS starts before
+    if (endStation < rhs.endStation)
+        return StationRangeOverlapDetail(StationRangeOverlap::IsFullyEncapsulatedIn);
+    if (endStation == rhs.endStation)
+        return StationRangeOverlapDetail(StationRangeOverlap::IsRightEncapsulatedIn);
 
-    BeAssert("StationRange::Overlaps - failure");
-    return StationRangeOverlapDetail(StationRangeOverlap::EqualRange);
+    return StationRangeOverlapDetail(StationRangeOverlap::IsRightOverlapOf);
     }

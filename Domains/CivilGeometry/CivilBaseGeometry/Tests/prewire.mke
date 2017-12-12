@@ -6,8 +6,7 @@
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
-baseDir = $(_makeFilePath)
 
-$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(_MakeFilePath)ignore_list.txt
     $(msg)
     $(LinkFirstDepToFirstTarget)

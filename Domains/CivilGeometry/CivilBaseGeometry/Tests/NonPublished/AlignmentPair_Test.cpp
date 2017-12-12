@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../BackDoor/PublicApi/BackDoor/RoadRailAlignment/BackDoor.h"
+#include "../TestHeader.h"
 
 #define ENABLE_SELF_INTERSECT_TEST 0
 #define METERS_TO_ENGLISH_FEET 3.28083989501
@@ -2737,7 +2737,7 @@ void AlignmentPairEditor_VGeometryThrough()
 //---------------------------------------------------------------------------------------
 // @betest                              Alexandre.Gagnon                        10/2016
 //---------------------------------------------------------------------------------------
-TEST_F(RoadRailAlignmentTests, AlignmentPairTests)
+TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     {
     //! AlignmentPair tests
     AlignmentPair_Create();

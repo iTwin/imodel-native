@@ -63,6 +63,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(StationRange)
 //=======================================================================================
 enum class StationRangeOverlap
     {
+    InvalidRange,           //< there is at least 1 invalid range for computation
     IsLeftOf,               //< rhs is after
     IsLeftAdjacentOf,       //< rhs starts where current ends and ends after
     IsRightOf,              //< rhs is before
@@ -120,7 +121,7 @@ public:
     bool ContainsExclusive() const { return StationRangeOverlap::ContainsExclusive == m_overlap; }
     // Current range contains other range
     // this.startStation <= rhs <= this.endStation
-    bool ContainsInclusive() const { return StationRangeOverlap::ContainsInclusive == m_overlap; }
+    bool ContainsInclusive() const { return StationRangeOverlap::ContainsInclusive == m_overlap || StationRangeOverlap::ContainsExclusive == m_overlap; }
 
     // Ranges are equal, or current range fully contains other range including cases where ranges start/end at the same location
     bool IsEqualOrContainsInclusive() const { return IsEqualRange() || ContainsInclusive(); }
@@ -137,13 +138,15 @@ public:
     double endStation;
 
 public:
-    StationRange() : startStation(NAN), endStation(NAN) {}
+    // Creates the object with (reversed) infinite range
+    StationRange() : startStation(DBL_MAX), endStation(-DBL_MAX) {}
     StationRange(double start, double end) : startStation(start), endStation(end) {}
 
     // Should always do comparisons using the appropriate method
     bool operator==(StationRangeCR rhs) const = delete;
 
-    bool IsValid() const { return (!isnan(startStation) && !isnan(endStation) && startStation <= endStation); }
+    bool IsValid() const { return DBL_MAX != startStation && -DBL_MAX != endStation && startStation <= endStation; }
+
     // Returns the Length of the range
     double Length() const { return fabs(endStation - startStation); }
     // Returns the Center of the range
