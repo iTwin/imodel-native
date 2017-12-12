@@ -73,7 +73,7 @@
         <Source multiplicity="(1..*)" roleLabel="refers to" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referred by" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="false">
             <Class class="HorizontalAlignment"/>
         </Target>
     </ECRelationshipClass>
@@ -82,7 +82,7 @@
         <Source multiplicity="(1..*)" roleLabel="refers to main" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="main is referred by" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="main is referenced by" polymorphic="false">
             <Class class="VerticalAlignment"/>
         </Target>
     </ECRelationshipClass>
