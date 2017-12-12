@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
 #include <StructuralDomain/StructuralDomainApi.h>
+#include <FormsDomain/Forms.h>
+#include <FormsDomain/FormsDomainDefinitions.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>
@@ -37,9 +39,6 @@ TEST_F(StructuralDomainTestFixture, EnsureDomainsAreRegistered)
 
     DgnDomainCP structuralPhysical = db->Domains().FindDomain(Structural::StructuralPhysicalDomain::GetDomain().GetDomainName());
     ASSERT_TRUE(NULL != structuralPhysical);
-
-    DgnDomainCP structuralProfiles = db->Domains().FindDomain(Structural::StructuralProfilesDomain::GetDomain().GetDomainName());
-    ASSERT_TRUE(NULL != structuralProfiles);
     }
 
 BE_JSON_NAME(StructuralDomain)
@@ -516,7 +515,7 @@ TEST_F(StructuralDomainTestFixture, SurfaceMemberClassTests)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-#define BUILTUPPROFILE_CODE_VALUE       "BUILTUPPROFILE-001"
+/*#define BUILTUPPROFILE_CODE_VALUE       "BUILTUPPROFILE-001"
 
 TEST_F(StructuralDomainTestFixture, BuiltUpProfileClassTests)
     {
@@ -657,7 +656,7 @@ TEST_F(StructuralDomainTestFixture, BuiltUpProfileComponentUsesConstantProfileTe
 
     ASSERT_TRUE(queriedElement->Update().IsValid());
     }
-
+    */
 
 #define STRUCTURALSUBTRACTION_CODE_VALUE       "STRUCTURALSUBTRACTION-001"
 TEST_F(StructuralDomainTestFixture, StructuralSubtractionClassTests)
@@ -731,8 +730,8 @@ TEST_F(StructuralDomainTestFixture, FormClassTests)
 
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    FormPtr formAspect = Form::Create();
-    Form::SetAspect(*pw, *formAspect); //set aspect to wall
+    Forms::FormPtr formAspect = Forms::Form::Create();
+    Forms::Form::SetAspect(*pw, *formAspect); //set aspect to wall
 
     pw->Insert(&status);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
@@ -813,7 +812,7 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
     }
 
 
-#define PUBLISHEDPROFILE_CODE_VALUE3       "PUBLISHEDPROFILE-003"
+/*#define PUBLISHEDPROFILE_CODE_VALUE3       "PUBLISHEDPROFILE-003"
 TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
     {   
     DgnDbPtr db = OpenDgnDb();
@@ -913,7 +912,7 @@ TEST_F(StructuralDomainTestFixture, PublishedProfileClassAndPropertiesTests)
 
 #define PUBLISHEDPROFILE_CODE_VALUE4       "PUBLISHEDPROFILE-004"
 TEST_F(StructuralDomainTestFixture, CardinalPointsTests)
-{
+    {
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
@@ -1003,4 +1002,4 @@ TEST_F(StructuralDomainTestFixture, CardinalPointsTests)
             DPoint2d point = value.GetPoint2d();
         }
     }
-}
+}*/

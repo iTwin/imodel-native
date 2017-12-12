@@ -11,5 +11,4 @@
 
 #include "StructuralCommon/StructuralCommonApi.h"
 #include "StructuralPhysical/StructuralPhysicalApi.h"
-#include "StructuralProfiles/StructuralProfilesApi.h"
 #include "StructuralDomainUtilities.h"

@@ -14,12 +14,6 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Form" displayLabel="Structural Form Aspect" modifier="none">
-        <BaseClass>bis:ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="MaterialProperties" displayLabel="Material Properties">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="ElasticModulus" typeName="double" description="Modulus of Elasticity" displayLabel="Elastic Modulus" kindOfQuantity="M_PER_L_T2"/>

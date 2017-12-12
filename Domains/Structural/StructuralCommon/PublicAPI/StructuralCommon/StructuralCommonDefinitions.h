@@ -60,5 +60,3 @@
 //-----------------------------------------------------------------------------------------
 STRUCTURAL_POINTER_TYPEDEFS(StructuralPhysicalModel)
 STRUCTURAL_POINTER_TYPEDEFS(StructuralTypeDefinitionModel)
-
-STRUCTURAL_POINTER_TYPEDEFS(Form)

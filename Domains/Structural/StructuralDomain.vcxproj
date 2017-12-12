@@ -23,7 +23,6 @@
     <None Include="Structural.prewire.mke" />
     <None Include="StructuralCommon\StructuralCommon.prewire.mki" />
     <None Include="StructuralPhysical\StructuralPhysical.prewire.mki" />
-    <None Include="StructuralProfiles\StructuralProfiles.prewire.mki" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="StructuralCommon\StructuralCommon.ecschema.xml">
@@ -35,12 +34,8 @@
     <Xml Include="StructuralPhysical\StructuralPhysical.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="StructuralProfiles\StructuralProfiles.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="StructuralCommon\Form.cpp" />
     <ClCompile Include="StructuralCommon\StructuralCommonDomain.cpp" />
     <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp" />
     <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp" />
@@ -63,20 +58,9 @@
     <ClCompile Include="StructuralPhysical\StructuralSubtraction.cpp" />
     <ClCompile Include="StructuralPhysical\SurfaceMember.cpp" />
     <ClCompile Include="StructuralPhysical\Wall.cpp" />
-    <ClCompile Include="StructuralProfiles\BuiltUpProfile.cpp" />
-    <ClCompile Include="StructuralProfiles\BuiltUpProfileComponent.cpp" />
-    <ClCompile Include="StructuralProfiles\ConstantProfile.cpp" />
-    <ClCompile Include="StructuralProfiles\CurvedExtrusion.cpp" />
-    <ClCompile Include="StructuralProfiles\ParametricProfile.cpp" />
-    <ClCompile Include="StructuralProfiles\Profile.cpp" />
-    <ClCompile Include="StructuralProfiles\ProfiledExtrusion.cpp" />
-    <ClCompile Include="StructuralProfiles\PublishedProfile.cpp" />
-    <ClCompile Include="StructuralProfiles\StraightExtrusion.cpp" />
-    <ClCompile Include="StructuralProfiles\StructuralProfilesDomain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\StructuralDomain\StructuralDomainUtilities.h" />
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\Form.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDefinitions.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h" />
@@ -104,18 +88,6 @@
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralSubtraction.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\SurfaceMember.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Wall.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfile.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfileComponent.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ConstantProfile.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\CurvedExtrusion.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ParametricProfile.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Profile.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ProfiledExtrusion.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\PublishedProfile.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StraightExtrusion.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesApi.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDefinitions.h" />
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDomain.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7317B658-8A6E-4A68-857A-2DFA99B98479}</ProjectGuid>

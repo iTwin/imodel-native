@@ -26,9 +26,6 @@
     <Filter Include="StructuralPhysical">
       <UniqueIdentifier>{6646c568-d20a-486b-947a-94209b2db834}</UniqueIdentifier>
     </Filter>
-    <Filter Include="StructuralProfiles">
-      <UniqueIdentifier>{ca75b9d4-4568-4811-bedd-cc4e114d9d7d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Utilities">
       <UniqueIdentifier>{f163d5b0-dfe7-4b74-b751-cb31b378e72f}</UniqueIdentifier>
     </Filter>
@@ -49,9 +46,6 @@
     <None Include="StructuralPhysical\StructuralPhysical.prewire.mki">
       <Filter>Mke</Filter>
     </None>
-    <None Include="StructuralProfiles\StructuralProfiles.prewire.mki">
-      <Filter>Mke</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="StructuralDomains.Partfile.xml">
@@ -61,9 +55,6 @@
       <Filter>Schemas</Filter>
     </Xml>
     <Xml Include="StructuralCommon\StructuralCommon.ecschema.xml">
-      <Filter>Schemas</Filter>
-    </Xml>
-    <Xml Include="StructuralProfiles\StructuralProfiles.ecschema.xml">
       <Filter>Schemas</Filter>
     </Xml>
   </ItemGroup>
@@ -116,27 +107,6 @@
     <ClCompile Include="StructuralPhysical\Wall.cpp">
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
-    <ClCompile Include="StructuralProfiles\StructuralProfilesDomain.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\BuiltUpProfile.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\BuiltUpProfileComponent.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\ConstantProfile.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\ParametricProfile.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\Profile.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\PublishedProfile.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
     <ClCompile Include="StructuralDomainUtilities.cpp">
       <Filter>Utilities</Filter>
     </ClCompile>
@@ -155,18 +125,6 @@
     <ClCompile Include="StructuralPhysical\StructuralAddition.cpp">
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
-    <ClCompile Include="StructuralCommon\Form.cpp">
-      <Filter>StructuralCommon</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\CurvedExtrusion.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\ProfiledExtrusion.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralProfiles\StraightExtrusion.cpp">
-      <Filter>StructuralProfiles</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h">
@@ -183,33 +141,6 @@
     </ClInclude>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralTypeDefinitionModel.h">
       <Filter>StructuralCommon</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesApi.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDefinitions.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StructuralProfilesDomain.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfile.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfileComponent.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ConstantProfile.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ParametricProfile.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\Profile.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\PublishedProfile.h">
-      <Filter>StructuralProfiles</Filter>
     </ClInclude>
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Beam.h">
       <Filter>StructuralPhysical</Filter>
@@ -279,18 +210,6 @@
     </ClInclude>
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralAddition.h">
       <Filter>StructuralPhysical</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\Form.h">
-      <Filter>StructuralCommon</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\CurvedExtrusion.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\ProfiledExtrusion.h">
-      <Filter>StructuralProfiles</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\StraightExtrusion.h">
-      <Filter>StructuralProfiles</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

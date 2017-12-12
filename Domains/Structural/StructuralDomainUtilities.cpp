@@ -59,7 +59,6 @@ DomainHandlerRegisterHelper::DomainHandlerRegisterHelper() : m_registrationStatu
 
     bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralCommonDomain::GetDomain());
     bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralPhysicalDomain::GetDomain());
-    bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralProfilesDomain::GetDomain());
     }
 
 
