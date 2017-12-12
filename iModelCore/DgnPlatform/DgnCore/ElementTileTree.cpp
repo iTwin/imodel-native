@@ -719,25 +719,11 @@ END_UNNAMED_NAMESPACE
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys)
     {
+#if !defined(DISABLE_PARTIAL_TILES)
     // We only create partial tiles for the 'root' tiles (the top-most displayable tiles) because they are the first tiles we generate for an empty view,
     // and can always be substituted while higher-resolution child tiles are being (fully) generated.
-#if !defined(DISABLE_PARTIAL_TILES)
     if (!tile.IsParentDisplayable() && nullptr != loads && loads->HasDeadline())
-        {
-        auto now = BeTimePoint::Now();
-        if (loads->GetDeadline() < now)
-            {
-            // already out of time...
-            m_collectionDeadline = now;
-            }
-        else
-            {
-            // Assume it takes approx the same amount of time to collect geometry as to facet it
-            BeDuration duration = loads->GetDeadline() - now;
-            duration = BeDuration::FromSeconds(duration.ToSeconds() / 2.0);
-            m_collectionDeadline = now + duration;
-            }
-        }
+        m_collectionDeadline = loads->GetDeadline();
 #endif
     }
 
@@ -2340,35 +2326,36 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         }
 
     // Collect geometry from each element, until all elements processed or we run out of time
-    // Note: We assume geometry collection and mesh generation take approximately the same amount of time.
-    // So we will halt geometry collection when we are halfway to the deadline.
-    // We will generate meshes for all geometry collected up to that point. Yes, this may put us over the full deadline, but it's less complicated.
     bool isPartialTile = false;
     TileR tile = GetTile();
     for (/*m_elementIter*/; m_elementCollector.GetEntries().end() != m_elementIter; ++m_elementIter)
         {
+        // Collect geometry from this element
         auto const& entry = *m_elementIter;
         m_tileContext.ProcessElement(entry.second, entry.first);
-        if (loadContext.WasAborted())
-            {
-            m_geometries.clear();
-            break;
-            }
-        else if (m_tileContext.GetGeometryCount() >= m_elementCollector.GetMaxElements())
+        if (m_tileContext.GetGeometryCount() >= m_elementCollector.GetMaxElements())
             {
             BeAssert(!tile.IsLeaf());
             m_tileContext.TruncateGeometryList(m_elementCollector.GetMaxElements());
             break;
             }
-        else if (loadContext.WantPartialTiles() && loadContext.IsPastCollectionDeadline())
-            {
-            isPartialTile = (++m_elementIter) != m_elementCollector.GetEntries().end();
+
+        // Convert this element's geometry to meshes
+        for (auto const& geom : m_geometries)
+            m_meshGenerator.AddMeshes(*geom, true);
+
+        bool aborted = loadContext.WasAborted();
+        isPartialTile = loadContext.WantPartialTiles() && (aborted || loadContext.IsPastCollectionDeadline());
+        if (aborted || isPartialTile)
             break;
-            }
         }
 
-    if (loadContext.WasAborted())
+    // Don't discard our progress if this is a partial tile
+    if (!isPartialTile && loadContext.WasAborted())
+        {
+        m_geometries.clear();
         return Completion::Aborted;
+        }
 
     // Determine whether or not to subdivide this tile
     bool canSkipSubdivision = tile.GetTolerance() <= s_maxLeafTolerance;
@@ -2387,38 +2374,6 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 
     // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;
-    bmap<GeomPartCP, bvector<GeometryCP>> parts;
-    for (auto const& geom : m_geometries)
-        {
-        if (loadContext.WasAborted())
-            return Completion::Aborted;
-
-        auto part = geom->GetPart();
-        if (part.IsNull())
-            {
-            m_meshGenerator.AddMeshes(*geom, true);
-            continue;
-            }
-
-        auto iter = parts.find(part.get());
-        if (parts.end() == iter)
-            iter = parts.Insert(part.get(), bvector<GeometryCP>()).first;
-
-        iter->second.push_back(geom.get());
-        }
-
-    // Facet geometry part instances
-    for (auto& kvp : parts)
-        {
-        if (loadContext.WasAborted())
-            break;
-
-        m_meshGenerator.AddMeshes(*const_cast<GeomPartP>(kvp.first), kvp.second);
-        }
-
-    if (loadContext.WasAborted())
-        return Completion::Aborted;
-
     collection.Meshes() = m_meshGenerator.GetMeshes();
     if (!isPartialTile)
         {

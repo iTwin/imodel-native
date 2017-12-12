@@ -886,11 +886,6 @@ void Root::DrawInView(SceneContextR context)
     DrawArgs args = CreateDrawArgs(context);
     bvector<TileCPtr> selectedTiles = SelectTiles(args);
 
-    std::sort(selectedTiles.begin(), selectedTiles.end(), [&](TileCPtr const& lhs, TileCPtr const& rhs)
-        {
-        return args.ComputeTileDistance(*lhs) < args.ComputeTileDistance(*rhs);
-        });
-
     for (auto const& selectedTile : selectedTiles)
         {
         BeAssert(!selectedTile->IsRegionCulled(args));
