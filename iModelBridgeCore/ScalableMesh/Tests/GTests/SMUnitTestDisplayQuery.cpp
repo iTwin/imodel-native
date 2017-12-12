@@ -300,8 +300,8 @@ void DisplayQueryTester::VerifyDisplayNodeFunctions(bvector<IScalableMeshCachedD
         bvector<bpair<bool, uint64_t>> textureIds;
         
         StatusInt status = node->GetCachedMeshes(cachedMeshes, textureIds);
-
-        ASSERT_EQ(status == SUCCESS, true);
+        
+        ASSERT_EQ(status == SUCCESS || node->GetPointCount() == 0, true);
 
         if (textureIds.size() > 0)
             {
@@ -316,10 +316,13 @@ void DisplayQueryTester::VerifyDisplayNodeFunctions(bvector<IScalableMeshCachedD
                     nbValidTextures++;
                 }
             
-            StatusInt statusGetTextures = node->GetCachedTextures(cachedTextures, textureRequestIds);            
+            if (nbValidTextures > 0)
+                {             
+                StatusInt statusGetTextures = node->GetCachedTextures(cachedTextures, textureRequestIds);
+                ASSERT_EQ(statusGetTextures == SUCCESS, true);                
+                EXPECT_EQ(textureIds.size() == textureRequestIds.size(), true);
+                }                
             
-            ASSERT_EQ(statusGetTextures == SUCCESS, true);
-            EXPECT_EQ(textureIds.size() == textureRequestIds.size(), true);
             EXPECT_EQ(cachedTextures.size() == nbValidTextures, true);           
             }
 
