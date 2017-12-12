@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: CivilBaseGeometry/CivilBaseGeometry.mke $
+#     $Source: CivilBaseGeometry/build/CivilBaseGeometry.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -40,6 +40,10 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 $(o)StationRange$(oext) :           $(appSrc)StationRange.cpp $(appPublicApi)StationRange.h ${MultiCompileDepends}
 
+$(o)AlignmentPair$(oext) :          $(appSrc)AlignmentPair.cpp $(appPublicApi)AlignmentPair.h ${MultiCompileDepends}
+
+$(o)AlignmentPairEditor$(oext) :    $(appSrc)AlignmentPairEditor.cpp $(appPublicApi)AlignmentPairEditor.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 #------------------------------------------------
 # END Compile
@@ -61,5 +65,7 @@ DLM_CREATE_LIB_CONTEXT_LINK     = 1
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+
 
 %include $(sharedMki)LinkLibrary.mki

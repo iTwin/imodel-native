@@ -11,6 +11,8 @@
 #include <Bentley/Bentley.h>
 #include <Geom/GeomApi.h>
 
+#include <DgnPlatform/DgnPlatformApi.h> //&&AG todo remove this dependency
+
 // This Dll is not expected to contain any other dependencies other than GeomLibs and the BentleyApi
 
 #ifdef __CIVILBASEGEOMETRY_BUILD__
@@ -20,10 +22,27 @@
 #endif
 
 /** @namespace BentleyApi::CivilBaseGeometry %CivilBaseGeometry data types */
-#define BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE   BEGIN_BENTLEY_NAMESPACE namespace CivilBaseGeometry {
+#define BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE   BEGIN_BENTLEY_NAMESPACE namespace CivilGeometry {
 #define END_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE     } END_BENTLEY_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_CIVILBASEGEOMETRY   using namespace BENTLEY_NAMESPACE_NAME::CivilBaseGeometry;
+#define USING_NAMESPACE_BENTLEY_CIVILBASEGEOMETRY   using namespace BENTLEY_NAMESPACE_NAME::CivilGeometry;
+
 
 // create the Bentley.CivilBaseGeometry namespace
 BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AlignmentPair)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AlignmentPairEditor)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AlignmentIntersection)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AlignmentIntersectionInfo)
+
+DEFINE_REF_COUNTED_PTR(AlignmentPair)
+DEFINE_REF_COUNTED_PTR(AlignmentPairEditor)
+DEFINE_REF_COUNTED_PTR(AlignmentIntersection)
+
+struct AlignmentPairIntersection;
+DEFINE_REF_COUNTED_PTR(AlignmentPairIntersection)
+
+#define REPLACEMENT_LOG(...)    (void)0
+#define REPLACEMENT_LOGW(...)   (void)0
+
 END_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE

@@ -127,7 +127,8 @@ public:
 };
 
 //=======================================================================================
-//! A StationRange is a context object carrying start and end stations
+// @bsiclass
+// StationRange is an object carrying start and end stations
 //=======================================================================================
 struct StationRange
 {

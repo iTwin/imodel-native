@@ -11,3 +11,5 @@
 #include "CivilBaseGeometry.h"
 
 #include "StationRange.h"
+#include "AlignmentPair.h"
+#include "AlignmentPairEditor.h"
