@@ -996,7 +996,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     {
-    auto result = _RequestTile(node, nullptr, nullptr, BeTimePoint());
+    auto result = _RequestTile(node, nullptr, nullptr, BeDuration());
     result.wait();
     return result.isReady() ? SUCCESS : ERROR;
     }
@@ -1021,7 +1021,7 @@ BentleyStatus SMScene::LoadScene()
     //root->m_childPath = m_sceneInfo.m_rootNodePath;
     m_rootTile = root;
 
-    auto result = _RequestTile(*root, nullptr, GetRenderSystemP(), BeTimePoint());
+    auto result = _RequestTile(*root, nullptr, GetRenderSystemP(), BeDuration());
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
     }

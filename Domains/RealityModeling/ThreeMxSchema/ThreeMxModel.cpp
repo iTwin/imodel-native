@@ -59,7 +59,7 @@ BentleyStatus Scene::LoadScene()
     root->m_childPath = m_sceneInfo.m_rootNodePath;
     m_rootTile = root;
 
-    auto result = _RequestTile(*root, nullptr, nullptr, BeTimePoint());
+    auto result = _RequestTile(*root, nullptr, nullptr, BeDuration());
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
     }
@@ -69,7 +69,7 @@ BentleyStatus Scene::LoadScene()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::LoadNodeSynchronous(NodeR node)
     {
-    auto result = _RequestTile(node, nullptr, nullptr, BeTimePoint());
+    auto result = _RequestTile(node, nullptr, nullptr, BeDuration());
     result.wait();
     return result.isReady() ? SUCCESS : ERROR;
     }
