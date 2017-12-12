@@ -96,31 +96,34 @@ CurveVectorPtr  surfaceVector
 ) : T_Super(params) 
     {
 
-    Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
-
-    //Placement3d newPlacement ((*(*surfaceVector->begin ())->GetLineStringCP ())[0], GetPlacement ().GetAngles ());
-    Placement3d newPlacement (DPoint3d::FromZero (), GetPlacement ().GetAngles ());
-    SetPlacement (newPlacement);
-
-    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
-
-    if (surfaceVector->size () == 1 &&
-        surfaceVector->at (0)->GetCurvePrimitiveType () == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString)
+    if (params.m_classId.IsValid () && surfaceVector.IsValid()) // elements created via handler have no classid.
         {
-        ICurvePrimitivePtr primitive = surfaceVector->at (0);
-        bvector<DPoint3d> points = *primitive->GetPointStringCP ();
-        DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (points[0], ELLIPSE_FROM_SINGLE_POINT_RADIUS);
-        ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (ellipse);
-        surfaceVector = CurveVector::Create (arc, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
-        }
+        Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
 
-    if (builder->Append (*surfaceVector, Dgn::GeometryBuilder::CoordSystem::World))
-        {
-        if (SUCCESS != builder->Finish (*geomElem))
-            BeAssert (!"Failed to create DrivingSurface Geometry");
-        }
+        //Placement3d newPlacement ((*(*surfaceVector->begin ())->GetLineStringCP ())[0], GetPlacement ().GetAngles ());
+        Placement3d newPlacement (DPoint3d::FromZero (), GetPlacement ().GetAngles ());
+        SetPlacement (newPlacement);
 
-    SetAxisId (params.m_gridAxisId);
+        Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
+
+        if (surfaceVector->size () == 1 &&
+            surfaceVector->at (0)->GetCurvePrimitiveType () == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString)
+            {
+            ICurvePrimitivePtr primitive = surfaceVector->at (0);
+            bvector<DPoint3d> points = *primitive->GetPointStringCP ();
+            DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY (points[0], ELLIPSE_FROM_SINGLE_POINT_RADIUS);
+            ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (ellipse);
+            surfaceVector = CurveVector::Create (arc, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
+            }
+
+        if (builder->Append (*surfaceVector, Dgn::GeometryBuilder::CoordSystem::World))
+            {
+            if (SUCCESS != builder->Finish (*geomElem))
+                BeAssert (!"Failed to create DrivingSurface Geometry");
+            }
+
+        SetAxisId (params.m_gridAxisId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,11 +428,15 @@ Dgn::ElementIterator GridSurface::MakeCreatedCurvesIterator() const
 IPlanGridSurface::IPlanGridSurface 
 (
 Dgn::DgnElementR thisElem,
-CreateParams const& params
+CreateParams const& params,
+Dgn::DgnClassId classId
 ) :m_thisElem(thisElem)
     {
-    SetStartElevation (params.m_startElevation);
-    SetEndElevation (params.m_endElevation);
+    if (classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetStartElevation (params.m_startElevation);
+        SetEndElevation (params.m_endElevation);
+        }
     }
 
 END_GRIDS_NAMESPACE

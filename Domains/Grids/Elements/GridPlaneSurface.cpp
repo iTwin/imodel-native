@@ -10,6 +10,7 @@ USING_NAMESPACE_BENTLEY_DGN
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridPlanarSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -255,9 +256,8 @@ PlanGridPlanarSurface::PlanGridPlanarSurface
 (
 CreateParams const& params,
 DgnExtrusionDetailCR extDetail
-) : T_Super(params, ISolidPrimitive::CreateDgnExtrusion (extDetail)), IPlanGridSurface(*this, params)
+) : T_Super(params, ISolidPrimitive::CreateDgnExtrusion (extDetail)), IPlanGridSurface(*this, params, params.m_classId)
     {
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -266,9 +266,8 @@ DgnExtrusionDetailCR extDetail
 PlanGridPlanarSurface::PlanGridPlanarSurface
 (
 CreateParams const& params
-) : T_Super(params), IPlanGridSurface(*this, params)
+) : T_Super(params), IPlanGridSurface(*this, params, params.m_classId)
     {
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -316,9 +315,12 @@ PlanCartesianGridSurface::PlanCartesianGridSurface
 CreateParams const& params
 ) : T_Super(params)
     {
-    SetCoordinate (params.m_coordinate);
-    SetStartExtent (params.m_startExtent);
-    SetEndExtent (params.m_endExtent);
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetCoordinate (params.m_coordinate);
+        SetStartExtent (params.m_startExtent);
+        SetEndExtent (params.m_endExtent);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -335,6 +337,66 @@ CreateParams const& params
         return nullptr;
 
     return gridSurface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ElevationGridSurface::ElevationGridSurface
+(
+CreateParams const& params
+) : T_Super(params, params.m_surface.IsValid() ? params.m_surface->Clone (Transform::From(0.0, 0.0, params.m_elevation)) : params.m_surface)
+    {
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetElevation (params.m_elevation);
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ElevationGridSurfacePtr             ElevationGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    ElevationGridSurfacePtr surface = new ElevationGridSurface (params);
+
+    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
+        return nullptr;
+    
+    return surface;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus    ElevationGridSurface::_SetPlacement
+(
+Placement3dCR placement
+)
+    {
+    GridCPtr grid = GetDgnDb ().Elements ().Get<Grid> (GetGridId ());
+
+    Placement3dCR currPlacement = grid->GetPlacement ();
+
+    Transform currTransInv, thatTrans, diffTrans;
+    currTransInv.InverseOf(currPlacement.GetTransform ());
+    thatTrans = placement.GetTransform ();
+    bsiTransform_multiplyTransformTransform (&diffTrans, &currTransInv, &thatTrans);
+
+    DPlane3d diffPlane;
+    bsiTransform_getOriginAndVectors (&diffTrans, &diffPlane.origin, NULL, NULL, &diffPlane.normal);
+
+    if (!DoubleOps::AlmostEqualFraction(abs(diffPlane.normal.z), 1.0))
+        return Dgn::DgnDbStatus::ValidationFailed;   //if the elevationsurface is rotated from Z axis, fail
+
+    //else recompute the elevation
+    SetElevation (diffPlane.origin.z);
+    return T_Super::_SetPlacement (placement);
     }
 
 END_GRIDS_NAMESPACE

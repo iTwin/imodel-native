@@ -63,11 +63,12 @@
 #define GRIDS_CODESPEC_CODE(categoryName)                     GRIDS_SCHEMA_NAME "::" categoryName
 
 #define GRIDS_REL_GridSurfaceCreatesGridCurve                   "GridSurfaceCreatesGridCurve"
-#define GRIDS_REL_GridHasAxes                            "GridHasAxes"
+#define GRIDS_REL_GridHasAxes                                   "GridHasAxes"
 #define GRIDS_REL_GridAxisContainsGridSurfaces                  "GridAxisContainsGridSurfaces"
 
 #define GRIDS_CLASS_SurfaceSet                                  "SurfaceSet"
 #define GRIDS_CLASS_Grid                                 "Grid"
+#define GRIDS_CLASS_ElevationGrid                        "ElevationGrid"
 #define GRIDS_CLASS_PlanGrid                             "PlanGrid"
 #define GRIDS_CLASS_OrthogonalGrid                       "OrthogonalGrid"
 #define GRIDS_CLASS_RadialGrid                           "RadialGrid"
@@ -85,6 +86,7 @@
 #define GRIDS_CLASS_GridPlanarSurface                           "GridPlanarSurface"
 #define GRIDS_CLASS_PlanGridPlanarSurface                       "PlanGridPlanarSurface"
 #define GRIDS_CLASS_PlanCartesianGridSurface                    "PlanCartesianGridSurface"
+#define GRIDS_CLASS_ElevationGridSurface                        "ElevationGridSurface"
 #define GRIDS_CLASS_GridSplineSurface                           "GridSplineSurface"
 #define GRIDS_CLASS_GridArcSurface                              "GridArcSurface"
 
