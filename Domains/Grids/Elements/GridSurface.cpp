@@ -193,7 +193,7 @@ void GridSurface::Translate(DVec3d translation)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-BentleyStatus GridSurface::ChangeHeight(double height)
+BentleyStatus GridSurface::SetHeight(double height)
     {
     CurveVectorPtr baseCurve = GetSurfaceVector();
     if (baseCurve.IsNull())
@@ -211,7 +211,7 @@ BentleyStatus GridSurface::ChangeHeight(double height)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-void GridSurface::ChangeElevation(double elevation)
+void GridSurface::SetElevation(double elevation)
     {
     DPoint3d origin = GetPlacement().GetOrigin();
     DVec3d translation = DVec3d::From(0, 0, elevation - origin.z);
@@ -222,7 +222,7 @@ void GridSurface::ChangeElevation(double elevation)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-BentleyStatus GridSurface::ChangeBaseCurve(CurveVectorPtr base)
+BentleyStatus GridSurface::SetBaseCurve(CurveVectorPtr base)
     {
     double existingHeight;
     if (BentleyStatus::ERROR == TryGetHeight(existingHeight))

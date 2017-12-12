@@ -103,16 +103,16 @@ public:
     //! Shrinks or expands grid surface by height
     //! @param[in] height   new height
     //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's height
-    GRIDELEMENTS_EXPORT BentleyStatus ChangeHeight(double height);
+    GRIDELEMENTS_EXPORT BentleyStatus SetHeight(double height);
 
     //! Changes grid surface's bottom elevation
     //! @param[in] elevation    new elevation
-    GRIDELEMENTS_EXPORT void ChangeElevation(double elevation);
+    GRIDELEMENTS_EXPORT void SetElevation(double elevation);
 
     //! Changes grid surface's base curve. For specifications of base curve see derived elements' creation documentation
     //! @param[in] base         new base curve
     //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's base curve
-    GRIDELEMENTS_EXPORT BentleyStatus ChangeBaseCurve(CurveVectorPtr base);
+    GRIDELEMENTS_EXPORT BentleyStatus SetBaseCurve(CurveVectorPtr base);
 
     //! Sets geometry for this grid surface
     //! @param[in]  surface     new geometry for the surface
