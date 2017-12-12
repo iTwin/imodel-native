@@ -288,25 +288,22 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                 vec2    bisector   = normalize(prevDir - nextDir);
                 float   dotP       = dot(bisector, perp);
                 float   jointParam = mod(a_param.y, 4.0);
+                float   miter       = 1.0 / dotP;
+
+                miter = (miter < 0.0) ? max(-5.0, miter) : min(5.0, miter);  // Avoid zingers.
 
                 if (jointParam < 0.01)
                     {
                     // Standard miter. (used where angle is known to be small).
-                    delta = bisector * (dist / dotP);
+                    delta = bisector * dist * miter;
                     }
                 else if (jointParam < 1.01)
                     {
                     // Miter on the interior - perpendicular on exterior (to leave space for joint).
                     if (dotP < 0.0)
-                        {
-                        float   miter  = dist / dotP;
-            
-                        delta = bisector * max(miter, - 5.0 * dist);
-                        }
+                        delta = bisector * dist * miter;
                     else
-                        {
                         delta = perp * dist;
-                        }
                     }
                 else    
                     {   // This is a joint  - calculate as a weighted sum of the perpendicular and the miter.

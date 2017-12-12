@@ -4220,7 +4220,7 @@ Json::Value PublisherContext::GetDisplayStyleJson(DisplayStyleCR style)
 
         case GlobeMode::FromDisplayStyle:
             if (nullptr != style3d)
-                json["isGlobeVisible"] = style3d->IsGroundPlaneEnabled();
+                json["isGlobeVisible"] = style3d->IsGroundPlaneEnabled() || IsGeolocated();
         }
 
     return json;
