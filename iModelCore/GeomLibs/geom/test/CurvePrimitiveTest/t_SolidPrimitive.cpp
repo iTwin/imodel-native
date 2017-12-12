@@ -653,7 +653,9 @@ void CheckPolyfaceToMTG (ISolidPrimitivePtr primitive, PolyfaceHeaderPtr polyfac
     Check::EndScope ();
     }
     
-void CheckFacets (ISolidPrimitivePtr primitive)
+void CheckFacets (ISolidPrimitivePtr primitive,
+bool expectExactMeshFaceCountMatch  // true to enforce exact match of mesh and SolidPrimitive "faces". (e.g. set false for bsplines that might get interior visible edges)
+)
     {
     PolyfaceHeaderPtr facets = PolyfaceHeader::CreateVariableSizeIndexed ();
     IFacetOptionsPtr options = IFacetOptions::Create ();
@@ -695,7 +697,9 @@ void CheckFacets (ISolidPrimitivePtr primitive)
         if (blockedIndices[i] < 0)
             numBlocks++;
         }
-    Check::Size (faces.size (), numBlocks, "Solid Primitive face count per visibility");            
+     if (expectExactMeshFaceCountMatch)
+        Check::Size (faces.size (), numBlocks, "Solid Primitive face count per visibility");            
+    else Check::True (faces.size () <= numBlocks, "Mesh must have at least as many faces as solid primitive");
     }
 
 void CheckPrimitiveAsTrimmedSurfaces (ISolidPrimitivePtr primitive)
@@ -801,11 +805,11 @@ void CheckConstructiveFrame (ISolidPrimitiveR primitive, char const*typeName)
 
 #if defined (_WIN32) && !defined(BENTLEY_WINRT)
 
-void CheckPrimitiveB (ISolidPrimitivePtr primitive, char const*typeName)
+void CheckPrimitiveB (ISolidPrimitivePtr primitive, char const*typeName, bool expectExactMeshFaceCountMatch)
     {
 
     CheckAllFaces (primitive, typeName);
-    CheckFacets (primitive);
+    CheckFacets (primitive, expectExactMeshFaceCountMatch);
     
     CheckConstructiveFrame (*primitive, typeName);
     if (primitive->GetCapped ())
@@ -820,7 +824,7 @@ void CheckPrimitiveB (ISolidPrimitivePtr primitive, char const*typeName)
     
     }
 
-void CheckPrimitive (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveType, DSegment3dCP segment = NULL, int numHits = 0)
+void CheckPrimitive (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveType, DSegment3dCP segment = NULL, int numHits = 0, bool expectExactMeshFaceCountMatch = true)
     {
     static bool s_printNames = false;
     char const*typeName = "";
@@ -857,7 +861,7 @@ void CheckPrimitive (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveT
     Check::StartScope (typeName);
 
     CheckPrimitiveA (primitive, primitiveType, segment, numHits);
-    CheckPrimitiveB (primitive, typeName);
+    CheckPrimitiveB (primitive, typeName, expectExactMeshFaceCountMatch);
 
     CheckMoments (primitive);
     CheckAreaMoments (primitive);
@@ -1247,7 +1251,7 @@ TEST(SolidPrimitive, CreateRuledBsplines)
     ruledSections.push_back (pathB);
     DgnRuledSweepDetail ruledSweepData (ruledSections, false);
     ISolidPrimitivePtr ruledSweep = ISolidPrimitive::CreateDgnRuledSweep (ruledSweepData);
-    CheckPrimitive (ruledSweep, SolidPrimitiveType_DgnRuledSweep);
+    CheckPrimitive (ruledSweep, SolidPrimitiveType_DgnRuledSweep, nullptr, 0, false);
     }
 
 
@@ -2760,4 +2764,27 @@ TEST(SolidPrimitive,Silhouette)
         testSilhouette (geometry[i], eyePointD);
         }
     Check::ClearGeometry ("SolidPrimitive.Silhouette");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SolidPrimitive,Seams)
+    {
+    Check::QuietFailureScope scoper;
+
+    auto arc1 = CurveVector::CreateDisk (DEllipse3d::From (4,0,0,  1,0,0,  0,1, 0, 0.0, Angle::TwoPi ()));
+    // auto arc2 = arc1->Clone ();
+    
+    auto rotationalSweepData = DgnRotationalSweepDetail (arc1, DPoint3d::From (0,0,0), DVec3d::From (0,1,0), Angle::TwoPi (), false);
+    auto rotationalSweep = ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepData);
+
+    IFacetOptionsPtr options = IFacetOptions::Create ();
+    options->SetAngleTolerance (0.23);
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+    if (Check::True (builder->AddSolidPrimitive (*rotationalSweep), "Builder.AddSolidPrimitive"))
+        {
+        Check::SaveTransformed (builder->GetClientMeshR ());
+        }
+    Check::ClearGeometry ("SolidPrimitive.Seams");
     }
