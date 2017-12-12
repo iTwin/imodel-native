@@ -142,7 +142,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>bb -N0 -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re Bentley-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb         -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re Bentley-Gtest -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -N0 -v4 -r Bentley -f Bentley -p Bentley-Gtest -ax64 re PublishedApi Base BentleyDll Bentley-Gtest Gtest UnitTests-Published -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

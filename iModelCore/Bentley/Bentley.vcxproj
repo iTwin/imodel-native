@@ -251,9 +251,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <NMakeBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -r Bentley -f Bentley -p BentleyDll build</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -N0 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb         -r Bentley -f Bentley -p BentleyDll build</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll -c</NMakeCleanCommandLine>
     <IncludePath>$(ProjectDir);$(ProjectDir)PublicAPI\;$(ProjectDir)Bentley\;$(ProjectDir)Bentley\nonport\;$(IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" Condition="'$(Platform)'=='x64'">
