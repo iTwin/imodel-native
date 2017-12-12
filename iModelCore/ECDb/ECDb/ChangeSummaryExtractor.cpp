@@ -492,8 +492,10 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         ChangeIterator::ColumnMap const& relClassIdColumnMap = endTableRelMap.m_relationshipClassIdColumnMap;
 
         relClassId = rowEntry.GetClassIdFromChangeOrTable(relClassIdColumnMap.GetName().c_str(), rowEntry.GetPrimaryInstanceId());
-        BeAssert(relClassId.IsValid());
+        if (!relClassId.IsValid())
+            return ERROR; //rel class id wasn't set along with nav id
         }
+
     ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
     
     ECN::ECClassCP relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(relClassId);
