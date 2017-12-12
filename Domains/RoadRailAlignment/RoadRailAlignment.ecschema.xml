@@ -61,37 +61,37 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="HorizontalModelBreaksDownAlignmentsPortion" strength="embedding" strengthDirection="Backward" modifier="Sealed" description="Relationship enabling break-down of an AlignmentModel (3d) into a 2d model focusing on Horizontal/Plan-view of them.">
         <BaseClass>bis:ModelModelsElement</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="may be broken down into 1 horizontal model">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="breaks down">
             <Class class="HorizontalAlignmentModel"/>
         </Source>
-        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="breaks down 1 alignment">
+        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="is broken down by">
             <Class class="HorizontalAlignmentsPortion"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" modifier="Sealed" description="Relationship enabling an Alignment to refer to its Horizontal alignment.">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(1..*)" roleLabel="is main horizontal for 1 alignment" polymorphic="false">
+        <Source multiplicity="(1..*)" roleLabel="refers to" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="refers to 1 horizontal" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="is referred by" polymorphic="false">
             <Class class="HorizontalAlignment"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" modifier="Sealed" description="Relationship enabling an Alignment to refer to its main Vertical alignment.">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(1..*)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
+        <Source multiplicity="(1..*)" roleLabel="refers to main" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="refers to 1 main vertical" polymorphic="false">
+        <Target multiplicity="(0..1)" roleLabel="main is referred by" polymorphic="false">
             <Class class="VerticalAlignment"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="VerticalModelBreaksDownAlignment" strength="embedding" strengthDirection="Backward" modifier="Sealed" description="Relationship enabling break-downs of an Alignment into Vertical-Alignments.">
         <BaseClass>bis:ModelModelsElement</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 alignment">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="breaks down">
             <Class class="VerticalAlignmentModel"/>
         </Source>
-        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="has N vertical alignments">
+        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="is broken down by">
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
@@ -112,10 +112,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="AlignmentOwnsStations" strength="embedding" modifier="Sealed" description="Relationship definitiong ownership from an Alignment to its child Stations.">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 alignment">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="owns">
             <Class class="Alignment"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="has N stations">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="is owned by">
             <Class class="AlignmentStation"/>
         </Target>
     </ECRelationshipClass>
