@@ -245,23 +245,57 @@ TEST(FormattingTest, StdFormatting)
     FormattingTestFixture::TearDownL10N();
     }
 
+
+TEST(FormattingTest, TestFUS)
+    {
+    LOG.infov("\n================  Testing FUS (start) ===========================");
+    FormattingTestFixture::SetUpL10N();
+
+    FormattingTestFixture::ShowFUS("MM");
+    FormattingTestFixture::ShowFUS("IN");
+    FormattingTestFixture::ShowFUS("CM");
+
+    FormattingTestFixture::ShowFUS("{\"unitName\":\"MM\"}");
+    FormattingTestFixture::ShowFUS("{\"unitName\":\"IN\"}");
+    FormattingTestFixture::ShowFUS("{\"unitName\":\"CM\"}");
+
+    //FormattingTestFixture::ShowFUS("MM|fract8");
+
+    FormattingTestFixture::ShowFUS("MM|fract8|");
+    FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
+
+    FormattingTestFixture::CrossValidateFUS("MM", "{\"unitName\":\"MM\"}");
+    FormattingTestFixture::CrossValidateFUS("IN", "{\"unitName\":\"IN\"}");
+    FormattingTestFixture::CrossValidateFUS("CM", "{\"unitName\":\"CM\"}");
+
+    FormattingTestFixture::CrossValidateFUS("MM", "{\"unitName\":\"MM\", \"formatName\":\"real\"}");
+    FormattingTestFixture::CrossValidateFUS("IN", "{\"unitName\":\"IN\", \"formatName\":\"real\"}");
+    FormattingTestFixture::CrossValidateFUS("CM", "{\"unitName\":\"CM\", \"formatName\":\"real\"}");
+
+    FormattingTestFixture::CrossValidateFUS("{\"unitName\":\"MM\"}", "{\"unitName\":\"MM\", \"formatName\":\"real\"}");
+    FormattingTestFixture::CrossValidateFUS("{\"unitName\":\"IN\"}", "{\"unitName\":\"IN\", \"formatName\":\"real\"}");
+    FormattingTestFixture::CrossValidateFUS("{\"unitName\":\"CM\"}", "{\"unitName\":\"CM\", \"formatName\":\"real\"}");
+
+    //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
+    //FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
+    //FormattingTestFixture::ShowFUS("W/(M*C)");
+    //FormattingTestFixture::ShowFUS("TONNE/HR(real4");
+    //FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");
+    FormattingTestFixture::TearDownL10N();
+LOG.infov("================  Testing FUS (end) ===========================\n");
+    }
+
 TEST(FormattingTest, FullySpecifiedFUS)
     {
     LOG.infov("\n================  FullySpecifiedFUS (start) ===========================");
     FormattingTestFixture::SetUpL10N();
-    BEU::UnitCP metrUOM = BEU::UnitRegistry::Instance().LookupUnitCI("M");
-    FormatUnitSet fusYF = FormatUnitSet("FT(fract32u)");
-    BEU::Quantity const lenQ = BEU::Quantity(22.7, *metrUOM);
+    
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "FT", "fract32u", "74 15/32ft");
 
-    EXPECT_STREQ ("74 15/32ft", fusYF.FormatQuantity(lenQ, "").c_str());
-    Utf8String fusJ = fusYF.ToJsonString(false, true);
-    LOG.infov("\nfusJ  %s\n", fusJ.c_str());
-
-    FormatUnitSet fusFromJ =
-        FormatUnitSet("{\"unitName\":\"FT\",\"formatSpec\":{\"NumericFormat\":{\"barType\":\"Diagonal\",\"decPrec\":6,\"decimalSeparator\":\".\",\"formatTraits\":{\"AppendUnitName\":\"true\"},\"fractPrec\":32,\"minWidth\":0,\"presentType\":\"Fractional\",\"roundFactor\":0.0,\"signOpt\":\"OnlyNegative\",\"statSeparator\":\"+\",\"thousandSeparator\":\",\",\"uomSeparator\":\" \"},\"SpecAlias\":\"fract32u\",\"SpecName\":\"Fractional32U\",\"SpecType\":\"numeric\"}}");
-    Utf8String lenT = fusFromJ.FormatQuantity(lenQ, "").c_str();
-    LOG.infov("fusFromJ-lenT %s", lenT.c_str());
-    EXPECT_STREQ ("74 15/32ft", fusFromJ.FormatQuantity(lenQ, "").c_str());
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "FT", "real4u", "74.4751ft");
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "FT", "fi8", "74' 5 3/4\"");
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "IN", "real", "893.700787");
+    FormattingTestFixture::StandaloneFUSTest(22.7, "M", "IN", "", "893.700787");
 
     FormattingTestFixture::TearDownL10N();
     LOG.infov("================  FullySpecifiedFUS (end) ===========================\n");
@@ -484,17 +518,7 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::SignaturePattrenCollapsing("125.43 ARC_DEG", 23, false);
     FormattingTestFixture::SignaturePattrenCollapsing("125.43ARC_DEG", 24, false);
     FormattingTestFixture::SignaturePattrenCollapsing("1.3RAD", 24, false);*/
-    //FormattingTestFixture::ShowFUS("MM");
-    //FormattingTestFixture::ShowFUS("MM|fract8");
-
-    FormattingTestFixture::ShowFUS("MM|fract8|");
-    FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
-    //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
-    //FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
-    //FormattingTestFixture::ShowFUS("W/(M*C)");
-    //FormattingTestFixture::ShowFUS("TONNE/HR(real4");
-    //FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");
-
+   
     //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnitCI("TONNE/HR");
     //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
     //LOG.infov("TONNE_PER_HR-System  %s", sysN);
@@ -532,6 +556,7 @@ TEST(FormattingTest, PhysValues)
                                     "KOQgroup FT(Fractional8),IN(Fractional8),M(Real4),MM(Real2),M(Stop1000-2-4)", 
                                     "KOQgroup FT(fract8),IN(fract8),M(real4),MM(real2),M(stop1000-2-4)");
 
+    FormattingTestFixture::ShowFUG("FUG1", "MM, IN, MM, CM");
 
     // preparing pointers to various Unit definitions used in the following tests
     //  adding practically convenient aliases/synonyms to selected Units

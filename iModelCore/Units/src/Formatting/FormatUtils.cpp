@@ -1227,6 +1227,8 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
     m_unitName = Utf8String(unit->GetName());
     m_unit = unit;
     if (nullptr == m_formatSpec)
+        m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
+    if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
     else if (nullptr == m_unit)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
@@ -1248,6 +1250,8 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData)
     {
     m_problem = FormatProblemDetail();
     m_unit = nullptr;
+    if (Utils::IsNameNullOrEmpty(formatName))
+        formatName = FormatConstant::DefaultFormatName();
     m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
     if (nullptr == m_formatSpec)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
@@ -1300,6 +1304,7 @@ void FormatUnitSet::LoadJson(Json::Value jval)
     Utf8String format;
     bool cloneData = false;
     bool local = false;
+    m_formatSpec = nullptr;
 
     Init();
     if (jval.empty())
@@ -1326,7 +1331,7 @@ void FormatUnitSet::LoadJson(Json::Value jval)
             {
             format = val.asString();
             if (format.empty())
-                m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
+                m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
             else
                 m_formatSpec = StdFormatSet::FindFormatSpec(format.c_str());
             }
@@ -1340,6 +1345,8 @@ void FormatUnitSet::LoadJson(Json::Value jval)
             }
         }
     // last check if the referenced data is to be copied locally
+    if(nullptr == m_formatSpec)
+        m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
     if (cloneData && !local && (nullptr != m_formatSpec))
         {
         m_localCopy.Clone(m_formatSpec);

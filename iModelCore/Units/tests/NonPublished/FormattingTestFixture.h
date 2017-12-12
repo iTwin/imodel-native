@@ -49,7 +49,9 @@ struct FormattingTestFixture
         static void ShowHexDump(Utf8String str, int len);
         static void ShowHexDump(Utf8CP str, int len);
         static void ShowFUS(Utf8CP koq);
+        static void ShowFUG(Utf8CP name, Utf8CP fugText);
         static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
+        static void CrossValidateFUS(Utf8CP descr1, Utf8CP descr2);
         static void TestFUGFormat(double dval, Utf8CP uom, Utf8CP name, Utf8CP fusText);
         static void TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
         static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space);
@@ -86,6 +88,7 @@ struct FormattingTestFixture
         static void RegistryLookupUnitCITest(Utf8CP unitName);
         static void CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat);
         static void StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint = false);
+        static void StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result);
         //static void LoadUnitSynonymsTest();
     };
 

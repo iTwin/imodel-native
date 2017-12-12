@@ -25,6 +25,9 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
 static void* testFile = nullptr;
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Bill Steinbock 12/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::SetUpL10N()
     {
     BeFileName sqlangFile;
@@ -40,6 +43,9 @@ void FormattingTestFixture::SetUpL10N()
     BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Bill Steinbock 12/17
+//----------------------------------------------------------------------------------------
 void FormattingTestFixture::TearDownL10N()
     {
     BeSQLite::L10N::Shutdown();
@@ -133,8 +139,33 @@ void FormattingTestFixture::ShowFUS(Utf8CP koq)
         LOG.infov("KOQ: >%s<  Normilized: >%s< WithAlias: >%s< ", koq, fus.ToText(false).c_str(), fus.ToText(true).c_str());
     Utf8String strA = fus.ToJsonString(true);
     Utf8String strN = fus.ToJsonString(false);
-    LOG.infov("JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
+    LOG.infov("FUS JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+void FormattingTestFixture::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
+    {
+    FormatUnitSet fus1 = FormatUnitSet(descr1);
+    if (fus1.HasProblem())
+        LOG.infov("Invalid descr1: >%s<", descr1);
+    FormatUnitSet fus2 = FormatUnitSet(descr2);
+    if (fus2.HasProblem())
+        LOG.infov("Invalid descr1: >%s<", descr1);
+    EXPECT_TRUE (fus1.IsIdentical(fus2));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
+void FormattingTestFixture::ShowFUG(Utf8CP name, Utf8CP fugText)
+    {
+    FormatUnitGroup fug = FormatUnitGroup(name, fugText);
+    Json::Value jval = fug.ToJson(true);
+    LOG.infov("FUS Group: %s JSON: >%s<", name, jval.ToString().c_str());
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
@@ -1082,6 +1113,58 @@ void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool do
             LOG.infov("Different from original: %s   (diff %d)", jsonFormat);
         LOG.infov("=======================================================\n");
         }
+    }
+
+void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result)
+    {
+    LOG.info("\n=========== StandaloneFUSTest=============");
+    BEU::UnitCP uom = BEU::UnitRegistry::Instance().LookupUnitCI(unitName);
+    if (nullptr == uom)
+        {
+        LOG.infov("Invalid Unit Name %s", unitName);
+        return;
+        }
+    if (Utils::IsNameNullOrEmpty(fusUnitName))
+        {
+        LOG.infov("Missing FUS Unit Name");
+        return;
+        }
+    BEU::UnitCP fusUOM = BEU::UnitRegistry::Instance().LookupUnitCI(fusUnitName);
+    if (nullptr == uom)
+        {
+        LOG.infov("Invalid FUS Unit Name %s", fusUnitName);
+        return;
+        }
+    fusUOM = nullptr;
+    Utf8Char buf[256];
+    if(Utils::IsNameNullOrEmpty(formatName))
+        sprintf(buf, "%s", fusUnitName);
+    else
+        sprintf(buf, "%s(%s)", fusUnitName, formatName);
+    FormatUnitSet fus = FormatUnitSet(buf);
+    if (Utils::IsNameNullOrEmpty(formatName))
+        sprintf(buf, "{\"unitName\":\"%s\"}", fusUnitName);
+    else
+        sprintf(buf, "{\"unitName\":\"%s\",\"formatName\":\"%s\"}", fusUnitName, formatName);
+    LOG.infov("JSON %s", buf);
+    FormatUnitSet fusS = FormatUnitSet(buf);
+
+    BEU::Quantity qty = BEU::Quantity(dval, *uom);
+    Utf8String qtyT = fus.FormatQuantity(qty, "");
+    Utf8String qtyS = fusS.FormatQuantity(qty, "");
+
+    LOG.infov("qty value: %s (expected %s)", qtyT.c_str(), result);
+    LOG.infov("JSON-qty value: %s (expected %s)", qtyS.c_str(), result);
+    EXPECT_STREQ (result, qtyT.c_str());
+    EXPECT_STREQ (result, qtyS.c_str());
+
+    Utf8String fusJ = fus.ToJsonString(false, true);
+    LOG.infov("\nfusJ  %s\n", fusJ.c_str());
+    FormatUnitSet fusFromJ = FormatUnitSet(fusJ.c_str());
+    qtyT = fusFromJ.FormatQuantity(qty, "");
+    EXPECT_STREQ (result, qtyT.c_str());
+    LOG.infov("restored qty value: %s (expected %s)", qtyT.c_str(), result);
+    LOG.info("=========== StandaloneFUSTest=============\n");
     }
 
 
