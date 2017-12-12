@@ -76,6 +76,8 @@ public class BeAndroidTestRunner extends AndroidTestRunner implements TestListen
      */
     private void setUpTestCase(Class<? extends TestCase> clazz)
         {
+        TestActivity.initializeSqlang();
+        
         try
             {
             Method setUpMethod = clazz.getDeclaredMethod("setUpTestCase", (Class<?>[]) null);
@@ -111,6 +113,7 @@ public class BeAndroidTestRunner extends AndroidTestRunner implements TestListen
             {
             e.printStackTrace();
             }
+        
         TestActivity.uninitializeSqlang();
         }
 

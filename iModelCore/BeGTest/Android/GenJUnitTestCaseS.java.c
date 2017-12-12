@@ -2,7 +2,7 @@
 |
 |     $Source: Android/GenJUnitTestCaseS.java.c $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -39,14 +39,12 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
             m_activity.extractAssets();  // make sure assets have been extracted. It will do the extraction on the first call and then do nothing on subsequent calls.
             s_didExtractAssets = true;
             }
-        TestActivity.initializeSqlang ();
         super.setUp ();
         }
 
     @Override
     protected void tearDown () throws Exception 
         { 
-        //TestActivity.uninitializeSqlang ();
         if (null != m_activity)
             {
             Log.d ("BeTestX", "tearDown - m_activity.finish()");
