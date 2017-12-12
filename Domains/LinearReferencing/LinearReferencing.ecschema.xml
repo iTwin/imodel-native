@@ -47,7 +47,7 @@
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="along">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is axis along which are linearly located">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is linear axis for">
             <Class class="ILinearElement"/>
         </Target>
     </ECRelationshipClass>
@@ -123,7 +123,7 @@
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
             <Class class="LinearlyReferencedAtLocation"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
@@ -131,7 +131,7 @@
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
@@ -139,7 +139,7 @@
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
             <Class class="LinearlyReferencedFromToLocation"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
