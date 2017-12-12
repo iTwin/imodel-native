@@ -1,8 +1,1 @@
-#TFS 777185:
 
-iModelBridgeTests.FwkArgs
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/28/2017
-    # c:\build\outA\mds06t_2017-10-27_15-23-54\out\Winx64\Product\iModelBridge-Gtest\iModelBridgeFwk.logging.config.xml: file not found.
-    # 2017-10-27 16:11:56,542 ERROR [0x00001cec] iModelBridgeRegistry - c:\build\outA\mds06t_2017-10-27_15-23-54\out\Winx64\Product\iModelBridge-Gtest\run\Output\iModelBridgeTests - cannot find fwk registry db in this directory or any of its parents. Creating an empty db.
-    # 2017-10-27 16:11:58,027 ERROR [0x00001cec] iModelBridge - Logging.config.xml not specified. Activating default logging using console provider.
-    # unknown file: error: Unknown C++ exception thrown in the test body.
