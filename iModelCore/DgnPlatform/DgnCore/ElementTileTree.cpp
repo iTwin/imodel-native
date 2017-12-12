@@ -1893,7 +1893,7 @@ public:
     void AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances);
 
     // Return a list of all meshes currently in the builder map
-    MeshList GetMeshes();
+    MeshList GetMeshes(bool isPartialTile);
     // Return a tight bounding volume
     DRange3dCR GetContentRange() const { return m_contentRange; }
     DRange3dCR GetTileRange() const { return m_builderMap.GetRange(); }
@@ -2253,7 +2253,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshList MeshGenerator::GetMeshes()
+MeshList MeshGenerator::GetMeshes(bool isPartialTile)
     {
     MeshList meshes;
     for (auto& builder : m_builderMap)
@@ -2266,7 +2266,11 @@ MeshList MeshGenerator::GetMeshes()
     // Do not allow vertices outside of this tile's range to expand its content range
     clipContentRangeToTileRange(m_contentRange, GetTileRange());
 
-    meshes.m_features = std::move(m_featureTable);
+    if (isPartialTile)
+        meshes.m_features = m_featureTable;
+    else
+        meshes.m_features = std::move(m_featureTable);
+
     return meshes;
     }
 
@@ -2333,6 +2337,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
     for (/*m_elementIter*/; m_elementCollector.GetEntries().end() != m_elementIter; ++m_elementIter)
         {
         // Collect geometry from this element
+        m_geometries.clear();
         auto const& entry = *m_elementIter;
         m_tileContext.ProcessElement(entry.second, entry.first);
         if (m_tileContext.GetGeometryCount() >= m_elementCollector.GetMaxElements())
@@ -2376,7 +2381,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 
     // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;
-    collection.Meshes() = m_meshGenerator.GetMeshes();
+    collection.Meshes() = m_meshGenerator.GetMeshes(isPartialTile);
     if (!isPartialTile)
         {
         tile.SetContentRange(ElementAlignedBox3d(m_meshGenerator.GetContentRange()));
@@ -2395,8 +2400,8 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         collection.MarkCurved();
 
     output = std::move(collection);
-    if (isPartialTile)
-        m_geometries.clear(); // NB: Retains curved/complete flags...clear so partial tile skips already-processed geometry next time around.
+
+    m_geometries.clear(); // NB: Retains curved/complete flags...
 
     return isPartialTile ? Completion::Partial : Completion::Full;
     }
@@ -2409,25 +2414,6 @@ END_ELEMENT_TILETREE_NAMESPACE
 Tile::~Tile()
     {
     // Defined here for instantiation of destructor of std::unique_ptr<TileGenerator> which is incomplete type in header file.
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshList Tile::GenerateMeshes(GeometryList const& geometries, bool doRangeTest, LoadContextCR loadContext) const
-    {
-    GeometryOptions options;
-    MeshGenerator generator(*this, options, loadContext);
-    generator.AddMeshes(geometries, doRangeTest);
-    
-    MeshList meshes;
-    if (!loadContext.WasAborted())
-        {
-        meshes = generator.GetMeshes();
-        m_contentRange = ElementAlignedBox3d(generator.GetContentRange());
-        }
-
-    return meshes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2515,91 +2501,101 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
         return SelectParent::No;
         }
 
-    // NB: We don't mark the partial tiles as 'ready'...wait until they are complete.
-    bool isPartial = _IsPartial();
-    if (isPartial)
+    if (Visibility::Visible == vis)
         {
-        if (!_HasGraphics())
-            {
-            // Ensure we at least partially load this tile before children
+        // This tile is of appropriate resolution to draw.
+        // If we need loading or refinement, enqueue
+        if (!IsReady() || _IsPartial())
             args.InsertMissing(*this);
-            return SelectParent::No;
+
+        if (_HasGraphics())
+            {
+            // It can be drawn - select it
+            selected.push_back(this);
+            if (!_IsPartial())
+                _UnloadChildren(args.m_purgeOlderThan);
+            }
+        else
+            {
+            // If direct children are drawable, draw them in this tile's place; otherwise draw the parent.
+            size_t initialSize = selected.size();
+            auto children = _GetChildren(false);
+            if (nullptr == children)
+                return SelectParent::Yes;
+
+            for (auto const& child : *children)
+                {
+                if (Visibility::OutsideFrustum == child->GetVisibility(args))
+                    continue;
+
+                if (!child->_HasGraphics())
+                    {
+                    selected.resize(initialSize);
+                    return SelectParent::Yes;
+                    }
+
+                selected.push_back(child);
+                }
+
+            m_childrenLastUsed = BeTimePoint::Now();
             }
 
-        // We have enough graphics to draw *something* - follow normal logic.
-        // If this tile is appropriate for view will be enqueued for further refinement; otherwise we will skip to higher-resolution children.
+        // We're drawing either this tile, or its direct children.
+        return SelectParent::No;
         }
 
-    bool tooCoarse = Visibility::TooCoarse == vis;
-    bool ready = IsReady();
+    // This tile is too coarse to draw. Try to draw something more appropriate.
+    // If it is not ready to draw, we may want to skip loading in favor of loading its descendants.
+    // We never skip the root tile(s) to avoid a situation in which we have no tiles to draw - but we can skip them if they're partially loaded.
+    bool canSkipThisTile = IsReady() || _IsPartial() || IsParentDisplayable();
 
-    // If a tile is not ready and is too coarse to draw, we can skip it only if we haven't already skipped more than maxTilesToSkip.
-    // Note we never skip the topmost displayable tiles; otherwise we can end up in a situation (e.g. after zooming way out) in which we have no tiles to draw.
-    // We would also end up enqueueing a ton of tiles when zoomed way in
-    // Part of the problem is that we can't determine which tiles are leaves until we actually generate their geometry...so if we skip lots of intermediate tiles
-    // we potentially generate a ton of child tiles for parents which really should have been leaves.
-    constexpr uint32_t maxTilesToSkip = 1;
-    bool skipThisTile = tooCoarse && (ready || IsParentDisplayable());
-    if (skipThisTile && !ready)
+    if (canSkipThisTile && IsDisplayable()) // skipping an undisplayable tile (i.e. the root tile) doesn't count toward the maximum
         {
-        if (numSkipped >= maxTilesToSkip)
-            skipThisTile = false;
-        else
-            ++numSkipped;
+        // Some tiles do not sub-divide - they only facet the same geometry to a higher resolution. We can skip directly to the correct resolution.
+        bool isNotReady = !_HasGraphics() && !HasZoomFactor();
+        if (isNotReady)
+            {
+            // We must avoid skipping too many levels, because otherwise we end up generating lots of little tiles for parents which really should have been leaves
+            // (We cannot determine if a tile should be a leaf until we actually generate its geometry)
+            constexpr uint32_t maxTilesToSkip = 1;
+            if (numSkipped >= maxTilesToSkip)
+                canSkipThisTile = false;
+            else
+                ++numSkipped;
+            }
         }
 
-    // Queue for loading if necessary...
-    if (!ready && !skipThisTile)
-        args.InsertMissing(*this);
-
-    // Try drawing children in place of this tile
-    auto children = skipThisTile ? _GetChildren(true) : nullptr;
+    auto children = canSkipThisTile ? _GetChildren(true) : nullptr;
     if (nullptr != children)
         {
-        m_childrenLastUsed = args.m_now;
-        bool drawParent = false;
+        m_childrenLastUsed = BeTimePoint::Now();
+        bool allChildrenDrawable = true;
         size_t initialSize = selected.size();
 
         for (auto const& child : *children)
             {
             if (SelectParent::Yes == static_cast<TileCP>(child.get())->SelectTiles(selected, args, numSkipped))
                 {
-                drawParent = true;
                 // NB: We must continue iterating children so that they can be requested if missing...
+                allChildrenDrawable = false;
                 }
             }
 
-        if (!drawParent)
-            {
-            // Draw children in place of this tile
-            m_childrenLastUsed = args.m_now;
+        if (allChildrenDrawable)
             return SelectParent::No;
-            }
 
         selected.resize(initialSize);
         }
 
-    // We've determined that we should draw this tile, if we have graphics for it.
-    if (!tooCoarse)
-        _UnloadChildren(args.m_purgeOlderThan);
-
-#define REQUIRE_ALL_CHILDREN_LOADED
-#if defined(REQUIRE_ALL_CHILDREN_LOADED)
-    if (ready || isPartial)
+    if (_HasGraphics())
         {
-        if (_HasGraphics())
-            selected.push_back(this);
-
+        selected.push_back(this);
         return SelectParent::No;
         }
 
-    return SelectParent::Yes;
-#else
-    if (_HasGraphics())
-        selected.push_back(this);
-
-    return SelectParent::No;
-#endif
+    // We want to load this tile before considering children.
+    args.InsertMissing(*this);
+    return IsParentDisplayable() ? SelectParent::Yes : SelectParent::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
