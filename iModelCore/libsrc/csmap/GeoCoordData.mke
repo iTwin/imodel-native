@@ -2,7 +2,7 @@
 #
 #     $Source: GeoCoordData.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 #----------------------------------------------------------------
@@ -25,8 +25,8 @@ PolicyFile=${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 #----------------------------------------------------------------------
 #   We link the CSMap data subdirectories to our output directory
 #----------------------------------------------------------------------
-csDeliverDir    	= $(baseDir)deliver/
-csDictionariesDir   = $(baseDir)Dictionaries/
+csDictionarySourcesDir    	= $(baseDir)DictionarySources/
+csDictionariesDir           = $(baseDir)Dictionaries/
 
 #----------------------------------------------------------------------
 #   Create output directories.
@@ -42,7 +42,7 @@ always:
 always:
     CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
     CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
-	$(OutputRootDir)build/csmap/cs_comp.exe -b $(csDictionariesDir) $(OutputRootDir)build/csmap/
+	$(OutputRootDir)build/csmap/cs_comp.exe -b $(csDictionarySourcesDir) $(OutputRootDir)build/csmap/
 
 #---------------------------------------------------------------------
 #   This is the minimal set of data for products that don't allow selection
@@ -80,7 +80,7 @@ always:
 
 always:
     CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty=$(OutputRootDir)build/csmap/coordsys.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty.xml=$(csDeliverDir)coordsys.dty.xml"
+    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
     CreateSymLinks.py   -f"$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionariesDir)UserOverrideGeodeticTransformSeed.asc"
     CreateSymLinks.py   -f"$(GeoCoordData)NameMapper.csv=$(csDictionariesDir)NameMapper.csv"
     CreateSymLinks.py   -f"$(GeoCoordData)WW15MGH.GRD=$(csDictionariesDir)WW15MGH.GRD"
