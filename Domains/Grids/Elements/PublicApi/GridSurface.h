@@ -100,6 +100,20 @@ public:
     //! @param[in] translation   vector to translate by
     GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
 
+    //! Shrinks or expands grid surface by height
+    //! @param[in] height   new height
+    //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's height
+    GRIDELEMENTS_EXPORT BentleyStatus ChangeHeight(double height);
+
+    //! Changes grid surface's bottom elevation
+    //! @param[in] elevation    new elevation
+    GRIDELEMENTS_EXPORT void ChangeElevation(double elevation);
+
+    //! Changes grid surface's base curve. For specifications of base curve see derived elements' creation documentation
+    //! @param[in] base         new base curve
+    //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's base curve
+    GRIDELEMENTS_EXPORT BentleyStatus ChangeBaseCurve(CurveVectorPtr base);
+
     //! Sets geometry for this grid surface
     //! @param[in]  surface     new geometry for the surface
     //! @returns BentleyStatus::SUCCESS if geometry is valid for the surface and there has been no error in setting surface geometry
