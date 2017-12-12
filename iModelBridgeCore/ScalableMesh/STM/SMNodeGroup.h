@@ -762,7 +762,7 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
         bool IsBalanced() const { return m_masterHeader.m_balanced; }
         uint64_t GetSplitThreshold() const { return m_masterHeader.m_SplitTreshold; }
         uint64_t GetDepth() const { return m_masterHeader.m_depth; }
-        bool IsTextured() const { return m_masterHeader.m_textured != SMTextureType::None; }
+        SMTextureType IsTextured() const { return m_masterHeader.m_textured; }
         uint64_t GetTerrainDepth() const { return m_masterHeader.m_terrainDepth; }
         double GetResolution() const { return m_masterHeader.m_resolution; }
         bool IsTerrain() const { return m_masterHeader.m_isTerrain; }
@@ -1203,7 +1203,7 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         SMMasterHeader["MeshDataDepth"] = m_GroupMasterHeader.GetTerrainDepth();
         SMMasterHeader["IsTerrain"] = m_GroupMasterHeader.IsTerrain();
         SMMasterHeader["DataResolution"] = m_GroupMasterHeader.GetResolution();
-        SMMasterHeader["IsTextured"] = m_GroupMasterHeader.IsTextured();
+        SMMasterHeader["IsTextured"] = (uint32_t)m_GroupMasterHeader.IsTextured();
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;

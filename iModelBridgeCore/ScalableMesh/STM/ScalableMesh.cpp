@@ -1921,10 +1921,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
     bool isUsingBingMap = false;    
     WString bingMapType; 
 
-    if (textureType == SMTextureType::Streaming)
+    // NEEDS_WORK_SM_STREAMING : Save bing map server url in Cesium 3dtiles?
+    if (m_smSQLitePtr != nullptr && textureType == SMTextureType::Streaming)
         {
-        assert(m_smSQLitePtr != nullptr);
-
         SourcesDataSQLite sourcesData;
         m_smSQLitePtr->LoadSources(sourcesData);
         

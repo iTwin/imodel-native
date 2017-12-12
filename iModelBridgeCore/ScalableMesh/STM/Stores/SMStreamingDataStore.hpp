@@ -432,6 +432,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_balanced = masterJSON["Balanced"].asBool();
             indexHeader->m_depth = masterJSON["Depth"].asUInt();
             indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
+            indexHeader->m_textured = SMTextureType(masterJSON["IsTextured"].asUInt());
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
             indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
