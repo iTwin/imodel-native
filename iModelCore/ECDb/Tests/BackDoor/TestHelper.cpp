@@ -138,7 +138,7 @@ JsonValue TestHelper::ExecuteSelectECSql(Utf8CP ecsql) const
         return JsonValue(Json::nullValue);
 
     JsonValue resultSet(Json::arrayValue);
-    JsonECSqlSelectAdapter adapter(stmt);
+    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Json::Value row;
