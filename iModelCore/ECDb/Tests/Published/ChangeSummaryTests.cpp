@@ -1863,6 +1863,62 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  12/17
 //---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("VirtualRelECClassId.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Parent" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" modifier="Sealed">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="embedding">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                    <Class class="Parent"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                    <Class class="Child" />
+                </Target>
+        </ECRelationshipClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
+    TestChangeTracker tracker(m_ecdb);
+
+    ECInstanceKey parentKey, childKey;
+
+    //changeset 1
+    tracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(parentKey, "INSERT INTO ts.Parent(Name) VALUES('Parent 1')"));
+    Utf8String parentIdStr = parentKey.GetInstanceId().ToHexStr();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(childKey, Utf8PrintfString("INSERT INTO ts.Child(Name,Parent.Id) VALUES('Child 1',%s)", parentIdStr.c_str()).c_str()));
+    Utf8String childIdStr = childKey.GetInstanceId().ToHexStr();
+
+    TestChangeSet changeset;
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+    //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+
+    tracker.EndTracking();
+    //now delete the child so that its unmodified values show up as NULL in the Changes function
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Child"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT Parent.Id,Parent.RelECClassId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(parentKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    //Once fixed TFS#793636, this must be:
+    //ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "Rel"), stmt.GetValueId<ECClassId>(1));
+    ASSERT_TRUE(stmt.IsValueNull(1)) << "RelECClassId is currently expected to be NULL because of a bug. " << stmt.GetECSql();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithNavPropCascadeDelete.ecdb", SchemaItem(
