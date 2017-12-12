@@ -37,7 +37,7 @@ struct BriefcaseTests: public IntegrationTestsBase
         auto credentials = IntegrationTestSettings::Instance().GetValidAdminCredentials();
 
         m_client            = SetUpClient(credentials, proxy);
-        m_projectConnection = SetUpProjectConnection(proxy, credentials);
+        m_projectConnection = SetUpProjectConnection(m_client->GetHttpHandler(), credentials);
 
         m_imodel = CreateNewiModel(*m_client, "BriefcaseTest");
 
@@ -46,17 +46,10 @@ struct BriefcaseTests: public IntegrationTestsBase
         m_pHost->SetRepositoryAdmin(m_client->GetiModelAdmin());
         }
 
-    IWSRepositoryClientPtr SetUpProjectConnection(IHttpHandlerPtr proxy, Credentials credentials)
+    IWSRepositoryClientPtr SetUpProjectConnection(IHttpHandlerPtr authHandler, Credentials credentials)
         {
         Utf8StringCR serverUrl = UrlProvider::Urls::iModelHubApi.Get();
         ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo ();
-
-        auto manager = ConnectSignInManager::Create(clientInfo, proxy, StubLocalState::Instance());
-        SignInResult signInResult = manager->SignInWithCredentials(credentials)->GetResult();
-        if (!signInResult.IsSuccess())
-            return nullptr;
-
-        AuthenticationHandlerPtr authHandler = manager->GetAuthenticationHandler(serverUrl);
 
         Utf8String project;
         project.Sprintf("%s--%s", ServerSchema::Plugin::Project, m_projectId.c_str());
