@@ -17,12 +17,3 @@ MGeometry.ConvexHullManyPoints # fails on iOS - 0 test is seeing very tiny negat
 Polyface.MultiMeshVisibilityCS4
 Polyface.MultiMeshVisibilityF
 Polyface.MultiMeshVisibilityE
-SolidPrimitive.CreateRuledBsplines
-
-    # TFS#792916
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 12/09/2017
-    # ( RuledSweep (size_t a 1) (size_t b 3))
-    # c:\build\src\mds06t\GeomLibs\geom\test\src\checkers.cpp(181): error: Value of: false
-    # Actual: false
-    # Expected: true
-    # Solid Primitive face count per visibility
