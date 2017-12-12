@@ -68,6 +68,7 @@ namespace LRPJobBackdoorAPI
         {
         int retries = 300;
 
+        BeDuration timer(BeDuration::FromMilliseconds (1000));
         while (--retries > 0)
             {
             int jobState = QueryLRPJobState (projectConnection, lrpJobRecordId);
@@ -75,7 +76,7 @@ namespace LRPJobBackdoorAPI
                 return true;
             if (Failed == jobState)
                 return false;
-            BeThreadUtilities::BeSleep (1000);
+            timer.Sleep ();
             }
         return false;
         }
