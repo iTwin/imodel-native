@@ -44,14 +44,19 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-//#define STRUCTURAL_COMMON_CLASS_StructuralPhysicalModel              "StructuralPhysicalModel"
-//#define STRUCTURAL_COMMON_CLASS_StructuralTypeDefinitionModel        "StructuralTypeDefinitionModel"
-#define FORMS_COMMON_CLASS_FormAspect                    "Form"
+#define FORMS_CLASS_FormAspect                    "Form"
+#define FORMS_CLASS_ProfiledExtrusion             "ProfiledExtrusion"
+#define FORMS_CLASS_CurvedExtrusion               "CurvedExtrusion"
+#define FORMS_CLASS_StraightExtrusion             "StraightExtrusion"
+#define FORMS_CLASS_CurvedProfiledExtrusion       "CurvedProfiledExtrusion"
+#define FORMS_CLASS_StraightProfiledExtrusion     "StraightProfiledExtrusion"
 
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------
-//STRUCTURAL_POINTER_TYPEDEFS(StructuralPhysicalModel)
-//STRUCTURAL_POINTER_TYPEDEFS(StructuralTypeDefinitionModel)
-
 FORMS_POINTER_TYPEDEFS(Form)
+FORMS_POINTER_TYPEDEFS(ProfiledExtrusion)
+FORMS_POINTER_TYPEDEFS(CurvedExtrusion)
+FORMS_POINTER_TYPEDEFS(StraightExtrusion)
+FORMS_POINTER_TYPEDEFS(CurvedProfiledExtrusion)
+FORMS_POINTER_TYPEDEFS(StraightProfiledExtrusion)

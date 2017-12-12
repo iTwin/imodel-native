@@ -16,5 +16,23 @@ $(targetAPIDir)FormsDomainDefinitions.h : $(_MakeFilePath)/PublicAPI/FormsDomain
 $(targetAPIDir)FormsDomain.h : $(_MakeFilePath)/PublicAPI/FormsDomain/FormsDomain.h
     $(LinkFirstDepToFirstTarget)
 
+$(targetAPIDir)Forms.h : $(_MakeFilePath)/PublicAPI/FormsDomain/Form.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)ProfiledExtrusion.h : $(_MakeFilePath)/PublicAPI/FormsDomain/ProfiledExtrusion.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)CurvedExtrusion.h : $(_MakeFilePath)/PublicAPI/FormsDomain/CurvedExtrusion.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)StraightExtrusion.h : $(_MakeFilePath)/PublicAPI/FormsDomain/StraightExtrusion.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)CurvedProfiledExtrusion.h : $(_MakeFilePath)/PublicAPI/FormsDomain/CurvedProfiledExtrusion.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)StraightProfiledExtrusion.h : $(_MakeFilePath)/PublicAPI/FormsDomain/StraightProfiledExtrusion.h
+    $(LinkFirstDepToFirstTarget)
+
 $(targetSchemasDir)Forms.ecschema.xml : $(_MakeFilePath)\Forms.ecschema.xml
     $(LinkFirstDepToFirstTarget)

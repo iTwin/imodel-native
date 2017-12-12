@@ -32,14 +32,26 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CurvedExtrusion.cpp" />
+    <ClCompile Include="CurvedProfiledExtrusion.cpp" />
+    <ClCompile Include="Form.cpp" />
     <ClCompile Include="FormsDomain.cpp" />
     <ClCompile Include="FormsDomainUtilities.cpp" />
+    <ClCompile Include="ProfiledExtrusion.cpp" />
+    <ClCompile Include="StraightExtrusion.cpp" />
+    <ClCompile Include="StraightProfiledExtrusion.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PublicAPI\FormsDomain\CurvedExtrusion.h" />
+    <ClInclude Include="PublicAPI\FormsDomain\CurvedProfiledExtrusion.h" />
+    <ClInclude Include="PublicAPI\FormsDomain\Form.h" />
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomain.h" />
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainApi.h" />
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainDefinitions.h" />
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainUtilities.h" />
+    <ClInclude Include="PublicAPI\FormsDomain\ProfiledExtrusion.h" />
+    <ClInclude Include="PublicAPI\FormsDomain\StraightExtrusion.h" />
+    <ClInclude Include="PublicAPI\FormsDomain\StraightProfiledExtrusion.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{604CA524-E3A2-430C-8E6B-094AB73539C9}</ProjectGuid>

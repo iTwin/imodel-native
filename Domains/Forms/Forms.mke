@@ -54,6 +54,60 @@ $(o)FormsDomain$(oext) : $(FormsBase)FormsDomain.cpp \
     $(FormsBasePublicAPI)FormsDomainUtilities.h \
     $(FormsBasePublicAPI)FormsDomainDefinitions.h
 
+$(o)Form$(oext) : $(FormsBase)Form.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)ProfiledExtrusion$(oext) : $(FormsBase)ProfiledExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)ProfiledExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)CurvedExtrusion$(oext) : $(FormsBase)CurvedExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)CurvedExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)StraightExtrusion$(oext) : $(FormsBase)StraightExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)StraightExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)CurvedProfiledExtrusion$(oext) : $(FormsBase)CurvedProfiledExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)CurvedProfiledExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+$(o)StraightProfiledExtrusion$(oext) : $(FormsBase)StraightProfiledExtrusion.cpp \
+    ${MultiCompileDepends} \
+    $(FormsBasePublicAPI)StraightProfiledExtrusion.h \
+    $(FormsBasePublicAPI)Form.h \
+    $(FormsBasePublicAPI)FormsDomain.h \
+    $(FormsBasePublicAPI)FormsDomainApi.h \
+    $(FormsBasePublicAPI)FormsDomainUtilities.h \
+    $(FormsBasePublicAPI)FormsDomainDefinitions.h
+
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------

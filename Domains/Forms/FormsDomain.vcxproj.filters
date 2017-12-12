@@ -45,6 +45,12 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="FormsDomain.cpp" />
+    <ClCompile Include="Form.cpp" />
+    <ClCompile Include="CurvedExtrusion.cpp" />
+    <ClCompile Include="ProfiledExtrusion.cpp" />
+    <ClCompile Include="StraightExtrusion.cpp" />
+    <ClCompile Include="CurvedProfiledExtrusion.cpp" />
+    <ClCompile Include="StraightProfiledExtrusion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainUtilities.h">
@@ -57,5 +63,23 @@
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomain.h" />
+    <ClInclude Include="PublicAPI\FormsDomain\Form.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomain\CurvedExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomain\StraightExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomain\ProfiledExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomain\CurvedProfiledExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomain\StraightProfiledExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
