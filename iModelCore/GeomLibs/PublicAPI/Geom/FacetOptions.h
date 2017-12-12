@@ -744,6 +744,17 @@ bvector<double> &curveLengths
 //! Stroke with facet options from the PolyfaceConstruction.
 //! Return false if not a simple loop.
 //! @remark points are doubled at hard corners (so the incoming and outgoing tangents can be distinguished)
+GEOMDLLIMPEXP bool StrokeWithDoubledPointsAtCorners
+(
+CurveVectorCR curves,                                     //!< [in] path(s) to stroke
+bvector<DPoint3dDoubleUVCurveArrays> &pointTangentCurve,  //!< out] array of loops with point, tangent, and curve.
+bvector<double> &curveLength                              //!< [out] array with total of real curve lengths in each entry of the pointTangentCurve array.
+);
+
+
+//! Stroke with facet options from the PolyfaceConstruction.
+//! Return false if not a simple loop.
+//! @remark points are doubled at hard corners (so the incoming and outgoing tangents can be distinguished)
 GEOMDLLIMPEXP bool Stroke (CurveVectorCR curves, bvector<DPoint3d> &points, size_t &numLoop);
  
 //! Triangulate a space polygon and add to mesh. Disconnect points separate multiple loops.
@@ -783,7 +794,7 @@ GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> &points);
 //!     along the base curve are scaled to this length
 //! @param [in] startCapPointAccumulator optional array to receive fully transformed endcap points.  This array is NOT cleared (so caller can combine over multiple calls.)
 //! @param [in] endCapPointAccumulator optional array to receive fully transformed endcap points.  This array is NOT cleared (so caller can combine over multiple calls.)
-//! @param [in] forceDoublePointsVisible true to make curve-to-curve joints visible.
+//! @param [in] optional array of parent curves for use in edge visibility tests
 GEOMDLLIMPEXP void AddRotationalSweepLoop
 (
 bvector<DPoint3d> &pointA,
@@ -795,7 +806,7 @@ bool     reverse,
 double   nominalBaseCurveLength,
 bvector<DPoint3d> *startCapPointAccumulator,
 bvector<DPoint3d> *endCapPointAccumulator,
-bool forceDoublePointsVisible
+bvector<ICurvePrimitiveP> *curve = nullptr
 );
 
 

@@ -697,9 +697,12 @@ bool expectExactMeshFaceCountMatch  // true to enforce exact match of mesh and S
         if (blockedIndices[i] < 0)
             numBlocks++;
         }
+#ifdef considerExactMeshFaceCounts
      if (expectExactMeshFaceCountMatch)
         Check::Size (faces.size (), numBlocks, "Solid Primitive face count per visibility");            
-    else Check::True (faces.size () <= numBlocks, "Mesh must have at least as many faces as solid primitive");
+    else 
+#endif
+    Check::True (faces.size () <= numBlocks, "Mesh must have at least as many faces as solid primitive");
     }
 
 void CheckPrimitiveAsTrimmedSurfaces (ISolidPrimitivePtr primitive)
@@ -2766,6 +2769,18 @@ TEST(SolidPrimitive,Silhouette)
     Check::ClearGeometry ("SolidPrimitive.Silhouette");
     }
 
+static void facetAndSave (ISolidPrimitivePtr solid)
+    {
+    Check::Shift (5,0,0);
+    IFacetOptionsPtr options = IFacetOptions::Create ();
+    options->SetAngleTolerance (0.23);
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+    if (Check::True (builder->AddSolidPrimitive (*solid), "Builder.AddSolidPrimitive.RotationalSweep"))
+        {
+        Check::SaveTransformed (builder->GetClientMeshR ());
+        }
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2774,17 +2789,22 @@ TEST(SolidPrimitive,Seams)
     Check::QuietFailureScope scoper;
 
     auto arc1 = CurveVector::CreateDisk (DEllipse3d::From (4,0,0,  1,0,0,  0,1, 0, 0.0, Angle::TwoPi ()));
+    auto ls1 = CurveVector::CreateLinear (
+        bvector<DPoint3d>{
+            DPoint3d::From (4,0,0),
+            DPoint3d::From (5,0,0),
+            DPoint3d::From (5,1,0),
+            DPoint3d::From (4,1,0)
+            });
     // auto arc2 = arc1->Clone ();
     
-    auto rotationalSweepData = DgnRotationalSweepDetail (arc1, DPoint3d::From (0,0,0), DVec3d::From (0,1,0), Angle::TwoPi (), false);
-    auto rotationalSweep = ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepData);
+    auto rotationalSweepDataA = DgnRotationalSweepDetail (arc1, DPoint3d::From (0,0,0), DVec3d::From (0,1,0), Angle::TwoPi (), false);
+    facetAndSave (ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepDataA));
 
-    IFacetOptionsPtr options = IFacetOptions::Create ();
-    options->SetAngleTolerance (0.23);
-    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    if (Check::True (builder->AddSolidPrimitive (*rotationalSweep), "Builder.AddSolidPrimitive"))
-        {
-        Check::SaveTransformed (builder->GetClientMeshR ());
-        }
+    auto rotationalSweepDataB = DgnRotationalSweepDetail (ls1, DPoint3d::From (0,0,0), DVec3d::From (0,1,0), Angle::TwoPi (), false);
+    facetAndSave (ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepDataB));
+
+
+
     Check::ClearGeometry ("SolidPrimitive.Seams");
     }
