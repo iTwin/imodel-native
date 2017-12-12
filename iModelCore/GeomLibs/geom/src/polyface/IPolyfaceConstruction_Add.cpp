@@ -990,11 +990,12 @@ static bool IsSmoothClosure(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tange
 * Add option to make all double points visible.
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-static bool IsVisibleJoint(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangentA, DVec3dCR tangentB, bool forceDoublePointsVisible)
+static bool IsVisibleJoint(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangentA, DVec3dCR tangentB,
+            ICurvePrimitiveCP curveA, ICurvePrimitiveCP curveB)
     {
     if (!pointA.AlmostEqual (pointB))
         return false;   // simple interior point within curve -- not visible
-    if (forceDoublePointsVisible)
+    if (curveA != curveB)
         return true;    // head-to-tail junction
     return !tangentA.IsParallelTo (tangentB);
     }
@@ -1047,14 +1048,19 @@ static bool AppendBsplineStrokes(
 IPolyfaceConstruction &builder,
 ICurvePrimitivePtr curve,
 bvector<DPoint3d> &xyz,
-bvector<DVec3d> *tangent
+bvector<DVec3d> *tangent,
+bvector<double> *fractions = nullptr,
+bvector<ICurvePrimitiveP> *curves = nullptr
 )
     {
     MSBsplineCurveCP bcurve = curve->GetProxyBsplineCurveCP ();
     if (NULL == bcurve)
         return false;
-
-    bcurve->AddStrokes (builder.GetFacetOptionsR (), xyz, tangent, NULL);
+    size_t num0 = xyz.size ();
+    bcurve->AddStrokes (builder.GetFacetOptionsR (), xyz, tangent, fractions);
+    if (curves != nullptr)
+        for (size_t i = num0; i < xyz.size (); i++)
+            curves->push_back (curve.get ());
     return true;
     }
 
@@ -3091,7 +3097,7 @@ bool capped
             }
 
         if (i > 0 && i < n - 1)
-            visible1 = IsVisibleJoint (pointA[i], pointA[i+1], tangentA->at(i), tangentA->at(i+1), s_forceDoublePointsVisible);
+            visible1 = IsVisibleJoint (pointA[i], pointA[i+1], tangentA->at(i), tangentA->at(i+1), nullptr, nullptr);
         else
             visible1 = !smoothClosed;
 
@@ -3283,7 +3289,7 @@ bool     reverse,
 double   nominalBaseCurveLength,
 bvector<DPoint3d> *startCapPointAccumulator,
 bvector<DPoint3d> *endCapPointAccumulator,
-bool forceDoublePointsVisible
+bvector <ICurvePrimitiveP> *curve
 )
     {
     DVec3d axis = rotationAxis;
@@ -3326,13 +3332,18 @@ bool forceDoublePointsVisible
         baseNormal.push_back (normalVector);
         }
     size_t lastIndex = n - 1;
-    baseCurveBreak.push_back (!IsSmoothClosure (
+    baseCurveBreak.push_back (
+        !pointA[0].AlmostEqual (pointA[lastIndex])
+        || IsVisibleJoint (
                 pointA[0], pointA[lastIndex],
                 tangentA[0], tangentA[lastIndex],
-                forceDoublePointsVisible
+                    curve ? curve->at (0) : nullptr,
+                    curve ? curve->at (lastIndex) : nullptr
                 ));
     for (size_t i = 1; i < lastIndex; i++)
-        baseCurveBreak.push_back (IsVisibleJoint (pointA[i], pointA[i+1], tangentA[i], tangentA[i+1], forceDoublePointsVisible));
+        baseCurveBreak.push_back (IsVisibleJoint (pointA[i], pointA[i+1], tangentA[i], tangentA[i+1],
+                    curve ? curve->at (i) : nullptr,
+                    curve ? curve->at (i+1) : nullptr));
 
     baseCurveBreak.push_back (baseCurveBreak[0]);
     DPoint3dOps::Multiply (&workPoint, worldToLocal);
@@ -3546,6 +3557,37 @@ bvector<DVec3d>   &tangents
 template <typename T>
 static bool StrokeByUniformFractions
 (
+ICurvePrimitiveCP curve,
+T const &geometry,
+double f0,
+double f1,
+size_t count,
+DPoint3dDoubleUVCurveArrays &pointTangentCurve
+)
+    {
+    if (count > 0)
+        {
+        double df = 1.0 / (double)count;
+        DPoint3d xyz;
+        DVec3d tangent;
+        for (size_t i = 0; i <= count; i++)
+            {
+            double f = i * df;
+            if (i == count)
+                f = 1.0;    // prevent numerical fuzz
+            FractionToPoint (geometry, f, xyz, tangent);
+            pointTangentCurve.Add (xyz, DoubleOps::Interpolate (f0, f, f1), tangent, const_cast <ICurvePrimitive*>(curve));
+            }
+        }
+    return count > 0;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+template <typename T>
+static bool StrokeByUniformFractions
+(
 T const &geometry,
 size_t count,
 bvector<DPoint3d> &points
@@ -3648,6 +3690,89 @@ bvector<double> &curveLengths
         }
     return true;
     }
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      03/2014
++--------------------------------------------------------------------------------------*/
+bool IPolyfaceConstruction::StrokeWithDoubledPointsAtCorners
+(
+CurveVectorCR curves,
+bvector<DPoint3dDoubleUVCurveArrays> &pointTangentCurve,
+bvector<double> &curveLength
+)
+    {
+    IFacetOptionsR options = GetFacetOptionsR ();
+    CurveVectorCP child = NULL;
+    DSegment3d segment;
+    DEllipse3d ellipse;
+    bvector<DPoint3d>const *linestring;
+    bool makeNewLoop = true;
+    for (size_t i = 0; i < curves.size (); i++)
+        {
+        ICurvePrimitivePtr primitive = curves.at(i);
+        if (NULL != (child = primitive->GetChildCurveVectorCP ()))
+            {
+            StrokeWithDoubledPointsAtCorners (*child, pointTangentCurve, curveLength);
+            makeNewLoop = true;
+            }
+        else
+            {
+            if (makeNewLoop)
+                {
+                pointTangentCurve.push_back (DPoint3dDoubleUVCurveArrays());
+                curveLength.push_back (0);
+                makeNewLoop = false;
+                }
+            if (primitive->TryGetLine (segment))
+                {
+                StrokeByUniformFractions<DSegment3d> (primitive.get (), segment, 0.0, 1.0,
+                    options.SegmentStrokeCount (segment), pointTangentCurve.back ());
+                curveLength.back () += segment.Length ();
+                }
+            else if (NULL != (linestring = primitive->GetLineStringCP ()))
+                {
+                size_t n = linestring->size ();
+                double df = n > 1 ? 1.0 / (double)(n-1) : 0.0;
+                for (size_t i = 1, n = linestring->size (); i < n; i++)
+                    {
+                    DSegment3d segment;
+                    segment.point[0] = linestring->at(i-1);
+                    segment.point[1] = linestring->at(i);
+                    StrokeByUniformFractions<DSegment3d> (primitive.get (), segment, (i - 1) * df, i * df,
+                        options.SegmentStrokeCount (segment), pointTangentCurve.back ());
+                    curveLength.back () += segment.Length ();
+                    }
+                }
+            else if (primitive->TryGetArc (ellipse))
+                {
+                StrokeByUniformFractions <DEllipse3d>(primitive.get (), ellipse, 0.0, 1.0,
+                    options.EllipseStrokeCount (ellipse), pointTangentCurve.back ());
+                if (ellipse.IsFullEllipse () && !pointTangentCurve.back ().m_xyz.empty ())    // enforce bitwise closure
+                    pointTangentCurve.back ().m_xyz.back () = pointTangentCurve.back ().m_xyz.front ();
+                double a;
+                primitive->Length (a);
+                curveLength.back () += a;
+                }
+            else if (AppendBsplineStrokes (*this,
+                    primitive,
+                    pointTangentCurve.back ().m_xyz,
+                    &pointTangentCurve.back ().m_vectorU,
+                    &pointTangentCurve.back ().m_f,
+                    &pointTangentCurve.back ().m_curve))
+                {
+                double a;
+                primitive->Length (a);
+                curveLength.back () += a;
+                }
+            else
+                return false;
+            }
+        }
+    return true;
+    }
+
+
 
 
 /*--------------------------------------------------------------------------------**//**
@@ -3849,7 +3974,7 @@ bool     capped
     double curveLength = curve.CurveLength ();
     bvector<DPoint3d> capA, capB;
     bool reverse = ComputeRotationalSweepLoopSense (points, origin, axis, totalSweepRadians);
-    AddRotationalSweepLoop (points, tangents, origin, axis, totalSweepRadians, reverse, curveLength, &capA, &capB, s_forceDoublePointsVisible);
+    AddRotationalSweepLoop (points, tangents, origin, axis, totalSweepRadians, reverse, curveLength, &capA, &capB, nullptr);
 
     AddTriangulationPair (capA, !reverse, capB, reverse,
             capped,
@@ -3868,20 +3993,28 @@ bool     capped
     {
     if(curve.IsValid ())
         {
-        bvector<bvector<DPoint3d>> points;
-        bvector<bvector<DVec3d>> tangents;
+        bvector<DPoint3dDoubleUVCurveArrays> loopData;
         bvector<double> curveLengths;
-        builder.StrokeWithDoubledPointsAtCorners (*curve, points, tangents, curveLengths);
-
-        bool reverse = curve->IsAnyRegionType () ? ComputeRotationalSweepLoopSense(points[0], origin, axis, totalSweepRadians)
+        builder.StrokeWithDoubledPointsAtCorners (*curve, loopData, curveLengths);
+        for (auto &loop : loopData)
+            {
+            if (loop.m_xyz.size () != loop.m_vectorU.size ()
+                || loop.m_xyz.size () != loop.m_curve.size ())
+                    GEOMAPI_PRINTF ("loop sizes %d %d %d\n", (int)loop.m_xyz.size (),(int)loop.m_vectorU.size (),(int)loop.m_curve.size ());
+            }
+        bool reverse = curve->IsAnyRegionType () ? ComputeRotationalSweepLoopSense(loopData[0].m_xyz, origin, axis, totalSweepRadians)
                 : false;
 
         bvector<DPoint3d> endCapPoints;
         bvector<DPoint3d> startCapPoints;
 
-        for (size_t i = 0; i < points.size (); i++)
+        for (size_t i = 0; i < loopData.size (); i++)
             {
-            builder.AddRotationalSweepLoop (points[i], tangents[i], origin, axis, totalSweepRadians, reverse, curveLengths[i], &startCapPoints, &endCapPoints, s_forceDoublePointsVisible);
+            builder.AddRotationalSweepLoop (
+                loopData[i].m_xyz,
+                loopData[i].m_vectorU,
+                origin, axis, totalSweepRadians, reverse, curveLengths[i], &startCapPoints, &endCapPoints,
+                &loopData[i].m_curve);
             DPoint3dOps::AppendDisconnect (&startCapPoints);
             DPoint3dOps::AppendDisconnect (&endCapPoints);
             }
