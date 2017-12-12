@@ -28,9 +28,9 @@ std::unique_ptr<BeMutexHolder> SchemaReader::LockECDb() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BeSqliteDbMutex> SchemaReader::LockDb() const
+std::unique_ptr<BeSqliteDbMutexHolder> SchemaReader::LockDb() const
     {
-    return std::unique_ptr<BeSqliteDbMutex>(new BeSqliteDbMutex(const_cast<ECDb&>(GetECDb())));
+    return std::unique_ptr<BeSqliteDbMutexHolder>(new BeSqliteDbMutexHolder(const_cast<ECDb&>(GetECDb())));
     }
 
 /*---------------------------------------------------------------------------------------
@@ -146,6 +146,23 @@ ECClassCP SchemaReader::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR cl
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
     {
+        {
+        auto lockECDb = LockECDb();
+        ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
+        if (cacheEntry == nullptr)
+            {
+            //ECDb allows nullptr as entry in the cache to indicate that this is a class which was attempted
+            //to be loaded before but failed. Subsequent calls don't have to attempt a load anymore, so nullptr
+            //can be returned right away.
+            if (m_cache.HasClassEntry(ecClassId))
+                return nullptr;
+            }
+        else
+            return cacheEntry->m_cachedClass;
+        }
+
+    auto lockDb = LockDb();
+    auto lockECDb = LockECDb();
     Context ctx;
     ECClassCP ecclass = GetClass(ctx, ecClassId);
     if (ecclass != nullptr)
@@ -165,8 +182,6 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     if (!ecClassId.IsValid())
         return nullptr;
 
-    {
-    auto lockECDb = LockECDb();
     ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
     if (cacheEntry == nullptr)
         {
@@ -178,11 +193,7 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
         }
     else
         return cacheEntry->m_cachedClass;
-    }
-
-    auto lockDb = LockDb();
-    auto lockECDb = LockECDb();
-    
+        
     if (ClassDbEntry* cacheEntry = m_cache.Find(ecClassId))
         return cacheEntry->m_cachedClass;
 
@@ -390,15 +401,22 @@ ECClassId SchemaReader::GetClassId(ECClassCR ecClass) const
 ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR className, SchemaLookupMode lookupMode) const
     {
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
-    ECClassId ecClassId = m_cache.Find(schemaName, className);
-    if (!ecClassId.IsValid())
-        {
-        ecClassId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), schemaName.c_str(), className.c_str(), lookupMode);
+    ECClassId ecClassId;
+    {
+    auto lockECDb = LockECDb();
+    ecClassId = m_cache.Find(schemaName, className);
+    if (ecClassId.IsValid())
+        return ecClassId;
+    }
 
-        //add id to cache (only if valid class id to avoid overflow of the cache)
-        if (ecClassId.IsValid())
-            m_cache.Insert(schemaName, className, ecClassId);
-        }
+    auto lockDb = LockDb();
+    auto lockECDb = LockECDb();
+
+    ecClassId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), schemaName.c_str(), className.c_str(), lookupMode);
+
+    //add id to cache (only if valid class id to avoid overflow of the cache)
+    if (ecClassId.IsValid())
+        m_cache.Insert(schemaName, className, ecClassId);
 
     return ecClassId;
     }
@@ -1914,7 +1932,7 @@ BentleyStatus SchemaReader::Context::Postprocess(SchemaReader const& reader) con
 //+---------------+---------------+---------------+---------------+---------------+--------
 void SchemaReader::ReaderCache::Clear() const
     {
-    BeMutexHolder lockECDb(m_ecdb.GetImpl().GetMutex());
+    BeMutexHolder(m_ecdb.GetImpl().GetMutex());
     m_classIdCache.clear();
     m_enumCache.clear();
     m_koqCache.clear();

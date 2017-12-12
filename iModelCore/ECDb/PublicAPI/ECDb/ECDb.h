@@ -409,6 +409,7 @@ public:
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;
+    bool HasImpl() const;
     void FireAfterSchemaImportEvent() const { _OnAfterSchemaImport(); }
 #endif
 };

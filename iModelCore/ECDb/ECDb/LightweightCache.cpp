@@ -58,16 +58,23 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::GetHorizontalPart
 StorageDescription const& LightweightCache::GetStorageDescription(ClassMap const& classMap)  const
     {
     const ECClassId classId = classMap.GetClass().GetId();
+    {
+    BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
     auto it = m_storageDescriptions.find(classId);
-    if (it == m_storageDescriptions.end())
-        {
-        auto des = StorageDescription::Create(classMap, *this);
-        auto desP = des.get();
-        m_storageDescriptions[classId] = std::move(des);
-        return *desP;
-        }
+    if (it != m_storageDescriptions.end())
+        return *(it->second.get());
+    }
 
-    return *(it->second.get());
+    BeSqliteDbMutexHolder lockDb(const_cast<ECDb&>(m_schemaManager.GetECDb()));
+    BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
+    auto it = m_storageDescriptions.find(classId);
+    if (it != m_storageDescriptions.end())
+        return *(it->second.get());
+
+    auto des = StorageDescription::Create(classMap, *this);
+    auto desP = des.get();
+    m_storageDescriptions[classId] = std::move(des);
+    return *desP;
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,6 +82,15 @@ StorageDescription const& LightweightCache::GetStorageDescription(ClassMap const
 //---------------------------------------------------------------------------------------
 std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTable const& tbl) const
     {
+        {
+        BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
+        auto itor = m_classIdsPerTable.find(&tbl);
+        if (itor != m_classIdsPerTable.end())
+            return itor->second;
+        }
+
+    BeSqliteDbMutexHolder lockDb(const_cast<ECDb&>(m_schemaManager.GetECDb()));
+    BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
     auto itor = m_classIdsPerTable.find(&tbl);
     if (itor != m_classIdsPerTable.end())
         return itor->second;
@@ -112,6 +128,15 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
 //---------------------------------------------------------------------------------------
 bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassId classId) const
     {
+        {
+        BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
+        auto itor = m_tablesPerClassId.find(classId);
+        if (itor != m_tablesPerClassId.end())
+            return itor->second;
+        }
+
+    BeSqliteDbMutexHolder lockDb(const_cast<ECDb&>(m_schemaManager.GetECDb()));
+    BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
     auto itor = m_tablesPerClassId.find(classId);
     if (itor != m_tablesPerClassId.end())
         return itor->second;
@@ -159,6 +184,15 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
 //---------------------------------------------------------------------------------------
 bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::LoadConstraintClassesForRelationships(ECN::ECClassId relationshipId) const
     {
+        {
+        BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
+        auto itor = m_constraintClassIdsPerRelClassIds.find(relationshipId);
+        if (itor != m_constraintClassIdsPerRelClassIds.end())
+            return itor->second;
+        }
+
+    BeSqliteDbMutexHolder lockDb(const_cast<ECDb&>(m_schemaManager.GetECDb()));
+    BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
     auto itor = m_constraintClassIdsPerRelClassIds.find(relationshipId);
     if (itor != m_constraintClassIdsPerRelClassIds.end())
         return itor->second;
@@ -204,6 +238,15 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
 //---------------------------------------------------------------------------------------
 LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPartitions(ECN::ECClassId classId) const
     {
+        {
+        BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
+        auto itor = m_horizontalPartitions.find(classId);
+        if (itor != m_horizontalPartitions.end())
+            return itor->second;
+        }
+
+    BeSqliteDbMutexHolder lockDb(const_cast<ECDb&>(m_schemaManager.GetECDb()));
+    BeMutexHolder lockECDb(m_schemaManager.GetECDb().GetImpl().GetMutex());
     auto itor = m_horizontalPartitions.find(classId);
     if (itor != m_horizontalPartitions.end())
         return itor->second;
@@ -258,8 +301,12 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void LightweightCache::Clear()
+void LightweightCache::Clear()    
     {
+    //std::unique_ptr<BeMutexHolder> lockECDb;
+    //if (m_schemaManager.GetECDb().HasImpl())
+    //    lockECDb = std::unique_ptr<BeMutexHolder>(new BeMutexHolder(m_schemaManager.GetECDb().GetImpl().GetMutex()));
+
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
     m_constraintClassIdsPerRelClassIds.clear();

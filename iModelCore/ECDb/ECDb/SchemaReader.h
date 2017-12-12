@@ -142,7 +142,7 @@ struct SchemaReader final
         SchemaReader& operator=(SchemaReader const&) = delete;
 
         std::unique_ptr<BeMutexHolder> LockECDb() const;
-        std::unique_ptr<BeSqliteDbMutex> LockDb() const;
+        std::unique_ptr<BeSqliteDbMutexHolder> LockDb() const;
 
         ECN::ECSchemaCP GetSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetClass(Context&, ECN::ECClassId) const;

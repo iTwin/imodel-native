@@ -386,7 +386,7 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_SQL)
                 stmt.Finalize();
                 }
             printf("Thread %Id ends ===========================\n ", BeThreadUtilities::GetCurrentThreadId());
-            }
+            } 
         ));
         counter++;
         }
@@ -395,4 +395,160 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_SQL)
     EXPECT_EQ(counter, kThreadCount);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                       12/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ThreadSafetyTests, ConncurentECSqlStressTest)
+    {
+    const int noOfClasses = 6000;
+    const int noOfPropertiesPerClass = 10;
+    const int rowPerClass = 5;
+    const int nthreads = BeThreadUtilities::GetHardwareConcurrency();
+    const int threadTask = noOfClasses / nthreads;
+
+    ECDb ecdb;
+    BeFileName ecdbFileName = BuildECDbPath("LargeSchema.ecdb");
+    if (!ecdbFileName.DoesPathExist())
+        {
+        printf("Creating file ... %s\r\n", ecdbFileName.GetNameUtf8().c_str());
+        ASSERT_EQ(BE_SQLITE_OK,  ecdb.CreateNewDb(ecdbFileName));
+        ECSchemaPtr testSchema;        
+        ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 0));
+        ECSchemaP ecdbMapRef = const_cast<ECSchemaP>(ecdb.Schemas().GetSchema("ECDbMap"));        
+        ASSERT_EQ(ECObjectsStatus::Success, testSchema->AddReferencedSchema(*ecdbMapRef));
+        StandaloneECInstancePtr classMapCA = ecdbMapRef->GetClassCP("ClassMap")->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_EQ(ECObjectsStatus::Success, classMapCA->SetValue("MapStrategy", ECValue("TablePerHierarchy")));
+        StandaloneECInstancePtr sharedColumnCA = ecdbMapRef->GetClassCP("ShareColumns")->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_EQ(ECObjectsStatus::Success, sharedColumnCA->SetValue("MaxSharedColumnsBeforeOverflow", ECValue(noOfPropertiesPerClass)));
+        ASSERT_EQ(ECObjectsStatus::Success, sharedColumnCA->SetValue("ApplyToSubclassesOnly", ECValue(false)));
+        ECEntityClassP baseClass;
+        ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(baseClass, "BaseClass"));
+        ASSERT_EQ(ECObjectsStatus::Success, baseClass->SetCustomAttribute(*classMapCA));
+        ASSERT_EQ(ECObjectsStatus::Success, baseClass->SetCustomAttribute(*sharedColumnCA));
+        for (int nClass = 1; nClass <= noOfClasses; nClass++)
+            {
+            ECEntityClassP entityClass;
+            Utf8String entityClasName;
+            entityClasName.Sprintf("c_%d", nClass);
+            ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(entityClass, entityClasName));
+            ASSERT_EQ(ECObjectsStatus::Success, entityClass->AddBaseClass(*baseClass));
+            for (int nProperty = 1; nProperty <= noOfPropertiesPerClass; nProperty++)
+                {
+                PrimitiveECPropertyP primitiveProperty;
+                Utf8String propertyName;
+                propertyName.Sprintf("p_%d_%d", nClass, nProperty);
+                ASSERT_EQ(ECObjectsStatus::Success, entityClass->CreatePrimitiveProperty(primitiveProperty, propertyName, PrimitiveType::PRIMITIVETYPE_Long));
+                }
+            }
+
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({testSchema.get()}));
+        for (ECClassCP derivedClass : baseClass->GetDerivedClasses())
+            {
+            ECSqlStatement stmt;
+            Utf8String sql, values;
+            sql = "INSERT INTO ts." + derivedClass->GetName() + " (";
+            values = "VALUES (";
+            bool first = true;
+            for (ECPropertyCP localProp : derivedClass->GetProperties())
+                {
+                if (first)
+                    first = false;
+                else
+                    {
+                    sql.append(",");
+                    values.append(",");
+                    }
+
+                sql.append(localProp->GetName());
+                values.append("?");
+                }
+            sql.append(")").append(values).append(")");
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, sql.c_str()));
+            for (int r = 0; r < rowPerClass; r++)
+                {
+                stmt.Reset();
+                stmt.ClearBindings();
+                for (int i = 1; i <= noOfPropertiesPerClass; i++)
+                    stmt.BindInt(i, rand());
+
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+                }
+            }
+        ecdb.CloseDb();
+        }
+
+    struct TestSQLFunc : ScalarFunction
+        {
+        protected:
+            ECDbCR m_conn;
+            const std::vector<Utf8String> m_classes;
+            virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+                {
+                int k = 0;
+                for (int i = 0; i < 3; i++)
+                    {
+                    //printf("Start TestSQLFunc ... [thread=%d, task=%d]\r\n", (int)BeThreadUtilities::GetCurrentThreadId(), i);
+                    ECSqlStatement stmt;
+                    const size_t n = (size_t) floor(((double) rand() / RAND_MAX)*m_classes.size());
+                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_conn, SqlPrintfString("SELECT * FROM %s", m_classes[n].c_str())));
+                    while (stmt.Step() == BE_SQLITE_ROW)
+                        {
+                        k = k + 1;
+                        }
+                    //printf("End TestSQLFunc   ... [thread=%d, task=%d]\r\n", (int) BeThreadUtilities::GetCurrentThreadId(), i);
+                    }
+
+                ctx.SetResultInt(k);
+                }
+        public:
+            TestSQLFunc(ECDbCR conn, std::vector<Utf8String> classes) : ScalarFunction("testSqlFunc", 0, DbValueType::IntegerVal), m_conn(conn), m_classes(classes) {}
+        };
+
+    std::vector<Utf8String> classes;
+    //////////////////////////////////////////////   
+    {
+    printf("Reading class names\r\n");
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    Statement stmt;  
+    stmt.Prepare(ecdb, R"(
+        SELECT [S].[Alias] || '.' || [C].[Name]
+        FROM   [ec_Class] [C]
+               INNER JOIN [ec_Schema] [S] ON [S].[Id] = [C].[SchemaId]
+        WHERE  [S].[Alias] = 'ts';)");
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        classes.push_back(stmt.GetValueText(0));
+        }
+
+    stmt.Finalize();
+    ecdb.CloseDb();
+    }
+    printf("Running threads\r\n");
+    //////////////////////////////////////////////
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    TestSQLFunc testFunc(ecdb, classes);
+    ecdb.AddFunction(testFunc);
+    std::vector<BeThread> threads;
+    for (int p = 0; p < nthreads; p++)
+        {
+        threads.push_back(BeThread::Start([&] ()
+            {
+            for (int i = 0; i < threadTask; i++)
+                {
+                //printf("Start Task        ... [thread=%d, task=%d]\r\n", (int) BeThreadUtilities::GetCurrentThreadId(),i);
+                ECSqlStatement stmt;
+                const size_t n = (size_t) floor(((double) rand() / RAND_MAX)*classes.size());
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, SqlPrintfString("SELECT *,testSqlFunc() FROM %s", classes[n].c_str())));
+                while (stmt.Step() == BE_SQLITE_ROW)
+                    {
+                    }
+                //printf("End Task          ... [thread=%d, task=%d]\r\n", (int) BeThreadUtilities::GetCurrentThreadId(), i);
+                }
+            }));
+        }
+
+    BeThread::JoinAll(threads);
+    ecdb.RemoveFunction(testFunc);
+    }
 END_ECDBUNITTESTS_NAMESPACE

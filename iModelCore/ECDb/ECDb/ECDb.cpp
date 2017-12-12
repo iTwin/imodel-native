@@ -247,6 +247,11 @@ void ECDb::ClearECDbCache(Utf8CP tableSpace) const { m_pimpl->ClearECDbCache(tab
 ECDb::Impl& ECDb::GetImpl() const { BeAssert(m_pimpl != nullptr); return *m_pimpl; }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Raman.Ramanujam                09/2012
+//---------------+---------------+---------------+---------------+---------------+------
+bool ECDb::HasImpl() const { return m_pimpl != nullptr; }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 //static

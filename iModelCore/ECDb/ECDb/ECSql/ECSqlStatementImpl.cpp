@@ -35,7 +35,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
         return ECSqlStatus::InvalidECSql;
         }
 
-    BeMutexHolder lock(ecdb.GetImpl().GetMutex());
+    //BeMutexHolder lock(ecdb.GetImpl().GetMutex());
     Diagnostics diag(ecsql, GetPrepareDiagnosticsLogger(), true);
 
     //Step 1: parse the ECSQL
