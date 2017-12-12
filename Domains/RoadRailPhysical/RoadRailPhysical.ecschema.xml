@@ -21,10 +21,10 @@
         <ECNavigationProperty propertyName="MainAlignment" relationshipName="PathwayRefersToMainAlignment" direction="Forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="PathwayRefersToMainAlignment" strength="referencing" strengthDirection="Forward" modifier="Sealed">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Pathways">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to main">
             <Class class="PathwayElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Alignment">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="main is referred by">
             <Class class="rralign:Alignment"/>
         </Target>
     </ECRelationshipClass>
