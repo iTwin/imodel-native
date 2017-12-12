@@ -24,7 +24,7 @@
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to main">
             <Class class="PathwayElement"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="main is referred by">
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="main is referenced by">
             <Class class="rralign:Alignment"/>
         </Target>
     </ECRelationshipClass>
