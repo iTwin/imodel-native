@@ -267,7 +267,7 @@ public:
     UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
     UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
     UNITS_EXPORT void AddSynonymMaps(Json::Value jval) const;
-    UNITS_EXPORT Json::Value SynonymMapToJson();
+    UNITS_EXPORT Json::Value SynonymMapToJson() const;
     UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV); 
     UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const { return &m_altNames; }
     UNITS_EXPORT size_t GetSynonymCount() const { return m_altNames.size(); }

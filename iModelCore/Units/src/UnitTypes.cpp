@@ -659,7 +659,7 @@ void Phenomenon::AddSynonymMaps(Json::Value jval) const // this value could be a
         }
     }
 
-Json::Value Phenomenon::SynonymMapToJson()
+Json::Value Phenomenon::SynonymMapToJson() const
     {
     Json::Value jval;
 
