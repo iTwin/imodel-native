@@ -1174,8 +1174,8 @@ CurveVectorCP curves
                     double midFraction = 0.5 * (fraction0 + fraction1);
                     DPoint3d xyz;
                     curve->FractionToPoint (midFraction, xyz);
-                    auto inClip = clipSet.IsPointInside (xyz);
-                    auto inMask= maskSet != nullptr ?  maskSet->IsPointInside (xyz) : false;
+                    auto inClip = clipSet.IsPointOnOrInside (xyz, DoubleOps::SmallMetricDistance());
+                    auto inMask= maskSet != nullptr ?  maskSet->IsPointOnOrInside (xyz, DoubleOps::SmallMetricDistance()) : false;
                     if (inClip && !inMask)
                         {
                         numIn++;
