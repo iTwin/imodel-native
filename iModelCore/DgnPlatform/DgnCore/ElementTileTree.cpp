@@ -977,13 +977,13 @@ BentleyStatus Loader::_LoadTile()
                 return ERROR;
                 }
             }
+
+        tile.SetContentRange(contentRange);
         }
 
 #ifdef TILECACHE_DEBUG
     s_statistics.Update(stopWatch.GetCurrentSeconds(), geometry.IsEmpty());
 #endif
-
-    tile.SetContentRange(contentRange);
 
     // No point subdividing empty Tiles - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
