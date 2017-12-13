@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassEmptyInput_EmptyResults)
@@ -36,7 +36,7 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassEmptyInput_EmptyResults)
     ASSERT_EQ(0, result.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClassesEmptyInput_EmptyResults)
@@ -59,7 +59,7 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClassesEmptyInput_EmptyRe
     ASSERT_EQ(0, result.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleInvalidClasses_SkipsInvalidClasses)
@@ -86,7 +86,7 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleInvalidClasses_SkipsInval
     EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClass_FiltersByClass)
@@ -112,7 +112,7 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClass_FiltersByClass)
     EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClasses_FiltersByClasses)
@@ -144,7 +144,7 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClasses_FiltersByClasses)
     EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass2->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassPolymorphicaly_FiltersByClassAndItsDerived)
@@ -174,7 +174,7 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassPolymorphicaly_FiltersByC
     EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClassesPolymorphicaly_FiltersByClassesAndItsDerived)
@@ -211,7 +211,7 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClassesPolymorphicaly_Fil
     EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, AddLabelFilter_EmptyLabelPassed_FindsNoInstances)
@@ -240,7 +240,7 @@ TEST_F(ECInstanceKeyFilterTests, AddLabelFilter_EmptyLabelPassed_FindsNoInstance
     ASSERT_EQ(0, result.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, AddLabelFilter_MultipleClasses_FiltersByLabel)
@@ -280,7 +280,7 @@ TEST_F(ECInstanceKeyFilterTests, AddLabelFilter_MultipleClasses_FiltersByLabel)
     EXPECT_CONTAINS(result, instanceKeyPair3);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, AddLabelFilterAndByClass_MultipleClasses_FiltersByLabelAndClass)
@@ -321,7 +321,7 @@ TEST_F(ECInstanceKeyFilterTests, AddLabelFilterAndByClass_MultipleClasses_Filter
     EXPECT_CONTAINS(result, instanceKeyPair3);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, AddAnyPropertiesLikeFilter_SingleClas_FiltersByLabel)
@@ -361,7 +361,7 @@ TEST_F(ECInstanceKeyFilterTests, AddAnyPropertiesLikeFilter_SingleClas_FiltersBy
     EXPECT_CONTAINS(result, instanceKeyPair2);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, AddAnyPropertiesLikeFilter_MultipleClasses_FiltersByLabel)
@@ -409,7 +409,7 @@ TEST_F(ECInstanceKeyFilterTests, AddAnyPropertiesLikeFilter_MultipleClasses_Filt
     EXPECT_CONTAINS(result, instanceKeyPair2);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, SetLimit_OnClassFilter_ReturnsLimitedInstances)
@@ -432,7 +432,7 @@ TEST_F(ECInstanceKeyFilterTests, SetLimit_OnClassFilter_ReturnsLimitedInstances)
     ASSERT_EQ(1, result.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECInstanceKeyFilterTests, SetLimit_OnLabelFilter_ReturnsLimitedInstances)

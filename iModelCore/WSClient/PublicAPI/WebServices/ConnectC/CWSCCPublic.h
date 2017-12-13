@@ -10,12 +10,12 @@
 
 #include <WebServices/ConnectC/CWSCC.h>
 
-/************************************************************************************//**
+/****************************************************************************************
 * \addtogroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
 * \{
 ****************************************************************************************/
 	
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Initialize the API with the authenticated token string
 * \param[in] authenticatedToken used to initizalize HttpClients
 * \param[in] temporaryDirectory directory path used for temporary files
@@ -47,7 +47,7 @@ IHTTPHANDLERPTR customHandler,
 void* securityStoreInitializer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Initialize the API with user credentials
 * \param[in] username username used to login
 * \param[in] password password used to login
@@ -81,14 +81,14 @@ IHTTPHANDLERPTR customHandler,
 void* securityStoreInitializer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief API handle free function
 * \param[in] apiHandle API object
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
 CWSCC_EXPORT CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle);
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new projectfavorite_v2
 * \param[in] apiHandle API object
 * \param[in] ProjectGuid
@@ -100,21 +100,21 @@ CWSCCHANDLE apiHandle,
 WCharCP ProjectGuid
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Retrieve the previous status message
 * \param[in] apiHandle Previously created API object
 * \return last status message
 ****************************************************************************************/
 CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE apiHandle);
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Retrieve the previous status description
 * \param[in] apiHandle Previously created API object
 * \return last status description
 ****************************************************************************************/
 CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle);
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Retrieve the instanceId of the last created object (if there is one, empty string otherwise)
 * \param[in] apiHandle Previously created API object
 * \param[out] instanceId the instance id of the last created object by this API object
@@ -122,7 +122,7 @@ CWSCC_EXPORT CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHAND
 ****************************************************************************************/
 CWSCC_EXPORT CallStatus ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (CWSCCHANDLE apiHandle, Utf8String& instanceId);
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Retrieve the previous status description
 * \param[in] apiHandle Previously created API object
 * \param[in] proxyUrl The base url for the Web Proxy
@@ -137,7 +137,7 @@ Utf8CP username,
 Utf8CP password
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create root project storage (project share) for CONNECT Project
 * \param[in] apiHandle API object
 * \param[in] projectGuid

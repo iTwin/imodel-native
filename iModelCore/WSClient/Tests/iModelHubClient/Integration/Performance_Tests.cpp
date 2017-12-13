@@ -73,7 +73,7 @@ struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
         RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new TestMultiAspect(""); }
 };
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsistruct                                            Algirdas.Mikoliunas       05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MultiAspectHandlerDomain : DgnDomain

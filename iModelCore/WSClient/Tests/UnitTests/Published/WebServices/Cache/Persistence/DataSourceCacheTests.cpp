@@ -21,7 +21,7 @@ std::set<T> ToStdSet(const bset<T>& bset)
     return std::set<T>(bset.begin(), bset.end());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Create_ValidParameters_Success)
@@ -30,7 +30,7 @@ TEST_F(DataSourceCacheTests, Create_ValidParameters_Success)
     EXPECT_EQ(SUCCESS, result);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Open_NoFile_Error)
@@ -39,7 +39,7 @@ TEST_F(DataSourceCacheTests, Open_NoFile_Error)
     EXPECT_EQ(ERROR, DataSourceCache().Open(path, CacheEnvironment()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Open_NonECDbFile_Error)
@@ -49,7 +49,7 @@ TEST_F(DataSourceCacheTests, Open_NonECDbFile_Error)
     EXPECT_EQ(ERROR, DataSourceCache().Open(path, CacheEnvironment()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Open_SimpleECDb_Succeeds)
@@ -63,7 +63,7 @@ TEST_F(DataSourceCacheTests, Open_SimpleECDb_Succeeds)
     EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Open_ExistingDb_Success)
@@ -78,7 +78,7 @@ TEST_F(DataSourceCacheTests, Open_ExistingDb_Success)
     EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
@@ -96,7 +96,7 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
     EXPECT_EQ(SUCCESS, DataSourceCache().Open(path, CacheEnvironment(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithEmptyEnvironment_Empty)
@@ -110,7 +110,7 @@ TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithEmptyEnvironment_Empty)
     EXPECT_EQ(L"", cacheEnv.externalFileCacheDir);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment)
@@ -129,7 +129,7 @@ TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithFullBaseEnvironment_SubFo
     EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), HasSubstr(baseEnv.externalFileCacheDir.c_str()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir)
@@ -147,7 +147,7 @@ TEST_F(DataSourceCacheTests, GetEnvironment_CreatedWithoutExternalEnvironmentDir
     EXPECT_THAT(cacheEnv.externalFileCacheDir.c_str(), AnyOf(EndsWith(L"\\ext\\"), EndsWith(L"//ext//")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds)
@@ -156,7 +156,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucce
     EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<BeFileName> {}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_PathPasssed_SuccessAndSchemaAccessable)
@@ -169,7 +169,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_PathPasssed_SuccessAndSchemaAccessabl
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassed_SuccessAndSchemasAccessable)
@@ -181,7 +181,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassed_SuccessAndSchemasAccess
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_RootInstanceCreated_ShouldNotDeleteRootInstance)
@@ -210,7 +210,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_RootInstanceCreated_ShouldNotDeleteRo
     EXPECT_EQ(root1, root2);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
@@ -224,7 +224,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("TestSchema2"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithoutMajorVersionChangeWithDeletedPropertyPassed_Error)
@@ -251,7 +251,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithoutMajorVersionChangeWithDe
     EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeButNoSharedColumnsWithDeletedPropertyPassed_Error)
@@ -278,7 +278,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeButNoShar
     EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeAndRequiredCAsWithDeletedPropertyPassed_SuccessAndPropertyDeleted)
@@ -329,7 +329,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeAndRequir
     EXPECT_TRUE(nullptr == ecClass->GetPropertyP("B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
@@ -384,7 +384,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDat
     EXPECT_TRUE(nullptr == ecClass->GetPropertyP("B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching)
@@ -426,7 +426,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_Change
     EXPECT_TRUE(VerifyHasRelationship(cache, "UpdateSchema.AB", {"UpdateSchema.A", "AA"}, {"UpdateSchema.B", "BB"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
@@ -440,7 +440,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
     EXPECT_EQ(ERROR, result);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate)
@@ -456,7 +456,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSche
     cache->UnRegisterSchemaChangeListener(&listener);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Close_SchemaChangeListenerRegistered_CallsListener)
@@ -471,7 +471,7 @@ TEST_F(DataSourceCacheTests, Close_SchemaChangeListenerRegistered_CallsListener)
     cache->Close();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListenerOnceTransactionIsStarted)
@@ -512,7 +512,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     cache2.UnRegisterSchemaChangeListener(&listener2);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
@@ -527,7 +527,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
     EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("WSCacheMetaSchema"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
@@ -539,7 +539,7 @@ TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullIn
     EXPECT_TRUE(instance.isNull());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetInstance_LinkedToRoot_ReturnsOk)
@@ -559,7 +559,7 @@ void VerifyJsonRawFormat(JsonValueCR instance)
     EXPECT_TRUE(instance.isMember(ECJsonUtilities::json_id()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetInstance_NewInstance_ReturnsPlaceholderInstanceWithExpectedFormat)
@@ -573,10 +573,10 @@ TEST_F(DataSourceCacheTests, GetInstance_NewInstance_ReturnsPlaceholderInstanceW
     VerifyJsonRawFormat(instance);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndInstanceNotCached)
@@ -592,7 +592,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCache_ReturnsErrorAndIn
 
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
     }
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCacheAndResponseNotModified_ReturnsErrorAndInstanceNotCached)
@@ -609,7 +609,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceNotInCacheAndResponseNotModi
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
@@ -627,7 +627,7 @@ TEST_F(DataSourceCacheTests, UpdateInstance_InstanceInCache_SuccessfullyUpdates)
     EXPECT_EQ(Utf8String("TestValue"), updatedInstance["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceNotCached_IsFullyCachedIsFalse)
@@ -637,7 +637,7 @@ TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceNotCached_IsFullyCached
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceCached_IsFullyCachedIsTrue)
@@ -651,7 +651,7 @@ TEST_F(DataSourceCacheTests, GetCachedObjectInfo_InstanceCached_IsFullyCachedIsT
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_InstanceNotCached_ReturnsDataNotCached)
@@ -661,7 +661,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceNotCached_ReturnsDataNotCach
     EXPECT_EQ(CacheStatus::DataNotCached, cache->RemoveInstance({"TestSchema.TestClass", "Foo"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_DeletesCachedInstanceFromECDb)
@@ -680,7 +680,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_DeletesCachedInstance
     EXPECT_FALSE(DoesInstanceExist(*cache, instanceKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_NavigationBaseObject_DeletesCachedInstanceFromECDb)
@@ -694,7 +694,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_NavigationBaseObject_DeletesCachedIn
     EXPECT_FALSE(cache->FindInstance(ObjectId()).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_NotExistingNavigationBaseObject_ReturnsDataNotCached)
@@ -705,7 +705,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_NotExistingNavigationBaseObject_Retu
     EXPECT_EQ(CacheStatus::DataNotCached, cache->RemoveInstance(ObjectId()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryExists_DeletesQueryResults)
@@ -732,7 +732,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryExists_DeletesQueryResults
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "resultB"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultHasOtherParent_DoesNotDeleteResult)
@@ -754,7 +754,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultHasOtherParent_DoesN
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "result"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_InstanceIsInCachedQueryResults_QueryResultCacheTagIsRemoved)
@@ -777,7 +777,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceIsInCachedQueryResults_Query
     EXPECT_THAT(responseIds, Contains(ObjectId("TestSchema.TestClass", "B")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_HasCachedFile_FileIsDeleted)
@@ -794,7 +794,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_HasCachedFile_FileIsDeleted)
     EXPECT_FALSE(cachedFilePath.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInRoot_LeavesResultInstanceInCache)
@@ -814,7 +814,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInRoot_Lea
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "resultInRoot"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F (DataSourceCacheTests, RemoveInstance_UnderlyingTreeHasCyclicHoldingRelationships_StillRemovesAllTree)
@@ -849,7 +849,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInRoot_Lea
 //    EXPECT_FALSE (cache->HasInstance ({"TestSchema.TestClass", "childA"}));
 //    }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInWeaklyLinkedToRoot_RemovesResultInstanceInCache)
@@ -869,7 +869,7 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInWeaklyLi
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "resultInRoot"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_NotCachedInstance_Null)
@@ -879,7 +879,7 @@ TEST_F(DataSourceCacheTests, FindInstance_NotCachedInstance_Null)
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_PassedCachedRelationshipId_ReturnsInvalidAsFindRelationshipShouldBeUsed)
@@ -894,7 +894,7 @@ TEST_F(DataSourceCacheTests, FindInstance_PassedCachedRelationshipId_ReturnsInva
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestRelationshipClass", "AB"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindCachedObject_InstanceLinkedToRoot_IsNotNull)
@@ -905,7 +905,7 @@ TEST_F(DataSourceCacheTests, FindCachedObject_InstanceLinkedToRoot_IsNotNull)
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, LinkInstanceToRoot_NotCachedInstance_HasInstance)
@@ -916,7 +916,7 @@ TEST_F(DataSourceCacheTests, LinkInstanceToRoot_NotCachedInstance_HasInstance)
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedToRoot_InstanceRemoved)
@@ -928,7 +928,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedToRoot
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceButLinkedToOtherRoot_InstanceNotRemoved)
@@ -942,7 +942,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceButLinkedToO
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "IdB"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedAlsoToOtherRoot_InstanceNotRemoved)
@@ -955,7 +955,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_ExistingInstanceLinkedAlsoTo
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NotCachedInstance_Suceeds)
@@ -967,7 +967,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NotCachedInstance_Suceeds)
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NonExistingRoot_SuceedsAndKeepsInstance)
@@ -979,7 +979,7 @@ TEST_F(DataSourceCacheTests, UnlinkInstanceFromRoot_NonExistingRoot_SuceedsAndKe
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_ObjectIdDoesNotMachWSObjectsResponse_ErrorIsReturned)
@@ -994,7 +994,7 @@ TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_ObjectIdDoesNotMachWSObj
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_WSObjectResultPassed_InstanceInRootAndFullyCached)
@@ -1009,7 +1009,7 @@ TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_WSObjectResultPassed_Ins
     EXPECT_TRUE(cache->IsInstanceInRoot("Root", cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_InstanceJsonPassed_InstanceInRootAndFullyCached)
@@ -1023,7 +1023,7 @@ TEST_F(DataSourceCacheTests, CacheInstanceAndLinkToRoot_InstanceJsonPassed_Insta
     EXPECT_TRUE(cache->IsInstanceInRoot("Root", cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstance_InstanceCached)
@@ -1038,7 +1038,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstance_InstanceCac
     EXPECT_TRUE(cache->IsInstanceInRoot("Root", cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithWeakLink_InstanceCached)
@@ -1052,7 +1052,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithWeakLink
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithETag_ETagIsCached)
@@ -1068,7 +1068,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_OneInstanceWithETag_ETa
     EXPECT_EQ("TestTag", cache->ReadInstanceCacheTag(objectId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWithWeakLink_InstancesCached)
@@ -1083,7 +1083,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWithWea
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWitStrongLink_InstancesCached)
@@ -1098,7 +1098,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_RelatedInstancesWitStro
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingChildInstanceClass_ReturnsError)
@@ -1111,7 +1111,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingChildInstanc
     ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingRelationshipClass_ReturnsError)
@@ -1124,7 +1124,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingRelationship
     ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
     }
     
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingInstanceClass_ReturnsError)
@@ -1139,7 +1139,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingInstanceClas
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFromCache)
@@ -1152,7 +1152,7 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootHasLinkedInstance_InstanceRemovedFro
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRoot_RootHasWeaklyLinkedInstance_InstanceRemovedFromCache)
@@ -1168,7 +1168,7 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootHasWeaklyLinkedInstance_InstanceRemo
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRoot_InstanceLinkedToSeveralRoots_InstanceNotRemoved)
@@ -1182,7 +1182,7 @@ TEST_F(DataSourceCacheTests, RemoveRoot_InstanceLinkedToSeveralRoots_InstanceNot
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelationshipToItsParent_QueryResultsAndParentDeleted)
@@ -1201,7 +1201,7 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelatio
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "CyclicParent"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_NoSuchRoots_ReturnsSuccess)
@@ -1210,7 +1210,7 @@ TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_NoSuchRoots_ReturnsSuccess)
     EXPECT_EQ(SUCCESS, cache->RemoveRootsByPrefix("Foo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_RootsWithLinkedInstancesExist_DeletesOnlyPrefixedRootLinkedInstances)
@@ -1230,7 +1230,7 @@ TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_RootsWithLinkedInstancesExist_D
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "D"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsInstanceConnectedToRoot_InstanceIsRootChild_True)
@@ -1241,7 +1241,7 @@ TEST_F(DataSourceCacheTests, IsInstanceConnectedToRoot_InstanceIsRootChild_True)
     EXPECT_TRUE(cache->IsInstanceConnectedToRoot("root", cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_RootNotUsed_ReturnsSuccessAndNoInstances)
@@ -1254,7 +1254,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_RootNotUsed_ReturnsSucces
     EXPECT_EQ(0, instances.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstancesLinkedToRoot_ReturnsInstances)
@@ -1272,7 +1272,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstance
     EXPECT_THAT(cache->ObjectIdFromJsonInstance(instances[1]), AnyOf(ObjectId("TestSchema.TestClass", "A"), ObjectId("TestSchema.TestClass2", "B")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFile_NotExistingInstance_Success)
@@ -1281,7 +1281,7 @@ TEST_F(DataSourceCacheTests, RemoveFile_NotExistingInstance_Success)
     EXPECT_EQ(SUCCESS, cache->RemoveFile({"TestSchema.TestClass", "NotExisting"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFile_NotExistingFile_Success)
@@ -1291,7 +1291,7 @@ TEST_F(DataSourceCacheTests, RemoveFile_NotExistingFile_Success)
     EXPECT_EQ(SUCCESS, cache->RemoveFile(cache->FindInstance(instance)));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToTemporary_DeletesFileWithContainingFolder)
@@ -1309,7 +1309,7 @@ TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToTemporary_DeletesFileWithCon
     EXPECT_TRUE(GetTestCacheEnvironment().temporaryFileCacheDir.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToPersistent_DeletesFileWithContainingFolder)
@@ -1327,7 +1327,7 @@ TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToPersistent_DeletesFileWithCo
     EXPECT_TRUE(GetTestCacheEnvironment().persistentFileCacheDir.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToExternal_DeletesFileWithSubFolderButLeavesExternalDir)
@@ -1347,7 +1347,7 @@ TEST_F(DataSourceCacheTests, RemoveFile_FileCachedToExternal_DeletesFileWithSubF
     EXPECT_THAT(GetFolderContent(cache->GetEnvironment().externalFileCacheDir), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFile_TwoFilesInExternalFolderAndDeletingOneOfThem_MovesFileButLeavesExternalSubfFolder)
@@ -1371,7 +1371,7 @@ TEST_F(DataSourceCacheTests, RemoveFile_TwoFilesInExternalFolderAndDeletingOneOf
     EXPECT_TRUE(pathB.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFile_AdditionalFileUpInExternalDirectory_RemovesEmptySubDirectoriesOnly)
@@ -1397,7 +1397,7 @@ TEST_F(DataSourceCacheTests, RemoveFile_AdditionalFileUpInExternalDirectory_Remo
     EXPECT_FALSE(BeFileName(cache->GetEnvironment().externalFileCacheDir).AppendToPath(L"A/B/C").DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToFull_LeavesFile)
@@ -1415,7 +1415,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_TRUE(path.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToTemporary_DeletesFileWithContainingFolder)
@@ -1435,7 +1435,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_TRUE(GetTestCacheEnvironment().temporaryFileCacheDir.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToPersistent_DeletesFileWithContainingFolder)
@@ -1455,7 +1455,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_TRUE(GetTestCacheEnvironment().persistentFileCacheDir.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToExternal_DeletesFileWithSubFolderButLeavesExternalDir)
@@ -1477,7 +1477,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_THAT(GetFolderContent(cache->GetEnvironment().externalFileCacheDir), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndOldFileCachedToPersistent_DeletesFile)
@@ -1503,7 +1503,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_FALSE(path.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndNewFileCachedToPersistent_LeavesFile)
@@ -1529,7 +1529,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_TRUE(path.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExists_LeavesModifiedFile)
@@ -1547,7 +1547,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExist
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Reset_InstanceLinkedToRoot_InstanceRemoved)
@@ -1561,7 +1561,7 @@ TEST_F(DataSourceCacheTests, Reset_InstanceLinkedToRoot_InstanceRemoved)
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Reset_NullRootRemovedWithNavigationBase_NavigationBaseIsNotInCache)
@@ -1574,7 +1574,7 @@ TEST_F(DataSourceCacheTests, Reset_NullRootRemovedWithNavigationBase_NavigationB
     EXPECT_FALSE(cache->FindInstance(ObjectId()).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, Reset_FileCachedBefore_CachesNewFileToSameLocation)
@@ -1597,7 +1597,7 @@ TEST_F(DataSourceCacheTests, Reset_FileCachedBefore_CachesNewFileToSameLocation)
         Utf8String(BeFileName::GetDirectoryName(newCachedPath)));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_NonExistingObject_False)
@@ -1607,7 +1607,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_NonExistingObject_False)
     EXPECT_FALSE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "NonExistant"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInFullPersistenceRoot_True)
@@ -1619,7 +1619,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInFullPersistenceRoot_
     EXPECT_TRUE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryPersistenceRoot_False)
@@ -1631,7 +1631,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryPersistence
     EXPECT_FALSE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectQueryParentInFullPersistenceRoot_True)
@@ -1650,7 +1650,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectQueryParentInFullPersi
     EXPECT_TRUE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryAndFullPersistenceRoots_True)
@@ -1664,7 +1664,7 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryAndFullPers
     EXPECT_TRUE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetupRoot_NewRoot_Succeeds)
@@ -1675,7 +1675,7 @@ TEST_F(DataSourceCacheTests, SetupRoot_NewRoot_Succeeds)
     EXPECT_EQ(SUCCESS, cache->SetupRoot("boo", CacheRootPersistence::Full));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, DoesRootExist_NonExistingRoot_FalseAndRootIsNotCreated)
@@ -1686,7 +1686,7 @@ TEST_F(DataSourceCacheTests, DoesRootExist_NonExistingRoot_FalseAndRootIsNotCrea
     EXPECT_FALSE(cache->DoesRootExist("Foo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, DoesRootExist_ExistingRoot_True)
@@ -1697,7 +1697,7 @@ TEST_F(DataSourceCacheTests, DoesRootExist_ExistingRoot_True)
     EXPECT_TRUE(cache->DoesRootExist("Foo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindOrCreateRoot_NonExistingRoot_CreatesNewRoot)
@@ -1707,7 +1707,7 @@ TEST_F(DataSourceCacheTests, FindOrCreateRoot_NonExistingRoot_CreatesNewRoot)
     EXPECT_TRUE(cache->FindOrCreateRoot("Foo").IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindOrCreateRoot_DifferentRoot_CreatesNewRoot)
@@ -1722,7 +1722,7 @@ TEST_F(DataSourceCacheTests, FindOrCreateRoot_DifferentRoot_CreatesNewRoot)
     EXPECT_THAT(rootKeyA, Not(rootKeyB));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindOrCreateRoot_ExistingRoot_ReturnsSameKey)
@@ -1735,7 +1735,7 @@ TEST_F(DataSourceCacheTests, FindOrCreateRoot_ExistingRoot_ReturnsSameKey)
     EXPECT_THAT(cache->FindOrCreateRoot("Foo"), rootKey);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RenameRoot_ExistingRoot_SuccessAndRenamesRoot)
@@ -1750,7 +1750,7 @@ TEST_F(DataSourceCacheTests, RenameRoot_ExistingRoot_SuccessAndRenamesRoot)
     EXPECT_THAT(cache->DoesRootExist("Other"), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RenameRoot_NotExistingRoot_SuccessAndCreatesRoot)
@@ -1765,7 +1765,7 @@ TEST_F(DataSourceCacheTests, RenameRoot_NotExistingRoot_SuccessAndCreatesRoot)
     EXPECT_THAT(cache->DoesRootExist("Other"), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RenameRoot_TargetRootExists_Error)
@@ -1780,7 +1780,7 @@ TEST_F(DataSourceCacheTests, RenameRoot_TargetRootExists_Error)
     EXPECT_THAT(cache->DoesRootExist("Other"), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RenameRoot_ExistingRootWithInstanceLinked_RenamedRootHasInstanceLinked)
@@ -1794,7 +1794,7 @@ TEST_F(DataSourceCacheTests, RenameRoot_ExistingRootWithInstanceLinked_RenamedRo
     EXPECT_THAT(cache->IsInstanceInRoot("Root", cache->FindInstance({"TestSchema.TestClass", "Foo"})), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstances_WSResultNotModified_ReturnsError)
@@ -1806,7 +1806,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_WSResultNotModified_ReturnsError)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstances_NotExistingInstance_InstanceInsertedIntoRejected)
@@ -1826,7 +1826,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_NotExistingInstance_InstanceInserte
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_Caches)
@@ -1845,7 +1845,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_Caches)
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_InsertsIntoCachedInstances)
@@ -1866,7 +1866,7 @@ TEST_F(DataSourceCacheTests, UpdateInstances_ExistingInstance_InsertsIntoCachedI
     EXPECT_CONTAINS(cachedInstances, StubECInstanceKey(0, 42));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NewInstnaces_ReturnsCachedInstanceKeys)
@@ -1887,7 +1887,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NewInstnaces_ReturnsCac
     EXPECT_THAT(instanceKeys, Contains(ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass2", "B"}))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ErrorAndNullJson)
@@ -1900,7 +1900,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ErrorAndNullJso
     EXPECT_THAT(instance.isNull(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ErrorAndNullJson)
@@ -1912,7 +1912,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ErrorAndNullJson)
     EXPECT_THAT(instance.isNull(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsJsonInstanceWithRemoteIdAndValues)
@@ -1931,7 +1931,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsJsonInstanceWi
     EXPECT_THAT(instance["TestProperty"].asString(), Eq("TestValue"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ReturnsNull)
@@ -1943,7 +1943,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseObjectId_ReturnsNull)
     EXPECT_THAT(instance.IsNull(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ReturnsNull)
@@ -1954,7 +1954,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NotExistingObjectId_ReturnsNull)
     EXPECT_THAT(instance.IsNull(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsECInstanceWithRemoteIdAndValues)
@@ -1974,7 +1974,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsECInstanceWith
     EXPECT_THAT(value.GetUtf8CP(), StrEq("TestValue"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseInstanceKey_ReturnsNull)
@@ -1989,7 +1989,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseInstanceKey_ReturnsNull)
     EXPECT_THAT(instance.IsNull(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstance_ExistingInstanceKey_ReturnsECInstanceWithRemoteIdAndValues)
@@ -2012,7 +2012,7 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingInstanceKey_ReturnsECInstanceW
     EXPECT_THAT(value.GetUtf8CP(), StrEq("TestValue"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIds_ReturnsInstances)
@@ -2034,7 +2034,7 @@ TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIds_ReturnsInstances)
     EXPECT_EQ(2, instancesArray.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
@@ -2047,7 +2047,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     EXPECT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_CachedInstanceAsParentInCache_Succeeds)
@@ -2060,7 +2060,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CachedInstanceAsParentInCache_Succeed
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_RootAsParentInCache_Succeeds)
@@ -2073,7 +2073,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RootAsParentInCache_Succeeds)
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NavigationBaseAsParentInCache_Succeeds)
@@ -2087,7 +2087,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NavigationBaseAsParentInCache_Succeed
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentInstance_Succeeds)
@@ -2103,7 +2103,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentInstanc
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentRoot_Succeeds)
@@ -2119,7 +2119,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentRoot_Su
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderInstance_Succeeds)
@@ -2136,7 +2136,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderInstanc
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderRoot_Succeeds)
@@ -2153,7 +2153,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderRoot_Su
     EXPECT_TRUE(cache->IsResponseCached(key2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFullInstances)
@@ -2178,7 +2178,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
     EXPECT_EQ("TestValueB", instanceJson["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPreviusly_RemovesOldQueryResults)
@@ -2200,7 +2200,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPrevi
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameButDifferentParentsCachedPreviusly_DoesNotOverrideExistingQuery)
@@ -2222,7 +2222,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameButDifferentParentsC
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewData_RemovesInstanceFromCache)
@@ -2243,7 +2243,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewData_RemovesInsta
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewDataButIsInRoot_LeavesInstanceInCache)
@@ -2262,7 +2262,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewDataButIsInRoot_L
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResultsButIsWeaklyLinkedToRoot_RemovesInstance)
@@ -2282,7 +2282,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResultsButIsWeakl
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResults_RemovesInstanceChildQueryResults)
@@ -2305,7 +2305,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResults_RemovesIn
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "ChildFoo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile)
@@ -2329,7 +2329,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewRes
     EXPECT_FALSE(cachedFilePath.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NewResponseDoesNotContainHoldingRelationshipChild_RemovesChildInstance)
@@ -2351,7 +2351,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResponseDoesNotContainHoldingRelat
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NewResponseNoLongerContainsParent_RemovesCachedInstancesExceptParent)
@@ -2372,7 +2372,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResponseNoLongerContainsParent_Rem
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NewResponseIsEmpty_RemovesCachedInstances)
@@ -2392,7 +2392,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResponseIsEmpty_RemovesCachedInsta
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceAddedInNewResults_AddsInstanceToCache)
@@ -2412,7 +2412,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceAddedInNewResults_AddsInstanc
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_RootAsParent_InstancesNotRelatedToRootInRelationships)
@@ -2434,7 +2434,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RootAsParent_InstancesNotRelatedToRoo
     EXPECT_FALSE(ECDbHelper::IsInstanceInMultiMap(instance, relatedInstances));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultNotModified_LeavesPreviouslyCachedData)
@@ -2451,7 +2451,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultNotModified_LeavesPreviouslyCac
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_CachesAllRelatedInstances)
@@ -2473,7 +2473,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_Ca
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "D"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_CachesRelatedInstancesWithDefinedRelationship)
@@ -2492,7 +2492,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultInstanceWithRelatedInstances_Ca
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesCyclicRelationship)
@@ -2514,7 +2514,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesCy
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass, {"TestSchema.TestClass", "B"}, {"TestSchema.TestClass", "A"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesInstanceOnce)
@@ -2536,7 +2536,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultWithCyclicRelationship_CachesIn
     EXPECT_EQ("CachedValue", instanceJson["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithChangedRelationship_RemovesOldRelationship)
@@ -2565,7 +2565,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithChangedRelationship_Remo
     EXPECT_FALSE(VerifyHasRelationship(cache, testRelClass, {"TestSchema.TestClass", "B"}, {"TestSchema.TestClass", "C"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleClassRelationshipsAndNewResultHasNewIntermixedRelationships_LeavesOldRelationshipsAndAddsNew_REGRESSION)
@@ -2599,7 +2599,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleClassRelationshipsAndNewResul
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass1, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "2"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelationships_RemovesOldInstances)
@@ -2617,7 +2617,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelatio
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithoutRelationshipButSameRelationshipCachedInOtherQuery_LeavesOldRelationship)
@@ -2644,7 +2644,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultWithoutRelationshipButSameRe
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelationshipWithSameIds_CachesRelationships)
@@ -2670,7 +2670,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelationshipWithSameIds
     EXPECT_EQ(ObjectId("TestSchema.TestRelationshipClass", "SameId"), cache->FindRelationship(relationshipBC));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceNotCachedPreviouslyAndQueryIsNull_CachesFullInstance)
@@ -2689,7 +2689,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceNotCachedPreviouslyAndQueryIs
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Partial"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanceAndQueryIsNull_OverwritesFullInstance)
@@ -2720,7 +2720,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     EXPECT_TRUE(rejected.empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanceInTemporaryRoot_OverwritesItWithNew)
@@ -2752,7 +2752,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstancePreviouslyCachedAsFullInstanc
     EXPECT_TRUE(rejected.empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QueryPassedButNotRejectedIsNull_Error)
@@ -2769,7 +2769,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryPassedButNotRejectedIsNull_Error
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QueryHasEmptySelectToSelectAllProperties_CachesInstanceAsFull)
@@ -2788,7 +2788,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryHasEmptySelectToSelectAllPropert
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllProperties_CachesInstanceAsFull)
@@ -2809,7 +2809,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllProperties_CachesInsta
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllPropertiesWithDifferentSchemaClass_CachesInstanceAsFullAndReturnsNoRejects)
@@ -2830,7 +2830,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsAllPropertiesWithDifferen
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllProperties_CachesInstanceAsPartial)
@@ -2852,7 +2852,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllProperties_CachesIn
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QueryPolymorphicallySelectsNotAllProperties_CachesInstanceAsPartial)
@@ -2874,7 +2874,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryPolymorphicallySelectsNotAllProp
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsJustIdButFromEmptySchemaAndClass_CachesInstanceAspartial)
@@ -2896,7 +2896,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsJustIdButFromEmptySchemaA
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdAndSomeProperiesForFullyCachedInstance_RejectsInstance)
@@ -2923,7 +2923,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdAndSomeProperiesForFull
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsSomeProperiesAndIdForFullyCachedInstance_RejectsInstance)
@@ -2950,7 +2950,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsSomeProperiesAndIdForFull
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsOnlyIdForFullyCachedInstance_TreatsInstanceAsReferenceAndDoesNotRejectIt)
@@ -2977,7 +2977,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsOnlyIdForFullyCachedInsta
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QueryDSelectsForwardRelatedInstanceForDifferentSchemaWithAllProperties_CachesInstances)
@@ -3001,7 +3001,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QueryDSelectsForwardRelatedInstanceFo
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsForwardRelatedInstanceWithAllProperties_CachesInstances)
@@ -3025,7 +3025,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsForwardRelatedInstanceWit
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsBackwardRelatedInstanceWithAllProperties_CachesInstances)
@@ -3049,7 +3049,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsBackwardRelatedInstanceWi
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphicallyWithAllProperties_CachesFullInstances)
@@ -3073,7 +3073,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphi
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphicallyWithAllPropertiesAndResultHasDerived_CachesFullInstances)
@@ -3097,7 +3097,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstancePolimorphi
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestDerivedClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphically_CachesFullInstances)
@@ -3121,7 +3121,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphicallyAndResponseHasDerivedRelationshipAndNotAllProperties_CachesRelatedAsPartial)
@@ -3145,7 +3145,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedFullyWithDefaultRelationship_RelatedIsCachedAsPartialAsDefaultRelationshipsAreNotSupported)
@@ -3169,7 +3169,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedFullyWithDefaultRe
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedPropertyOnlyAndRelatedWasCachedAsFull_RejectsRelatedInstance)
@@ -3198,7 +3198,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedPropertyOnlyAndRel
     EXPECT_EQ("OldValue", instanceJson["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyWithRelated_SkipsIdOnlyInstanceAndCachesRelatedInstances)
@@ -3225,7 +3225,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyWithRelated_SkipsId
     EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "A"})["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsFull_TreatsIdOnlyAsReferenceAndDoesNotRejectInstance)
@@ -3253,7 +3253,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
     EXPECT_EQ("OldValue", instanceJson["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphicallyAndResponseHasDerivedRelationship_CachesFullInstances)
@@ -3277,7 +3277,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelationshipPolymorphical
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithAllPropertiesAndAliases_CachesInstances)
@@ -3301,7 +3301,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithAllPro
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithNotAllPropertiesForFullyCachedInstances_RejectsRelatedInstance)
@@ -3334,7 +3334,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedInstanceWithNotAll
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWithNotAllPropertiesForFullyCachedInstances_RejectsRelatedInstances)
@@ -3375,7 +3375,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "C"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWithAllPropertiesForFullyCachedInstances_CachesInstances)
@@ -3414,7 +3414,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNestedRelatedInstanceWith
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "C"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyCachedInstances_RejectsAllInstances)
@@ -3450,7 +3450,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData)
@@ -3501,7 +3501,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
     EXPECT_EQ("", cache->ReadResponseCacheTag(fullResponseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPartialInstanceAsParent_InvalidatesFullResponsesWhenOverridenWithPartialData)
@@ -3554,7 +3554,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponsesWithFullAndPar
     EXPECT_EQ("", cache->ReadResponseCacheTag(fullResponseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponseWithFullAndThenPartial_DoesNotInvalidateButOverridesItselfWithPartialData)
@@ -3588,7 +3588,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CacheTemporaryResponseWithFullAndThen
     EXPECT_EQ("TagB", cache->ReadResponseCacheTag(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelationshipToResults)
@@ -3608,7 +3608,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelati
     EXPECT_THAT(ECDbHelper::IsInstanceInMultiMap(instanceKey, parentInstances), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHaveHoldingRelationshipToResultsButHolderDoes)
@@ -3630,7 +3630,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHa
     EXPECT_THAT(ECDbHelper::IsInstanceInMultiMap(instanceKey, holderInstances), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults)
@@ -3648,7 +3648,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsR
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted)
@@ -3669,7 +3669,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndP
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Parent"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Simas.Lukenas                      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ParentIsRemoved_NewResponseIsNotCached)
@@ -3682,7 +3682,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ParentIsRemoved_NewResponseIsNotCache
     ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponseNotCached_NewResponseIsNotCached)
@@ -3693,7 +3693,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponseNotCached_NewRe
     ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponsePageNotCached_NewResponseIsNotCached)
@@ -3705,7 +3705,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedAndResponsePageNotCached_N
     ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubWSObjectsResponseNotModified(), nullptr, nullptr, 42));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsHolderInstanceAndHolderRootIsRemoved_QueryResultsAndHolderDeleted)
@@ -3728,7 +3728,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsHolderInstanceAndH
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Holder"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleNestedResponsesWithHolderAndHolderIsRemoved_RemovesResults)
@@ -3759,7 +3759,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleNestedResponsesWithHolderAndH
     EXPECT_THAT(cache->IsResponseCached(key3), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRelationshipProperties)
@@ -3786,7 +3786,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingSourceCardinality_Error)
@@ -3803,7 +3803,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingTargetCardinality_Error)
@@ -3821,7 +3821,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
@@ -3845,7 +3845,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelation
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "C"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationshipWithUnusedInstances_RemovesUnusedInstancesFromCashe)
@@ -3875,7 +3875,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelation
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClassB", "B"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_DoesNotLooseChildrenData)
@@ -3905,7 +3905,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelation
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassB", "C"}, {"TestSchema.TestClassB", "B"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneHoldingRelationship_DoesNotLooseChildrenData)
@@ -3930,7 +3930,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneHoldingR
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClass", "C"}, {"TestSchema.TestClass", "B"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleResultContainsChangedOneToOneHoldingRelationship_DoesNotLooseChildrenData3)
@@ -3965,7 +3965,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleResultContainsChangedOneToOne
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "C"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 +* @bsimethod                                julius.cepukenas                     09/17
 ++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToManyRelationship_ChangesRelationshipWithoutErrors)
@@ -3998,7 +3998,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToManyRelatio
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "D"}, {"TestSchema.TestClassB", "C"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedManyToOneRelationship_ChangesRelationshipWithoutErrors)
@@ -4029,7 +4029,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedManyToOneRelatio
     EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "C"}, {"TestSchema.TestClassB", "B"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_NewResponseOverridesOldOne)
@@ -4051,7 +4051,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameAndParent_Ne
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameParentAndSameNameButDifferentHolders_NewResponseOverridesOldOne)
@@ -4074,7 +4074,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameParentAndSameNameButDiffe
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameButDifferentParents_DoesNotOverrideEachOther)
@@ -4097,7 +4097,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeysHaveSameHolderAndNameButDifferent
     EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NotCancelledCancellatioTokenPassed_CachesAndReturnsSuccess)
@@ -4113,7 +4113,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotCancelledCancellatioTokenPassed_Ca
     EXPECT_THAT(cache->IsResponseCached(responseKey), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_CancelledCancellatioTokenPassed_ReturnsError)
@@ -4128,7 +4128,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CancelledCancellatioTokenPassed_Retur
     EXPECT_EQ(CacheStatus::Error, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse(), nullptr, nullptr, 0, token));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_DifferentPages_Cached)
@@ -4164,7 +4164,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_DifferentPages_Cached)
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_SamePage_Overrides)
@@ -4199,7 +4199,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_SamePage_Overrides)
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_CachedPagesAndFinalResponseOnFirstPage_OverridesAllPreviousPages)
@@ -4233,7 +4233,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_CachedPagesAndFinalResponseOnFirstPag
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndDefaultPage_KeepsOnlyFirstPageAndCompletesResponse)
@@ -4266,7 +4266,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndDefaultPag
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndOnLastPage_SetsAsCached)
@@ -4300,7 +4300,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndOnLastPage
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedPageAndThenModifiedPageResponses_ModifiedResponseClearsIsResponseCachedFlag)
@@ -4322,7 +4322,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotModifiedPageAndThenModifiedPageRes
     EXPECT_FALSE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedPage_SetsAsIsResponseCached)
@@ -4345,7 +4345,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedPage_SetsAsIsResponse
     EXPECT_TRUE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NotFinalAndNotModifiedPageAfterModifiedPage_DoesNotSetIsResponseCached)
@@ -4366,7 +4366,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_NotFinalAndNotModifiedPageAfterModifi
     EXPECT_FALSE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndPageIndexZero_RemovesAllPreviousPages)
@@ -4400,7 +4400,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndPageIndexZero_Removes
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePages_RemovesPagesOutsideOfFinalPageIndex)
@@ -4445,7 +4445,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePages_Removes
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "E"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePagesWihtSpacedOutIndexes_RemovesPagesOutsideOfPageIndex)
@@ -4485,7 +4485,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePagesWihtSpac
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_UpdatesPropertyValueForSameInstanceInCache)
@@ -4508,7 +4508,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_
     EXPECT_EQ("NewValue", properties["TestReadOnlyProperty"]);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithoutValue_CacheDoesNotUpdateValueAsECDbNoLongerDoesThat)
@@ -4533,7 +4533,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithout
     EXPECT_EQ(Json::Value::GetNull(), properties["TestCalculatedProperty"]);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithValue_CachesProvidedValue)
@@ -4556,7 +4556,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithVal
     EXPECT_EQ("NewValue", properties["TestCalculatedProperty"]);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
@@ -4567,7 +4567,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
     EXPECT_FALSE(cache->IsResponseCached(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_ResponseNotCachedButParentExists_False)
@@ -4577,7 +4577,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseNotCachedButParentExists_F
     EXPECT_FALSE(cache->IsResponseCached(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_ResponseCached_True)
@@ -4589,7 +4589,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseCached_True)
     EXPECT_TRUE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_ResponseWithHoldererCached_True)
@@ -4602,7 +4602,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_ResponseWithHoldererCached_True)
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_NoFinalPageCached_False)
@@ -4615,7 +4615,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_NoFinalPageCached_False)
     EXPECT_FALSE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_FinalPageCached_True)
@@ -4629,7 +4629,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_FinalPageCached_True)
     EXPECT_TRUE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_NotFinalPageCachedIntoFinalizedResponse_False)
@@ -4644,7 +4644,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_NotFinalPageCachedIntoFinalizedRes
     EXPECT_FALSE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_AllPagesCachedSecondTime_True)
@@ -4660,7 +4660,7 @@ TEST_F(DataSourceCacheTests, IsResponseCached_AllPagesCachedSecondTime_True)
     EXPECT_TRUE(cache->IsResponseCached(key));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQueryContainsFullyCachedInstanceInTemporaryRoot_SetsInstanceStateToPartial)
@@ -4690,7 +4690,7 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQueryContainsFullyCachedParentInstanceInTemporaryRoot_SetsInstanceStateToPartial)
@@ -4723,7 +4723,7 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQueryContainsFullyCachedInstanceInFullRoot_LeavesInstanceStateFullyCached)
@@ -4753,7 +4753,7 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "FullyCached"}).IsFullyCached());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDataNotCachedAndEmptyArray)
@@ -4766,7 +4766,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDa
     EXPECT_TRUE(results.empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingParent_ReturnsDataNotCachedAndEmptyArray)
@@ -4779,7 +4779,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingParent_ReturnsD
     EXPECT_TRUE(results.empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ZeroResultsCached_ReturnsOkAndEmptyArray)
@@ -4794,7 +4794,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ZeroResultsCached_ReturnsO
     EXPECT_TRUE(results.empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsWithTwoInstance_ReturnsBothInstances)
@@ -4815,7 +4815,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsWithTwoInstan
     EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsIncludeInstancesRelatedToOtherInstance_ReturnsBothInstances)
@@ -4837,7 +4837,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedResultsIncludeInstan
     EXPECT_CONTAINS(results, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "B"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_EmptyResultsOverrideParentAndInstanceResult_ReturnsEmpty)
@@ -4859,7 +4859,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_EmptyResultsOverrideParent
     EXPECT_EQ(0, results.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_PartialInstanceRejectedWhileCaching_StillReturnsInstanceAsQueryResult)
@@ -4889,7 +4889,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_PartialInstanceRejectedWhi
     EXPECT_EQ("FullyCached", results[0][DataSourceCache_PROPERTY_RemoteId].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithInstance_ReturnsInstanceProperties)
@@ -4908,7 +4908,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsWithInstance_ReturnsInsta
     EXPECT_EQ("42", results[0]["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponse_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
@@ -4928,7 +4928,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedWithKeyWithSeperateHolderButPass
     EXPECT_EQ("42", results[0]["TestProperty"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeParent_ReturnsParentAlso)
@@ -4949,7 +4949,7 @@ TEST_F(DataSourceCacheTests, ReadResponse_CachedResultsIncludeParent_ReturnsPare
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), cache->ObjectIdFromJsonInstance(results[0]));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDataNotCachedAndEmptyMap)
@@ -4962,7 +4962,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_NonExistingQuery_ReturnsDa
     EXPECT_EQ(0, instances.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_TwoInstancesCachedAsResult_ReturnsThemInMap)
@@ -4984,7 +4984,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_TwoInstancesCachedAsResult
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "B"}), instances));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ResultsContainParent_ReturnsParent)
@@ -5005,7 +5005,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ResultsContainParent_Retur
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instances));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
@@ -5025,7 +5025,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedWithKeyWithSeperateH
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instances));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingQuery_ReturnsDataNotCached)
@@ -5037,7 +5037,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingQuery_ReturnsDataN
     EXPECT_EQ(CacheStatus::DataNotCached, cache->ReadResponseObjectIds(responseKey, objectIds));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingParent_ReturnsDataNotCachedAndNoIds)
@@ -5051,7 +5051,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_NonExistingParent_ReturnsData
     EXPECT_TRUE(objectIds.empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_TwoInstancesCachedAsResult_ReturnsTheirObjectIds)
@@ -5073,7 +5073,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_TwoInstancesCachedAsResult_Re
     EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_MultiplePages_ReturnsTheirObjectIds)
@@ -5101,7 +5101,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_MultiplePages_ReturnsTheirObj
     EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_ResultsContainParent_ReturnsParentObjectId)
@@ -5122,7 +5122,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_ResultsContainParent_ReturnsP
     EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "A"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseObjectIds_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
@@ -5142,7 +5142,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_CachedWithKeyWithSeperateHold
     EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "A"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveResponse_NonExistingQuery_ReturnsSuccess)
@@ -5153,7 +5153,7 @@ TEST_F(DataSourceCacheTests, RemoveResponse_NonExistingQuery_ReturnsSuccess)
     EXPECT_EQ(SUCCESS, cache->RemoveResponse({root, "NonExisting"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveResponse_ResponseSharesRelationshipWithOtherResponse_LeavesRelationship)
@@ -5180,7 +5180,7 @@ TEST_F(DataSourceCacheTests, RemoveResponse_ResponseSharesRelationshipWithOtherR
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass, instanceA, instanceB));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveResponse_ResponseWithRelationshipWhenOtherResponseHoldsOnlyInstances_DeletesRelationship)
@@ -5210,7 +5210,7 @@ TEST_F(DataSourceCacheTests, RemoveResponse_ResponseWithRelationshipWhenOtherRes
     EXPECT_FALSE(VerifyHasRelationship(cache, testRelClass, instanceA, instanceB));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_NonExistingQueryResults_ReturnsEmptyString)
@@ -5221,7 +5221,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_NonExistingQueryResults_Return
     EXPECT_EQ("", cache->ReadResponseCacheTag({root, "NonExisting"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTag_ReturnsSameTag)
@@ -5234,7 +5234,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTag_Return
     EXPECT_EQ("FooTag", cache->ReadResponseCacheTag(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedMultipleTimesWithTags_ReturnsLastTag)
@@ -5249,7 +5249,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedMultipleTimesW
     EXPECT_EQ("C", cache->ReadResponseCacheTag(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedMultipleResponsesWithSameParentsWithTags_ReturnsSameTags)
@@ -5265,7 +5265,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedMultipleRespon
     EXPECT_EQ("B", cache->ReadResponseCacheTag(key2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTagAndHolder_ReturnsSameTag)
@@ -5278,7 +5278,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PreviouslyCachedWithTagAndHold
     EXPECT_EQ("FooTag", cache->ReadResponseCacheTag(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_NotExistingPage_ReturnsEmpty)
@@ -5291,7 +5291,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_NotExistingPage_ReturnsEmpty)
     EXPECT_EQ("", cache->ReadResponseCacheTag(key, 2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_DifferentPages_ReturnsTags)
@@ -5306,7 +5306,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_DifferentPages_ReturnsTags)
     EXPECT_EQ("B", cache->ReadResponseCacheTag(key, 1));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PagesOvewritten_NoTagForRemovedPages)
@@ -5324,7 +5324,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCacheTag_PagesOvewritten_NoTagForRemove
     EXPECT_EQ("", cache->ReadResponseCacheTag(key, 1));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_NonExistingQueryResults_ReturnsInvalidDate)
@@ -5336,7 +5336,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_NonExistingQueryResults_Retu
     EXPECT_FALSE(cache->ReadResponseCachedDate({root, "NonExisting"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_Cached_ReturnsCorrectCachedDate)
@@ -5353,7 +5353,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_Cached_ReturnsCorrectCachedD
     EXPECT_BETWEEN(before, cache->ReadResponseCachedDate(responseKey), after);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTime_ReturnsLatestCachedDate)
@@ -5375,7 +5375,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTime_ReturnsLate
     EXPECT_NE(dateTime1, dateTime2);
     EXPECT_BETWEEN(before, dateTime2, after);
     }
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTimeAsNonModified_ReturnsLatestCachedDate)
@@ -5398,7 +5398,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_CachedSecondTimeAsNonModifie
     EXPECT_BETWEEN(before, dateTime2, after);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_PreviouslyCachedWithHolder_ReturnsCorrectCachedDate)
@@ -5415,7 +5415,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_PreviouslyCachedWithHolder_R
     EXPECT_BETWEEN(before, cache->ReadResponseCachedDate(responseKey), after);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_PageNotCached_ReturnsInvalid)
@@ -5428,7 +5428,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_PageNotCached_ReturnsInvalid
     EXPECT_FALSE(cache->ReadResponseCachedDate(responseKey, 1).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseCachedDate_DifferentPages_DifferentValues)
@@ -5456,7 +5456,7 @@ TEST_F(DataSourceCacheTests, ReadResponseCachedDate_DifferentPages_DifferentValu
     EXPECT_NE(dateTime1, dateTime2);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceLabel_EmptyObjectId_ReturnsEmpty)
@@ -5465,7 +5465,7 @@ TEST_F(DataSourceCacheTests, ReadInstanceLabel_EmptyObjectId_ReturnsEmpty)
     EXPECT_EQ("", cache->ReadInstanceLabel({}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceLabel_ClassWithLabelProperty_ReturnsCachedLabel)
@@ -5475,7 +5475,7 @@ TEST_F(DataSourceCacheTests, ReadInstanceLabel_ClassWithLabelProperty_ReturnsCac
     EXPECT_EQ("TestLabel", cache->ReadInstanceLabel({"TestSchema.TestLabeledClass", "Foo"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceLabel_DreivedClassWithBaseLabelProperty_ReturnsCachedLabel)
@@ -5485,7 +5485,7 @@ TEST_F(DataSourceCacheTests, ReadInstanceLabel_DreivedClassWithBaseLabelProperty
     EXPECT_EQ("TestLabel", cache->ReadInstanceLabel({"TestSchema.TestDerivedLabeledClass", "Foo"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileProperties_NonExistingInstance_Error)
@@ -5496,7 +5496,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonExistingInstance_Error)
     EXPECT_EQ(ERROR, cache->ReadFileProperties(StubNonExistingInstanceKey(*cache), &fileName, &fileSize));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyValues)
@@ -5514,7 +5514,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyV
     EXPECT_EQ(0, fileSize);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Mantas.Boiko                     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
@@ -5532,7 +5532,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturn
     EXPECT_EQ(0, fileSize);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentProperties_SuccessAndReturnsLabelAndSize)
@@ -5550,7 +5550,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
     EXPECT_EQ(42, fileSize);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Mantas.Boiko                     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileNameProperty_SuccessAndReturnsLabel)
@@ -5568,7 +5568,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
     EXPECT_EQ(0, fileSize);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Mantas.Boiko                     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileSizeProperty_SuccessAndReturnsFileSize)
@@ -5586,7 +5586,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
     EXPECT_EQ(42, fileSize);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Mantas.Boiko                     10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
@@ -5604,7 +5604,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
     EXPECT_EQ(0, fileSize);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_NotExistingObject_ReturnsError)
@@ -5613,7 +5613,7 @@ TEST_F(DataSourceCacheTests, CacheFile_NotExistingObject_ReturnsError)
     EXPECT_EQ(ERROR, cache->CacheFile({"TestSchema.TestClass", "NotExisting"}, StubWSFileResponse(), FileCache::Persistent));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileResponsePassed_MovesFileToCacheLocation)
@@ -5633,7 +5633,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileResponsePassed_MovesFileToCacheLocati
     EXPECT_EQ("TestTag", cache->ReadFileCacheTag(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_ToDefaultLocation_CachesToTemporaryLocation)
@@ -5649,7 +5649,7 @@ TEST_F(DataSourceCacheTests, CacheFile_ToDefaultLocation_CachesToTemporaryLocati
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_AutoLocation_CachesToTemporaryLocation)
@@ -5665,7 +5665,7 @@ TEST_F(DataSourceCacheTests, CacheFile_AutoLocation_CachesToTemporaryLocation)
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_AutoLocationForFileAlreadyCachedToExternal_CachesToExternalLocation)
@@ -5683,7 +5683,7 @@ TEST_F(DataSourceCacheTests, CacheFile_AutoLocationForFileAlreadyCachedToExterna
     EXPECT_EQ(FileCache::External, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_AutoLocationForFileAlreadyConfiguredLocationToExternal_CachesToExternalLocation)
@@ -5701,7 +5701,7 @@ TEST_F(DataSourceCacheTests, CacheFile_AutoLocationForFileAlreadyConfiguredLocat
     EXPECT_EQ(FileCache::External, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_ToPersistentLocation_CachedFilePathBeginsWithEnvironmentPath)
@@ -5716,7 +5716,7 @@ TEST_F(DataSourceCacheTests, CacheFile_ToPersistentLocation_CachedFilePathBegins
     EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_ToTemporaryLocation_CachedFilePathBeginsWithEnvironmentPath)
@@ -5731,7 +5731,7 @@ TEST_F(DataSourceCacheTests, CacheFile_ToTemporaryLocation_CachedFilePathBeginsW
     EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_ToExternalLocation_CachesFileToExternalFolderRoot)
@@ -5747,7 +5747,7 @@ TEST_F(DataSourceCacheTests, CacheFile_ToExternalLocation_CachesFileToExternalFo
     EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_ToExternalButCacheEnvironmentExternalLocaitonWasEmpty_CachesFileToDefaultExternalLocationInPersistenceFolder)
@@ -5766,7 +5766,7 @@ TEST_F(DataSourceCacheTests, CacheFile_ToExternalButCacheEnvironmentExternalLoca
     EXPECT_EQ(env.persistentFileCacheDir, path.GetDirectoryName().PopDir().PopDir().AppendSeparator());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalAndCachingToExternal_CachesFileToExternalFolderRoot)
@@ -5782,7 +5782,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalAndCachingToExte
     EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalSubFolderWithoutSlashAndCachingToExternal_CachesFileToExternalSubFolder)
@@ -5800,7 +5800,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalSubFolderWithout
     EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(relativePath).AppendSeparator(), path.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalSubFoldersAndCachingToExternal_CachesFileToExternalSubFolder)
@@ -5817,7 +5817,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileLocationSetToExternalSubFoldersAndCac
     EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(relativePath), path.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileCachedInTemporaryAndCachingToExternalLocation_RemovesOldFileAndCachesNewToExternalRoot)
@@ -5839,7 +5839,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCachedInTemporaryAndCachingToExternal
     EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path2.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviously_ReplacesFileInSamePath)
@@ -5859,7 +5859,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviously_Replaces
     EXPECT_EQ("ContentB", SimpleReadFile(path2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviously_RemovesOldFileAndAddsNewToSameCacheFolder)
@@ -5879,7 +5879,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviously_Rem
     EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviouslyAndExternalLocation_ReplacesFileInSamePath)
@@ -5899,7 +5899,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviouslyAndExtern
     EXPECT_EQ("ContentB", SimpleReadFile(path2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndExternalLocation_RemovesOldFileAndAddsNewToSameFolder)
@@ -5919,7 +5919,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndE
     EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndExternalSubFolderLocation_RemovesOldFileAndAddsNewToSameSubFolder)
@@ -5940,7 +5940,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndE
     EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviouslyAndCachingToDifferentLocation_CachesNewFileAndRemovesOldFileFolder)
@@ -5960,7 +5960,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviouslyAndCachingToDifferent
     EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileCachedToExternalSubFolderAndCachingToDifferentLocation_CachesNewFileToFileStorageAndRemovesExternalSubFolder)
@@ -5982,7 +5982,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCachedToExternalSubFolderAndCachingTo
     EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileResponseNotModifiedPassed_UpdatesCachedDate)
@@ -6001,7 +6001,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileResponseNotModifiedPassed_UpdatesCach
     EXPECT_BETWEEN(before, cachedDate, after);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotCached_ReturnsInvalid)
@@ -6014,7 +6014,7 @@ TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotCached_ReturnsInvalid)
     ASSERT_THAT(cache->ReadFileCachedDate(fileId).IsValid(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotOnDiskAnyMore_ReturnsInvalid)
@@ -6029,7 +6029,7 @@ TEST_F(DataSourceCacheTests, ReadFileCachedDate_FileNotOnDiskAnyMore_ReturnsInva
     ASSERT_THAT(cache->ReadFileCachedDate(fileId).IsValid(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceCached_ReturnsDateWhenCached)
@@ -6050,7 +6050,7 @@ TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceCached_ReturnsDateWh
     EXPECT_BETWEEN(before, cachedDate, after);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceNotCached_ReturnsInvalid)
@@ -6060,7 +6060,7 @@ TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceNotCached_ReturnsInv
     ASSERT_THAT(cache->ReadInstanceCachedDate({"TestSchema.TestClass", "NonExisting"}).IsValid(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingInstance_Error)
@@ -6071,7 +6071,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingInstance_Error)
     ASSERT_EQ(ERROR, cache->SetFileCacheLocation(fileId, FileCache::Persistent));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_ChangesLocationAndFilePathIsEmpty)
@@ -6089,7 +6089,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_ChangesLocatio
     EXPECT_EQ(L"", cache->ReadFilePath(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_PassingAutoForNotExistingFile_KeepsLocationTemporary)
@@ -6103,7 +6103,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_PassingAutoForNotExistingFile_
     EXPECT_EQ(L"", cache->ReadFilePath(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_PassingAutoToAlreadyConfiguredLocationPersistent_KeepsLocationPersistent)
@@ -6121,7 +6121,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_PassingAutoToAlreadyConfigured
     EXPECT_EQ(L"", cache->ReadFilePath(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_SuccessAndLocationCanBeChangedWhenCaching)
@@ -6138,7 +6138,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_NotExistingFile_SuccessAndLoca
     EXPECT_THAT(cachedFilePath.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_MovesFileToTemporaryEnvironmentLocation)
@@ -6156,7 +6156,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_Mo
     EXPECT_THAT(path2.c_str(), StartsWith(GetTestCacheEnvironment().temporaryFileCacheDir.c_str()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_MovesFileToPersistentEnvironmentLocation)
@@ -6174,7 +6174,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToPersistent_M
     EXPECT_THAT(path2.c_str(), StartsWith(GetTestCacheEnvironment().persistentFileCacheDir.c_str()));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingFileFromTemporaryToPersistentWhenEnvironmentPathsAreTheSame_FileStaysInSamePath)
@@ -6193,7 +6193,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingFileFromTemporaryToPersi
     EXPECT_EQ(path1, path2);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToExternalWithoutRelativePath_MovesFileToExternalRootLocation)
@@ -6212,7 +6212,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToExternalWith
     EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileFromExternal_MovesFileToNewLocationAndRemovesExternalSubfolder)
@@ -6233,7 +6233,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileFromExternal_M
     EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingToOtherExternalLocation_MovesFileAndRemovesExternalSubfolders)
@@ -6254,7 +6254,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingToOtherExternalLocation_
     EXPECT_FALSE(BeFileName(cache->GetEnvironment().externalFileCacheDir).AppendToPath(L"A").DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_TwoFilesInExternalFolderAndMovingOneOfThem_MovesFileButLeavesExternalSubfFolder)
@@ -6279,7 +6279,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_TwoFilesInExternalFolderAndMov
     EXPECT_EQ(pathB, cache->ReadFilePath(fileIdB));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_PassedRelativePathButNotExternalLocationForCachedFile_ErrorWithNoPathChange)
@@ -6297,7 +6297,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_PassedRelativePathButNotExtern
     EXPECT_EQ(path1, path2);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithoutRelativePath_MovesDirectlyToRootDirectory)
@@ -6314,7 +6314,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
     EXPECT_EQ(GetTestCacheEnvironment().externalFileCacheDir, path2.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePath_MovesToRootDirectorySubfolder)
@@ -6334,7 +6334,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
     EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(relativePath), path2.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationAndSameRelativePath_SuccessAndDoesNothingToFile)
@@ -6352,7 +6352,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationAndSameRelativ
     EXPECT_TRUE(path2.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathWithoutEndSlash_MovesToRootDirectorySubfolder)
@@ -6367,7 +6367,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
     EXPECT_EQ(BeFileName(GetTestCacheEnvironment().externalFileCacheDir).AppendToPath(L"Foo/Boo/"), path.GetDirectoryName());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileWithRelativePathOnlyASlash_Error)
@@ -6379,7 +6379,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationForCachedFileW
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationAndFileAlreadyExistsThere_SuccessAndOverridesFile)
@@ -6402,7 +6402,7 @@ TEST_F(DataSourceCacheTests, SetFileCacheLocation_ExternalLocationAndFileAlready
     EXPECT_EQ("A", SimpleReadFile(existingFilePath));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExistingInstance_ReturnsTemporary)
@@ -6412,7 +6412,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExistingInstance_ReturnsTem
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExistingInstanceButDefaultPassed_ReturnsDefault)
@@ -6422,7 +6422,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotExistingInstanceButDefaultP
     EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId, FileCache::Persistent));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFile_ReturnsTemporary)
@@ -6433,7 +6433,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFile_ReturnsTemporary
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFileButDefaultPassed_ReturnsSameDefault)
@@ -6444,7 +6444,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFileButDefaultPassed_
     EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId, FileCache::Persistent));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFileButDefaultAutoPassed_ReturnsTemporary)
@@ -6455,7 +6455,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_NotCachedFileButDefaultAutoPas
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId, FileCache::Auto));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToTemporary_ReturnsTemporary)
@@ -6468,7 +6468,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToTemporary_ReturnsTempo
     EXPECT_EQ(FileCache::Temporary, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToPersistent_ReturnsPersistent)
@@ -6482,7 +6482,7 @@ TEST_F(DataSourceCacheTests, GetFileCacheLocation_CachedToPersistent_ReturnsPers
     EXPECT_EQ(FileCache::Persistent, cache->GetFileCacheLocation(fileId));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndObjectIdPassed_ReturnsPath)
@@ -6498,7 +6498,7 @@ TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndObjectIdPassed_ReturnsPat
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndECInstanceKeyPassed_ReturnsPath)
@@ -6516,7 +6516,7 @@ TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileAndECInstanceKeyPassed_Retur
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileButIsDeletedFromDisk_ReturnsEmpty)
@@ -6533,7 +6533,7 @@ TEST_F(DataSourceCacheTests, ReadFilePath_CachedFileButIsDeletedFromDisk_Returns
     EXPECT_THAT(cache->ReadFilePath(fileId), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileCacheTag_NotCachedFile_ReturnsEmpty)
@@ -6546,7 +6546,7 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_NotCachedFile_ReturnsEmpty)
     EXPECT_THAT(cache->ReadFileCacheTag(fileId), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFile_ReturnsTag)
@@ -6560,7 +6560,7 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFile_ReturnsTag)
     EXPECT_THAT(cache->ReadFileCacheTag(fileId), Eq("TestTag"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_ReturnsEmpty)
@@ -6577,7 +6577,7 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_Ret
     EXPECT_THAT(cache->ReadFileCacheTag(fileId), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
@@ -6589,7 +6589,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
     EXPECT_FALSE(instanceKey.IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalFileInfoCreated)
@@ -6610,7 +6610,7 @@ TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalF
     EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFileInfoCreated)
@@ -6631,7 +6631,7 @@ TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFi
     EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_ExternalFileCached_CorrectECDbExternalFileInfoCreated)
@@ -6652,7 +6652,7 @@ TEST_F(DataSourceCacheTests, CacheFile_ExternalFileCached_CorrectECDbExternalFil
     EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCreated)
@@ -6688,7 +6688,7 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCr
     EXPECT_EQ(externalFileInfoKey, ownershipFileInfoKey);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKeyButCorrectClass)
@@ -6701,7 +6701,7 @@ TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKey
     EXPECT_EQ(cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId(), instanceKey.GetClassId());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdClass_EmptyKey)
@@ -6714,7 +6714,7 @@ TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdClass_EmptyKey)
     EXPECT_EQ(ECInstanceKey(), instanceKey);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectId_ReturnsInvalid)
@@ -6725,7 +6725,7 @@ TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectId_ReturnsInvalid)
     EXPECT_FALSE(instanceKey.IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectIdAndNavigationBaseLinkedToRoot_ReturnsKeyToNavigationBase)
@@ -6738,7 +6738,7 @@ TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectIdAndNavigationBaseLinkedTo
     EXPECT_TRUE(instanceKey.IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_KeyToNavigationBase_ReturnsEmptyObjectId)
@@ -6752,7 +6752,7 @@ TEST_F(DataSourceCacheTests, FindInstance_KeyToNavigationBase_ReturnsEmptyObject
     EXPECT_EQ(ObjectId(), cache->FindInstance(baseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndNotCached_InvalidObjectId)
@@ -6765,7 +6765,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndNotCached_InvalidObjec
     EXPECT_FALSE(objectId.IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndInCache_ValidKey)
@@ -6782,7 +6782,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndInCache_ValidKey)
     EXPECT_EQ(instanceKey, foundInstanceKey);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndInCache_ValidObjectId)
@@ -6799,7 +6799,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndInCache_ValidObjectId)
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndChangeDeleted_ValidKey)
@@ -6814,7 +6814,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndChangeDeleted_ValidKey)
     EXPECT_EQ(instanceKey, foundInstanceKey);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndChangeDeleted_ValidObjectId)
@@ -6829,7 +6829,7 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndChangeDeleted_ValidObj
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "Foo"), objectId);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey)
@@ -6845,7 +6845,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_Returns
     EXPECT_FALSE(cache->FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey)
@@ -6868,7 +6868,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_Ret
     EXPECT_EQ(expectedRelationship, cache->FindRelationship(*relClass, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId)
@@ -6884,7 +6884,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_Re
     EXPECT_EQ(ObjectId(), cache->FindRelationship(relationship));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId)
@@ -6902,7 +6902,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRe
     EXPECT_EQ(ObjectId({"TestSchema.TestRelationshipClass", "AB"}), cache->FindRelationship(relationship));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds)
@@ -6925,7 +6925,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInsta
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "C"}), map));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds)
@@ -6947,7 +6947,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLi
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass2", "B"}), map));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceIsInResponseButHasNoResponses_ReturnsNoInstances)
@@ -6975,7 +6975,7 @@ TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceIsInResponseButHasNoR
     EXPECT_EQ(0, map.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceHasResponsesCachedUnderIt_ReturnsInstancesUnderIt)
@@ -7013,7 +7013,7 @@ TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceHasResponsesCachedUnd
     EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "F"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_NoRoot_ReturnsInvalid)
@@ -7022,7 +7022,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_NoRoot_ReturnsInvalid)
     EXPECT_FALSE(cache->ReadRootSyncDate("NonExistingRoot").IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_ExistingRootButDateNotSet_ReturnsInvalid)
@@ -7032,7 +7032,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_ExistingRootButDateNotSet_ReturnsI
     EXPECT_FALSE(cache->ReadRootSyncDate("Foo").IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_DateSetAutomatically_ReturnsSameDate)
@@ -7050,7 +7050,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_DateSetAutomatically_ReturnsSameDa
     EXPECT_BETWEEN(before, cachedDate, after);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_SpecificDateSetOnNotExistingRoot_CreatesRootReturnsSameDate)
@@ -7062,7 +7062,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_SpecificDateSetOnNotExistingRoot_C
     EXPECT_EQ(syncDate, cache->ReadRootSyncDate("Foo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadRootSyncDate_RootRemovedAfterSyncDateWasSet_ReturnsInvalid)
@@ -7075,7 +7075,7 @@ TEST_F(DataSourceCacheTests, ReadRootSyncDate_RootRemovedAfterSyncDateWasSet_Ret
     EXPECT_FALSE(cache->ReadRootSyncDate("Foo").IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_NoResponse_ReturnsInvalid)
@@ -7086,7 +7086,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_NoResponse_ReturnsInvalid)
     EXPECT_THAT(cache->ReadResponseAccessDate(responseKey).IsValid(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_CachedResponse_ReturnsInvalid)
@@ -7098,7 +7098,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_CachedResponse_ReturnsInvali
     EXPECT_THAT(cache->ReadResponseAccessDate(responseKey).IsValid(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSetAutomatically_ReturnsSameDate)
@@ -7117,7 +7117,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSetAutomatically_R
     EXPECT_BETWEEN(before, cachedDate, after);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSet_ReturnsSameDate)
@@ -7131,7 +7131,7 @@ TEST_F(DataSourceCacheTests, ReadResponseAccessDate_AccessDateSet_ReturnsSameDat
     EXPECT_EQ(date, cache->ReadResponseAccessDate(responseKey));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, SetResponseAccessDate_ResponseNotCached_ReturnsErrorAndDateNotSet)
@@ -7143,7 +7143,7 @@ TEST_F(DataSourceCacheTests, SetResponseAccessDate_ResponseNotCached_ReturnsErro
     EXPECT_THAT(cache->ReadResponseAccessDate(responseKey).IsValid(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_InstanceNotCached_ReturnsEmpty)
@@ -7161,7 +7161,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_InstanceNotCached_Re
     ASSERT_EQ(0, responces.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ResponceWithOneInstance_ReturnsResponceKey)
@@ -7179,7 +7179,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ResponceWithOneInsta
     EXPECT_EQ(key, *responces.begin());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_TwoResponcesWithSameInstance_ReturnsBothResponceKeys)
@@ -7202,7 +7202,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_TwoResponcesWithSame
     EXPECT_EQ(StubBSet({key1, key2}), responces);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ExistingNamePassed_ReturnsResponceKeyFilteredByName)
@@ -7225,7 +7225,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ExistingNamePassed_R
     EXPECT_EQ(key1, *responces.begin());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_NonExistingNamePassed_ReturnsEmpty)
@@ -7244,7 +7244,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_NonExistingNamePasse
     EXPECT_EQ(0, responces.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_InstanceAddedToResponce_ReturnsResponceKey)
@@ -7260,7 +7260,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_InstanceAddedToRespo
     EXPECT_EQ(key1, *responces.begin());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_HolderPassed_ReturnsResponceKey)
@@ -7283,7 +7283,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_HolderPassed_Returns
     EXPECT_EQ(key1, *responces.begin());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_HolderInResults_ReturnsResponceKey)
@@ -7306,7 +7306,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_HolderInResults_Retu
     EXPECT_EQ(key1, *responces.begin());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ParentInResults_ReturnsResponceKey)
@@ -7328,7 +7328,7 @@ TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ParentInResults_Retu
     EXPECT_EQ(key1, *responces.begin());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_NoResponsesWithName_ReturnsSuccess)
@@ -7344,7 +7344,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_NoResponsesWithName_Return
     EXPECT_THAT(cache->IsResponseCached(responseKey), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponsesWithSameNameButPersistent_LeavesResponses)
@@ -7373,7 +7373,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponsesWithSameNameButPe
     EXPECT_THAT(cache->IsResponseCached(responseKey4), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLaterThanUsed_LeavesResponse)
@@ -7396,7 +7396,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLate
     EXPECT_THAT(cache->IsResponseCached(responseKey2), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesResponses)
@@ -7419,7 +7419,7 @@ TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesRespon
     EXPECT_THAT(cache->IsResponseCached(responseKey3), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine)
@@ -7435,7 +7435,7 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine)
     EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForRelationship_WorksFine)
@@ -7451,7 +7451,7 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForRelationship_WorksFin
     EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForRoot_WorksFine)
@@ -7467,7 +7467,7 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForRoot_WorksFine)
     EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForNavigationBase_WorksFine)
@@ -7483,7 +7483,7 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForNavigationBase_WorksF
     EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged)
@@ -7510,7 +7510,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyM
     EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLocallyModified_UpdatesPropertiesThatWereNotChanged)
@@ -7544,7 +7544,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
     EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceThatWasLocallyModified_RejectsAndDoesNotUpdateInstance)
@@ -7579,7 +7579,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceThatWasL
     EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceWihtIdOnlyThatWasLocallyModified_DoesNotRejectOrUpdateInstance)
@@ -7613,7 +7613,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainInstanceWihtIdOn
     EXPECT_EQ("ModifiedValueB", instanceJson["TestProperty2"].asString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance)
@@ -7641,7 +7641,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsInstanceThatWas
     ASSERT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
@@ -7665,7 +7665,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_FullResultContainsInstanceThatWasLoca
     EXPECT_EQ(Json::Value::GetNull(), instanceJson);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyDeletedAndRelatedInstance_IgnoresDeletedInstanceAndUpdatesRelatedOne)
@@ -7692,7 +7692,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsInstanceThatWasLocallyD
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "A"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelatedInstanceThatWasLocallyDeleted_IgnoresDeletedInstance)
@@ -7719,7 +7719,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelatedInstanceThatWasL
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "B"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsMultipleRelationshipsToRelatedInstanceThatWasLocallyDeleted_IgnoresDeletedInstance)
@@ -7740,7 +7740,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsMultipleRelationshipsTo
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "B"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelatedInstanceThatWasLocallyDeleted_CachedResponseContainsDeletedInstanceAlso)
@@ -7765,7 +7765,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsRelatedInstanceThatWasL
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "B"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsRelatedInstanceThatWasLocallyDeleted_RemovesDeletedInstanceFromCache)
@@ -7791,7 +7791,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultNoLongerContainsRelatedInstance
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWasLocallyDeleted_IgnoresInstance)
@@ -7815,7 +7815,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
     EXPECT_EQ(IChangeManager::ChangeStatus::Deleted, cache->GetChangeManager().GetObjectChangeStatus(cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWasCachedAsPartial_UpdatesInstance)

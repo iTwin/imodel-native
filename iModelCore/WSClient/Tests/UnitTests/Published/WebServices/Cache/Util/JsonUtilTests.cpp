@@ -36,7 +36,7 @@ using namespace rapidjson;
     EXPECT_FALSE(JsonUtil::AreValuesEqual(a, b)); \
     EXPECT_FALSE(JsonUtil::AreValuesEqual(b, a));
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_Empty_Copies)
@@ -44,7 +44,7 @@ TEST_F(JsonUtilTests, DeepCopy_Empty_Copies)
     TEST_DeepCopy(R"({})");
     TEST_DeepCopy(R"([])");
     }
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_PrimitiveValues_Copies)
@@ -58,7 +58,7 @@ TEST_F(JsonUtilTests, DeepCopy_PrimitiveValues_Copies)
     TEST_DeepCopyJson(Value(true));
     TEST_DeepCopyJson(Value(false));
     }
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_ObjectWithPrimitiveValues_Copies)
@@ -74,7 +74,7 @@ TEST_F(JsonUtilTests, DeepCopy_ObjectWithPrimitiveValues_Copies)
     }
 
 #ifdef WIP_MERGE
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_ObjectWithObjects_Copies)
@@ -89,7 +89,7 @@ TEST_F(JsonUtilTests, DeepCopy_ObjectWithObjects_Copies)
     }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_ObjectWithArray_Copies)
@@ -97,7 +97,7 @@ TEST_F(JsonUtilTests, DeepCopy_ObjectWithArray_Copies)
     TEST_DeepCopy(R"({ "Foo" : [1, 2, 3]})");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_Array_Copies)
@@ -107,7 +107,7 @@ TEST_F(JsonUtilTests, DeepCopy_Array_Copies)
     TEST_DeepCopy(R"([{ "Foo" : "A" }, { "Foo" : "B" }])");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsUnrelatedValues_LeavesValues)
@@ -118,7 +118,7 @@ TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsUnrelatedValues_LeavesValues)
     EXPECT_EQ(*ToRapidJson(R"({"A" : "ValA", "B" : "ValB"})"), *target);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsSameFieldWithDifferentValue_OverridesValue)
@@ -129,7 +129,7 @@ TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsSameFieldWithDifferentValue_O
     EXPECT_EQ(*ToRapidJson(R"({"Foo" : "SourceVal"})"), *target);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsSameFieldWithDifferentType_OverridesValue)
@@ -140,7 +140,7 @@ TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsSameFieldWithDifferentType_Ov
     EXPECT_EQ(*ToRapidJson(R"({"Foo" : "SourceVal"})"), *target);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsSameFieldWithArray_OverridesArray)
@@ -151,7 +151,7 @@ TEST_F(JsonUtilTests, DeepCopy_TargetObjectContainsSameFieldWithArray_OverridesA
     EXPECT_EQ(*ToRapidJson(R"({"Foo" : [4, 5, 6]})"), *target);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, DeepCopy_SourceIsNullAndTargetIsObject_OverridesWithNull)
@@ -162,7 +162,7 @@ TEST_F(JsonUtilTests, DeepCopy_SourceIsNullAndTargetIsObject_OverridesWithNull)
     EXPECT_EQ(Value(), *target);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, AreValuesEqual_EqualPrimitiveValues_True)
@@ -180,7 +180,7 @@ TEST_F(JsonUtilTests, AreValuesEqual_EqualPrimitiveValues_True)
     TEST_AreValuesEqual(Value(""), Value(""));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, AreValuesEqual_NotequalPrimitiveValues_False)
@@ -195,7 +195,7 @@ TEST_F(JsonUtilTests, AreValuesEqual_NotequalPrimitiveValues_False)
     TEST_AreValuesNotEqual(Value(""), Value("Boo"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, AreValuesEqual_NotequalPrimitiveTypes_False)
@@ -265,7 +265,7 @@ TEST_F(JsonUtilTests, AreValuesEqual_NotequalPrimitiveTypes_False)
     TEST_AreValuesNotEqual(Value(kArrayType), Value(kNullType));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, AreValuesEqual_EqualObjects_True)
@@ -274,7 +274,7 @@ TEST_F(JsonUtilTests, AreValuesEqual_EqualObjects_True)
     TEST_AreValuesEqual(*ToRapidJson(R"({"Foo" : {}})"), *ToRapidJson(R"({"Foo" : {}})"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, AreValuesEqual_NotEqualObjects_False)
@@ -283,7 +283,7 @@ TEST_F(JsonUtilTests, AreValuesEqual_NotEqualObjects_False)
     TEST_AreValuesNotEqual(*ToRapidJson(R"({"Foo" : 1})"), *ToRapidJson(R"({"Foo" : 2})"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, AreValuesEqual_EqualArrays_True)
@@ -292,7 +292,7 @@ TEST_F(JsonUtilTests, AreValuesEqual_EqualArrays_True)
     TEST_AreValuesEqual(*ToRapidJson(R"([1, 2, 3])"), *ToRapidJson(R"([1, 2, 3])"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonUtilTests, AreValuesEqual_NotEqualArrays_False)

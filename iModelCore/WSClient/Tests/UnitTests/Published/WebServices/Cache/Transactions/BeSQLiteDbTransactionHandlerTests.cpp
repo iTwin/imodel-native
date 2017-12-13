@@ -45,7 +45,7 @@ struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
             }
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_TransactionNotStarted_Error)
@@ -61,7 +61,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_TransactionNotStarte
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDone_ChangesSaved)
@@ -85,7 +85,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDone_ChangesS
     EXPECT_EQ(SUCCESS, handler.CommitTransaction());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDoneInSecondTransaction_ChangesSaved)
@@ -112,7 +112,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_ChangesDoneInSecondT
     EXPECT_EQ(SUCCESS, handler.CommitTransaction());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, RollbackTransaction_ChangesDone_ChangesRemoved)
@@ -136,7 +136,7 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, RollbackTransaction_ChangesDone_Change
     EXPECT_EQ(SUCCESS, handler.CommitTransaction());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTransactionHandlerTests, StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction)

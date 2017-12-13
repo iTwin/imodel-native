@@ -10,7 +10,7 @@
 #include <WebServices/Configuration/BuddiClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetRegions_Default_ReturnsSomeRegions)
@@ -23,7 +23,7 @@ TEST_F(BuddiClientTests, GetRegions_Default_ReturnsSomeRegions)
     EXPECT_FALSE(result.GetValue().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetUrl_ExistingUrlName_ReturnsUrl)
@@ -35,7 +35,7 @@ TEST_F(BuddiClientTests, GetUrl_ExistingUrlName_ReturnsUrl)
     EXPECT_TRUE(result.IsSuccess());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BuddiClientTests, GetUrl_NotExistingUrlName_ReturnsUrlNotConfiguredError)

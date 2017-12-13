@@ -31,7 +31,7 @@ void WSRepositoryClientTests::SetUp()
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_INFO);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithConnectSignInManager_Succeeds)
@@ -55,7 +55,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithCo
     auto resultStr = RapidJsonToString(result.GetValue().GetRapidJsonDocument());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredToken_RetrievesNewTokenAndSucceeds)
@@ -84,7 +84,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     printf(resultStr.c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredTokenAndWrongPassword_ReturnsCredentialError)
@@ -113,7 +113,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndWSG1_Succeeds)
@@ -158,7 +158,7 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
     ASSERT_TRUE(result.IsSuccess());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndWSG2_Succeeds)
@@ -208,7 +208,7 @@ TEST_F(WSRepositoryClientTests, DISABLED_SendCreateObjectRequest_ProjectWiseAndW
     ASSERT_TRUE(result.IsSuccess());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChunks_UploadsEverythingSuccessfully)

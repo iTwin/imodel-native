@@ -15,7 +15,7 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_DefaultWSError_EmptyMessageAndDescription)
@@ -26,7 +26,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_DefaultWSError_EmptyMessageAndDescripti
     EXPECT_EQ("", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_SuccessStatus_EmptyMessageAndDescription)
@@ -37,7 +37,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_SuccessStatus_EmptyMessageAndDescriptio
     EXPECT_EQ("", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_InternalCacheError_NotEmptyMessageAndEmptyDescription)
@@ -48,7 +48,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_InternalCacheError_NotEmptyMessageAndEm
     EXPECT_EQ("", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_SchemaError_NotEmptyMessageAndEmptyDescription)
@@ -59,7 +59,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_SchemaError_NotEmptyMessageAndEmptyDesc
     EXPECT_EQ("", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_DataNotCached_NotEmptyMessageAndEmptyDescription)
@@ -70,7 +70,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_DataNotCached_NotEmptyMessageAndEmptyDe
     EXPECT_EQ("", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_StringMessage_StatusIsInternalCacheErrorAndMessageSet)
@@ -82,7 +82,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_StringMessage_StatusIsInternalCacheErro
     EXPECT_EQ("", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_WSError_NetworkError)
@@ -96,7 +96,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_WSError_NetworkError)
     EXPECT_EQ(WSError::CreateServerNotSupportedError().GetDescription(), error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorPassed_StatusIsInternalCacheErrorAndMessageAndDescriptionSet)
@@ -108,7 +108,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorPassed_StatusIsInternalCacheE
     EXPECT_EQ("B", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorAndStatusPassed_StatusAndMessageAndDescriptionSet)
@@ -124,7 +124,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorAndStatusPassed_StatusAndMess
     EXPECT_EQ("B", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusAndAsyncErrorPassed_StatusAndMessageAndDescriptionSet)
@@ -135,7 +135,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusAndAsyncErrorPassed_StatusAn
     EXPECT_EQ("B", error.GetDescription());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusFileLockedAndEmptyAsyncError_OnlyStatusSet)
@@ -146,7 +146,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusFileLockedAndEmptyAsyncError
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorAndEmptyAsyncError_StatusAndMessageSet)
@@ -157,7 +157,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorAndEmptyAsyncError_Stat
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_NullCancellationTokenPassed_SetsStatus)
@@ -168,7 +168,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_NullCancellationTokenPassed_SetsStatus)
     EXPECT_FALSE(error.GetMessage().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_NotCanceledCancellationTokenPassed_SetsStatus)
@@ -179,7 +179,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_NotCanceledCancellationTokenPassed_Sets
     EXPECT_FALSE(error.GetMessage().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CanceledCancellationTokenPassed_SetsStatusCanceledAndNoMessage)
@@ -191,7 +191,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CanceledCancellationTokenPassed_SetsSta
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_SetsSuccessWithoutMessage)
@@ -203,7 +203,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_SetsSuccessWi
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_SetsInternalCacheErrorWithMessage)
@@ -215,7 +215,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_SetsIntern
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusDataNotCachedStatusPassed_SetsStatusDataNotCachedWithMessage)
@@ -227,7 +227,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusDataNotCachedStatusPassed_Se
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_NotCanceledCancellationTokenPassed_SetsInternalCacheErrorWithMessage)
@@ -239,7 +239,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_NotCancele
     EXPECT_TRUE(error.GetDescription().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_CanceledCancellationTokenPassed_SetsStatusCanceled)

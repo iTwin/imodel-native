@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/ConnectC/CWSCCBufferPublic.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,11 +10,11 @@
 
 #include <WebServices/ConnectC/CWSCC.h>
 
-/************************************************************************************//**
+/****************************************************************************************
 * \defgroup BufferFunctions ConnectWebServicesClientC Data Buffer Functions
 * \{
 ****************************************************************************************/
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Free an allocated data buffer
 * \param[in] apiHandle Handle to api
 * \param[in] dataBuffer Data buffer
@@ -24,7 +24,7 @@ CWSCC_EXPORT CallStatus ConnectWebServicesClientC_DataBufferFree
 CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE dataBuffer
 );
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a count of the number of items in a data buffer
 * \param[in] dataBuffer Data buffer
 * \return Object count
@@ -33,7 +33,7 @@ CWSCC_EXPORT uint64_t ConnectWebServicesClientC_DataBufferGetCount
 (
 CWSCCDATABUFHANDLE dataBuffer
 );
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a String property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
@@ -53,7 +53,7 @@ uint32_t strLength,
 WCharP str
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a Stringlength property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
@@ -71,7 +71,7 @@ uint32_t index,
 size_t* outStringSize
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a Datetime property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
@@ -91,7 +91,7 @@ uint32_t strLength,
 WCharP dateTime
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a Guid property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
@@ -111,7 +111,7 @@ uint32_t strLength,
 WCharP guid
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a Boolean property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
@@ -129,7 +129,7 @@ uint32_t index,
 bool* boolean
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a Int property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
@@ -147,7 +147,7 @@ uint32_t index,
 int32_t* integer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a Double property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
@@ -165,7 +165,7 @@ uint32_t index,
 double* pDouble
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get a Long property from a data buffer
 * \param[in] apiHandle handle to api
 * \param[in] dataBuffer Data buffer
