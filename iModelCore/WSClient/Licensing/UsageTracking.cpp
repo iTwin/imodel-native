@@ -2,7 +2,7 @@
  |
  |     $Source: Licensing/UsageTracking.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -143,7 +143,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     }
 
 #ifndef BENTLEY_WINRT
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String ToHexString(const void *data, size_t dataSize)
@@ -161,7 +161,7 @@ static Utf8String ToHexString(const void *data, size_t dataSize)
     }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool CalcSha1(Utf8StringCR input, Utf8StringR hash)

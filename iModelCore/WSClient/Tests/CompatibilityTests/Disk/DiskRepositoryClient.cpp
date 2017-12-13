@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_EC
 #include <openssl/evp.h>
 #include <Bentley/Base64Utilities.h>
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned int * hashLen)
@@ -44,7 +44,7 @@ bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned in
     return true;
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Sha1CalcToBase64(const bvector<Byte>& input, Utf8StringR hashHexStringOut)
@@ -62,7 +62,7 @@ bool Sha1CalcToBase64(const bvector<Byte>& input, Utf8StringR hashHexStringOut)
     return true;
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CalcFileHash(BeFileNameCR filePath, Utf8StringR hashHexStringOut)
