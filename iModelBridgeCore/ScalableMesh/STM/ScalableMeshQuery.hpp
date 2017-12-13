@@ -2769,6 +2769,10 @@ IScalableMeshNodePtr ScalableMeshNode<POINT>::_GetParentNode() const
     if (meshNode == nullptr)
         return nullptr;
     HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr = meshNode->GetParentNodePtr();
+
+    if (nodePtr == nullptr)
+        return nullptr;
+
     return new ScalableMeshNode<POINT>(nodePtr);
     }
 
