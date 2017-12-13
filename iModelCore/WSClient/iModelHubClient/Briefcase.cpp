@@ -132,9 +132,10 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets, ICancellationTokenP
 StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR uploadCallback, 
                               ICancellationTokenPtr cancellationToken) const
     {
-    Push(description, relinquishCodesLocks, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken);
+    return Push(description, relinquishCodesLocks, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken);
     }
 
+//TODO: all of the parameters must be optional
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2016
 //---------------------------------------------------------------------------------------
@@ -289,9 +290,10 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquis
                                               ICancellationTokenPtr cancellationToken,
                                               int attemptsCount)
     {
-    PullMergeAndPush(description, relinquishCodesLocks, downloadCallback, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, attemptsCount);
+    return PullMergeAndPush(description, relinquishCodesLocks, downloadCallback, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, attemptsCount);
     }
 
+//TODO: all of the parameters must be optional
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------

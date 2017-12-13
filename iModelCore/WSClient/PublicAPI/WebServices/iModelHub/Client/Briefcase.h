@@ -97,9 +97,9 @@ public:
     //! @param[in] options
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error and pushed ChangeSet.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
-                                              Http::Request::ProgressCallbackCR uploadCallback = nullptr, 
-                                              IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(Utf8CP description, bool relinquishCodesLocks,
+                                              Http::Request::ProgressCallbackCR uploadCallback, 
+                                              IBriefcaseManager::ResponseOptions options,
                                               ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Send the outgoing ChangeSets.
@@ -142,10 +142,10 @@ public:
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
-    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
-                                                              Http::Request::ProgressCallbackCR downloadCallback = nullptr,
-                                                              Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                                              IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks,
+                                                              Http::Request::ProgressCallbackCR downloadCallback,
+                                                              Http::Request::ProgressCallbackCR uploadCallback,
+                                                              IBriefcaseManager::ResponseOptions options,
                                                               ICancellationTokenPtr cancellationToken = nullptr, 
                                                               int attemptsCount = 1);
 
