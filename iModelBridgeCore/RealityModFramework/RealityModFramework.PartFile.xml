@@ -213,6 +213,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="SimpleGCSApiExample" BentleyBuildMakeFile="RealityPlatformTools\Example\SimpleGCSApiExample.mke">
+        <SubPart PartName="RealityPlatformTools"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="SpatioTemporalSelector"/>
+        <Bindings>
+            <Assemblies>Delivery/SimpleGCSApiExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+
+
     <Part Name="RealityDataServiceUploader" BentleyBuildMakeFile="RealityPlatformTools\Example\RealityDataServiceUploader.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -312,6 +322,7 @@
         <SubPart PartName="RealityDataServiceErrorReportingExample"/>
         <SubPart PartName="RealityDataServiceToolsExample"/>
         <SubPart PartName="SimpleRDSApiExample"/>
+        <SubPart PartName="SimpleGCSApiExample"/>
         <SubPart PartName="RealityDataServiceUploader"/>
         <SubPart PartName="RealityDataServiceDownloader"/>
         <SubPart PartName="RealityDataServiceConsole"/>

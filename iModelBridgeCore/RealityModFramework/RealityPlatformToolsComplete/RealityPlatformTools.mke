@@ -64,6 +64,8 @@ $(o)SimpleWSGBase$(oext) : $(deskDir)SimpleWSGBase.cpp $(PublicApiDir)SimpleWSGB
 
 $(o)SimpleRDSApi$(oext) : $(baseDir)SimpleRDSApi.cpp $(PublicApiDir)SimpleRDSApi.h ${MultiCompileDepends}
 
+$(o)SimpleGCSApi$(oext) : $(baseDir)SimpleGCSApi.cpp $(PublicApiDir)SimpleGCSApi.h ${MultiCompileDepends}
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the

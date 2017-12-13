@@ -1,0 +1,42 @@
+#----------------------------------------------------------------------
+#
+#     $Source: RealityPlatformTools/Example/SimpleGCSApiExample.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  
+#----------------------------------------------------------------------
+ 
+%include mdl.mki
+
+appName             = SimpleGCSApiExample
+baseDir             = $(_MakeFilePath)
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#----------------------------------------------------------------------
+#   Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Build source files
+#----------------------------------------------------------------------
+$(o)SimpleGCSApiExample$(oext) : $(baseDir)SimpleGCSApiExample.cpp
+
+#----------------------------------------------------------------------
+#   DLL/LIB creation
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appName)
+EXE_OBJS     = $(o)SimpleGCSApiExample$(oext)
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextDeliveryDir)RealityPlatform.lib \
+                       $(ContextDeliveryDir)SpatioTemporalSelector.lib \
+                       $(ContextDeliveryDir)RealityPlatformTools.lib 
+
+%include $(SharedMki)linktool.mki
+

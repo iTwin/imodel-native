@@ -179,6 +179,8 @@ void DownloadModify(Utf8String guid)
         std::cout << response.simpleMessage << std::endl;
         return;
         }
+
+    BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
 
 void Delete(Utf8String guid)

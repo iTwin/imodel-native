@@ -19,7 +19,6 @@
 #include <conio.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
-USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be overriden by parameter at the execution.
 
@@ -72,7 +71,7 @@ static void callback_status_func (int index, void *pClient, int ErrorCode, const
 //* @bsifunction                                    Francis Boily                   09/2015
 //+---------------+---------------+---------------+---------------+---------------+------*/
 static WString createDirWithHash(Utf8StringCR uri, WStringCR tempPath, uint64_t filesize)
-{
+    {
     // Extract filename form URL, the last part of the URL until a '/'or '\' or '='
     WString urlW(uri.c_str(), BentleyCharEncoding::Utf8);
     urlW.ReplaceAll(WCSALT_DIR_SEPARATOR, WCSDIR_SEPARATOR);
@@ -105,11 +104,11 @@ static WString createDirWithHash(Utf8StringCR uri, WStringCR tempPath, uint64_t 
     char tempHashFragment[3];
     // Write the resulting hashed strings in the result vector
     for (int j = 0; j < sizeof signature; ++j)
-    {
+        {
         // Bytes are written one by one (one byte equals 2 hex characters)
         sprintf_s(tempHashFragment, sizeof(tempHashFragment), "%02X", signature[j]);
         finalHashValue.AppendA(tempHashFragment);
-    }
+        }
 
     // Appending the hash to the current directory
     filenameTemp.AppendUtf8("_");
@@ -121,11 +120,11 @@ static WString createDirWithHash(Utf8StringCR uri, WStringCR tempPath, uint64_t 
         BeFileName::CreateNewDirectory(separatedDirectoryForZip);
 
     return separatedDirectoryForZip.GetWCharCP();
-}
+    }
 
 
 int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
-{
+    {
     printf("DownloadEngine...\n");
 
     //printf("argc = %d\n", pi_Argc);
@@ -308,7 +307,7 @@ int wmain(int pi_Argc, wchar_t *pi_ppArgv[])
     printf("-----Done-----");
     _getch();
     return 0;
-}
+    }
 
 
 

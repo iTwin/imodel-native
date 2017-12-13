@@ -29,6 +29,9 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 bool memorySaverMode = false;
+Utf8String metadata = "";
+Utf8String dataset = "";
+Utf8String description = "";
 
 static void progressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {
@@ -271,13 +274,13 @@ void upload(BeFileName zippedFile, Utf8String fileName, Utf8String resolution, U
     properties.Insert(RealityDataField::RootDocument, rootDocument);
     properties.Insert(RealityDataField::Classification, "Terrain");
     properties.Insert(RealityDataField::Type, extension);
-    properties.Insert(RealityDataField::Description, "SRTM-derived 1 Second Digital Elevation Models Version 1.0");
+    properties.Insert(RealityDataField::Description, description);
     properties.Insert(RealityDataField::Visibility, "PUBLIC");
     properties.Insert(RealityDataField::Listable, "true");
     properties.Insert(RealityDataField::Copyright, "Commonwealth of Australia (Geoscience Australia) 2010");
     properties.Insert(RealityDataField::TermsOfUse, "Creative Commons Attribution 4.0 International Licence");
-    properties.Insert(RealityDataField::Dataset, "SRTM1");
-    properties.Insert(RealityDataField::MetadataUrl, "https://ecat.ga.gov.au/geonetwork/srv/eng/search#!aac46307-fce8-449d-e044-00144fdd4fa6");
+    properties.Insert(RealityDataField::Dataset, dataset);
+    properties.Insert(RealityDataField::MetadataUrl, metadata);
     if(footprint.length() > 0)
         properties.Insert(RealityDataField::Footprint, footprint);
 
@@ -460,6 +463,18 @@ int main(int argc, char *argv[])
     std::cout << "minimize memory use (delete zips, after upload)? (\"y\", \"n\")\n" << std::endl;
     std::getline(std::cin, str);
     memorySaverMode = str == "y";
+
+    std::cout << "input metadata" << std::endl;
+    std::getline(std::cin, str);
+    metadata = Utf8String(str.c_str());
+
+    std::cout << "input dataset" << std::endl;
+    std::getline(std::cin, str);
+    dataset = Utf8String(str.c_str());
+
+    std::cout << "input description" << std::endl;
+    std::getline(std::cin, str);
+    description = Utf8String(str.c_str());
 
     if (uploadPath.DoesPathExist() && uploadPath.IsDirectory()) //path is directory, find all documents
         {

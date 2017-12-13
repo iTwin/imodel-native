@@ -257,7 +257,7 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
     
     id.append(Utf8PrintfString("%ldbuildTest(DELETE THIS)", currentTime));
 
-    Utf8String commandString = "\n"
+    Utf8String commandString = "dev\n"
                                 "n\n"
                                 "8\n"
                                 "y\n"
