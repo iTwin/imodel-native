@@ -47,9 +47,6 @@ typedef AsyncResult<void, WSError>                      WSVoidResult;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IWSRepositoryClient
     {
-    struct RequestOptions;
-    typedef std::shared_ptr<RequestOptions> RequestOptionsPtr;
-
     public:
         enum AuthenticationType
             {
@@ -57,10 +54,12 @@ struct IWSRepositoryClient
             Windows
             };
 
+        struct RequestOptions;
+        typedef std::shared_ptr<RequestOptions> RequestOptionsPtr;
+
     public:
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
-    public:
         struct Timeout
             {
             struct Connection
@@ -79,6 +78,7 @@ struct IWSRepositoryClient
                 };
             };
 
+    public:
         WSCLIENT_EXPORT virtual ~IWSRepositoryClient();
 
         virtual IWSClientPtr GetWSClient() const = 0;
