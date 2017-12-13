@@ -2398,11 +2398,12 @@ bool                containsSchemaChanges
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::Push
 (
-Dgn::DgnRevisionPtr               changeSet,
-Dgn::DgnDbCR                      dgndb,
-bool                              relinquishCodesLocks,
-Http::Request::ProgressCallbackCR callback,
-ICancellationTokenPtr             cancellationToken
+Dgn::DgnRevisionPtr                 changeSet,
+Dgn::DgnDbCR                        dgndb,
+bool                                relinquishCodesLocks,
+Http::Request::ProgressCallbackCR   callback,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::Push";
@@ -2451,7 +2452,7 @@ ICancellationTokenPtr             cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken)
                         ->Then([=](StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2481,7 +2482,7 @@ ICancellationTokenPtr             cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken)
                         ->Then([=](StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2545,12 +2546,13 @@ FileTaskPtr iModelConnection::GetLatestSeedFile(ICancellationTokenPtr cancellati
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::InitializeChangeSet
 (
-Dgn::DgnRevisionPtr             changeSet,
-Dgn::DgnDbCR                    dgndb,
-JsonValueR                      pushJson,
-ObjectId                        changeSetObjectId,
-bool                            relinquishCodesLocks,
-ICancellationTokenPtr           cancellationToken
+Dgn::DgnRevisionPtr                 changeSet,
+Dgn::DgnDbCR                        dgndb,
+JsonValueR                          pushJson,
+ObjectId                            changeSetObjectId,
+bool                                relinquishCodesLocks,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();
@@ -2602,7 +2604,7 @@ ICancellationTokenPtr           cancellationToken
     auto requestOptions = std::make_shared<WSRepositoryClient::RequestOptions>();
     requestOptions->SetTransferTimeOut(WSRepositoryClient::Timeout::Transfer::LongUpload);
 
-    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken, requestOptions)
+    return SendChangesetRequestInternal(changeset, options, cancellationToken, requestOptions)
         ->Then([=](const StatusResult& initializeChangeSetResult)
         {
         if (initializeChangeSetResult.IsSuccess())
@@ -2624,7 +2626,7 @@ ICancellationTokenPtr           cancellationToken
         codesToReserve.insert(discardedCodes.begin(), discardedCodes.end());
 
         AcquireCodesLocksInternal(usedLocks, codesToReserve, briefcaseId, seedFileId, changeSet->GetParentId(), 
-                                  IBriefcaseManager::ResponseOptions::None, cancellationToken)
+                                  options, cancellationToken)
             ->Then([=](StatusResultCR acquireCodesLocksResult)
             {
             if (!acquireCodesLocksResult.IsSuccess())
