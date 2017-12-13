@@ -142,8 +142,8 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     Json::Value viewerOptions = params.GetViewerOptions();
 
     // If we are displaying "in place" but don't have a real geographic location - default to natural earth.
-    if (!IsGeolocated() && viewerOptions["imageryProvider"].isNull())
-        viewerOptions["imageryProvider"] = "NaturalEarth";
+    if (viewerOptions["imageryProvider"].isNull())
+        viewerOptions["imageryProvider"] = IsGeolocated() ? "BingMapsAerialWithLabels" : "NaturalEarth";
 
     json["viewerOptions"] = viewerOptions;
 

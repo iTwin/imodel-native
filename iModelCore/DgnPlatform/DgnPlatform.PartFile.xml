@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
@@ -48,7 +48,7 @@
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="FollyShim" ExcludePlatforms="Linux*">
-        <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
+        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
     </Part>
 
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->

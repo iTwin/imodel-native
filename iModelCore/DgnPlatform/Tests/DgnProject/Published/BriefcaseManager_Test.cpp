@@ -2642,6 +2642,27 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
         m_db->Revisions().AbandonCreateRevision();
         return DgnDbStatus::Success;
         }
+    
+    //-------------------------------------------------------------------------------------------
+    // @bsimethod                                                 Diego.Pinate     12/17
+    //-------------------------------------------------------------------------------------------
+    DgnDbStatus Commit()
+        {
+        if (BE_SQLITE_OK != m_db->SaveChanges())
+            return DgnDbStatus::WriteError;
+
+        RevisionStatus revStat;
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
+        if (rev.IsNull())
+            {
+            if (RevisionStatus::NoTransactions == revStat)
+                return DgnDbStatus::Success;
+            else
+                return DgnDbStatus::BadRequest;
+            }
+        
+        return m_db->Revisions().FinishCreateRevision() == RevisionStatus::Success ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2671,6 +2692,9 @@ TEST_F(ExtractLocksTest, UsedLocks)
     DgnDbR db = *m_db;
     DgnModelR model = *db.Models().GetModel(m_modelId);
     DgnElementCPtr cpEl = db.Elements().GetElement(m_elemId);
+    DgnModelPtr testModel = CreateModel("TestModelLocks");
+    DgnElementCPtr testElem = CreateElement(*testModel);
+    EXPECT_EQ(DgnDbStatus::Success, Commit());
 
     LockRequest req;
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
@@ -2699,28 +2723,75 @@ TEST_F(ExtractLocksTest, UsedLocks)
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
     EXPECT_TRUE(req.IsEmpty());
 
-    // Create a new model
-    DgnModelPtr newModel = CreateModel("NewModel");
-    DgnElementCPtr newElem = CreateElement(*newModel);
+    // Test creating a new model and a new element inside the new model
+        {
+        UndoScope V_V_V_Undo(db);
+        // Create a new model
+        DgnModelPtr newModel = CreateModel("NewModel");
+        DgnElementCPtr newElem = CreateElement(*newModel);
 
-    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(5, req.Size());
-    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
-    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
-    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
-    // Should also have locks for the RepositoryModel + Subject for newModel
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        // A lock for the db, a lock for the root subject which the new model is created in
+        EXPECT_EQ(2, req.Size());
+        // TFS#788401: Now, we don't extract locks for inserted elements in the revision
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newModel)));
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newElem)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        // TODO: Check that the other lock is indeed the model related to the root subject
+        //EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db.Elements().GetRootSubjectId())));
+        }
 
-    // Delete the new element
-    EXPECT_EQ(DgnDbStatus::Success, newElem->Delete());
+    // Change reversed on exit above scope
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(4, req.Size());
-    EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
-    EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Test creating an element inside an existing model
+        {
+        UndoScope V_V_V_Undo(db);
+        DgnElementCPtr newElem2 = CreateElement(*testModel);
+
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        // Locks: Db and existing model (all shared)
+        EXPECT_EQ(2, req.Size());
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(*newElem2)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Test deleting an element in the existing model
+        {
+        UndoScope V_V_V_Undo(db);
+        // Delete the new element
+        LockableId testElemId (*testElem);
+        EXPECT_EQ(DgnDbStatus::Success, testElem->Delete());
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(*testModel)));
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testElemId));
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
 
     // Delete the new model
-    EXPECT_EQ(DgnDbStatus::Success, newModel->Delete());
-    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(3, req.Size());
+        {
+        UndoScope V_V_V_Undo(db);
+        LockableId testModelId (*testModel);
+        LockableId testElemId (*testElem);
+        EXPECT_EQ(DgnDbStatus::Success, testModel->Delete());
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+        // Locks for db, model, the element that was in the model, and the root where the model was
+        EXPECT_EQ(3, req.Size());
+        EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testModelId));
+        EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testElemId));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
