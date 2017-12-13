@@ -843,7 +843,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
 	// FindSpatialV8Models has already forced children of a spatial root to be spatial
 
-    SubjectCR parentRefsSubject = _GetSpatialParentSubject();
+    SubjectCPtr parentRefsSubject = &_GetSpatialParentSubject();
 
     bool hasPushedReferencesSubject = false;
     for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
@@ -856,7 +856,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
         if (!hasPushedReferencesSubject)
             {
-            SubjectCPtr myRefsSubject = GetOrCreateModelSubject(parentRefsSubject, v8mm.GetDgnModel().GetName(), ModelSubjectType::References);
+            SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, v8mm.GetDgnModel().GetName(), ModelSubjectType::References);
             if (!myRefsSubject.IsValid())
                 {
                 BeAssert(false);
@@ -884,7 +884,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
         }
 
     if (hasPushedReferencesSubject)
-        SetSpatialParentSubject(parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
+        SetSpatialParentSubject(*parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
     }
 
 /*---------------------------------------------------------------------------------**//**
