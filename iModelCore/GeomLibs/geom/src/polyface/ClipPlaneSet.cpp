@@ -1190,6 +1190,10 @@ CurveVectorCP curves
             i0 = i1;
             }
         }
+
+    if (numIn == 0 && numOut == 0)
+       return ClipPlaneContainment::ClipPlaneContainment_StronglyOutside;
+
     if (numIn == 0 && numOut > 0)
         {
         if (!considerRegions || (curves == nullptr) || !curves->IsAnyRegionType ())
