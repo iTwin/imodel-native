@@ -2418,7 +2418,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
         {
         BeAssert((DgnDbStatus::LockNotHeld != stat) && "Failed to get or retain necessary locks");
         BeAssert(false);
-        ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*results.m_element).c_str());
+        ReportIssue(IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*results.m_element).c_str());
         return stat;
         }
 
