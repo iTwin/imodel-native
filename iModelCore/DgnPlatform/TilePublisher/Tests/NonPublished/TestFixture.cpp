@@ -166,7 +166,7 @@ Cesium::TilesetPublisher::Status TestFixture::PublishTiles()
     SaveDb();
 
     auto filename = GetDb().GetFileName();
-    Cesium::PublisherParams params(filename, GetBaseDir(), GetTilesetNameW());
+    Cesium::PublisherParams params(filename, GetBaseDir(), GetTilesetNameW(), /*copyScripts=*/ false);
 
     DgnViewIdSet views;
     DgnViewId defaultView = params.GetViewIds(views, GetDb());
