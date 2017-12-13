@@ -309,6 +309,30 @@ int EXP_LVL9 CSparm7I2 (struct csParm7_ *parm7,double* trgLl,Const double* srcLl
 
 		/* Compute the WGS-84 lat/long for our current guess. */
 		rtnVal = CSparm7F2 (parm7,newLl,guess);
+#ifdef GEOCOORD_ENHANCEMENT
+        // Sometimes when the coordinate is close to the -180/180 frontier the algorithm will not work
+        // and the returned coordinate will be a multiple of 360 degrees, maybe resulting in exceeding the maximum number of 
+        // iterations.
+        // We will contraint the return value to follow the same convention as input
+        if (srcLl[LNG] > 0.0 && newLl[LNG] < 0.0)
+        {
+            // Signs changed but this does not mean it is incorrect if around the prime meridian
+            if (srcLl[LNG] - newLl[LNG] > 180.0)
+            {
+                // The difference is indeed large which may only result from crossing the frontier with sign reversal
+                newLl[LNG] += 360.0;
+            }
+        }
+        else if (srcLl[LNG] < 0.0 && newLl[LNG] > 0.0)
+        {
+            // Signs changed but this does not mean it is incorrect if around the prime meridian
+            if (newLl[LNG] - srcLl[LNG] > 180.0)
+            {
+                // The difference is indeed large which may only result from crossing the frontier with sign reversal
+                newLl[LNG] -= 360.0;
+            }
+        }
+#endif
 		if (rtnVal != 0)
 		{
 			/* Oopps!! We must have been given some pretty strange
