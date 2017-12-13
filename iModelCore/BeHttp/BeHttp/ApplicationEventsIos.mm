@@ -6,7 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#if !defined (__APPLE__)
+#include <Bentley/Bentley.h>
+
+#if !defined (BENTLEYCONFIG_OS_APPLE_IOS)
     #error This file is only intended for iOS compilands!
 #endif
 
@@ -24,7 +26,7 @@ void ApplicationEventsManager::InitializeApplicationEventsListening()
     {
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     NSOperationQueue *mainQueue = [NSOperationQueue mainQueue];
-    
+
     [center addObserverForName:UIApplicationDidEnterBackgroundNotification object:nil queue:mainQueue usingBlock:^(NSNotification *note)
         {
         for (auto listener : m_applicationEventsListeners)
@@ -37,7 +39,7 @@ void ApplicationEventsManager::InitializeApplicationEventsListening()
             listener->_OnApplicationSentToForeground();
         }];
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Vincas.Razma            07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

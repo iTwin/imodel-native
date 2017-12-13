@@ -16,14 +16,14 @@
 
 #include "WebLogging.h"
 
-#if defined(__APPLE__)
+#if defined(BENTLEYCONFIG_OS_APPLE)
 #include <CoreFoundation/CoreFoundation.h>
 #include <CFNetwork/CFNetwork.h>
 
 static Utf8String GetProxyUrlIos(CFDictionaryRef proxyDict, CFStringRef proxyKey, CFStringRef portKey);
 static void LoadSystemProxySettingsIos(CFDictionaryRef systemProxySettings, Utf8StringR proxyUrl, Utf8StringR pacUrl);
 
-#endif // __APPLE__
+#endif // BENTLEYCONFIG_OS_APPLE
 
 #if defined (BENTLEY_WIN32)
 #include <windows.h>
@@ -175,7 +175,7 @@ bool HttpProxy::ShouldBypassUrl(Utf8StringCR url) const
 bvector<Utf8String> HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR url) const
     {
     bvector<Utf8String> proxyUrls;
-#if defined(__APPLE__)
+#if defined(BENTLEYCONFIG_OS_APPLE)
     CFStringRef pacScript = CFStringCreateWithCString(nullptr, m_pacScript.c_str(), kCFStringEncodingUTF8);
     CFStringRef urlString = CFStringCreateWithCString(nullptr, url.c_str(), kCFStringEncodingUTF8);
     CFURLRef urlRef = CFURLCreateWithString(nullptr, urlString, nullptr);
@@ -202,7 +202,7 @@ bvector<Utf8String> HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR url) const
             proxyUrls.push_back("");
         }
     CFRelease(proxies);
-#else // __APPLE__
+#else // BENTLEYCONFIG_OS_APPLE
 #if defined(BENTLEY_WIN32)
     HINTERNET hSession = WinHttpOpen(L"User", WINHTTP_ACCESS_TYPE_NO_PROXY, nullptr, nullptr, 0);
     if (nullptr != hSession)
@@ -252,11 +252,11 @@ bvector<Utf8String> HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR url) const
         LOG.errorv("HttpProxy::GetProxyUrlsFromPacScript() WinHttpOpen() failed: %d", GetLastError());
         }
 #endif // BENTLEY_WIN32
-#endif // !__APPLE__
+#endif // !BENTLEYCONFIG_OS_APPLE
     return proxyUrls;
     }
 
-#if defined(__APPLE__)
+#if defined(BENTLEYCONFIG_OS_APPLE)
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Travis.Cobbs           09/2017
@@ -306,7 +306,7 @@ static void LoadSystemProxySettingsIos(CFDictionaryRef systemProxySettings, Utf8
     // the iOS API doesn't support this entry (it is Mac-only), so we are forced to ignore it.
     }
 
-#endif // __APPLE__
+#endif // BENTLEYCONFIG_OS_APPLE
 
 #if defined(BENTLEY_WIN32)
 
@@ -436,7 +436,7 @@ bool HttpProxy::LoadSystemProxySettings()
     m_pacScript.clear();
     m_proxyBypassHosts.clear();
 
-#if defined(__APPLE__)
+#if defined(BENTLEYCONFIG_OS_APPLE)
     CFDictionaryRef systemProxySettings = CFNetworkCopySystemProxySettings();
     LoadSystemProxySettingsIos(systemProxySettings, m_proxyUrl, m_pacUrl);
     CFRelease(systemProxySettings);
