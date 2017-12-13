@@ -143,8 +143,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
 
             //! Creates create parameters for orthogonal grid
             //! @param[in] model              model for the PlanCartesianGridSurface
-            CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId gridAxisId, double coordinate, double staExtent, double endExtent, double staElevation, double endElevation) :
-                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxisId, staElevation, endElevation)
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double coordinate, double staExtent, double endExtent, double staElevation, double endElevation) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId(), staElevation, endElevation)
                 {
                 m_coordinate = coordinate;
                 m_startExtent = staExtent;
@@ -265,4 +265,64 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
         //! @param[in]  Elevation   new Elevation for this ElevationGridSurface
         GRIDELEMENTS_EXPORT void        SetElevation (double elevation) { SetPropertyValue (prop_Elevation (), elevation); };
     };
+
+//=======================================================================================
+//! plan grid planar surface element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SketchLineGridSurface : PlanGridPlanarSurface
+    {
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_SketchLineGridSurface, PlanGridPlanarSurface);
+    DEFINE_T_SUPER (PlanGridPlanarSurface);
+    public:
+        struct CreateParams : T_Super::CreateParams
+            {
+            DEFINE_T_SUPER (SketchLineGridSurface::T_Super::CreateParams);
+            DPoint2d m_startPoint;
+            DPoint2d m_endPoint;
+
+            //! Creates create parameters for orthogonal grid
+            //! @param[in] model              model for the PlanCartesianGridSurface
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double staElevation, double endElevation, DPoint2d staPoint, DPoint2d endPoint) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId (), staElevation, endElevation)
+                {
+                m_startPoint = staPoint;
+                m_endPoint = endPoint;
+                }
+
+            //! Constructor from base params. Chiefly for internal use.
+            //! @param[in]      params   The base element parameters
+            //! @return 
+            explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
+                : T_Super (params)
+                {
+                m_startPoint = m_endPoint = DPoint2d::FromZero ();
+                }
+            };
+
+    private:
+        BE_PROP_NAME (Line2d)
+
+
+    protected:
+        explicit GRIDELEMENTS_EXPORT SketchLineGridSurface (CreateParams const& params);
+        friend struct SketchLineGridSurfaceHandler;
+
+    public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchLineGridSurface, GRIDELEMENTS_EXPORT)
+
+        //! Creates a SketchLineGridSurface surface
+        //! @param[in]  params           params to create SketchLineGridSurface
+        GRIDELEMENTS_EXPORT static  SketchLineGridSurfacePtr Create (CreateParams const& params);
+
+        //! Gets Line2d of this SketchLineGridSurface
+        //! @param[out]  startPoint     startPoint of gridSurface in local coordinates
+        //! @param[out]  endPoint       endPoint of gridSurface in local coordinates
+        GRIDELEMENTS_EXPORT BentleyStatus       GetBaseLine (DPoint2dR startPoint, DPoint2dR endPoint) const;
+
+        //! Sets Line2d of this SketchLineGridSurface
+        //! @param[in]   startPoint     startPoint of gridSurface in local coordinates
+        //! @param[in]   endPoint       endPoint of gridSurface in local coordinates
+        GRIDELEMENTS_EXPORT void                SetBaseLine (DPoint2d startPoint, DPoint2d endPoint);
+    };
+
 END_GRIDS_NAMESPACE

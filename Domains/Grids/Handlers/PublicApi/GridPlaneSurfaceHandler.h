@@ -29,4 +29,9 @@ struct ElevationGridSurfaceHandler : GridPlanarSurfaceHandler
     ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_ElevationGridSurface, ElevationGridSurface, ElevationGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
     };
 
+struct SketchLineGridSurfaceHandler : GridPlanarSurfaceHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_SketchLineGridSurface, SketchLineGridSurface, SketchLineGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
+    };
+
 END_GRIDS_NAMESPACE

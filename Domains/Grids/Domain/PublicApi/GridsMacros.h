@@ -87,6 +87,7 @@
 #define GRIDS_CLASS_PlanGridPlanarSurface                       "PlanGridPlanarSurface"
 #define GRIDS_CLASS_PlanCartesianGridSurface                    "PlanCartesianGridSurface"
 #define GRIDS_CLASS_ElevationGridSurface                        "ElevationGridSurface"
+#define GRIDS_CLASS_SketchLineGridSurface                       "SketchLineGridSurface"
 #define GRIDS_CLASS_GridSplineSurface                           "GridSplineSurface"
 #define GRIDS_CLASS_GridArcSurface                              "GridArcSurface"
 

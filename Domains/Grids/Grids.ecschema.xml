@@ -225,6 +225,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECProperty propertyName="Line2d" displayLabel="Line2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="PlanGridArcSurface" description="An arc plangrid surface element.">
@@ -247,6 +248,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECProperty propertyName="Arc2d" displayLabel="Arc2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="PlanGridSplineSurface" description="An arc plangrid surface element.">

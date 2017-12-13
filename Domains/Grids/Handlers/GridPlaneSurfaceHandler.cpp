@@ -13,4 +13,5 @@ USING_NAMESPACE_GRIDS
 HANDLER_DEFINE_MEMBERS (GridPlanarSurfaceHandler)
 HANDLER_DEFINE_MEMBERS (PlanCartesianGridSurfaceHandler)
 HANDLER_DEFINE_MEMBERS (ElevationGridSurfaceHandler)
+HANDLER_DEFINE_MEMBERS (SketchLineGridSurfaceHandler)
 

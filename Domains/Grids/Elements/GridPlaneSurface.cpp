@@ -11,6 +11,7 @@ USING_NAMESPACE_BENTLEY_DGN
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (SketchLineGridSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -397,6 +398,92 @@ Placement3dCR placement
     //else recompute the elevation
     SetElevation (diffPlane.origin.z);
     return T_Super::_SetPlacement (placement);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchLineGridSurface::SketchLineGridSurface
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetBaseLine (params.m_startPoint, params.m_endPoint);
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchLineGridSurfacePtr             SketchLineGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    SketchLineGridSurfacePtr surface = new SketchLineGridSurface (params);
+
+    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
+        return nullptr;
+    
+    return surface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            SketchLineGridSurface::SetBaseLine
+(
+DPoint2d startPoint,
+DPoint2d endPoint
+)
+    {
+    DSegment3d segment = DSegment3d::From (startPoint.x, startPoint.y, 0.0,
+                                           endPoint.x, endPoint.y, 0.0);
+    ICurvePrimitivePtr line = ICurvePrimitive::CreateLine (segment);
+    IGeometryPtr geometryPtr = IGeometry::Create (line);
+
+    ECN::ECValue line2dValue;
+    line2dValue.SetIGeometry (*geometryPtr);
+
+    SetPropertyValue (prop_Line2d (), line2dValue);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   SketchLineGridSurface::GetBaseLine
+(
+DPoint2dR startPoint,
+DPoint2dR endPoint
+) const
+    {
+    ECN::ECValue line2dValue;
+
+    GetPropertyValue (line2dValue, prop_Line2d ());
+
+    IGeometryPtr geometryPtr = line2dValue.GetIGeometry ();
+    if (!geometryPtr.IsValid ())
+        return BentleyStatus::ERROR;
+
+    ICurvePrimitivePtr curve = geometryPtr->GetAsICurvePrimitive ();
+    if (!curve.IsValid ())
+        return BentleyStatus::ERROR;
+            
+    DSegment3dCP pSegment = curve->GetLineCP ();
+    if (pSegment == NULL)
+        return BentleyStatus::ERROR;
+
+    startPoint.x = pSegment->point[0].x;
+    startPoint.y = pSegment->point[0].y;
+    endPoint.x = pSegment->point[1].x;
+    endPoint.y = pSegment->point[1].y;
+
+    return BentleyStatus::SUCCESS;
     }
 
 END_GRIDS_NAMESPACE
