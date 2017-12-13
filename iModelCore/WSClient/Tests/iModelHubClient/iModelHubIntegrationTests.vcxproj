@@ -92,6 +92,7 @@
     <ClCompile Include="Integration\MultiProgressCallbackHandlerTests.cpp" />
     <ClCompile Include="Integration\Performance_Tests.cpp" />
     <ClCompile Include="Integration\iModelManager_Tests.cpp" />
+    <ClCompile Include="Integration\WebsiteSeedFile_Tests.cpp" />
     <ClCompile Include="Integration\Retry_Tests.cpp" />
     <ClCompile Include="Integration\IntegrationTestsBase.cpp" />
     <ClCompile Include="Integration\IntegrationTestsHelper.cpp" />
