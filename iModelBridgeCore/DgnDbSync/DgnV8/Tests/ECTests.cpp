@@ -1810,6 +1810,23 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
     else
         ASSERT_TRUE(false) << "Error opening csv file";
 
+    //Creating a csv for Failing Views
+    BentleyApi::BeFileName FailingCsv = csvPath;
+    FailingCsv.AppendToPath(L"FailingViews").AppendA(".csv");
+
+    if (FailingCsv.DoesPathExist())
+        ASSERT_EQ(0, remove(FailingCsv.GetNameUtf8().c_str())) << "Error deleting file.";
+
+    //Writing results in csv 
+    FILE *failingViews;
+    failingViews = fopen(FailingCsv.GetNameUtf8().c_str(), "a");
+    if (failingViews != NULL)
+        {
+        fprintf(failingViews, "FileName , Failing View Name\n");
+        }
+    else
+        ASSERT_TRUE(false) << "Error opening csv file";
+
     BentleyApi::BeSQLite::DbResult sqlPrepareStatus;
     BentleyApi::Bstdcxx::bvector<BentleyApi::Utf8String> FailingViews;
 
@@ -1817,15 +1834,13 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
         {
         printf("\n\n\nibim Name: %s\n\n\n", dbName.GetNameUtf8().c_str());
 
-        bool Filestatus = false;
-
         DgnDbPtr dgnProj = OpenExistingDgnDb(dbName, Db::OpenMode::Readonly);
         EXPECT_TRUE(dgnProj->IsDbOpen());
         BentleyApi::BeSQLite::Statement statement;
         EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, statement.Prepare(*dgnProj, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
         while (statement.Step() == BE_SQLITE_ROW)
             {
-            //printf("\n ViewName : %s \n", statement.GetValueText(0));
+            printf("\n ViewName : %s \n", statement.GetValueText(0));
             BentleyApi::BeSQLite::Statement stmt;
             BentleyApi::Utf8String sql;
             sql.Sprintf("SELECT * FROM %s", statement.GetValueText(0));
@@ -1833,12 +1848,13 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
             sqlPrepareStatus = stmt.Prepare(*dgnProj, sql.c_str());
             EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, sqlPrepareStatus) << "ECClassView " << stmt.GetValueText(0) << " has invalid DDL: " << dgnProj->GetLastError().c_str() << " in DgnDb : " << dbName.c_str();
 
-            if (sqlPrepareStatus == BE_SQLITE_OK)
-                Filestatus = true;
-            else
-                FailingViews.push_back(stmt.GetValueText(0));
-            Filestatus = false;
+            if (sqlPrepareStatus != BE_SQLITE_OK)
+                {
+                FailingViews.push_back(statement.GetValueText(0));
+                fprintf(failingViews, "%ls ,%s\n", dbName.GetFileNameAndExtension().c_str(), statement.GetValueText(0));
+                }
             }
+
         statement.Finalize();
         dgnProj->CloseDb();
 
@@ -1849,6 +1865,7 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
         }
 
     fclose(f);
+    fclose(failingViews);
     }
 
 /*---------------------------------------------------------------------------------**//**
