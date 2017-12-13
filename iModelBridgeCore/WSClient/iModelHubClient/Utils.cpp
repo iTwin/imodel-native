@@ -64,7 +64,7 @@ bool StringFromJson(Utf8StringR result, RapidJsonValueCR value)
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                              julius.cepukenas   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LockLevelFromJson(LockLevel& level, RapidJsonValueCR value)
@@ -79,7 +79,7 @@ bool LockLevelFromJson(LockLevel& level, RapidJsonValueCR value)
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                             julius.cepukenas   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LockableTypeFromJson(LockableType& type, RapidJsonValueCR value)
@@ -93,7 +93,7 @@ bool LockableTypeFromJson(LockableType& type, RapidJsonValueCR value)
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BriefcaseIdFromJson(BeBriefcaseId& bcId, RapidJsonValueCR value)

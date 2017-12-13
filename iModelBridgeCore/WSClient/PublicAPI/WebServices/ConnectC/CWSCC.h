@@ -17,7 +17,7 @@ using namespace std;
 #define CWSCC_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-/************************************************************************************//**
+/****************************************************************************************
 * \defgroup ConnectWebServicesClientCStatusCodes ConnectWebServicesClientC Status Codes
 * \\ NOTE: These status codes are used in pyCApiGen tool. If edited here, update there as well.
 * \{
@@ -168,7 +168,7 @@ To many unsuccessful login attempts have happened.
 typedef int16_t CallStatus;
 /** \} */
 
-/************************************************************************************//**
+/****************************************************************************************
 * \defgroup PointerTypes ConnectWebServicesClientC Pointer types
 * \{
 ****************************************************************************************/

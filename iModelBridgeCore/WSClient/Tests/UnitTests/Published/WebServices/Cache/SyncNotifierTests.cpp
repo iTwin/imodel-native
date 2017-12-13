@@ -12,7 +12,7 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                          Benediktas.Lipnickas        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SyncNotifierTests, OnComplete_NoTasksAdded_ReturnsNotSynced)
@@ -24,7 +24,7 @@ TEST_F(SyncNotifierTests, OnComplete_NoTasksAdded_ReturnsNotSynced)
     EXPECT_EQ(ICachingDataSource::SyncStatus::NotSynced, result.GetValue());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                          Benediktas.Lipnickas        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SyncNotifierTests, OnComplete_AllTasksSynced_ReturnsSynced)
@@ -39,7 +39,7 @@ TEST_F(SyncNotifierTests, OnComplete_AllTasksSynced_ReturnsSynced)
     EXPECT_EQ(ICachingDataSource::SyncStatus::Synced, result.GetValue());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                          Benediktas.Lipnickas        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SyncNotifierTests, OnComplete_OneOfTheTasksSynced_ReturnsSynced)
@@ -56,7 +56,7 @@ TEST_F(SyncNotifierTests, OnComplete_OneOfTheTasksSynced_ReturnsSynced)
     EXPECT_EQ(ICachingDataSource::SyncStatus::Synced, result.GetValue());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                          Benediktas.Lipnickas        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SyncNotifierTests, OnComplete_AllTasksNotSynced_ReturnsNotSynced)

@@ -15,7 +15,7 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, GetSelectProperties_AnyClass_SelectAll)
@@ -31,7 +31,7 @@ TEST_F(ISelectProviderTests, GetSelectProperties_AnyClass_SelectAll)
     EXPECT_THAT(select->GetExtendedProperties(), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, GetSortPriority_AnyClass_Zero)
@@ -40,7 +40,7 @@ TEST_F(ISelectProviderTests, GetSortPriority_AnyClass_Zero)
     ASSERT_THAT(ISelectProvider().GetSortPriority(*schema->GetClassCP("TestClass")), 0);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, GetSortProperties_AnyClass_Empty)
@@ -49,7 +49,7 @@ TEST_F(ISelectProviderTests, GetSortProperties_AnyClass_Empty)
     ASSERT_THAT(ISelectProvider().GetSortProperties(*schema->GetClassCP("TestClass")), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_Ctor_Default_SelectAllWithid)
@@ -62,7 +62,7 @@ TEST_F(ISelectProviderTests, SelectProperties_Ctor_Default_SelectAllWithid)
     EXPECT_THAT(select.GetExtendedProperties(), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_True_RemovesProperties)
@@ -79,7 +79,7 @@ TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_True_RemovesPropertie
     EXPECT_THAT(select.GetSelectAll(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_False_LeavesProperties)
@@ -96,7 +96,7 @@ TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_False_LeavesPropertie
     EXPECT_THAT(select.GetSelectAll(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_True_DoesNotRemoveExtendedProperties)
@@ -111,7 +111,7 @@ TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_True_DoesNotRemoveExt
     EXPECT_THAT(select.GetSelectAll(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_Null_SkipsProperty)
@@ -122,7 +122,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_Null_SkipsProperty)
     EXPECT_THAT(select.GetExtendedProperties(), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_DuplicateProperties_DoesNotAddDuplicates)
@@ -137,7 +137,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_DuplicateProperties_Do
     EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWithPropertiesInExpression_AddsAdditionalProperties)
@@ -167,7 +167,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWith
     EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("PropertyB"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWithInvalidPropertyInExpression_AddsOnlyValidProperties)
@@ -196,7 +196,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWith
     EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("PropertyA"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWithNoPropertiesInExpression_DoesNotAddAdditionalProperties)
@@ -223,7 +223,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWith
     EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("TestCalculatedProperty"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_Null_SelectAllFalse)
@@ -235,7 +235,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_Null_SelectAllFalse)
     EXPECT_THAT(select.GetSelectAll(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_ValidProperty_SelectAllFalse)
@@ -249,7 +249,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_ValidProperty_SelectAl
     EXPECT_THAT(select.GetSelectAll(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddExtendedProperty_Empty_DoesNotEmptyProperties)
@@ -260,7 +260,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddExtendedProperty_Empty_DoesNotE
     EXPECT_THAT(select.GetExtendedProperties(), IsEmpty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddExtendedProperty_PropertyAdded_DoesNotClearSelectAll)
@@ -272,7 +272,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddExtendedProperty_PropertyAdded_
     EXPECT_THAT(select.GetSelectAll(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SelectProperties_AddExtendedProperty_DuplicateProperty_DoesNotAddDuplicates)
@@ -284,7 +284,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddExtendedProperty_DuplicatePrope
     EXPECT_THAT(select.GetExtendedProperties(), SizeIs(1));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SortProperty_Ctor_Default_ReturnsAscendingTrue)
@@ -296,7 +296,7 @@ TEST_F(ISelectProviderTests, SortProperty_Ctor_Default_ReturnsAscendingTrue)
     EXPECT_THAT(sort.GetSortAscending(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingFalse_ReturnsAscendingFalse)
@@ -308,7 +308,7 @@ TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingFalse_ReturnsAscendingFa
     EXPECT_THAT(sort.GetSortAscending(), false);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingTrue_ReturnsAscendingTrue)
@@ -320,7 +320,7 @@ TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingTrue_ReturnsAscendingTru
     EXPECT_THAT(sort.GetSortAscending(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ISelectProviderTests, SortProperty_Ctor_Default_ReturnsSameProperty)

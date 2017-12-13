@@ -269,7 +269,7 @@ TEST_F (WSClientTests, GetServerInfo_IncorrectServerHeaderPokeWSG_IdentifyingWSG
     EXPECT_EQ (BeVersion (2, 1), info.GetValue ().GetVersion ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperMasServerHeader_IdentifyingWSG)
@@ -283,7 +283,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperMasServerHeader_Identi
     EXPECT_EQ(BeVersion(2,6), info.GetValue().GetVersion());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                julius.cepukenas                     09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSClientTests, GetServerInfo_FirstResponseHasMasServerAndServerHeader_IdentifyingCorrectWSG)

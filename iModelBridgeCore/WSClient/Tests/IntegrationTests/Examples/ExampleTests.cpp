@@ -39,7 +39,7 @@ void ExampleTests::SetUp()
     CacheTransactionManager::SetAllowUnsafeAccess(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, WSRepositoryClient_PWConnectionCreationAndQuery)
@@ -71,7 +71,7 @@ TEST_F(ExampleTests, WSRepositoryClient_PWConnectionCreationAndQuery)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, WSRepositoryClient_ConnectConnectionCreationAndQuery)
@@ -103,7 +103,7 @@ TEST_F(ExampleTests, WSRepositoryClient_ConnectConnectionCreationAndQuery)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, CachingDataSource_PWConnectionCreationAndQuery)
@@ -150,7 +150,7 @@ TEST_F(ExampleTests, CachingDataSource_PWConnectionCreationAndQuery)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ExampleTests, CachingDataSource_PWDocumentRenameAndSync)

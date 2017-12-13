@@ -30,7 +30,7 @@ void SolrClientTests::SetUp()
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_INFO);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestWithTokenPreceededAuthenticationStringForIMSUserService_HttpResultIsInvalid)
@@ -49,7 +49,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestWithTokenPreceededAuthentication
     EXPECT_EQ(HttpStatus::Unauthorized, error.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidBaseServerUrlForImsUserService_Returns404NotFound)
@@ -71,7 +71,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidBaseServerUrlForImsU
     EXPECT_EQ(HttpStatus::None, error.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidCollectionString_Returns404NotFound)
@@ -91,7 +91,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidCollectionString_Ret
     EXPECT_EQ(HttpStatus::NotFound, error.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidSelectParameterForImsUserService_Returns0Results)
@@ -113,7 +113,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidSelectParameterForIm
     EXPECT_EQ(0, resultUserData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidFilterParameterForImsUserService_Returns400BadRequest)
@@ -135,7 +135,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidFilterParameterForIm
     EXPECT_EQ(HttpStatus::BadRequest, error.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidRowParameterAndRowsDefaultsTo1ForImsUserService_HttpRequestSucceedsWithRowsSetTo1)
@@ -161,7 +161,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidRowParameterAndRowsDefaultsT
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidStartParameterAndStartDefaultsTo0ForImsUserService_HttpRequestSucceedsWithStartSetTo0)
@@ -186,7 +186,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidStartParameterAndStartDefaul
     EXPECT_EQ(35, resultUserData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SendsVanillaRequestToGetAllTokenInformationForImsUserService_HttpResponseSuccessful)
@@ -221,7 +221,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SendsVanillaRequestToGetAllTokenInforma
     EXPECT_STREQ(expectedAccountName.c_str(), resultUserData["AccountName"].asCString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsSelectForUserIdForImsUserService_HttpResponseOnlyReturnUserIdCategory)
@@ -248,7 +248,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsSelectForUserIdForImsUserService_Ht
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsMultiSelectForFirstNameAndLastNameForImsUserService_HttpResponseOnlyReturnsFirstNameAndLastName)
@@ -277,7 +277,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsMultiSelectForFirstNameAndLastNameF
     EXPECT_STREQ(expectedLastName.c_str(), resultUserData["LastName"].asCString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestWithTokenPreceededAuthenticationStringForNotificationService_HttpResultIsInvalid)
@@ -296,7 +296,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestWithTokenPreceededAuthentication
     EXPECT_EQ(HttpStatus::Unauthorized, error.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidBaseServerUrlForNotificationService_Returns404NotFound)
@@ -316,7 +316,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidBaseServerUrlForNoti
     EXPECT_EQ(HttpStatus::NotFound, error.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidSelectParameterForNotificationService_Returns0Results)
@@ -338,7 +338,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidSelectParameterForNo
     EXPECT_EQ(0, resultNotificationData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidFilterParameterForNotificationService_Returns400BadRequest)
@@ -360,7 +360,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidFilterParameterForNo
     EXPECT_EQ(HttpStatus::BadRequest, error.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidRowParameterAndRowsDefaultsTo1ForNotificationService_HttpRequestSucceedsWithRowsSetTo1)
@@ -386,7 +386,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidRowParameterAndRowsDefaultsT
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidStartParameterAndStartDefaultsTo0ForNotificationService_HttpRequestSucceedsWithStartSetTo0)
@@ -411,7 +411,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidStartParameterAndStartDefaul
     EXPECT_EQ(10, resultNotificationData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SendsVanillaRequestToGetAllTokenInformationForNotificationService_HttpResponseSuccessful)
@@ -444,7 +444,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SendsVanillaRequestToGetAllTokenInforma
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsSelectForUserIdForNotificationService_HttpResponseOnlyReturnUserIdCategory)
@@ -472,7 +472,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsSelectForUserIdForNotificationServi
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsMultiSelectForUserIdAndSenderForNotificationService_HttpResponseOnlyReturnsUserIdAndSender)
@@ -503,7 +503,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsMultiSelectForUserIdAndSenderForNot
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo5ForNotificationService_HttpResponseOnlySendBack5Results)
@@ -525,7 +525,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo5ForNotificationService_HttpR
     EXPECT_EQ(5, resultNotificationData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo100ForNotificationService_HttpResponseSendsBackAllData)
@@ -547,7 +547,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo100ForNotificationService_Htt
     EXPECT_EQ(25, resultNotificationData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo100AndStartAt10ForNotificationService_HttpResponseSendsBackResultsFrom11To25)
@@ -570,7 +570,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo100AndStartAt10ForNotificatio
     EXPECT_EQ(15, resultNotificationData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetsStartPastNumberOfUserNotificationForNotificationService_HttpResponseSendsBack0Results)
@@ -593,7 +593,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsStartPastNumberOfUserNotificationFo
     EXPECT_EQ(0, resultNotificationData.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetIndentTrueForNotificationService_HttpResponseHeaderHasIndentationSetToTrue)
@@ -615,7 +615,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetIndentTrueForNotificationService_Htt
     EXPECT_STREQ("true", resultNotificationParams["indent"].asCString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SolrClientTests, SendQueryRequest_SetIndentFalseForNotificationService_HttpResponseHeaderHasIndentationSetToFalse)

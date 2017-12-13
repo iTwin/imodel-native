@@ -12,7 +12,7 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_TASKS
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ServerReturnsError_ReturnsErrorResponse)
@@ -30,7 +30,7 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ServerReturnsError_Return
     EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSuccess)
@@ -55,7 +55,7 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_ReturnsErrorResponse)
@@ -73,7 +73,7 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_Ret
     EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Andrius.Zonys                     01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSuccess)
@@ -114,7 +114,7 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSu
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Andrius.Zonys                     01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ProgressCallbackPassedForMultiChunkUpload_ProgressReported)
@@ -170,7 +170,7 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ProgressCallbackPassed
     ASSERT_TRUE(result.IsSuccess());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Andrius.Zonys                     01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_ReturnsError)
