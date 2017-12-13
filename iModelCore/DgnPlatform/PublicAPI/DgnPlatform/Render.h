@@ -2665,7 +2665,9 @@ public:
     explicit FeatureTable(uint32_t maxFeatures) : FeatureTable(DgnModelId(), maxFeatures) { }
     FeatureTable(DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
     FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
+    FeatureTable(FeatureTableCR src) : m_map(src.m_map), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
     FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_modelId = src.m_modelId; m_maxFeatures = src.m_maxFeatures; return *this; }
+    FeatureTable& operator=(FeatureTableCR src) { *this = FeatureTable(src); return *this; }
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
     uint32_t GetIndex(FeatureCR feature)
