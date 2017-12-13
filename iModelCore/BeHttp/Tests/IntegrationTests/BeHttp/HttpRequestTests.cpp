@@ -64,7 +64,7 @@ struct HttpRequestTests : ::testing::Test
         }
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSuccessfully)
@@ -78,7 +78,7 @@ TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSucce
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
@@ -98,7 +98,7 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequestWithThen_ExecutesChainedTaskSucc
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
@@ -118,7 +118,7 @@ TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfu
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasValidCert_Success)
@@ -132,7 +132,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasValidCert_Success)
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success)
@@ -146,7 +146,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasSelfSignedCert_Fails)
@@ -160,7 +160,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasSelfSignedCert_Fails
     EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasSelfSignedCert_Succeeds)
@@ -174,7 +174,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasSelfSignedCert_Su
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasCertIssuedToDifferentSite_Fails)
@@ -188,7 +188,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasCertIssuedToDifferen
     EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasCertIssuedToDifferentSite_Succeeds)
@@ -202,7 +202,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasCertIssuedToDiffe
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
@@ -219,7 +219,7 @@ TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
@@ -233,7 +233,7 @@ TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EncodesUnsafeCharactersAndExecutesSuccessfully)
@@ -264,7 +264,7 @@ TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EncodesUnsafeCharactersAn
     EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", response.GetEffectiveUrl().c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEncodedCharactersInUrl)
@@ -274,7 +274,7 @@ TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEncodedCharactersIn
     EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", request.GetUrl().c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, GetUrl_TextAsUrlPassed_ReturnsSameText)
@@ -284,7 +284,7 @@ TEST_F(HttpRequestTests, GetUrl_TextAsUrlPassed_ReturnsSameText)
     EXPECT_STREQ("test url", request.GetUrl().c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_MalformedUrl_Fails)
@@ -299,7 +299,7 @@ TEST_F(HttpRequestTests, Perform_MalformedUrl_Fails)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_NonexistingUrl_ExecutesWithError)
@@ -313,7 +313,7 @@ TEST_F(HttpRequestTests, Perform_NonexistingUrl_ExecutesWithError)
     EXPECT_STREQ("", response.GetBody().AsString().c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationCorrectCredentials_Success)
@@ -328,7 +328,7 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationCorrectCredentials_Success)
     EXPECT_TRUE(Json::Reader::DoParse(response.GetBody().AsString()).isObject());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationNoCredentials_Fails)
@@ -341,7 +341,7 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationNoCredentials_Fails)
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationIncorrectCredentials_Fails)
@@ -355,7 +355,7 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationIncorrectCredentials_Fails)
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_FollowRedirectsTrue_RedirectsSuccessfully)
@@ -368,7 +368,7 @@ TEST_F(HttpRequestTests, Perform_FollowRedirectsTrue_RedirectsSuccessfully)
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
@@ -381,7 +381,7 @@ TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
     EXPECT_EQ(HttpStatus::Found, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_DefaultHttpRequestAndReceivedBody_SucceedsWithBody)
@@ -396,7 +396,7 @@ TEST_F(HttpRequestTests, Perform_DefaultHttpRequestAndReceivedBody_SucceedsWithB
     EXPECT_EQ(2, response.GetContent()->GetBody()->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_HttpRequestWithNullResponseBodyAndReceivedBody_SucceedsWithEmptyBody)
@@ -412,7 +412,7 @@ TEST_F(HttpRequestTests, Perform_HttpRequestWithNullResponseBodyAndReceivedBody_
     EXPECT_EQ(0, response.GetContent()->GetBody()->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_ReusingSameResponseBodyWithData_ResetsResponseBodySoDataWouldNotBeMerged)
@@ -437,7 +437,7 @@ TEST_F(HttpRequestTests, Perform_ReusingSameResponseBodyWithData_ResetsResponseB
     EXPECT_EQ("B", responseBody->AsString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_ReusingSameRequestBody_KeepsSameBody)
@@ -452,7 +452,7 @@ TEST_F(HttpRequestTests, Perform_ReusingSameRequestBody_KeepsSameBody)
     EXPECT_EQ(Json::Reader::DoParse(response.GetBody().AsString())["data"].asString(), "TestBody");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_ZeroByteBodyAndHttpFileBody_SavesZeroSizedFile)
@@ -477,7 +477,7 @@ TEST_F(HttpRequestTests, Perform_ZeroByteBodyAndHttpFileBody_SavesZeroSizedFile)
     EXPECT_EQ(0, size);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 // Disabled until httpbin.org fix is pushed, more info: TFS#633418
@@ -499,7 +499,7 @@ TEST_F(HttpRequestTests, DISABLED_Perform_SlowConnectionWithResumableDownload_Do
     EXPECT_EQ("abcdefghij", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
@@ -541,7 +541,7 @@ TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
     BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
@@ -586,7 +586,7 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
     BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_DeclareCompressedEncodingWithoutEnablingRequestCompression_BadRequestError)
@@ -601,7 +601,7 @@ TEST_F(HttpRequestTests, Perform_DeclareCompressedEncodingWithoutEnablingRequest
     EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
@@ -623,7 +623,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionForRequestWithType_Success)
@@ -646,7 +646,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionForRequestWithType_Succ
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithCompressionTypesSet_Success)
@@ -671,7 +671,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithCompressionTypesSet
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompression_ContentEncodingHeaderAdded)
@@ -690,7 +690,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompression_ContentEncodingHeaderA
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionRequestNotCompressibleType_BadRequestError)
@@ -711,7 +711,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionRequestNotCompressibleT
     EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerThanContentSize_Success)
@@ -734,7 +734,7 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerTh
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerThanContentSizeWithCompressedContentEncodingEnabled_BadRequestError)
@@ -785,7 +785,7 @@ INSTANTIATE_TEST_CASE_P(DifferentMethods, HttpRequestTestsMethods, Values(
     MethodParam {"http://httpbin.org/delete", "DELETE", Utf8String(32 * 1024, 'x')}
 ));
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(HttpRequestTestsMethods, Perform_BeforeMovedToBackground_RequestFinishesInBackground)
@@ -809,7 +809,7 @@ TEST_P(HttpRequestTestsMethods, Perform_BeforeMovedToBackground_RequestFinishesI
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(HttpRequestTestsMethods, Perform_WhenMovedToBackground_RequestDoesNothingUntilInForeground)
@@ -842,7 +842,7 @@ TEST_P(HttpRequestTestsMethods, Perform_WhenMovedToBackground_RequestDoesNothing
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(HttpRequestTestsMethods, Perform_AfterMovedFromBackgroundToForeground_ExecutesRequestAsUsual)
@@ -865,7 +865,7 @@ TEST_P(HttpRequestTestsMethods, Perform_AfterMovedFromBackgroundToForeground_Exe
     EXPECT_EQ(HttpStatus::OK, request.Perform().get().GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(HttpRequestTestsMethods, Perform_ExecutingInBackgroundWithDownloadAndUploadProgressCallbacks_IntermediateProgressIsNotReported)
@@ -897,7 +897,7 @@ TEST_P(HttpRequestTestsMethods, Perform_ExecutingInBackgroundWithDownloadAndUplo
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(HttpRequestTestsMethods, Perform_NonRetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestReturnsError)
@@ -935,7 +935,7 @@ TEST_P(HttpRequestTestsMethods, Perform_NonRetryaleRequestAndBackgroundTimeExpir
     EXPECT_EQ(ConnectionStatus::ConnectionLost, response.GetConnectionStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(HttpRequestTestsMethods, Perform_RetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestRestartedWhenInForeground)
@@ -1032,7 +1032,7 @@ struct HttpRequestTestsProxy : HttpRequestTests
         }
     };
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_LocalServerFileDownload_Downloads)
@@ -1045,7 +1045,7 @@ TEST_F(HttpRequestTestsProxy, Perform_LocalServerFileDownload_Downloads)
     EXPECT_EQ("TestData", response.GetBody().AsString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_ProxyUrlSetToNotExisting_CouldNotResolveProxy)
@@ -1061,7 +1061,7 @@ TEST_F(HttpRequestTestsProxy, Perform_ProxyUrlSetToNotExisting_CouldNotResolvePr
     EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_ProxyUrlSet_ExecutesViaProxy)
@@ -1077,7 +1077,7 @@ TEST_F(HttpRequestTestsProxy, Perform_ProxyUrlSet_ExecutesViaProxy)
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyUrlSet_ExecutesViaProxy)
@@ -1093,7 +1093,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyUrlSet_ExecutesViaProxy)
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSet_ExecutesViaProxy)
@@ -1111,7 +1111,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSet_ExecutesViaProxy)
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetWithDirect_ExecutesDirectly)
@@ -1129,7 +1129,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetWithDirect_ExecutesDi
     EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetWithSecondProxyReachable_ExecutesViaProxy)
@@ -1147,7 +1147,7 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetWithSecondProxyReacha
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExisting_CouldNotResolveProxy)
@@ -1163,7 +1163,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExisting_CouldNotResolveProx
     EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExistingForHttps_CouldNotResolveProxy)
@@ -1179,7 +1179,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyNotExistingForHttps_CouldNotRes
     EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET https://httpbin.org/ip")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxy_ExecutesViaProxy)
@@ -1195,7 +1195,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxy_ExecutesViaProxy)
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttps_ExecutesViaProxy)
@@ -1211,7 +1211,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttps_ExecutesViaProxy)
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("CONNECT httpbin.org:443"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpsButRequestHttp_ExecutesDirectly)
@@ -1227,7 +1227,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpsButRequestHttp_Executes
     EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpButRequestHttps_ExecutesDirectly)
@@ -1243,7 +1243,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyForHttpButRequestHttps_Executes
     EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET https://httpbin.org/ip")));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButRequestOverrides_ExecutesViaRequestProxy)
@@ -1260,7 +1260,7 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButRequestOverrides_ExecutesVia
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButDefaultOverrides_ExecutesViaDefaultProxy)

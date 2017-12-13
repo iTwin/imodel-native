@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 struct HttpClientTests : public ::testing::Test{};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_UrlAndMethodPassed_SetsUrlAndMethod)
@@ -26,7 +26,7 @@ TEST_F (HttpClientTests, CreateRequest_UrlAndMethodPassed_SetsUrlAndMethod)
     EXPECT_EQ ("BOO", request.GetMethod ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_NoHeaderProvider_EmptyHeaders)
@@ -37,7 +37,7 @@ TEST_F (HttpClientTests, CreateRequest_NoHeaderProvider_EmptyHeaders)
     EXPECT_EQ (0, request.GetHeaders ().GetMap ().size ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_DefaultHeaderProvider_EmptyHeaders)
@@ -48,7 +48,7 @@ TEST_F (HttpClientTests, CreateRequest_DefaultHeaderProvider_EmptyHeaders)
     EXPECT_EQ (0, request.GetHeaders ().GetMap ().size ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_HeaderProviderWithHeadersSet_HeadersSetToRequest)

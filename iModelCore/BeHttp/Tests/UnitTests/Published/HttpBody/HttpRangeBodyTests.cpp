@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 struct HttpRangeBodyTests : public ::testing::Test {};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_FullRange_ReturnsSameString)
@@ -22,7 +22,7 @@ TEST_F (HttpRangeBodyTests, AsString_FullRange_ReturnsSameString)
     EXPECT_STREQ ("abcde", body->AsString ().c_str ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromStart_ReturnsClipped)
@@ -32,7 +32,7 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromStart_ReturnsClipped)
     EXPECT_STREQ ("cde", body->AsString ().c_str ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromEnd_ReturnsClipped)
@@ -42,7 +42,7 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromEnd_ReturnsClipped)
     EXPECT_STREQ ("abc", body->AsString ().c_str ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromBothEnds_ReturnsClipped)
@@ -52,7 +52,7 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromBothEnds_ReturnsClipped)
     EXPECT_STREQ ("bcd", body->AsString ().c_str ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_CalledAfterRead_StringifiesAllContent)
@@ -65,7 +65,7 @@ TEST_F (HttpRangeBodyTests, AsString_CalledAfterRead_StringifiesAllContent)
     EXPECT_STREQ ("abcde", body->AsString ().c_str ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Read_AsStringCalledAfterRead_ReadingContinuesAsNormal)
@@ -83,7 +83,7 @@ TEST_F (HttpRangeBodyTests, Read_AsStringCalledAfterRead_ReadingContinuesAsNorma
     EXPECT_STREQ ("c", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, SetPosition_ValuePassed_PositionSet)
@@ -96,7 +96,7 @@ TEST_F (HttpRangeBodyTests, SetPosition_ValuePassed_PositionSet)
     EXPECT_EQ (2, pos);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Reset_FilledBody_ClearsContentsInRange)
@@ -114,7 +114,7 @@ TEST_F (HttpRangeBodyTests, Reset_FilledBody_ClearsContentsInRange)
     EXPECT_EQ ('D', str[3]);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Reset_PositionSet_ClearsPosition)

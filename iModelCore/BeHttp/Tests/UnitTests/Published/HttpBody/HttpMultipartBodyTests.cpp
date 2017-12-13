@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 struct HttpMultipartBodyTests : public ::testing::Test {};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpMultipartBodyTests, SetPosition_ValuePassed_PositionSet)
@@ -26,7 +26,7 @@ TEST_F (HttpMultipartBodyTests, SetPosition_ValuePassed_PositionSet)
     EXPECT_EQ (2, pos);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpMultipartBodyTests, Reset_PositionSet_ClearsPosition)

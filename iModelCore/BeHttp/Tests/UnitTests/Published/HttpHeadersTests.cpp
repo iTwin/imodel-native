@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 struct HttpHeadersTests : public ::testing::Test{};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, SetValue_EmptyString_RemovesValue)
@@ -28,7 +28,7 @@ TEST_F(HttpHeadersTests, SetValue_EmptyString_RemovesValue)
     EXPECT_EQ(0, headers.GetMap().size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_SingleSetValue_ReturnsValue)
@@ -40,7 +40,7 @@ TEST_F(HttpHeadersTests, GetValue_SingleSetValue_ReturnsValue)
     EXPECT_STREQ(REQUESTHEADER_ContentType_TextHtml, headers.GetValue("Content-Type"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_SetValueAndAddValue_ReturnValuesCommaSeparated)
@@ -53,7 +53,7 @@ TEST_F(HttpHeadersTests, GetValue_SetValueAndAddValue_ReturnValuesCommaSeparated
     EXPECT_STREQ("foo, bar", headers.GetValue("Server"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_MultipleSetValue_ReturnsOnlyLastValue)
@@ -66,7 +66,7 @@ TEST_F(HttpHeadersTests, GetValue_MultipleSetValue_ReturnsOnlyLastValue)
     EXPECT_STREQ("bar", headers.GetValue("Server"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_ValueNotSet_ReturnsNullptr)
@@ -75,7 +75,7 @@ TEST_F(HttpHeadersTests, GetValue_ValueNotSet_ReturnsNullptr)
     EXPECT_EQ(nullptr, headers.GetValue("Server"));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetMap_ValuesSet_ReturnsMap)
@@ -90,7 +90,7 @@ TEST_F(HttpHeadersTests, GetMap_ValuesSet_ReturnsMap)
     EXPECT_STREQ("foo", headers.GetMap().find("Server")->second.c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, Clear_SetValueAndClear_ReturnsEmptyMap)

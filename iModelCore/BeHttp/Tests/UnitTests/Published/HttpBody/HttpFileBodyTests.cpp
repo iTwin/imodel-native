@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 struct HttpFileBodyTests : public ::testing::Test {};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Open_NonExistingFile_CreatesEmptyFile)
@@ -28,7 +28,7 @@ TEST_F(HttpFileBodyTests, Open_NonExistingFile_CreatesEmptyFile)
     EXPECT_EQ("", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Open_FileWithContent_DoesNothing)
@@ -41,7 +41,7 @@ TEST_F(HttpFileBodyTests, Open_FileWithContent_DoesNothing)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Open_FileLockedForWrite_DoesNothing)
@@ -56,7 +56,7 @@ TEST_F(HttpFileBodyTests, Open_FileLockedForWrite_DoesNothing)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, SetPosition_NonExistingFile_FilePositionSet)
@@ -71,7 +71,7 @@ TEST_F(HttpFileBodyTests, SetPosition_NonExistingFile_FilePositionSet)
     EXPECT_EQ(10, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, SetPosition_EmptyFile_FilePositionSet)
@@ -86,7 +86,7 @@ TEST_F(HttpFileBodyTests, SetPosition_EmptyFile_FilePositionSet)
     EXPECT_EQ(10, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, SetPosition_PositionToContent_FilePositionSet)
@@ -101,7 +101,7 @@ TEST_F(HttpFileBodyTests, SetPosition_PositionToContent_FilePositionSet)
     EXPECT_EQ(2, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_NonExistingFile_SucceedsAndDoesNothing)
@@ -113,7 +113,7 @@ TEST_F(HttpFileBodyTests, Reset_NonExistingFile_SucceedsAndDoesNothing)
     EXPECT_FALSE(path.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_FileWithContent_DeletesFile)
@@ -125,7 +125,7 @@ TEST_F(HttpFileBodyTests, Reset_FileWithContent_DeletesFile)
     EXPECT_FALSE(path.DoesPathExist());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_PositionSet_ClearsPosition)
@@ -140,7 +140,7 @@ TEST_F(HttpFileBodyTests, Reset_PositionSet_ClearsPosition)
     EXPECT_EQ(0, pos);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_NoFileAtPath_Succeeds)
@@ -152,7 +152,7 @@ TEST_F(HttpFileBodyTests, Reset_NoFileAtPath_Succeeds)
     ASSERT_EQ(SUCCESS, body->Reset());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_NonExistingFile_CreatesFileAndWritesContent)
@@ -165,7 +165,7 @@ TEST_F(HttpFileBodyTests, Write_NonExistingFile_CreatesFileAndWritesContent)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileWithContent_OverridesContentAtPosition)
@@ -178,7 +178,7 @@ TEST_F(HttpFileBodyTests, Write_FileWithContent_OverridesContentAtPosition)
     EXPECT_EQ("DBC", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileLockedForWrite_WritesNothing)
@@ -195,7 +195,7 @@ TEST_F(HttpFileBodyTests, Write_FileLockedForWrite_WritesNothing)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileWithContentWithoutOpen_OverridesContentAtPosition)
@@ -207,7 +207,7 @@ TEST_F(HttpFileBodyTests, Write_FileWithContentWithoutOpen_OverridesContentAtPos
     EXPECT_EQ("DBC", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileWithContentAndPositionSet_OverridesContentAtPosition)
@@ -220,7 +220,7 @@ TEST_F(HttpFileBodyTests, Write_FileWithContentAndPositionSet_OverridesContentAt
     EXPECT_EQ("DBC", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_AfterResetCalled_Succeeds)
@@ -233,7 +233,7 @@ TEST_F(HttpFileBodyTests, Write_AfterResetCalled_Succeeds)
     EXPECT_EQ("B", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_MultipleTimes_IncrementsPosition)
@@ -257,7 +257,7 @@ TEST_F(HttpFileBodyTests, Write_MultipleTimes_IncrementsPosition)
     EXPECT_EQ("DEFG", FSTest::ReadFile(path));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_PositionSetToContent_OverridesCotentAtPosition)
@@ -275,7 +275,7 @@ TEST_F(HttpFileBodyTests, Write_PositionSetToContent_OverridesCotentAtPosition)
     EXPECT_EQ(3, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_NonExistingFile_ReadsNothing)
@@ -289,7 +289,7 @@ TEST_F(HttpFileBodyTests, Read_NonExistingFile_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_EmptyFile_ReadsNothing)
@@ -303,7 +303,7 @@ TEST_F(HttpFileBodyTests, Read_EmptyFile_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileWithContent_ReadsContent)
@@ -317,7 +317,7 @@ TEST_F(HttpFileBodyTests, Read_FileWithContent_ReadsContent)
     EXPECT_STREQ("ABC", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileWithContentWithoutOpen_ReadsNothing)
@@ -330,7 +330,7 @@ TEST_F(HttpFileBodyTests, Read_FileWithContentWithoutOpen_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileWithContentAfterReset_ReadsNothing)
@@ -344,7 +344,7 @@ TEST_F(HttpFileBodyTests, Read_FileWithContentAfterReset_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileLockedForWrite_ReadsContent)
@@ -360,7 +360,7 @@ TEST_F(HttpFileBodyTests, Read_FileLockedForWrite_ReadsContent)
     EXPECT_STREQ("ABC", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_MultipleTimes_IncrementsPosition)
@@ -391,7 +391,7 @@ TEST_F(HttpFileBodyTests, Read_MultipleTimes_IncrementsPosition)
     EXPECT_EQ(3, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_PositionSetToContent_ReadsContentAtPosition)
@@ -410,7 +410,7 @@ TEST_F(HttpFileBodyTests, Read_PositionSetToContent_ReadsContentAtPosition)
     EXPECT_EQ(3, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_NonExistingFile_ReturnsZero)
@@ -420,7 +420,7 @@ TEST_F(HttpFileBodyTests, GetLength_NonExistingFile_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_EmptyFile_ReturnsZero)
@@ -430,7 +430,7 @@ TEST_F(HttpFileBodyTests, GetLength_EmptyFile_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentWithoutOpen_ReturnsLength)
@@ -440,7 +440,7 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentWithoutOpen_ReturnsLength)
     EXPECT_EQ(3, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterOpen_ReturnsLength)
@@ -451,7 +451,7 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterOpen_ReturnsLength)
     EXPECT_EQ(3, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterReset_ReturnsZero)
@@ -462,7 +462,7 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterReset_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterWrite_ReturnsNewLength)
@@ -476,7 +476,7 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterWrite_ReturnsNewLength)
     EXPECT_EQ(6, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileLockedForWrite_ReturnsLength)
@@ -488,7 +488,7 @@ TEST_F(HttpFileBodyTests, GetLength_FileLockedForWrite_ReturnsLength)
     EXPECT_EQ(3, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, AsString_NoFileAtPath_ReturnsEmptyString)
@@ -497,7 +497,7 @@ TEST_F(HttpFileBodyTests, AsString_NoFileAtPath_ReturnsEmptyString)
     EXPECT_EQ("", body->AsString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, AsString_FileWithContentAtPath_ReturnsContents)

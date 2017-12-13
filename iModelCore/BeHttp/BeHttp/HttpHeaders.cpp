@@ -25,7 +25,7 @@ void HttpHeaders::SetValue(Utf8StringCR field, Utf8StringCR value)
     m_headers[field] = value;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpHeaders::AddValue(Utf8StringCR field, Utf8StringCR value)
@@ -53,7 +53,7 @@ Utf8CP HttpHeaders::GetValue(Utf8StringCR field) const
     return (*position).second.c_str();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String GetAnsiCFormattedDateTime(DateTimeCR dateTime)
@@ -90,7 +90,7 @@ static Utf8String GetAnsiCFormattedDateTime(DateTimeCR dateTime)
     return Utf8PrintfString("%s %s %02d %02d:%02d:%02d %d", wkday, month, dateTime.GetDay(), dateTime.GetHour(), dateTime.GetMinute(), dateTime.GetSecond(), dateTime.GetYear());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                     Grigas.Petraitis               07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpRequestHeaders::SetIfModifiedSince(DateTimeCR dateTime) {SetIfModifiedSince(GetAnsiCFormattedDateTime(dateTime));}

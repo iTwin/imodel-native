@@ -29,7 +29,7 @@ struct HttpErrorTests : public ::testing::Test
         }
     };
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, Ctor_ResponseResourceNotFound_MessageAndDefaultDescription)
@@ -40,7 +40,7 @@ TEST_F(HttpErrorTests, Ctor_ResponseResourceNotFound_MessageAndDefaultDescriptio
     EXPECT_STREQ("Http error: 404", error.GetDisplayDescription().c_str());
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, Ctor_ResponseWithProxyAuthenticationRequiredAndNoHeaders_MessageAndNoDescription)
@@ -51,7 +51,7 @@ TEST_F(HttpErrorTests, Ctor_ResponseWithProxyAuthenticationRequiredAndNoHeaders_
     EXPECT_STREQ("", error.GetDisplayDescription().c_str());
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, Ctor_ResponseWithProxyAuthenticationRequiredProxyAuthenticateHeaderWithoutRealm_MessageAndNoDescription)
@@ -63,7 +63,7 @@ TEST_F(HttpErrorTests, Ctor_ResponseWithProxyAuthenticationRequiredProxyAuthenti
     EXPECT_STREQ("", error.GetDisplayDescription().c_str());
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, Ctor_ResponseWithProxyAuthenticationRequiredProxyAuthenticateHeaderWithRealm_MessageWithRealmAndNoDescription)
@@ -75,7 +75,7 @@ TEST_F(HttpErrorTests, Ctor_ResponseWithProxyAuthenticationRequiredProxyAuthenti
     EXPECT_STREQ("", error.GetDisplayDescription().c_str());
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, IsValid_DefaultCtor_False)
@@ -83,7 +83,7 @@ TEST_F(HttpErrorTests, IsValid_DefaultCtor_False)
     EXPECT_FALSE(HttpError().IsValid());
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, IsValid_FromNotConnectedResponse_True)
@@ -97,7 +97,7 @@ TEST_F(HttpErrorTests, IsValid_FromNotConnectedResponse_True)
         }
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, IsValid_FromConnectedResponse_True)
@@ -111,7 +111,7 @@ TEST_F(HttpErrorTests, IsValid_FromConnectedResponse_True)
         }
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, IsValid_FromNotConnectedStatus_True)
@@ -125,7 +125,7 @@ TEST_F(HttpErrorTests, IsValid_FromNotConnectedStatus_True)
         }
     }
 
-/*-------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                        10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpErrorTests, IsValid_FromConnectedStatus_True)

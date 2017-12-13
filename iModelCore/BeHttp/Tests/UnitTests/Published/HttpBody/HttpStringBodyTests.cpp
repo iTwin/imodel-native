@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 struct HttpStringBodyTests : public ::testing::Test {};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, AsString_Empty_ReturnsEmptyString)
@@ -21,7 +21,7 @@ TEST_F (HttpStringBodyTests, AsString_Empty_ReturnsEmptyString)
     EXPECT_EQ ("", body->AsString ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, AsString_ConstructedWithString_ReturnsEqualString)
@@ -30,7 +30,7 @@ TEST_F (HttpStringBodyTests, AsString_ConstructedWithString_ReturnsEqualString)
     EXPECT_EQ ("TestContent", body->AsString ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpStringBodyTests, AsString_CreatedWithNullPtr_ReturnsEmptyString)
@@ -39,7 +39,7 @@ TEST_F(HttpStringBodyTests, AsString_CreatedWithNullPtr_ReturnsEmptyString)
     EXPECT_EQ("", body->AsString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpStringBodyTests, AsString_CreatedWithSharedString_ReturnsString)
@@ -48,7 +48,7 @@ TEST_F(HttpStringBodyTests, AsString_CreatedWithSharedString_ReturnsString)
     EXPECT_EQ("TestContent", body->AsString());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, SetPosition_ValuePassed_PositionSet)
@@ -61,7 +61,7 @@ TEST_F (HttpStringBodyTests, SetPosition_ValuePassed_PositionSet)
     EXPECT_EQ (2, pos);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, Reset_FilledBody_ClearsContents)
@@ -71,7 +71,7 @@ TEST_F (HttpStringBodyTests, Reset_FilledBody_ClearsContents)
     EXPECT_EQ ("", body->AsString ());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, Reset_PositionSet_ClearsPosition)

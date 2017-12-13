@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 struct HttpCompressedBodyTests : public ::testing::Test {};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_NullPointerContent_Error)
@@ -25,7 +25,7 @@ TEST_F(HttpCompressedBodyTests, SetPosition_NullPointerContent_Error)
     ASSERT_EQ(ERROR, body->SetPosition(2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_WithoutOpen_Error)
@@ -35,7 +35,7 @@ TEST_F(HttpCompressedBodyTests, SetPosition_WithoutOpen_Error)
     ASSERT_EQ(ERROR, body->SetPosition(2));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_PositionToContent_PositionSet)
@@ -50,7 +50,7 @@ TEST_F(HttpCompressedBodyTests, SetPosition_PositionToContent_PositionSet)
     EXPECT_EQ(2, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_AfterClose_PositionSet)
@@ -66,7 +66,7 @@ TEST_F(HttpCompressedBodyTests, SetPosition_AfterClose_PositionSet)
     EXPECT_EQ(2, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_PositionOutsideContent_Error)
@@ -77,7 +77,7 @@ TEST_F(HttpCompressedBodyTests, SetPosition_PositionOutsideContent_Error)
     ASSERT_EQ(ERROR, body->SetPosition(body->GetLength() + 1));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_NullPointerContent_SucceedsAndDoesNothing)
@@ -88,7 +88,7 @@ TEST_F(HttpCompressedBodyTests, Reset_NullPointerContent_SucceedsAndDoesNothing)
     ASSERT_EQ(SUCCESS, body->Reset());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_NonEmptyContent_ContentNotChanged)
@@ -101,7 +101,7 @@ TEST_F(HttpCompressedBodyTests, Reset_NonEmptyContent_ContentNotChanged)
     ASSERT_STREQ("foo", innerBody->AsString().c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_PositionSet_ClearsPosition)
@@ -117,7 +117,7 @@ TEST_F(HttpCompressedBodyTests, Reset_PositionSet_ClearsPosition)
     EXPECT_EQ(0, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_PositionSetForContentBody_ContentBodyPositionNotChanged)
@@ -135,7 +135,7 @@ TEST_F(HttpCompressedBodyTests, Reset_PositionSetForContentBody_ContentBodyPosit
     EXPECT_EQ(2, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Write_NullPointerContent_WritesNothing)
@@ -148,7 +148,7 @@ TEST_F(HttpCompressedBodyTests, Write_NullPointerContent_WritesNothing)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Write_NonEmptyContent_WritesNothing)
@@ -161,7 +161,7 @@ TEST_F(HttpCompressedBodyTests, Write_NonEmptyContent_WritesNothing)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NullPointerContent_ReadsNothing)
@@ -174,7 +174,7 @@ TEST_F(HttpCompressedBodyTests, Read_NullPointerContent_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentWithoutOpen_ReadsNothing)
@@ -186,7 +186,7 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentWithoutOpen_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_Succeeds)
@@ -198,7 +198,7 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_Succeeds)
     ASSERT_EQ(body->GetLength(), body->Read(buffer, 32));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentNotChanged)
@@ -212,7 +212,7 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentNotChanged)
     EXPECT_STREQ("foo", innerBody->AsString().c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentBodyPositionNotChanged)
@@ -232,7 +232,7 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentBodyPositionNotChang
     ASSERT_EQ(originalPosition, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentAfterClose_Succeeds)
@@ -245,7 +245,7 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentAfterClose_Succeeds)
     ASSERT_EQ(body->GetLength(), body->Read(buffer, 32));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_AfterReset_ReadsNothing)
@@ -259,7 +259,7 @@ TEST_F(HttpCompressedBodyTests, Read_AfterReset_ReadsNothing)
     ASSERT_EQ(0, body->Read(buffer, 32));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_MultipleTimes_IncrementsPosition)
@@ -287,7 +287,7 @@ TEST_F(HttpCompressedBodyTests, Read_MultipleTimes_IncrementsPosition)
     EXPECT_EQ(5, position);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NullPointerContent_ReturnsZero)
@@ -298,7 +298,7 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NullPointerContent_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_EmptyContent_ReturnsLenght)
@@ -309,7 +309,7 @@ TEST_F(HttpCompressedBodyTests, GetLenght_EmptyContent_ReturnsLenght)
     EXPECT_LT(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentWithoutOpen_ReturnsZero)
@@ -319,7 +319,7 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentWithoutOpen_ReturnsZero
     EXPECT_EQ(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptySmallContent_ReturnsLenghtLargerThanContentLenght)
@@ -331,7 +331,7 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptySmallContent_ReturnsLenghtLarg
     EXPECT_LT(innerBody->GetLength(), body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyLargeContent_ReturnsLenghtSmallerThanContentLenght)
@@ -343,7 +343,7 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyLargeContent_ReturnsLenghtSmal
     EXPECT_GT(innerBody->GetLength(), body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterClose_ReturnsLenght)
@@ -356,7 +356,7 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterClose_ReturnsLengh
     EXPECT_LT(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterReset_ReturnsZero)
@@ -369,7 +369,7 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterReset_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, AsString_NullPointerContent_ReturnsEmptyString)
@@ -382,7 +382,7 @@ TEST_F(HttpCompressedBodyTests, AsString_NullPointerContent_ReturnsEmptyString)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContentWithoutOpen_ReturnsEmptyString)
@@ -394,7 +394,7 @@ TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContentWithoutOpen_ReturnsEmpty
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContent_ReturnsEmptyString)
@@ -407,7 +407,7 @@ TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContent_ReturnsEmptyString)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Close_NullPointerContent_DoesNothing)
@@ -417,7 +417,7 @@ TEST_F(HttpCompressedBodyTests, Close_NullPointerContent_DoesNothing)
     body->Close();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Julius.Cepukenas                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Close_NonEmptyContent_DoesNothing)

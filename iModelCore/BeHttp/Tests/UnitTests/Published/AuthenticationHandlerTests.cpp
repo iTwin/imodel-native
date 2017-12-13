@@ -25,7 +25,7 @@ bmap<Utf8String, Utf8String> GetHttpHeaders(Utf8String key, Utf8String value)
     return httpHeaders;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasValue_PassesRequestToSuppliedHandler)
@@ -42,7 +42,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasValue_P
     EXPECT_EQ (1, GetHandler().GetRequestsPerformed());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasNoValue_RetrievesAuthorizationAndPerformsRequest)
@@ -61,7 +61,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasNoValue
     EXPECT_EQ (1, GetHandler().GetRequestsPerformed());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorizationHeaderHasNoValueAndRetrieveAuthorizationReturnsError_TriesRequestWithoutCredentials)
@@ -81,7 +81,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorizationHeaderHasNoValue
     EXPECT_EQ (1, GetHandler().GetRequestsPerformed());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_FirstRequestHasAuthorizationButFailsAndRetrieveAuthorizationReturnsError_ReturnsResponse)
@@ -100,7 +100,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_FirstRequestHasAuthorizationB
     EXPECT_EQ (1, GetHandler().GetRequestsPerformed());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseUnauthorized_RetrievesAuthorizationAndRetriesRequest)
@@ -122,7 +122,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseUnauthorized_Retrieve
     EXPECT_EQ (2, GetHandler().GetRequestsPerformed());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseNonLoginError_ReturnsResponseDirectly)

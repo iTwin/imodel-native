@@ -15,7 +15,7 @@ void ApplicationEventsManager::StartBackgroundTask(Utf8CP name, std::function<vo
 void ApplicationEventsManager::SetNetworkActivityIndicatorVisible(bool visible) { /* Do nothing on non-iOS platforms. */ }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ApplicationEventsManager& ApplicationEventsManager::GetInstance()
