@@ -948,7 +948,7 @@ protected:
 };
 
 //=======================================================================================
-//! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y5.
+//! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
