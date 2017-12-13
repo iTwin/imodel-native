@@ -4,7 +4,6 @@
 import { IModelStatus, StatusCodeWithMessage } from "@bentley/bentleyjs-core/lib/BentleyError";
 import { DbResult } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
-/* import { IModelStatus } from "@bentley/bentleyjs-core/lib/Bentley"; */
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
@@ -25,7 +24,6 @@ interface IModelJsNodeAddonStatusOnlyCallback<STATUS_TYPE> {
    */
   (error: STATUS_TYPE): void;
 }
-
 
 /**
  * The return type of synchronous functions that may return an error or a successful result.
@@ -50,13 +48,8 @@ declare class NodeAddonDgnDb {
    */
   getCachedBriefcaseInfosSync(cachePath: string): ErrorStatusOrResult<DbResult, string>;
 
-  /** Get name and description of the root subject of this iModel as a JSON string ({name:, description: }) */
-  getRootSubjectInfo(): string;
-
-  /**
-   * Get the project extents of this iModel.
-   */
-  getExtents(): string;
+  /** Get the IModelProps of this iModel. */
+  getIModelProps(): string;
 
   /**
    * Open a local iModel.

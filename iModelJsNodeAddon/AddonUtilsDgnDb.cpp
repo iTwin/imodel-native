@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AddonUtils.h"
 #include <Bentley/BeDirectoryIterator.h>
-#include <ECObjects/ECJsonUtilities.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
@@ -515,26 +515,53 @@ DbResult AddonUtils::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFi
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 12/17
+// @bsimethod                               Keith.Bentley                 12/17
 //---------------------------------------------------------------------------------------
-void AddonUtils::GetRootSubjectInfo(JsonValueR rootSubjectInfo, DgnDbCR dgndb)
+void AddonUtils::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
     {
-    SubjectCPtr rootSubject = dgndb.Elements().GetRootSubject();
-    rootSubjectInfo = Json::objectValue;
+    // add the root subject, if available.
+    auto rootSubject = dgndb.Elements().GetRootSubject();
     if (rootSubject.IsValid())
         {
-        rootSubjectInfo["name"] = rootSubject->GetCode().GetValueUtf8CP();
-        rootSubjectInfo["description"] = rootSubject->GetDescription();
+        auto& subject = val[json_rootSubject()];
+        subject[json_name()] = rootSubject->GetCode().GetValueUtf8CP();
+        auto descr = rootSubject->GetDescription();
+        if (!descr.empty())
+            subject[json_description()] = descr; 
         }
-    }
+    
+    auto& geolocation = dgndb.GeoLocation();
+    
+    // add project extents
+    auto extents = geolocation.GetProjectExtents();
+    extents.ToJson(val[json_projectExtents()]);
+    
+    // add global origin
+    JsonUtils::DPoint3dToJson(val[json_globalOrigin()], geolocation.GetGlobalOrigin());
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 12/17
-//---------------------------------------------------------------------------------------
-void AddonUtils::GetExtents(JsonValueR extentsJson, DgnDbCR dgndb)
-    {
-    AxisAlignedBox3d extents = dgndb.GeoLocation().GetProjectExtents();
-    extentsJson = Json::Value(Json::objectValue);
-    ECJsonUtilities::Point3dToJson(extentsJson["low"], extents.low);
-    ECJsonUtilities::Point3dToJson(extentsJson["high"], extents.high);
+    // if the project is geolocated, add the world to ecef transform
+    auto* dgnGCS = geolocation.GetDgnGCS();
+    if (nullptr == dgnGCS)
+        return;
+
+    DPoint3d origin = extents.GetCenter();
+    DPoint3d ecfOrigin, ecfNorth;
+    DPoint3d north = origin;
+    north.y += 100.0;
+
+    GeoPoint originLatLong, northLatLong;
+    dgnGCS->LatLongFromUors(originLatLong, origin);
+    dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
+    dgnGCS->LatLongFromUors(northLatLong, north);
+    dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
+
+    DVec3d zVector, yVector;
+    zVector.Normalize((DVec3dCR) ecfOrigin);
+    yVector.NormalizedDifference(ecfNorth, ecfOrigin);
+
+    RotMatrix rMatrix = RotMatrix::FromIdentity();
+    rMatrix.SetColumn(yVector, 1);
+    rMatrix.SetColumn(zVector, 2);
+    rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
+    JsonUtils::TransformToJson(val[json_ecefTrans()], Transform::From(rMatrix, ecfOrigin));
     }

@@ -72,7 +72,8 @@ USING_NAMESPACE_BENTLEY_EC
     else if (info[i].IsNumber()) {\
         var = info[i].As<Napi::Number>().Int32Value();\
     }\
-    else {\
+    else if (info[i].IsUndefined()) {\
+    } else {\
         var = (default);\
         Napi::TypeError::New(Env(), "Argument " #i " must be an integer").ThrowAsJavaScriptException();\
     }
@@ -85,7 +86,8 @@ USING_NAMESPACE_BENTLEY_EC
     else if (info[i].IsString()) {\
         var = info[i].As<Napi::String>().Utf8Value().c_str();\
     }\
-    else {\
+    else if (info[i].IsUndefined()) {\
+    } else {\
         Napi::TypeError::New(Env(), "Argument " #i " must be string").ThrowAsJavaScriptException();\
     }
 
@@ -993,31 +995,17 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         }
 
     //=======================================================================================
-    //  Get information on the root subject of the BIM
+    //  Get the properties of the iModel
     //! @bsiclass
     //=======================================================================================
-    Napi::Value GetRootSubjectInfo(const Napi::CallbackInfo& info)
+    Napi::Value GetIModelProps(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN_SYNC
         RETURN_IF_HAD_EXCEPTION_SYNC
 
-        Json::Value rootSubjectInfo;
-        AddonUtils::GetRootSubjectInfo(rootSubjectInfo, *m_dgndb);
-        return Napi::String::New(Env(), rootSubjectInfo.ToString().c_str());
-        }
-
-    //=======================================================================================
-    //  Get extents of the BIM
-    //! @bsiclass
-    //=======================================================================================
-    Napi::Value GetExtents(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        RETURN_IF_HAD_EXCEPTION_SYNC
-
-        Json::Value extentsJson;
-        AddonUtils::GetExtents(extentsJson, *m_dgndb);
-        return Napi::String::New(Env(), extentsJson.ToString().c_str());
+        Json::Value props;
+        AddonUtils::GetIModelProps(props, *m_dgndb);
+        return Napi::String::New(Env(), props.ToString().c_str());
         }
 
     //=======================================================================================
@@ -1368,8 +1356,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),
             InstanceMethod("executeQuery", &NodeAddonDgnDb::StartExecuteQueryWorker),
             InstanceMethod("getCachedBriefcaseInfosSync", &NodeAddonDgnDb::GetCachedBriefcaseInfosSync),
-            InstanceMethod("getRootSubjectInfo", &NodeAddonDgnDb::GetRootSubjectInfo),
-            InstanceMethod("getExtents", &NodeAddonDgnDb::GetExtents),
+            InstanceMethod("getIModelProps", &NodeAddonDgnDb::GetIModelProps),
         });
 
         target.Set("NodeAddonDgnDb", t);
