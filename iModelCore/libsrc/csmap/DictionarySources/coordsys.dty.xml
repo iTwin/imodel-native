@@ -6741,6 +6741,18 @@
                   <Member>
                     <KeyName>DHDN/3.GK3d-1</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>DB_REF.GK3d-2/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DB_REF.GK3d-3/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DB_REF.GK3d-4/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DB_REF.GK3d-5/EN</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -29015,7 +29027,22 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:31495</KeyName>
-                  </Member>                    
+                  </Member>     
+                  <Member>
+                    <KeyName>EPSG:5649</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5650</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5651</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5652</KeyName>
+                  </Member>        
+                  <Member>
+                    <KeyName>EPSG:5653</KeyName>
+                  </Member>                 
                 </Members>
               </Group>
               <Group>
@@ -32318,6 +32345,9 @@
                   </Member>
                   <Member>
                     <KeyName>DHDN/3.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DB_REF.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4745</KeyName>
