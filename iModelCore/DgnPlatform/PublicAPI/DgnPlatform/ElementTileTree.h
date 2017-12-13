@@ -201,6 +201,8 @@ public:
     bool WantCacheGeometry(double rangeDiagonalSquared) const;
 
     DGNPLATFORM_EXPORT static void ToggleDebugBoundingVolumes();
+
+    Transform GetLocationForTileGeneration() const; //!< @private
 };
 
 ENUM_IS_FLAGS(Root::DebugOptions);
