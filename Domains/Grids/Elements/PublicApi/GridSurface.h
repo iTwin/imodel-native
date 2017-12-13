@@ -68,10 +68,7 @@ protected:
 
     virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const { return false; };
-    //! Sets gridsurface axis Id
-    //! @param[in] axisId to set
-    void SetAxisId (Dgn::DgnElementId axisId) { SetPropertyValue (prop_Axis (), axisId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces)); };
-
+    
     static GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModelAxisClassId (Dgn::SpatialLocationModelCR model, GridAxisCR axis, Dgn::DgnClassId classId);
 
 protected:
@@ -103,6 +100,20 @@ public:
     //! @param[in] translation   vector to translate by
     GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
 
+    //! Shrinks or expands grid surface by height
+    //! @param[in] height   new height
+    //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's height
+    GRIDELEMENTS_EXPORT BentleyStatus SetHeight(double height);
+
+    //! Changes grid surface's bottom elevation
+    //! @param[in] elevation    new elevation
+    GRIDELEMENTS_EXPORT void SetElevation(double elevation);
+
+    //! Changes grid surface's base curve. For specifications of base curve see derived elements' creation documentation
+    //! @param[in] base         new base curve
+    //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's base curve
+    GRIDELEMENTS_EXPORT BentleyStatus SetBaseCurve(CurveVectorPtr base);
+
     //! Sets geometry for this grid surface
     //! @param[in]  surface     new geometry for the surface
     //! @returns BentleyStatus::SUCCESS if geometry is valid for the surface and there has been no error in setting surface geometry
@@ -119,6 +130,10 @@ public:
     //!Returns id of axis that has this surface
     //! @return axis id of the surface
     GRIDELEMENTS_EXPORT Dgn::DgnElementId GetAxisId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Axis ()); };
+
+    //! Sets gridsurface axis Id
+    //! @param[in] axisId to set
+    GRIDELEMENTS_EXPORT void SetAxisId(Dgn::DgnElementId axisId) { SetPropertyValue(prop_Axis(), axisId, GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridAxisContainsGridSurfaces)); };
 
     //! Returns base curve of this surface
     //! @return a ptr to a curve vector of this surface

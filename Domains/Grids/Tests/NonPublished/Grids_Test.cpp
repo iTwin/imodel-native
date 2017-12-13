@@ -3394,5 +3394,56 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
             ASSERT_TRUE(actualBase->IsSameStructureAndGeometry(*expectedBase.get(), 0.1)) << "Grid's base curve vector is incorrect";
             }
     }
+
+    { // Try changing surface's height
+            {
+            ASSERT_EQ(BentleyStatus::SUCCESS, surface->SetHeight(50)) << "Failed to change grid surface's height";
+
+            double actualHeight;
+            ASSERT_EQ(BentleyStatus::SUCCESS, surface->TryGetHeight(actualHeight)) << "Failed to get grid surface's height";
+            ASSERT_EQ(50, actualHeight);
+            }
+
+            // Return to previous state
+            {
+            ASSERT_EQ(BentleyStatus::SUCCESS, surface->SetHeight(20)) << "Failed to change grid surface's height";
+
+            double actualHeight;
+            ASSERT_EQ(BentleyStatus::SUCCESS, surface->TryGetHeight(actualHeight)) << "Failed to get grid surface's height";
+            ASSERT_EQ(20, actualHeight);
+            }
+    }
+
+    { // Try changing surface's elevation
+            {
+            surface->SetElevation(15);
+            ASSERT_EQ(15, surface->GetPlacement().GetOrigin().z) << "New Elevation is incorrect";
+            }
+
+            // Return to previous state
+            {
+            surface->SetElevation(0);
+            ASSERT_EQ(0, surface->GetPlacement().GetOrigin().z) << "New elevation is incorrect";
+            }
+    }
+
+    {
+      // Try changing surface's base curve
+    CurveVectorPtr old = surface->GetSurfaceVector();
+    ASSERT_TRUE(old.IsValid()) << "Failed to get existing curve vector";
+            {
+            CurveVectorPtr newBase = CurveVector::CreateLinear({ { 13, 14, 15 }, {17, 18, 19} }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+            ASSERT_TRUE(newBase.IsValid()) << "Failed to create new curve vector";
+               
+            ASSERT_EQ(BentleyStatus::SUCCESS, surface->SetBaseCurve(newBase));
+            ASSERT_TRUE(newBase->IsSameStructureAndGeometry(*surface->GetSurfaceVector(), 0.1));
+            }
+
+            // Return to previous state
+            {
+            ASSERT_EQ(BentleyStatus::SUCCESS, surface->SetBaseCurve(old));
+            ASSERT_TRUE(old->IsSameStructureAndGeometry(*surface->GetSurfaceVector(), 0.1));
+            }
+    }
     db.SaveChanges();
     }

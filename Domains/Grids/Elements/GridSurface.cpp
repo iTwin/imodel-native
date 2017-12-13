@@ -194,6 +194,53 @@ void GridSurface::Translate(DVec3d translation)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  12/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridSurface::SetHeight(double height)
+    {
+    CurveVectorPtr baseCurve = GetSurfaceVector();
+    if (baseCurve.IsNull())
+        return BentleyStatus::ERROR;
+
+    DVec3d up = DVec3d::From(0, 0, height);
+    DgnExtrusionDetail detail = DgnExtrusionDetail(baseCurve, up, false);
+    ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
+    if (geometry.IsNull())
+        return BentleyStatus::ERROR;
+    
+    return SetGeometry(geometry);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  12/17
+//---------------------------------------------------------------------------------------
+void GridSurface::SetElevation(double elevation)
+    {
+    DPoint3d origin = GetPlacement().GetOrigin();
+    DVec3d translation = DVec3d::From(0, 0, elevation - origin.z);
+
+    Translate(translation);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  12/17
+//---------------------------------------------------------------------------------------
+BentleyStatus GridSurface::SetBaseCurve(CurveVectorPtr base)
+    {
+    double existingHeight;
+    if (BentleyStatus::ERROR == TryGetHeight(existingHeight))
+        return BentleyStatus::ERROR;
+
+    DVec3d up = DVec3d::From(0, 0, existingHeight);
+    DgnExtrusionDetail detail = DgnExtrusionDetail(base, up, false);
+    ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
+    if (geometry.IsNull())
+        return BentleyStatus::ERROR;
+
+    return SetGeometry(geometry);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  10/17
 //---------------------------------------------------------------------------------------
 BentleyStatus GridSurface::SetGeometry(ISolidPrimitivePtr surface)
