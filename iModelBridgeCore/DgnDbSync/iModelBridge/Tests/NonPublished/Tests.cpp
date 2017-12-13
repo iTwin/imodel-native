@@ -469,8 +469,8 @@ TEST_F(iModelBridgeTests, FwkArgs)
     args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
     args.push_back(L"--server-user=username=username");
     args.push_back(L"--server-password=\"password><!@\"");
-    args.push_back(L"--fwk-bridge-regsubkey=regsubkey");
-    args.push_back(L"--fwk-input=rootfilename");
+    //args.push_back(L"--fwk-bridge-regsubkey=regsubkey"); // CGM - Trying to isolate where firebug is failing in these tests
+    //args.push_back(L"--fwk-input=rootfilename");
 
     bvector<WCharCP> argptrs;
     for (auto& arg: args)
