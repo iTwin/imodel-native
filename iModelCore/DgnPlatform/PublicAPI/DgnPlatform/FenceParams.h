@@ -106,6 +106,9 @@ public:
     //! Return true if fence overlap mode is set.
     DGNPLATFORM_EXPORT bool AllowOverlaps() const;
 
+    //! Return true if we aren't looking for overlaps or clipping.
+    DGNPLATFORM_EXPORT bool IsInsideMode() const;
+
     //! Return true if the given element satisfies the fence criteria.
     DGNPLATFORM_EXPORT bool AcceptElement(GeometrySourceCR);
 
