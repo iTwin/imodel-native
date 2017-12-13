@@ -794,7 +794,7 @@ GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> &points);
 //!     along the base curve are scaled to this length
 //! @param [in] startCapPointAccumulator optional array to receive fully transformed endcap points.  This array is NOT cleared (so caller can combine over multiple calls.)
 //! @param [in] endCapPointAccumulator optional array to receive fully transformed endcap points.  This array is NOT cleared (so caller can combine over multiple calls.)
-//! @param [in] optional array of parent curves for use in edge visibility tests
+//! @param [in] curve optional array of parent curves for use in edge visibility tests
 GEOMDLLIMPEXP void AddRotationalSweepLoop
 (
 bvector<DPoint3d> &pointA,
