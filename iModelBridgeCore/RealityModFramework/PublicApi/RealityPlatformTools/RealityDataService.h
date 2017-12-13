@@ -364,6 +364,12 @@ struct RealityDataFilterCreator
     //!  and no filtering will be set.
     REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByCreationDate(DateTime minDate, DateTime maxDate);
 
+    //! Filters the list by last accessed date. To indicate either min or max date
+    //!  are unbounded simply provide an invalid/unset DataTime object.
+    //! If both dates are invalid/unset then the command will return an error
+    //!  and no filtering will be set.  
+    REALITYDATAPLATFORM_EXPORT static RDSFilter FilterByAccessDate(DateTime minDate, DateTime maxDate);
+
     //! Filters the list by modification date. To indicate either min or max date
     //!  are unbounded simply provide an invalid/unset DataTime object.
     //! If both dates are invalid/unset then the command will return an error

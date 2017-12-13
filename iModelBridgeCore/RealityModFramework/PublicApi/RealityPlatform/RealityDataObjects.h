@@ -377,6 +377,7 @@ enum class RealityDataField
     Listable,
     CreatedTimestamp,
     ModifiedTimestamp,
+    LastAccessedTimestamp,
     OwnedBy,
     Group,
     Hidden,
@@ -423,6 +424,10 @@ public:
     //! The date of the production of the data or an invalid date if it is unknown.
     REALITYDATAPLATFORM_EXPORT DateTimeCR GetCreationDateTime() const;
     REALITYDATAPLATFORM_EXPORT void SetCreationDateTime(DateTimeCR creationDateTime);
+
+    //! Indicates the last time the data was read or modified.
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetLastAccessedDateTime() const;
+    REALITYDATAPLATFORM_EXPORT void SetLastAccessedDateTime(DateTimeCR lastAccessedDateTime);
 
     //! The last modified time
     REALITYDATAPLATFORM_EXPORT DateTime GetModifiedDateTime() const;
@@ -496,10 +501,6 @@ public:
     //! Indicates if the data has delegated permissions.
     REALITYDATAPLATFORM_EXPORT bool HasDelegatePermissions() const;
     REALITYDATAPLATFORM_EXPORT void SetDelegatePermissions(bool dp);
-
-    //! Indicates the last time the data was read or modified.
-    REALITYDATAPLATFORM_EXPORT DateTimeCR GetLastAccessedDateTime() const;
-    REALITYDATAPLATFORM_EXPORT void SetLastAccessedDateTime(DateTimeCR lastAccessedDateTime);
 
     //! Indicates if the footprint is exact or approximate.
     REALITYDATAPLATFORM_EXPORT bool IsApproximateFootprint() const;

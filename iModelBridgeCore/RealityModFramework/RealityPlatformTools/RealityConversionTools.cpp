@@ -537,6 +537,9 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     if (includeROProps && (includeUnsetProps || realityData.GetCreationDateTime().IsValid()))
         properties.push_back(RealityDataField::CreatedTimestamp);
 
+    if (includeROProps && (includeUnsetProps || realityData.GetLastAccessedDateTime().IsValid()))
+        properties.push_back(RealityDataField::LastAccessedTimestamp);
+
     if (includeROProps && (includeUnsetProps || (realityData.GetOwner().size() != 0)))
         properties.push_back(RealityDataField::OwnedBy);
 
@@ -685,6 +688,11 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
         case RealityDataField::CreatedTimestamp:
             propertyString.append("\"CreatedTimestamp\" : \"");
             propertyString.append(realityData.GetCreationDateTime().ToString());
+            propertyString.append("\"");
+            break;
+        case RealityDataField::LastAccessedTimestamp:
+            propertyString.append("\"LastAccessedTimestamp\" : \"");
+            propertyString.append(realityData.GetLastAccessedDateTime().ToString());
             propertyString.append("\"");
             break;
         case RealityDataField::OwnedBy:

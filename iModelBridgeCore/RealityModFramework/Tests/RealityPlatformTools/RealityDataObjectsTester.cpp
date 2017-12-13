@@ -730,6 +730,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataBasicTest)
     EXPECT_STREQ(myRealityData->GetCopyright().c_str(), "");
     EXPECT_STREQ(myRealityData->GetTermsOfUse().c_str(), "");
     EXPECT_TRUE(!myRealityData->GetModifiedDateTime().IsValid()); // Time not set should be invalid
+    EXPECT_TRUE(!myRealityData->GetLastAccessedDateTime().IsValid()); // Time not set should be invalid
     EXPECT_STREQ(myRealityData->GetGroup().c_str(), "");
     EXPECT_TRUE(!myRealityData->GetLastAccessedDateTime().IsValid());
     EXPECT_FALSE(myRealityData->IsApproximateFootprint());

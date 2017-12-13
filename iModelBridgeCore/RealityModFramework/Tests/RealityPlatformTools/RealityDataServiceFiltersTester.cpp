@@ -93,6 +93,18 @@ TEST(RealityDataFilterCreator, FilterByModificationDate)
 	}
 
 //=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  12/2017
+//=====================================================================================
+TEST(RealityDataFilterCreator, FilterByAccessDate)
+    {
+    DateTime minDate(DateTime::Kind::Utc, 2000, 01, 01, 12, 00, 25, 200);
+    DateTime maxDate(DateTime::Kind::Utc, 2016, 12, 31, 23, 59, 59, 999);
+
+    RDSFilter filter = RealityDataFilterCreator::FilterByAccessDate(minDate, maxDate);
+    EXPECT_STREQ(filter.ToString().c_str(), "LastAccessedTimestamp+ge+'2000-01-01T12:00:25.200Z'+and+LastAccessedTimestamp+le+'2016-12-31T23:59:59.999Z'");
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
 TEST(RealityDataFilterCreator, FilterByVisibility)
@@ -233,6 +245,7 @@ struct RealityMap
         realityDataFieldVector.emplace_back(RealityDataField::Listable, "Listable");
         realityDataFieldVector.emplace_back(RealityDataField::CreatedTimestamp, "CreatedTimestamp");
         realityDataFieldVector.emplace_back(RealityDataField::ModifiedTimestamp, "ModifiedTimestamp");
+        realityDataFieldVector.emplace_back(RealityDataField::LastAccessedTimestamp, "LastAccessedTimestamp");
         realityDataFieldVector.emplace_back(RealityDataField::OwnedBy, "OwnedBy");
         realityDataFieldVector.emplace_back(RealityDataField::Group, "Group");
 

@@ -525,6 +525,14 @@ RDSFilter RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, D
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              12/2017
+//=====================================================================================
+RDSFilter RealityDataFilterCreator::FilterByAccessDate(DateTime minDate, DateTime maxDate)
+    {
+    return RDSFilter(Utf8PrintfString("LastAccessedTimestamp+ge+'%s'+and+LastAccessedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString()));
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
@@ -695,6 +703,7 @@ static bmap<RealityDataField, Utf8String> CreatePropertyMap()
     m.Insert(RealityDataField::Listable, "Listable");
     m.Insert(RealityDataField::CreatedTimestamp, "CreatedTimestamp");
     m.Insert(RealityDataField::ModifiedTimestamp, "ModifiedTimestamp");
+    m.Insert(RealityDataField::LastAccessedTimestamp, "LastAccessedTimestamp");
     m.Insert(RealityDataField::OwnedBy, "OwnedBy");
     m.Insert(RealityDataField::Group, "Group");
     m.Insert(RealityDataField::Hidden, "Hidden");
