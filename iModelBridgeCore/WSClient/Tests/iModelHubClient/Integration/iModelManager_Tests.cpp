@@ -17,7 +17,6 @@
 #include <DgnPlatform/DgnDbTables.h>
 #include "MockHttpHandler.h"
 #include <DgnPlatform/GenericDomain.h>
-#include "../../../iModelHubClient/Utils.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -86,7 +85,6 @@ enum CodeState : uint8_t
     Discarded,  //!< A changeSet has been committed to the server in which the Code became discarded by the object by which it was previously used.
     };
 
-//TODO: delete
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2017
 //---------------------------------------------------------------------------------------
@@ -1239,7 +1237,7 @@ TEST_F(iModelManagerTests, FailingLocksResponseOptions)
     ExpectLocksCount(*briefcase1, 2);
     db1.SaveChanges();
     PushPendingChanges(*briefcase1, false);
-    ExpectLocksCount(*briefcase1, 6);
+    ExpectLocksCount(*briefcase1, 2);
 
     EXPECT_EQ(DgnDbStatus::Success, model1_1->Delete());
     EXPECT_EQ(DgnDbStatus::Success, model1_2->Delete());
@@ -1248,28 +1246,22 @@ TEST_F(iModelManagerTests, FailingLocksResponseOptions)
     EXPECT_SUCCESS(briefcase2->PullAndMerge()->GetResult());
     DgnModelPtr model2_1 = db2.Models().GetModel(model1_1->GetModelId());
 
-    DgnLockSet locks;
-    locks.insert(DgnLock(LockableId(model2_1->GetModelId()), LockLevel::None));
-    DgnCodeSet codes;
-    StatusResult result = briefcase2->GetiModelConnection().DemoteCodesLocks(locks, codes, briefcase1->GetBriefcaseId(), db2.GetDbGuid())->GetResult();
-    EXPECT_SUCCESS(result);
-
     IBriefcaseManager::Request req;
     EXPECT_EQ(RepositoryStatus::Success, db2.BriefcaseManager().PrepareForModelDelete(req, *model2_1, IBriefcaseManager::PrepareAction::Acquire)); 
     EXPECT_EQ(DgnDbStatus::Success, model2_1->Delete());
     db2.SaveChanges();
-    ExpectLocksCount(*briefcase1, 5);
+    ExpectLocksCount(*briefcase1, 2);
     ExpectLocksCount(*briefcase2, 2);
 
     StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();
     EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, result1.GetError().GetId());
     JsonValueCR error1 = result1.GetError().GetExtendedData();
-    EXPECT_EQ(1, error1[ServerSchema::Property::ConflictingLocks].size());
+    EXPECT_EQ(1, error1["ConflictingLocks"].size());
 
     StatusResult result2 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::None)->GetResult();
     EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, result1.GetError().GetId());
     JsonValueCR error2 = result2.GetError().GetExtendedData();
-    EXPECT_EQ(Json::Value::GetNull(), error2[ServerSchema::Property::ConflictingLocks]);
+    EXPECT_EQ(Json::Value::GetNull(), error2["ConflictingLocks"]);
     }
 
 
@@ -1301,12 +1293,12 @@ TEST_F(iModelManagerTests, FailingCodesResponseOptions)
     StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();
     EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, result1.GetError().GetId());
     JsonValueCR error1 = result1.GetError().GetExtendedData();
-    EXPECT_EQ(1, error1[ServerSchema::Property::ConflictingCodes].size());
+    EXPECT_EQ(1, error1["ConflictingCodes"].size());
 
     StatusResult result2 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::None)->GetResult();
     EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, result2.GetError().GetId());
     JsonValueCR error2 = result2.GetError().GetExtendedData();
-    EXPECT_EQ(Json::Value::GetNull(), error2[ServerSchema::Property::ConflictingCodes]);
+    EXPECT_EQ(Json::Value::GetNull(), error2["ConflictingCodes"]);
     }
 
 
@@ -2460,7 +2452,7 @@ TEST_F(iModelManagerTests, ModifySchema)
     // Reload DB with upgrade options
     auto changeSets = briefcase2->GetiModelConnection().DownloadChangeSetsAfterId(briefcase2->GetLastChangeSetPulled(), briefcase2->GetDgnDb().GetDbGuid(), CreateProgressCallback())->GetResult().GetValue();
     bvector<DgnRevisionCP> changeSetsToMerge;
-   // ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge); TODO: uncomment
+    ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
     auto filePath = db2.GetFileName();
     db2.CloseDb();
 
