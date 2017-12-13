@@ -2541,7 +2541,7 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
             }
         else
             {
-            // If direct children are drawable, draw them in this tile's place; otherwise draw the parent.
+            // If direct children are drawable, draw them in this tile's place; otherwise draw the parent. Do not load/request the children for this purpose.
             size_t initialSize = selected.size();
             auto children = _GetChildren(false);
             if (nullptr == children)
@@ -2613,6 +2613,11 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
 
     if (_HasGraphics())
         {
+        // This tile might have 'backup' graphics after having been modified. Ask it to load its 'real' graphics.
+        // Consider NOT refining partial tile for this purpose? We're awaiting the child tiles.
+        if (!IsReady() || _IsPartial())
+            args.InsertMissing(*this);
+
         selected.push_back(this);
         return SelectParent::No;
         }
