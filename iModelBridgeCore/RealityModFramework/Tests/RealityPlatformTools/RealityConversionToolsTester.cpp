@@ -222,6 +222,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Listable": true,
                     "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
+                    "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
                     "OwnedBy": "francis.boily@bentley.com",
                     "Hidden": false,
                     "DelegatePermissions": false
@@ -282,6 +283,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "Listable": true,
                     "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
+                    "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
                     "OwnedBy": "francis.boily@bentley.com",
                     "Hidden": true,
                     "DelegatePermissions": true
@@ -618,6 +620,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetVisibilityTag(), "PRIVATE");
     ASSERT_EQ(realityData->IsListable(), true);
     ASSERT_EQ(realityData->GetModifiedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
+    ASSERT_EQ(realityData->GetLastAccessedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
     ASSERT_EQ(realityData->IsHidden(), false);
