@@ -2456,7 +2456,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false); // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
 
     Transform transformFromDgn;
-    transformFromDgn.InverseOf(root.GetLocation());
+    transformFromDgn.InverseOf(root.GetLocationForTileGeneration());
 
     // ###TODO: Avoid heap alloc if don't want partial tiles...
     TileGeneratorUPtr generator = std::make_unique<TileGenerator>(GetDgnRange(), *model->GetRangeIndex(), minRangeDiagonalSq, context, maxFeatures, *this, *facetOptions, transformFromDgn, m_tolerance, GeometryOptions());
@@ -2481,8 +2481,32 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
 DRange3d Tile::GetDgnRange() const
     {
     DRange3d range;
-    GetRoot().GetLocation().Multiply(range, GetTileRange());
+    GetElementRoot().GetLocationForTileGeneration().Multiply(range, GetTileRange());
     return range;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform Root::GetLocationForTileGeneration() const
+    {
+    // TFS#783612: Diego's 'Model Alignment' workflow involves:
+    // 1. Start a dynamic transaction
+    // 2. Apply a uniform transform to all elements in a set of models
+    // 3. Apply the same transform to the models' tile trees as the temporary 'display transform' to cause them to render in the new location
+    // 4. When finished, cancel the dynamic transaction, which restores the range index; and remove the temporary display transform from the tile trees.
+    // In between 2 and 3, we try to generate tiles using the temporarily modified RangeIndex, and our range intersections are all wrong.
+    // During tile generation we transform ranges and positions from tile to dgn, and back again - so the net result is as if the
+    // RangeIndex had never been modified - we generate the same tiles we normally would.
+    auto tf = GetLocation();
+    if (m_haveDisplayTransform)
+        {
+        BeAssert(GetDgnDb().Txns().InDynamicTxn());
+        BeAssert(m_ignoreChanges);
+        tf = Transform::FromProduct(m_displayTransform, tf);
+        }
+
+    return tf;
     }
 
 /*---------------------------------------------------------------------------------**//**
