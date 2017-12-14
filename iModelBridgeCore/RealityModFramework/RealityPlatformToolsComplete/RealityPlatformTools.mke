@@ -93,3 +93,9 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
 LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
 
 %include dlmlink.mki
+
+#---------------------------------------------------------------------------------------+
+#   Deliver assets
+#---------------------------------------------------------------------------------------+
+$(OutputRootDir)BuildContexts/BeHttp/Delivery/http/ContextServices.pem : $(baseDir)ContextServices.pem
+    $(LinkFirstDepToFirstTarget)

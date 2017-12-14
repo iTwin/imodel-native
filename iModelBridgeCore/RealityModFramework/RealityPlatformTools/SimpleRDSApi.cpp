@@ -15,7 +15,7 @@ void RDSRequestManager::Setup()
         return;
         }
     
-    RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX", "" /*WSGRequest::GetInstance().GetCertificatePath().GetNameUtf8()*/);
+    RealityDataService::SetServerComponents(serverName, version, "S3MXECPlugin--Server", "S3MX", WSGRequest::GetInstance().GetCertificatePath().GetNameUtf8());
     }
 
 ConnectedNavNode::ConnectedNavNode(const NavNode& node)
