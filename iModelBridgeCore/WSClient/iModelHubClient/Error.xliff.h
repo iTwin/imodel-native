@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 #include <BeSQLite/L10N.h>
 #include <WebServices/iModelHub/Client/Error.h>
 
