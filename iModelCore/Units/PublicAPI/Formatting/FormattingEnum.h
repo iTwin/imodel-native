@@ -434,7 +434,6 @@ struct FormatConstant
         static Utf8String FPN_Name() { return "name"; }
         static Utf8String FPN_Alias() { return "alias"; }
 
-
         static Utf8String FPN_NoSign() { return "NoSign"; }
         static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
         static Utf8String FPN_SignAlways() { return "SignAlways"; }
@@ -573,7 +572,9 @@ struct FormatConstant
         static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
         UNITS_EXPORT static const size_t* FractionCodes();
         static const Utf8CP DefaultFormatName() { return "DefaultReal"; }
+        static const Utf8CP DefaultPresentationFormatName() { return "DefaultRealU"; }
         static const Utf8CP DefaultFormatAlias() { return "real"; }
+        static const Utf8CP DefaultPresentationFormatAlias() { return "realu"; }
         static const Utf8CP FUSJsonName() { return "name"; }
         static const Utf8CP FUSJsonAlias() { return "alias"; }
         static const Utf8CP FUSJsonUnit() { return "unit"; }
