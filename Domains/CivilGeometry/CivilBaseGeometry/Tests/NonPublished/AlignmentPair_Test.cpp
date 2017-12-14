@@ -270,35 +270,35 @@ void AlignmentPair_CloneCurveVectors()
     // Clone as EnglishFeet
     DPoint3d start, end;
 
-    hz = pair->CloneHorizontalCurveVector(StandardUnit::EnglishFeet);
+    hz = pair->CloneHorizontalCurveVector(Dgn::StandardUnit::EnglishFeet);
     ASSERT_TRUE(hz.IsValid());
     EXPECT_TRUE(hz->GetStartEnd(start, end));
     EXPECT_EQ_DPOINT3D(DPoint3d::FromZero(), start);
     EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 0), METERS_TO_ENGLISH_FEET), end);
 
-    vt = pair->CloneVerticalCurveVector(StandardUnit::EnglishFeet);
+    vt = pair->CloneVerticalCurveVector(Dgn::StandardUnit::EnglishFeet);
     ASSERT_TRUE(vt.IsValid());
     EXPECT_TRUE(vt->GetStartEnd(start, end));
     EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(0, 0, 800), METERS_TO_ENGLISH_FEET), start);
     EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 815.0), METERS_TO_ENGLISH_FEET), end);
     
     // Clone as EnglishSurveyFeet
-    hz = pair->CloneHorizontalCurveVector(StandardUnit::EnglishSurveyFeet);
+    hz = pair->CloneHorizontalCurveVector(Dgn::StandardUnit::EnglishSurveyFeet);
     ASSERT_TRUE(hz.IsValid());
     EXPECT_TRUE(hz->GetStartEnd(start, end));
     EXPECT_EQ_DPOINT3D(DPoint3d::FromZero(), start);
     EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 0), METERS_TO_ENGLISH_SURVEY_FEET), end);
 
-    vt = pair->CloneVerticalCurveVector(StandardUnit::EnglishSurveyFeet);
+    vt = pair->CloneVerticalCurveVector(Dgn::StandardUnit::EnglishSurveyFeet);
     ASSERT_TRUE(vt.IsValid());
     EXPECT_TRUE(vt->GetStartEnd(start, end));
     EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(0, 0, 800), METERS_TO_ENGLISH_SURVEY_FEET), start);
     EXPECT_EQ_DPOINT3D(DPoint3d::FromScale(DPoint3d::From(100, 0, 815.0), METERS_TO_ENGLISH_SURVEY_FEET), end);
 
     // Clone unsupported unit
-    hz = pair->CloneHorizontalCurveVector(StandardUnit::AngleDegrees);
+    hz = pair->CloneHorizontalCurveVector(Dgn::StandardUnit::AngleDegrees);
     EXPECT_FALSE(hz.IsValid());
-    vt = pair->CloneVerticalCurveVector(StandardUnit::AngleDegrees);
+    vt = pair->CloneVerticalCurveVector(Dgn::StandardUnit::AngleDegrees);
     EXPECT_FALSE(vt.IsValid());
     }
 
@@ -1248,6 +1248,105 @@ void AlignmentPI_Tests()
 
 
 //=======================================================================================
+// AlignmentPVI tests
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @betest                              Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPVI_Tests()
+    {
+    DPoint3d disconnect;
+    disconnect.InitDisconnect();
+
+    AlignmentPVI pvi;
+
+    // Unitialized PI
+    EXPECT_TRUE(nullptr == pvi.GetGradeBreak());
+    EXPECT_TRUE(nullptr == pvi.GetGradeBreakP());
+    EXPECT_TRUE(nullptr == pvi.GetArc());
+    EXPECT_TRUE(nullptr == pvi.GetArcP());
+    EXPECT_TRUE(nullptr == pvi.GetParabola());
+    EXPECT_TRUE(nullptr == pvi.GetParabolaP());
+    EXPECT_FALSE(pvi.IsInitialized());
+    EXPECT_EQ(AlignmentPVI::TYPE_Uninitialized, pvi.GetType());
+    EXPECT_EQ_DPOINT3D(disconnect, pvi.GetPVCLocation());
+    EXPECT_EQ_DPOINT3D(disconnect, pvi.GetPVILocation());
+    EXPECT_EQ_DPOINT3D(disconnect, pvi.GetPVTLocation());
+    EXPECT_EQ_DOUBLE(0.0, AlignmentPVI::Slope(pvi.GetPVCLocation(), pvi.GetPVILocation()));
+    EXPECT_EQ_DOUBLE(0.0, AlignmentPVI::Slope(pvi.GetPVILocation(), pvi.GetPVTLocation()));
+
+    // GradeBreak
+    pvi.InitGradeBreak(DPoint3d::FromOne());
+    EXPECT_TRUE(nullptr != pvi.GetGradeBreak());
+    EXPECT_TRUE(nullptr != pvi.GetGradeBreakP());
+    EXPECT_TRUE(pvi.IsInitialized());
+    EXPECT_EQ(AlignmentPVI::TYPE_GradeBreak, pvi.GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(1, 0, 1), pvi.GetPVCLocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(1, 0, 1), pvi.GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(1, 0, 1), pvi.GetPVTLocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(1, 0, 1), pvi.GetGradeBreak()->pvi);
+
+    EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().startStation);
+    EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().endStation);
+
+    // Arc
+    pvi.InitArc(DPoint3d::From(2, 0, 4), 60.0);
+    EXPECT_TRUE(nullptr != pvi.GetArc());
+    EXPECT_TRUE(nullptr != pvi.GetArcP());
+    EXPECT_TRUE(pvi.IsInitialized());
+    EXPECT_EQ(AlignmentPVI::TYPE_Arc, pvi.GetType());
+    pvi.GetArcP()->length = 20.0;
+    pvi.GetArcP()->pvc.x -= 10.0;
+    pvi.GetArcP()->pvt.x += 10.0;
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(-8, 0, 4), pvi.GetPVCLocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(2, 0, 4), pvi.GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(12, 0, 4), pvi.GetPVTLocation());
+    EXPECT_EQ_DOUBLE(-8.0, pvi.GetStationRange().startStation);
+    EXPECT_EQ_DOUBLE(12.0, pvi.GetStationRange().endStation);
+    EXPECT_EQ_DOUBLE(60.0, pvi.GetArc()->radius);
+
+    // Parabola
+    pvi.InitParabola(DPoint3d::From(14.0, 0, 8), 204.0);
+    EXPECT_TRUE(nullptr != pvi.GetParabola());
+    EXPECT_TRUE(nullptr != pvi.GetParabolaP());
+    EXPECT_TRUE(pvi.IsInitialized());
+    EXPECT_EQ(AlignmentPVI::TYPE_Parabola, pvi.GetType());
+    EXPECT_EQ_DOUBLE(204.0, pvi.GetParabola()->length);
+    pvi.GetParabolaP()->pvc = DPoint3d::From(9.0, 0, 7.0);
+    pvi.GetParabolaP()->pvt = DPoint3d::From(19.0, 0., 7.0);
+    pvi.GetParabolaP()->length = 10.0;
+    EXPECT_EQ_DOUBLE(2400.0, pvi.GetParabola()->LengthFromK(60.0));
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(9.0, 0, 7.0), pvi.GetPVCLocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(14.0, 0, 8.0), pvi.GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(19.0, 0, 7.0), pvi.GetPVTLocation());
+    EXPECT_EQ_DOUBLE(9.0, pvi.GetStationRange().startStation);
+    EXPECT_EQ_DOUBLE(19.0, pvi.GetStationRange().endStation);
+    EXPECT_EQ_DOUBLE(10.0, pvi.GetParabola()->length);
+    EXPECT_EQ_DOUBLE(0.2, AlignmentPVI::Slope(pvi.GetPVCLocation(), pvi.GetPVILocation()));
+    EXPECT_EQ_DOUBLE(-0.2, AlignmentPVI::Slope(pvi.GetPVILocation(), pvi.GetPVTLocation()));
+
+    EXPECT_EQ_DOUBLE(0.25, pvi.GetParabola()->KValue());
+    pvi.GetParabolaP()->pvc.z = 8.0;
+    pvi.GetParabolaP()->pvt.z = 8.0;
+    EXPECT_EQ_DOUBLE(0.0, pvi.GetParabola()->LengthFromK(60.0));
+
+    EXPECT_EQ_DOUBLE(0.0, pvi.GetParabola()->KValue());
+    EXPECT_EQ_DOUBLE(0.0, pvi.GetParabola()->LengthFromK(60.0));
+    EXPECT_EQ_DOUBLE(0.0, AlignmentPVI::Slope(pvi.GetPVCLocation(), pvi.GetPVILocation()));
+    EXPECT_EQ_DOUBLE(0.0, AlignmentPVI::Slope(pvi.GetPVILocation(), pvi.GetPVTLocation()));
+
+    pvi.GetParabolaP()->pvt = DPoint3d::From(14.0, 0.0, 7.0);
+    EXPECT_EQ_DOUBLE(CS_PVI_INFINITY, AlignmentPVI::Slope(pvi.GetPVILocation(), pvi.GetPVTLocation()));
+
+    pvi.InitParabola(DPoint3d::FromOne(), 0.0);
+    EXPECT_EQ_DOUBLE(0.0, pvi.GetParabola()->KValue());
+    EXPECT_EQ_DOUBLE(0.0, pvi.GetParabola()->LengthFromK(60.0));
+    }
+
+
+
+
+//=======================================================================================
 // AlignmentPairEditor tests
 //=======================================================================================
 //---------------------------------------------------------------------------------------
@@ -1379,17 +1478,17 @@ void AlignmentPairEditor_GetPIs()
     ASSERT_EQ(AlignmentPI::TYPE_Arc, pis[1].GetType());
     EXPECT_EQ_DOUBLE(184.0, pis[1].GetArc()->arc.radius);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(468660.06504850514, 2259068.6505596871), pis[1].GetArc()->arc.centerPoint);
-    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[1].GetArc()->arc.orientation);
+    EXPECT_EQ(Orientation::ORIENTATION_CW, pis[1].GetArc()->arc.orientation);
 
     ASSERT_EQ(AlignmentPI::TYPE_Arc, pis[2].GetType());
     EXPECT_EQ_DOUBLE(184.0, pis[2].GetArc()->arc.radius);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(468834.54602081364, 2259416.9857294112), pis[2].GetArc()->arc.centerPoint);
-    EXPECT_EQ(AlignmentPI::ORIENTATION_CCW, pis[2].GetArc()->arc.orientation);
+    EXPECT_EQ(Orientation::ORIENTATION_CCW, pis[2].GetArc()->arc.orientation);
 
     ASSERT_EQ(AlignmentPI::TYPE_Arc, pis[3].GetType());
     EXPECT_EQ_DOUBLE(184.0, pis[3].GetArc()->arc.radius);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469123.72809941485, 2259174.1824242566), pis[3].GetArc()->arc.centerPoint);
-    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[3].GetArc()->arc.orientation);
+    EXPECT_EQ(Orientation::ORIENTATION_CW, pis[3].GetArc()->arc.orientation);
 
     ASSERT_EQ(AlignmentPI::TYPE_NoCurve, pis[4].GetType());
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469321.36029021174, 2259393.2817337015), pis[4].GetNoCurve()->piPoint);
@@ -1412,21 +1511,21 @@ void AlignmentPairEditor_GetPIs()
     EXPECT_EQ_DPOINT3D(DPoint3d::From(468561.57954157837, 2258790.8192921854), pis[1].GetSCS()->spiral1.startPoint);
     EXPECT_EQ_DOUBLE(667.0, pis[1].GetSCS()->arc.radius);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469159.06811088009, 2258491.8333408381), pis[1].GetSCS()->arc.centerPoint);
-    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[1].GetSCS()->arc.orientation);
+    EXPECT_EQ(Orientation::ORIENTATION_CW, pis[1].GetSCS()->arc.orientation);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(468790.67837881838, 2259047.8711141152), pis[1].GetSCS()->spiral2.startPoint);
 
     ASSERT_EQ(AlignmentPI::TYPE_SCS, pis[2].GetType());
     EXPECT_EQ_DPOINT3D(DPoint3d::From(468988.41144292668, 2259166.3367093648), pis[2].GetSCS()->spiral1.startPoint);
     EXPECT_EQ_DOUBLE(667.0, pis[2].GetSCS()->arc.radius);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(468677.07669415820, 2259757.4846297354), pis[2].GetSCS()->arc.centerPoint);
-    EXPECT_EQ(AlignmentPI::ORIENTATION_CCW, pis[2].GetSCS()->arc.orientation);
+    EXPECT_EQ(Orientation::ORIENTATION_CCW, pis[2].GetSCS()->arc.orientation);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469127.65689328074, 2259265.685398180), pis[2].GetSCS()->spiral2.startPoint)
     
     ASSERT_EQ(AlignmentPI::TYPE_SCS, pis[3].GetType());
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469275.47792368190, 2259413.8482709471), pis[3].GetSCS()->spiral1.startPoint);
     EXPECT_EQ_DOUBLE(667.0, pis[3].GetSCS()->arc.radius);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469773.91098115058, 2258968.9329118370), pis[3].GetSCS()->arc.centerPoint);
-    EXPECT_EQ(AlignmentPI::ORIENTATION_CW, pis[3].GetSCS()->arc.orientation);
+    EXPECT_EQ(Orientation::ORIENTATION_CW, pis[3].GetSCS()->arc.orientation);
     EXPECT_EQ_DPOINT3D(DPoint3d::From(469379.99574711901, 2259507.1891597323), pis[3].GetSCS()->spiral2.startPoint)
 
     ASSERT_EQ(AlignmentPI::TYPE_NoCurve, pis[4].GetType());
@@ -2763,13 +2862,15 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     AlignmentPair_GetStrokedAlignment();
     AlignmentPair_ComputeMinimumRadius();
 
-    // ALignmentPI tests
     AlignmentPI_Tests();
+    AlignmentPVI_Tests();
 
-    //! AlignmentPairEditor tests
+    // AlignmentPairEditor tests
     AlignmentPairEditor_Create_Clone();
     AlignmentPairEditor_GetPIs();
     AlignmentPairEditor_UpdateCurveVectors();
+
+    // AlignmentPairEditor - Hz edits
     AlignmentPairEditor_InsertPI();
     AlignmentPairEditor_DeletePI();
     AlignmentPairEditor_MovePI();
@@ -2778,6 +2879,9 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     AlignmentPairEditor_UpdateRadius();
     AlignmentPairEditor_UpdateSpiralLengths();
     AlignmentPairEditor_RemoveSpirals_AddSpirals();
+
+    // AlignmentPairEditor - Vt edits
+
 
 #if 0 //&&AG NEEDSWORK EDITOR
     AlignmentPairEditor_RoadPVITests();

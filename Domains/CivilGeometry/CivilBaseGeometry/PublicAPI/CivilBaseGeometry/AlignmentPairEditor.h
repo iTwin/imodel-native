@@ -9,8 +9,16 @@
 
 //__PUBLISH_SECTION_START__
 #include "AlignmentPair.h"
+#include "StationRange.h"
 
 BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE
+
+typedef struct AlignmentPI& AlignmentPIR;
+typedef struct AlignmentPI const& AlignmentPICR;
+typedef struct AlignmentPVI& AlignmentPVIR;
+typedef struct AlignmentPVI const& AlignmentPVICR;
+
+enum class Orientation { ORIENTATION_Unknown, ORIENTATION_CW, ORIENTATION_CCW };
 
 //=======================================================================================
 // @bsiclass
@@ -20,8 +28,6 @@ BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE
 struct AlignmentPI
 {
 public:
-    enum Orientation { ORIENTATION_Unknown, ORIENTATION_CW, ORIENTATION_CCW };
-
     //=======================================================================================
     // @bsiclass
     // PI definition of an Arc
@@ -137,10 +143,6 @@ public:
     SSInfoP GetSSP()                    { return (TYPE_SS == m_type) ? &m_ssInfo : nullptr; }
 }; // AlignmentPI
 
-typedef AlignmentPI& AlignmentPIR;
-typedef AlignmentPI const& AlignmentPICR;
-
-
 
 // PVI stuff
 enum class ZeroSlopePoints
@@ -149,13 +151,6 @@ enum class ZeroSlopePoints
     CrestOnly = 1,
     BothSagAndCrest = 2
     };
-
-typedef enum VerticalCurveIndex
-    {
-    PVC = 0,
-    PVI = 1,
-    PVT = 2
-    } VC;
 
 enum class VerticalCurveType
     {
@@ -166,108 +161,90 @@ enum class VerticalCurveType
     TypeIV = 4,
     Invalid = -1
     };
-
-enum class VerticalGeometryType
-    {
-    None = 0,
-    Parabola = 1,
-    SingleArc = 2
-    };
-
 /*---------------------------------------------------------------------------------**//**
 +---------------+---------------+---------------+---------------+---------------+------*/
 // marker applied to curvePrimitives of intersection/ramp edges, to denote which primitives of the edge curve are
 // part of the 'fillet', and which are just part of the offset alignments
 #define VERTICAL_HOLD_CURVE_LENGTH ICurvePrimitive::CurvePrimitiveMarkerBit::CURVE_PRIMITIVE_BIT_ApplicationBit1
 
-
 //=======================================================================================
 // @bsiclass
 // AlignmentPVI
-// Data holder for different PVI types
+// Data holder for different PVI types stored using a discriminated union
 //=======================================================================================
 struct AlignmentPVI
+{
+public:
+    //=======================================================================================
+    //=======================================================================================
+    struct GradeBreakInfo
     {
-    bvector<DPoint3d> poles;
+    DPoint3d pvi;
+    };
+    //=======================================================================================
+    //=======================================================================================
+    struct ArcInfo
+    {
+    DPoint3d pvi;
+    DPoint3d pvc;
+    DPoint3d pvt;
+
     double length;
+    bool holdLength;
+
     double radius;
-    bool holdLength; // marker for editing where we need to hold a fixed length 10/9/17 - Devoe
+    DPoint3d center;
+    Orientation orientation;
+    };
+    //=======================================================================================
+    //=======================================================================================
+    struct ParabolaInfo
+    {
+    DPoint3d pvi;
+    DPoint3d pvc;
+    DPoint3d pvt;
 
-    VerticalGeometryType geometryType;
+    double length;
+    bool holdLength;
 
-    AlignmentPI::Arc arc; //&&AG needswork. create AlignmentPVI::Arc
-
-    //--------------------------------------------------------------------------------------
-    // @description Create Single point PVI
-    // @bsimethod                                                    James.Goode   2/2017
-    //--------------------------------------------------------------------------------------
-    CIVILBASEGEOMETRY_EXPORT AlignmentPVI(DPoint3dCR loc) : length(0.0), radius(0.0), geometryType(VerticalGeometryType::None), holdLength(false)
-        {
-        DPoint3d pvc = loc;
-        DPoint3d pvt = loc;       
-
-        poles.push_back(pvc);
-        poles.push_back(loc);
-        poles.push_back(pvt);
-        }    
-
-    //--------------------------------------------------------------------------------------
-    // @description Create parabola PVI
-    // @bsimethod                                                    James.Goode   2/2017
-    //--------------------------------------------------------------------------------------
-    CIVILBASEGEOMETRY_EXPORT AlignmentPVI(DPoint3dCR loc, double len) : length(len), radius(0.0), geometryType(VerticalGeometryType::Parabola), holdLength(false)
-        {
-        // Create Parabola PVI
-        DPoint3d pvc = DPoint3d::From(loc.x - (0.5 * len), 0.0, loc.z);
-        DPoint3d pvt = DPoint3d::From(loc.x + (0.5 * len), 0.0, loc.z);        
-
-        poles.push_back(pvc);
-        poles.push_back(loc);
-        poles.push_back(pvt);
-        }
-
-    //--------------------------------------------------------------------------------------
-    // @description Create parabola PVI
-    // @bsimethod                                                    James.Goode   2/2017
-    //--------------------------------------------------------------------------------------
-    CIVILBASEGEOMETRY_EXPORT AlignmentPVI(DPoint3dCR pvi, DPoint3dCR pvc, DPoint3dCR pvt, double len) : length(len), radius(0.0), geometryType(VerticalGeometryType::Parabola), holdLength(false)
-        {
-        // Create Parabola PVI        
-        poles.push_back(pvc);
-        poles.push_back(pvi);
-        poles.push_back(pvt);
-        }
-
-
-    //--------------------------------------------------------------------------------------
-    // @description Create parabola or arc PVI
-    // @bsimethod                                                    James.Goode   2/2017
-    //--------------------------------------------------------------------------------------
-    CIVILBASEGEOMETRY_EXPORT AlignmentPVI(double arcRadius, DPoint3dCR piLocation, DPoint3dCR arcStartPoint, DPoint3dCR arcEndPoint) : radius(arcRadius), length(0.0), geometryType(VerticalGeometryType::SingleArc), holdLength(false)
-        {        
-        // Create Arc PVI
-        poles.push_back(arcStartPoint);
-        poles.push_back(piLocation);
-        poles.push_back(arcEndPoint);
-        }
-
-    // for a computed AlignmentPVI, return the K value
+    // Return the computed K value
     CIVILBASEGEOMETRY_EXPORT double KValue() const;
-    // return a length computed based on a given k value
+    // Return a length computed based on a given K value
     CIVILBASEGEOMETRY_EXPORT double LengthFromK(double kvalue) const;
+    };
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(GradeBreakInfo)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ArcInfo)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ParabolaInfo)
 
-    CIVILBASEGEOMETRY_EXPORT void UpdatePVTz(double nextSlope);
-    CIVILBASEGEOMETRY_EXPORT void UpdatePVCz(double prevSlope);
-    CIVILBASEGEOMETRY_EXPORT double UpdatePVTz(AlignmentPVI const& nextPVI);
-    CIVILBASEGEOMETRY_EXPORT double UpdatePVCz(AlignmentPVI const& prevPVI);
+    // Possible PVI types
+    enum Type { TYPE_Uninitialized, TYPE_GradeBreak, TYPE_Arc, TYPE_Parabola };
+    
+private:
+    // The variable holding the current type
+    Type m_type;
 
-    CIVILBASEGEOMETRY_EXPORT void UpdateLength(double len);
+    // The union storing the data of this PVI
+    union
+        {
+        GradeBreakInfo m_gradeBreakInfo;    //< If a Grade Break, holds the grade break information
+        ArcInfo m_arcInfo;                  //< If an Arc, holds the arc information
+        ParabolaInfo m_parabolaInfo;        //< If a Parabola, holds the parabola information
+        };
 
-    //RoadStationRange GetRange() const;
+public:
+    CIVILBASEGEOMETRY_EXPORT AlignmentPVI();
+    CIVILBASEGEOMETRY_EXPORT void InitGradeBreak(DPoint3dCR pviPoint);
+    CIVILBASEGEOMETRY_EXPORT void InitArc(DPoint3dCR pviPoint, double radius, double length = 0.0, bool holdLength = false);
+    CIVILBASEGEOMETRY_EXPORT void InitParabola(DPoint3dCR pviPoint, double length = 0.0, bool holdLength = false);
+    void InitInvalid(Type pviType); //! @private
 
-#if 1 //&&AG WIP new api for AlignmentPVI.
-// Add any convenient methods here
+    // Returns whether this PVI is initialized
+    bool IsInitialized() const { return TYPE_Uninitialized != m_type; }
+    // Returns the PVI type
+    AlignmentPVI::Type GetType() const { return m_type; }
 
+    // Returns the x-range this PVI occupies
+    CIVILBASEGEOMETRY_EXPORT StationRange GetStationRange() const;
     // Returns the PVC location
     // @remarks for GradeBreak, returns the PVI
     CIVILBASEGEOMETRY_EXPORT DPoint3dCR GetPVCLocation() const;
@@ -278,13 +255,23 @@ struct AlignmentPVI
     CIVILBASEGEOMETRY_EXPORT DPoint3dCR GetPVTLocation() const;
 
     CIVILBASEGEOMETRY_EXPORT static double Slope(DPoint3dCR p0, DPoint3dCR p1);
-    CIVILBASEGEOMETRY_EXPORT double GetFrontSlope() const;
-    CIVILBASEGEOMETRY_EXPORT double GetBackSlope() const;
 
-#endif
-    };
-    typedef AlignmentPVI& AlignmentPVIR;
-    typedef AlignmentPVI const& AlignmentPVICR;
+    // Updates the length on PVIs that supports it
+    void UpdateLength(double length);
+    // Updates PVC.z on a PVI that supports it
+    // @remarks returns the range over which changes happened
+    StationRange UpdatePVCz(AlignmentPVICR prevPVI);
+    // Updates PVT.z on a PVI that supports it
+    // @remarks returns the range over which changes happened
+    StationRange UpdatePVTz(AlignmentPVICR nextPVI);
+
+    GradeBreakInfoCP GetGradeBreak() const  { return (TYPE_GradeBreak == m_type) ? &m_gradeBreakInfo : nullptr; }
+    GradeBreakInfoP GetGradeBreakP()        { return (TYPE_GradeBreak == m_type) ? &m_gradeBreakInfo : nullptr; }
+    ArcInfoCP GetArc() const                { return (TYPE_Arc == m_type) ? &m_arcInfo : nullptr; }
+    ArcInfoP GetArcP()                      { return (TYPE_Arc == m_type) ? &m_arcInfo : nullptr; }
+    ParabolaInfoCP GetParabola() const      { return (TYPE_Parabola == m_type) ? &m_parabolaInfo : nullptr; }
+    ParabolaInfoP GetParabolaP()            { return (TYPE_Parabola == m_type) ? &m_parabolaInfo : nullptr; }
+}; // AlignmentPVI
 
 //=======================================================================================
 // @bsiclass
@@ -295,7 +282,8 @@ struct AlignmentPairEditor : AlignmentPair
 DEFINE_T_SUPER (AlignmentPair)
 
 private:
-    mutable bvector<AlignmentPI> m_cachedPIs; //< PIs cached on the first call of GetPIs.
+    mutable bvector<AlignmentPI> m_cachedPIs;   //< PIs cached on the first call of GetPIs.
+    mutable bvector<AlignmentPVI> m_cachedPVIs; //< PVIs cached on the first call of GetPVIs
 
 protected:
     AlignmentPairEditor() {}
@@ -311,14 +299,14 @@ protected:
     bool LoadArcData(AlignmentPI::Arc& arc, ICurvePrimitiveCR primitiveArc) const;
     bool LoadSpiralData(AlignmentPI::Spiral& spiral, ICurvePrimitiveCR primitiveSpiral) const;
 
-    bool GetLinePI(AlignmentPIR pi, size_t index) const;
-    bool GetArcPI(AlignmentPIR pi, size_t index) const;
-    bool GetSCSPI(AlignmentPIR pi, size_t index) const;
-    bool GetSSPI(AlignmentPIR pi, size_t index) const;
+    bool GetLinePI(AlignmentPIR pi, size_t primitiveIdx) const;
+    bool GetArcPI(AlignmentPIR pi, size_t primitiveIdx) const;
+    bool GetSCSPI(AlignmentPIR pi, size_t primitiveIdx) const;
+    bool GetSSPI(AlignmentPIR pi, size_t primitiveIdx) const;
 
     // Creates an arc primitive
     // @return Arc or invalid primitive
-    ICurvePrimitivePtr BuildArc(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, AlignmentPI::Orientation orientation) const;
+    ICurvePrimitivePtr BuildArc(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, Orientation orientation) const;
     ICurvePrimitivePtr BuildArc(AlignmentPI::ArcInfoCR info) const;
     // Creates a SCS curve
     // @return CurveVector with 3 primitives or invalid curve
@@ -350,6 +338,9 @@ public:
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr Create(AlignmentPairCR pair);
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr CreateVerticalOnly(CurveVectorCR verticalAlignment);
+
+    // Returns the transform that converts back and forth between XY and XZ
+    CIVILBASEGEOMETRY_EXPORT static TransformCR GetFlipYZTransform();
 
 #if 0
 private:
@@ -436,17 +427,27 @@ public:
 
 
 protected:
+    bool AreStationsEqual(DPoint3dCR p0, DPoint3dCR p1) const;
+    // Checks whether the PVI at the given index overlaps the previous or next PVI
+    // @remarks only looks for PVI and ignores PVC/PVT
+    bool IsPVIOverlap(bvector<AlignmentPVI> const& pvis, size_t index) const;
+    // Computes the maximum length a PVI can have and still fit in between adjacent PVIs
+    double ComputeMaximumLength(bvector<AlignmentPVI> const& pvis, size_t index) const;
+
+    bool GetArcPVI(AlignmentPVIR pi, size_t primitiveIdx) const;
+    bool GetParabolaPVI(AlignmentPVIR pvi, size_t primitiveIdx) const;
+
+    // Creates an arc primitive
+    // @return Arc or invalid primitive
+    ICurvePrimitivePtr BuildVerticalArc(AlignmentPVI::ArcInfoCR info) const;
+    // Create a parabola primitive (BSpline)
+    // @return MSBSpline or invalid primitive
+    ICurvePrimitivePtr BuildVerticalParabola(AlignmentPVI::ParabolaInfoCR info) const;
+
     //! Builds a CurveVector off a vector of PVIs
     //! @remarks caller should make sure all PVIs are solved and validated before calling this
     CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr _BuildCurveVectorFromPVIs(bvector<AlignmentPVI> const& pvis) const;
 
-
-    // Fits the PVI using current PI location and arc radius and adjacent PIs
-    // Updates the PVI information upon success
-    bool SolveGradeBreakPVI(bvector<AlignmentPVI>& pvis, size_t index) const;
-    // Fits the PVI using previous and next PVI information
-    // Updates the PVI information upon success
-    bool SolveParabolicPVI(bvector<AlignmentPVI>& pvis, size_t index) const;
     CIVILBASEGEOMETRY_EXPORT virtual bool _SolvePVI(bvector<AlignmentPVI>& pvis, size_t index) const;
     CIVILBASEGEOMETRY_EXPORT virtual bool _ValidatePVIs(bvector<AlignmentPVI> const& pvis) const;
 
@@ -510,9 +511,11 @@ public:
 
     // return a horizontal edit range by comparing the two curve vectors
     CIVILBASEGEOMETRY_EXPORT StationRangeEdit ComputeHorizontalEditRange (CurveVectorCR newHorizontal);
+#endif
+    CIVILBASEGEOMETRY_EXPORT bvector<AlignmentPVI> GetPVIs() const;
 
 
-
+#if 0
 public:
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr Create (CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment);
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr Create (AlignmentPair const& roadAlignment);

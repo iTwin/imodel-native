@@ -142,20 +142,18 @@ public:
     CIVILBASEGEOMETRY_EXPORT AlignmentPairPtr GetPartialAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
     CIVILBASEGEOMETRY_EXPORT virtual AlignmentPairPtr GetPartialAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
-#if 1 //&&AG needswork
     //! Returns a deep copy of the Horizontal, optionally converted in a different unit
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr CloneHorizontalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
     //! Returns a deep copy of the Vertical, optionally converted in a different unit
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr CloneVerticalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;
-#endif
 
     //! Returns the radius of the smallest arc primitive that turns left on the horizontal alignment
     //! @remarks Only circular arcs are taken into account
-    //! @remarks offsetting the alignment to the left with a value greater than this radius will result in invalid geometry
+    //! @remarks offsetting the alignment to the left (-) with a value greater than this radius will result in invalid geometry
     CIVILBASEGEOMETRY_EXPORT double ComputeLeftMinimumRadius() const;
     //! Returns the radius of the smallest arc primitive that turns right on the horizontal alignment
     //! @remarks Only circular arcs are taken into account
-    //! @remarks offsetting the alignment to the right with a value greater than this radius will result in invalid geometry
+    //! @remarks offsetting the alignment to the right (+) with a value greater than this radius will result in invalid geometry
     CIVILBASEGEOMETRY_EXPORT double ComputeRightMinimumRadius() const;
 
     // Find intersection of two alignments in XY. Optionally returns distanceAlong of the intersect. Also optionally locates the intersection
