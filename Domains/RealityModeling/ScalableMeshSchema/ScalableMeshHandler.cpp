@@ -542,6 +542,12 @@ bool SMNode::_WantDebugRangeGraphics() const
     return s_debugRange;
     }
 
+void SMNode::_GetCustomMetadata(Utf8StringR name, Json::Value& data) const
+    {
+    name = "SMHeader";
+    IScalableMeshPublisher::Create(SMPublishType::CESIUM)->ExtractPublishNodeHeader(m_scalableMeshNodePtr, data);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2770,6 +2776,15 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
             }
 
         m_tryOpen = true;
+        }
+    
+    if (m_smPtr.IsValid())
+        {
+        Json::Value publishingMetadata;
+        publishingMetadata["name"] = "SMMasterHeader";
+
+        IScalableMeshPublisher::Create(SMPublishType::CESIUM)->ExtractPublishMasterHeader(m_smPtr, publishingMetadata["properties"]);
+        SetJsonProperties(json_publishing(), publishingMetadata);
         }
     }
 

@@ -18,6 +18,7 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
+#include <ScalableMesh/IScalableMeshPublisher.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/MeshTile.h>
@@ -153,6 +154,7 @@ private:
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
     Utf8String _GetTileCacheKey() const override;
     bool _WantDebugRangeGraphics() const override;
+    void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const override;
 
 public:
     SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
@@ -226,7 +228,8 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublis
     BE_JSON_NAME(scalablemesh)
     BE_JSON_NAME(clip)
     BE_JSON_NAME(classifiers)
-        
+    BE_JSON_NAME(publishing)
+
 private:
 
     static IScalableMeshLocationProviderPtr m_locationProviderPtr;
@@ -280,6 +283,9 @@ private:
 		bool HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID);
 		
     void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
+
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
+
 protected:
     struct Properties
     {
