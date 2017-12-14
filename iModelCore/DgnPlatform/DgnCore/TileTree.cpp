@@ -563,6 +563,24 @@ BentleyStatus Root::DeleteCacheFile()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName TileCache::GetCacheFileName(BeFileNameCR baseName)
+    {
+    BeFileName filename = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+
+    // TFS#784733: Navigator wants these in a subdirectory to simplify management of various other types of caches
+    filename.AppendToPath(L"Tiles");
+    filename.AppendSeparator();
+    BeFileName::CreateNewDirectory(filename);
+
+    filename.AppendToPath(baseName);
+    filename.AppendExtension(L"TileCache");
+
+    return filename;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
@@ -570,10 +588,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
     if (httpOnly && !IsHttp()) 
         return;
         
-    m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-    m_localCacheName.AppendToPath(BeFileName(realityCacheName));
-    m_localCacheName.AppendExtension(L"TileCache");
-
+    m_localCacheName = TileCache::GetCacheFileName(BeFileName(realityCacheName));
     m_cache = new TileCache(maxSize);
     if (SUCCESS != m_cache->OpenAndPrepare(m_localCacheName))
         m_cache = nullptr;
@@ -582,7 +597,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeTimePoint deadline)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -591,7 +606,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
         }
 
     if (nullptr == loads)
-        loads = std::make_shared<TileLoadState>(tile, deadline);
+        loads = std::make_shared<TileLoadState>(tile, partialTimeout);
 
     TileLoaderPtr loader = tile._CreateTileLoader(loads, renderSys);
     if (!loader.IsValid())
@@ -816,7 +831,7 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     {
     // NB: We test for region culling before IsDisplayable() - otherwise we will never unload children of undisplayed tiles when
     // they are outside frustum
-    if (IsRegionCulled(args))
+    if (IsEmpty() || IsRegionCulled(args))
         return Visibility::OutsideFrustum;
 
     // some nodes are merely for structure and don't have any geometry
@@ -871,11 +886,6 @@ void Root::DrawInView(SceneContextR context)
     DrawArgs args = CreateDrawArgs(context);
     bvector<TileCPtr> selectedTiles = SelectTiles(args);
 
-    std::sort(selectedTiles.begin(), selectedTiles.end(), [&](TileCPtr const& lhs, TileCPtr const& rhs)
-        {
-        return args.ComputeTileDistance(*lhs) < args.ComputeTileDistance(*rhs);
-        });
-
     for (auto const& selectedTile : selectedTiles)
         {
         BeAssert(!selectedTile->IsRegionCulled(args));
@@ -896,7 +906,29 @@ void Root::DrawInView(SceneContextR context)
 DrawArgs Root::CreateDrawArgs(SceneContextR context)
     {
     auto now = BeTimePoint::Now();
-    return DrawArgs(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    return DrawArgs(context, GetDisplayTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform Root::GetDisplayTransform(RenderContextR context) const
+    {
+    auto transform = _GetTransform(context);
+    if (m_haveDisplayTransform)
+        transform = Transform::FromProduct(m_displayTransform, transform);
+
+    return transform;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::SetDisplayTransform(TransformCP tf)
+    {
+    m_haveDisplayTransform = nullptr != tf;
+    if (m_haveDisplayTransform)
+        m_displayTransform = *tf;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1068,7 +1100,7 @@ void DrawArgs::DrawGraphics()
 * be cancelled - we have determined we do not need them to draw the current frame.
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
+void Root::RequestTiles(MissingNodesCR missingNodes, BeDuration partialTimeout)
     {
     uint32_t numCanceled = 0;
 
@@ -1091,13 +1123,12 @@ void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
             }
         }
 
-    // This requests tiles ordered first by distance to camera, then by depth.
     for (auto const& missing : missingNodes)
         {
-        if (missing.GetTile().IsNotLoaded())
+        if (missing->IsNotLoaded())
             {
-            TileLoadStatePtr loads = std::make_shared<TileLoadState>(missing.GetTile(), deadline);
-            _RequestTile(const_cast<TileR>(missing.GetTile()), loads, nullptr, deadline);
+            TileLoadStatePtr loads = std::make_shared<TileLoadState>(*missing, partialTimeout);
+            _RequestTile(const_cast<TileR>(*missing), loads, nullptr, partialTimeout);
             }
         }
 
@@ -1309,16 +1340,9 @@ void OctTree::Tile::_ValidateChildren() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MissingNodes::Insert(TileCR tile, double distance)
+void MissingNodes::Insert(TileCR tile, bool prioritize)
     {
-    MissingNode toInsert(tile, distance);
-    auto inserted = m_set.insert(toInsert);
-    if (!inserted.second && distance < inserted.first->GetDistance())
-        {
-        // replace with closer distance
-        m_set.erase(inserted.first);
-        m_set.insert(toInsert);
-        }
+    m_set.insert(Node(tile, prioritize));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1326,8 +1350,14 @@ void MissingNodes::Insert(TileCR tile, double distance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MissingNodes::Contains(TileCR tile) const
     {
-    // ###TODO: Make this more efficient...
-    return m_set.end() != std::find_if(m_set.begin(), m_set.end(), [&](MissingNodeCR arg) { return &arg.GetTile() == &tile; });
+    bool prioritize = !tile._IsPartial();
+    Node toFind(tile, prioritize);
+    if (m_set.end() != m_set.find(toFind))
+        return true;
+
+    // It's possible the tile was previously partial, then became complete on background thread.
+    toFind.m_prioritize = !prioritize;
+    return m_set.end() != m_set.find(toFind);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1335,7 +1365,8 @@ bool MissingNodes::Contains(TileCR tile) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::InsertMissing(TileCR tile)
     {
-    m_missing.Insert(tile, ComputeTileDistance(tile));
+    // Refine partial tiles with lower-priority than siblings with no graphics at all.
+    m_missing.Insert(tile, !tile._IsPartial());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1424,10 +1455,18 @@ void Root::MarkDamaged(DRange3dCR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::SetIgnoreChanges(bool ignore) { m_ignoreChanges = ignore; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(range);
     _OnAddToRangeIndex(range, id);
     }
@@ -1437,6 +1476,9 @@ void Root::OnAddToRangeIndex(DRange3dCR range, DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(range);
     _OnRemoveFromRangeIndex(range, id);
     }
@@ -1446,6 +1488,9 @@ void Root::OnRemoveFromRangeIndex(DRange3dCR range, DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnElementId id)
     {
+    if (m_ignoreChanges)
+        return;
+
     MarkDamaged(oldRange);
     MarkDamaged(newRange);
     _OnUpdateRangeIndex(oldRange, newRange, id);
@@ -1561,14 +1606,14 @@ void Root::CancelTileLoad(TileCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileRequests::RequestMissing(BeTimePoint deadline) const
+void TileRequests::RequestMissing(BeDuration partialTimeout) const
     {
 #if defined(DEBUG_REQUEST_MISSING)
     size_t nRequested = 0;
     for (auto const& kvp : m_map)
         {
         for (auto const& missing : kvp.second)
-            if (missing.GetTile().IsNotLoaded())
+            if (*missing.IsNotLoaded())
                 ++nRequested;
         }
 
@@ -1578,7 +1623,7 @@ void TileRequests::RequestMissing(BeTimePoint deadline) const
 
     for (auto const& kvp : m_map)
         if (!kvp.second.empty())
-            kvp.first->RequestTiles(kvp.second, deadline);
+            kvp.first->RequestTiles(kvp.second, partialTimeout);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1626,6 +1671,83 @@ Render::OctEncodedNormalList TriMeshTree::TriMesh::CreateParams::QuantizeNormals
         }
 
     return oens;
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void floatToDouble(double* pDouble, float const* pFloat, size_t n)
+    {
+    for (double* pEnd = pDouble + n; pDouble < pEnd; )
+        *pDouble++ = *pFloat++;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr TriMeshTree::TriMesh::CreateParams::ToPolyface() const
+    {
+    PolyfaceHeaderPtr polyFace = PolyfaceHeader::CreateFixedBlockIndexed(3);
+
+    BlockedVectorIntR pointIndex = polyFace->PointIndex();
+    pointIndex.resize(m_numIndices);
+    uint32_t const* pIndex = (uint32_t const*)m_vertIndex;
+    uint32_t const* pEnd = pIndex + m_numIndices;
+    int* pOut = &pointIndex.front();
+
+    for (; pIndex < pEnd; )
+        *pOut++ = 1 + *pIndex++;
+
+    if (nullptr != m_points)
+        {
+        polyFace->Point().resize(m_numPoints);
+        for (int i = 0; i < m_numPoints; i++)
+            polyFace->Point()[i] = DVec3d::From(m_points[i].x, m_points[i].y, m_points[i].z);
+        }
+
+    if (nullptr != m_normals)
+        {
+        polyFace->Normal().resize(m_numPoints);
+        for (int i = 0; i < m_numPoints; i++)
+            polyFace->Normal()[i] = DVec3d::From(m_normals[i].x, m_normals[i].y, m_normals[i].z);
+        }
+
+    if (nullptr != m_textureUV)
+        {
+        polyFace->Param().resize(m_numPoints);
+        floatToDouble(&polyFace->Param().front().x, &m_textureUV->x, 2 * m_numPoints);
+        polyFace->ParamIndex() = pointIndex;
+        }
+
+    return polyFace;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::TriMesh::CreateParams::FromTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, FPoint3d* fpts, DgnDbR db)
+    {
+    for (int i = 0; i < 4; i++)
+        {
+        fpts[i] = FPoint3d::From(corners.m_pts[i].x, corners.m_pts[i].y, corners.m_pts[i].z);
+        }
+    m_numPoints  = 4;
+    m_points     = fpts;
+    m_normals    = nullptr;
+
+    static int32_t indices[] = {0,1,2,2,1,3};
+    m_numIndices = 6;
+    m_vertIndex  = indices;
+
+    static FPoint2d textUV[] = 
+        {
+            {0.0f, 0.0f},
+            {1.0f, 0.0f},
+            {0.0f, 1.0f},
+            {1.0f, 1.0f},
+        };
+    m_textureUV = textUV;
+    m_texture = const_cast<Render::Texture*>(&tile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1707,6 +1829,93 @@ void TriMeshTree::TriMesh::Pick(PickArgsR args)
 
     auto graphic = args.m_context.CreateSceneGraphic(args.m_location);
     graphic->AddPolyface(*GetPolyface());
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/15
++===============+===============+===============+===============+===============+======*/
+struct Clipper : PolyfaceQuery::IClipToPlaneSetOutput
+{
+    bool m_unclipped;
+    bvector<PolyfaceHeaderPtr> m_output;
+
+    Clipper() : m_unclipped(false) {}
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
+    bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip, bool triangulate) {clip.ClipPolyface(mesh, *this, triangulate); return m_output;}
+    bool IsUnclipped() {return m_unclipped;}
+}; // Clipper
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Root::ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys)
+    {
+    Clipper clipper;
+    PolyfaceHeaderPtr polyface = geomParams.ToPolyface();
+    bvector<PolyfaceHeaderPtr>& clippedPolyfaces = clipper.ClipPolyface(*polyface, *GetClipVector(), true);
+    if (clipper.IsUnclipped())
+        {
+        triMeshList.push_front(new TriMesh(geomParams, *this, renderSys));
+        }
+    else
+        {
+        for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
+            {
+            if (!clippedPolyface->IsTriangulated())
+                clippedPolyface->Triangulate();
+
+            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) || 
+                (0 != clippedPolyface->GetNormalCount() && clippedPolyface->GetNormalCount() != clippedPolyface->GetPointCount()))
+                clippedPolyface = PolyfaceHeader::CreateUnifiedIndexMesh(*clippedPolyface);
+
+            size_t              numPoints = clippedPolyface->GetPointCount();
+            bvector<int32_t>    indices;
+            bvector<FPoint3d>   points(numPoints), normals(nullptr == clippedPolyface->GetNormalCP() ? 0 : numPoints);
+            bvector<FPoint2d>   params(nullptr == clippedPolyface->GetParamCP() ? 0 : numPoints);
+
+            for (size_t i=0; i<numPoints; i++)
+                {
+                bsiFPoint3d_initFromDPoint3d(&points[i], &clippedPolyface->GetPointCP()[i]);
+                if (nullptr != clippedPolyface->GetNormalCP())
+                    bsiFPoint3d_initFromDPoint3d(&normals[i], &clippedPolyface->GetNormalCP()[i]);
+
+                if (nullptr != clippedPolyface->GetParamCP())
+                    bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
+                }
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*clippedPolyface, true);
+            for (visitor->Reset(); visitor->AdvanceToNextFace();)
+                {   
+                indices.push_back(visitor->GetClientPointIndexCP()[0]);
+                indices.push_back(visitor->GetClientPointIndexCP()[1]);
+                indices.push_back(visitor->GetClientPointIndexCP()[2]);
+                }
+
+            Dgn::TileTree::TriMeshTree::TriMesh::CreateParams clippedGeomParams;
+            clippedGeomParams.m_numIndices = indices.size();
+            clippedGeomParams.m_vertIndex  = &indices.front();
+            clippedGeomParams.m_numPoints  = numPoints;
+            clippedGeomParams.m_points     = &points.front();
+            clippedGeomParams.m_normals    = normals.empty() ? nullptr : &normals.front();
+            clippedGeomParams.m_textureUV  = params.empty() ? nullptr : &params.front();
+            clippedGeomParams.m_texture    = geomParams.m_texture;
+
+            triMeshList.push_front(new TriMesh(clippedGeomParams, *this, renderSys));
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mark.Schlosser   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Root::CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys)
+    {
+    if (nullptr != GetClipVector())
+        {
+        ClipTriMesh(triMeshList, geomParams, renderSys);
+        }
+    else
+        triMeshList.push_front(new TriMesh(geomParams, *this, renderSys));
     }
 
 /*---------------------------------------------------------------------------------**//**

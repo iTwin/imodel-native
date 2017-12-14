@@ -217,7 +217,7 @@ BentleyStatus GltfReader::ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GltfReader::ReadVertices(QVertex3dListR vertexList, Json::Value const& primitiveValue)
+BentleyStatus GltfReader::ReadVertices(QPoint3dListR vertexList, Json::Value const& primitiveValue)
     {
     void const*     pData;
     size_t          count, byteLength;
@@ -250,7 +250,7 @@ BentleyStatus GltfReader::ReadVertices(QVertex3dListR vertexList, Json::Value co
                 return ERROR;
                 }
 
-            vertexList.Init(DRange3d::From(min[0].asDouble(), min[1].asDouble(), min[2].asDouble(), max[0].asDouble(), max[1].asDouble(), max[2].asDouble()), reinterpret_cast <QPoint3d const*>(pData), count); 
+            vertexList.Assign(reinterpret_cast<QPoint3d const*>(pData), count, QPoint3d::Params(DRange3d::From(min[0].asDouble(), min[1].asDouble(), min[2].asDouble(), max[0].asDouble(), max[1].asDouble(), max[2].asDouble())));
             return SUCCESS;
             }
 
@@ -531,11 +531,13 @@ BentleyStatus GltfReader::ReadPolylines(bvector<MeshPolyline>& polylines, Json::
         uint32_t                nIndices = 0;
         bvector<uint32_t>       indices;
         float                   startDistance;
-        FPoint3d                rangeCenter;
+        FPoint3d                fRangeCenter;
 
         CopyAndIncrement(&startDistance, pData, sizeof(startDistance));
-        CopyAndIncrement(&rangeCenter, pData, sizeof(rangeCenter));
+        CopyAndIncrement(&fRangeCenter, pData, sizeof(fRangeCenter));
         CopyAndIncrement(&nIndices, pData, sizeof(nIndices));
+
+        DPoint3d rangeCenter = DPoint3d::From(fRangeCenter);
 
         indices.resize(nIndices);
         if (Gltf::DataType::UnsignedShort == type)
@@ -1435,7 +1437,7 @@ void DgnCacheTileRebuilder::AddPolylines(MeshPrimitive const& mesh, Json::Value 
 
         // Fill color will also be the same for all vertices
         uint32_t fillColor = mesh.GetVertexColor(firstIndex);
-        builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance, polyline.m_header.m_rangeCenter);
+        builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance, DPoint3d::From(polyline.m_header.m_rangeCenter));
         }
     }
 
@@ -1472,7 +1474,7 @@ void DgnCacheTileRebuilder::AddPolylineEdges(MeshEdgesR edges, MeshPrimitive con
         for (uint32_t i = 1; i < polyline.m_header.m_numIndices; i++)
             newIndices[i] = mesh.RemapIndex(polyline.m_indices[i]);
 
-        MeshPolyline mpl(polyline.m_header.m_startDistance, polyline.m_header.m_rangeCenter, std::move(newIndices));
+        MeshPolyline mpl(polyline.m_header.m_startDistance, DPoint3d::From(polyline.m_header.m_rangeCenter), std::move(newIndices));
         edges.m_polylines.push_back(std::move(mpl));
         }
     }

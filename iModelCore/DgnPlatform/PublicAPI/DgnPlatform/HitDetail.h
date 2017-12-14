@@ -57,9 +57,9 @@ enum class HitSource
 };
 
 //=======================================================================================
-//! The type of geometry that was being tested to generate this Hit. This is not
-//! the ELEMENT type that generated the Hit, but rather what type of geometry within an element
-//! being considered.
+//! What was being tested to generate this hit. This is not the element or 
+//! GeometricPrimitive that generated the Hit, it's an indication of whether it's an
+//! edge or interior hit.
 //=======================================================================================
 enum class HitGeomType
 {
@@ -69,6 +69,20 @@ enum class HitGeomType
     Curve          = 3,
     Arc            = 4,
     Surface        = 5,
+};
+
+//=======================================================================================
+//! Indicates whether the GeometricPrimitive that generated the hit was a wire,
+//! surface, or solid.
+//=======================================================================================
+enum class HitParentGeomType
+{
+    None           = 0,
+    Wire           = 1,
+    Sheet          = 2,
+    Solid          = 3,
+    Mesh           = 4,
+    Text           = 5,
 };
 
 //=======================================================================================
@@ -96,7 +110,8 @@ private:
     ICurvePrimitivePtr m_primitive;     // curve primitve for hit (world coordinates).
     DPoint3d m_closePoint;              // the closest point on geometry (world coordinates).
     DVec3d m_normal;                    // surface hit normal (world coordinates).
-    HitGeomType m_geomType;             // category hit geometry falls into.
+    HitParentGeomType m_parentType;     // type of parent geometry.
+    HitGeomType m_geomType;             // type of hit geometry (edge or interior).
     HitDetailSource m_detailSource;     // mask of HitDetailSource values.
     HitPriority m_hitPriority;          // Relative priority of hit.
     bool m_nonSnappable;                // non-snappable detail, ex. pattern or line style.
@@ -109,6 +124,7 @@ public:
 
     DPoint3dCR GetClosestPoint() const {return m_closePoint;}
     DVec3dCR GetSurfaceNormal() const {return m_normal;}
+    HitParentGeomType GetParentGeomType() const {return m_parentType;}
     HitGeomType GetGeomType() const {return m_geomType;}
     HitDetailSource GetDetailSource() const {return m_detailSource;}
     HitPriority GetLocatePriority() const {return m_hitPriority;}
@@ -118,6 +134,7 @@ public:
 
     void SetClosestPoint(DPoint3dCR pt) {m_closePoint = pt;}
     void SetSurfaceNormal(DVec3dCR value) {m_normal = value;}
+    void SetParentGeomType(HitParentGeomType value) {m_parentType = value;}
     void SetGeomType(HitGeomType value) {m_geomType = value; m_primitive = nullptr;} // NOTE: Use SetCurvePrimitive for HitGeomType::Segment/Arc/Curve.
     void SetDetailSource(HitDetailSource value) {m_detailSource = value;}
     void SetLocatePriority(HitPriority value) {m_hitPriority = value;}
@@ -179,7 +196,7 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _Draw(ViewContextR context) const;
+    virtual void _Draw(DecorateContextR context) const;
     virtual void _SetHilited(bool) const;
 
 public:
@@ -193,7 +210,7 @@ public:
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
     bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
     Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
-    void Draw(ViewContextR context) const {_Draw(context);}
+    void Draw(DecorateContextR context) const {_Draw(context);}
     DGNPLATFORM_EXPORT Utf8String GetInfoString(Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT bool IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
@@ -352,7 +369,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    void _Draw(ViewContextR) const override;
+    void _Draw(DecorateContextR) const override;
     HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT void _SetHilited(bool) const override;
     DGNPLATFORM_EXPORT bool _IsSameHit(HitDetailCP otherHit) const override;

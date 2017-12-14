@@ -10,7 +10,6 @@
 
 #include <Bentley/BeAssert.h>
 #include "RepositoryManager.h"
-#include "MemoryManager.h"
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;
@@ -355,7 +354,7 @@ struct AutoHandledPropertiesCollection
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
     
     static void DetectOrphanCustomHandledProperty(DgnDbR db, ECN::ECClassCR);
-    static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);
+    DGNPLATFORM_EXPORT static bool IsOrphanCustomHandledProperty(ECN::ECPropertyCR);     // used by imodeljs node addon
 
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {
@@ -592,10 +591,8 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : RefCountedBase, NonCopyableClass
 {
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
 public:
     friend struct DgnElements;
     friend struct DgnModel;
@@ -1120,7 +1117,6 @@ protected:
         Dirty = 3       // (implies InBuffer)
     };
 
-    mutable BeAtomic<uint32_t> m_refCount;
     mutable Flags m_flags;
     mutable uint32_t m_ecPropertyDataSize;
     mutable Byte* m_ecPropertyData;
@@ -1507,10 +1503,6 @@ public:
     bool IsCustomHandledProperty(Utf8CP) const;
     bool IsCustomHandledProperty(ECN::ECPropertyCR) const;
     Utf8String GetInfoString(Utf8CP delimiter) const {return _GetInfoString(delimiter);}
-
-    DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
-    DGNPLATFORM_EXPORT void Release() const; //!< @private
-    uint32_t GetRefCount() const {return m_refCount.load();} //!< Get the current reference count for this DgnElement.
 
     //! @name Dynamic casting to subclasses of DgnElement 
     //! @{
@@ -2134,7 +2126,7 @@ protected:
     virtual GeometryStreamCR _GetGeometryStream() const = 0;
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _Stroke(ViewContextR, double pixelSize) const;
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeHit(ViewContextR, HitDetailCR) const;
+    DGNPLATFORM_EXPORT virtual BentleyStatus _StrokeHit(DecorateContextR, HitDetailCR) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
     virtual bool _IsHilited() const {if (nullptr == ToElement()) return false; else return ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
@@ -2166,7 +2158,7 @@ public:
     DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
-    Render::GraphicPtr StrokeHit(ViewContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
+    BentleyStatus StrokeHit(DecorateContextR context, HitDetailCR hit) const {return _StrokeHit(context, hit);}
     DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR context, double pixelSize) const;
 
     SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
@@ -2358,6 +2350,7 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
 
 public:
     BE_PROP_NAME(InSpatialIndex)
@@ -2441,6 +2434,7 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
+    DGNPLATFORM_EXPORT void _OnDeleted() const override;
 
 public:
     BE_PROP_NAME(Rotation)
@@ -3426,7 +3420,7 @@ protected:
 //! @see DgnDb::Elements
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct DgnElements : DgnDbTable, MemoryConsumer
+struct DgnElements : DgnDbTable
 {
     friend struct DgnDb;
     friend struct DgnElement;
@@ -3438,25 +3432,6 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
-
-    //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
-    struct Totals
-    {
-        uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
-        uint32_t m_entries;        //! total number of persistent elements
-        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements
-        uint64_t m_allocedBytes;   //! total number of bytes of data held by persistent elements
-    };
-
-    //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
-    //! (note: the same element may become garbage and then be reclaimed, each such occurrence is reflected here.)
-    struct Statistics
-    {
-        uint32_t m_newElements;    //! number of newly created or loaded elements
-        uint32_t m_unReferenced;   //! number of elements that became garbage since last reset
-        uint32_t m_reReferenced;   //! number of garbage elements that were referenced
-        uint32_t m_purged;         //! number of garbage elements that were purged
-    };
 
 private:
     // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
@@ -3474,7 +3449,8 @@ private:
     typedef bmap<DgnClassId, ECSqlClassInfo> ClassInfoMap;
     typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
 
-    std::unique_ptr<struct ElemIdTree> m_tree;
+    std::unique_ptr<struct ElementMRU> m_mruCache;
+    uint64_t m_extant = 0;
     BeSQLite::StatementCache m_stmts;
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
     BeSQLite::SnappyFromMemory m_snappyFrom;
@@ -3487,8 +3463,6 @@ private:
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
 
-    void OnReclaimed(DgnElementCR);
-    void OnUnreferenced(DgnElementCR);
     void Destroy();
     void AddToPool(DgnElementCR) const;
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
@@ -3505,8 +3479,6 @@ private:
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;
-    uint64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
-    uint64_t _Purge(uint64_t memTarget) override;
 
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
 
@@ -3529,7 +3501,6 @@ public:
     ECSqlClassInfo& FindClassInfo(DgnClassId classId) const;
     
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
-    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //!< @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //!< @private
     DgnDbStatus LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize); //!< @private
 
@@ -3563,18 +3534,6 @@ public:
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeSpecName, DgnElementId codeScopeElementId, Utf8StringCR codeValue) const;
-
-    //! Get the total counts for the current state of the pool.
-    DGNPLATFORM_EXPORT Totals const& GetTotals() const;
-
-    //! Shortcut to get the Totals.m_allocatedBytes member
-    int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
-
-    //! Get the statistics for the current state of the element pool.
-    DGNPLATFORM_EXPORT Statistics GetStatistics() const;
-
-    //! Reset the statistics for the element pool.
-    DGNPLATFORM_EXPORT void ResetStatistics();
 
     //! Create a new, non-persistent element from the supplied ECInstance.
     //! The supplied instance must specify the element's ModelId and Code. It does not have to specify the ElementId/ECInstaceId. Typically, it will not.
@@ -3669,6 +3628,15 @@ public:
     void SetUndisplayed(DgnElementR, bool isUndisplayed);
     DgnElementIdSet const& GetHilitedSet() const {return m_hilitedSet;}
     void SetHilited(DgnElementR, bool hilited);
+
+    //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb. 
+    //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,
+    //! the least recently used element is discarded. Set to 0 to disable MRU cache.
+    //! @note If there are currently more than newMax elements in memory, the oldest ones are removed until the size is newMax.
+    DGNPLATFORM_EXPORT void SetCacheSize(uint32_t newMax);
+
+    //! Empty the Most Recentley Used element cache for this DgnDb.
+    DGNPLATFORM_EXPORT void ClearCache();
 };
 
 //=======================================================================================

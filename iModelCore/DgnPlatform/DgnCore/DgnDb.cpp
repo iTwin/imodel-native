@@ -47,8 +47,6 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence")
     {
-    m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
-
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
     }
 
@@ -59,11 +57,7 @@ RealityData::CachePtr DgnDb::ElementTileCache() const
     {
     if (!m_elementTileCache.IsValid())
         {
-        BeFileName  cacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-
-        cacheName.AppendToPath(GetFileName().GetBaseName());
-        cacheName.AppendExtension(L"TileCache");
-
+        BeFileName cacheName = TileTree::TileCache::GetCacheFileName(GetFileName().GetBaseName());
         m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
         if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
             m_elementTileCache = nullptr;

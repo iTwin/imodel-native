@@ -11,74 +11,110 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void forEachSpatialModel(DgnDbR db, T func)
+    {
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM Bis.SpatialModel");
+    while (BE_SQLITE_ROW == stmt->Step())
+        func(stmt->GetValueId<DgnModelId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static void applyToTileTree(DgnViewportR vp, DgnModelId const& modelId, T func)
+    {
+    auto target = vp.GetRenderTarget();
+    auto system = nullptr != target ? &target->GetSystem() : nullptr;
+    BeAssert(nullptr != system);
+
+    auto model = vp.GetViewController().GetDgnDb().Models().Get<SpatialModel>(modelId);
+    auto tree = model.IsValid() ? model->GetTileTree(system) : nullptr;
+    if (nullptr != tree)
+        func(*tree);
+    }
+
 //-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	10/17
+// @bsimethod                                                 Diego.Pinate     10/17
 //-------------------------------------------------------------------------------------------
-SubjectViewController::SubjectViewController(SpatialViewDefinition const& view, DgnDbP db, SubjectColorMap const& subjectColors)
-    : SpatialViewController(view), m_db(db)
+SubjectViewController::SubjectViewController(SpatialViewDefinition const& view, SubjectColorMap const& subjectColors)
+    : SpatialViewController(view)
     {
     m_subjectColors = subjectColors;
-    m_elementToSubjectStmt = new ECSqlStatement();
-    m_elementToSubjectStmt->Prepare(*db, "SELECT s.ECInstanceId FROM Bis.Subject s \
-                    JOIN Bis.SubjectOwnsPartitionElements sope ON sope.SourceECInstanceId=s.ECInstanceId \
-                    JOIN Bis.ModelModelsElement mme ON sope.TargetECInstanceId = mme.TargetECInstanceId \
-                    JOIN Bis.ModelContainsElements mce ON mme.SourceECInstanceId=mce.SourceECInstanceId \
-                    WHERE mce.TargetECInstanceId=?");
     }
 
-//-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	11/17
-//-------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubjectViewController::_OnAttachedToViewport(DgnViewportR vp)
+    {
+    T_Super::_OnAttachedToViewport(vp);
+
+    // NB: This applies to every spatial model, because models may be added or removed from this view controller's viewed model list during alignment workflow.
+    // Possibly m_subjectColors contains the actual models of interest?
+
+    forEachSpatialModel(GetDgnDb(), [&](DgnModelId const& modelId)
+            {
+            applyToTileTree(vp, modelId, [&](TileTree::Root& tree)
+                {
+                tree.SetIgnoreChanges(true);
+                });
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubjectViewController::_OnDetachedFromViewport(DgnViewportR vp)
+    {
+    forEachSpatialModel(GetDgnDb(), [&](DgnModelId const& modelId)
+        {
+        applyToTileTree(vp, modelId, [&](TileTree::Root& tree)
+            {
+            tree.SetIgnoreChanges(false);
+            tree.SetDisplayTransform(nullptr);
+            });
+        });
+
+    T_Super::_OnDetachedFromViewport(vp);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
 SubjectViewController::~SubjectViewController()
     {
-    delete m_elementToSubjectStmt;
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SubjectViewController::SetTransform(DgnModelIdSet const& modelIds, TransformCP transform)
+    {
+    BeAssert(nullptr != m_vp);
+    for (auto const& modelId : modelIds)
+        applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(transform); });
+
+    m_vp->InvalidateScene();
     }
 
 //-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	11/17
+// @bsimethod                                                 Diego.Pinate     11/17
 //-------------------------------------------------------------------------------------------
 void    SubjectViewController::SetModelsAndCategoriesVisibility(bool visible)
     {
-    CachedECSqlStatementPtr modelStmt = m_db->GetPreparedECSqlStatement("SELECT m.ECInstanceId FROM Bis.SpatialModel m");
-    while (modelStmt->Step() == BE_SQLITE_ROW)
-        ChangeModelDisplay(modelStmt->GetValueId<DgnModelId>(0), visible);
+    forEachSpatialModel(GetDgnDb(), [&](DgnModelId const& modelId) { ChangeModelDisplay(modelId, visible); });
 
-    CachedECSqlStatementPtr categoryStmt = m_db->GetPreparedECSqlStatement("SELECT c.ECInstanceId FROM Bis.Category c");
+    CachedECSqlStatementPtr categoryStmt = GetDgnDb().GetPreparedECSqlStatement("SELECT c.ECInstanceId FROM Bis.Category c");
     while (categoryStmt->Step() == BE_SQLITE_ROW)
         ChangeCategoryDisplay(categoryStmt->GetValueId<DgnCategoryId>(0), visible);
     }
 
 //-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	10/17
-//-------------------------------------------------------------------------------------------
-SubjectCPtr GetParentJobSubjectRecursive(DgnDbP db, ECClassCP subjectClass, DgnElementCPtr element)
-    {
-    if (element == nullptr)
-        return nullptr;
-
-    ECClassCP elementClass = element->GetElementClass();
-    if (elementClass->Is(subjectClass))
-        {
-        SubjectCPtr candidate = db->Elements().Get<Subject>(element->GetElementId());
-        BeAssert(candidate.IsValid());
-        if (JobSubjectUtils::IsJobSubject(*candidate))
-            return candidate;
-        }
-    
-    return GetParentJobSubjectRecursive(db, subjectClass, db->Elements().GetElement(element->GetParentId()));
-    }
-
-//-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	10/17
-//-------------------------------------------------------------------------------------------
-SubjectCPtr SubjectViewController::GetParentJobSubject(DgnElementCP element)
-    {
-    ECClassCP subjectClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Subject);
-    return GetParentJobSubjectRecursive(m_db, subjectClass, element);
-    }
-
-//-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	10/17
+// @bsimethod                                                 Diego.Pinate     10/17
 //-------------------------------------------------------------------------------------------
 void    SubjectViewController::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) const
     {
@@ -87,19 +123,18 @@ void    SubjectViewController::_AddFeatureOverrides(Render::FeatureSymbologyOver
     }
 
 //-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	10/17
+// @bsimethod                                                 Diego.Pinate     10/17
 //-------------------------------------------------------------------------------------------
 void    SubjectViewController::ToggleVisibility(DgnModelId modelId, bool isVisible)
     {
     if (m_subjectColors.find(modelId) == m_subjectColors.end())
         return;
-    
-    m_subjectColors[modelId].SetAlpha(isVisible ? 0 : 255);
-    SetFeatureOverridesDirty();
+
+    ChangeModelDisplay(modelId, isVisible);
     }
 
 //-------------------------------------------------------------------------------------------
-// @bsimethod 												Diego.Pinate 	11/17
+// @bsimethod                                                 Diego.Pinate     11/17
 //-------------------------------------------------------------------------------------------
 bool     SubjectViewController::IsVisible(DgnModelId modelId) const
     {
@@ -109,7 +144,6 @@ bool     SubjectViewController::IsVisible(DgnModelId modelId) const
         return false;
         }
     
-    SubjectColorMap::const_iterator iter = m_subjectColors.find(modelId);
-    Byte alpha = iter->second.GetAlpha();
-    return alpha == 0;
+    auto& models = GetSpatialViewDefinition().GetModelSelector().GetModelsR();
+    return models.Contains(modelId);
     }

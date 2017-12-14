@@ -2810,15 +2810,11 @@ DVec3dCR        direction           // => toward the view (positive Z)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Brien.Bastings                 11/2017
 //---------------------------------------------------------------------------------------
-void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, TransformCP entityTransform, double tolerance)
+void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, double tolerance)
     {
     PK_TRANSF_t viewTransformTag = PK_ENTITY_null;
-    PK_TRANSF_t entityTransformTag = PK_ENTITY_null;
 
     computeViewTransform(viewTransformTag, eyePoint, direction);
-
-    if (nullptr != entityTransform)
-        PSolidUtil::CreateTransf(entityTransformTag, *entityTransform);
 
     PK_TOPOL_render_line_o_t options;
 
@@ -2834,13 +2830,156 @@ void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP
         }
  
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
-    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null == entityTransformTag ? PK_ENTITY_null : &entityTransformTag, viewTransformTag, &options);
+    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, viewTransformTag, &options);
     s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
 
     PK_ENTITY_delete(1, &viewTransformTag);
+    }
 
-    if (PK_ENTITY_null != entityTransformTag)
-        PK_ENTITY_delete(1, &entityTransformTag);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getAdjustedRadialAngles
+(
+PK_FACE_t       faceTag,
+double&         radialAround,
+double&         radialAbout,
+bool            swapUV
+)
+    {
+    PK_UVBOX_t  uvBox;
+
+    if (SUCCESS != PK_FACE_find_uvbox (faceTag, &uvBox))
+        return false;
+
+    if (swapUV)
+        {
+        if (radialAround && (uvBox.param[3] - uvBox.param[1]) < radialAround + 5.0 * (msGeomConst_pi / 180.0))
+            radialAround = 0.0;
+
+        if (radialAbout && (uvBox.param[2] - uvBox.param[0]) < radialAbout + 5.0 * (msGeomConst_pi / 180.0))
+            radialAbout = 0.0;
+        }
+    else
+        {
+        if (radialAround && (uvBox.param[2] - uvBox.param[0]) < radialAround + 5.0 * (msGeomConst_pi / 180.0))
+            radialAround = 0.0;
+
+        if (radialAbout && (uvBox.param[3] - uvBox.param[1]) < radialAbout + 5.0 * (msGeomConst_pi / 180.0))
+            radialAbout = 0.0;
+        }
+
+    return (radialAround > 0.0 || radialAbout > 0.0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Brien.Bastings                 11/2017
+//---------------------------------------------------------------------------------------
+static bool setupHatchOptionsForFace(PK_TOPOL_render_line_o_t& options, PK_FACE_t faceTag, int divisor, double tolerance)
+    {
+    PK_SURF_t   surfaceTag = PK_ENTITY_null;
+
+    if (PK_ERROR_no_errors != PK_FACE_ask_surf(faceTag, &surfaceTag))
+        return false;
+
+    PK_CLASS_t  surfaceClass = 0;
+
+    PK_ENTITY_ask_class(surfaceTag, &surfaceClass);
+
+    switch (surfaceClass)
+        {
+        case PK_CLASS_plane:
+            return false; // Not hatched...
+
+        case PK_CLASS_cone:
+        case PK_CLASS_cyl:
+            {
+            options.radial = PK_render_radial_yes_c;
+            options.radial_around = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_around_start = msGeomConst_pi;
+
+            return getAdjustedRadialAngles(faceTag, options.radial_around, options.radial_about, false);
+            }
+
+        case PK_CLASS_torus:
+            {
+            options.radial = PK_render_radial_yes_c;
+            options.radial_around = (msGeomConst_2pi / 4.0); // Don't think other arcs are very useful snap locations...avoid clutter and just output every 90 degrees...
+            options.radial_about = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_around_start = msGeomConst_pi;
+
+            return getAdjustedRadialAngles(faceTag, options.radial_around, options.radial_about, true);
+            }
+
+        case PK_CLASS_sphere:
+            {
+            options.radial = PK_render_radial_yes_c;
+            options.radial_around = (msGeomConst_2pi / (double) (2 * divisor));
+            options.radial_about = (msGeomConst_2pi / 4.0); // Don't think other arcs are very useful snap locations...avoid clutter and just output equator...
+            options.radial_around_start = msGeomConst_pi;
+            options.radial_about_start = msGeomConst_pi;
+
+            return getAdjustedRadialAngles(faceTag, options.radial_around, options.radial_about, false);
+            }
+
+        default:
+            {
+            double uDivisor = (double) divisor;
+            double vDivisor = uDivisor;
+
+            PK_PARAM_periodic_t periodicU;
+            PK_PARAM_periodic_t periodicV;
+
+            if (PK_ERROR_no_errors != PK_FACE_is_periodic(faceTag, &periodicU, &periodicV))
+                return false;
+
+            if (PK_PARAM_periodic_no_c != periodicU)
+                uDivisor *= 2.0;
+
+            if (PK_PARAM_periodic_no_c != periodicV)
+                vDivisor *= 2.0;
+
+            PK_UVBOX_t uvBox;
+
+            if (SUCCESS != PK_FACE_find_uvbox(faceTag, &uvBox))
+                return false;
+
+            options.param = PK_render_param_yes_c;
+            options.param_u = (uvBox.param[2] - uvBox.param[0]) / uDivisor;
+            options.param_v = (uvBox.param[3] - uvBox.param[1]) / vDivisor;
+
+            if (tolerance > 0.0)
+                {
+                options.is_curve_chord_tol = PK_LOGICAL_true;
+                options.curve_chord_tol = tolerance;
+                }
+
+            return true;
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Brien.Bastings                 11/2017
+//---------------------------------------------------------------------------------------
+void PSolidGoOutput::ProcessFaceHatching(IParasolidWireOutput& output, int divisor, PK_FACE_t entityTag, double tolerance)
+    {
+    if (0 == divisor)
+        return;
+
+    PK_TOPOL_render_line_o_t options;
+
+    PK_TOPOL_render_line_o_m(options);
+
+    options.edge   = PK_render_edge_no_c;
+    options.bcurve = PK_render_bcurve_nurbs_c; // bcurves in nurbs format...
+
+    if (!setupHatchOptionsForFace(options, entityTag, divisor, tolerance))
+        return;
+
+    s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
+    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, PK_ENTITY_null, &options);
+    s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
     }
 
 /*---------------------------------------------------------------------------------**//**

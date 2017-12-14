@@ -7,12 +7,17 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/RenderPrimitives.h>
+#if defined(BENTLEYCONFIG_PARASOLID)
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
+
+// #define DEBUG_DISPLAY_PARAMS_CACHE
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -48,8 +53,8 @@ static FPoint2d toFPoint2d(DPoint2dCR dpoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
-    {                    
+static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCP transform)
+    {
     bvector <bvector<bvector<DPoint3d>>> strokesArray;
 
     curve.CollectLinearGeometry (strokesArray, &facetOptions);
@@ -58,12 +63,21 @@ static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR cur
         {
         for (auto& loopStrokes : loop)
             {
-            transform.Multiply(loopStrokes, loopStrokes);
+            if (nullptr != transform)
+                transform->Multiply(loopStrokes, loopStrokes);
 
             DRange3d    range = DRange3d::From(loopStrokes);
             strokes.push_back (Strokes::PointList(std::move(loopStrokes), DPoint3d::FromInterpolate(range.low, .5, range.high)));
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
+    {
+    return collectCurveStrokes(strokes, curve, facetOptions, &transform);
     }
 
 //=======================================================================================
@@ -103,13 +117,8 @@ struct SolidKernelGeometry : Geometry
 {
 private:
     IBRepEntityPtr      m_entity;
-    BeMutex             m_mutex;
 
-    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
-        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
-        {
-        //
-        }
+    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db);
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
@@ -128,12 +137,13 @@ struct TextStringGeometry : Geometry
 private:
     TextStringPtr                   m_text;
     mutable bvector<CurveVectorPtr> m_glyphCurves;
+    DgnDbR                          m_db;
     bool                            m_checkGlyphBoxes;
 
     TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db, bool checkGlyphBoxes)
-        : Geometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes)
+        : Geometry(transform, range, elemId, params, true, db), m_text(&text), m_checkGlyphBoxes(checkGlyphBoxes), m_db(db)
         { 
-        InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
+        //
         }
 
     bool _DoVertexCluster() const override { return false; }
@@ -148,7 +158,9 @@ public:
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override;
     size_t _GetFacetCount(FacetCounter& counter) const override;
-    void InitGlyphCurves() const;
+
+    DgnDbR GetDb() const { return m_db; }
+    TextStringCR GetText() const { return *m_text; }
 };  // TextStringGeometry
 
 //=======================================================================================
@@ -171,6 +183,183 @@ public:
     GeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
+
+//=======================================================================================
+//! Text is frequently used for decorations, which are regenerated constantly; and
+//! glyphs can be too expensive to regenerate and re-facet from scratch every frame.
+//! Cache them a la qv_addGlyphToFont(), but tie their lifetimes to that of the DgnDb.
+// @bsistruct                                                   Paul.Connelly   11/17
+//=======================================================================================
+struct GlyphCache : DgnDb::AppData
+{
+    enum Tolerance
+    {
+        kTolerance_Largest,
+        kTolerance_Large,
+        kTolerance_Small,
+        kTolerance_Smallest,
+        kTolerance_COUNT
+    };
+
+    static double GetTolerance(Tolerance tol) { return s_tolerances[tol]; }
+private:
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   11/17
+    //=======================================================================================
+    struct Geom
+    {
+    private:
+        Strokes::PointLists m_strokes;
+        PolyfaceHeaderPtr   m_polyface;
+    public:
+        Geom() = default;
+
+        Strokes::PointLists GetStrokes() const { return m_strokes; }
+        PolyfaceHeaderPtr GetPolyface() const { return m_polyface.IsValid() ? m_polyface->Clone() : nullptr; }
+        bool IsValid() const { return m_polyface.IsValid() || !m_strokes.empty(); }
+        void Invalidate() { m_polyface = nullptr; m_strokes.clear(); }
+        void InitStrokes(CurveVectorCR curves, IFacetOptionsR facetOptions)
+            {
+            m_strokes.clear();
+            collectCurveStrokes(m_strokes, curves, facetOptions, nullptr);
+            }
+        void InitPolyface(CurveVectorCR curves, IFacetOptionsR facetOptions)
+            {
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(facetOptions);
+            builder->AddRegion(curves);
+            m_polyface = builder->GetClientMeshPtr();
+            }
+    };
+
+    static double s_tolerances[kTolerance_COUNT];
+
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   11/17
+    //=======================================================================================
+    struct Glyph
+    {
+    private:
+        using Tolerance = GlyphCache::Tolerance;
+
+        CurveVectorPtr      m_curves;
+        Geom                m_geom[kTolerance_COUNT];
+        double              m_smallestTolerance;
+        bool                m_isCurved;
+        bool                m_isStrokes;
+
+        template<typename T, typename U> void GetGeometry(IFacetOptionsR, T createGeom, U acceptGeom);
+    public:
+        Glyph() = default; // for bmap...
+        Glyph(DgnGlyphCR glyph)
+            {
+            bool unusedArg;
+            if ((m_curves = glyph.GetCurveVector(unusedArg)).IsValid())
+                {
+                m_isCurved = m_curves->ContainsNonLinearPrimitive();
+                m_isStrokes = !m_curves->IsAnyRegionType();
+
+                // If we receive a request for a tolerance smaller than our 'smallest', we'll re-facet and replace our cached geometry.
+                m_smallestTolerance = GetTolerance(kTolerance_Smallest);
+                }
+            }
+
+        bool IsValid() const { return m_curves.IsValid(); }
+        bool IsStrokes() const { return m_isStrokes; }
+        bool IsCurved() const { return m_isCurved; }
+
+        Strokes::PointLists GetStrokes(IFacetOptionsR facetOptions)
+            {
+            BeAssert(IsStrokes());
+            Strokes::PointLists strokes;
+            GetGeometry(facetOptions,
+                    [&](Geom& geom) { geom.InitStrokes(*m_curves, facetOptions); },
+                    [&](Geom& geom) { strokes = geom.GetStrokes(); });
+            return strokes;
+            }
+        PolyfaceHeaderPtr GetPolyface(IFacetOptionsR facetOptions)
+            {
+            BeAssert(!IsStrokes());
+            PolyfaceHeaderPtr polyface;
+            GetGeometry(facetOptions,
+                    [&](Geom& geom) { geom.InitPolyface(*m_curves, facetOptions); },
+                    [&](Geom& geom) { polyface = geom.GetPolyface(); });
+            return polyface;
+            }
+
+        Tolerance GetTolerance(double tol) const
+            {
+            if (m_isCurved)
+                {
+                for (uint8_t iTol = kTolerance_Largest; iTol < kTolerance_Smallest; iTol++)
+                    {
+                    auto kTol = static_cast<Tolerance>(iTol);
+                    if (tol >= GlyphCache::GetTolerance(kTol))
+                        return static_cast<Tolerance>(kTol);
+                    }
+                }
+
+            return kTolerance_Smallest;
+            }
+        double GetChordTolerance(Tolerance tol, double requestedTolerance) const
+            {
+            if (!IsCurved())
+                return 0.0;
+            else if (kTolerance_Smallest == tol && requestedTolerance < m_smallestTolerance)
+                return requestedTolerance;
+            else
+                return GlyphCache::GetTolerance(tol);
+            }
+    };
+
+    static Key const& GetKey() { static Key s_key; return s_key; }
+
+    using Map = bmap<DgnGlyphCP, Glyph>;
+
+    Map m_map;
+
+    GlyphCache() { }
+
+    static GlyphCache& Get(DgnDbR db)
+        {
+        return static_cast<GlyphCache&>(*db.FindOrAddAppData(GetKey(), []() { return new GlyphCache(); }));
+        }
+
+    static IFacetOptionsPtr CreateFacetOptions(double tolerance);
+
+    Glyph* FindOrInsert(DgnGlyphCR);
+    void GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance);
+    static void GetTextGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& text, double tolerance)
+        {
+        // Because we need the font mutex in order to operate on the glyphs, also use it to protect our internal data.
+        BeMutexHolder lock(DgnFonts::GetMutex());
+        Get(text.GetDb()).GetGeometry(strokes, polyfaces, text, tolerance);
+        }
+public:
+    static void GetGeometry(StrokesList& strokes, PolyfaceList& polyfaces, TextStringGeometry const& text, double tolerance)
+        {
+        return GetTextGeometry(&strokes, &polyfaces, text, tolerance);
+        }
+    static PolyfaceList GetPolyfaces(TextStringGeometry const& text, double tolerance)
+        {
+        PolyfaceList polyfaces;
+        GetTextGeometry(nullptr, &polyfaces, text, tolerance);
+        return polyfaces;
+        }
+    static StrokesList GetStrokes(TextStringGeometry const& text, double tolerance)
+        {
+        StrokesList strokes;
+        GetTextGeometry(&strokes, nullptr, text, tolerance);
+        return strokes;
+        }
+};
+
+double GlyphCache::s_tolerances[GlyphCache::kTolerance_COUNT] =
+    {
+    1.0,
+    0.1,
+    0.01,
+    0.0001,
+    };
 
 END_UNNAMED_NAMESPACE
 
@@ -391,6 +580,11 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     if (&rhs == this)
         return false;
 
+#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
+    if (ComparePurpose::Merge == purpose)
+        printf("Comparing:%s\n       to:%s\n", ToDebugString().c_str(), rhs.ToDebugString().c_str());
+#endif
+
     TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
@@ -417,6 +611,9 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         if (GetTextureMapping().IsValid())
             TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses color).
 
+#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
+        printf ("Equal.\n");
+#endif
         return false;
         }
 
@@ -490,9 +687,33 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
         toFind.Resolve(m_db, m_system);
         BeAssert(toFind.m_resolved);
         iter = m_set.insert(toFind.Clone()).first;
+#if defined(DEBUG_DISPLAY_PARAMS_CACHE)
+        printf("\nLooking for: %s\nCreated: %s\n", toFind.ToDebugString().c_str(), (*iter)->ToDebugString().c_str());
+#endif
         }
 
     return **iter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DisplayParams::ToDebugString() const
+    {
+    Utf8CP types[3] = { "Mesh", "Linear", "Text" };
+    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s%s%s",
+        types[static_cast<uint8_t>(m_type)],
+        m_lineColor.GetValue(),
+        m_fillColor.GetValue(),
+        m_width,
+        static_cast<uint32_t>(m_linePixels),
+        static_cast<uint32_t>(m_fillFlags),
+        static_cast<uint32_t>(m_class),
+        m_ignoreLighting ? "ignoreLights " : "",
+        m_resolved ? "resolved " : "",
+        m_hasRegionOutline ? "outlined" : "");
+
+    return str;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -594,7 +815,7 @@ void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::Syst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QVertex3dListCR vertices)
+template<typename T, typename U> static void insertVertexAttribute(bvector<uint16_t>& indices, T& table, U const& value, QPoint3dListCR vertices)
     {
     // Don't allocate the indices until we have non-uniform values
     if (table.empty())
@@ -620,11 +841,11 @@ template<typename T, typename U> static void insertVertexAttribute(bvector<uint1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(QVertex3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
+uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
     {
     auto index = static_cast<uint32_t>(m_verts.size());
 
-    m_verts.Add(vert);
+    m_verts.push_back(vert);
     m_features.Add(feature, m_verts.size());
 
     if (nullptr != normal)
@@ -712,7 +933,7 @@ void Mesh::Features::SetIndices(bvector<uint32_t>&& indices)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Mesh::GetRange() const
+DRange3d Mesh::ComputeRange() const
     {
     DRange3d range = DRange3d::NullRange();
     auto const& points = Points();
@@ -726,7 +947,7 @@ DRange3d Mesh::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Mesh::GetUVRange() const
+DRange3d Mesh::ComputeUVRange() const
     {
     DRange3d range = DRange3d::NullRange();
     for (auto const& fpoint : m_uvParams)
@@ -805,85 +1026,35 @@ bool TriangleKey::operator<(TriangleKeyCR rhs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
+* @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool VertexKey::Comparator::operator()(VertexKeyCR lhs, VertexKeyCR rhs) const
+bool VertexKey::operator<(VertexKeyCR rhs) const
     {
-    // We never merge meshes where these differ...
-    BeAssert(lhs.m_normalValid == rhs.m_normalValid);
-    BeAssert(lhs.m_paramValid == rhs.m_paramValid);
+    // This primarily exists because VertexKey comparisons are quite slow in non-optimized builds and app teams complained...
+    static_assert(1 == sizeof(DgnGeometryClass), "unexpected size");
+    static_assert(std::is_standard_layout<VertexKey>::value, "not standard layout");
+    static_assert(0x00 == offsetof(VertexKey, m_param), "unexpected offset");
+    static_assert(0x10 == offsetof(VertexKey, m_normalAndPos), "unexpected offset");
+    static_assert(0x18 == offsetof(VertexKey, m_elemId), "unexpected offset");
+    static_assert(0x20 == offsetof(VertexKey, m_subcatId), "unexpected offset");
+    static_assert(0x28 == offsetof(VertexKey, m_fillColor), "unexpected offset");
+    static_assert(0x2C == offsetof(VertexKey, m_class), "unexpected offset");
+    static_assert(0x2D == offsetof(VertexKey, m_normalValid), "unexpected offset");
 
-    if (lhs.m_position.IsQuantized())
+    size_t offset = offsetof(VertexKey, m_normalAndPos) + m_normalValid ? 0 : sizeof(uint16_t);
+    size_t size = offsetof(VertexKey, m_normalValid) - offset;
+    auto cmp = memcmp(reinterpret_cast<uint8_t const*>(this)+offset, reinterpret_cast<uint8_t const*>(&rhs)+offset, size);
+    if (0 != cmp)
+        return cmp < 0;
+
+    if (m_paramValid)
         {
-        if (!rhs.m_position.IsQuantized())
-            return false;
-
-        auto const& lpos = lhs.m_position.GetQPoint3d();
-        auto const& rpos = rhs.m_position.GetQPoint3d();
-
-        COMPARE_VALUES(lpos.x, rpos.x);
-        COMPARE_VALUES(lpos.y, rpos.y);
-        COMPARE_VALUES(lpos.z, rpos.z);
+        constexpr double s_paramTolerance  = .1;
+        COMPARE_VALUES_TOLERANCE (m_param.x, rhs.m_param.x, s_paramTolerance);
+        COMPARE_VALUES_TOLERANCE (m_param.y, rhs.m_param.y, s_paramTolerance);
         }
-    else
-        {
-        if (rhs.m_position.IsQuantized())
-            return true;
-
-        auto const& lpos = lhs.m_position.GetFPoint3d();
-        auto const& rpos = rhs.m_position.GetFPoint3d();
-
-        // ###TODO: May want to use a tolerance here; if so must be relative to range...
-        COMPARE_VALUES(lpos.x, rpos.x);
-        COMPARE_VALUES(lpos.y, rpos.y);
-        COMPARE_VALUES(lpos.z, rpos.z);
-        }
-
-    COMPARE_VALUES (lhs.m_fillColor, rhs.m_fillColor);
-    COMPARE_VALUES (lhs.m_feature.GetElementId(), rhs.m_feature.GetElementId());
-
-    if (lhs.m_normalValid)
-        COMPARE_VALUES(lhs.m_normal, rhs.m_normal);
-
-    COMPARE_VALUES (lhs.m_feature.GetSubCategoryId(), rhs.m_feature.GetSubCategoryId());
-
-    constexpr double s_paramTolerance  = .1;
-    if (lhs.m_paramValid)
-        {
-        BeAssert(rhs.m_paramValid);
-        COMPARE_VALUES_TOLERANCE (lhs.m_param.x, rhs.m_param.x, s_paramTolerance);
-        COMPARE_VALUES_TOLERANCE (lhs.m_param.y, rhs.m_param.y, s_paramTolerance);
-        }
-
-    COMPARE_VALUES (lhs.m_feature.GetClass(), rhs.m_feature.GetClass());
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-VertexKey::VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal, DPoint2dCP param)
-    : m_position(point, qParams), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
-    {
-    if (m_normalValid)
-        m_normal.InitFrom(*normal);
-
-    if (m_paramValid)
-        m_param = *param;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-VertexKey::VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param)
-    : m_position(point), m_fillColor(fillColor), m_feature(feature), m_normalValid(nullptr != normal), m_paramValid(nullptr != param)
-    {
-    if (m_normalValid)
-        m_normal = *normal;
-
-    if (m_paramValid)
-        m_param = DPoint2d::From(*param);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -903,7 +1074,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
@@ -940,13 +1111,14 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
                 params = computedParams;
             }
-                
-        bool haveNormals = !visitor.Normal().empty();
+
+        if (requireNormals && visitor.Normal().size() < points.size())
+            continue; // TFS#790263: Degenerate triangle - no normals.
 
         for (size_t i = 0; i < 3; i++)
             {
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
-            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
+            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
             newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
             if (m_currentPolyface.IsValid())
@@ -962,7 +1134,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
     {
-    MeshPolyline    newPolyline(startDistance, FPoint3d::From(rangeCenter));
+    MeshPolyline    newPolyline(startDistance, rangeCenter);
 
     for (auto& point : points)
         {
@@ -976,7 +1148,7 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, FPoint3dCR rangeCenter)
+void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
     {
     MeshPolyline newPolyline(startDistance, rangeCenter);
     for (auto const& point : points)
@@ -992,7 +1164,7 @@ void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::AddPolyline(MeshPolylineCR polyline) 
-    { 
+    {
     BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); 
     
     if (PrimitiveType::Polyline == GetType() && polyline.GetIndices().size() < 2)
@@ -1014,11 +1186,10 @@ uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     auto index = static_cast<uint32_t>(m_mesh->Verts().size());
     auto insertPair = verts.Insert(vertex, index);
     if (insertPair.second)
-        m_mesh->AddVertex(vertex.m_position, vertex.GetNormal(), vertex.GetParam(), vertex.m_fillColor, vertex.m_feature);
+        m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
 
     return insertPair.first->second;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -1220,8 +1391,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         {
         bool addNormals = facetOptions.GetNormalsRequired() && 0 == geom.GetNormalCount(),
              addParams = facetOptions.GetParamsRequired() && 0 == geom.GetParamCount(),
-             addFaceData = addParams && 0 == geom.GetFaceCount(),
-             addEdgeChains = facetOptions.GetEdgeChainsRequired() && 0 == geom.GetEdgeChainCount();
+             addFaceData = addParams && 0 == geom.GetFaceCount();
 
         if (addNormals)
             AddNormals(*polyface, facetOptions);
@@ -1235,8 +1405,8 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
         if (!geom.HasConvexFacets() && facetOptions.GetConvexFacetsRequired())
             polyface->Triangulate(3);
 
-        if (addEdgeChains)
-            polyface->AddEdgeChains(/*drawMethodIndex = */ 0);
+        // Not necessary to add edges chains -- edges will be generated from visibility flags later
+        // and decimation will not handle edge chains correctly.
         }
 
     return polyface;
@@ -1365,18 +1535,27 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
+        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)    
+    PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context)
     {
     PolyfaceList tilePolyfaces;
-#if defined (BENTLEYCONFIG_PARASOLID)    
-    // Cannot process the same solid entity simultaneously from multiple threads...
-    BeMutexHolder lock(m_mutex);
 
+#if defined (BENTLEYCONFIG_PARASOLID)
     DRange3d entityRange = m_entity->GetEntityRange();
     if (entityRange.IsNull())
-        return tilePolyfaces;
+        return tilePolyfaces;                                                                                                                                                                                                 
 
     double              rangeDiagonal = entityRange.DiagonalDistance();
     static double       s_minRangeRelTol = 1.0e-4;
@@ -1619,15 +1798,7 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshBuilderMap GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
     {
-    auto builderMap = ToMeshBuilderMap(options, tolerance, featureTable, context);
-    for (auto& builder : builderMap)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
-            mesh->Close();
-        }
-
-    return builderMap;
+    return ToMeshBuilderMap(options, tolerance, featureTable, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1668,7 +1839,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor, nullptr != polyface->GetNormalCP());
 
             meshBuilder.EndPolyface();
             }
@@ -1709,10 +1880,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
         {
         MeshP mesh = builder.second->GetMesh();
         if (!mesh->IsEmpty())
-            {
-            mesh->Close();
             meshes.push_back(mesh);
-            }
         }
 
     return meshes;
@@ -1802,60 +1970,7 @@ bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, ViewContextR context)
     {
-    PolyfaceList                polyfaces;
-    IFacetOptionsPtr            facetOptions = facetOptionsIn.Clone();
-
-    //facetOptions->SetNormalsRequired(false);     // No lighting so normals not required.
-
-    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(*facetOptions);
-    if (DoGlyphBoxes(*facetOptions))
-        {
-        // ###TODO: Fonts are a freaking mess.
-        BeMutexHolder lock(DgnFonts::GetMutex());
-
-        DVec3d              xAxis, yAxis;
-        DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
-        DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
-
-        m_text->ComputeGlyphAxes(xAxis, yAxis);
-        Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
-
-        for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
-            {
-            if (nullptr != glyphs[iGlyph])
-                {
-                DRange2d                range = glyphs[iGlyph]->GetExactRange();
-                bvector<DPoint3d>       box(5);
-
-                box[0].x = box[3].x = box[4].x = range.low.x;
-                box[1].x = box[2].x = range.high.x;
-
-                box[0].y = box[1].y = box[4].y = range.low.y;
-                box[2].y = box[3].y = range.high.y;
-
-                Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform).Multiply (box, box);
-
-                polyfaceBuilder->AddTriangulation (box);
-                }                                                                                                                              
-
-
-            }
-        }
-    else
-        {
-        for (auto& glyphCurve : m_glyphCurves)
-            polyfaceBuilder->AddRegion(*glyphCurve);
-        }
-
-    PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
-
-    if (polyface.IsValid() && polyface->HasFacets())
-        {
-        polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
-        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, false, true));
-        }
-
-    return polyfaces;
+    return GlyphCache::GetPolyfaces(*this, facetOptionsIn.GetChordTolerance());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1863,32 +1978,15 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn, Vi
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewContextR context)
     {
-    StrokesList strokes;
-
-    if (DoGlyphBoxes(facetOptions))
-        return strokes;
-
-    InitGlyphCurves();
-
-    Strokes::PointLists         strokePoints;
-    Transform                   transform = Transform::FromProduct (GetTransform(), m_text->ComputeTransform());
-
-    for (auto& glyphCurve : m_glyphCurves)
-        if (!glyphCurve->IsAnyRegionType())
-            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
-
-    if (!strokePoints.empty())
-        strokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), false, true));
-
-    return strokes;
+    return GlyphCache::GetStrokes(*this, facetOptions.GetChordTolerance());
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t TextStringGeometry::_GetFacetCount(FacetCounter& counter) const
-    { 
+    {
+#if defined(IF_COUNTING_FACETS)
     InitGlyphCurves();
     size_t              count = 0;
 
@@ -1896,40 +1994,113 @@ size_t TextStringGeometry::_GetFacetCount(FacetCounter& counter) const
         count += counter.GetFacetCount(*glyphCurve);
 
     return count;
+#else
+    return 0;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void  TextStringGeometry::InitGlyphCurves() const
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IFacetOptionsPtr GlyphCache::CreateFacetOptions(double chordTolerance)
     {
-    if (!m_glyphCurves.empty())
+    auto opts = Geometry::CreateFacetOptions(chordTolerance);
+    opts->SetParamsRequired(false);
+    opts->SetNormalsRequired(false);
+    opts->SetEdgeChainsRequired(false);
+    return opts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, TextStringGeometry const& geom, double chordTolerance)
+    {
+    TextStringCR textString = geom.GetText();
+    DgnGlyphCP const* glyphs = textString.GetGlyphs();
+    if (nullptr == glyphs)
         return;
 
-    // ###TODO: Fonts are a freaking mess.
-    BeMutexHolder lock(DgnFonts::GetMutex());
+    DPoint3dCP glyphOrigins = textString.GetGlyphOrigins();
+    BeAssert(nullptr != glyphOrigins);
 
-    DVec3d              xAxis, yAxis;
-    DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
-    DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
+    DVec3d xAxis, yAxis;
+    textString.ComputeGlyphAxes(xAxis, yAxis);
+    Transform rot = Transform::From(RotMatrix::From2Vectors(xAxis, yAxis));
+    Transform textTransform = Transform::FromProduct(geom.GetTransform(), textString.ComputeTransform());
 
-    m_text->ComputeGlyphAxes(xAxis, yAxis);
-    Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
+    auto facetOptions = CreateFacetOptions(chordTolerance);
 
-    for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
+    for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
-        if (nullptr != glyphs[iGlyph])
-            {
-            bool            isFilled = false;
-            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector(isFilled);
+        auto textGlyph = glyphs[i];
+        Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph) : nullptr;
+        if (nullptr == glyph || !glyph->IsValid())
+            continue;
+        else if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
+            continue;
 
-            if (glyphCurveVector.IsValid())
+        Transform glyphTransform = Transform::FromProduct(Transform::From(glyphOrigins[i]), rot);
+        glyphTransform = Transform::FromProduct(textTransform, glyphTransform);
+
+        if (glyph->IsStrokes())
+            {
+            Strokes::PointLists points = glyph->GetStrokes(*facetOptions);
+            if (!points.empty())
                 {
-                glyphCurveVector->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
-                m_glyphCurves.push_back(glyphCurveVector);
+                for (auto& loop : points)
+                    {
+                    glyphTransform.Multiply(loop.m_points, loop.m_points);
+                    glyphTransform.Multiply(loop.m_rangeCenter);
+                    }
+
+                strokes->push_back(Strokes(geom.GetDisplayParams(), std::move(points), false, true));
                 }
             }
-        }                                                                                                           
+        else
+            {
+            PolyfaceHeaderPtr polyface = glyph->GetPolyface(*facetOptions);
+            if (polyface.IsValid() && polyface->HasFacets())
+                {
+                polyface->Transform(glyphTransform);
+                polyfaces->push_back(Polyface(geom.GetDisplayParams(), *polyface, false, true));
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph)
+    {
+    auto iter = m_map.find(&glyph);
+    if (m_map.end() == iter)
+        iter = m_map.Insert(&glyph, Glyph(glyph)).first;
+
+    return &iter->second;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T, typename U> void GlyphCache::Glyph::GetGeometry(IFacetOptionsR facetOptions, T createGeom, U acceptGeom)
+    {
+    BeAssert(IsValid());
+    Tolerance tol = GetTolerance(facetOptions.GetChordTolerance());
+    auto& geom = m_geom[tol];
+    double chordTolerance = GetChordTolerance(tol, facetOptions.GetChordTolerance());
+    if (kTolerance_Smallest == tol && chordTolerance < m_smallestTolerance)
+        {
+        geom.Invalidate();
+        m_smallestTolerance = chordTolerance;
+        }
+
+    if (!geom.IsValid())
+        createGeom(geom);
+
+    if (geom.IsValid())
+        acceptGeom(geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2408,11 +2579,14 @@ void GeometryListBuilder::_AddTextString2dR(TextStringR text, double priority)
         }
     }
 
+PUSH_MSVC_IGNORE(6386) // Static analysis warning claims we overrun tmpPts...bogus.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
+    BeAssert(numPoints >= 3);
+
     if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int nPt = 0;
@@ -2435,6 +2609,7 @@ void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThick
             _AddShape(3, points+iPt, true);
         }
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
@@ -2767,18 +2942,15 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
     {
-    constexpr double s_sizeToToleranceRatio = 0.25;
-    double tolerance;
-
     auto const& params = GetCreateParams();
     if (params.IsViewCoordinates())
         {
-        tolerance = 1.0;
+        return 0.25;
         }
     else if (nullptr == params.GetViewport())
         {
         BeAssert(!accum.GetGeometries().ContainsCurves() && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
-        tolerance = 20.0;
+        return 20.0;
         }
     else
         {
@@ -2787,10 +2959,8 @@ double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
 
         // NB: Geometry::CreateFacetOptions() will apply any scale factors from transform...no need to do it here.
         DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-        tolerance = params.GetViewport()->GetPixelSizeAtPoint(&pt);
+        return params.GetViewport()->GetPixelSizeAtPoint(&pt);
         }
-
-    return tolerance * s_sizeToToleranceRatio;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2832,35 +3002,6 @@ GeometryList GeometryList::Slice(size_t startIdx, size_t endIdx) const
 
     return list;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QVertex3dList::Requantize()
-    {
-    if (IsFullyQuantized())
-        return;
-
-    m_qpoints.Requantize(QPoint3d::Params(m_range));
-    m_qpoints.reserve(size());
-
-    for (auto const& fpt : m_fpoints)
-        m_qpoints.Add(DPoint3d::From(fpt));
-
-    m_fpoints.clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QVertex3dList::Init(DRange3dCR range, QPoint3dCP qPoints, size_t nPoints)
-    {
-    m_range = range;
-    m_qpoints.resize(nPoints);
-    m_qpoints.SetParams(QPoint3d::Params(range));
-    memcpy (m_qpoints.data(), qPoints, nPoints * sizeof(QPoint3d));
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017

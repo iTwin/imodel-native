@@ -617,7 +617,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         EXPECT_EQ(DgnDbStatus::BadElement, status);
         }
 
-    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ClearCache();
 
     TestLoadElem(noPlacementNoGeomId, nullptr, false);
     TestLoadElem(placementAndGeomId, &placement, true);
@@ -1642,7 +1642,7 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         }
 
     m_db->SaveChanges("");
-    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ClearCache();
 
     ASSERT_TRUE(persistentId.IsValid());
 
@@ -1712,7 +1712,7 @@ TEST_F(DgnElementTests, TestUserProperties)
         }
     
     m_db->SaveChanges("");
-    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ClearCache();
 
     ASSERT_TRUE(persistentId.IsValid());
 
@@ -1740,7 +1740,7 @@ TEST_F(DgnElementTests, TestUserProperties)
         persistentEl = editEl->Update();
         }
 
-    m_db->Memory().PurgeUntil(0);
+    m_db->Elements().ClearCache();
 
     if (true)
         {
@@ -1883,7 +1883,7 @@ TEST_F(DgnElementTests, FederationGuid)
 
     // flush cache and re-check element
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         DgnElementCPtr element = m_db->Elements().GetElement(elementId);
         EXPECT_TRUE(element.IsValid());
         EXPECT_FALSE(element->GetFederationGuid().IsValid());
@@ -1910,7 +1910,7 @@ TEST_F(DgnElementTests, FederationGuid)
 
     // flush cache and re-check element
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(elementId);
         EXPECT_TRUE(element.IsValid());
         EXPECT_TRUE(element->GetFederationGuid().IsValid());
@@ -1923,7 +1923,7 @@ TEST_F(DgnElementTests, FederationGuid)
 
     // flush cache and verify set/update to updated value
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(elementId);
         EXPECT_TRUE(element.IsValid());
         EXPECT_TRUE(element->GetFederationGuid().IsValid());
@@ -1938,7 +1938,7 @@ TEST_F(DgnElementTests, FederationGuid)
 
     // flush cache and verify set/update to null value
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         DgnElementCPtr element = m_db->Elements().GetElement(elementId);
         EXPECT_TRUE(element.IsValid());
         EXPECT_FALSE(element->GetFederationGuid().IsValid());
@@ -1973,7 +1973,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
     // flush cache to make sure PhysicalTypes were inserted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         for (int32_t i=0; i<_countof(physicalTypeId); i++)
             {
             TestPhysicalTypePtr physicalType = m_db->Elements().GetForEdit<TestPhysicalType>(physicalTypeId[i]);
@@ -1989,7 +1989,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
     // flush cache to make sure PhysicalTypes were updated properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         for (int32_t i=0; i<_countof(physicalTypeId); i++)
             {
             TestPhysicalTypeCPtr physicalType = m_db->Elements().Get<TestPhysicalType>(physicalTypeId[i]);
@@ -2017,7 +2017,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
     // flush cache to make sure the PhysicalElement's PhysicalType was inserted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
@@ -2029,7 +2029,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
     // flush cache to make sure the PhysicalElement's PhysicalType was updated properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
@@ -2041,7 +2041,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 
     // flush cache to make sure the PhysicalElement's PhysicalType was cleared properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetPhysicalType().IsValid());
@@ -2076,7 +2076,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
     // flush cache to make sure GraphicalTypes were inserted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         for (int32_t i=0; i<_countof(graphicalTypeId); i++)
             {
             TestGraphicalType2dPtr graphicalType = m_db->Elements().GetForEdit<TestGraphicalType2d>(graphicalTypeId[i]);
@@ -2092,7 +2092,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
     // flush cache to make sure GraphicalTypes were updated properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         for (int32_t i=0; i<_countof(graphicalTypeId); i++)
             {
             TestGraphicalType2dCPtr graphicalType = m_db->Elements().Get<TestGraphicalType2d>(graphicalTypeId[i]);
@@ -2122,7 +2122,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
     // flush cache to make sure the TestElement2d's GraphicalType was inserted properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
@@ -2134,7 +2134,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
     // flush cache to make sure the TestElement2d's GraphicalType was updated properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
@@ -2146,7 +2146,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
 
     // flush cache to make sure the TestElement2d's GraphicalType was cleared properly
         {
-        m_db->Memory().PurgeUntil(0);
+        m_db->Elements().ClearCache();
         TestElement2dPtr element = m_db->Elements().GetForEdit<TestElement2d>(elementId);
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetGraphicalType().IsValid());

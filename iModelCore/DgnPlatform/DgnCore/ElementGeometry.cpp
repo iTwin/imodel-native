@@ -16,32 +16,6 @@
 
 using namespace flatbuffers;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
-    {
-    Render::TexturePtr tx;
-    auto sys = GetRenderSystem();
-    if (nullptr != sys)
-        tx = sys->_CreateTexture(image);
-
-    return tx;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const
-    {
-    Render::TexturePtr tx;
-    auto sys = GetRenderSystem();
-    if (nullptr != sys)
-        tx = sys->_CreateTexture(source, bottomUp);
-
-    return tx;
-    }
-
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3183,31 +3157,6 @@ void GeometryStreamIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& 
     }
 
 /*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  04/2016
-+===============+===============+===============+===============+===============+======*/
-struct BRepCache : DgnElement::AppData
-{
-static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
-typedef bmap<uint16_t, IBRepEntityPtr> IndexedGeomMap;
-IndexedGeomMap m_map;
-
-virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
-virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
-virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
-virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
-
-static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
-    {
-    BRepCache* cache = dynamic_cast<BRepCache*>(elem.FindAppData(GetKey()));
-
-    if (nullptr == cache && addIfNotFound)
-        elem.AddAppData(GetKey(), cache = new BRepCache);
-
-    return cache;
-    }
-};
-
-/*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/2015
 +===============+===============+===============+===============+===============+======*/
 struct DrawHelper
@@ -3301,48 +3250,6 @@ static bool IsFillVisible(ViewContextR context, Render::GeometryParamsCR geomPar
         default:
             return true;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static IBRepEntityPtr GetCachedSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId)
-    {
-    // Only use for auto-locate, display has Render::Graphic, and other callers of Stroke should be ok reading again...thread-safety issues otherwise...
-    if (nullptr == context.GetIPickGeom())
-        return nullptr;
-
-    if (nullptr == element)
-        return nullptr;
-
-    BRepCache* cache = BRepCache::Get(*element, false);
-
-    if (nullptr == cache)
-        return nullptr;
-
-    BRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex());
-
-    if (found == cache->m_map.end())
-        return nullptr;
-
-    return found->second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void SaveSolidKernelEntity(ViewContextR context, DgnElementCP element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity)
-    {
-    // Only save for auto-locate, display has Render::Graphic, and other callers of Stroke should be ok reading again...
-    if (nullptr == context.GetIPickGeom())
-        return;
-
-    if (nullptr == element)
-        return;
-
-    BRepCache* cache = BRepCache::Get(*element, true);
-
-    cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = &entity;
     }
 
 }; // DrawHelper
@@ -3799,26 +3706,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!DrawHelper::IsGeometryVisible(context, geomParams, &subGraphicRange))
                     break;
 
-                IBRepEntityPtr entityPtr = DrawHelper::GetCachedSolidKernelEntity(context, element, entryId);
+                // NOTE: Only use cache for auto-locate/snapping. Other callers of Stroke should be ok reading again, thread-safety issues otherwise...
+                bool useBRepCache = (nullptr != element && nullptr != context.GetIPickGeom());
+                IBRepEntityPtr entityPtr;
+
+                if (useBRepCache)
+                    entityPtr = BRepDataCache::FindCachedBRepEntity(*element, entryId);
 
                 if (!entityPtr.IsValid())
                     {
-                    if (!reader.Get(egOp, entityPtr) ||
-                        !entityPtr.IsValid())
+                    if (!reader.Get(egOp, entityPtr) || !entityPtr.IsValid())
                         break;
 
-                    // Resolve/Cook face attachments...need to do this even when output isn't QVis because it's going to be cached...
-                    IFaceMaterialAttachmentsCP attachments = entityPtr->GetFaceMaterialAttachments();
-
-                    if (nullptr != attachments)
-                        {
-                        T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
-
-                        for (FaceAttachment const& attachment : faceAttachmentsVec)
-                            attachment.CookFaceAttachment(context, geomParams);
-                        }
-
-                    DrawHelper::SaveSolidKernelEntity(context, element, entryId, *entityPtr);
+                    if (useBRepCache)
+                        BRepDataCache::AddCachedBRepEntity(*element, entryId, *entityPtr);
                     }
 
                 usePreBakedBody = currGraphic->WantPreBakedBody(*entityPtr);
@@ -3942,19 +3843,23 @@ Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR hit) const
+BentleyStatus GeometrySource::_StrokeHit(DecorateContextR context, HitDetailCR hit) const
     {
-    if (0 == hit.GetGeomDetail().GetGeometryStreamEntryId().GetIndex())
-        return nullptr;
+    GeometryStreamEntryId elemEntryId = hit.GetGeomDetail().GetGeometryStreamEntryId();
 
-    switch (hit.GetSubSelectionMode())
+    if (0 == elemEntryId.GetIndex())
+        return ERROR;
+
+    SubSelectionMode subMode = hit.GetSubSelectionMode();
+
+    switch (subMode)
         {
         case SubSelectionMode::Part:
             {
-            if (hit.GetGeomDetail().GetGeometryStreamEntryId().GetGeometryPartId().IsValid())
+            if (elemEntryId.GetGeometryPartId().IsValid())
                 break;
 
-            return nullptr;
+            return ERROR;
             }
 
         case SubSelectionMode::Primitive:
@@ -3965,33 +3870,35 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
             if (nullptr != hit.GetGeomDetail().GetCurvePrimitive())
                 break;
 
-            return nullptr;
+            return ERROR;
             }
 
         default:
-            return nullptr;
+            return ERROR;
         }
 
     // Get the GeometryParams for this hit from the GeometryStream...
     GeometryCollection collection(*this);
-    Render::GraphicBuilderPtr graphic;
+    Render::GraphicBuilderPtr builder;
+    Render::GraphicPtr graphic;
 
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...
-        if (hit.GetGeomDetail().GetGeometryStreamEntryId() != iter.GetGeometryStreamEntryId())
+        if (elemEntryId != iter.GetGeometryStreamEntryId())
             continue;
 
-        switch (hit.GetSubSelectionMode())
+        switch (subMode)
             {
             case SubSelectionMode::Part:
                 {
                 GeometryParams geomParams(iter.GetGeometryParams());
 
-                graphic = context.CreateSceneGraphic(iter.GetSourceToWorld());
-                context.AddSubGraphic(*graphic, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
+                builder = context.CreateSceneGraphic(iter.GetSourceToWorld());
+                context.AddSubGraphic(*builder, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
 
-                return graphic->Finish();
+                graphic = builder->Finish();
+                break;
                 }
 
             case SubSelectionMode::Segment:
@@ -4000,16 +3907,20 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 GraphicParams  graphicParams;
 
                 context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
-                graphicParams.SetWidth(graphicParams.GetWidth()+2); // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
+                graphicParams.SetWidth(graphicParams.GetWidth()+2);
+                graphicParams.SetLineTransparency(25);
 
-                graphic = context.CreateSceneGraphic();
-                graphic->ActivateGraphicParams(graphicParams);
+                bool isSnap = (hit.GetHitType() >= HitDetailType::Snap);
+                bool doSegmentFlash = false;
 
-                bool doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
-
-                if (!doSegmentFlash)
+                if (isSnap)
                     {
-                    switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
+                    SnapDetailCR snap = static_cast<SnapDetailCR>(hit);
+                    
+                    if (!snap.IsHot())
+                        graphicParams.SetLineTransparency(150);
+
+                    switch (snap.GetSnapMode())
                         {
                         case SnapMode::Center:
                         case SnapMode::Origin:
@@ -4022,6 +3933,9 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                         }
                     }
 
+                builder = context.CreateWorldOverlay();
+                builder->ActivateGraphicParams(graphicParams);
+
                 DSegment3d      segment;
                 CurveVectorPtr  curve;
 
@@ -4031,12 +3945,10 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 else
                     curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
 
-                if (hit.GetViewport().Is3dView())
-                    graphic->AddCurveVectorR(*curve, false);
-                else
-                    graphic->AddCurveVector2dR(*curve, false, geomParams.GetNetDisplayPriority());
+                builder->AddCurveVectorR(*curve, false);
 
-                return graphic->Finish();
+                graphic = builder->Finish();
+                break;
                 }
 
             case SubSelectionMode::Primitive:
@@ -4045,29 +3957,34 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
 
                 if (geom.IsValid())
                     {
-                    if (!graphic.IsValid())
-                        graphic = context.CreateSceneGraphic(iter.GetGeometryToWorld());
+                    if (!builder.IsValid())
+                        builder = context.CreateSceneGraphic(iter.GetGeometryToWorld());
 
                     GeometryParams geomParams(iter.GetGeometryParams());
 
-                    context.CookGeometryParams(geomParams, *graphic);
-                    geom->AddToGraphic(*graphic);
-                    break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+                    context.CookGeometryParams(geomParams, *builder);
+                    geom->AddToGraphic(*builder);
+
+                    if (!iter.IsBRepPolyface()) // NOTE: multi-symb BRep is Polyface per-symbology...need to draw all matching geometry...
+                        graphic = builder->Finish();
+                    break;
                     }
 
                 DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
 
                 if (!geomPart.IsValid())
-                    return nullptr; // Shouldn't happen...
+                    return ERROR; // Shouldn't happen...
 
                 GeometryCollection partCollection(geomPart->GetGeometryStream(), context.GetDgnDb());
 
                 partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
 
+                GeometryStreamEntryId partEntryId = hit.GetGeomDetail().GetGeometryStreamEntryId(true); // pass true to compare part geometry index...
+
                 for (auto partIter : partCollection)
                     {
-                    // Quick exclude of part geometry that didn't generate the hit...pass true to compare part geometry index...
-                    if (hit.GetGeomDetail().GetGeometryStreamEntryId(true) != partIter.GetGeometryStreamEntryId())
+                    // Quick exclude of part geometry that didn't generate the hit...
+                    if (partEntryId != partIter.GetGeometryStreamEntryId())
                         continue;
 
                     GeometricPrimitivePtr partGeom = partIter.GetGeometryPtr();
@@ -4075,22 +3992,67 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                     if (!partGeom.IsValid())
                         continue;
 
-                    if (!graphic.IsValid())
-                        graphic = context.CreateSceneGraphic(partIter.GetGeometryToWorld());
+                    if (!builder.IsValid())
+                        builder = context.CreateSceneGraphic(partIter.GetGeometryToWorld());
 
                     GeometryParams geomParams(partIter.GetGeometryParams());
 
-                    context.CookGeometryParams(geomParams, *graphic);
-                    partGeom->AddToGraphic(*graphic);
-                    continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
+                    context.CookGeometryParams(geomParams, *builder);
+                    partGeom->AddToGraphic(*builder);
+
+                    if (!partIter.IsBRepPolyface()) // NOTE: multi-symb BRep is Polyface per-symbology...need to draw all matching geometry...
+                        break;
                     }
 
-                return graphic->Finish(); // Done with part...
+                graphic = builder->Finish();
+                break;
                 }
             }
+
+        if (builder.IsValid() && !builder->IsOpen())
+            break;
         }
 
-    return graphic->Finish();
+    if (!graphic.IsValid())
+        {
+        if (builder.IsValid())
+            graphic = builder->Finish();
+
+        if (!graphic.IsValid())
+            return ERROR;
+        }
+
+    // Use branch to push geometry towards eye and to override color from normal flash for primitive/part sub-selection...
+    double      offsetDist = context.GetPixelSizeAtPoint(&hit.GetHitPoint());
+    DVec3d      offsetDir;
+    DPoint3d    viewPt[2];
+    Transform   offsetTrans;
+
+    viewPt[0].Init(0.5, 0.5, 0.0);
+    viewPt[1].Init(0.5, 0.5, 1.0);
+
+    context.NpcToWorld(viewPt, viewPt, 2);
+    offsetDir.DifferenceOf(viewPt[1], viewPt[0]);
+    offsetDir.ScaleToLength(4.0 * offsetDist);
+    offsetTrans.InitFrom(offsetDir);
+
+    ColorDef color = context.GetViewport()->GetHiliteColor();
+    Render::OvrGraphicParams ovrParams;
+
+    if (SubSelectionMode::Segment != subMode)
+        {
+        ovrParams.SetLineColor(color);
+        ovrParams.SetFillColor(color);
+        ovrParams.SetLineTransparency(0x64);
+        ovrParams.SetFillTransparency(0x64);
+        }
+
+    GraphicBranch branch;
+
+    branch.Add(*graphic);
+    context.AddWorldDecoration(*context.CreateBranch(branch, context.GetDgnDb(), offsetTrans), &ovrParams);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4336,6 +4298,14 @@ bool GeometryCollection::Iterator::IsSolid() const
         default:
             return false;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryCollection::Iterator::IsBRepPolyface() const
+    {
+    return (GeometryStreamIO::OpCode::BRepPolyface == m_egOp.m_opCode);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -12,6 +12,32 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  11/17
++===============+===============+===============+===============+===============+======*/
+struct FencePolyfaceTester : PolyfaceQuery::IClipToPlaneSetOutput
+{
+bool m_unclipped;
+bvector<PolyfaceHeaderPtr> m_output;
+        
+FencePolyfaceTester() : m_unclipped(false) {}
+StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {m_unclipped = true; return SUCCESS;}
+StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
+bool HasOverlap(PolyfaceQueryCR mesh, ClipVectorCR clip) {clip.ClipPolyface(mesh, *this, false); return !m_output.empty();}
+bool IsInside() {return m_unclipped;}
+
+}; // FencePolyfaceTester
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  11/17
++===============+===============+===============+===============+===============+======*/
+struct FenceSimplifyGraphic : SimplifyGraphic
+{
+bool _WantPreBakedBody(IBRepEntityCR) override {return true;}
+
+explicit FenceSimplifyGraphic(Render::GraphicBuilder::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : SimplifyGraphic(params, processor, context) {}
+};
+
+/*=================================================================================**//**
 * Context to determine if element should be accepted for fence processing..
 * @bsiclass                                                     Brien.Bastings  09/04
 +===============+===============+===============+===============+===============+======*/
@@ -45,7 +71,7 @@ FenceAcceptContext(FenceParamsR fp, FenceCheckStop* checkStop = nullptr) : m_fp(
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
     {
-    return new SimplifyGraphic(params, *this, *this);
+    return new FenceSimplifyGraphic(params, *this, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -53,14 +79,15 @@ Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams co
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips) override
     {
-    return new SimplifyGraphic::Base(db);
+    return new FenceSimplifyGraphic::Base(db);
     }
 
-UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...
-UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
-UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
-UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // BAD - NEEDSWORK...
-UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/04
++---------------+---------------+---------------+---------------+---------------+------*/
+UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;} // NOTE: Won't be used for persistent BReps, we'll use backup mesh from GeometryStream...
 UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return UnhandledPreference::Box;}
 
 /*---------------------------------------------------------------------------------**//**
@@ -84,7 +111,7 @@ void CheckCurrentAccept()
     if (m_earlyDecision) // accept status has already been determined...
         return;
 
-    bool insideMode = !m_fp.AllowOverlaps() && FenceClipMode::None == m_fp.GetClipMode();
+    bool insideMode = m_fp.IsInsideMode();
     bool hasOverlap = !m_firstAccept && (m_currentAccept != m_accept);
 
     if (m_currentAccept)
@@ -103,9 +130,8 @@ void CheckCurrentAccept()
         if (hasOverlap)
             m_fp.SetHasOverlaps(true);
 
-        // Need to look for ALL overlaps in clip mode...
-        if (FenceClipMode::None == m_fp.GetClipMode())
-            m_earlyDecision = m_fp.HasOverlaps();
+        // I don't think we need to look for all overlaps in clip mode anymore...might have been because of split params for non-optimized clip???
+        m_earlyDecision = m_fp.HasOverlaps();
         }
 
     m_firstAccept = false;
@@ -121,42 +147,6 @@ bool _CheckStop() override
         return true;
 
     return m_earlyDecision;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override
-    {
-#if defined (NEEDSWORK_FENCE)
-    FenceParamsP    fp = m_graphic->GetFenceParamsP ();
-
-    if (fp->HasOverlaps())
-        return; // Already have overlap w/element don't need to draw the pattern...
-
-    if (_CheckStop())
-        return;
-
-    if (!_WantAreaPatterns())
-        return;
-
-    fp.SetHasOverlaps(false);
-
-    if (FenceClipMode::None == fp->GetClipMode()) // Need to draw patterns for interior overlap check when clipping...
-        {
-        // Attempt to short circuit fence accept using boundary...only check symbol geometry for interior overlap...
-        boundary.GetGeomSource().Stroke(*this);
-
-        // Element never rejected by pattern...so if boundary is acceptable we can skip drawing the pattern...
-        if (_CheckStop() || m_graphic->GetCurrentAccept())
-            return;
-
-        fp.SetHasOverlaps(false);
-        }
-
-    // Keep looking for overlaps using pattern geometry...
-    T_Super::_DrawAreaPattern(boundary);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,127 +172,20 @@ bool ProcessPoints(DPoint3dCP points, int numPoints, SimplifyGraphic& graphic)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessLinearSegments(DPoint3dCP points, int numPoints, bool closed, bool filled, SimplifyGraphic& graphic)
-    {
-    Transform transform = graphic.GetLocalToWorldTransform();
-
-    if (m_fp.AcceptByCurve() && numPoints > 1)
-        {
-        MSBsplineCurve curve;
-
-        if (SUCCESS != curve.InitFromPoints(points, numPoints))
-            return true;
-
-        curve.TransformCurve(transform);
-        m_currentAccept = m_fp.AcceptCurve(curve);
-        curve.ReleaseMem();
-        }
-    else
-        {
-        DPoint3dP tmpPtsP = (DPoint3dP) alloca(numPoints * sizeof(DPoint3d));
-
-        transform.Multiply(tmpPtsP, points, numPoints);
-        m_currentAccept = m_fp.AcceptLineSegments(tmpPtsP, numPoints, closed);
-        }
-
-    CheckCurrentAccept();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessDEllipse3d(DEllipse3dCR ellipse, bool closed, bool filled, SimplifyGraphic& graphic)
-    {
-    Transform transform = graphic.GetLocalToWorldTransform();
-    DEllipse3d tmpEllipse;
-
-    transform.Multiply(tmpEllipse, ellipse);
-
-    if (m_fp.AcceptByCurve())
-        {
-        MSBsplineCurve curve;
-
-        if (SUCCESS != curve.InitFromDEllipse3d(tmpEllipse))
-            return true;
-
-        m_currentAccept = m_fp.AcceptCurve(curve);
-        curve.ReleaseMem();
-        }
-    else
-        {
-        m_currentAccept = m_fp.AcceptDEllipse3d(tmpEllipse);
-        }
-
-    CheckCurrentAccept();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessCurve(MSBsplineCurveCR geom, bool filled, SimplifyGraphic& graphic)
-    {
-    Transform transform = graphic.GetLocalToWorldTransform();
-    MSBsplineCurvePtr copy = geom.CreateCopyTransformed(transform);
-
-    m_currentAccept = m_fp.AcceptCurve(*copy);
-    CheckCurrentAccept();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled, SimplifyGraphic& graphic) override
     {
-    switch (primitive.GetCurvePrimitiveType())
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == primitive.GetCurvePrimitiveType())
         {
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-            {
-            DSegment3dCP segment = primitive.GetLineCP();
+        bvector<DPoint3d> const* points = primitive.GetPointStringCP();
 
-            return ProcessLinearSegments(segment->point, 2, closed, filled, graphic);
-            }
+        ProcessPoints(&points->front(), (int) points->size(), graphic);
 
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-            {
-            bvector<DPoint3d> const* points = primitive.GetLineStringCP();
-
-            return ProcessLinearSegments(&points->front(), (int) points->size(), closed, filled, graphic);
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-            {
-            DEllipse3dCP ellipse = primitive.GetArcCP();
-
-            return ProcessDEllipse3d(*ellipse, closed, filled, graphic);
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
-            {
-            bvector<DPoint3d> const* points = primitive.GetPointStringCP();
-
-            return ProcessPoints(&points->front(), (int) points->size(), graphic);
-            }
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-        default:
-            {
-            // NOTE: default case handles bcurves to accomdate future proxy bcurve additions...
-            MSBsplineCurveCP bcurve = primitive.GetProxyBsplineCurveCP();
-
-            if (nullptr != bcurve)            
-                return ProcessCurve(*bcurve, filled, graphic);
-
-            return false; // SimplifyGraphic will recurse for ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector and call us with primitives...
-            }
+        return true;
         }
+
+    return (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != primitive.GetCurvePrimitiveType());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -310,87 +193,49 @@ bool _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& graphic) override
     {
-    graphic.ProcessAsCurvePrimitives(curves, filled);
-
-    // If already detected overlap (or not a region/filled in wireframe), can skip interior check... 
-    if (m_fp.HasOverlaps() || !curves.IsAnyRegionType() || LocateSurfacesPref::Never == m_fp.GetLocateInteriors())
-        return true;
-
-    if (LocateSurfacesPref::ByView == m_fp.GetLocateInteriors() && RenderMode::Wireframe == GetViewFlags().GetRenderMode() && !filled)
-        return true;
-
-    Transform worldToLocal, localToWorld = graphic.GetLocalToWorldTransform();
+    Transform localToWorld = graphic.GetLocalToWorldTransform();
+    Transform worldToLocal;
 
     worldToLocal.InverseOf(localToWorld);
 
+    // NEEDSWORK: Earlin will add a method to handle all clips/masks...
     for (ClipPrimitivePtr const& primitive : *m_fp.GetClipVector())
         {
         if (CheckStop())
             break;
 
-        ClipPlaneSetCP planeSet = primitive->GetMaskOrClipPlanes();
+        ClipPlaneSetCP clipPlanes = primitive->GetClipPlanes();
+//        ClipPlaneSetCP clipMask = primitive->GetMaskPlanes();
 
-        if (nullptr == planeSet)
+        if (nullptr == clipPlanes)
             continue;
 
-        for (ConvexClipPlaneSetCR convexPlaneSet : *planeSet)
+        ClipPlaneSet localClipPlanes(*clipPlanes);
+
+        localClipPlanes.TransformInPlace(worldToLocal);
+
+        switch (ClipPlaneSet::ClassifyCurveVectorInSetDifference(curves, localClipPlanes, nullptr, !m_fp.IsInsideMode()))
             {
-            if (CheckStop())
+            case ClipPlaneContainment_StronglyInside:
+                m_currentAccept = true;
                 break;
 
-            for (ClipPlaneCR clipPlane : convexPlaneSet)
-                {
-                bvector<CurveLocationDetailPair> intersections;
-                DPlane3d plane = clipPlane.GetDPlane3d();
-
-                worldToLocal.Multiply(plane);
-
-                if (!curves.AppendClosedCurvePlaneIntersections(plane, intersections) || intersections.empty())
-                    continue;
-
-#if defined (NOT_NOW) // Just testing, really need CurveVector method that takes the entire ClipPlaneSet...maybe try checking if both "ends" of intersection curve are interior???
+            case ClipPlaneContainment_Ambiguous:
+                if (m_fp.IsInsideMode())
+                    break;
                 m_currentAccept = true;
                 m_fp.SetHasOverlaps(true);
-                CheckCurrentAccept();
-#endif
+                break;
 
-                return true;
-                }
-            }
+            case ClipPlaneContainment_StronglyOutside:
+                continue;
+           }
+
+        CheckCurrentAccept();
         }
 
-#if defined (NOT_NOW)
-    DRange3d    localRange;
-    Transform   localToWorld, worldToLocal;
-
-    CurveVectorPtr curvesLocal = geom.CloneInLocalCoordinates(LOCAL_COORDINATE_SCALE_01RangeBothAxes, localToWorld, worldToLocal, localRange);
-
-    if (curvesLocal.IsValid())
-        {
-        bvector<DRay3d> boresiteVector;
-
-        GetBoresiteLocations(boresiteVector);
-
-        for (DRay3dR boresite: boresiteVector)
-            {
-            double      t;
-            DPoint3d    uvw;
-
-            if (!boresite.IntersectZPlane(localToWorld, 0.0, uvw, t))
-                continue;
-
-            CurveVector::InOutClassification inOut = curvesLocal->PointInOnOutXY (uvw);
-
-            if (CurveVector::INOUT_In != inOut && CurveVector::INOUT_On != inOut)
-                continue;
-
-            m_currentAccept = true;
-            m_fp.SetHasOverlaps(true);
-            CheckCurrentAccept();
-            break;
-            }
-        }
-#endif
+    if (!CheckStop())
+        graphic.ProcessAsCurvePrimitives(curves, filled); // Check for point strings...
 
     return true;
     }
@@ -400,37 +245,11 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gra
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessSolidPrimitive(ISolidPrimitiveCR solid, SimplifyGraphic& graphic) override
     {
-#if defined (NOT_NOW)
-    // NOTE: Always return ERROR for default edge processing...
-    if (m_fp->HasOverlaps())
-        return ERROR; // Already detected overlap, can skip interior check...
+    if (CheckStop())
+        return true;
 
-    if (RenderMode::Wireframe == GetViewFlags().GetRenderMode() && !isFilled)
-        return ERROR;
-
-    bvector<DRay3d> boresiteVector;
-
-    GetBoresiteLocations(boresiteVector);
-
-    for (DRay3dR boresite: boresiteVector)
-        {
-        bvector<SolidLocationDetail> intersectLocationDetail;
-
-        primitive.AddRayIntersections(intersectLocationDetail, boresite);
-
-        if (0 == intersectLocationDetail.size())
-            continue;
-
-        m_currentAccept = true;
-        m_fp->SetHasOverlaps(true);
-        CheckCurrentAccept();
-        break;
-        }
-
-    return ERROR;
-#else
+    // NEEDSWORK: Ask Earlin if we can get containment more efficiently without creating Polyface...
     return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -438,38 +257,11 @@ bool _ProcessSolidPrimitive(ISolidPrimitiveCR solid, SimplifyGraphic& graphic) o
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphic) override
     {
-#if defined (NOT_NOW)
-    // NOTE: Always return ERROR for default edge processing...
-    if (m_fp->HasOverlaps())
-        return ERROR; // Already detected overlap, can skip interior check...
+    if (CheckStop())
+        return true;
 
-    if (RenderMode::Wireframe == GetViewFlags().GetRenderMode() && !isFilled)
-        return ERROR;
-
-    double          uorRes = bspsurf_getResolution(&surface);
-    bvector<DRay3d> boresiteVector;
-
-    GetBoresiteLocations(boresiteVector);
-
-    for (DRay3dR boresite: boresiteVector)
-        {
-        int     nHits = 0;
-
-        bsprsurf_allBoresiteToSurface(NULL, NULL, &nHits, &boresite.origin, &boresite.direction, const_cast <MSBsplineSurfaceP> (&surface), &uorRes);
-
-        if (0 == nHits)
-            continue;
-
-        m_currentAccept = true;
-        m_fp->SetHasOverlaps(true);
-        CheckCurrentAccept();
-        break;
-        }
-
-    return ERROR;
-#else
+    // NEEDSWORK: Ask Earlin if we can get containment more efficiently without creating Polyface...
     return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -477,55 +269,34 @@ bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphic) overr
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& graphic) override
     {
-#if defined (NOT_NOW)
-    // NOTE: Always return SUCCESS, don't want default edge processing...
-    if (m_fp->HasOverlaps())
+    if (CheckStop())
+        return true;
+
+    // NEEDSWORK: Ask Earlin if we can get containment more efficiently without creating clipped result...
+    Transform localToWorld = graphic.GetLocalToWorldTransform();
+    Transform worldToLocal;
+
+    worldToLocal.InverseOf(localToWorld);
+
+    ClipVectorPtr       localClip = m_fp.GetClipVector()->Clone(&worldToLocal);
+    FencePolyfaceTester polyfaceTester;
+
+    if (polyfaceTester.HasOverlap(polyface, *localClip))
         {
-        ClipAndProcessFacetSetAsCurves(meshData);
-
-        return SUCCESS; // Already detected overlap, can skip interior check...
-        }
-
-    if (RenderMode::Wireframe == GetViewFlags().GetRenderMode() && !isFilled)
-        {
-        ClipAndProcessFacetSetAsCurves(meshData);
-
-        return SUCCESS;
-        }
-
-    PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
-    bvector<DRay3d>     boresiteVector;
-
-    GetBoresiteLocations(boresiteVector);
-
-    for (; visitor->AdvanceToNextFace(); )
-        {
-        if (m_context->CheckStop())
-            return SUCCESS;
-
-        for (DRay3dR boresite: boresiteVector)
+        if (!m_fp.IsInsideMode())
             {
-            FacetLocationDetail  facetDetail;
-
-            if (!visitor->TryDRay3dIntersectionToFacetLocationDetail(boresite, facetDetail))
-                continue;
-
             m_currentAccept = true;
-            m_fp->SetHasOverlaps(true);
-            CheckCurrentAccept();
-            break;
+            m_fp.SetHasOverlaps(true);
             }
-
-        if (m_fp->HasOverlaps())
-            break;
+        }
+    else if (polyfaceTester.IsInside())
+        {
+        m_currentAccept = true;
         }
 
-    ClipAndProcessFacetSetAsCurves(meshData);
+    CheckCurrentAccept();
 
-    return SUCCESS;
-#else
-    return false;
-#endif
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -570,21 +341,6 @@ bool AcceptGeometrySource(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AcceptCurveVector(CurveVectorCR curves)
-    {
-    if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose))
-        return false;
-
-    auto graphic = CreateSceneGraphic();
-
-    graphic->AddCurveVector(curves, false);
-
-    return m_accept;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/10
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GetContents(DgnElementIdSet& contents)
     {
     DRange3d npcRange = m_fp.GetFenceRangeNPC ();
@@ -617,9 +373,9 @@ DgnViewportP    FenceParams::GetViewport() const {BeAssert(m_viewport && "Fence 
 void            FenceParams::SetOverlapMode(bool val) {m_overlapMode = val;}
 void            FenceParams::SetClipMode(FenceClipMode val) {m_clipMode = val;}
 void            FenceParams::SetClip(ClipVectorCR clip) {m_clip = ClipVector::CreateCopy(clip);}
-void            FenceParams::SetLocateInteriors(LocateSurfacesPref interiors) {m_locateInteriors = interiors;}
 bool            FenceParams::HasOverlaps() const {return m_hasOverlaps;}
 bool            FenceParams::AllowOverlaps() const {return m_overlapMode;}
+bool            FenceParams::IsInsideMode() const {return !m_overlapMode && FenceClipMode::None == m_clipMode;}
 
 /*---------------------------------------------------------------------------------**//**
 | @param view => selects view whose transformation is applied.
@@ -878,7 +634,6 @@ FenceParams::FenceParams()
     m_onTolerance       = .25;    // The traditional UOR tolerance...
     m_viewport          = nullptr;
     m_clipMode          = FenceClipMode::None;
-    m_locateInteriors   = LocateSurfacesPref::Never;
     m_hasOverlaps       = false;
     m_fenceRangeNPC.Init();
     }
@@ -894,7 +649,6 @@ FenceParams::FenceParams(FenceParamsP fpP)
     m_clipMode          = fpP->m_clipMode;
     m_clip              = fpP->m_clip;
     m_fenceRangeNPC     = fpP->m_fenceRangeNPC;
-    m_locateInteriors   = fpP->m_locateInteriors;
     m_hasOverlaps       = false;
     }
 

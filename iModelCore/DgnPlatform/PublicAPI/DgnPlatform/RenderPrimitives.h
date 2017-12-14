@@ -36,7 +36,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryAccumulator);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ColorTable);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PrimitiveBuilder);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(QVertex3d);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshList);
 
 DEFINE_REF_COUNTED_PTR(DisplayParams);
@@ -180,6 +179,8 @@ public:
         {
         return new DisplayParams(type, catId, subCatId, gradient, matId, lineColor, fillColor, width, linePixels, fillFlags, geomClass, ignoreLights, dgnDb, renderSys);
         }
+
+    DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 };
 
 //=======================================================================================
@@ -313,109 +314,6 @@ public:
 };
 
 //=======================================================================================
-//! Represents a possibly-quantized position. Used during mesh generation.
-//! See QVertex3dList.
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct QVertex3d
-{
-    using Params = QPoint3d::Params;
-    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
-private:
-    struct Quantized { uint16_t x, y, z; };
-    struct Unquantized { float x, y, z; };
-
-    union
-        {
-        Quantized   m_q;
-        Unquantized m_u;
-        };
-    bool    m_quantized;
-public:
-    QVertex3d() { }
-    explicit QVertex3d(QPoint3dCR qpt) : m_q(*reinterpret_cast<Quantized const*>(&qpt)), m_quantized(true) { } // onus on caller to ensure in quantization range...
-    QVertex3d(DPoint3dCR dpt, ParamsCR params) : QVertex3d(FPoint3d::From(dpt), params) { }
-    QVertex3d(FPoint3dCR fpt, ParamsCR params)
-        {
-        double x, y=0, z=0; // Compiler doesn't realize y and z are never used unless they are initialized, therefore must initialize here...
-        m_quantized = (Quantization::IsInRange(x = Quantization::QuantizeDouble(fpt.x, params.origin.x, params.scale.x))
-                    && Quantization::IsInRange(y = Quantization::QuantizeDouble(fpt.y, params.origin.y, params.scale.y))
-                    && Quantization::IsInRange(z = Quantization::QuantizeDouble(fpt.z, params.origin.z, params.scale.z)));
-        if (m_quantized)
-            {
-            m_q.x = static_cast<uint16_t>(x);
-            m_q.y = static_cast<uint16_t>(y);
-            m_q.z = static_cast<uint16_t>(z);
-            }
-        else
-            {
-            *reinterpret_cast<FPoint3dP>(&m_u) = fpt;
-            }
-        }
-
-    bool IsQuantized() const { return m_quantized; }
-    QPoint3dCR GetQPoint3d() const { BeAssert(IsQuantized()); return *reinterpret_cast<QPoint3dCP>(&m_q); }
-    FPoint3dCR GetFPoint3d() const { BeAssert(!IsQuantized()); return *reinterpret_cast<FPoint3dCP>(&m_u); }
-
-    FPoint3d Unquantize(ParamsCR params) const
-        {
-        return IsQuantized() ? GetQPoint3d().Unquantize32(params) : GetFPoint3d();
-        }
-};
-
-//=======================================================================================
-//! A list of possibly-quantized positions. When mesh generation begins, we typically
-//! know a range that will contain most of the mesh's vertices, but vertices of triangles
-//! which only partially intersect that range must also be included. Vertices within the
-//! initial range are quantized to that range; vertices outside of it are stored directly,
-//! and used to extend the initial range.
-//! After mesh generation completes, the entire list is requantized to the actual range
-//! if necessary.         
-// @bsistruct                                                   Paul.Connelly   05/17
-//=======================================================================================
-struct QVertex3dList
-{
-private:
-    bvector<FPoint3d>   m_fpoints;
-    QPoint3dList        m_qpoints;
-    DRange3d            m_range;
-public:
-    explicit QVertex3dList(DRange3dCR range) : m_qpoints(range), m_range(range) { }
-
-    void Add(QVertex3dCR vertex)
-        {
-        if (!vertex.IsQuantized())
-            {
-            FPoint3dCR fpt = vertex.GetFPoint3d();
-            m_fpoints.push_back(fpt);
-            m_range.Extend(fpt);
-            }
-        else if (m_fpoints.empty())
-            {
-            m_qpoints.push_back(vertex.GetQPoint3d());
-            }
-        else
-            {
-            m_fpoints.push_back(vertex.Unquantize(m_qpoints.GetParams()));
-            }
-        }
-
-    //! If any unquantized vertices exist, requantize. IsFullyQuantized() returns true after this operation.
-    DGNPLATFORM_EXPORT void Requantize();
-    bool IsFullyQuantized() const { return m_fpoints.empty(); }
-    QPoint3dListCR GetQuantizedPoints() const { BeAssert(IsFullyQuantized()); return m_qpoints; }
-    QPoint3d::ParamsCR GetParams() const { return m_qpoints.GetParams(); }
-    bool empty() const { return m_fpoints.empty() && m_qpoints.empty(); }
-    size_t size() const { return m_fpoints.size() + m_qpoints.size(); }
-
-    //! Returns the accumulated range, which may be larger than the initial range passed to the constructor.
-    DRange3dCR GetRange() const { return m_range; }
-    void Init(DRange3dCR range, QPoint3dCP points, size_t nPoints); 
-};
-
-DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(QVertex3dList);
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct Mesh : RefCountedBase
@@ -446,7 +344,7 @@ private:
     DisplayParamsCPtr               m_displayParams;
     TriangleList                    m_triangles;
     PolylineList                    m_polylines;
-    QVertex3dList                   m_verts;
+    QPoint3dList                    m_verts;
     OctEncodedNormalList            m_normals;
     bvector<FPoint2d>               m_uvParams;
     ColorTable                      m_colorTable;
@@ -475,9 +373,9 @@ public:
     TriangleList const&             Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
     PolylineList const&             Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
     PolylineList&                   PolylinesR() { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
-    QPoint3dListCR                  Points() const { return m_verts.GetQuantizedPoints(); } //!< Position vertex attribute array
-    QVertex3dListCR                 Verts() const { return m_verts; }
-    QVertex3dListR                  VertsR() { return m_verts; }
+    QPoint3dListCR                  Points() const { return m_verts; } //!< Position vertex attribute array
+    QPoint3dListCR                  Verts() const { return m_verts; }
+    QPoint3dListR                   VertsR() { return m_verts; }
     OctEncodedNormalListCR          Normals() const { return m_normals; }   //!< Normal vertex attribute array
     OctEncodedNormalListR           NormalsR()  { return m_normals; }       //!< Normal vertex attribute array
     bvector<FPoint2d> const&        Params() const { return m_uvParams; }   //!< UV params vertex attribute array
@@ -497,14 +395,12 @@ public:
     PrimitiveType GetType() const { return m_type; }
     FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
 
-    DGNPLATFORM_EXPORT DRange3d GetRange() const;
-    DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
-
-    void Close() { m_verts.Requantize(); }
+    DGNPLATFORM_EXPORT DRange3d ComputeRange() const;
+    DGNPLATFORM_EXPORT DRange3d ComputeUVRange() const;
 
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
-    uint32_t AddVertex(QVertex3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
+    uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
     void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
 };
 
@@ -526,7 +422,7 @@ struct MeshBuilderMap
     {
         friend struct MeshBuilderMap;
     private:
-        DisplayParamsCP     m_params;
+        DisplayParamsCPtr   m_params;
         uint16_t            m_order;
         Mesh::PrimitiveType m_type;
         bool                m_hasNormals;
@@ -555,7 +451,7 @@ struct MeshBuilderMap
             if (m_hasNormals != rhs.m_hasNormals)
                 return !m_hasNormals;
 
-            BeAssert(nullptr != m_params && nullptr != rhs.m_params);
+            BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
             return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
             }
     };
@@ -593,28 +489,55 @@ public:
 //=======================================================================================
 struct VertexKey
 {
-    DPoint2d            m_param;
-    uint32_t            m_fillColor = 0;
-    Feature             m_feature;
-    QVertex3d           m_position;
-    OctEncodedNormal    m_normal;
-    bool                m_normalValid;
-    bool                m_paramValid;
-
-    VertexKey() { }
-    VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr);
-    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param);
-
-    OctEncodedNormalCP GetNormal() const { return m_normalValid ? &m_normal : nullptr; }
-    DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
-
-    //=======================================================================================
-    // @bsistruct                                                   Paul.Connelly   12/16
-    //=======================================================================================
-    struct Comparator
+private:
+    struct NormalAndPosition
     {
-        DGNPLATFORM_EXPORT bool operator()(VertexKey const& lhs, VertexKey const& rhs) const;
+        uint16_t    m_data[4];
+
+        NormalAndPosition() { }
+        NormalAndPosition(QPoint3dCR pos, uint16_t normal)
+            {
+            m_data[0] = normal;
+            m_data[1] = pos.x;
+            m_data[2] = pos.y;
+            m_data[3] = pos.z;
+            }
     };
+
+    DPoint2d            m_param;            // 0
+    NormalAndPosition   m_normalAndPos;     // 10
+    uint64_t            m_elemId;           // 18
+    uint64_t            m_subcatId;         // 20
+    uint32_t            m_fillColor;        // 28
+    DgnGeometryClass    m_class;            // 2C
+    bool                m_normalValid;      // 2D
+    bool                m_paramValid;       // 2E
+
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, uint16_t normal, bool normalValid, bool paramValid)
+        : m_normalAndPos(point, normal), m_elemId(feature.GetElementId().GetValueUnchecked()), m_subcatId(feature.GetSubCategoryId().GetValueUnchecked()),
+        m_fillColor(fillColor), m_class(feature.GetClass()), m_normalValid(normalValid), m_paramValid(paramValid) { }
+public:
+    VertexKey() { }
+    VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr)
+        : VertexKey(QPoint3d(point, qParams), feature, fillColor, nullptr != normal ? OctEncodedNormal::From(*normal).Value() : 0, nullptr != normal, nullptr != param)
+        {
+        if (m_paramValid)
+            m_param = *param;
+        }
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param)
+        : VertexKey(point, feature, fillColor, nullptr != normal ? normal->Value() : 0, nullptr != normal, nullptr != param)
+        {
+        if (m_paramValid)
+            m_param = DPoint2d::From(param->x, param->y);
+        }
+
+    DGNPLATFORM_EXPORT bool operator<(VertexKey const& rhs) const;
+
+    QPoint3dCR GetPosition() const { return *reinterpret_cast<QPoint3dCP>(m_normalAndPos.m_data+1); }
+    Feature GetFeature() const { return Feature(DgnElementId(m_elemId), DgnSubCategoryId(m_subcatId), m_class); }
+    uint32_t GetFillColor() const { return m_fillColor; }
+    OctEncodedNormalCP GetNormal() const { return m_normalValid ? reinterpret_cast<OctEncodedNormalCP>(m_normalAndPos.m_data) : nullptr; }
+    DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
 };
 
 //=======================================================================================
@@ -630,7 +553,7 @@ struct TriangleKey
     bool operator<(TriangleKeyCR rhs) const;
 };
 
-typedef bmap<VertexKey, uint32_t, VertexKey::Comparator> VertexMap;
+typedef bmap<VertexKey, uint32_t> VertexMap;
 typedef bset<TriangleKey> TriangleSet;
 
 //=======================================================================================
@@ -666,9 +589,9 @@ public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
-    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor, bool requireNormals);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
-    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, FPoint3dCR rangeCenter);
+    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();
 
@@ -697,6 +620,7 @@ struct Polyface
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
     Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar); }
+    DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
 };
 
 //=======================================================================================
@@ -715,8 +639,9 @@ struct Strokes
         PointList(bvector<DPoint3d>&& points, DPoint3dCR rangeCenter) : m_startDistance(0.0), m_points(std::move(points)), m_rangeCenter(rangeCenter) { }
         };
 
-
     typedef bvector<PointList> PointLists;
+
+    static PointLists ClipToRange(PointLists&& input, DRange3dCR range);
 
     DisplayParamsCPtr   m_displayParams;
     PointLists          m_strokes;
@@ -727,6 +652,8 @@ struct Strokes
     Strokes(DisplayParamsCR displayParams, bool disjoint, bool isPlanar) : m_displayParams(&displayParams), m_disjoint(disjoint), m_isPlanar(isPlanar) { }
 
     void Transform(TransformCR transform);
+    DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
+
 };
 
 //=======================================================================================
@@ -977,7 +904,7 @@ struct IndexedPolyline : IndexedPolylineArgs::Polyline
 
     bool Init(MeshPolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance(), line.GetRangeCenter()); }
         
-    bool Init (bvector<uint32_t> const& indices, double startDistance, FPoint3dCR rangeCenter)
+    bool Init (bvector<uint32_t> const& indices, double startDistance, DPoint3dCR rangeCenter)
         {
         Reset();
 

@@ -9,6 +9,7 @@
 #include <Bentley/SHA1.h>
 #include <BeSQLite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
+#include <ECDb/ChangeIterator.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -867,7 +868,9 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
 
         BeAssert(modelId.IsValid());
         lockRequest.InsertLock(LockableId(modelId), LockLevel::Shared);
-        lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        // TFS#788401: We don't want to extract locks for inserted elements, as once it is pushed to the server
+        if (entry.GetDbOpcode() != DbOpcode::Insert)
+            lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
     // Any models or CodeSpecs directly changed?
@@ -882,8 +885,12 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         if (!entry.IsPrimaryTable())
             continue;
 
-        if (primaryClass->Is(modelClass))
+        // TFS#788401: We don't want to extract locks for inserted models, as once it is pushed to the server
+        if (primaryClass->Is(modelClass) && entry.GetDbOpcode() != DbOpcode::Insert)
             lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        // If a model is inserted, we don't want to have any locks related to it (same as inserted elements)
+        else if (primaryClass->Is(modelClass) && entry.GetDbOpcode() == DbOpcode::Insert)
+            lockRequest.Remove(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())));
         else if (primaryClass->Is(codeSpecClass))
             lockRequest.InsertCodeSpecsLock(dgndb);
         }
@@ -1152,47 +1159,20 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
-    if (m_dgndb.IsReadonly())
-        {
-        BeAssert(false && "Cannot merge changes into a Readonly database");
-        return RevisionStatus::CannotMergeIntoReadonly;
-        }
-
-    if (m_dgndb.IsMasterCopy())
-        {
-        BeAssert(false && "Cannot merge changes into the Master copy of a database");
-        return RevisionStatus::CannotMergeIntoMaster;
-        }
+    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
+    PRECONDITION(!m_dgndb.IsMasterCopy() && "Cannot merge changes into the Master copy of a database", RevisionStatus::CannotMergeIntoMaster);
 
     TxnManagerR txnMgr = m_dgndb.Txns();
 
-    if (txnMgr.HasChanges())
-        {
-        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        return RevisionStatus::HasUncommittedChanges;
-        }
-
-    if (txnMgr.InDynamicTxn())
-        {
-        BeAssert(false && "Cannot merge revisions if in the middle of a dynamic transaction");
-        return RevisionStatus::InDynamicTransaction;
-        }
-
-    if (IsCreatingRevision())
-        {
-        BeAssert(false && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first");
-        return RevisionStatus::IsCreatingRevision;
-        }
+    PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", RevisionStatus::HasUncommittedChanges);
+    PRECONDITION(!txnMgr.InDynamicTxn() && "Cannot merge revisions if in the middle of a dynamic transaction", RevisionStatus::InDynamicTransaction);
+    PRECONDITION(!IsCreatingRevision() && "There is already a revision being created. Call AbandonCreateRevision() or FinishCreateRevision() first", RevisionStatus::IsCreatingRevision)
 
     RevisionStatus status = revision.Validate(m_dgndb);
     if (RevisionStatus::Success != status)
         return status;
 
-    if (GetParentRevisionId() != revision.GetParentId())
-        {
-        BeAssert(false && "Parent of revision should match the parent revision id of the Db");
-        return RevisionStatus::ParentMismatch;
-        }
+    PRECONDITION(GetParentRevisionId() == revision.GetParentId() && "Parent of revision should match the parent revision id of the Db", RevisionStatus::ParentMismatch);
 
     return txnMgr.MergeRevision(revision);
     }

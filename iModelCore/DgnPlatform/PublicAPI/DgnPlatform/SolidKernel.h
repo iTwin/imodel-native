@@ -966,4 +966,14 @@ struct TopologyID
 
 }; // BRepUtil
 
+//=======================================================================================
+//! @private
+//=======================================================================================
+struct BRepDataCache
+{
+DGNPLATFORM_EXPORT static IBRepEntityPtr FindCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId);
+DGNPLATFORM_EXPORT static void AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity);
+
+}; // BRepDataCache
+
 END_BENTLEY_DGN_NAMESPACE

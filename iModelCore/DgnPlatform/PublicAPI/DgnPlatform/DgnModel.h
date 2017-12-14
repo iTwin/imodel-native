@@ -181,6 +181,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             {
             }
 
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, JsonValueCR val);
+
         void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
         void SetModeledElementRelClassId(DgnClassId classId) {m_modeledElementRelClassId = classId;} //!< Set the DgnClassId of the relationship of the DgnModel to the modeled element
         void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this model should @em not appear in lists shown to the user
@@ -272,6 +274,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
 
     //! Initialize this DgnModel from a Json::Value.
+    //! @param props The properties. @note The input object's properties will be moved into and consumed by this model.
     //! @note If you override this method, you @em must call T_Super::_FromJson
     DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
@@ -334,7 +337,7 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     virtual void _OnAppliedAddElement(DgnElementCR element) {}
 
-    //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was aplied to the DgnDb.
+    //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
@@ -715,6 +718,10 @@ public:
     void RemoveUserProperties(Utf8CP nameSpace) {GetUserPropsR().RemoveMember(nameSpace);}
     /** @} */
 
+    //! Set this model's properties from JavaScript.
+    //! @param opts The properties. @note The input object's properties will be moved into and consumed by this model.
+    void FromJson(JsonValueR opts) {return _FromJson(opts);}
+
     Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
 }; // DgnModel
 
@@ -941,7 +948,7 @@ protected:
 };
 
 //=======================================================================================
-//! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y5.
+//! A GeometricModel2d is a infinite planar model that contains only 2-dimensional DgnElements. Coordinates values are X,Y.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================

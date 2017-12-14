@@ -152,7 +152,7 @@ void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr HypermodelingViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
+BentleyStatus HypermodelingViewController::_StrokeHit(DecorateContextR context, GeometrySourceCR source, HitDetailCR hit)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  If the hit is in the drawing view, draw that view

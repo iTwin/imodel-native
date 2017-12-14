@@ -8,7 +8,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="CesiumJs" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
+    <Part Name="CesiumJs" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
         <Bindings>
             <Directory SourceName="Delivery/TilePublisher/scripts" ProductDirectoryName="Assets" ProductSubDirectory="scripts" />
         </Bindings>
@@ -21,7 +21,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPublicAPI" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
@@ -41,10 +41,10 @@
         </Bindings>
     </Part>
 
-    <Part Name="TilePublisherExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="TilePublisherExe-Windows" DeferType="BuildSamples" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="TilePublisherExe" />
     </Part>
-    <Part Name="TilePublisherExe-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
+    <Part Name="TilePublisherExe-Unix" DeferType="BuildSamples" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
         <SubPart PartName="TilePublisherExe" />
     </Part>
     <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" >
@@ -54,7 +54,7 @@
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
+        <SubPart PartName="RealityPlatform"     PartFile="RealityModFramework"  Repository="RealityModFramework"/>
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
         </Bindings>
@@ -67,9 +67,9 @@
         <Directories DirectoryListName="TilePublisherDirs" />
     </Product>
 
-    <Part Name="TilePublisherLibNuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke" OnlyPlatforms="x64">
+    <Part Name="TilePublisherLibNuGetPackage" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.NuGetPackage.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubProduct ProductName="TilePublisher" />
+        <SubPart PartName="TilePublisherLib" />
         <Bindings>
             <Files ProductDirectoryName="NuGetPackages">Install\TilePublisher\TilePublisher.*.nupkg</Files>
         </Bindings>
@@ -102,10 +102,10 @@
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="TilePublisher/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
-    <Part Name="Tests">
+    <Part Name="Tests" DeferType="BuildUnitTests">
         <SubPart PartName="UnitTests-NonPublished"/>
     </Part>
-    <Product Name="TilePublisher-Test">
+    <Product Name="TilePublisher-Test" DeferType="BuildUnitTests">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="Tests"/>

@@ -48,7 +48,6 @@ private:
     bool m_allowTransients = false;
     uint32_t m_maxHits;
     HitSource m_hitSource;
-    LocateSurfacesPref m_locateSurface = LocateSurfacesPref::ByView;
 
 public:
     LocateOptions()
@@ -67,13 +66,11 @@ public:
     void SetAllowTransients(bool allowTransients) {m_allowTransients = allowTransients;}
     void SetMaxHits(uint32_t maxHits) {m_maxHits = maxHits;}
     void SetHitSource(HitSource hitSource) {m_hitSource = hitSource;}
-    void SetLocateSurfaces(LocateSurfacesPref locateSurface) {m_locateSurface = locateSurface;}
 
     bool GetDisableDgnDbFilter() const {return m_disableDgnDbFilter;}
     bool GetAllowTransients() const {return m_allowTransients;}
     uint32_t GetMaxHits() const {return m_maxHits;}
     HitSource GetHitSource() const {return m_hitSource;}
-    LocateSurfacesPref GetLocateSurfaces() const {return m_locateSurface;}
 };
 
 /*=================================================================================**//**
@@ -83,12 +80,10 @@ struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 {
     DEFINE_T_SUPER(ViewContext)
     friend struct SheetAttachmentPicker;
-    friend struct BRepSilhouetteProcessor;
 
 private:
     bool m_doneSearching;
     bool m_unusableLStyleHit;
-    bool m_doLocateInteriors;
     TestLStylePhase m_testingLStyle;
     GeomDetail m_currGeomDetail;
     HitListP m_hitList;
@@ -109,8 +104,8 @@ private:
     void SetPickAperture(double val) {m_pickAperture=val; m_pickApertureSquared=val*val;}
     IPickGeomP _GetIPickGeom () override {return this;}
     StatusInt _OutputGeometry(GeometrySourceCR) override;
+    void _OnNewGeometry() override;
     bool _CheckStop() override;
-    StatusInt _InitContextForView() override;
     StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override;
     void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override;
     void _DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override;
@@ -150,7 +145,6 @@ public:
     bool GetDoneSearching() {return m_doneSearching;}
     void SetTestLStylePhase(TestLStylePhase phase) {m_testingLStyle = phase; if (TestLStylePhase::None == phase) m_unusableLStyleHit = false;}
     DPoint3dP GetProjectedPickPointView(DPoint3dR pPoint);
-    bool* GetLocateInteriors() {return &m_doLocateInteriors;}
 
     bool _IsSnap() const override;
     DPoint4dCR _GetPickPointView() const override {return m_pickPointView;}

@@ -381,7 +381,7 @@ struct DgnModels : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnModel;
-    friend struct IModelJs;
+    friend struct AddonUtils;
     friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
@@ -396,7 +396,7 @@ private:
     void DropLoadedModel(DgnModelR);
 
     ECSqlClassInfo const& FindClassInfo(DgnModelR model);
-    BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnModelR model);
+    DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnModelR model);     // used by imodeljs node addon
     BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnModelR model);
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnModelR model);
 
@@ -731,7 +731,7 @@ public:
 
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
-    //! Get the BIM's global origin. All spatial coordinates in the BIM are stored relative to its global origin.
+    //! Get the iModel's global origin. All spatial coordinates in the BIM are stored relative to its global origin.
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
     //! Update the project extents for this BIM

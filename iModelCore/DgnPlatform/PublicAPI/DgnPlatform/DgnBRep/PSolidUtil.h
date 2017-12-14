@@ -52,10 +52,17 @@ struct PSolidGoOutput
 //! @param[in] eyePoint The eye point (nullptr if parallel).
 //! @param[in] direction The direction toward the view (positive Z)
 //! @param[in] entityTag The input entity to compute silhouettes for.
-//! @param[in] entityTransform The entity transform (or nullptr).
 //! @param[in] tolerance The curve chord tolerance.
 //! @remarks This method outputs silhouette curves through GO and is NOT thread safe.
-DGNPLATFORM_EXPORT static void ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, TransformCP entityTransform = nullptr, double tolerance = 0.0);
+DGNPLATFORM_EXPORT static void ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP eyePoint, DVec3dCR direction, PK_ENTITY_t entityTag, double tolerance = 0.0);
+
+//! Output hatch curves for the supplied face sub-entity and snap divisor.
+//! @param[in] output IParasolidWireOutput to process each hatch curve.
+//! @param[in] divisor The snap divisor to control how many hatch curves to output.
+//! @param[in] entityTag The input face entity to compute hatching for.
+//! @param[in] tolerance The tolerance for hatching of a parametric face.
+//! @remarks This method outputs face hatch curves through GO and is NOT thread safe.
+DGNPLATFORM_EXPORT static void ProcessFaceHatching(IParasolidWireOutput& output, int divisor, PK_FACE_t entityTag, double tolerance = 0.0);
 
 }; // PSolidGoOutput
 
@@ -382,32 +389,16 @@ struct  MainThreadMark : RefCountedBase
 struct WorkerThreadOuterMark : RefCountedBase
     {
     public:
+
     DGNPLATFORM_EXPORT WorkerThreadOuterMark ();
     DGNPLATFORM_EXPORT ~WorkerThreadOuterMark ();
     };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley      09/2017
-*
-*  The WorkerThreadInnerMark should be included once in the worker thread whenever
-*  any Parasolid processing occurs.  It set the partition to the lightweight partition
-*  for this thread and advances the partition mark (PMark) so that will be used to 
-*  roll back if a sever error occurs.
-*                                                    Ray.Bentley      09/2017
-+===============+===============+===============+===============+===============+======*/
-struct WorkerThreadInnerMark : RefCountedBase
-    {
-    private:
-    BeMutexHolder     m_mutexHolder;
-
-    public:
-    DGNPLATFORM_EXPORT WorkerThreadInnerMark ();
-    DGNPLATFORM_EXPORT ~WorkerThreadInnerMark ();
-    };
+static PK_PARTITION_t  GetThreadPartition();
+static void  SetThreadPartitionMark();
     
 typedef  RefCountedPtr<MainThreadMark>          MainThreadMarkPtr;
 typedef  RefCountedPtr<WorkerThreadOuterMark>   WorkerThreadOuterMarkPtr;
-typedef  RefCountedPtr<WorkerThreadInnerMark>   WorkerThreadInnerMarkPtr;
 };
 
 END_BENTLEY_DGN_NAMESPACE

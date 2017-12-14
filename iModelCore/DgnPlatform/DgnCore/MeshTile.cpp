@@ -991,7 +991,9 @@ private:
         , m_db(db)
 #endif
         {
-        //
+#if defined (BENTLEYCONFIG_PARASOLID)    
+        PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+#endif
         }
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
@@ -1346,9 +1348,8 @@ TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR f
 TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)    
-    // We need to generate facets in this threads parasolid partition so that we
-    // can roll them back correctly in the event of a server parasolid error.
-    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
+    // Set mark so that we can roll back if severe error occurs.
+    PSolidThreadUtil::SetThreadPartitionMark();
 
     // Cannot process the same solid entity simultaneously from multiple threads...
     BeMutexHolder lock(m_mutex);
@@ -1569,7 +1570,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-#if 0 
+#ifdef ACCEPT_PUBLISHED_TILESET_INTERFACE 
     if (nullptr != getPublishedURL)
         {
         return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
@@ -2484,9 +2485,6 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
     {
     // We need to generate these in this threads parasolid partition so that we 
     // can roll them back correctly in the event of a server parasolid error.
-#if defined (BENTLEYCONFIG_PARASOLID)    
-    PSolidThreadUtil::WorkerThreadInnerMark     innerMark;
-#endif
 
     IBRepEntityPtr  clone = const_cast<IBRepEntityP>(&solid);
     DRange3d        range = clone->GetEntityRange();
@@ -2622,7 +2620,6 @@ private:
         }
 
     StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
-    Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
 
     static Render::ViewFlags GetDefaultViewFlags()
         {
@@ -2720,43 +2717,6 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings 09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (BENTLEYCONFIG_PARASOLID) 
-static bool hasPartOrBRep(GeometrySourceCR source)
-    {
-    GeometryCollection collection(source);
-
-    for (auto iter : collection)
-        {
-        if (GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType() ||
-            GeometryCollection::Iterator::EntryType::GeometryPart == iter.GetEntryType())      
-            return true;
-        }
-
-    return false;
-    }
-#endif
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    // If the geometry has a parasolid BRep (or a part that may contain a BREP (TFS# 775181)) then create a mark so that work is done in this threads lightweight partition and
-    // error handling works properly..
-    PSolidThreadUtil::WorkerThreadInnerMarkPtr        innerMark;
-    if (hasPartOrBRep(source))
-        innerMark = new PSolidThreadUtil::WorkerThreadInnerMark();
-
-    Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
-    return WasAborted() ? nullptr : graphic;
-#else
-    return nullptr;
-#endif
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
@@ -2836,6 +2796,18 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     return publishedTileGeometry;
     }
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     12/2017
++===============+===============+===============+===============+===============+======*/
+struct MeshTileClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
+{
+    bvector<PolyfaceHeaderPtr>  m_clipped;
+    bvector<PolyfaceQueryCP>    m_output;
+
+    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
+    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2866,7 +2838,6 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
-        bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
 
         FeatureAttributes attributes = geom->GetAttributes();
         for (auto& tilePolyface : polyfaces)
@@ -2904,13 +2875,17 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                 if (doDecimate)
                     polyface->DecimateByEdgeCollapse (tolerance, 0.0);
 
-                for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                    {
-                    if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
-                        {
+                
+                MeshTileClipOutput  clipOutput;
+
+                if (doRangeTest)
+                    polyface->ClipToRange(myTileRange, clipOutput, false);
+                else
+                    clipOutput.m_output.push_back(polyface.get());     // Skip clipping if not range test (instances).
+
+                for (auto& outputPolyface : clipOutput.m_output)
+                    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*outputPolyface); visitor->AdvanceToNextFace(); /**/)
                         meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
-                        }
-                    }
                 }
             }
 

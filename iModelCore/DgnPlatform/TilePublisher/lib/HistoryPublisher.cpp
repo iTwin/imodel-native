@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                  
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: TilePublisher/lib/HistoryPublisher.cpp $
 |
@@ -9,7 +9,6 @@
 #include <VersionCompare/VersionCompare.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
-#include <ECPresentation/IECPresentationManager.h>
 #include "Constants.h"
 
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
@@ -19,7 +18,6 @@ USING_NAMESPACE_VERSIONCOMPARE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 
 //=======================================================================================
@@ -39,7 +37,7 @@ struct CompareChangeSet : BentleyApi::BeSQLite::ChangeSet
         BeAssert(result == BE_SQLITE_OK);
         UNUSED_VARIABLE(result);
 
-        if (cause == ChangeSet::ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone. 
+        if (cause == ChangeSet::ConflictCause::NotFound && opcode == DbOpcode::Delete) // a delete that is already gone.
             return ChangeSet::ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
 
         return ChangeSet::ConflictResolution::Replace;
@@ -116,15 +114,15 @@ static WebServices::ClientInfoPtr getClientInfo()
 static ClientPtr   doSignIn(PublisherParams const& params)
     {
     Credentials                 credentials;
-    WebServices::UrlProvider::Environment   urlEnvironment = WebServices::UrlProvider::Environment::Qa;  
+    WebServices::UrlProvider::Environment   urlEnvironment = WebServices::UrlProvider::Environment::Qa;
 
 
     if (params.GetEnvironment().StartsWithI("Dev"))
         urlEnvironment =  urlEnvironment = WebServices::UrlProvider::Environment::Dev;
     else if (0 == params.GetEnvironment().CompareToI("Release"))
-        urlEnvironment = WebServices::UrlProvider::Environment::Release; 
-        
-        
+        urlEnvironment = WebServices::UrlProvider::Environment::Release;
+
+
     credentials.SetUsername(params.GetUser());
     credentials.SetPassword(params.GetPassword());
 
@@ -132,29 +130,8 @@ static ClientPtr   doSignIn(PublisherParams const& params)
     iModel::Hub::ClientHelper::Initialize(getClientInfo(), getLocalState());
     UrlProvider::Initialize(urlEnvironment, UrlProvider::DefaultTimeout, getLocalState());
 
-    Tasks::AsyncError error;        
+    Tasks::AsyncError error;
     return iModel::Hub::ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static RulesDrivenECPresentationManager*    registerPresentationManager()
-    {
-    // Initialize RulesDrivenECPresentationManager
-    BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();  
-    BeFileName rulesetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-
-    rulesetsDir.AppendToPath(L"PresentationRules");
-
-    RulesDrivenECPresentationManager::Paths paths (rulesetsDir, tempDir);
-    RulesDrivenECPresentationManager*   manager = new RulesDrivenECPresentationManager(paths);
-    
-    RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(rulesetsDir.GetNameUtf8().c_str());
-    manager->GetLocaters().RegisterLocater(*locater);
-    IECPresentationManager::RegisterImplementation(manager);
-
-    return manager;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -185,14 +162,14 @@ DgnDbPtr  acquireTemporaryBriefcase(BeFileNameR tempDbName, ClientPtr client, Ut
     if (!getIModelResult.IsSuccess())
         return nullptr;
 
-    if (BeFileName::DoesPathExist(tempDbName.c_str())) 
-        BeFileName::BeDeleteFile(tempDbName.c_str()); 
+    if (BeFileName::DoesPathExist(tempDbName.c_str()))
+        BeFileName::BeDeleteFile(tempDbName.c_str());
 
     auto acquireBriefcaseResult = client->AcquireBriefcase(*getIModelResult.GetValue(), tempDbName)->GetResult();
 
     if (!acquireBriefcaseResult.IsSuccess())
         return nullptr;
-    
+
     return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     }
 
@@ -226,19 +203,19 @@ DgnDbPtr copyToTemporaryBriefcase (BeFileNameR tempDbName, BeFileNameCR inputDbN
 struct TilesetRevisionPublisher : TilesetPublisher
 {
     DEFINE_T_SUPER(TilesetPublisher);
-    
+
 private:
     bool        m_preview;
     int         m_index;
 
-public:    
+public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetRevisionPublisher(DgnDbR db, PublisherParamsCR params, AxisAlignedBox3dCR projectExtents, WStringCR revisionName, int index, bool preview) : m_preview(preview), m_index(index),
     TilesetPublisher(db, DgnViewIdSet(), DgnViewId(), projectExtents, params.GetOutputDirectory(), params.GetTilesetName(), params.GetGeoLocation(), 5,
-            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode()) 
-    { 
+            params.GetDepth(), params.SurfacesOnly(), params.WantVerboseStatistics(), params.GetTextureMode(), params.WantProgressOutput(), params.GetGlobeMode())
+    {
     m_dataDir.AppendToPath(L"History").AppendSeparator();
     m_dataDir.AppendToPath(revisionName.c_str()).AppendSeparator();
     m_dataDir.AppendToPath(preview ? L"Pre" : L"Post").AppendSeparator();
@@ -261,13 +238,13 @@ PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnEleme
     auto status = InitializeDirectories(GetDataDirectory());
     if (Status::Success != status)
         return status;
-    
+
 
     if (!elementIds.empty())                                                                                                        {
         ProgressMeter               progressMonitor(*this);
         RevisionCollectionFilter    collectionFilter(elementIds);
         TileGenerator               tileGenerator(m_db, &collectionFilter, &progressMonitor);
-    
+
         auto generateStatus = tileGenerator.GenerateTiles(*this, modelIds, params.GetTolerance(), params.SurfacesOnly(), s_maxPointsPerTile);
         }
 
@@ -288,7 +265,7 @@ virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR
 
     json[m_preview ? "preRevision" : "revision"] = std::move(revisions);
     }
-   
+
 };  // TilesetRevisionPublisher
 
 
@@ -301,7 +278,7 @@ struct     HistoryPublisher
     ClientPtr                               m_client;
     iModelConnectionPtr                     m_connection;
     DgnDbPtr                                m_tempDb;
-    BeFileName                              m_tempDbName;                                                                                                                                                                                  
+    BeFileName                              m_tempDbName;
     bvector<DgnRevisionPtr>                 m_changeSets;
     bvector<ChangeSetInfoPtr>               m_changeSetInfos;
     PublisherParamsCR                       m_params;
@@ -336,10 +313,8 @@ DgnModelIdSet   GetElementModelIds(DgnElementIdSet const& elementIds)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status Initialize()
     {
-    auto presentationManager = registerPresentationManager();
-
     m_client = doSignIn(m_params);
-    
+
     if (!m_client.IsValid())
         return TilesetPublisher::Status::CantConnectToIModelHub;
 
@@ -470,7 +445,7 @@ Json::Value     GetChanges(DgnElementIdSet& addedOrModifiedIds, DgnElementIdSet&
 * @bsimethod                                                    Ray.Bentley     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPublisher& tipPublisher)
-    {                                                                
+    {
     AxisAlignedBox3d        projectExtents = tipPublisher.GetProjectExtents();
 
     LOG.infov ("Publishing History with %d Revisions\n", (int) m_changeSets.size());
@@ -491,7 +466,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
 
         WriteChangeSetInfoJson(revisionJson, *m_changeSetInfos.at(i));
         revisionsJson[Utf8PrintfString("%d", revisionIndex).c_str()] = revisionJson;
- 
+
 
         // Don't recreate revision if it already exists.
         if (BeFileName::DoesPathExist(outputFileName.c_str()) ||
@@ -504,7 +479,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
         DgnModelIdSet                       prevModelIds, postModelIds;
         auto                                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
         auto                                postModelIterator = m_tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
- 
+
         for (auto& model : prevModelIterator)
             prevModelIds.insert(model.GetModelId());
 
@@ -514,7 +489,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
         if (addedOrModifiedIds.empty() && deletedOrModifiedIds.empty() && prevModelIds == postModelIds)
             continue;           // Skip empty revisions.
 
-                
+
         if (!addedOrModifiedIds.empty())
             {
             TilesetRevisionPublisher    revisionPublisher(*m_tempDb, m_params, projectExtents, revisionName, revisionIndex, false);
@@ -526,7 +501,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
 
             if (!modelIds.empty())
                 revisionPublisher.PublishRevision(modelIds, addedOrModifiedIds, m_params);
-                    
+
             revisionJson["postModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
 
@@ -544,7 +519,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
 
             revisionJson["preModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
-            
+
         revisionJson["name"] = Utf8PrintfString("1.%d", revisionIndex + 1);
         revisionJson["elements"] = std::move(revisionElementsJson);
         revisionJson.removeMember("url");
@@ -552,7 +527,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
         TileUtil::WriteJsonToFile (outputFileName.c_str(), revisionJson);
         }
     return TilesetPublisher::Status::Success;
-    }                                                                                                                                                                                         
+    }
 
 };  // HistoryPublisher
 

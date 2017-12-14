@@ -213,7 +213,7 @@ Render::GraphicPtr ViewController::_StrokeGeometry(ViewContextR context, Geometr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr ViewController::_StrokeHit(ViewContextR context, GeometrySourceCR source, HitDetailCR hit)
+BentleyStatus ViewController::_StrokeHit(DecorateContextR context, GeometrySourceCR source, HitDetailCR hit)
     {
     return source.StrokeHit(context, hit);
     }

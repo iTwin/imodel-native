@@ -12,6 +12,9 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
+    if (m_viewController.IsValid())
+        m_viewController->_OnDetachedFromViewport(*this);
+
     SuspendViewport();
     m_viewController = nullptr;
     }
@@ -1172,6 +1175,20 @@ void DgnViewport::SetAnimator(IViewportAnimatorR animator)
     {
     RemoveAnimator();
     m_animator = &animator;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetFlashed(DgnElementId id, double duration)
+    {
+    if (m_flashedElem != id)
+        {
+        m_lastFlashedElem = m_flashedElem;
+        m_flashedElem = id;
+        }
+
+    m_flashDuration = duration;
     }
 
 /*---------------------------------------------------------------------------------**//**

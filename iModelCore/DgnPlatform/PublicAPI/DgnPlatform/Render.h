@@ -163,6 +163,22 @@ public:
     RenderMode GetRenderMode() const {return m_renderMode;}
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
+    bool HiddenEdgesVisible() const
+        {
+        switch (m_renderMode)
+            {
+            case RenderMode::SolidFill:
+            case RenderMode::HiddenLine:
+                return m_hiddenEdges;
+
+            case RenderMode::SmoothShade:
+                return m_visibleEdges && m_hiddenEdges;
+
+            default:
+                return true;
+            }
+        }
+
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
@@ -251,6 +267,7 @@ struct Task : RefCounted<NonCopyableClass>
     //! The rendering operation a task performs.
     enum class Operation
     {
+        ChangeDecorations,
         ChangeDynamics,
         ChangeRenderPlan,
         ChangeScene,
@@ -515,6 +532,9 @@ public:
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
+protected:
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+public:
     struct CreateParams
     {
         bool m_isTileSection = false;
@@ -629,7 +649,7 @@ protected:
 
     //! Override to perform additional logic when texture mapping is set, if necessary.
     virtual void _MapTexture() { }
-
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 public:
     //! Map a texture to this material
     void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping; _MapTexture();}
@@ -853,7 +873,7 @@ enum class BackgroundFill
     Outline = 2, //!< single color fill uses the view's background color and line color to draw an outline fill
 };
 
-enum class DgnGeometryClass
+enum class DgnGeometryClass : uint8_t
 {
     Primary      = 0,
     Construction = 1,
@@ -1312,17 +1332,17 @@ public:
 //=======================================================================================
 enum class GraphicType
 {
-    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: disabled.
+    //! Renders behind all other graphics. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled.
     ViewBackground,
     //! Renders as if it were part of the scene. Coordinates: world. RenderMode: from view. Lighting: from view. Z-testing: enabled.
     //! Used for the scene itself, dynamics, and 'normal' decorations.
     Scene,
     //! Renders within the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
     WorldDecoration,
-    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: world. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the ACS triad and the grid.
     WorldOverlay,
-    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: default. Z-testing: enabled
+    //! Renders atop the scene. Coordinates: view. RenderMode: smooth. Lighting: none. Z-testing: disabled
     //! Used for things like the locate circle.
     ViewOverlay
 };
@@ -1858,7 +1878,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalPairList)
 namespace Quantization
 {
     constexpr double RangeScale() { return static_cast<double>(0xffff); }
-
     constexpr double ComputeScale(double extent) { return 0.0 == extent ? extent : RangeScale() / extent; }
 
     inline bool IsInRange(double quantizedPos)
@@ -1866,9 +1885,9 @@ namespace Quantization
         return quantizedPos >= 0.0 && quantizedPos < RangeScale() + 1.0; // rounding term of 0.5 added...double value floored when convert to uint16_t
         }
 
-    constexpr double QuantizeDouble(double pos, double origin, double scale)
+    inline /*constexpr*/ double QuantizeDouble(double pos, double origin, double scale)
         {
-        return 0.5 + (pos - origin) * scale;
+        return std::max(0.0, std::min(RangeScale(), 0.5 + (pos - origin) * scale));
         }
 
     inline bool IsQuantizable(double pos, double origin, double scale)
@@ -1879,7 +1898,6 @@ namespace Quantization
     inline uint16_t Quantize(double pos, double origin, double scale)
         {
         double qpos = QuantizeDouble(pos, origin, scale);
-        BeAssert(IsInRange(qpos));
         return static_cast<uint16_t>(qpos);
         }
 
@@ -1933,7 +1951,7 @@ namespace Quantization
         void Assign(T const* points, size_t nPoints, Params const& params)
             {
             m_params = params;
-            assign(points, points+nPoints);
+            this->assign(points, points+nPoints);
             }
 
         //! Empty this list and change its quantization parameters
@@ -1954,7 +1972,7 @@ namespace Quantization
         DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
         //! Return the point at the specified index, unquantized as a vector type.
         DVec UnquantizeAsVector(size_t index) const { BeAssert(index < this->size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
-        //! Return the point at the specified index
+        //! Return the point at the specified index.
         FPoint Unquantize32(size_t index) const { return ToFPoint(Unquantize(index)); }
 
         //! Requantize all the points in this list to the new parameters, and update the list's parameters.
@@ -2237,11 +2255,11 @@ struct IndexedPolylineArgs
     {
         uint32_t const* m_vertIndex = nullptr;
         uint32_t        m_numIndices = 0;
-        float           m_startDistance = 0.0;
-        FPoint3d        m_rangeCenter;
+        double          m_startDistance = 0.0;
+        DPoint3d        m_rangeCenter;
 
         Polyline() { }
-        Polyline(uint32_t const* indices, uint32_t numIndices, float startDistance, FPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+        Polyline(uint32_t const* indices, uint32_t numIndices, double startDistance, DPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
     };
 
     QPoint3dCP          m_points = nullptr;
@@ -2290,18 +2308,18 @@ struct MeshPolyline
 {
 private:
     bvector<uint32_t>   m_indices;
-    float               m_startDistance;
-    FPoint3d            m_rangeCenter;
+    double              m_startDistance;
+    DPoint3d            m_rangeCenter;
 
 public:
     MeshPolyline () : m_startDistance(0.0) { }
-    MeshPolyline (float startDistance, FPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-    MeshPolyline (float startDistance, FPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+    MeshPolyline (double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+    MeshPolyline (double startDistance, DPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
 
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
-    float GetStartDistance() const { return m_startDistance; }
-    FPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
+    double GetStartDistance() const { return m_startDistance; }
+    DPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
     
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
@@ -2527,15 +2545,23 @@ struct HiliteSettings
         Thin, //!< A thin silhouette
         Thick //!< A thick silhouette
     };
+
+    struct Defaults
+    {
+        static ColorDef Color() {return ColorDef(0x23,0xbb,0xfc);};
+        static double VisibleRatio() {return 0.25;}
+        static double HiddenRatio() {return 0.0;}
+        static HiliteSettings::Silhouette Width() {return HiliteSettings::Silhouette::Thin;}
+    };
 private:
     ColorDef    m_color;
-    double      m_visibleRatio = 0.5;
-    double      m_hiddenRatio = 0.25;
-    Silhouette  m_silhouette = Silhouette::Thick;
+    double      m_visibleRatio;
+    double      m_hiddenRatio;
+    Silhouette  m_silhouette;
 
     static void Clamp(double& value) { value = std::min(1.0, std::max(0.0, value)); }
 public:
-    explicit HiliteSettings(ColorDef color=ColorDef::Magenta(), double visibleRatio=0.5, double hiddenRatio=0.25, Silhouette silhouette=Silhouette::Thick)
+    explicit HiliteSettings(ColorDef color=Defaults::Color(), double visibleRatio=Defaults::VisibleRatio(), double hiddenRatio=Defaults::HiddenRatio(), Silhouette silhouette=Defaults::Width())
         : m_color(color), m_visibleRatio(visibleRatio), m_hiddenRatio(hiddenRatio), m_silhouette(silhouette)
         {
         Clamp(m_visibleRatio);
@@ -2639,7 +2665,9 @@ public:
     explicit FeatureTable(uint32_t maxFeatures) : FeatureTable(DgnModelId(), maxFeatures) { }
     FeatureTable(DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId), m_maxFeatures(maxFeatures) { }
     FeatureTable(FeatureTable&& src) : m_map(std::move(src.m_map)), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
+    FeatureTable(FeatureTableCR src) : m_map(src.m_map), m_modelId(src.m_modelId), m_maxFeatures(src.m_maxFeatures) { }
     FeatureTable& operator=(FeatureTable&& src) { m_map = std::move(src.m_map); m_modelId = src.m_modelId; m_maxFeatures = src.m_maxFeatures; return *this; }
+    FeatureTable& operator=(FeatureTableCR src) { *this = FeatureTable(src); return *this; }
 
     //! This method potentially allocates a new index, if the specified Feature does not yet exist in the lookup table.
     uint32_t GetIndex(FeatureCR feature)

@@ -227,7 +227,6 @@ Utf8String MapRoot::_ConstructTileResource(TileCR tile) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-
 MapRoot::MapRoot(DgnDbR db, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
         uint32_t maxSize) : QuadTree::Root(db, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider(&imageryProvider)
     {

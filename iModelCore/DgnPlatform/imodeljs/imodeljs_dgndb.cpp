@@ -130,7 +130,7 @@ DgnDbStatus IModelJs::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP 
     {
     auto ecclass = dgndb.Schemas().GetClass(ecSchemaName, ecClassName);
     if (nullptr == ecclass)
-        return DgnDbStatus::Success;    // This is not an exception. It just returns an empty result.
+        return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
 
     if (ecclass->Is(dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element)))
         {
@@ -289,9 +289,9 @@ DgnDbStatus IModelJs::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus IModelJs::DeleteElement(DgnDbR dgndb, JsonValueR idJsonVal)
+DgnDbStatus IModelJs::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)
     {
-    DgnElementId eid(BeInt64Id::FromString(idJsonVal.asCString()).GetValue());
+    DgnElementId eid(BeInt64Id::FromString(eidStr.c_str()).GetValue());
     if (!eid.IsValid())
         return DgnDbStatus::InvalidId;
 
@@ -384,8 +384,9 @@ DbResult IModelJs::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFile
             DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
             if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
                 {
-                BeFileName::EmptyAndRemoveDirectory(briefcasePath);
-                continue;
+                jsonIModelBriefcases = Json::nullValue;
+				BeFileName::EmptyAndRemoveDirectory(iModelPath);
+                break;
                 }
 
             Json::Value jsonBriefcase = Json::objectValue;
@@ -393,6 +394,10 @@ DbResult IModelJs::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFile
             jsonBriefcase["parentChangeSetId"] = db->Revisions().GetParentRevisionId();
             jsonIModelBriefcases[briefcasePath.GetBaseName().GetNameUtf8()] = jsonBriefcase;
             }
+
+		if (jsonIModelBriefcases.isNull())
+			continue;
+
         jsonBriefcaseInfos[iModelPath.GetBaseName().GetNameUtf8()] = jsonIModelBriefcases;
         }
 

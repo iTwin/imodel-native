@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY
 struct Session;
 
 #define COMMAND_USAGE_IDENT "                                "
-
+struct Session;
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
@@ -44,6 +44,7 @@ struct Command
         void Run(Session& session, Utf8StringCR args) const;
     };
 
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
@@ -69,9 +70,6 @@ struct HelpCommand final : public Command
 struct OpenCommand final : public Command
     {
     private:
-        static Utf8CP const READONLY_SWITCH;
-        static Utf8CP const READWRITE_SWITCH;
-
         Utf8String _GetName() const override { return ".open"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
@@ -207,10 +205,11 @@ struct ECSqlCommand final : public Command
         void ExecuteUpdateOrDelete(Session&, BeSQLite::EC::ECSqlStatement&) const;
 
         static int ComputeColumnSize(BeSQLite::EC::ECSqlColumnInfo const&);
-        static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&, ECN::PrimitiveType);
+        static Utf8String ValueToString(BeSQLite::EC::IECSqlValue const&);
         static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&);
-        static Utf8String ArrayToString(BeSQLite::EC::IECSqlValue const& arrayValue, ECN::ECPropertyCP);
+        static Utf8String ArrayToString(BeSQLite::EC::IECSqlValue const& arrayValue);
         static Utf8String StructToString(BeSQLite::EC::IECSqlValue const& structValue);
+        static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&, ECN::PrimitiveType);
 
     public:
         ECSqlCommand() : Command() {}
@@ -282,6 +281,50 @@ struct RollbackCommand final : public Command
     };
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    12/2017
+//---------------------------------------------------------------------------------------
+struct AttachCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".attach"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        AttachCommand() : Command() {}
+        ~AttachCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    12/2017
+//---------------------------------------------------------------------------------------
+struct DetachCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".detach"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        DetachCommand() : Command() {}
+        ~DetachCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Affan.Khan    11/2017
+//---------------------------------------------------------------------------------------
+struct ChangeCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".change"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+    public:
+        ChangeCommand(): Command() {}
+        ~ChangeCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    10/2013
 //---------------------------------------------------------------------------------------
 struct MetadataCommand final : public Command
@@ -290,6 +333,8 @@ struct MetadataCommand final : public Command
         Utf8String _GetName() const override { return ".metadata"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
+
+        static Utf8String GetPropertyTypeName(ECN::ECPropertyCR);
 
     public:
         MetadataCommand() : Command() {}

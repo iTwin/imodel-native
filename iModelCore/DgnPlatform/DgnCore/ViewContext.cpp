@@ -428,39 +428,6 @@ StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitHit(HitDetailCR hit)
-    {
-    DgnElementCPtr   element = hit.GetElement();
-    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    if (nullptr == source)
-        {
-        IElemTopologyCP elemTopo = hit.GetElemTopology();
-        if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
-            return ERROR;
-        }
-
-    if (&GetDgnDb() != &source->GetSourceDgnDb())
-        return ERROR;
-
-    if (element.IsValid() && nullptr != m_viewport && !m_viewport->GetViewController().IsModelViewed(element->GetModelId()))
-        return ERROR;
-
-    // Allow sub-class involvement for flashing sub-entities...
-    Render::GraphicPtr graphic = (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit));
-
-    if (WasAborted()) // if we aborted, the graphic may not be complete
-        return ERROR;
-
-    if (graphic.IsValid())
-        _OutputGraphic(*graphic, source); 
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementId id)
@@ -1163,6 +1130,97 @@ void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* show a hit that comes from a view attachment on a sheet.
+* @bsimethod                                    Keith.Bentley                   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DecorateContext::DrawSheetHit(HitDetailCR hit)
+    {
+#if defined(TODO_ETT_SHEETS)
+    auto& attachVp = *hit.GetSheetAttachViewport();
+
+    // first, create a branch to hold the graphics of the hit using tileVp
+    Render::GraphicBranch branch;
+    branch.SetViewFlagsOverrides(Render::ViewFlagsOverrides(attachVp.GetViewFlags()));
+
+    m_viewlet = &branch;  // See AddFlashed
+    m_viewport = &attachVp; // fake this context to be attached to tileVp
+    T_Super::_VisitHit(hit); // and visit the hit normally
+    m_viewport = &hit.GetViewport(); // restore m_viewport and m_viewlet so call to _OutputGraphics below will add the branch to the flashed list
+    m_viewlet = nullptr;
+
+    if (attachVp.GetViewController().IsSpatialView()) // for 3d views, we need to use viewlets.
+        {
+        // first get transform from sheet view coordinates to tile view coordinates
+        Transform sheetViewToTileView = attachVp.GetTransformFromSheet(*m_viewport);
+
+        // All this is due to the fact that the QV viewlet api doesn't allow rotated viewlets. We therefore have to rotate the frustum of the tileVp to match
+        // the orientation of the sheet, in case the sheet view is rotated.
+        Render::Plan plan(attachVp);
+        plan.m_frustum = GetViewport()->GetFrustum(DgnCoordSystem::View).TransformBy(sheetViewToTileView);      // get corners of sheet view in attach view coordinates
+        attachVp.ViewToWorld(plan.m_frustum.m_pts, plan.m_frustum.m_pts, NPC_CORNER_COUNT);    // and create a frustum from those 8 points in world coordinates of attachment
+
+        Frustum sheetFrust = GetFrustum();
+        DPoint3d center = sheetFrust.GetCenter();
+        center.z = attachVp.m_biasDistance;
+        double width  = sheetFrust.Distance(NPC_LeftBottomRear, NPC_RightBottomRear);
+        double height = sheetFrust.Distance(NPC_LeftBottomRear, NPC_LeftTopRear);
+
+        Render::ViewletPosition pos(center, width, height, attachVp.GetAttachClips());
+        _OutputGraphic(*m_viewport->GetRenderTarget()->GetSystem()._CreateViewlet(branch, plan, pos), nullptr); // put the branch into a "viewlet" and output it
+        }
+    else
+        {
+        Transform toNpc;
+        toNpc.InitFrom(*attachVp.GetWorldToNpcMap(), false);
+        Transform sheetToAttach = Transform::FromProduct(attachVp.m_toParent, toNpc);
+        sheetToAttach.form3d[2][3] = attachVp.m_biasDistance;
+
+        auto drawBranch = CreateBranch(branch, GetDgnDb(), sheetToAttach, attachVp.GetAttachClips());
+        _OutputGraphic(*drawBranch, nullptr);
+        }
+#endif
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DecorateContext::DrawNormalHit(HitDetailCR hit)
+    {
+    DgnElementCPtr   element = hit.GetElement();
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        {
+        IElemTopologyCP elemTopo = hit.GetElemTopology();
+        if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+            return ERROR;
+        }
+
+    if (&GetDgnDb() != &source->GetSourceDgnDb())
+        return ERROR;
+
+    if (element.IsValid() && nullptr != m_viewport && !m_viewport->GetViewController().IsModelViewed(element->GetModelId()))
+        return ERROR;
+
+    // Allow sub-class involvement for flashing sub-entities...
+    return (nullptr != m_viewport ? m_viewport->GetViewControllerR()._StrokeHit(*this, *source, hit) : source->StrokeHit(*this, hit));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DecorateContext::DrawHit(HitDetailCR hit)
+    {
+    auto sheetVp = hit.GetSheetAttachViewport();
+    if (sheetVp && &hit.GetViewport() == GetViewport())
+        return DrawSheetHit(hit);
+
+    return DrawNormalHit(hit);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum
@@ -1568,6 +1626,32 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     AddWorldDecoration(*graphic->Finish());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TexturePtr ViewContext::_CreateTexture(Render::ImageCR image) const
+    {
+    Render::TexturePtr tx;
+    auto sys = GetRenderSystem();
+    if (nullptr != sys)
+        tx = sys->_CreateTexture(image);
+
+    return tx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TexturePtr ViewContext::_CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const
+    {
+    Render::TexturePtr tx;
+    auto sys = GetRenderSystem();
+    if (nullptr != sys)
+        tx = sys->_CreateTexture(source, bottomUp);
+
+    return tx;
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/17
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -216,8 +216,8 @@ void CalculateEdgeVisibility(DRange3dCR tileRange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain, MeshBuilder::Polyface const& builderPolyface, bmap<uint32_t, uint32_t> const& inverseVertexIndexMap) const
     {
-    float               startDistance = 0.0;
-    FPoint3d            rangeCenter;
+    double              startDistance = 0.0;
+    DPoint3d            rangeCenter;
     bvector<uint32_t>   indices;
     DRange3d            range = DRange3d::NullRange();
     DPoint3dCP          polyfacePoints = builderPolyface.m_polyface.GetPointCP();
@@ -227,7 +227,7 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
         if (0 != chainIndices[i])
             range.Extend(polyfacePoints[chainIndices[i]-1]);
 
-   rangeCenter = FPoint3d::From (range.LocalToGlobal(.5, .5, .5));
+   rangeCenter = range.LocalToGlobal(.5, .5, .5);
 
     for (size_t i=0; i<chain.GetIndexCount(); i++)
         {

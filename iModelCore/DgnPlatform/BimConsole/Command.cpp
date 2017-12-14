@@ -8,6 +8,7 @@
 #include <ECDb/ECDbApi.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
+#include <Bentley/Nullable.h>
 #include "Command.h"
 #include "BimConsole.h"
 #include <numeric>
@@ -54,7 +55,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 26 && "Command was added or removed, please update the HelpCommand accordingly.");
     BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -69,6 +70,9 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".commit")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".rollback")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".attach")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".detach")->GetUsage().c_str());
+    BimConsole::WriteLine(m_commandMap.at(".change")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".import")->GetUsage().c_str());
     BimConsole::WriteLine(m_commandMap.at(".export")->GetUsage().c_str());
@@ -88,17 +92,11 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-//static
-Utf8CP const OpenCommand::READONLY_SWITCH = "readonly";
-Utf8CP const OpenCommand::READWRITE_SWITCH = "readwrite";
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
 Utf8String OpenCommand::_GetUsage() const
     {
-    return " .open [readonly|readwrite] <BIM/ECDb/BeSQLite file>\r\n"
-        COMMAND_USAGE_IDENT "Opens a BIM, ECDb, or BeSQLite file. Default open mode: read-only.\r\n";
+    return " .open [readonly|readwrite] [attachchangesummarycache] <iModel/ECDb/BeSQLite file>\r\n"
+        COMMAND_USAGE_IDENT "Opens iModel, ECDb, or BeSQLite file. Default open mode: read-only.\r\n"
+        COMMAND_USAGE_IDENT "if attachchangesummarycache is specified, the ChangeSummary cache is attached (and created if necessary).\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -123,6 +121,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     //default mode: read-only
     Db::OpenMode openMode = Db::OpenMode::Readonly;
+    ECDb::ChangeSummaryCacheMode changeSummaryCacheMode = ECDb::ChangeSummaryCacheMode::DoNotAttach;
     bool openAsECDb = false;
 
     const size_t switchCount = argCount - 1;
@@ -132,10 +131,12 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             {
             Utf8String const& arg = args[i];
 
-            if (arg.EqualsI(READWRITE_SWITCH))
+            if (arg.EqualsI("readwrite"))
                 openMode = Db::OpenMode::ReadWrite;
             else if (arg.EqualsI("asecdb"))
                 openAsECDb = true;
+            else if (arg.EqualsI("attachchangesummarycache"))
+                changeSummaryCacheMode = ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists;
             }
         }
 
@@ -149,7 +150,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         }
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
-
+    Utf8CP attachChangeSummaryMessage = changeSummaryCacheMode == ECDb::ChangeSummaryCacheMode::DoNotAttach ? "" : " and attached ChangeSummary cache file";
     //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or BIM file, we close it
     //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
@@ -175,11 +176,12 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         DbResult bimStat;
         Dgn::DgnDb::OpenParams params(openMode);
+        params.Set(changeSummaryCacheMode);
         Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
         if (BE_SQLITE_OK == bimStat)
             {
             session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-            BimConsole::WriteLine("Opened BIM file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+            BimConsole::WriteLine("Opened BIM file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeSummaryMessage);
             return;
             }
 
@@ -192,13 +194,13 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         sqliteFile->GetHandleR().CloseDb();
 
         std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode, changeSummaryCacheMode)))
             {
             session.SetFile(std::move(ecdbFile));
             if (isBimFile)
                 BimConsole::WriteLine("Opened BIM file as ECDb file '%s' in %s mode. This can damage the file as BIM validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
             else
-                BimConsole::WriteLine("Opened ECDb file '%s' in %s mode.", filePath.GetNameUtf8().c_str(), openModeStr);
+                BimConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeSummaryMessage);
             return;
             }
 
@@ -223,7 +225,7 @@ void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         //need to get path before closing, because afterwards it is not available on the ECDb object anymore
         Utf8String path(session.GetFile().GetPath());
-        session.GetFile().GetHandleR().CloseDb();
+        session.Reset();
         BimConsole::WriteLine("Closed '%s'.", path.c_str());
         }
     }
@@ -529,6 +531,204 @@ void RollbackCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     else
         BimConsole::WriteLine("Rolled current transaction back and restarted it.");
     }
+
+
+
+//******************************* AttachCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+Utf8String AttachCommand::_GetUsage() const
+    {
+    return " .attach <file path> <table space>     Attaches the specified file to the currently open file.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+void AttachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    const size_t switchArgIndex = 0;
+    if (args.size() != 2)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    Utf8CP filePath = args[0].c_str();
+    if (!BeFileName::DoesPathExist(WString(filePath, BentleyCharEncoding::Utf8).c_str()))
+        {
+        BimConsole::WriteErrorLine("File to attach does not exist: %s", filePath);
+        return;
+        }
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().AttachDb(filePath, args[1].c_str()))
+        {
+        BimConsole::WriteErrorLine("Failed to attach file %s as table space %s: %s", filePath, args[1].c_str(),
+                                   session.GetFile().GetHandle().GetLastError().c_str());
+        return;
+        }
+
+    BimConsole::WriteLine("Attached file %s as table space %s.", filePath, args[1].c_str());
+    }
+
+//******************************* DetachCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+Utf8String DetachCommand::_GetUsage() const
+    {
+    return " .detach <table space>          Detaches the table space and its backing file";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+
+    const size_t switchArgIndex = 0;
+    if (args.size() != 1)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().DetachDb(args[0].c_str()))
+        {
+        BimConsole::WriteErrorLine("Failed to detach table space %s and backing file: %s", args[0].c_str(), session.GetFile().GetHandle().GetLastError().c_str());
+        return;
+        }
+
+    BimConsole::WriteLine("Detached table space %s and backing file.", args[0].c_str());
+    }
+
+//******************************* ChangeCommand ******************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan     11/2017
+//---------------------------------------------------------------------------------------
+Utf8String ChangeCommand::_GetUsage() const
+    {
+    return " .change tracking [on|off]      Enable / pause change tracking. Pausing does not create a revision.\r\n"
+           "         attachcache            attaches (and creates if necessary) the change summary cache file.\r\n"
+           "         extractsummary         creates a revision and extracts a change summary from it.\r\n";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Affan.Khan     11/2017
+//---------------------------------------------------------------------------------------
+void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
+    {
+    if (!session.IsECDbFileLoaded(true))
+        return;
+
+    const std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
+    if (args.size() != 1 && args.size() != 2)
+        {
+        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (args[0].EqualsIAscii("tracking"))
+        {
+        if (args.size() == 1)
+            {
+            BimConsole::WriteLine("Change tracking is %s.", session.GetFile().IsTracking() ? "on" : "off");
+            return;
+            }
+
+        const bool on = args[1].EqualsIAscii("on");
+        if (on && session.GetFile().IsTracking())
+            {
+            BimConsole::WriteLine("Change tracking is already on.");
+            return;
+            }
+
+        if (!on && !session.GetFile().IsTracking())
+            {
+            BimConsole::WriteLine("Change tracking is already off.");
+            return;
+            }
+
+        session.GetFileR().EnableTracking(on);
+        return;
+        }
+
+    if (args[0].EqualsIAscii("attachcache"))
+        {
+        if (session.GetFileR().GetECDbHandle()->IsChangeSummaryCacheAttached())
+            {
+            BimConsole::WriteLine("Change summary cache file has already been attached.");
+            return;
+            }
+
+        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeSummaryCache())
+            {
+            BimConsole::WriteErrorLine("Failed to attach change summary cache.");
+            return;
+            }
+
+        BimConsole::WriteLine("Attached change summary cache.");
+        return;
+        }
+
+    if (args[0].EqualsIAscii("extractsummary"))
+        {
+        if (!session.GetFileR().GetECDbHandle()->IsChangeSummaryCacheAttached())
+            {
+            BimConsole::WriteErrorLine("Failed to extract change summary. Change summary file is not attached. Make sure to attach it first.");
+            return;
+            }
+
+        BimConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
+        if (tracker == nullptr)
+            {
+            BimConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
+            return;
+            }
+
+        if (!tracker->HasChanges())
+            {
+            BimConsole::WriteErrorLine("No changes tracked.");
+            return;
+            }
+
+        BimConsoleChangeSet changeset;
+        if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
+            {
+            BimConsole::WriteErrorLine("Failed to retrieve changeset.");
+            return;
+            }
+
+        ECInstanceKey changeSummaryKey;
+        if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, changeset) != SUCCESS)
+            {
+            BimConsole::WriteErrorLine("Failed to extract change summary.");
+            return;
+            }
+
+        const bool trackingWasOn = tracker->IsTracking();
+        tracker->EndTracking();//end the changeset
+        BimConsole::WriteLine("Successfully created revision and extracted ChangeSummary (Id: %s) from it.", changeSummaryKey.GetInstanceId().ToString());
+        if (trackingWasOn)
+            tracker->EnableTracking(true);
+
+        return;
+        }
+
+    BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+    }
+
 
 //******************************* ImportCommand ******************
 //---------------------------------------------------------------------------------------
@@ -1192,8 +1392,8 @@ void MetadataCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     BimConsole::WriteLine();
     BimConsole::WriteLine("Column metadata");
     BimConsole::WriteLine("===============");
-    BimConsole::WriteLine("Index   Name/PropertyPath                   DisplayLabel                        Type           Root class                     Root class alias");
-    BimConsole::WriteLine("----------------------------------------------------------------------------------------------------------------------------------------------");
+    BimConsole::WriteLine("Index   Name/PropertyPath                   DisplayLabel                        Type                      Root class                     Root class alias");
+    BimConsole::WriteLine("---------------------------------------------------------------------------------------------------------------------------------------------------------");
     const int columnCount = stmt.GetColumnCount();
     for (int i = 0; i < columnCount; i++)
         {
@@ -1202,18 +1402,159 @@ void MetadataCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         ECN::ECPropertyCP prop = columnInfo.GetProperty();
         ECSqlPropertyPathCR propPath = columnInfo.GetPropertyPath();
         Utf8String propPathStr = isGeneratedProp ? prop->GetDisplayLabel() : propPath.ToString();
+        Utf8String typeName = GetPropertyTypeName(*prop);
 
-        Utf8String typeName(prop->GetTypeName());
-        if (prop->GetIsArray())
-            typeName.append("[]");
+        Utf8String rootClassName;
+        if (isGeneratedProp)
+            rootClassName = "generated";
+        else
+            {
+            ECClassCR rootClass = columnInfo.GetRootClass();
+            //system properties have a different schema, so they must be excluded and never get a full class name
+            if (!prop->GetClass().GetSchema().GetName().EqualsIAscii("ECDbSystem") &&
+                rootClass.GetSchema().GetId() != prop->GetClass().GetSchema().GetId())
+                rootClassName = rootClass.GetFullName();
+            else
+                rootClassName = rootClass.GetName();
+            }
 
-        Utf8CP rootClassName = isGeneratedProp ? "generated" : columnInfo.GetRootClass().GetFullName();
         Utf8CP rootClassAlias = columnInfo.GetRootClassAlias();
 
-        BimConsole::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), typeName.c_str(), rootClassName, rootClassAlias);
+        BimConsole::WriteLine("%3d     %-35s %-35s %-25s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), typeName.c_str(), rootClassName.c_str(), rootClassAlias);
         }
 
     BimConsole::WriteLine();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+//static
+Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
+    {
+    if (prop.GetIsPrimitive() || prop.GetIsPrimitiveArray())
+        {
+        ECEnumerationCP ecEnum = nullptr;
+        Nullable<PrimitiveType> primType;
+        Utf8String extendedTypeName;
+        PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
+        bool isArray = false;
+        if (primProp != nullptr)
+            {
+            ecEnum = primProp->GetEnumeration();
+            if (ecEnum == nullptr)
+                primType = primProp->GetType();
+
+            if (primProp->HasExtendedType())
+                extendedTypeName = primProp->GetExtendedTypeName();
+            }
+        else
+            {
+            PrimitiveArrayECPropertyCP primArrayProp = prop.GetAsPrimitiveArrayProperty();
+            BeAssert(primArrayProp != nullptr);
+            isArray = true;
+            ecEnum = primArrayProp->GetEnumeration();
+            if (ecEnum == nullptr)
+                primType = primArrayProp->GetPrimitiveElementType();
+
+            if (primArrayProp->HasExtendedType())
+                extendedTypeName = primArrayProp->GetExtendedTypeName();
+            }
+
+        Utf8String typeName;
+        if (ecEnum != nullptr)
+            {
+            if (ecEnum->GetSchema().GetId() != prop.GetClass().GetSchema().GetId())
+                typeName = ecEnum->GetFullName();
+            else
+                typeName = ecEnum->GetName();
+            }
+        else
+            {
+            BeAssert(!primType.IsNull());
+            switch (primType.Value())
+                {
+                    case PRIMITIVETYPE_Binary:
+                        typeName = "Blob";
+                        break;
+                    case PRIMITIVETYPE_Boolean:
+                        typeName = "Boolean";
+                        break;
+                    case PRIMITIVETYPE_DateTime:
+                        typeName = "DateTime";
+                        break;
+                    case PRIMITIVETYPE_Double:
+                        typeName = "Double";
+                        break;
+                    case PRIMITIVETYPE_IGeometry:
+                        typeName = "Geometry";
+                        break;
+                    case PRIMITIVETYPE_Integer:
+                        typeName = "Integer";
+                        break;
+                    case PRIMITIVETYPE_Long:
+                        typeName = "Long";
+                        break;
+                    case PRIMITIVETYPE_Point2d:
+                        typeName = "Point2d";
+                        break;
+                    case PRIMITIVETYPE_Point3d:
+                        typeName = "Point3d";
+                        break;
+                    case PRIMITIVETYPE_String:
+                        typeName = "String";
+                        break;
+                    default:
+                        typeName = "<unknown>";
+                        BeAssert(false && "Adjust code to new value in ECN::PrimitiveType enum");
+                        break;
+                }
+            }
+
+        if (isArray)
+            typeName.append("[]");
+
+        if (!extendedTypeName.empty())
+            typeName.append(" Extended Type: ").append(extendedTypeName);
+
+        return typeName;
+        }
+
+    if (prop.GetIsStruct() || prop.GetIsStructArray())
+        {
+        ECStructClassCR structType = prop.GetIsStruct() ? prop.GetAsStructProperty()->GetType() : prop.GetAsStructArrayProperty()->GetStructElementType();
+        Utf8String typeName;
+        if (structType.GetSchema().GetId() != prop.GetClass().GetSchema().GetId())
+            typeName = structType.GetFullName();
+        else
+            typeName = structType.GetName();
+
+        if (prop.GetIsStructArray())
+            typeName.append("[]");
+
+        return typeName;
+        }
+
+    if (prop.GetIsNavigation())
+        {
+        NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
+        Utf8String typeName("Navigation(");
+
+        if (navProp->GetRelationshipClass()->GetSchema().GetId() != prop.GetClass().GetSchema().GetId())
+            typeName.append(navProp->GetRelationshipClass()->GetFullName());
+        else
+            typeName.append(navProp->GetRelationshipClass()->GetName());
+
+        if (navProp->GetDirection() == ECRelatedInstanceDirection::Forward)
+            typeName.append(",forward)");
+        else
+            typeName.append(",backward)");
+
+        return typeName;
+        }
+
+    BeAssert(false && "Adjust code to new ECProperty type");
+    return Utf8String("<unknown>");
     }
 
 //******************************* ParseCommand ******************
@@ -1646,6 +1987,9 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
         BimConsole::WriteLine(" %s [%s]", stmt.GetValueText(0), stmt.GetValueText(1));
         } while (BE_SQLITE_ROW == stmt.Step());
     }
+
+
+
 
 //******************************* SchemaStatsCommand ******************
 

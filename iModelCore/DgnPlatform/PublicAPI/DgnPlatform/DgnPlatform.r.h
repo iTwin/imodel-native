@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.r.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,13 +80,6 @@ enum class SelectionMode
     Inverse     = 3,
     Clear       = 4,
     All         = 5,
-    };
-
-enum class LocateSurfacesPref
-    {
-    Never   = 0, //!< Don't locate interiors of regions, surfaces, and solids even if filled or rendered.
-    ByView  = 1, //!< Locate interiors according to view attributes for fill display and render mode. (Default)
-    Always  = 2, //!< Locate interiors of regions, surfaces, and solids even in wireframe and even with fill display off.
     };
 
 enum class UnitBase
