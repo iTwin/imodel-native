@@ -7,4 +7,3 @@ WebsiteSeedFileTests.CreateSeedFile
 #----------------------------------------------------------------------------------------
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
-ClientTests.SuccessfulCreateiModelWithASpaceInName
