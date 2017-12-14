@@ -3433,6 +3433,13 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
                     TilePublisher::WriteBoundingVolume(child, childRange);
 
                     child[JSON_Content]["url"] = Utf8String (metadataRelativePath.c_str()).c_str();
+
+                    Json::Value tileCustomMetadata;
+                    Utf8String metadataName;
+                    childTile->GetTileCustomMetadata(metadataName, tileCustomMetadata);
+                    if (!tileCustomMetadata.isNull())
+                        child[metadataName.c_str()] = tileCustomMetadata;
+
                     root[JSON_Children].append(child);
                     range.Extend (childRange);
                     }
@@ -3467,6 +3474,12 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
         root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, GetTileExtension(tile).c_str(), GetCurrentClassifier()));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
         }
+
+    Json::Value tileCustomMetadata;
+    Utf8String metadataName;
+    tile.GetTileCustomMetadata(metadataName, tileCustomMetadata);
+    if (!tileCustomMetadata.isNull())
+        root[metadataName.c_str()] = tileCustomMetadata;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3503,7 +3516,26 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     if (rootTile.GetModel().IsSpatialModel())
         val[JSON_Root][JSON_Transform] = TransformToJson(m_spatialToEcef);
 
+    Utf8String name;
+    Json::Value modelCustomMetadata;
+    ExtractModelCustomPublishMetadata(rootTile.GetModel(), name, modelCustomMetadata);
+    if (!modelCustomMetadata.isNull())
+        val[JSON_Root][name.c_str()] = modelCustomMetadata;
+
     TileUtil::WriteJsonToFile (metadataFileName.c_str(), val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::ExtractModelCustomPublishMetadata(DgnModelCR model, Utf8StringR name, Json::Value& metadata) const
+    {
+    auto const& publishProperties = model.GetJsonProperties("publishing");
+    if (!publishProperties.isNull())
+        {
+        name = publishProperties["name"].asString();
+        metadata = publishProperties["properties"];
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
