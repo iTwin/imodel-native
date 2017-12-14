@@ -2876,9 +2876,12 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     polyface->DecimateByEdgeCollapse (tolerance, 0.0);
 
                 
-                MeshTileClipOutput     clipOutput;
+                MeshTileClipOutput  clipOutput;
 
-                polyface->ClipToRange(myTileRange, clipOutput, false);
+                if (doRangeTest)
+                    polyface->ClipToRange(myTileRange, clipOutput, false);
+                else
+                    clipOutput.m_output.push_back(polyface.get());     // Skip clipping if not range test (instances).
 
                 for (auto& outputPolyface : clipOutput.m_output)
                     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*outputPolyface); visitor->AdvanceToNextFace(); /**/)

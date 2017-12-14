@@ -468,7 +468,7 @@ WriteStatus writeCesiumTile(Context context)
         {                                
         TileTree::TileLoadStatePtr      loadState;
 
-        return context.m_inputTile->IsNotLoaded() ? context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem, BeTimePoint()) : SUCCESS;
+        return context.m_inputTile->IsNotLoaded() ? context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem, BeDuration()) : SUCCESS;
         })
     .then([=](BentleyStatus status)
         {

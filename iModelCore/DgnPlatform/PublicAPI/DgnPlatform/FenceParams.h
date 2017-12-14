@@ -48,7 +48,6 @@ private:
     FenceClipMode           m_clipMode;
     ClipVectorPtr           m_clip;
     DRange3d                m_fenceRangeNPC;
-    LocateSurfacesPref      m_locateInteriors;
     bool                    m_hasOverlaps;
 
 public:
@@ -57,7 +56,6 @@ public:
     DGNPLATFORM_EXPORT ~FenceParams();
 
     void SetHasOverlaps(bool hasOverlaps) {m_hasOverlaps = hasOverlaps;}
-    LocateSurfacesPref GetLocateInteriors() {return m_locateInteriors;}
     DRange3d GetFenceRangeNPC() {return m_fenceRangeNPC;}
 
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR testPoint);
@@ -84,9 +82,6 @@ public:
     //! Set the fence boundary by supplying a ClipVector.
     DGNPLATFORM_EXPORT void SetClip(ClipVectorCR clip);
 
-    //! Specify whether overlap testing should detect a fence that is completely contained within a region/surface element.
-    DGNPLATFORM_EXPORT void SetLocateInteriors(LocateSurfacesPref);
-
     //! Setup the fence clip boundary from world coordinate points defining a planar shape.
     DGNPLATFORM_EXPORT StatusInt StoreClippingPoints(DPoint3dCP, size_t nPoints, bool outside);
 
@@ -110,6 +105,9 @@ public:
 
     //! Return true if fence overlap mode is set.
     DGNPLATFORM_EXPORT bool AllowOverlaps() const;
+
+    //! Return true if we aren't looking for overlaps or clipping.
+    DGNPLATFORM_EXPORT bool IsInsideMode() const;
 
     //! Return true if the given element satisfies the fence criteria.
     DGNPLATFORM_EXPORT bool AcceptElement(GeometrySourceCR);

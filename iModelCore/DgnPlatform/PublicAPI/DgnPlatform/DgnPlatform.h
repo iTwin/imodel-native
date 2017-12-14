@@ -27,6 +27,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/RTreeMatch.h>
 #include <ECDb/ECDbApi.h>
+#include "JsonUtils.h"
 
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
@@ -511,6 +512,7 @@ struct BoundingBox3d : DRange3d
     BoundingBox3d() {DRange3d::Init();}
     explicit BoundingBox3d(DRange2dCR range2d) {DRange3d::InitFrom(&range2d.low, 2, 0.0);}
     bool IsValid() const {return !IsEmpty();}
+    void ToJson(JsonValueR value) const {JsonUtils::DRange3dToJson(value, *this);}
 };
 
 //=======================================================================================

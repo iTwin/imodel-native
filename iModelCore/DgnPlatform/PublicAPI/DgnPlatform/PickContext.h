@@ -48,7 +48,6 @@ private:
     bool m_allowTransients = false;
     uint32_t m_maxHits;
     HitSource m_hitSource;
-    LocateSurfacesPref m_locateSurface = LocateSurfacesPref::ByView;
 
 public:
     LocateOptions()
@@ -67,13 +66,11 @@ public:
     void SetAllowTransients(bool allowTransients) {m_allowTransients = allowTransients;}
     void SetMaxHits(uint32_t maxHits) {m_maxHits = maxHits;}
     void SetHitSource(HitSource hitSource) {m_hitSource = hitSource;}
-    void SetLocateSurfaces(LocateSurfacesPref locateSurface) {m_locateSurface = locateSurface;}
 
     bool GetDisableDgnDbFilter() const {return m_disableDgnDbFilter;}
     bool GetAllowTransients() const {return m_allowTransients;}
     uint32_t GetMaxHits() const {return m_maxHits;}
     HitSource GetHitSource() const {return m_hitSource;}
-    LocateSurfacesPref GetLocateSurfaces() const {return m_locateSurface;}
 };
 
 /*=================================================================================**//**
@@ -109,7 +106,6 @@ private:
     StatusInt _OutputGeometry(GeometrySourceCR) override;
     void _OnNewGeometry() override;
     bool _CheckStop() override;
-    StatusInt _InitContextForView() override;
     StatusInt _VisitDgnModel(GeometricModelR inDgnModel) override;
     void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook) override;
     void _DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override;

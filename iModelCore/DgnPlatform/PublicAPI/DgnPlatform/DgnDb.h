@@ -10,7 +10,6 @@
 
 #include "DgnDbTables.h"
 #include "DgnModel.h"
-#include "MemoryManager.h"
 #include "RepositoryManager.h"
 #include "UpdatePlan.h"
 #include "RealityDataCache.h"
@@ -195,7 +194,6 @@ protected:
     DgnGeoLocation m_geoLocation;
     DgnCodeSpecs m_codeSpecs;
     TxnManagerPtr m_txnManager;
-    MemoryManager m_memoryManager;
     IBriefcaseManagerPtr m_briefcaseManager;
     DgnSearchableText m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
@@ -294,7 +292,6 @@ public:
     DgnSearchableText& SearchableText() const {return const_cast<DgnSearchableText&>(m_searchableText);} //!< The searchable text table for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
-    MemoryManager& Memory() const {return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
 
     //! Imports EC Schemas into the DgnDb
@@ -304,7 +301,7 @@ public:
     //! <li> ONLY to be used for cases where the schemas are NOT paired with a domain.
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by committing 
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number. 
@@ -434,7 +431,7 @@ public:
     //! not allowed. 
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by committing 
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);

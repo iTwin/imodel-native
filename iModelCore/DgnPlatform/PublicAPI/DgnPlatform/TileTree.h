@@ -147,18 +147,18 @@ struct TileLoadState : Tasks::ICancellationToken, NonCopyableClass
 {
 private:
     TileCPtr        m_tile;
-    BeTimePoint     m_deadline;
+    BeDuration      m_partialTimeout;
     BeAtomic<bool>  m_canceled;
 public:
-    explicit TileLoadState(TileCR tile, BeTimePoint deadline) : m_tile(&tile), m_deadline(deadline) { }
+    explicit TileLoadState(TileCR tile, BeDuration partialTimeout) : m_tile(&tile), m_partialTimeout(partialTimeout) { }
     DGNPLATFORM_EXPORT ~TileLoadState();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
     TileCR GetTile() const { return *m_tile; }
-    BeTimePoint GetDeadline() const {return m_deadline;}
-    bool HasDeadline() const {return GetDeadline().IsValid();}
-    bool IsPastDeadline() const {return HasDeadline() && GetDeadline().IsInPast();}
+    BeDuration GetPartialTimeout() const {return m_partialTimeout;}
+    bool HasPartialTimeout() const {return !m_partialTimeout.IsZero();}
+    void ClearPartialTimeout() {m_partialTimeout = BeDuration();}
 
     struct PtrComparator
     {
@@ -322,7 +322,8 @@ public:
     virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
 
     virtual bool _IsPartial() const { return false; }
-
+    bool IsEmpty() const { return IsDisplayable() && IsReady() && !_HasGraphics(); }
+	
     //! Returns custom metadata extracted from the model
     virtual void GetCustomMetadata(Utf8StringR name, Json::Value& data) const { _GetCustomMetadata(name, data); };
 };
@@ -373,8 +374,8 @@ protected:
     void InvalidateDamagedTiles();
     bvector<TileCPtr> SelectTiles(DrawArgsR args);
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeTimePoint deadline);
-    void RequestTiles(MissingNodesCR, BeTimePoint deadline);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout);
+    void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
 
     //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
     bvector<TileCPtr> SelectTiles(SceneContextR context);
@@ -492,8 +493,9 @@ public:
     bool IsCanceledOrAbandoned() const {return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned();}
     Dgn::Render::SystemP GetRenderSystem() const { return nullptr == m_renderSys ? m_tile->GetRoot().GetRenderSystemP(): m_renderSys; }
 
-    BeTimePoint GetDeadline() const {return nullptr != m_loads ? m_loads->GetDeadline() : BeTimePoint();}
-    bool HasDeadline() const {return GetDeadline().IsValid();}
+    BeDuration GetPartialTimeout() const {return nullptr != m_loads ? m_loads->GetPartialTimeout() : BeDuration();}
+    bool HasPartialTimeout() const {return nullptr != m_loads && m_loads->HasPartialTimeout();}
+    bool WantPartialTiles() const {return HasPartialTimeout();}
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
@@ -624,7 +626,7 @@ public:
 
     //! Request all accumulated tiles to be loaded. This operation first cancels loading of any previously-requested tiles which
     //! are not contained in this set of requests.
-    DGNPLATFORM_EXPORT void RequestMissing(BeTimePoint deadline) const;
+    DGNPLATFORM_EXPORT void RequestMissing(BeDuration timeoutForPartialTiles) const;
 };
 
 //=======================================================================================

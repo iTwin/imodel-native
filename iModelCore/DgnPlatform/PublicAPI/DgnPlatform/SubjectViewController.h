@@ -38,6 +38,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SubjectViewController : SpatialViewController
 
 private:
     SubjectColorMap                 m_subjectColors;
+    bmap<DgnElementId, Transform>   m_transformCache;
 protected:
     void _AddFeatureOverrides(Render::FeatureSymbologyOverrides&) const override;
     void _OnAttachedToViewport(DgnViewportR) override;
@@ -61,7 +62,14 @@ public:
     DGNPLATFORM_EXPORT SubjectViewController(SpatialViewDefinition const& view, SubjectColorMap const& subjectColors);
     DGNPLATFORM_EXPORT ~SubjectViewController();
 
-    DGNPLATFORM_EXPORT void SetTransform(DgnModelIdSet const& modelIds, TransformCP transform);
+    //! Applies an incremental transform for dynamics of tools
+    DGNPLATFORM_EXPORT void ApplyDynamicTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds, TransformCP incrementalTransform);
+    
+    //! Reset to the cached transform
+    DGNPLATFORM_EXPORT void ResetDynamicTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds);
+
+    //! Sets the display transform for models in a subject
+    DGNPLATFORM_EXPORT void SetTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds, TransformCP transform);
 };
 
 END_BENTLEY_DGN_NAMESPACE

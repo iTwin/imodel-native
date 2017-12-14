@@ -216,8 +216,7 @@ static folly::Future<BentleyStatus> requestTile(Context context)
         TileTree::TileLoadStatePtr loadState;
         return context.m_requestTileQueue->Push([=]()
             {
-            BeTimePoint deadline;
-            return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem.get(), deadline);
+            return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem.get(), BeDuration());
             });
         }
         

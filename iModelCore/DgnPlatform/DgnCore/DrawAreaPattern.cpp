@@ -468,20 +468,20 @@ static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic,
                     continue; // Symbol range doesn't overlap pick...
                 }
 
-            ClipPlaneContainment containment = clip->front()->ClassifyPointContainment(tileCorners, 8); // First primitive should be outer loop...need to ignore holes...
+            ClipPlaneContainment containment = clip->ClassifyPointContainment(tileCorners, 8); 
 
             if (ClipPlaneContainment_StronglyOutside == containment)
                 continue;
 
             GeometryStreamIO::Collection collection(symbol.GetGeometryStream().GetData(), symbol.GetGeometryStream().GetSize());
-            GraphicBuilderPtr partBuilder = graphic.CreateSubGraphic(symbolTrans, ClipPlaneContainment_StronglyInside == containment ? nullptr : clip.get());
+            GraphicBuilderPtr partBuilder = graphic.CreateSubGraphic(symbolTrans, containment == ClipPlaneContainment_StronglyInside ? nullptr : clip.get());
 
             collection.Draw(*partBuilder, context, params, false, &symbol);
 
             if (wasAborted = context.WasAborted())
                 break;
 
-            graphic.AddSubGraphic(*partBuilder->Finish(), symbolTrans, graphicParams, ClipPlaneContainment_StronglyInside == containment ? nullptr : clip.get());
+            graphic.AddSubGraphic(*partBuilder->Finish(), symbolTrans, graphicParams, containment == ClipPlaneContainment_StronglyInside ? nullptr : clip.get());
             }
         }
 

@@ -1134,7 +1134,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, bool doVertexCluster, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
     {
-    MeshPolyline    newPolyline(startDistance, FPoint3d::From(rangeCenter));
+    MeshPolyline    newPolyline(startDistance, rangeCenter);
 
     for (auto& point : points)
         {
@@ -1148,7 +1148,7 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, FPoint3dCR rangeCenter)
+void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
     {
     MeshPolyline newPolyline(startDistance, rangeCenter);
     for (auto const& point : points)
@@ -2579,11 +2579,14 @@ void GeometryListBuilder::_AddTextString2dR(TextStringR text, double priority)
         }
     }
 
+PUSH_MSVC_IGNORE(6386) // Static analysis warning claims we overrun tmpPts...bogus.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
+    BeAssert(numPoints >= 3);
+
     if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int nPt = 0;
@@ -2606,6 +2609,7 @@ void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThick
             _AddShape(3, points+iPt, true);
         }
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
