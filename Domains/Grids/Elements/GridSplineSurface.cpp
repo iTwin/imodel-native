@@ -9,6 +9,7 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridSplineSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridSplineSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -105,4 +106,24 @@ DgnDbStatus      GridSplineSurface::_Validate
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanGridSplineSurface::PlanGridSplineSurface
+(
+CreateParams const& params,
+DgnExtrusionDetailCR extDetail
+) : T_Super(params, ISolidPrimitive::CreateDgnExtrusion (extDetail)), IPlanGridSurface(*this, params, params.m_classId)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanGridSplineSurface::PlanGridSplineSurface
+(
+CreateParams const& params
+) : T_Super(params), IPlanGridSurface(*this, params, params.m_classId)
+    {
+    }
 END_GRIDS_NAMESPACE
