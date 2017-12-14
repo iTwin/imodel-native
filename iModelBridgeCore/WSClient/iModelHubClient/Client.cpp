@@ -772,7 +772,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return StatusResult::Error(pullChangeSetsResult.GetError());
         }
 
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", mergedChangeSetId);
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", mergedChangeSetId.c_str());
 
     // If MergedChangeSetId and ParentChangeSetId do not match, query new changeSets
     Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
@@ -782,7 +782,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         pullChangeSetsTask = CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(ChangeSets()));
         pullChangeSetsResult = pullChangeSetsTask->GetResult();
 
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "MergedChangeSetId '%s' and ParentChangeSetId '%s' do not match.", mergedChangeSetId, parentRevisionId);
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "MergedChangeSetId '%s' and ParentChangeSetId '%s' do not match.", mergedChangeSetId.c_str(), parentRevisionId.c_str());
         pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, briefcaseInfo.GetFileId(), changeSetsFallbackCallback, cancellationToken);
         pullChangeSetsResult = pullChangeSetsTask->GetResult();
         if (!pullChangeSetsResult.IsSuccess())
