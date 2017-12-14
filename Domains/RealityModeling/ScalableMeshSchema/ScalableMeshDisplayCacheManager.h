@@ -86,7 +86,8 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         bool CanDisplay()
             {
-            return m_renderSys != nullptr;
+            return true;
+            //return m_renderSys != nullptr;
             }
 
         ScalableMeshDisplayCacheManager();
