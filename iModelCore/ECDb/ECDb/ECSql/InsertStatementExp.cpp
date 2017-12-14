@@ -35,6 +35,18 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             case FinalizeParseMode::BeforeFinalizingChildren:
             {
             ClassNameExp const* classNameExp = GetClassNameExp();
+            if (classNameExp == nullptr)
+                {
+                BeAssert(false && "ClassNameExp expected to be not null for InsertStatementExp");
+                return FinalizeParseStatus::Error;
+                }
+
+            if (classNameExp->GetMemberFunctionCallExp() != nullptr)
+                {
+                ctx.Issues().Report("May not call function on class in a INSERT statement: %s", ToECSql().c_str());
+                return FinalizeParseStatus::Error;
+                }
+
 
             std::vector<RangeClassInfo> classList;
             classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));

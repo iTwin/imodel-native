@@ -34,6 +34,18 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
         ClassNameExp const* classNameExp = GetClassNameExp();
+        if (classNameExp == nullptr)
+            {
+            BeAssert(false && "ClassNameExp expected to be not null for DeleteStatementExp");
+            return FinalizeParseStatus::Error;
+            }
+
+        if (classNameExp->GetMemberFunctionCallExp() != nullptr)
+            {
+            ctx.Issues().Report("May not call function on class in FROM clause in a DELETE statement: %s", ToECSql().c_str());
+            return FinalizeParseStatus::Error;
+            }
+
         std::vector<RangeClassInfo> classList;
         classList.push_back(RangeClassInfo(*classNameExp, RangeClassInfo::Scope::Local));
         m_rangeClassRefExpCache = std::move(classList);

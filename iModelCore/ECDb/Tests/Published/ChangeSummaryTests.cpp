@@ -503,6 +503,61 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionOnlyForSelect.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(S,I) VALUES('hello',123)"));
+
+    TestChangeSet changeset;
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+    tracker.EndTracking();
+
+    ECInstanceKey summaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, changeset));
+    Utf8String summaryId = summaryKey.GetInstanceId().ToString();
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT * FROM ts.Foo.Changes(%s,'AfterInsert')", summaryId.c_str()).c_str()));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO ts.Foo.Changes(%s,'AfterInsert') VALUES(?,?)", summaryId.c_str()).c_str()));
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo.Changes(I) VALUES(?)"));
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO main.ts.Foo.Changes(I) VALUES(?)"));
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo.Changes(1,'AfterInsert')(I) VALUES(?)"));
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "INSERT INTO main.ts.Foo.Changes(1,'AfterInsert')(I) VALUES(?)"));
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, Utf8PrintfString("UPDATE ts.Foo.Changes(%s,'AfterInsert') SET I=123", summaryId.c_str()).c_str()));
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, Utf8PrintfString("DELETE FROM ts.Foo.Changes(%s,'AfterInsert')", summaryId.c_str()).c_str()));
+    stmt.Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  11/17
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
@@ -1945,7 +2000,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
                 <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
                     <Class class="Child" />
                 </Target>
-        </ECRelationshipClass>
+            </ECRelationshipClass>
         </ECSchema>)xml")));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
 
