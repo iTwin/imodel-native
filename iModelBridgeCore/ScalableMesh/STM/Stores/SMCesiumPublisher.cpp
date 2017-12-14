@@ -45,7 +45,8 @@ void SMCesiumPublisher::_ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json
         return;
         }
 
-    auto const& index = static_cast<ScalableMesh<DPoint3d>&>(*smPtr).GetMainIndexP();
+    auto& sm = static_cast<ScalableMesh<DPoint3d>&>(*smPtr);
+    auto const& index = sm.GetMainIndexP();
     smJsonMasterHeader["Balanced"] = index->IsBalanced();
     smJsonMasterHeader["SplitTreshold"] = index->GetSplitTreshold();
     smJsonMasterHeader["Depth"] = index->GetDepth();
@@ -53,4 +54,9 @@ void SMCesiumPublisher::_ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json
     smJsonMasterHeader["IsTerrain"] = index->IsTerrain();
     smJsonMasterHeader["DataResolution"] = index->GetResolution();
     smJsonMasterHeader["IsTextured"] = (uint32_t)index->IsTextured();
+
+    WString wktString;
+    sm.GetDbFile()->GetWkt(wktString);
+    if (!wktString.empty())
+        smJsonMasterHeader["GCS"] = Utf8String(wktString.c_str());
     }
