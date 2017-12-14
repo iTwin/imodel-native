@@ -4859,6 +4859,9 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_EmptyResultsOverrideParent
     EXPECT_EQ(0, results.size());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_PartialInstanceRejectedWhileCaching_StillReturnsInstanceAsQueryResult)
     {
     // Arrange
@@ -4878,16 +4881,10 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_PartialInstanceRejectedWhi
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, partialInstances.ToWSObjectsResponse()));
 
     // Act
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
     Json::Value results;
     EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, results));
 
     // Assert
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
     EXPECT_EQ(1, results.size());
     EXPECT_EQ("FullyCached", results[0][DataSourceCache_PROPERTY_RemoteId].asString());
     }

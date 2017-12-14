@@ -526,9 +526,9 @@ void* securityStoreInitializer
     
 #endif
 
-
     m_clientInfo = ClientInfo::Create(applicationName, applicationVersion, applicationGUID, applicationProductId);
     m_connectSignInManager = ConnectSignInManager::Create(m_clientInfo, m_customHandler, &s_localState);
+    m_connectSignInManager->CheckAndUpdateToken();
     }
 
 /*---------------------------------------------------------------------------------**//**

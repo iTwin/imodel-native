@@ -326,8 +326,8 @@
     <Part Name="ConnectWebServicesClientC">
         <SubPart PartName="WSClient_en_L10N" />
         <SubPart PartName="ConnectWebServicesClientC-PC" />
-        <SubPart PartName="ConnectWebServicesClientC-iOS" LibType="Static"/>
-        <SubPart PartName="ConnectWebServicesClientC-Android" LibType="Static"/>
+        <SubPart PartName="ConnectWebServicesClientC-iOS"/>
+        <SubPart PartName="ConnectWebServicesClientC-Android" />
     </Part>
 
     <Part Name="ConnectWebServicesClientC-PC" ExcludePlatforms="iOS*, Android*">
@@ -336,12 +336,12 @@
     </Part>
 
     <Part Name="ConnectWebServicesClientC-iOS" OnlyPlatforms="iOS*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
-        <SubPart PartName="ConnectWebServicesClientC-Library" />
+        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" LibType="Static" />
+        <SubPart PartName="ConnectWebServicesClientC-Library" LibType="Static" />
     </Part>
 
     <Part Name="ConnectWebServicesClientC-Android" OnlyPlatforms="Android*">
-        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" />
+        <SubPart PartName="ConnectWebServicesClientC-PublicAPI" LibType="Static" />
         <SubPart PartName="ConnectWebServicesClientC-Library-Android" LibType="Static" />
     </Part>
 
@@ -929,9 +929,6 @@
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
         <RequiredRepository>BeGTest</RequiredRepository>
-        <RequiredRepository>BeTestAndroid</RequiredRepository>
-        <RequiredRepository>BeTestiOS</RequiredRepository>
-        <RequiredRepository>BeTestWinRT</RequiredRepository>
         <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
 
         <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />

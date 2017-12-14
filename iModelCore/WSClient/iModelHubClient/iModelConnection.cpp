@@ -1829,8 +1829,9 @@ ICancellationTokenPtr cancellationToken
             (EventReponseResult::Error(Error::Id::NotSubscribedToEventService));
         }
 
+    EventReponseResultPtr finalResult = std::make_shared<EventReponseResult>();
     return m_eventServiceClient->MakeReceiveDeleteRequest(longpolling)
-        ->Then<EventReponseResult>([=](const EventServiceResult& result)
+        ->Then([=](const EventServiceResult& result)
         {
         if (result.IsSuccess())
             {
@@ -1838,10 +1839,12 @@ ICancellationTokenPtr cancellationToken
             if (response.GetHttpStatus() != HttpStatus::OK)
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                return EventReponseResult::Error(Error(result.GetError()));
+                finalResult->SetError(result.GetError());
+                return;
                 }
 
-            return EventReponseResult::Success(response);
+            finalResult->SetSuccess(response);
+            return;
             }
         else
             {
@@ -1849,22 +1852,44 @@ ICancellationTokenPtr cancellationToken
             if (status == HttpStatus::NoContent || status == HttpStatus::None)
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
-                return EventReponseResult::Error(Error::Id::NoEventsFound);
+                finalResult->SetError(Error::Id::NoEventsFound);
+                return;
                 }
             else if (status == HttpStatus::Unauthorized && numOfRetries > 0)
                 {
-                if (SetEventSASToken())
+                SetEventSASToken(cancellationToken)->Then([=](StatusResultCR setResult)
+                    {
+                    if (!setResult.IsSuccess())
+                        {
+                        finalResult->SetError(setResult.GetError());
+                        return;
+                        }
+
                     m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
-                int nextLoopValue = numOfRetries - 1;
-                return GetEventServiceResponse(nextLoopValue, longpolling, cancellationToken)->GetResult();
+
+                    int nextLoopValue = numOfRetries - 1;
+                    auto currentResult = GetEventServiceResponse(nextLoopValue, longpolling, cancellationToken)->GetResult();
+                    if (!currentResult.IsSuccess())
+                        {
+                        finalResult->SetError(currentResult.GetError());
+                        return;
+                        }
+
+                    finalResult->SetSuccess(currentResult.GetValue());
+                    return;
+                    });
                 }
             else
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                return EventReponseResult::Error(Error(result.GetError()));
+                finalResult->SetError(result.GetError());
+                return;
                 }
             }
-        });
+        })->Then<EventReponseResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -2373,11 +2398,12 @@ bool                containsSchemaChanges
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::Push
 (
-Dgn::DgnRevisionPtr               changeSet,
-Dgn::DgnDbCR                      dgndb,
-bool                              relinquishCodesLocks,
-Http::Request::ProgressCallbackCR callback,
-ICancellationTokenPtr             cancellationToken
+Dgn::DgnRevisionPtr                 changeSet,
+Dgn::DgnDbCR                        dgndb,
+bool                                relinquishCodesLocks,
+Http::Request::ProgressCallbackCR   callback,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     const Utf8String methodName = "iModelConnection::Push";
@@ -2426,7 +2452,7 @@ ICancellationTokenPtr             cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken)
                         ->Then([=](StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2456,7 +2482,7 @@ ICancellationTokenPtr             cancellationToken
                         }
 
                     // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
+                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken)
                         ->Then([=](StatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2520,12 +2546,13 @@ FileTaskPtr iModelConnection::GetLatestSeedFile(ICancellationTokenPtr cancellati
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::InitializeChangeSet
 (
-Dgn::DgnRevisionPtr             changeSet,
-Dgn::DgnDbCR                    dgndb,
-JsonValueR                      pushJson,
-ObjectId                        changeSetObjectId,
-bool                            relinquishCodesLocks,
-ICancellationTokenPtr           cancellationToken
+Dgn::DgnRevisionPtr                 changeSet,
+Dgn::DgnDbCR                        dgndb,
+JsonValueR                          pushJson,
+ObjectId                            changeSetObjectId,
+bool                                relinquishCodesLocks,
+IBriefcaseManager::ResponseOptions  options,
+ICancellationTokenPtr               cancellationToken
 ) const
     {
     BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();
@@ -2577,7 +2604,7 @@ ICancellationTokenPtr           cancellationToken
     auto requestOptions = std::make_shared<WSRepositoryClient::RequestOptions>();
     requestOptions->SetTransferTimeOut(WSRepositoryClient::Timeout::Transfer::LongUpload);
 
-    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken, requestOptions)
+    return SendChangesetRequestInternal(changeset, options, cancellationToken, requestOptions)
         ->Then([=](const StatusResult& initializeChangeSetResult)
         {
         if (initializeChangeSetResult.IsSuccess())
@@ -2599,7 +2626,7 @@ ICancellationTokenPtr           cancellationToken
         codesToReserve.insert(discardedCodes.begin(), discardedCodes.end());
 
         AcquireCodesLocksInternal(usedLocks, codesToReserve, briefcaseId, seedFileId, changeSet->GetParentId(), 
-                                  IBriefcaseManager::ResponseOptions::None, cancellationToken)
+                                  options, cancellationToken)
             ->Then([=](StatusResultCR acquireCodesLocksResult)
             {
             if (!acquireCodesLocksResult.IsSuccess())

@@ -69,14 +69,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\iModelHub\BackDoor.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\iModelHub\iModelHubTests.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\WebServices\iModelHub\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\WebServices\iModelHub\iModelHubTests.h" />
     <ClInclude Include="IMHSClientExe\IMHSClientExe.h" />
     <ClInclude Include="Integration\EventParserTests.h" />
     <ClInclude Include="Integration\IntegrationTestsBase.h" />
     <ClInclude Include="Integration\IntegrationTestsHelper.h" />
     <ClInclude Include="Integration\MockHttpHandler.h" />
     <ClInclude Include="Integration\PerformanceTestsHelper.h" />
+    <ClInclude Include="Integration\LRPJobBackdoorAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\ScopedDgnDbServerHost.cpp" />
@@ -96,6 +97,9 @@
     <ClCompile Include="Integration\IntegrationTestsHelper.cpp" />
     <ClCompile Include="Integration\MockHttpHandler.cpp" />
     <ClCompile Include="Integration\PerformanceTestHelper.cpp" />
+    <ClCompile Include="Integration\Statistics_Tests.cpp" />
+    <ClCompile Include="Integration\UserInfo_Tests.cpp" />
+    <ClCompile Include="Integration\LRPJobBackdoorAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
