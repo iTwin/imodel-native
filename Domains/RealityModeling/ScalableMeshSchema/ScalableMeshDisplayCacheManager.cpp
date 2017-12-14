@@ -24,7 +24,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
                                                                  uint64_t smId)
     {
 
-    assert(!"MST_TODO");
+    //assert(!"MST_TODO");
 #if 0
     assert(m_renderSys != 0);
 
@@ -76,16 +76,23 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
     usedMemInBytes = nbVertices * sizeof(float) * 3 + nbTriangles * 3 * sizeof(int32_t) + sizeof(float) * 2 * nbVertices;
 
 #endif
+
+    cachedDisplayMesh = nullptr;
+    isStoredOnGpu = false;
+    usedMemInBytes = 0;
+
     return SUCCESS;
     }
 
 BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh)
     {
     // shutting down
+/*
     if (nullptr == DgnPlatformLib::QueryHost())
         return SUCCESS;
        
     delete cachedDisplayMesh;
+*/
 
     return SUCCESS;
     }
@@ -100,7 +107,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
                                                                     unsigned char const *    texels)      // => texel image)
     {
     //assert(!"MST_TODO");
-//#if 0
+#if 0
     assert(m_renderSys != 0);
             
     std::unique_ptr<SmCachedDisplayTexture> qvCachedDisplayTexture(new SmCachedDisplayTexture);
@@ -115,13 +122,18 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
     isStoredOnGpu = false;
     usedMemInBytes = xSize * ySize * 6;
 
-//#endif
+#endif
+
+    cachedDisplayTexture = nullptr;
+    isStoredOnGpu = false;
+    usedMemInBytes = 0;
     return SUCCESS;
     }
 
 BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture)
     {    
-    delete cachedDisplayTexture;
+
+    //delete cachedDisplayTexture;
 
     return SUCCESS;
     }

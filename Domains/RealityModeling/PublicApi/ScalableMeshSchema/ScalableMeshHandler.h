@@ -40,6 +40,7 @@ DEFINE_REF_COUNTED_PTR(SMGeometry)
 DEFINE_REF_COUNTED_PTR(SMNode)
 DEFINE_REF_COUNTED_PTR(SMScene)
 
+struct ScalableMeshModel;
 class ScalableMeshDrawingInfo;
 
 typedef RefCountedPtr<ScalableMeshDrawingInfo> ScalableMeshDrawingInfoPtr;
@@ -50,11 +51,23 @@ typedef RefCountedPtr<ScalableMeshDrawingInfo> ScalableMeshDrawingInfoPtr;
 class ScalableMeshDrawingInfo : public RefCountedBase
 {
 private:
-    DrawPurpose m_drawPurpose;
-    DMatrix4d   m_localToViewTransformation;
-    DRange3d    m_range;
+    DrawPurpose   m_drawPurpose;
+    DMatrix4d     m_localToViewTransformation;
+    DRange3d      m_range;
+    bset<__int64> m_ancestorsOfCorrectNodes;
+
+    void AccumulateAncestorNodes(IScalableMeshNodePtr& parentNode)
+        {
+        if (parentNode.IsValid())
+            {            
+            m_ancestorsOfCorrectNodes.insert(parentNode->GetNodeId());
+            IScalableMeshNodePtr greatParentNode(parentNode->GetParentNode());          
+            AccumulateAncestorNodes(greatParentNode);
+            }
+        }
 
 public:
+
     int m_currentQuery;
     int m_terrainQuery;
     bvector<BentleyB0200::Dgn::ClipVectorPtr> m_coverageClips;
@@ -86,6 +99,20 @@ public:
         {
         //NEEDS_WORK_SM : Default to 0
         return 0;
+        }    
+
+    bset<__int64>& GetAncestors()
+        {
+        if (m_ancestorsOfCorrectNodes.size() == 0 && m_meshNodes.size() != 0)
+            { 
+            for (auto& node : m_meshNodes)
+                {
+                IScalableMeshNodePtr parentNode(node->GetParentNode());
+                AccumulateAncestorNodes(parentNode);
+                }            
+            }
+
+        return m_ancestorsOfCorrectNodes;
         }
 
     bool HasAppearanceChanged(const ScalableMeshDrawingInfoPtr& smDrawingInfoPtr)
@@ -123,6 +150,8 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
 {
     DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Tile);
     friend struct SMScene;
+    friend struct ScalableMeshModel;
+    
 
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  11/2016
@@ -144,6 +173,7 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
     };
 
 private:
+    
     IScalableMeshNodePtr m_scalableMeshNodePtr;
 
     bool ReadHeader(Transform& locationTransform);
@@ -157,7 +187,13 @@ private:
     void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const override;
 
 public:
+
+
+    ScalableMeshModel*   m_3smModel = nullptr;
+
     SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
+    virtual ~SMNode();
+
     Utf8String GetFilePath(SMSceneR) const;
 
     bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0 || !IsReady(); }
@@ -165,6 +201,9 @@ public:
 
 
     Dgn::ElementAlignedBox3d ComputeRange();
+
+    virtual Dgn::TileTree::Tile::SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args) const override;
+
 };
 
 //=======================================================================================
@@ -174,10 +213,14 @@ struct SMScene : Dgn::TileTree::TriMeshTree::Root
 {
     DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Root);
     friend struct SMNode;
+    friend struct ScalableMeshModel;
 
 private:
-    IScalableMeshPtr m_smPtr;
-    Transform        m_toFloatTransform; 
+
+    
+    IScalableMeshPtr   m_smPtr;
+    Transform          m_toFloatTransform; 
+    
 
     //SceneInfo   m_sceneInfo;
     Dgn::ClipVectorCPtr m_clip;
@@ -186,6 +229,9 @@ private:
     Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 
 public:
+
+    ScalableMeshModel* m_3smModel = nullptr;
+
     SMScene(Dgn::DgnDbR db, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super(db, location, sceneFile, system), m_smPtr(smPtr), m_toFloatTransform(toFloatTransform) {}
 
     ~SMScene() { ClearAllTiles(); }
@@ -232,6 +278,8 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublis
 
 private:
 
+
+public: //MST_TEMP
     static IScalableMeshLocationProviderPtr m_locationProviderPtr;
 
     SMSceneP Load(Dgn::Render::SystemP) const;
@@ -266,6 +314,8 @@ private:
         bool m_loadedAllModels;
         BeFileName m_basePath;
 
+
+
         struct QueuedRegionOp
             {
             uint64_t id;
@@ -281,6 +331,8 @@ private:
 		void InitializeTerrainRegions(Dgn::ViewContextR);
 		
 		bool HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID);
+
+private:
 		
     void MakeTileSubTree(Render::TileNodePtr& rootTile, IScalableMeshNodePtr& node, TransformCR transformDbToTile, size_t childIndex=0, Render::TileNode* parent=nullptr);
 
