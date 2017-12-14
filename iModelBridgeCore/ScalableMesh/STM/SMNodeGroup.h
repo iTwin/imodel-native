@@ -185,7 +185,6 @@ public:
             {
             m_threads.emplace_back(static_cast<void (SMNodeDistributor::*)(Function)>
                 (&SMNodeDistributor::Consume), this, function);
-            m_threadStates[m_threads.back().get_id()] = ThreadState::IDLE;
             }
         }
 
