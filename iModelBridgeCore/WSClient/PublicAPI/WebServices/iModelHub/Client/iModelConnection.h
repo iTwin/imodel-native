@@ -163,9 +163,6 @@ private:
 
     iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
-    //! Sets AzureBlobStorageClient. 
-    void SetAzureClient(IAzureBlobStorageClientPtr azureClient) { m_azureClient = azureClient; }
-
     StatusTaskPtr DownloadFileInternal(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, 
                                        Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
@@ -278,9 +275,6 @@ private:
 
     //! Create a new briefcase instance for this iModel.
     AsyncTaskPtr<WSCreateObjectResult> CreateBriefcaseInstance(ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Queries briefcase file instance from this iModel.
-    FileTaskPtr GetBriefcaseFileInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
 
     //! Sets the EventSASToken in the EventServiceClient
     StatusTaskPtr SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);

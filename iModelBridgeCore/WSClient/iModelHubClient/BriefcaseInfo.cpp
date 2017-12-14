@@ -13,30 +13,16 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_SQLITE
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis           09/2016
-//---------------------------------------------------------------------------------------
-bool GuidFromJson(BeGuid& guid, RapidJsonValueCR json)
-    {
-    Utf8String guidString = json.GetString();
-    if (guidString.size() > 0)
-        return BentleyStatus::SUCCESS == guid.FromString(guidString.c_str());
-    else
-        return false;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
 BriefcaseInfoPtr BriefcaseInfo::ParseRapidJson(RapidJsonValueCR json)
     {
-    BeBriefcaseId id;
-    id = BeBriefcaseId(json[ServerSchema::Property::BriefcaseId].GetUint());
-    Utf8String  userOwned = json.HasMember(ServerSchema::Property::UserOwned) ? json[ServerSchema::Property::UserOwned].GetString() : "";
-    BeGuid fileId;
-    GuidFromJson(fileId, json[ServerSchema::Property::FileId]);
+    BeBriefcaseId id = BeBriefcaseId(json[ServerSchema::Property::BriefcaseId].GetUint());
+    Utf8String userOwned = json.HasMember(ServerSchema::Property::UserOwned) ? json[ServerSchema::Property::UserOwned].GetString() : "";
     bool isReadOnly = json[ServerSchema::Property::IsReadOnly].GetBool();
+    Utf8String mergedChangeSetId = json.HasMember(ServerSchema::Property::MergedChangeSetId) ? json[ServerSchema::Property::MergedChangeSetId].GetString() : "";
 
-    return new BriefcaseInfo(id, userOwned, fileId, isReadOnly);
+    return new BriefcaseInfo(json, id, userOwned, mergedChangeSetId, isReadOnly);
     }
 
 //---------------------------------------------------------------------------------------
