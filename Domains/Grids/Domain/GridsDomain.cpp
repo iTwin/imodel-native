@@ -27,26 +27,27 @@ DOMAIN_DEFINE_MEMBERS(GridsDomain)
 //---------------------------------------------------------------------------------------
 GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     {
-    RegisterHandler (GridArcSurfaceHandler::GetHandler ());
-    RegisterHandler (GridPlanarSurfaceHandler::GetHandler ());
-    RegisterHandler (ElevationGridSurfaceHandler::GetHandler ());
-    RegisterHandler (SketchLineGridSurfaceHandler::GetHandler ());
-    RegisterHandler (PlanCartesianGridSurfaceHandler::GetHandler ());
-    RegisterHandler (GridSplineSurfaceHandler::GetHandler ());
+    RegisterHandler(GridArcSurfaceHandler::GetHandler ());
+    RegisterHandler(SketchArcGridSurfaceHandler::GetHandler());
+    RegisterHandler(GridPlanarSurfaceHandler::GetHandler ());
+    RegisterHandler(ElevationGridSurfaceHandler::GetHandler ());
+    RegisterHandler(SketchLineGridSurfaceHandler::GetHandler ());
+    RegisterHandler(PlanCartesianGridSurfaceHandler::GetHandler ());
+    RegisterHandler(GridSplineSurfaceHandler::GetHandler ());
 
-    RegisterHandler (OrthogonalGridHandler::GetHandler ());
-    RegisterHandler (RadialGridHandler::GetHandler ());
-    RegisterHandler (SketchGridHandler::GetHandler ());
-    RegisterHandler (ElevationGridHandler::GetHandler ());
+    RegisterHandler(OrthogonalGridHandler::GetHandler ());
+    RegisterHandler(RadialGridHandler::GetHandler ());
+    RegisterHandler(SketchGridHandler::GetHandler ());
+    RegisterHandler(ElevationGridHandler::GetHandler ());
 
-    RegisterHandler (GridAxisHandler::GetHandler ());
+    RegisterHandler(GridAxisHandler::GetHandler ());
 
-    RegisterHandler (GridLineHandler::GetHandler ());
-    RegisterHandler (GridArcHandler::GetHandler ());
-    RegisterHandler (GridSplineHandler::GetHandler ());
+    RegisterHandler(GridLineHandler::GetHandler ());
+    RegisterHandler(GridArcHandler::GetHandler ());
+    RegisterHandler(GridSplineHandler::GetHandler ());
 
 
-    RegisterHandler (GridSurfaceCreatesGridCurveHandler::GetHandler ());
+    RegisterHandler(GridSurfaceCreatesGridCurveHandler::GetHandler ());
     }
 
 //---------------------------------------------------------------------------------------

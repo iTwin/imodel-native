@@ -88,4 +88,5 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGridSplineSurface : GridSplineSurface, IPlanG
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGridSplineSurface, GRIDELEMENTS_EXPORT)
 
     };
+
 END_GRIDS_NAMESPACE
