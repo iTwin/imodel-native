@@ -1334,7 +1334,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     {
-    auto result = _RequestTile(node, nullptr, nullptr, BeTimePoint());
+    auto result = _RequestTile(node, nullptr, nullptr, BeDuration());
     result.wait();
     return result.isReady() ? SUCCESS : ERROR;
     }
@@ -1360,7 +1360,7 @@ BentleyStatus SMScene::LoadScene()
     m_rootTile = root;
     root->m_3smModel = m_3smModel;
 
-    auto result = _RequestTile(*root, nullptr, GetRenderSystemP(), BeTimePoint());
+    auto result = _RequestTile(*root, nullptr, GetRenderSystemP(), BeDuration());
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
     }
@@ -2174,6 +2174,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
     assert(invertResult);
     
+    m_path = smFilename;
     if (m_smPtr->IsCesium3DTiles() && !(smFilename.ContainsI(L"realitydataservices") && smFilename.ContainsI(L"S3MXECPlugin")))
         {
         // The mesh likely comes from ProjectWiseContextShare, if it does then save that instead
