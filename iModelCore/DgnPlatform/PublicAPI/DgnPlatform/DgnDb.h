@@ -301,7 +301,7 @@ public:
     //! <li> ONLY to be used for cases where the schemas are NOT paired with a domain.
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by committing 
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
     //! compatible version number. 
@@ -431,7 +431,7 @@ public:
     //! not allowed. 
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by committing 
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);

@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <Bentley/Nullable.h>
 #include "Command.h"
 #include "BimConsole.h"
 
@@ -84,25 +85,7 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
         Utf8String rowString;
         for (int i = 0; i < columnCount; i++)
             {
-            IECSqlValue const& value = statement.GetValue(i);
-            ECPropertyCP prop = value.GetColumnInfo().GetProperty();
-
-            Utf8String cellValue;
-            if (prop->GetIsPrimitive())
-                cellValue = PrimitiveToString(value);
-            else if (prop->GetIsStruct())
-                cellValue = StructToString(value);
-            else if (prop->GetIsArray())
-                cellValue = ArrayToString(value, prop);
-            else if (prop->GetIsNavigation())
-                {
-                ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
-                if (navProp->IsMultiple())
-                    cellValue = "{...}";
-                else
-                    cellValue = StructToString(value);
-                }
-
+            Utf8String cellValue = ValueToString(statement.GetValue(i));
             const int columnSize = columnSizes[(size_t) i];
 
             Utf8String formatString;
@@ -223,6 +206,86 @@ int ECSqlCommand::ComputeColumnSize(ECSqlColumnInfo const& colInfo)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle    12/2017
+//---------------------------------------------------------------------------------------
+//static
+Utf8String ECSqlCommand::ValueToString(IECSqlValue const& value)
+    {
+    if (value.IsNull())
+        return "NULL";
+
+    ECPropertyCP prop = value.GetColumnInfo().GetProperty();
+    if (prop->GetIsPrimitive())
+        return PrimitiveToString(value);
+
+    if (prop->GetIsStruct())
+        return StructToString(value);
+
+    if (prop->GetIsArray())
+        return ArrayToString(value);
+
+    if (prop->GetIsNavigation())
+        {
+        ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+        if (navProp->IsMultiple())
+            return "{...}";
+
+        return StructToString(value);
+        }
+
+    BeAssert(false);
+    return "<unknown>";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan     10/2013
+//---------------------------------------------------------------------------------------
+//static
+Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value)
+    {
+    Nullable<PrimitiveType> primType;
+    ECEnumerationCP ecEnum = nullptr;
+
+    ECPropertyCP prop = value.GetColumnInfo().GetProperty();
+    BeAssert(prop->GetIsPrimitive() || prop->GetIsPrimitiveArray());
+
+    PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+    if (primProp != nullptr)
+        {
+        ecEnum = primProp->GetEnumeration();
+        if (ecEnum == nullptr)
+            primType = primProp->GetType();
+        }
+    else
+        {
+        PrimitiveArrayECPropertyCP primArrayProp = prop->GetAsPrimitiveArrayProperty();
+        BeAssert(primArrayProp != nullptr);
+        ecEnum = primArrayProp->GetEnumeration();
+        if (ecEnum == nullptr)
+            primType = primArrayProp->GetPrimitiveElementType();
+        }
+
+    if (!primType.IsNull())
+        return PrimitiveToString(value, primType.Value());
+
+    BeAssert(ecEnum != nullptr);
+    if (ecEnum->GetType() == PRIMITIVETYPE_String) //For string enums the actual value is already the enum value name
+        return PrimitiveToString(value, PRIMITIVETYPE_String);
+
+    BeAssert(ecEnum->GetType() == PRIMITIVETYPE_Integer && "Unsupported ECEnum data type");
+
+    const int actualValue = value.GetInt();
+    for (ECEnumerator const* enumValue : ecEnum->GetEnumerators())
+        {
+        if (actualValue == enumValue->GetInteger())
+            return enumValue->GetDisplayLabel();
+        }
+
+    //no enum value matches -> print out the integer value as is
+    return PrimitiveToString(value, PRIMITIVETYPE_Integer);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
@@ -324,34 +387,21 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
     return out;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan     10/2013
-//---------------------------------------------------------------------------------------
-//static
-Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value)
-    {
-    const PrimitiveType primitiveType = value.GetColumnInfo().GetDataType().GetPrimitiveType();
-    return PrimitiveToString(value, primitiveType);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 //static
-Utf8String ECSqlCommand::ArrayToString(IECSqlValue const& value, ECN::ECPropertyCP property)
+Utf8String ECSqlCommand::ArrayToString(IECSqlValue const& value)
     {
     Utf8String out = "[";
     bool isFirstRow = true;
     for (IECSqlValue const& arrayElementValue : value.GetArrayIterable())
         {
         if (!isFirstRow)
-            out.append(", ");
+            out.append(",");
 
-        if (property->GetIsPrimitiveArray())
-            out.append(PrimitiveToString(arrayElementValue, property->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()));
-        else
-            out.append(StructToString(arrayElementValue));
-
+        out.append(ValueToString(arrayElementValue));
         isFirstRow = false;
         }
 
@@ -371,17 +421,9 @@ Utf8String ECSqlCommand::StructToString(IECSqlValue const& value)
     for (IECSqlValue const& structMemberValue : value.GetStructIterable())
         {
         if (!isFirst)
-            out.append(", ");
+            out.append(",");
 
-        auto property = structMemberValue.GetColumnInfo().GetProperty();
-        BeAssert(property != nullptr && "ColumnInfo::GetProperty can be null.");
-        if (property->GetIsPrimitive())
-            out.append(PrimitiveToString(structMemberValue));
-        else if (property->GetIsStruct())
-            out.append(StructToString(structMemberValue));
-        else
-            out.append(ArrayToString(structMemberValue, property));
-
+        out.append(ValueToString(structMemberValue));
         isFirst = false;
         }
 

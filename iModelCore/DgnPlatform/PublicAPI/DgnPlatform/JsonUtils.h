@@ -9,8 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <DgnPlatform/ClipVector.h>
-#include <ECObjects/ECValue.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -295,24 +293,6 @@ static void DPoint3dVectorFromJson(bvector<DPoint3d>& points, JsonValueCR inValu
         points.push_back(pt);
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-*! Represent a NavigationProperty in JSON, in the format used by iModelJson.
-* @bsimethod                                                    Sam.Wilson      07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static Json::Value NavigationPropertyToJson(ECN::ECValue::NavigationInfo const&);
-
-/*---------------------------------------------------------------------------------**//**
-*! Parse a NavigationProperty from JSON, according to the format used by iModelJson.
-* @bsimethod                                                    Sam.Wilson      07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static ECN::ECValue NavigationPropertyFromJson(JsonValueCR json, DgnDbR db);
-
-/*---------------------------------------------------------------------------------**//**
-*! Get the class id from a string in the form "Schema:ClassName"
-* @bsimethod                                    Keith.Bentley                   08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static DgnClassId DgnClassIdFromJson(JsonValueCR json, DgnDbR db);
 
 };
 

@@ -186,7 +186,7 @@ public:
     //! @param placement The attachment's origin and size on the sheet.
     DGNPLATFORM_EXPORT ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement);
 
-    //! Construct an attachment in the case where you know the view scale. The placement's size will be computed.
+    //! Construct an attachment in the case where you know the view scale. Th5e placement's size will be computed.
     //! @param db   The DgnDb that will contain the attachment
     //! @param model The model in the DgnDb that will contain the attachment
     //! @param viewId   The view that is being attached
