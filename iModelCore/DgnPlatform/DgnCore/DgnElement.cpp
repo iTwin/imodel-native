@@ -1718,15 +1718,26 @@ void DgnElements::SetHilited(DgnElementR el, bool hilited)
     if (el.m_flags.m_hilited != hilited)
         {
         el.m_flags.m_hilited = hilited;
-        if (hilited)
-            m_hilitedSet.insert(elemId);
-        else
-            m_hilitedSet.erase(elemId);
-
-        T_HOST._OnHilitedSetChanged(GetDgnDb());
+        SetInHiliteSet(elemId, hilited);
         }
 
     BeAssert(hilited == (m_hilitedSet.end() != m_hilitedSet.find(elemId)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::SetInHiliteSet(DgnElementId id, bool hilited)
+    {
+    // This takes an ID because elements in the selection set can get unloaded from memory;
+    // SelectionSetManager will try to find loaded element, fail, and do nothing - so they
+    // remain hilited in tile graphics.
+    if (hilited)
+        m_hilitedSet.insert(id);
+    else
+        m_hilitedSet.erase(id);
+
+    T_HOST._OnHilitedSetChanged(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
