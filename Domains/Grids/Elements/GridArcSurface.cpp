@@ -126,4 +126,85 @@ CreateParams const& params
     {
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchArcGridSurface::SketchArcGridSurface
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetBaseArc(params.m_arc);
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchArcGridSurfacePtr             SketchArcGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    SketchArcGridSurfacePtr surface = new SketchArcGridSurface (params);
+
+    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
+        return nullptr;
+    
+    return surface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            SketchArcGridSurface::SetBaseArc
+(
+DEllipse3d arc
+)
+    {
+    if (arc.IsNearZeroRadius()) //if the radius is zero - arc not valid
+        return;
+
+    ICurvePrimitivePtr arcPrimitive = ICurvePrimitive::CreateArc (arc);
+    IGeometryPtr geometryPtr = IGeometry::Create (arcPrimitive);
+
+    ECN::ECValue arc2dValue;
+    arc2dValue.SetIGeometry (*geometryPtr);
+
+    SetPropertyValue (prop_Arc2d (), arc2dValue);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus                   SketchArcGridSurface::GetBaseArc
+(
+DEllipse3dR arc
+) const
+    {
+    ECN::ECValue arc2dValue;
+
+    GetPropertyValue (arc2dValue, prop_Arc2d());
+
+    IGeometryPtr geometryPtr = arc2dValue.GetIGeometry ();
+    if (!geometryPtr.IsValid ())
+        return BentleyStatus::ERROR;
+
+    ICurvePrimitivePtr curve = geometryPtr->GetAsICurvePrimitive ();
+    if (!curve.IsValid ())
+        return BentleyStatus::ERROR;
+            
+    DEllipse3dCP pArc = curve->GetArcCP ();
+    if (pArc == NULL)
+        return BentleyStatus::ERROR;
+
+    arc = *pArc;
+
+    return BentleyStatus::SUCCESS;
+    }
+
 END_GRIDS_NAMESPACE

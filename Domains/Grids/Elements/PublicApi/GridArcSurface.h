@@ -92,4 +92,62 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGridArcSurface : GridArcSurface, IPlanGridSur
 
     };
 
+//=======================================================================================
+//! plan grid planar surface element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SketchArcGridSurface : PlanGridArcSurface
+    {
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_SketchArcGridSurface, PlanGridArcSurface);
+    DEFINE_T_SUPER (PlanGridArcSurface);
+    public:
+        struct CreateParams : T_Super::CreateParams
+            {
+            DEFINE_T_SUPER (SketchArcGridSurface::T_Super::CreateParams);
+            DEllipse3d m_arc;
+
+            //! Creates create parameters for orthogonal grid
+            //! @param[in] model              model for the PlanCartesianGridSurface
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double staElevation, double endElevation, DEllipse3d arc) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId (), staElevation, endElevation)
+                {
+                m_arc = arc;
+                }
+
+            //! Constructor from base params. Chiefly for internal use.
+            //! @param[in]      params   The base element parameters
+            //! @return 
+            explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
+                : T_Super (params)
+                {
+                DPoint3d center = DPoint3d::FromZero();
+                m_arc = DEllipse3d::FromCenterRadiusXY(center, 0);
+                }
+            };
+
+    private:
+        BE_PROP_NAME (Arc2d)
+
+
+    protected:
+        explicit GRIDELEMENTS_EXPORT SketchArcGridSurface (CreateParams const& params);
+        friend struct SketchArcGridSurfaceHandler;
+
+    public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchArcGridSurface, GRIDELEMENTS_EXPORT)
+
+        //! Creates a SketchArcGridSurface surface
+        //! @param[in]  params           params to create SketchArcGridSurface
+        GRIDELEMENTS_EXPORT static  SketchArcGridSurfacePtr Create (CreateParams const& params);
+
+        //! Gets Arc2d of this SketchArcGridSurface
+        //! @param[out]  arc        base arc of gridSurface in local coordinates, on zero Z plane
+        //! @return base arc of this SketchArcGridSurface
+        GRIDELEMENTS_EXPORT BentleyStatus       GetBaseArc (DEllipse3dR arc) const;
+
+        //! Sets Line2d of this SketchArcGridSurface
+        //! @param[in]   arc        base arc of gridSurface in local coordinates, on zero Z plane
+        //! @Note: Only arcs on zero Z plane pass as valid geometry
+        GRIDELEMENTS_EXPORT void                SetBaseArc (DEllipse3d arc);
+    };
+
 END_GRIDS_NAMESPACE

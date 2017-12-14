@@ -91,7 +91,9 @@
 #define GRIDS_CLASS_GridSplineSurface                           "GridSplineSurface"
 #define GRIDS_CLASS_GridArcSurface                              "GridArcSurface"
 #define GRIDS_CLASS_PlanGridArcSurface                          "PlanGridArcSurface"
+#define GRIDS_CLASS_SketchArcGridSurface                        "SketchArcGridSurface"
 #define GRIDS_CLASS_PlanGridSplineSurface                       "PlanGridSplineSurface"
+#define GRIDS_CLASS_SketchSplineGridSurface                     "SketchSplineGridSurface"
 
 //Categories
 #define GRIDS_CATEGORY_CODE_IntersectionCurve                   "IntersectionCurve"
