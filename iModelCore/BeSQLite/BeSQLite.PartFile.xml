@@ -4,6 +4,7 @@
 
     <!-- Bind my own PublicAPI and VendorAPI into BuildContext. Note that this part does not cause any sub-part PublicAPIs to be bound. Also deliver my notices. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="BeSQLite.prewire.mke">
+        <SubPart PartName="PublicAPI" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <Bindings>
             <PublicAPI Domain="BeSQLite" />
             <VendorNotices>
