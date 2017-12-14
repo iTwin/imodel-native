@@ -1120,13 +1120,17 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     ConverterLogging::LogPerformance(timer, "Convert NamedGroups in dictionary (%" PRIu32 " element(s))", convertedElementCount);
 
     AddTasks(1);
+    bmap<Utf8String, Utf8String> indexDdlList;
     SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_RELATIONSHIPS());
+    DropElementRefersToElementsIndices(indexDdlList);
     ConvertNamedGroupsRelationships();
     ConverterLogging::LogPerformance(timer, "Convert Elements> NamedGroups");
 
     timer.Start();
     ConvertECRelationships();
     ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships (total)");
+    RecreateElementRefersToElementsIndices(indexDdlList);
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1256,7 +1260,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                     }
 
                 GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
-                if (group.IsValid() && !ElementGroupsMembers::HasMember(*group, *child))
+                if (group.IsValid()/* && !ElementGroupsMembers::HasMember(*group, *child)*/)
                     {
                     if (DgnDbStatus::Success != ElementGroupsMembers::Insert(*group, *child, 0))
                         {
@@ -1369,17 +1373,13 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
+// As all v8 relationships end up in the same table (bis_ElementRefersToElements)
+// it gets a lot of indexes. These hurt performance a lot, so we drop the indexes before the bulk insert
+// and re-add them later.
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList)
     {
-    if (m_skipECContent)
-        return BentleyApi::SUCCESS;
-
-    //As all v8 relationships end up in the same table (bis_ElementRefersToElements)
-    //it gets a lot of indexes. These hurt performance a lot, so we drop the indexes before the bulk insert
-    //and re-add them later.
-    bmap<Utf8String, Utf8String> indexDdlList;
     if (!IsUpdating())
         {
         StopWatch timer(true);
@@ -1404,23 +1404,14 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
 
         ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships: Dropped indices for bulk insertion into BisCore:ElementRefersToElements class hierarchy.");
         }
+    return BentleyApi::SUCCESS;
+    }
 
-    for (auto& modelMapping : m_v8ModelMappings)
-        {
-        ConvertECRelationshipsInModel(modelMapping.GetV8Model());
-        if (WasAborted())
-            return BentleyApi::ERROR;
-        }
-
-    //analyze named groups in dictionary models
-    for (DgnV8FileP v8File : m_v8Files)
-        {
-        DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
-        ConvertECRelationshipsInModel(dictionaryModel);
-        if (WasAborted())
-            return BentleyApi::ERROR;
-        }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList)
+    {
     //recreate indexes that were previously dropped
     if (!IsUpdating())
         {
@@ -1454,6 +1445,32 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
             }
 
         ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships: Recreated indices for BisCore:ElementRefersToElements class hierarchy.");
+        }
+    return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   10/2014
+//---------------------------------------------------------------------------------------
+BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
+    {
+    if (m_skipECContent)
+        return BentleyApi::SUCCESS;
+
+    for (auto& modelMapping : m_v8ModelMappings)
+        {
+        ConvertECRelationshipsInModel(modelMapping.GetV8Model());
+        if (WasAborted())
+            return BentleyApi::ERROR;
+        }
+
+    //analyze named groups in dictionary models
+    for (DgnV8FileP v8File : m_v8Files)
+        {
+        DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
+        ConvertECRelationshipsInModel(dictionaryModel);
+        if (WasAborted())
+            return BentleyApi::ERROR;
         }
 
     return BentleyApi::SUCCESS;
