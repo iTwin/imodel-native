@@ -42,6 +42,7 @@ IHttpHandlerPtr            customHandler
     wsRepositoryClient->SetCredentials(credentials);
 
     SetRepositoryClient(wsRepositoryClient);
+    m_azureClient = AzureBlobStorageClient::Create();
     }
 
 //---------------------------------------------------------------------------------------
@@ -59,27 +60,6 @@ ICancellationTokenPtr             cancellationToken
     const Utf8String methodName = "iModelConnection::DownloadFileInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-
-    if (typeid(NotUsedFileAccessKey) == typeid(*fileAccessKey))
-        {
-        // This environment does not use fileAccessKey
-        return ExecuteWithRetry<void>([=]()
-            {
-            return m_wsRepositoryClient->SendGetFileRequest(fileId, localFile, nullptr, callback, cancellationToken)
-                ->Then<StatusResult>([=](const WSFileResult& fileResult)
-                {
-                if (!fileResult.IsSuccess())
-                    {
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, fileResult.GetError().GetMessage().c_str());
-                    return StatusResult::Error(fileResult.GetError());
-                    }
-
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                return StatusResult::Success();
-                });
-            });
-        }
 
     // Download file directly from the url.
     return ExecuteWithRetry<void>([=]()
@@ -187,8 +167,7 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
             Json::Value json;
             result.GetValue().GetJson(json);
             JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            auto fileInfoPtr = FileInfo::Parse(ToRapidJson(instance[ServerSchema::Properties]), instance[ServerSchema::InstanceId].asString(), 
-                                               fileInfo);
+            auto fileInfoPtr = FileInfo::Parse(ToRapidJson(instance[ServerSchema::Properties]), fileInfo);
             fileInfoPtr->SetFileAccessKey(FileAccessKey::ParseFromRelated(instance));
 
             finalResult->SetSuccess(fileInfoPtr);
@@ -1107,9 +1086,7 @@ ICancellationTokenPtr cancellationToken
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Code);
 
     Utf8String filter;
-    filter.Sprintf("%s+ne+%u", ServerSchema::Property::BriefcaseId,
-                   briefcaseId.GetValue());
-
+    filter.Sprintf("%s+ne+%u", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
     query.SetFilter(filter);
 
     return QueryCodesLocksInternal(query, codesLocksOut, AddCodes, cancellationToken);
@@ -1345,30 +1322,6 @@ AsyncTaskPtr<WSCreateObjectResult> iModelConnection::CreateBriefcaseInstance(ICa
     briefcaseIdJson[ServerSchema::Instance][ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
     briefcaseIdJson[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
     return m_wsRepositoryClient->SendCreateObjectRequest(briefcaseIdJson, BeFileName(), nullptr, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-FileTaskPtr iModelConnection::GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
-    {
-    const Utf8String methodName = "iModelConnection::GetBriefcaseFileInfo";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    Utf8String briefcaseIdString;
-    briefcaseIdString.Sprintf("%d", briefcaseId.GetValue());
-    ObjectId briefcaseObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, briefcaseIdString);
-
-    return m_wsRepositoryClient->SendGetObjectRequest(briefcaseObjectId, nullptr, cancellationToken)
-        ->Then<FileResult>([=](WSObjectsResult const& result)
-        {
-        if (!result.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-            return FileResult::Error(result.GetError());
-            }
-        auto fileInfo = FileInfo::Parse(*result.GetValue().GetInstances().begin());
-        return FileResult::Success(fileInfo);
-        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -2435,65 +2388,33 @@ ICancellationTokenPtr             cancellationToken
             ObjectId    changeSetObjectId = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetInstanceId);
             auto fileAccessKey = FileAccessKey::ParseFromRelated(changeSetInstance);
 
-            if (fileAccessKey.IsNull())
+            m_azureClient->SendUpdateFileRequest(fileAccessKey->GetUploadUrl(), changeSet->GetRevisionChangesFile(), callback, cancellationToken)
+                ->Then([=] (const AzureResult& result)
                 {
-                m_wsRepositoryClient->SendUpdateFileRequest(changeSetObjectId, changeSet->GetRevisionChangesFile(), callback, cancellationToken)
-                    ->Then([=](const WSUpdateObjectResult& uploadChangeSetResult)
-                    {
 #if defined (ENABLE_BIM_CRASH_TESTS)
-                    BreakHelper::HitBreakpoint(Breakpoints::iModelConnection_AfterUploadChangeSetFile);
+                BreakHelper::HitBreakpoint(Breakpoints::iModelConnection_AfterUploadChangeSetFile);
 #endif
-                    if (!uploadChangeSetResult.IsSuccess())
-                        {
-                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, uploadChangeSetResult.GetError().GetMessage().c_str());
-                        finalResult->SetError(uploadChangeSetResult.GetError());
-                        return;
-                        }
-
-                    // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
-                        ->Then([=](StatusResultCR result)
-                        {
-                        if (result.IsSuccess())
-                            finalResult->SetSuccess();
-                        else
-                            {
-                            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                            finalResult->SetError(result.GetError());
-                            }
-                        });
-                    });
-                }
-            else
-                {
-                m_azureClient->SendUpdateFileRequest(fileAccessKey->GetUploadUrl(), changeSet->GetRevisionChangesFile(), callback, cancellationToken)
-                    ->Then([=](const AzureResult& result)
+                if (!result.IsSuccess())
                     {
-#if defined (ENABLE_BIM_CRASH_TESTS)
-                    BreakHelper::HitBreakpoint(Breakpoints::iModelConnection_AfterUploadChangeSetFile);
-#endif
-                    if (!result.IsSuccess())
-                        {
-                        HttpError error(result.GetError());
-                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
-                        finalResult->SetError(Error(error));
-                        return;
-                        }
+                    HttpError error(result.GetError());
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
+                    finalResult->SetError(Error(error));
+                    return;
+                    }
 
-                    // Stage 3. Initialize changeSet.
-                    InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
-                        ->Then([=](StatusResultCR result)
+                // Stage 3. Initialize changeSet.
+                InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, cancellationToken)
+                    ->Then([=] (StatusResultCR result)
+                    {
+                    if (result.IsSuccess())
+                        finalResult->SetSuccess();
+                    else
                         {
-                        if (result.IsSuccess())
-                            finalResult->SetSuccess();
-                        else
-                            {
-                            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-                            finalResult->SetError(result.GetError());
-                            }
-                        });
+                        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                        finalResult->SetError(result.GetError());
+                        }
                     });
-                }
+                });
             })->Then<StatusResult>([=]
                 {
                 return *finalResult;
@@ -2755,7 +2676,6 @@ IHttpHandlerPtr  customHandler
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     iModelConnectionPtr imodelConnection(new iModelConnection(iModel, credentials, clientInfo, customHandler));
-    imodelConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
@@ -3109,29 +3029,32 @@ BriefcasesInfoTaskPtr iModelConnection::QueryAllBriefcasesInfo(ICancellationToke
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-BriefcaseInfoTaskPtr iModelConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+BriefcaseInfoTaskPtr iModelConnection::QueryBriefcaseInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "iModelConnection::QueryBriefcaseInfo";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
-    Utf8String filter;
-    filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId);
-
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase);
-    query.SetFilter(filter);
-
-    return QueryBriefcaseInfoInternal(query, cancellationToken)->Then<BriefcaseInfoResult>([=](BriefcasesInfoResultCR briefcasesResult)
+    if (!briefcaseId.IsValid())
         {
-        if (!briefcasesResult.IsSuccess())
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid briefcaseId");
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(Error::Id::InvalidBriefcase));
+        }
+
+    Utf8String briefcaseIdString;
+    briefcaseIdString.Sprintf("%d", briefcaseId.GetValue());
+    ObjectId briefcaseObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Briefcase, briefcaseIdString);
+
+    return m_wsRepositoryClient->SendGetObjectRequest(briefcaseObjectId, nullptr, cancellationToken)
+        ->Then<BriefcaseInfoResult>([=](WSObjectsResult const& result)
+        {
+        if (!result.IsSuccess())
             {
-            return BriefcaseInfoResult::Error(briefcasesResult.GetError());
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            return BriefcaseInfoResult::Error(result.GetError());
             }
-        auto briefcasesInfo = briefcasesResult.GetValue();
-        if (briefcasesInfo.empty())
-            {
-            return BriefcaseInfoResult::Error({Error::Id::InvalidBriefcase, ErrorLocalizedString(MESSAGE_BriefcaseInfoParseError)});
-            }
-        return BriefcaseInfoResult::Success(briefcasesResult.GetValue()[0]);
+
+        BriefcaseInfoPtr briefcaseInfo = BriefcaseInfo::Parse(*result.GetValue().GetInstances().begin());
+        return BriefcaseInfoResult::Success(briefcaseInfo);
         });
     }
 

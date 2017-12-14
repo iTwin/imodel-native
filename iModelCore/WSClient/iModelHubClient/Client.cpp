@@ -19,14 +19,13 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGN
 
-BriefcaseFileNameCallback Client::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, iModelInfoCR iModelInfo, 
-                                                               FileInfoCR fileInfo)
+BriefcaseFileNameCallback Client::DefaultFileNameCallback = [](BeFileName baseDirectory, iModelInfoCR iModelInfo, BriefcaseInfoCR briefcaseInfo)
     {
     baseDirectory.AppendToPath(BeFileName(iModelInfo.GetId()));
     BeFileName briefcaseId;
-    briefcaseId.Sprintf(L"%u", briefcase);
+    briefcaseId.Sprintf(L"%u", briefcaseInfo.GetId());
     baseDirectory.AppendToPath(briefcaseId);
-    baseDirectory.AppendToPath(BeFileName(fileInfo.GetFileName()));
+    baseDirectory.AppendToPath(BeFileName(briefcaseInfo.GetFileName()));
     return baseDirectory;
     };
 
@@ -577,16 +576,15 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
 
     iModelConnectionPtr connection = connectionResult.GetValue();
 
-    auto fileResult = ExecuteAsync(connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken));
-    if (!fileResult->IsSuccess())
+    auto briefcaseResult = ExecuteAsync(connection->QueryBriefcaseInfo(briefcaseId, cancellationToken));
+    if (!briefcaseResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult->GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(fileResult->GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(briefcaseResult->GetError()));
         }
 
-    auto newFileInfo = fileResult->GetValue();
     BeFileName downloadPath = originalFilePath.GetDirectoryName();
-    downloadPath = downloadPath.AppendToPath(BeFileName(newFileInfo->GetFileId().ToString()));
+    downloadPath = downloadPath.AppendToPath(BeFileName(briefcaseResult->GetValue()->GetFileId().ToString()));
     downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
@@ -673,17 +671,16 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
 
     iModelConnectionPtr connection = connectionResult.GetValue();
 
-    //get Briefcase FileInfo
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting FileInfo of Briefcase ID %d.", briefcaseID);
-    auto fileInfoResult = ExecuteAsync(connection->GetBriefcaseFileInfo(briefcaseID, nullptr));
-    if (!fileInfoResult->IsSuccess())
+    //get BriefcaseInfo
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting BriefcaseInfo of Briefcase ID %d.", briefcaseID);
+    BriefcaseInfoResultPtr briefcaseInfoResult = ExecuteAsync(connection->QueryBriefcaseInfo(briefcaseID, nullptr));
+    if (!briefcaseInfoResult->IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileInfoResult->GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(fileInfoResult->GetError()));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseInfoResult->GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(briefcaseInfoResult->GetError()));
         }
-    FileInfoPtr fileInfo = fileInfoResult->GetValue();
-
-    BeFileName filePath = fileNameCallback(baseDirectory, briefcaseID, connection->GetiModelInfo(), *fileInfo);
+    BriefcaseInfoPtr briefcaseInfo = briefcaseInfoResult->GetValue();
+    BeFileName filePath = fileNameCallback(baseDirectory, connection->GetiModelInfo(), *briefcaseInfo);
     if (filePath.DoesPathExist())
         {
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "File already exists.");
@@ -695,7 +692,7 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
         }
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseID);
-    StatusResult downloadResult = DownloadBriefcase(connection, filePath, briefcaseID, *fileInfo, doSync, callback, cancellationToken);
+    StatusResult downloadResult = DownloadBriefcase(connection, filePath, *briefcaseInfo, doSync, callback, cancellationToken);
     if (!downloadResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
@@ -705,7 +702,6 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
     double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Download successful.");
 
-    BriefcaseInfoPtr briefcaseInfo = new BriefcaseInfo(briefcaseID);
     briefcaseInfo->SetLocalPath(filePath);
     return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Success(briefcaseInfo));
     }
@@ -736,32 +732,23 @@ DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName fi
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
-StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, FileInfoCR fileInfo,
+StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BriefcaseInfoCR briefcaseInfo,
                                        bool doSync, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::DownloadBriefcase";
     if (!doSync)
-        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), callback, cancellationToken);
-
-    // TODO. All commented out code in this method is related to this defect: TFS#788691:Parallel download of Briefcase and ChangeSet files are not working
-    //auto seedFileInfoResult = ExecuteAsync(connection->GetLatestSeedFile(cancellationToken));
-    //if (!seedFileInfoResult->IsSuccess())
-    //    {
-    //    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, seedFileInfoResult->GetError().GetMessage().c_str());
-    //    return StatusResult::Error(seedFileInfoResult->GetError());
-    //    }
+        return connection->DownloadBriefcaseFile(filePath, briefcaseInfo.GetId(), briefcaseInfo.GetFileAccessKey(), callback, cancellationToken);
 
     MultiProgressCallbackHandler handler(callback);
-    Http::Request::ProgressCallback changeSetsCallback, briefcaseCallback;
+    Http::Request::ProgressCallback briefcaseCallback, changeSetsCallback, changeSetsFallbackCallback;
+    handler.AddCallback(briefcaseCallback, 70.0f);
     handler.AddCallback(changeSetsCallback, 20.0f);
-    handler.AddCallback(briefcaseCallback, 80.0f);
-    
-    //Utf8String mergedChangeSetId = seedFileInfoResult->GetValue()->GetMergedChangeSetId();
-    //ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), changeSetsCallback, 
-    //                                                                             cancellationToken);
+    handler.AddCallback(changeSetsFallbackCallback, 10.0f);
 
-    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), 
-                                                                     briefcaseCallback, cancellationToken);
+    Utf8String mergedChangeSetId = briefcaseInfo.GetMergedChangeSetId();
+    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, briefcaseInfo.GetFileId(), changeSetsCallback, cancellationToken);
+
+    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, briefcaseInfo.GetId(), briefcaseInfo.GetFileAccessKey(), briefcaseCallback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, briefcaseResult.GetError().GetMessage().c_str());
@@ -778,12 +765,6 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return result;
         }
 
-    // This part should be removed with the fix for TFS#788691
-    //-----------------------------------------------------------------------------
-    Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
-    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), changeSetsCallback, cancellationToken);
-    //-----------------------------------------------------------------------------
-
     ChangeSetsResult pullChangeSetsResult = pullChangeSetsTask->GetResult();
     if (!pullChangeSetsResult.IsSuccess())
         {
@@ -791,22 +772,25 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return StatusResult::Error(pullChangeSetsResult.GetError());
         }
 
-    //LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", 
-    //               fileInfo.GetMergedChangeSetId().c_str());
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", mergedChangeSetId);
 
-    // If seedFile and briefacase id's do not match, query new changeset's
-    //Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
-    //if (!parentRevisionId.Equals(mergedChangeSetId))
-    //    {
-    //    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Latest seedFile's ChangeSetId did not match briefcase's.");
-    //    pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), changeSetsCallback, cancellationToken);
-    //    pullChangeSetsResult = pullChangeSetsTask->GetResult();
-    //    if (!pullChangeSetsResult.IsSuccess())
-    //        {
-    //        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
-    //        return StatusResult::Error(pullChangeSetsResult.GetError());
-    //        }
-    //    }
+    // If MergedChangeSetId and ParentChangeSetId do not match, query new changeSets
+    Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
+    if (!parentRevisionId.Equals(mergedChangeSetId))
+        {
+        // Override task and result so that previously downloaded changeSets will be removed. Otherwise they are overridden later and required changeSets are deleted.
+        pullChangeSetsTask = CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(ChangeSets()));
+        pullChangeSetsResult = pullChangeSetsTask->GetResult();
+
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "MergedChangeSetId '%s' and ParentChangeSetId '%s' do not match.", mergedChangeSetId, parentRevisionId);
+        pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, briefcaseInfo.GetFileId(), changeSetsFallbackCallback, cancellationToken);
+        pullChangeSetsResult = pullChangeSetsTask->GetResult();
+        if (!pullChangeSetsResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
+            return StatusResult::Error(pullChangeSetsResult.GetError());
+            }
+        }
 
     db->Txns().EnableTracking(true);
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -918,14 +902,13 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
     briefcaseResult->GetValue().GetJson(json);
     JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
     BriefcaseInfoPtr briefcaseInfo = BriefcaseInfo::ParseRapidJson(ToRapidJson(instance[ServerSchema::Properties]));
-    FileInfoPtr fileInfo = FileInfo::Parse(ToRapidJson(instance[ServerSchema::Properties]), instance[ServerSchema::InstanceId].asString());
 
     FileAccessKeyPtr fileAccessKey = FileAccessKey::ParseFromRelated(instance);
-    fileInfo->SetFileAccessKey(fileAccessKey);
+    briefcaseInfo->SetFileAccessKey(fileAccessKey);
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 
-    BeFileName filePath = fileNameCallback(baseDirectory, briefcaseInfo->GetId(), iModelInfo, *fileInfo);
+    BeFileName filePath = fileNameCallback(baseDirectory, iModelInfo, *briefcaseInfo);
     if (filePath.DoesPathExist())
         {
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "File already exists.");
@@ -937,7 +920,7 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
         }
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseInfo->GetId());
-    StatusResult downloadResult = DownloadBriefcase(connection, filePath, briefcaseInfo->GetId(), *fileInfo, doSync, callback, cancellationToken);
+    StatusResult downloadResult = DownloadBriefcase(connection, filePath, *briefcaseInfo, doSync, callback, cancellationToken);
     if (!downloadResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
@@ -963,11 +946,10 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcase(iModelInfoCR iModelInfo, BeFileNam
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "File already exists.");
         return CreateCompletedAsyncTask<BriefcaseInfoResult>(BriefcaseInfoResult::Error(Error::Id::FileAlreadyExists));
         }
-    return AcquireBriefcaseToDir(iModelInfo, localFileName, doSync, [=](BeFileName baseDirectory, BeBriefcaseId, iModelInfoCR iModelInfo, 
-                                                                        FileInfoCR fileInfo)
+    return AcquireBriefcaseToDir(iModelInfo, localFileName, doSync, [=](BeFileName baseDirectory, iModelInfoCR iModelInfo, BriefcaseInfoCR briefcaseInfo)
         {
         if (baseDirectory.IsDirectory())
-            baseDirectory.AppendToPath(BeFileName(fileInfo.GetFileName()));
+            baseDirectory.AppendToPath(BeFileName(briefcaseInfo.GetFileName()));
         return baseDirectory;
         }, callback, cancellationToken);
     }

@@ -9,6 +9,7 @@
 #include "IntegrationTestsHelper.h"
 #include "LRPJobBackdoorAPI.h"
 #include "../../../iModelHubClient/Utils.h"
+#include "MockHttpHandler.h"
 #include "StubLocalState.h"
 #include <BeSQLite/BeSQLite.h>
 #include <DgnPlatform/TxnManager.h>
@@ -962,7 +963,7 @@ TEST_F(BriefcaseTests, UnsuccessfulRestoreBriefcase)
 * @bsimethod                                              Robertas.Maleckas      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (BriefcaseTests, SuccessfulAcquireBriefcaseAfterMergeJob)
-{
+    {
     InitializeWithChangeSets();
 
     Utf8StringCR mergeJobId = LRPJobBackdoorAPI::ScheduleLRPJob(m_projectConnection, "MergeJob", m_imodel->GetId());
@@ -975,4 +976,41 @@ TEST_F (BriefcaseTests, SuccessfulAcquireBriefcaseAfterMergeJob)
     EXPECT_SUCCESS (acquireBriefcaseResult);
     auto dbPath = acquireBriefcaseResult.GetValue ()->GetLocalPath ();
     EXPECT_TRUE (dbPath.DoesPathExist ());
-}
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Andrius.Zonys                   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BriefcaseTests, SuccessfulAcquireBriefcase_UseFallbackForSync)
+    {
+    // Create and push 2 ChangeSets
+    InitializeWithChangeSets();
+
+    ChangeSetsInfoResult queryChangeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
+    EXPECT_SUCCESS (queryChangeSetsResult);
+    ChangeSetInfoPtr firstChangeSet = *queryChangeSetsResult.GetValue().begin();
+
+    IHttpHandlerPtr validHandler = m_client->GetHttpHandler();
+
+    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
+    mockHandler->ForAnyRequest([=] (Http::RequestCR request)
+        {
+        Http::Response response = validHandler->_PerformRequest(request)->GetResult();
+        if (request.GetUrl().EndsWith("Briefcase"))
+            {
+            // Replace MergedChangeSetId so that fallback download scenario will be used
+            Utf8String body = response.GetBody().AsString();
+            body.ReplaceAll ("\"MergedChangeSetId\":\"\"", Utf8PrintfString ("\"MergedChangeSetId\":\"%s\"", firstChangeSet->GetId()).c_str());
+            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(body.c_str())), response.GetEffectiveUrl().c_str(), response.GetConnectionStatus(), response.GetHttpStatus());
+            }
+        return response;
+        });
+
+    m_client->SetHttpHandler(mockHandler);
+    auto acquireBriefcaseResult = m_client->AcquireBriefcaseToDir (*m_imodel, m_pHost->GetOutputDirectory (), true, Client::DefaultFileNameCallback, CreateProgressCallback ())->GetResult ();
+    m_client->SetHttpHandler(validHandler);
+
+    EXPECT_SUCCESS (acquireBriefcaseResult);
+    auto dbPath = acquireBriefcaseResult.GetValue ()->GetLocalPath ();
+    EXPECT_TRUE (dbPath.DoesPathExist ());
+    }
