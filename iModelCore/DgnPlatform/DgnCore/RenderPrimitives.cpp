@@ -2579,11 +2579,14 @@ void GeometryListBuilder::_AddTextString2dR(TextStringR text, double priority)
         }
     }
 
+PUSH_MSVC_IGNORE(6386) // Static analysis warning claims we overrun tmpPts...bogus.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags)
     {
+    BeAssert(numPoints >= 3);
+
     if (AsThickenedLine::Yes == usageFlags) // represents thickened line...
         {
         int nPt = 0;
@@ -2606,6 +2609,7 @@ void GeometryListBuilder::_AddTriStrip(int numPoints, DPoint3dCP points, AsThick
             _AddShape(3, points+iPt, true);
         }
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/16
