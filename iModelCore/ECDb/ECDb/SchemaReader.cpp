@@ -146,6 +146,9 @@ ECClassCP SchemaReader::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR cl
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
     {
+    if (!ecClassId.IsValid())
+        return nullptr;
+
         {
         auto lockECDb = LockECDb();
         ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
