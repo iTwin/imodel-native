@@ -26,6 +26,7 @@ struct UserInfo : RefCountedBase
 private:
 	friend struct UserInfoManager;
     friend struct iModelInfo;
+    friend struct StatisticsInfo;
 	Utf8String m_id;
 	Utf8String m_name;
 	Utf8String m_surname;

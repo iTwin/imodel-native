@@ -51,8 +51,8 @@ public:
     iModelConnectionPtr ConnectToiModel(ClientCR client, iModelInfoPtr imodelInfo);
     void DeleteiModel(Utf8StringCR projectId, ClientCR client, iModelInfoCR imodel);
     BriefcasePtr AcquireBriefcase(ClientCR client, iModelInfoCR imodelInfo, bool pull = false, bool forceDomainUpgrade = false);
-    void InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount);
-    BeSQLite::BeGuid ReplaceSeedFile(iModelConnectionPtr imodelConnection, DgnDbR db, bool changeGuid = true);
+    BriefcasePtr InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount);
+    BeSQLite::BeGuid ReplaceSeedFile(iModelConnectionPtr imodelConnection, DgnDbR db);
     Utf8String PushPendingChanges(Briefcase& briefcase, bool relinquishLocksCodes = false);
 
     void ExpectLocksCount(Briefcase& briefcase, int expectedCount);

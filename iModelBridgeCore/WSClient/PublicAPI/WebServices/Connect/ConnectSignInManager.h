@@ -133,8 +133,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         void InitializeConnectionClientInterface() const;
 
     public:
-        //! Can be created after MobileDgn is initialized.
-        //! Will renew sign-in information asynchronously if needed.
+        //! Create manager. Call CheckAndUpdateToken() to update sign-in information seperately.
         //! @param clientInfo - client applicaiton info, see ClientInfo documentation for more details
         //! @param httpHandler - custom HttpHandler to route requests trough
         //! @param localState - custom LocalState to store encrypted authentication information between sessions
@@ -149,8 +148,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
             IConnectionClientInterfacePtr connectionClient = nullptr
             );
 
-        //! Can be created after MobileDgn is initialized.
-        //! Will renew sign-in information asynchronously if needed.
+        //! Create manager. Call CheckAndUpdateToken() to update sign-in information seperately.
         //! @param client - custom ImsClient for authenticating user
         //! @param localState - custom LocalState to store encrypted authentication information between sessions
         //! @param secureStore - custom encryption provider
@@ -167,6 +165,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
 
         //! Change default configuration with new one. Best called before any other calls are done.
         WSCLIENT_EXPORT void Configure(Configuration config);
+
+        //! Check if token expired and renew/handle expiration
+        WSCLIENT_EXPORT void CheckAndUpdateToken();
 
         //! Sign in using identity token.
         //! Note: Token can be retrieved from IMS sign-in page from browser, in-app web view, or other means.
@@ -222,9 +223,6 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Will always represent user that is signed-in when prividing token.
         //! @param rpUri relying party URI to use token for
         WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri) const;
-
-        //! Check if token expired and renew/handle expiration
-        WSCLIENT_EXPORT void CheckAndUpdateToken();
 
         //! Check if Connection Client is installed
         //! Should be called first to make sure the API will work correctly

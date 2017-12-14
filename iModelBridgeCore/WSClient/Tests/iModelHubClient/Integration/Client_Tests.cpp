@@ -198,34 +198,21 @@ TEST_F(ClientTests, ReplaceSeedFile)
     EXPECT_SUCCESS(connectionResult);
     auto imodelConnection = connectionResult.GetValue();
 
-    // Attempt to create a new seed file with same Guid
-    auto fileName = db->GetFileName();
-    FileInfoPtr fileInfo = FileInfo::Create(*db, "Replacement description0");
-    EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
-    auto uploadResult = imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, CreateProgressCallback())->GetResult();
-    EXPECT_FALSE(uploadResult.IsSuccess());
-    EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
-    CheckNoProgress();
 
     // Replace seed file sending lock imodel request first
-    BeSQLite::BeGuid secondGuid;
-    secondGuid.Create();
-    db->ChangeDbGuid(secondGuid); // Just changing the Guid for test instead of creating new file
+    auto fileName = db->GetFileName();
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
-    fileInfo = FileInfo::Create(*db, "Replacement description1");
+    FileInfoPtr fileInfo = FileInfo::Create(*db, "Replacement description1");
     EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
     EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, CreateProgressCallback())->GetResult());
     CheckProgressNotified();
 
     auto seedFileResult = imodelConnection->GetLatestSeedFile()->GetResult();
     EXPECT_SUCCESS(seedFileResult);
-    EXPECT_EQ(secondGuid, seedFileResult.GetValue()->GetFileId());
+    auto secondGuid = seedFileResult.GetValue()->GetFileId();
+    EXPECT_NE(firstGuid, secondGuid);
 
     // Replace seed file without sending a lock request first
-    EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
-    BeSQLite::BeGuid thirdGuid;
-    thirdGuid.Create();
-    db->ChangeDbGuid(thirdGuid);
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
     fileInfo = FileInfo::Create(*db, "Replacement description2");
     EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
@@ -235,7 +222,9 @@ TEST_F(ClientTests, ReplaceSeedFile)
 
     seedFileResult = imodelConnection->GetLatestSeedFile()->GetResult();
     EXPECT_SUCCESS(seedFileResult);
-    EXPECT_EQ(thirdGuid, seedFileResult.GetValue()->GetFileId());
+    auto thirdGuid = seedFileResult.GetValue()->GetFileId();
+    EXPECT_NE(thirdGuid, secondGuid);
+    EXPECT_NE(thirdGuid, firstGuid);
     
     // Acquire first briefcase
     auto newBriefcase = IntegrationTestsBase::AcquireBriefcase(*m_client, *imodelInfoPtr);
@@ -269,10 +258,10 @@ TEST_F(ClientTests, DownloadArchivedFiles)
     auto db = CreateTestDb();
     iModelInfoPtr imodelInfo = IntegrationTestsBase::CreateNewiModelFromDb(*m_client, *db);
     iModelConnectionPtr imodelConnection = IntegrationTestsBase::ConnectToiModel(*m_client, imodelInfo);
-    BeSQLite::BeGuid originalGuid = db->GetDbGuid();
-
+    
     // Add two changeSets to original seed file and add another changeSet after replacing it
-    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *imodelInfo, 2);
+    BriefcasePtr briefcase1 = IntegrationTestsBase::InitializeWithChangeSets(*m_client, *imodelInfo, 2);
+    auto originalGuid = briefcase1->GetDgnDb().GetDbGuid();
     IntegrationTestsBase::ReplaceSeedFile(imodelConnection, *db);
     IntegrationTestsBase::InitializeWithChangeSets(*m_client, *imodelInfo, 1);
 

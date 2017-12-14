@@ -86,6 +86,18 @@ enum CodeState : uint8_t
     };
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2017
+//---------------------------------------------------------------------------------------
+void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector)
+    {
+    pointersVector.clear();
+    for (auto changeSetPtr : changeSets)
+        {
+        pointersVector.push_back(changeSetPtr.get());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
 CodeLockSetTaskPtr QueryCodesLocksById(Briefcase& briefcase, bool byBriefcaseId, DgnCodeSet& codes, LockableIdSet& ids)
@@ -395,18 +407,6 @@ void CreateFileInstance(iModelConnectionPtr connection)
     auto wsiModelClient = BackDoor::iModelConnection::GetRepositoryClient(connection);
     EXPECT_SUCCESS(wsiModelClient->SendCreateObjectRequest(createFileJson)->GetResult());
     }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2017
-//---------------------------------------------------------------------------------------
-void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector)
-    {
-    pointersVector.clear();
-    for (auto changeSetPtr : changeSets)
-        {
-        pointersVector.push_back(changeSetPtr.get());
-        }
-    }
     
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis            08/2016
@@ -467,10 +467,10 @@ TEST_F(iModelManagerTests, RecoverBriefcase)
     {
     // Create imodel and acquire a briefcase
     auto db = CreateTestDb("RecoverBriefcaseTest");
-    BeSQLite::BeGuid oldGuid = db->GetDbGuid();
     auto imodelInfo = CreateNewiModelFromDb(*m_client, *db);
     auto imodelConnection = ConnectToiModel(*m_client, imodelInfo);
     auto briefcase = IntegrationTestsBase::AcquireBriefcase(*m_client, *imodelInfo, true);
+    BeSQLite::BeGuid oldGuid = briefcase->GetDgnDb().GetDbGuid();
 
     // ReplaceSeedFile
     auto newGuid = ReplaceSeedFile(imodelConnection, *db);
@@ -1216,6 +1216,91 @@ TEST_F(iModelManagerTests, ReserveModelCode)
     PushPendingChanges(*briefcase);
     ExpectNoCodeWithState(CreateCodeDiscarded(MakeModelCode("MyModel", db), cs1), imodelManager);
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Gintare.Grazulyte                12/2017
+//---------------------------------------------------------------------------------------
+TEST_F(iModelManagerTests, FailingLocksResponseOptions)
+    {
+    BriefcasePtr briefcase1 = AcquireBriefcase();
+    BriefcasePtr briefcase2 = AcquireBriefcase();
+    DgnDbR db1 = briefcase1->GetDgnDb();
+    DgnDbR db2 = briefcase2->GetDgnDb();
+    Utf8CP modelName1 = "Model1";
+    Utf8CP modelName2 = "Model2";
+
+    ExpectLocksCount(*briefcase1, 0);
+    ExpectLocksCount(*briefcase2, 0);
+
+    DgnModelPtr model1_1 = CreateModel(modelName1, db1);
+    DgnModelPtr model1_2 = CreateModel(modelName2, db1);
+    ExpectLocksCount(*briefcase1, 2);
+    db1.SaveChanges();
+    PushPendingChanges(*briefcase1, false);
+    ExpectLocksCount(*briefcase1, 2);
+
+    EXPECT_EQ(DgnDbStatus::Success, model1_1->Delete());
+    EXPECT_EQ(DgnDbStatus::Success, model1_2->Delete());
+    db1.SaveChanges();
+
+    EXPECT_SUCCESS(briefcase2->PullAndMerge()->GetResult());
+    DgnModelPtr model2_1 = db2.Models().GetModel(model1_1->GetModelId());
+
+    IBriefcaseManager::Request req;
+    EXPECT_EQ(RepositoryStatus::Success, db2.BriefcaseManager().PrepareForModelDelete(req, *model2_1, IBriefcaseManager::PrepareAction::Acquire)); 
+    EXPECT_EQ(DgnDbStatus::Success, model2_1->Delete());
+    db2.SaveChanges();
+    ExpectLocksCount(*briefcase1, 2);
+    ExpectLocksCount(*briefcase2, 2);
+
+    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();
+    EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, result1.GetError().GetId());
+    JsonValueCR error1 = result1.GetError().GetExtendedData();
+    EXPECT_EQ(1, error1["ConflictingLocks"].size());
+
+    StatusResult result2 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::None)->GetResult();
+    EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, result1.GetError().GetId());
+    JsonValueCR error2 = result2.GetError().GetExtendedData();
+    EXPECT_EQ(Json::Value::GetNull(), error2["ConflictingLocks"]);
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Gintare.Grazulyte                12/2017
+//---------------------------------------------------------------------------------------
+TEST_F(iModelManagerTests, FailingCodesResponseOptions)
+    {
+    BriefcasePtr briefcase1 = AcquireBriefcase();
+    BriefcasePtr briefcase2 = AcquireBriefcase();
+    DgnDbR db1 = briefcase1->GetDgnDb();
+    DgnDbR db2 = briefcase2->GetDgnDb();
+    Utf8CP modelName1 = "Model1";
+    Utf8CP modelName2 = "Model2";
+
+    ExpectCodesCount(*briefcase1, 0);
+    ExpectCodesCount(*briefcase2, 0);
+
+    DgnElementCPtr partition1_1 = CreateAndInsertModeledElement(modelName1, db1);
+    DgnElementCPtr partition1_2 = CreateAndInsertModeledElement(modelName2, db1);
+    ExpectCodesCount(*briefcase1, 2);
+    briefcase1->GetiModelConnection().RelinquishCodesLocks(briefcase1->GetBriefcaseId())->GetResult();
+    ExpectCodesCount(*briefcase1, 0);
+
+    DgnElementCPtr partition2_1 = CreateAndInsertModeledElement(modelName1, db2);
+    ExpectCodesCount(*briefcase2, 1);
+
+    db1.SaveChanges();
+    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();
+    EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, result1.GetError().GetId());
+    JsonValueCR error1 = result1.GetError().GetExtendedData();
+    EXPECT_EQ(1, error1["ConflictingCodes"].size());
+
+    StatusResult result2 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::None)->GetResult();
+    EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, result2.GetError().GetId());
+    JsonValueCR error2 = result2.GetError().GetExtendedData();
+    EXPECT_EQ(Json::Value::GetNull(), error2["ConflictingCodes"]);
+    }
+
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Algirdas.Mikoliunas             06/2016
@@ -2468,246 +2553,6 @@ TEST_F(iModelManagerTests, CodesStatesResponseTest)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               07/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QueryAllUsersInfoTest)
-    {
-    auto briefcase = AcquireBriefcase();
-    auto userInfoResult = m_connection->GetUserInfoManager().QueryAllUsersInfo()->GetResult();
-    EXPECT_SUCCESS(userInfoResult);
-
-    auto wantedUserId = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
-    bool success = false;
-
-    for (auto userInfo : userInfoResult.GetValue())
-        {
-        if (userInfo->GetId() == wantedUserId)
-            success = true;
-        }
-
-    EXPECT_TRUE(success);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               07/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QueryUserInfoTest)
-    {
-    auto briefcase = AcquireBriefcase();
-    auto userInfoResult = m_connection->GetUserInfoManager().QueryUserInfoById(m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned())->GetResult();
-    EXPECT_SUCCESS(userInfoResult);
-
-    auto wantedUserId = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
-
-    EXPECT_EQ(wantedUserId, userInfoResult.GetValue()->GetId());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               07/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QueryInvalidUserInfoTest)
-    {
-    auto userInfoResult = m_connection->GetUserInfoManager().QueryUserInfoById("Invalid User Id")->GetResult();
-    EXPECT_FALSE(userInfoResult.IsSuccess());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               08/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QueryUsersInfoByTwoIdsSeparately)
-    {
-    auto briefcase1 = AcquireBriefcase();
-    auto wantedUserId1 = m_connection->QueryBriefcaseInfo(briefcase1->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
-    auto userInfoResult1 = m_connection->GetUserInfoManager().QueryUserInfoById(wantedUserId1)->GetResult();
-    EXPECT_SUCCESS(userInfoResult1);
-
-    // Create new user
-    auto wantedUserId2 = GetNonAdminUserId();
-    auto userInfoResult2 = m_connection->GetUserInfoManager().QueryUserInfoById(wantedUserId2)->GetResult();
-    EXPECT_SUCCESS(userInfoResult2);
-
-    EXPECT_EQ(wantedUserId1, userInfoResult1.GetValue()->GetId());
-    EXPECT_EQ(wantedUserId2, userInfoResult2.GetValue()->GetId());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               08/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QueryUsersInfoByTwoIdsTogether)
-    {
-    auto briefcase1 = AcquireBriefcase();
-    auto wantedUserId1 = m_connection->QueryBriefcaseInfo(briefcase1->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
-
-    // Create new user
-    auto wantedUserId2 = GetNonAdminUserId();
-    auto userInfoResult = m_connection->GetUserInfoManager().QueryUsersInfoByIds(bvector<Utf8String>{wantedUserId1, wantedUserId2})->GetResult();
-    EXPECT_SUCCESS(userInfoResult);
-
-    EXPECT_EQ(2, userInfoResult.GetValue().size());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               08/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QueryUsersInfoByTwoIdsSeparately_OneAddedLater)
-    {
-    Utf8String userId1 = "0cdb50ea-c6c0-4790-9d31-f3395fcf6d3d";
-    Utf8String userId2 = "105dcc93-e9c5-4265-8537-167caca31c98";
-    Utf8String userId3 = "5a9e0150-873c-4fcd-98c0-491ba8065efb";
-
-    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
-
-    mockHandler->ForAnyRequest([=] (Http::RequestCR request)
-        {
-        Utf8String user1Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId1);
-
-        Utf8String user2Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId2);
-
-        Utf8String user3Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId3);
-
-        Utf8String user1Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Regular1\",\"Email\":\"bistroatp_reg1@mailinator.com\"},\"eTag\":\"\\\"XsHulgQuqLncjk+KB+RE/c1pr0k=\\\"\"}]}", userId1, userId1);
-        
-        Utf8String user2Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Admin1\",\"Email\":\"bistroATP_pmadm1@mailinator.com\"},\"eTag\":\"\\\"3zHySVdWrMmn6dVylJMugn5zUB8=\\\"\"}]}", userId2, userId2);
-
-        if (request.GetUrl().EndsWith("UserInfo"))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user1Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        else if (request.GetUrl().EndsWith(user1Request))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user1Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        else if (request.GetUrl().EndsWith(user2Request))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user2Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        else if (request.GetUrl().EndsWith("/v2.0/Plugins"))
-            {
-            auto httpResponseContent = Http::HttpResponseContent::Create(HttpStringBody::Create());
-            httpResponseContent->GetHeaders().SetValue("Server", "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00");
-            return Http::Response(httpResponseContent, "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-            }
-        else if (request.GetUrl().EndsWith(user3Request))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create("{\"instances\":[]}")), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        return Http::Response(Http::HttpResponseContent::Create(HttpStringBody::Create()), "", Http::ConnectionStatus::CouldNotConnect, Http::HttpStatus::None);
-        });
-
-    // Set other wsclient
-    WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
-    auto newClient = WSRepositoryClient::Create(m_imodel->GetServerURL(), m_imodel->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
-    m_connection->SetRepositoryClient(newClient);
-
-    // Should not succeed when user does not exist
-    auto user3InfoResult = m_connection->GetUserInfoManager().QueryUserInfoById(userId3)->GetResult();
-    EXPECT_FALSE(user3InfoResult.IsSuccess());
-
-    // Mock Handler should return only user1 when querying first time
-    auto user1InfoResult = m_connection->GetUserInfoManager().QueryUserInfoById(userId1)->GetResult();
-    EXPECT_SUCCESS(user1InfoResult);
-    EXPECT_EQ(userId1, user1InfoResult.GetValue()->GetId());
-
-    // Mock Handler should return user2
-    auto user2InfoResult = m_connection->GetUserInfoManager().QueryUserInfoById(userId2)->GetResult();
-    EXPECT_SUCCESS(user2InfoResult);
-    EXPECT_EQ(userId2, user2InfoResult.GetValue()->GetId());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               08/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QuerySameUserInfoTwice)
-    {
-    auto briefcase = AcquireBriefcase();
-    auto userId = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
-
-    double start1 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    auto userInfoResult1 = m_connection->GetUserInfoManager().QueryUserInfoById(userId)->GetResult();
-    EXPECT_SUCCESS(userInfoResult1);
-    EXPECT_EQ(userId, userInfoResult1.GetValue()->GetId());
-    double end1 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    double duration1 = end1 - start1;
-
-    double start2 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    auto userInfoResult2 = m_connection->GetUserInfoManager().QueryUserInfoById(userId)->GetResult();
-    EXPECT_SUCCESS(userInfoResult2);
-    EXPECT_EQ(userId, userInfoResult2.GetValue()->GetId());
-    double end2 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    double duration2 = end2 - start2;
-
-    //Expect cached retrieval to be faster than 1ms
-    EXPECT_LT(duration2, 1.0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Paulius.Valiunas               08/2017
-//---------------------------------------------------------------------------------------
-TEST_F(iModelManagerTests, QueryUsersInfoByTwoIdsTogether_OneAddedLater)
-    {
-    Utf8String userId1 = "8ff4834a-4754-4bbd-80b4-46770a50fcf4";
-    Utf8String userId2 = "1dbbee67-196c-4c9d-96a1-ba4ef15fced8";
-    Utf8String userId3 = "4fd49aef-142f-4eae-98e3-48eb0cee5cc7";
-
-    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
-
-    mockHandler->ForAnyRequest([=] (Http::RequestCR request)
-        {
-        Utf8String user1Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId1);
-
-        Utf8String user2Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId2);
-
-        Utf8String user23Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s','%s'%%5D", userId2, userId3);
-
-        Utf8String user3Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId3);
-
-        Utf8String user1Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Admin1\",\"Email\":\"bistroATP_pmadm1@mailinator.com\"},\"eTag\":\"\\\"3zHySVdWrMmn6dVylJMugn5zUB8=\\\"\"}]}", userId1, userId1);
-
-        Utf8String user2Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Regular1\",\"Email\":\"bistroatp_reg1@mailinator.com\"},\"eTag\":\"\\\"XsHulgQuqLncjk+KB+RE/c1pr0k=\\\"\"}]}", userId2, userId2);
-
-        if (request.GetUrl().EndsWith("UserInfo"))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user1Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        else if (request.GetUrl().EndsWith(user1Request))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user1Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        else if (request.GetUrl().EndsWith(user2Request))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user2Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        else if (request.GetUrl().EndsWith("/v2.0/Plugins"))
-            {
-            auto httpResponseContent = Http::HttpResponseContent::Create(HttpStringBody::Create());
-            httpResponseContent->GetHeaders().SetValue("Server", "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00");
-            return Http::Response(httpResponseContent, "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-            }
-        else if (request.GetUrl().EndsWith(user3Request))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create("{\"instances\":[]}")), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        else if (request.GetUrl().EndsWith(user23Request))
-            return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user2Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
-        return Http::Response(Http::HttpResponseContent::Create(HttpStringBody::Create()), "", Http::ConnectionStatus::CouldNotConnect, Http::HttpStatus::None);
-        });
-
-    // Set other wsclient
-    WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
-    auto newClient = WSRepositoryClient::Create(m_imodel->GetServerURL(), m_imodel->GetWSRepositoryName(), clientInfo, nullptr, mockHandler);
-    m_connection->SetRepositoryClient(newClient);
-
-    // Mock Handler should return only user1 when querying first time
-    auto user1InfoResult = m_connection->GetUserInfoManager().QueryUserInfoById(userId1)->GetResult();
-    EXPECT_SUCCESS(user1InfoResult);
-    EXPECT_EQ(userId1, user1InfoResult.GetValue()->GetId());
-
-    // Mock Handler should return only user1 and user2
-    auto bothUsersInfoResult = m_connection->GetUserInfoManager().QueryUsersInfoByIds(bvector<Utf8String> { userId2, userId1, userId3 })->GetResult();
-    EXPECT_SUCCESS(bothUsersInfoResult);
-
-    bool found1 = false;
-    bool found2 = false;
-    bool foundOther = false;
-    for (auto userInfo : bothUsersInfoResult.GetValue())
-        {
-        if (userInfo->GetId() == userId1)
-            found1 = true;
-        else if (userInfo->GetId() == userId2)
-            found2 = true;
-        else
-            foundOther = true;
-        }
-    EXPECT_TRUE(found1);
-    EXPECT_TRUE(found2);
-    EXPECT_FALSE(foundOther);
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas        07/2017
 //---------------------------------------------------------------------------------------
 TEST_F(iModelManagerTests, CodeIdsTest)
@@ -2919,3 +2764,4 @@ TEST_F(iModelManagerTests, GetChangeSetsRelatedToVersions)
     EXPECT_EQ(changeSet1, changeSetsResult.GetValue().at(0)->GetId());
     EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(1)->GetId());
     }
+
