@@ -351,6 +351,7 @@ CreateParams const& params
     if (params.m_classId.IsValid ()) // elements created via handler have no classid.
         {
         SetElevation (params.m_elevation);
+        SetSurface2d (params.m_surface);
         }
     }
 
@@ -400,6 +401,52 @@ Placement3dCR placement
     return T_Super::_SetPlacement (placement);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            ElevationGridSurface::SetSurface2d
+(
+CurveVectorPtr surface
+)
+    {
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    surface->IsPlanar (localToWorld, worldToLocal, range);
+    DPlane3d surfacePlane;
+    bsiTransform_getOriginAndVectors (&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
+
+    if (!DoubleOps::AlmostEqualFraction (surfacePlane.origin.z, 0.0) ||
+        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 0.0)) //must be a zero Z plane
+        return;
+
+    IGeometryPtr geometryPtr = IGeometry::Create (surface);
+
+    ECN::ECValue surface2dValue;
+    surface2dValue.SetIGeometry (*geometryPtr);
+
+    SetPropertyValue (prop_Surface2d (), surface2dValue);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr                   ElevationGridSurface::GetSurface2d
+(
+) const
+    {
+    ECN::ECValue surface2dValue;
+
+    GetPropertyValue (surface2dValue, prop_Surface2d ());
+
+    IGeometryPtr geometryPtr = surface2dValue.GetIGeometry ();
+    if (!geometryPtr.IsValid ())
+        return nullptr;
+
+    CurveVectorPtr surface = geometryPtr->GetAsCurveVector ();
+
+    return surface;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017

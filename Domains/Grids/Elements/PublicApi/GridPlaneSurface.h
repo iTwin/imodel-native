@@ -240,6 +240,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
 
     private:
         BE_PROP_NAME (Elevation)
+        BE_PROP_NAME (Surface2d)
 
     protected:
         explicit GRIDELEMENTS_EXPORT ElevationGridSurface (CreateParams const& params);
@@ -259,11 +260,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
 
         //! Gets Elevation of this ElevationGridSurface
         //! @return Elevation of this ElevationGridSurface
-        GRIDELEMENTS_EXPORT double      GetElevation () const { return GetPropertyValueDouble (prop_Elevation ()); }
+        GRIDELEMENTS_EXPORT double              GetElevation () const { return GetPropertyValueDouble (prop_Elevation ()); }
 
         //! Sets Elevation of this ElevationGridSurface
         //! @param[in]  Elevation   new Elevation for this ElevationGridSurface
-        GRIDELEMENTS_EXPORT void        SetElevation (double elevation) { SetPropertyValue (prop_Elevation (), elevation); };
+        GRIDELEMENTS_EXPORT void                SetElevation (double elevation) { SetPropertyValue (prop_Elevation (), elevation); };
+
+        //! Gets Surface2d of this ElevationGridSurface
+        //! @return surface of this ElevationGridSurface, as curvevector on zero Z plane
+        GRIDELEMENTS_EXPORT CurveVectorPtr      GetSurface2d () const;
+
+        //! Sets Surface2d of this ElevationGridSurface
+        //! @param[in]   surface        curvevector of gridSurface in local coordinates, on zero Z plane
+        GRIDELEMENTS_EXPORT void                SetSurface2d (CurveVectorPtr surface);
     };
 
 //=======================================================================================
@@ -317,6 +326,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchLineGridSurface : PlanGridPlanarSurface
         //! Gets Line2d of this SketchLineGridSurface
         //! @param[out]  startPoint     startPoint of gridSurface in local coordinates
         //! @param[out]  endPoint       endPoint of gridSurface in local coordinates
+        //! @return baseline of this SketchLineGridSurface
         GRIDELEMENTS_EXPORT BentleyStatus       GetBaseLine (DPoint2dR startPoint, DPoint2dR endPoint) const;
 
         //! Sets Line2d of this SketchLineGridSurface
