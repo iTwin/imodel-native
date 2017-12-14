@@ -352,6 +352,8 @@ protected:
     bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views, bool testUsed) const;
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
+    void ExtractModelCustomPublishMetadata(DgnModelCR model, Utf8StringR name, Json::Value& metadata) const;
+
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
     TILEPUBLISHER_EXPORT virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs);
