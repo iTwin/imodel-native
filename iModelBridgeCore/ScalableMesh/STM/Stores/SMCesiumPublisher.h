@@ -17,6 +17,8 @@ struct SMCesiumPublisher : virtual public IScalableMeshPublisher
 
         void _Publish(IScalableMeshNodePtr node, const Transform& tranform, bvector<Byte>& outData) override;
         void _Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData) override;
+        void _ExtractPublishNodeHeader(IScalableMeshNodePtr nodePtr, Json::Value& smHeader) override;
+        void _ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json::Value& smMasterHeader) override;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

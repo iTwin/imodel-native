@@ -1498,6 +1498,12 @@ public:
     size_t              GetNumberOfSubNodesOnSplit() const;
 
     /**----------------------------------------------------------------------------
+    Returns the data resolution
+
+    -----------------------------------------------------------------------------*/
+    float              GetResolution() const;
+
+    /**----------------------------------------------------------------------------
     Returns the highest depth level of the index
 
     @return The highest depth level

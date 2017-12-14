@@ -8903,6 +8903,17 @@ size_t SMPointIndex<POINT, EXTENT>::GetNumberOfSubNodesOnSplit() const
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT>
+float SMPointIndex<POINT, EXTENT>::GetResolution() const
+    {
+    HINVARIANTS;
+
+    return m_indexHeader.m_resolution;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Alain.Robert 10/10
+//=======================================================================================
+template<class POINT, class EXTENT>
 void SMPointIndex<POINT, EXTENT>::PropagateDataDownImmediately(int targetLevel)
     {
     if (m_pRootNode != NULL)
