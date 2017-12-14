@@ -56,6 +56,7 @@
 #include <DgnPlatform/RegionUtil.h>
 #include <DgnPlatform/RenderMaterial.h>
 #include <DgnPlatform/SimplifyGraphic.h>
+#include <DgnPlatform/GeometryClipper.h>
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/VecMath.h>
 #include <DgnPlatform/WebMercator.h>

@@ -28,7 +28,6 @@ protected:
     Render::GraphicParams m_currGraphicParams;
     Render::GeometryParams m_currGeometryParams;
     GeometryStreamEntryId m_currGeomEntryId;
-    ClipVectorPtr m_currClip;
     bool m_isOpen = true;
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
@@ -110,7 +109,6 @@ public:
     //! Call to output a CurveVector as individual ICurvePrimitives using IGeometryProcessor::_ProcessCurvePrimitive.
     DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled);
 
-    ClipVectorCP GetCurrentClip() const {return m_currClip.get();}
     DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled);
     DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR);
     DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR);

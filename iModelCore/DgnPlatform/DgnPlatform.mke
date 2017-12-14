@@ -200,7 +200,7 @@ $(CoreObjs)DgnViewport$(oext) :                     $(DgnCoreDir)DgnViewport.cpp
 
 $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(DgnPlatformAPISrc)Render.h ${MultiCompileDepends}
 
-$(CoreObjs)RenderPrimitives$(oext) :                $(DgnCoreDir)RenderPrimitives.cpp $(DgnPlatformAPISrc)RenderPrimitives.h ${MultiCompileDepends}
+$(CoreObjs)RenderPrimitives$(oext) :                $(DgnCoreDir)RenderPrimitives.cpp $(DgnPlatformAPISrc)RenderPrimitives.h $(DgnPlatformAPISrc)GeometryClipper.h ${MultiCompileDepends}
 
 $(CoreObjs)MeshTile$(oext) :                        $(DgnCoreDir)MeshTile.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
 
@@ -235,6 +235,8 @@ $(CoreObjs)FitContext$(oext) :                      $(DgnCoreDir)FitContext.cpp 
 $(CoreObjs)SnapContext$(oext) :                     $(DgnCoreDir)SnapContext.cpp $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SimplifyGraphic$(oext) :                 $(DgnCoreDir)SimplifyGraphic.cpp $(contextDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
+
+$(CoreObjs)GeometryClipper$(oext) :                 $(DgnCoreDir)GeometryClipper.cpp $(contextDepends) $(DgnPlatformAPISrc)GeometryClipper.h ${MultiCompileDepends}
 
 $(CoreObjs)DrawAreaPattern$(oext) :                 $(DgnCoreDir)DrawAreaPattern.cpp   $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
 

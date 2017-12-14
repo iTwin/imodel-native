@@ -544,6 +544,18 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
     CreateParams params = GetCreateParams().SubGraphic(Transform::FromProduct(GetLocalToWorldTransform(), tf));
     TileBuilderPtr subGf = new TileBuilder(m_context, GetElementId(), m_rangeDiagonalSquared, params);
     subGf->ActivateGraphicParams(GetGraphicParams(), GetGeometryParams());
+
+    if (nullptr != clip)
+        {
+        ClipVectorPtr tClip = clip->Clone(&GetLocalToWorldTransform());
+
+        Transform tileTransform;
+        tileTransform.InverseOf(m_context.GetRoot().GetLocationForTileGeneration());
+        tClip->TransformInPlace(tileTransform);
+
+        subGf->SetCurrentClip(tClip);
+        }
+
     return subGf.get();
     }
 
