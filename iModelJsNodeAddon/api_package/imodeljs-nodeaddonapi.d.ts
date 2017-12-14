@@ -1,8 +1,9 @@
 /*---------------------------------------------------------------------------------------------
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
-import { IModelStatus, StatusCodeWithMessage } from "@bentley/bentleyjs-core/lib/BentleyError";
-import { DbResult } from "@bentley/bentleyjs-core/lib/BeSQLite";
+import { IModelStatus, StatusCodeWithMessage, RepositoryStatus } from "@bentley/bentleyjs-core/lib/BentleyError";
+import { BentleyStatus } from "@bentley/bentleyjs-core/lib/Bentley";
+import { DbResult, DbOpcode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 /* import { IModelStatus } from "@bentley/bentleyjs-core/lib/Bentley"; */
 
@@ -34,6 +35,23 @@ interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
 
     /** Result of the operation. This property is defined if the operation completed successfully */
     result?: ResultType;
+}
+
+/**
+ * A request to send on to iModelHub.
+ */
+declare class NodeAddonBriefcaseManagerResourcesRequest {
+
+    /**
+     * Forget the requests.
+     */
+    reset(): void;
+
+    /** Contains no requests? */
+    isEmpty(): boolean;
+
+    /** Get the request in JSON format */
+    toJSON(): string;
 }
 
 /* The NodeAddonDgnDb class that is projected by the iModelJs node addon. */
@@ -203,6 +221,40 @@ declare class NodeAddonDgnDb {
    */
   executeQuery(ecsql: string, bindings: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<DbResult>, string>): void;
 
+    /**
+    * Add the lock, code, and other resource requests that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param elemProps The IDs of the elements
+    * @param opcode The operation that will be performed on the element.
+    */  
+    buildBriefcaseManagerResourcesRequestForElement(req: NodeAddonBriefcaseManagerResourcesRequest, elemProps: string, opcode: DbOpcode): RepositoryStatus;
+
+    /**
+    * Add the lock, code, and other resource requests that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param modelProps The IDs of the models
+    * @param opcode The operation that will be performed on the model.
+    */
+    buildBriefcaseManagerResourcesRequestForModel(req: NodeAddonBriefcaseManagerResourcesRequest, modelProps: string, opcode: DbOpcode): RepositoryStatus;
+
+    /**
+     * Try to acquire the requested resources from iModelHub.
+     * This function may fulfill some requests and fail to fulfill others. This function returns a zero status
+     * if all requests were fulfilled. It returns a non-zero status if some or all requests could not be fulfilled.
+     * This function updates req to remove the requests that were successfully fulfilled. Therefore, if a non-zero
+     * status is returned, the caller can look at req to see which requests failed.
+     * @param req On input, this is the list of resource requests to be fulfilled. On return, this is the list of
+     * requests that could not be fulfilled.
+     * @return 0 if all resources were acquired, or non-zero if some could not be acquired.
+     */
+    requestBriefcaseManagerResources(req: NodeAddonBriefcaseManagerResourcesRequest): RepositoryStatus;
+
+    /**
+     * Check to see if *all* of the requested resources could be acquired from iModelHub.
+     * @param req the list of resource requests to be fulfilled.
+     * @return true if all resources could be acquired or false if any could not be acquired.
+     */
+    areBriefcaseManagerResourcesAvailable(req: NodeAddonBriefcaseManagerResourcesRequest): boolean;
 }
 
 /* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */

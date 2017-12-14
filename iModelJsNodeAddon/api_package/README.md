@@ -40,15 +40,11 @@ The package version number for the addon and its api are stored in the file iMod
 
 You can build the addon like this:
 
-`bb -siModelJsNodeAddon b`
-
-If you are making changes to the libraries that are used by the addon, such as DgnPlatform.dll, then you must add BuildAll to your build strategy, in order to build and link with your local build, rather than with LKGs, like this:
-
 `bb -s"iModelJsNodeAddon;BuildAll" b`
 
 To force a rebuild of individual parts, do this:
 
-`bb "iModelJsNodeAddon;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
+`bb -s"iModelJsNodeAddon;BuildAll" re DgnPlatformDLL <other libraries...> iModelJsNodeAddonLib* MakePackages`
 
 ## Version
 
@@ -79,41 +75,43 @@ bb "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages
 
 To test changes to the native code before publishing, you can install your local build of the api and the addon into your local build of imodeljs-core and run unit tests.
 
-For example:
+When you bb build the MakePackages part,
+
+`bb -s"iModelJsNodeAddon;BuildAll" re MakePackages`
+
+That will print the location of the generated packages. For example:
+
+``` bat
+%OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
+%OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
+%OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+%OutRoot%Winx64\packages\imodeljs-nodeaddon
+```
+
+That message identifies the (generated) npm packages that contain the addon, as well as the API package. This example is from a Windows build. The messages from a Linux or MacOS build will be similar, but will show names that are specific to those platforms. Note MakePackages produces several packages from the same source. In the case of a Windows build, there is one addon package for use in a node app and another for an electron app. The API package is the same for both.
+
+Continuing this example, you would install like this:
 
 ```
 cd source\backend
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
 cd ..\test
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
+cd ..\..
 ```
 
-This example is for a windows build. Use whatever package names are displayed by the iModelJsNodeAddon::MakePackages part.
+To test other platforms or other versions, use the names of thie generated packages that are displayed by the MakePackages part.
 
-## Publish
+# Publishing the addon
 
-When you bb build the MakePackages part,
-
-`bb -siModelJsNodeAddon re MakePackages`
-
-That will print publishing instructions. For example:
-
-``` bat
-npm publish %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
-npm publish %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
-npm publish %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-```
-
-That message identifies the (generated) npm packages that contain the addon, as well as the API package. This example is from a Windows build. The messages from a Linux or MacOS build will be similar, but will show names that are specific to those platforms. Note MakePackages produces several packages from the same source. In the case of a Windows build, there is one addon package for use in a node app and another for an electron app. The API package is the same for both. All of the packages must be published together.
-
-Run the npm publish commands that are displayed by the MakePackages part.
-
-PRG must ensure that there is a version of the addon for each platform for a given version. When a new version is committed to the iModelNodeJsAddon repository, (***TBD***: who?) must stamp it, and PRG must pull the source on that stamp for each platform and publish the result.
+The addon packages are published by PRG, not by developers.
 
 ## Package Dependencies
 
 **Key point:** imodeljs-backend must depend on a specific minor version of the api.
+
 **Key point:** The minor version of imodeljs-backend must advance with the minor version of the api that it uses.
+
 **Key point:** Apps must depend on a specific minor version of imodeljs-backend.
 
 imodeljs-backend requires that apps deliver a compatible version of the addon. That means that, if imodeljs-backend moves up to a newer minor version of the api, then apps must move up to a newer version of the addon ... if they want to use the newer backend. 

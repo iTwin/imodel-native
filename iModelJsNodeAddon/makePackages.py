@@ -18,17 +18,18 @@ import subprocess
 
 # publish a package
 def publishPackage(packagedir, doPublish, tag):
+
+    if not doPublish:
+        print packagedir;
+        return;
+
     pubcmd = 'npm publish ' + packagedir;
 
     if tag != None:
         pubcmd = pubcmd + ' --tag ' + tag;
 
-    print pubcmd;
-
-    if not doPublish:
-        return;
-
-    os.system(pubcmd);
+    if 0 != os.system(pubcmd):
+        exit(1);
 
 # Replace ${macros} with values in specified file
 def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = None, PACKAGE_VERSION = None, DECL_FILE_NAME = None, NODE_ENGINES = None):

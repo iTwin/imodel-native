@@ -129,6 +129,17 @@ void AddonUtils::InitLogging()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
+NativeLogging::ILogger& AddonUtils::GetLogger()
+    {
+    static NativeLogging::ILogger* s_logger;
+    if (nullptr == s_logger)
+        s_logger = NativeLogging::LoggingManager::GetLogger("imodeljs-addon"); // This is thread-safe. The assignment is atomic, and GetLogger will always return the same value for a given key anyway.
+    return *s_logger;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  05/17
+//---------------------------------------------------------------------------------------
 void AddonUtils::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandler)
     {
     s_addonDllDir = addonDllDir;

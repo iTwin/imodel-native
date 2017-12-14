@@ -262,6 +262,111 @@ DgnDbStatus AddonUtils::InsertElement(JsonValueR outJson, DgnDbR dgndb, JsonValu
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps)
+    {
+    // *** NEEDS WORK: We don't want to go to the expense of creating a DgnElement just so that we can invoke its _PopulateRequest virtual method.
+    // ***              We replicate here what the base DgnElement::_PopulateRequest method does.
+    //
+
+    if (!elemProps.isMember("modelid") || !elemProps.isMember("code"))
+        {
+        BeAssert(false);
+        return RepositoryStatus::InvalidRequest;
+        }
+
+    DgnModelId mid;
+    mid.FromJson(elemProps["modelid"]);
+    auto rc = BuildBriefcaseManagerResourcesRequestToLockModel(req, dgndb, mid, LockLevel::Shared);
+    if (RepositoryStatus::Success != rc)
+        return rc;
+
+    DgnCode code;
+    code.FromJson(elemProps["code"]);
+
+    if (code.IsValid() && !code.IsEmpty())
+        {
+        // Avoid asking repository manager to reserve code if we know it's already in use...
+        if (dgndb.Elements().QueryElementIdByCode(code).IsValid())
+            return RepositoryStatus::CodeUsed;
+
+        req.Codes().insert(code);
+        }
+
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForElementById(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemIdJson, BeSQLite::DbOpcode opcode)
+    {
+    DgnElementId eid;
+    eid.FromJson(elemIdJson);
+    DgnElementCPtr elem = dgndb.Elements().GetElement(eid);
+    if (!elem.IsValid())
+        {
+        BeAssert(false);
+        return RepositoryStatus::InvalidRequest;
+        }
+    return elem->PopulateRequest(req, opcode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode)
+    {
+    if (elemPropsJson.isNull())
+        return RepositoryStatus::Success;
+
+    RepositoryStatus rc;
+
+    if (BeSQLite::DbOpcode::Insert == opcode)
+        rc = BuildBriefcaseManagerResourcesRequestToInsertElement(req, dgndb, elemPropsJson);
+    else
+        rc = BuildBriefcaseManagerResourcesRequestForElementById(req, dgndb, elemPropsJson, opcode);
+
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestToLockModel(IBriefcaseManager::Request& req, DgnDbR dgndb, DgnModelId mid, LockLevel level)
+    {
+    auto model = dgndb.Models().GetModel(mid);
+    if (!model.IsValid())
+        return RepositoryStatus::InvalidRequest;
+    req.Locks().Insert(*model, level);
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
+    {
+    DgnModelId mid;
+    mid.FromJson(modelPropsJson);
+    if (BeSQLite::DbOpcode::Insert == op)
+        {
+        // *** NEEDS WORK: We don't want to go to the expense of creating a DgnElement just so that we can invoke its _PopulateRequest virtual method.
+        // ***              We replicate here what the base DgnModel::_PopulateRequest method does.
+        //
+        req.Locks().Insert(dgndb, LockLevel::Shared);
+        return RepositoryStatus::Success;
+        }
+
+    auto model = dgndb.Models().GetModel(mid);
+    if (!model.IsValid())
+        return RepositoryStatus::InvalidRequest;
+
+    return model->PopulateRequest(req, op);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus AddonUtils::UpdateElement(DgnDbR dgndb, JsonValueR inJson)

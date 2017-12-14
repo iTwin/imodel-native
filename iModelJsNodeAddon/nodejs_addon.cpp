@@ -30,15 +30,19 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_EC
 
-#define DEFINE_CONSTANT_STRING_INTEGER(name, constant)                        \
-    Napi::PropertyDescriptor::Value(#name, Napi::String::New(env, constant),   \
-        static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)),
+#define PROPERTY_ATTRIBUTES static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)
 
 #define RETURN_IF_HAD_EXCEPTION if (Env().IsExceptionPending()) return;
 #define RETURN_IF_HAD_EXCEPTION_SYNC if (Env().IsExceptionPending()) return Env().Undefined();
 
 #define REQUIRE_DB_TO_BE_OPEN      if (!m_addondb->IsOpen()) {m_status = DgnDbStatus::NotOpen; return;}
 #define REQUIRE_DB_TO_BE_OPEN_SYNC if (!IsOpen()) return CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen);
+
+#define REQUIRE_ARGUMENT_ANY_OBJ(i, var)\
+    if (info.Length() <= (i)) {\
+        Napi::TypeError::New(Env(), "Argument " #i " must be an object").ThrowAsJavaScriptException();\
+    }\
+    Napi::Object var = info[0].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_OBJ(i, T, var)\
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {\
@@ -54,7 +58,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define REQUIRE_ARGUMENT_STRING(i, var)\
     if (info.Length() <= (i) || !info[i].IsString()) {\
-        Napi::TypeError::New(Env(), "Argument " #i " must be a string").ThrowAsJavaScriptException();\
+        Napi::TypeError::New(info.Env(), "Argument " #i " must be a string").ThrowAsJavaScriptException();\
     }\
     Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
 
@@ -698,6 +702,63 @@ public:
     static RefCountedPtr<SimpleRulesetLocater> Create(Utf8String rulesetId) {return new SimpleRulesetLocater(rulesetId);}
 };
 
+// Project the IBriefcaseManager::Request class 
+struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBriefcaseManagerResourcesRequest>
+{
+    IBriefcaseManager::Request m_req;
+    static Napi::FunctionReference s_constructor;
+
+    NodeAddonBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonBriefcaseManagerResourcesRequest>(info)
+        {
+        }
+
+    static bool HasInstance(Napi::Value val) {
+        Napi::Env env = val.Env();
+        Napi::HandleScope scope(env);
+        if (!val.IsObject())
+            return false;
+        Napi::Object obj = val.As<Napi::Object>();
+        return obj.InstanceOf(s_constructor.Value());
+        }
+
+    //  Create projections
+    static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
+        {
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "NodeAddonBriefcaseManagerResourcesRequest", {
+          InstanceMethod("reset", &NodeAddonBriefcaseManagerResourcesRequest::Reset),
+          InstanceMethod("isEmpty", &NodeAddonBriefcaseManagerResourcesRequest::IsEmpty),
+          InstanceMethod("toJSON", &NodeAddonBriefcaseManagerResourcesRequest::ToJSON),
+        });
+
+        target.Set("NodeAddonBriefcaseManagerResourcesRequest", t);
+
+        s_constructor = Napi::Persistent(t);
+        s_constructor.SuppressDestruct();             // ??? what is this?
+        }
+
+    void Reset(const Napi::CallbackInfo& info)
+        {
+        m_req.Reset();
+        }
+
+    Napi::Value IsEmpty(const Napi::CallbackInfo& info)
+        {
+        return Napi::Number::New(Env(), (bool)m_req.IsEmpty());
+        }
+
+    Napi::Value ToJSON(const Napi::CallbackInfo& info)
+        {
+        Json::Value json(Json::objectValue);
+        m_req.ToJson(json);
+        return Napi::String::New(Env(), json.ToString().c_str());
+        }
+
+};
+
 //=======================================================================================
 // Projects the DgnDb class into JS
 //! @bsiclass
@@ -1335,6 +1396,24 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
         }
 
+    Napi::Value BuildBriefcaseManagerResourcesRequestForElement(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_STRING(1, elemProps);
+        REQUIRE_ARGUMENT_INTEGER(2, dbop);
+        Json::Value elemPropsJson = Json::Value::From(elemProps);
+        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForElement(req->m_req, GetDgnDb(), elemPropsJson, (BeSQLite::DbOpcode)dbop));
+        }
+
+    Napi::Value BuildBriefcaseManagerResourcesRequestForModel(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_STRING(1, modelProps);
+        REQUIRE_ARGUMENT_INTEGER(2, dbop);
+        Json::Value modelPropsJson = Json::Value::From(modelProps);
+        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(req->m_req, GetDgnDb(), modelPropsJson, (BeSQLite::DbOpcode)dbop));
+        }
+
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
@@ -1369,6 +1448,8 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("getCachedBriefcaseInfosSync", &NodeAddonDgnDb::GetCachedBriefcaseInfosSync),
             InstanceMethod("getRootSubjectInfo", &NodeAddonDgnDb::GetRootSubjectInfo),
             InstanceMethod("getExtents", &NodeAddonDgnDb::GetExtents),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
         });
 
         target.Set("NodeAddonDgnDb", t);
@@ -1528,13 +1609,15 @@ static void registerModule(Napi::Env env, Napi::Object exports, Napi::Object mod
     NodeAddonDgnDb::Init(env, exports, module);
     // NodeAddonECDb::Init(env, exports, module);
     NodeAddonECSqlStatement::Init(env, exports, module);
+    NodeAddonBriefcaseManagerResourcesRequest::Init(env, exports, module);
 
     exports.DefineProperties(
         {
-        DEFINE_CONSTANT_STRING_INTEGER(version, PACKAGE_VERSION)
+        Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
         });
     }
 
+Napi::FunctionReference NodeAddonBriefcaseManagerResourcesRequest::s_constructor;
 Napi::FunctionReference NodeAddonECSqlStatement::s_constructor;
 Napi::FunctionReference NodeAddonDgnDb::s_constructor;
 //Napi::FunctionReference NodeAddonECDb::s_constructor;
