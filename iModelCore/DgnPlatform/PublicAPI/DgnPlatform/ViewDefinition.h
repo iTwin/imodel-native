@@ -244,7 +244,7 @@ public:
     DGNPLATFORM_EXPORT void SetSceneLight(Lighting::Parameters const&);
     DGNPLATFORM_EXPORT void SetSolarLight(Lighting::Parameters const&, DVec3dCR direction);
 
-    void SetSceneBrightness(double fstop) {std::max(-3.0, std::min(fstop, 3.0)); GetStylesR()[json_sceneLights()].SetOrRemoveDouble(json_fstop(), fstop, 0.0);}
+    void SetSceneBrightness(double fstop) {fstop = std::max(-3.0, std::min(fstop, 3.0)); GetStylesR()[json_sceneLights()].SetOrRemoveDouble(json_fstop(), fstop, 0.0);}
     double GetSceneBrightness() const {return GetStyles()[json_sceneLights()][json_fstop()].asDouble();}
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
