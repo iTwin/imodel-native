@@ -553,7 +553,7 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
         tileTransform.InverseOf(m_context.GetRoot().GetLocationForTileGeneration());
         tClip->TransformInPlace(tileTransform);
 
-        subGf->SetCurrentClip(tClip);
+        subGf->SetCurrentClip(tClip.get());
         }
 
     return subGf.get();
