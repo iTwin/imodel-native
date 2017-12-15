@@ -61,6 +61,8 @@ extern bool   GET_HIGHEST_RES;
 #include "MosaicTextureProvider.h"
 #include "ScalableMeshGroup.h"
 #include "ScalableMeshMesher.h"
+#include <ScalableMesh/IScalableMeshPublisher.h>
+#include "Stores\SMPublisher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -477,6 +479,11 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     return _RemoveSkirt(clipID);
     }
 
+
+int IScalableMesh::SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
+    {
+    return _SaveAs(destination, clips, progress);
+    }
 
 int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips) const
     {
@@ -1206,7 +1213,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     0,
                     0);
 
-                if (stream_settings->IsGCSStringSet())
+                if (false/*stream_settings->IsGCSStringSet()*/)
                     {
                     // even if it is 3DTiles, the GCS is extracted so the data is not cessessarily xyz
                     m_isCesium3DTiles = false;
@@ -1329,10 +1336,16 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
         //if (m_contentExtent.isNull() || m_contentExtent.isEmpty() || m_contentExtent.DiagonalDistance() == 0) return BSIERROR;
         for (int i = 0; i < (int)DTMAnalysisType::Qty; ++i)
-        {
+            {
             m_scalableMeshDTM[i] = ScalableMeshDTM::Create(this);
             m_scalableMeshDTM[i]->SetAnalysisType((DTMAnalysisType)i);
-        }
+
+            //TFS# 775936 - Ensure that the reprojection matrix is applied to the scalableMeshDTM object when reopening the 3SM internally 
+            //              (e.g. : when adding texture to existing terrain).
+            auto mat4d = DMatrix4d::From(m_reprojectionTransform);
+            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
+            }
+
         return BSISUCCESS;  
         }
     catch(...)
@@ -1908,10 +1921,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
     bool isUsingBingMap = false;    
     WString bingMapType; 
 
-    if (textureType == SMTextureType::Streaming)
+    // NEEDS_WORK_SM_STREAMING : Save bing map server url in Cesium 3dtiles?
+    if (m_smSQLitePtr != nullptr && textureType == SMTextureType::Streaming)
         {
-        assert(m_smSQLitePtr != nullptr);
-
         SourcesDataSQLite sourcesData;
         m_smSQLitePtr->LoadSources(sourcesData);
         
@@ -3015,6 +3027,68 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
     } 
 
 /*----------------------------------------------------------------------------+
+|ScalableMesh::_SaveAs
++----------------------------------------------------------------------------*/
+template <class POINT> StatusInt ScalableMesh<POINT>::_SaveAs(const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
+    {
+    // Create Scalable Mesh at output path
+    StatusInt status;
+    IScalableMeshNodeCreatorPtr scMeshDestination = IScalableMeshNodeCreator::GetFor(destination.c_str(), status);
+    if (SUCCESS != status || !scMeshDestination.IsValid())
+        return ERROR;
+
+    IScalableMeshTextureInfoPtr textureInfo = nullptr;
+    if (SUCCESS != GetTextureInfo(textureInfo))
+        return ERROR;
+
+    // Set global parameters to the new 3sm (this will also create a new index)
+    if (SUCCESS != scMeshDestination->SetGCS(m_sourceGCS))
+        return ERROR;
+    scMeshDestination->SetIsTerrain(IsTerrain());
+    scMeshDestination->SetIsSingleFile(!IsCesium3DTiles());
+    scMeshDestination->SetTextured(textureInfo->GetTextureType());
+
+    { // Scope the publishing part for proper cleanup of parameters when finished
+    SM3SMPublishParamsPtr smParams = new SM3SMPublishParams();
+
+    smParams->SetSource(this);
+    smParams->SetDestination(scMeshDestination);
+    smParams->SetClips(clips);
+    smParams->SetProgress(progress);
+    smParams->SetSaveTextures(textureInfo->IsTextureAvailable() && !textureInfo->IsUsingBingMap());
+
+    auto smPublisher = IScalableMeshPublisher::Create(SMPublishType::THREESM);
+    if (SUCCESS != smPublisher->Publish(smParams))
+        return ERROR;
+    }
+
+    scMeshDestination = nullptr;
+
+    if (m_smSQLitePtr->HasSources())
+        {
+        IScalableMeshSourceCreatorPtr destMeshSourceEdit = IScalableMeshSourceCreator::GetFor(destination.c_str(), status);
+        if (status != SUCCESS) 
+            return ERROR;
+
+        IDTMSourceCollection sources;
+
+        SourcesDataSQLite sourcesData;
+        m_smSQLitePtr->LoadSources(sourcesData);
+
+        if (!BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, DocumentEnv(L"")))
+            return ERROR;
+
+        destMeshSourceEdit->EditSources() = sources;
+        destMeshSourceEdit->SetSourcesDirty();
+
+        if (SUCCESS != destMeshSourceEdit->SaveToFile())
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------+
 |ScalableMesh::_Generate3DTiles
 +----------------------------------------------------------------------------*/
 template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const
@@ -3137,6 +3211,12 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
         rootTileset->AppendChildGroup(converageTileset);
         converageTileset->Close<Extent3dType>();
         }
+
+    WString wktStr;
+    if (m_smSQLitePtr != nullptr)
+        m_smSQLitePtr->GetWkt(wktStr);
+
+    rootTileset->GetParameters()->SetWellKnownText(wktStr);
 
     // Force save of root tileset and take into account coverages
     rootTileset->Close<Extent3dType>();

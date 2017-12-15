@@ -14,7 +14,11 @@
 
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
+#ifdef VANCOUVER_API
 #include    <CCApi\CCPublic.h>
+#else
+#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -207,19 +211,28 @@ void ScalableMeshRDSProvider::UpdateToken()
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
 	WString serverUrl;
-	UINT32 bufLen;
-	CallStatus status = APIERR_SUCCESS;
 	try
 		{
-		CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-		wchar_t* buffer;
-		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
-		bufLen++;
-		buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
-		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
-		serverUrl.assign(buffer);
-		CCApi_FreeApi(api);
-		}
+#ifdef VANCOUVER_API
+        CallStatus status = APIERR_SUCCESS;
+        WString buddiUrl;
+        UINT32 bufLen;
+
+        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+        wchar_t* buffer;
+        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
+        bufLen++;
+        buffer = (wchar_t*)calloc(1, bufLen * sizeof(wchar_t));
+        status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
+        serverUrl.assign(buffer);
+        CCApi_FreeApi(api);
+#else
+        wstring buddiUrl;
+        Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
+        connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
+        serverUrl = buddiUrl.c_str();
+#endif
+        }
 	catch (...)
 		{
 		}

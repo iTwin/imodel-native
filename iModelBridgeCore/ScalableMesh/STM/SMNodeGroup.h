@@ -20,6 +20,7 @@
 #include <json/json.h>
 #include <CloudDataSource/DataSourceManager.h>
 #include <queue>
+#include <map>
 #include <iomanip>
 
 #ifdef VANCOUVER_API
@@ -71,6 +72,8 @@ public:
     DataSourceAccount*      GetDataSourceAccount();
     StrategyType            GetStrategyType() { return m_strategyType; }
     uint32_t                GetNextNodeID() { return m_nextNodeID++; }
+    WString                 GetWellKnownText() { return m_wktStr; }
+    void                    SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
 
     static Ptr Create(StrategyType strategy, DataSourceAccount* account);
 
@@ -84,6 +87,7 @@ private:
     StrategyType          m_strategyType = NORMAL;
     DataSourceAccount*    m_account = nullptr;
     std::atomic<uint32_t> m_nextNodeID = 0;
+    WString               m_wktStr;
     };
 
 struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase 
@@ -147,6 +151,12 @@ class SMNodeDistributor : public Queue, std::mutex, std::condition_variable, pub
     unsigned int m_concurrency;
     bool m_done = false;
     std::vector<std::thread> m_threads;
+    enum class ThreadState
+        {
+        IDLE,
+        WORKING
+        };
+    std::map<std::thread::id, ThreadState> m_threadStates;
     std::function<void(Type)> m_workFunction;
 
 public:
@@ -175,8 +185,10 @@ public:
             throw std::invalid_argument("Max items per thread must be non-zero");
 
         for (unsigned int count{ 0 }; count < concurrency; count += 1)
+            {
             m_threads.emplace_back(static_cast<void (SMNodeDistributor::*)(Function)>
-            (&SMNodeDistributor::Consume), this, function);
+                (&SMNodeDistributor::Consume), this, function);
+            }
         }
 
     //    SMNodeDistributor(SMNodeDistributor &&) = default;
@@ -235,6 +247,46 @@ public:
         wait(lock, function);
         }
 
+    template <typename Function>
+    void WaitUntilFinished(Function function)
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        bool areThreadsFinished = false;
+        while (!wait_for(lock, 1000ms, function))
+            {
+            for (auto state : m_threadStates)
+                {
+                if (!(areThreadsFinished = state.second == ThreadState::IDLE))
+                    break;
+                }
+            if (Queue::empty() && areThreadsFinished)
+                break;
+            }
+        }
+
+    void WaitUntilFinished()
+        {
+        std::unique_lock<std::mutex> lock(*this);
+        bool areThreadsFinished = false;
+        while (true)
+            {
+            for (auto state : m_threadStates)
+                {
+                if (!(areThreadsFinished = state.second == ThreadState::IDLE))
+                    break;
+                }
+            if (!Queue::empty() || !areThreadsFinished)
+                {
+                assert(lock.owns_lock());
+                wait_for(lock, 1000ms);
+                }
+            else
+                {
+                break;
+                }
+            }
+        }
+
     void CancelAll()
         {
         std::unique_lock<std::mutex> lock(*this);
@@ -258,6 +310,7 @@ private:
                 Type item{ std::move(Queue::front()) };
                 Queue::pop();
                 notify_one();
+                m_threadStates[std::this_thread::get_id()] = ThreadState::WORKING;
                 lock.unlock();
                 process(item);
                 lock.lock();
@@ -278,6 +331,8 @@ private:
 //                    std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
 //                    }
 //#endif
+                m_threadStates[std::this_thread::get_id()] = ThreadState::IDLE;
+
                     wait(lock);
 //#ifdef DEBUG_GROUPS
 //                    {
@@ -315,6 +370,8 @@ FORWARD_DECL_GROUPING_STRATEGY(SMCesium3DTileStrategy);
     CREATE_GROUPING_STRATEGY_FRIENDSHIP(SMBentleyGroupingStrategy) \
     CREATE_GROUPING_STRATEGY_FRIENDSHIP(SMCesium3DTileStrategy)
 
+enum class UpAxis { X, Y, Z };
+
 class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
@@ -325,6 +382,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     private:
         bool   m_isLoaded = false;
         bool   m_isLoading = false;
+        UpAxis   m_upAxis = UpAxis::Y;
         uint32_t m_level = 0;
         size_t m_totalSize;
         uint32_t m_nLevels = 0;
@@ -395,6 +453,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         void SetLevel(const uint32_t& pi_NewID) { m_level = pi_NewID; }
 
+        UpAxis GetGltfUpAxis() { return m_upAxis; }
+
         void Append3DTile(const uint64_t& nodeID, const uint64_t& parentNodeID, const Json::Value& tile);
 
         void AppendChildGroup(SMNodeGroupPtr childGroup);
@@ -412,8 +472,6 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         size_t GetNumberNodes() { return m_groupHeader->size(); }
 
         size_t GetSizeOfHeaders() { return m_rawHeaders.size(); }
-
-        bool  GetWKTString(Utf8String& wkt);
 
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
 
@@ -704,7 +762,7 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
         bool IsBalanced() const { return m_masterHeader.m_balanced; }
         uint64_t GetSplitThreshold() const { return m_masterHeader.m_SplitTreshold; }
         uint64_t GetDepth() const { return m_masterHeader.m_depth; }
-        bool IsTextured() const { return m_masterHeader.m_textured != SMTextureType::None; }
+        SMTextureType IsTextured() const { return m_masterHeader.m_textured; }
         uint64_t GetTerrainDepth() const { return m_masterHeader.m_terrainDepth; }
         double GetResolution() const { return m_masterHeader.m_resolution; }
         bool IsTerrain() const { return m_masterHeader.m_isTerrain; }
@@ -1145,7 +1203,10 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         SMMasterHeader["MeshDataDepth"] = m_GroupMasterHeader.GetTerrainDepth();
         SMMasterHeader["IsTerrain"] = m_GroupMasterHeader.IsTerrain();
         SMMasterHeader["DataResolution"] = m_GroupMasterHeader.GetResolution();
-        SMMasterHeader["IsTextured"] = m_GroupMasterHeader.IsTextured();
+        SMMasterHeader["IsTextured"] = (uint32_t)m_GroupMasterHeader.IsTextured();
+        auto wktString = pi_Group->GetParameters()->GetWellKnownText();
+        if (!wktString.empty())
+            SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;

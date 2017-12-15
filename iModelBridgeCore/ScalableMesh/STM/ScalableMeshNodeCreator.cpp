@@ -114,6 +114,20 @@ void IScalableMeshNodeCreator::NotifyAllChildrenAdded(const IScalableMeshNodePtr
     return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->NotifyAllChildrenAdded(parentNode, status, computeNeighbors);
     }
 
+void IScalableMeshNodeCreator::SetTextured(SMTextureType textured)
+    {
+    dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->SetTextured(textured);
+    }
+
+void IScalableMeshNodeCreator::SetIsSingleFile(bool isSingleFile)
+    {
+    dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->SetIsSingleFile(isSingleFile);
+    }
+
+void IScalableMeshNodeCreator::SetIsTerrain(bool isTerrain)
+    {
+    dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->SetIsTerrain(isTerrain);
+    }
 
 void IScalableMeshNodeCreator::SetDataResolution(float resolution)
     {
@@ -243,6 +257,41 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
     return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(rootNodeP));
     }
 
+void IScalableMeshNodeCreator::Impl::SetTextured(SMTextureType textured)
+    {
+    if (m_pDataIndex == 0)
+        {
+        if (CreateScalableMesh(true) != BSISUCCESS)
+            {
+            return;
+            }
+        }
+    m_pDataIndex->SetTextured(textured);
+    }
+
+void IScalableMeshNodeCreator::Impl::SetIsSingleFile(bool isSingleFile)
+    {
+    if (m_pDataIndex == 0)
+        {
+        if (CreateScalableMesh(true) != BSISUCCESS)
+            {
+            return;
+            }
+        }
+    m_pDataIndex->SetSingleFile(isSingleFile);
+    }
+
+void IScalableMeshNodeCreator::Impl::SetIsTerrain(bool isTerrain)
+    {
+    if (m_pDataIndex == 0)
+        {
+        if (CreateScalableMesh(true) != BSISUCCESS)
+            {
+            return;
+            }
+        }
+    m_pDataIndex->SetIsTerrain(isTerrain);
+    }
 
 void IScalableMeshNodeCreator::Impl::SetDataResolution(float resolution)
     {

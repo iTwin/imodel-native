@@ -53,6 +53,12 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
         
         void AddTexture(int width, int height, int nOfChannels, const byte* texData, int64_t texID);
 
+        void SetTextured(SMTextureType textured);
+
+        void SetIsSingleFile(bool isSingleFile);
+
+        void SetIsTerrain(bool isTerrain);
+
         void SetDataResolution(float resolution);
 
         virtual StatusInt                           CreateScalableMesh(bool isSingleFile = true, bool restrictLevelForPropagation= false, bool doPartialUpdate = false) override;

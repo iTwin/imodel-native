@@ -85,11 +85,11 @@ namespace BENTLEY_NAMESPACE_NAME
             //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
             void ToString(Utf8P stringBuffer) const
                 {
-#ifndef VANCOUVER_API
-                BeStringUtilities::FormatUInt64(stringBuffer, m_id); //BeStringUtilities::FormatUInt64 is faster than sprintf.
-#else
+//#ifndef VANCOUVER_API
+//                BeStringUtilities::FormatUInt64(stringBuffer, m_id); //BeStringUtilities::FormatUInt64 is faster than sprintf.
+//#else
                 sprintf(stringBuffer, "%lld", m_id);
-#endif
+//#endif
                 }
 
                                                                                                              //! Converts this BeInt64Id to its string representation.
@@ -369,11 +369,11 @@ struct TileTextureImage : RefCountedBase
     private:
         ImageSource       m_imageSource;
 
-#ifndef VANCOUVER_API
-        static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
-#else
+//#ifndef VANCOUVER_API
+//        static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
+//#else
         static ImageSource Load(TileDisplayParamsCR params);
-#endif
+//#endif
 
         TileTextureImage(ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
         TileTextureImage(ImageSource& imageSource) : m_imageSource (imageSource) { BeAssert(m_imageSource.IsValid()); }
@@ -382,11 +382,11 @@ struct TileTextureImage : RefCountedBase
         static TileTextureImagePtr Create(ImageSource& imageSource) { return new TileTextureImage(imageSource); }
 
         ImageSourceCR GetImageSource() const { return m_imageSource; }
-#ifndef VANCOUVER_API
-        static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
-#else
+//#ifndef VANCOUVER_API
+//        static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
+//#else
         static void ResolveTexture(TileDisplayParamsCR params);
-#endif
+//#endif
     };
 
 //=======================================================================================
@@ -605,11 +605,11 @@ private:
     bool                    m_hasTexture;
 
 protected:
-#ifndef VANCOUVER_API
-    TileGeometry(TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ bool isCurved, DgnDbR db);
-#else
+//#ifndef VANCOUVER_API
+//    TileGeometry(TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ bool isCurved, DgnDbR db);
+//#else
     TileGeometry(TransformCR tf, DRange3dCR tileRange, bool isCurved);
-#endif
+//#endif
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
     virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
@@ -633,17 +633,17 @@ public:
     bool IsPolyface() const { return _IsPolyface(); }
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
-#ifndef VANCOUVER_API
-    //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
-    //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, DgnDbR db);
-#else
+//#ifndef VANCOUVER_API
+//    //! Create a TileGeometry for an IGeometry
+//    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
+//    //! Create a TileGeometry for an ISolidKernelEntity
+//    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, DgnDbR db);
+//#else
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved);
     //! Create a TileGeometry for an ISolidKernelEntity
     static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
-#endif
+//#endif
     };
 
 ////=======================================================================================

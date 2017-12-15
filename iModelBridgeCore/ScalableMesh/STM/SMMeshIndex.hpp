@@ -628,13 +628,16 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     if (this->m_nodeHeader.m_level == 0)
         {
         //distributor->Go();
+#ifdef PRINT_PUBLISH_3DTILES_INFO
         std::cout << "\nTime to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
+#endif
         while (progress != nullptr && !distributor->empty())
             {
             progress->UpdateListeners();
             if (progress->IsCanceled()) break;
             }
         distributor = nullptr; // join queue threads
+#ifdef PRINT_PUBLISH_3DTILES_INFO
         std::cout << "\nTime to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / nbThreads << std::endl;
         std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / nbThreads << std::endl;
         std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / nbThreads << std::endl;
@@ -643,7 +646,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
         std::cout << "Number processed nodes: " << nbProcessedNodes << std::endl;
         std::cout << "Total number of nodes: " << nbNodes << std::endl;
         std::cout << "Convert speed (nodes/sec): " << nbProcessedNodes / tTime << std::endl;
-
+#endif
         }
     return true;
     }
