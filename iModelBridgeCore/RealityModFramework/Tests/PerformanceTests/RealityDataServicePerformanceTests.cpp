@@ -52,6 +52,10 @@ static void downloadProgressFunc(Utf8String filename, double fileProgress, doubl
     {
     }
 
+static int heartbeatCallback()
+    {
+    return 0;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
@@ -606,9 +610,16 @@ StatusInt RealityDataServicePerformanceTests::UploadTest2(timeStats& theTimeStat
     RealityDataServiceUpload upload = RealityDataServiceUpload(BeFileName(m_tempFileName), m_newRealityData->GetIdentifier() + "\\DummyDirectory", formatedProps, true, true, statusFunc);
     upload.SetProgressCallBack(uploadProgressFunc);
     upload.SetProgressStep(0.1);
-    upload.OnlyReportErrors(true);
+    upload.SetHeartbeatCallBack(heartbeatCallback);
+    upload.OnlyReportErrors(false);
+    BeAssert(upload.IsValidTransfer());
+    BeAssert(upload.GetFileCount() == 2);
+    BeAssert((upload.GetFullTransferSize() > 0) && (upload.GetFullTransferSize() < 1000000));
     const TransferReport& tReport = upload.Perform();
     
+    BeAssert(upload.GetTokenTimer() > 0);
+    BeAssert(!upload.GetRealityDataId().empty());
+
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
 
