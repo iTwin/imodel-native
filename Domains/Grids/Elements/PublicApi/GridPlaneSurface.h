@@ -88,7 +88,6 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanGridPlanarSurface : GridPlanarSurface, IPlanGridSurface
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridPlanarSurface, GridPlanarSurface);
     DEFINE_T_SUPER(GridPlanarSurface);
 public:
 

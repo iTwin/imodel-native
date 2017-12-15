@@ -409,6 +409,8 @@ void                            ElevationGridSurface::SetSurface2d
 CurveVectorPtr surface
 )
     {
+    if (!surface.IsValid())
+        return;
     Transform localToWorld, worldToLocal;
     DRange3d range;
     surface->IsPlanar (localToWorld, worldToLocal, range);

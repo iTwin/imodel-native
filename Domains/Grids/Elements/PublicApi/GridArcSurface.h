@@ -59,7 +59,6 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanGridArcSurface : GridArcSurface, IPlanGridSurface
     {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_PlanGridArcSurface, GridArcSurface);
     DEFINE_T_SUPER (GridArcSurface);
     public:
 
