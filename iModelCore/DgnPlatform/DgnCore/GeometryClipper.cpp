@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClip(bvector<Strokes>& strokesOut, StrokesCR strokesIn)
+void GeometryClipper::DoClip(StrokesList& strokesOut, StrokesCR strokesIn)
     {
     //if (nullptr != m_clip)
     //if (0)
@@ -100,42 +100,23 @@ DSegment1dCR interval
     //else
     //    strokesOut.push_back(strokesIn);
     }
-#endif
 
-/*=================================================================================**//**
-* @bsiclass                                                     Mark.Schlosser  12/2017
-+===============+===============+===============+===============+===============+======*/
-struct PolyfaceClipper : PolyfaceQuery::IClipToPlaneSetOutput
-{
-private:
-    bvector<PolyfaceQueryCP> m_output;
-    bvector<PolyfaceHeaderPtr> m_clipped;
-
-    StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh);  return SUCCESS; }
-    StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh);  m_clipped.push_back(&mesh);  return SUCCESS; }
-
-public:
-    void ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCP clip, bool triangulate) { clip->ClipPolyface(mesh, *this, triangulate); }
-    bool HasOutput() const { return !m_output.empty(); }
-    bvector<PolyfaceQueryCP>& GetOutput() { return m_output; }
-};
+#else // !defined(WIP_STROKE_CLIPPING)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClip(bvector<Strokes>& strokesOut, StrokesCR strokesIn)
+void GeometryClipper::DoClip(StrokesList& strokesOut, StrokesCR strokesIn)
     {
-#if defined(WIP_STROKE_CLIPPING)
-    // ###TODO
-#else
     strokesOut.push_back(strokesIn);
-#endif
     }
 
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClip(bvector<Polyface>& polyfacesOut, PolyfaceCR polyfaceIn)
+void GeometryClipper::DoClip(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn)
     {
     if (nullptr != m_clip)
         {

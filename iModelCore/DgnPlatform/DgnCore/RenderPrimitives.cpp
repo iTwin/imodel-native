@@ -1370,7 +1370,7 @@ PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode
 
     GeometryClipper geomClipper(m_clip.get());
 
-	PolyfaceList clippedPolyfaces;
+    PolyfaceList clippedPolyfaces;
     for (auto& polyface : polyfaces)
         {
         geomClipper.DoClip(clippedPolyfaces, polyface);
