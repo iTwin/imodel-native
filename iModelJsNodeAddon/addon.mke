@@ -61,6 +61,8 @@ $(o)AddonUtils$(oext) : $(baseDir)AddonUtils.cpp $(baseDir)AddonUtils.h ${MultiC
 
 $(o)AddonUtilsDgnDb$(oext) : $(baseDir)AddonUtilsDgnDb.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
 
+$(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends} 
+
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------

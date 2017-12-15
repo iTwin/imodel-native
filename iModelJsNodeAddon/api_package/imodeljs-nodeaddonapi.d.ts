@@ -321,3 +321,16 @@ declare class NodeAddonECDb {
     executeStatement(): void;
 
 }
+
+/* The NodeAddonECPresentationManager class that is projected by the iModelJs node addon. */
+declare class NodeAddonECPresentationManager {
+    constructor();
+
+    /**
+     * Handles an ECPresentation manager request
+     * @param db The db to run the request on
+     * @param options Serialized JSON object that contains parameters for the request
+     * @return Serialized JSON response
+     */
+    handleRequest(db: NodeAddonDgnDb, options: string): string;
+}
