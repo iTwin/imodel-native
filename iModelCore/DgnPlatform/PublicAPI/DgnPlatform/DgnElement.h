@@ -3624,10 +3624,11 @@ public:
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
 
-    DgnElementIdSet const& GetUndisplayedSet() const {return m_undisplayedSet;}
-    void SetUndisplayed(DgnElementR, bool isUndisplayed);
-    DgnElementIdSet const& GetHilitedSet() const {return m_hilitedSet;}
-    void SetHilited(DgnElementR, bool hilited);
+    DgnElementIdSet const& GetUndisplayedSet() const {return m_undisplayedSet;} //!< @private
+    void SetUndisplayed(DgnElementR, bool isUndisplayed); //!< @private
+    DgnElementIdSet const& GetHilitedSet() const {return m_hilitedSet;} //!< @private
+    void SetHilited(DgnElementR, bool hilited); //!< @private
+    DGNPLATFORM_EXPORT void SetInHiliteSet(DgnElementId id, bool hilited); //!< @private
 
     //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb. 
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,

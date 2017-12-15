@@ -1387,7 +1387,7 @@ struct GraphicBuilder : RefCountedBase
         GraphicType     m_type;
 
     public:
-        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type) { }
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type);
         DGNPLATFORM_EXPORT CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type);
 
         //! Create params for a graphic in world coordinates, not necessarily associated with any viewport.
@@ -1439,6 +1439,7 @@ struct GraphicBuilder : RefCountedBase
 
 protected:
     CreateParams    m_createParams;
+    ClipVectorPtr   m_currClip;
 
     GraphicBuilder(CreateParams const& params) : m_createParams(params) { }
 
@@ -1492,6 +1493,8 @@ public:
 
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
 
+    void SetCurrentClip(ClipVectorPtr clip) { m_currClip = clip; }
+    ClipVectorCP GetCurrentClip() const {return m_currClip.get();}
     CreateParams const& GetCreateParams() const {return m_createParams;}
     DgnDbR GetDgnDb() const {return m_createParams.GetDgnDb();}
     TransformCR GetLocalToWorldTransform() const {return m_createParams.GetPlacement();}

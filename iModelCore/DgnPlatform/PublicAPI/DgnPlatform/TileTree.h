@@ -230,6 +230,8 @@ protected:
     virtual void _ValidateChildren() const { }
 
     bool IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const;
+
+    virtual void _GetCustomMetadata(Utf8StringR name, Json::Value& data) const {};
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
@@ -321,6 +323,9 @@ public:
 
     virtual bool _IsPartial() const { return false; }
     bool IsEmpty() const { return IsDisplayable() && IsReady() && !_HasGraphics(); }
+	
+    //! Returns custom metadata extracted from the model
+    virtual void GetCustomMetadata(Utf8StringR name, Json::Value& data) const { _GetCustomMetadata(name, data); };
 };
 
 /*=================================================================================**//**

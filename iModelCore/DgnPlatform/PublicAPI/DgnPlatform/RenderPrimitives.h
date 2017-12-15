@@ -670,6 +670,8 @@ private:
     bool                    m_isCurved;
     bool                    m_hasTexture;
 protected:
+    ClipVectorPtr           m_clip;
+
     Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db);
 
     virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR) = 0;
@@ -701,9 +703,10 @@ public:
     PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR);
     bool DoDecimate() const { return _DoDecimate(); }
     bool DoVertexCluster() const { return _DoVertexCluster(); }
-    StrokesList GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) { return _GetStrokes(facetOptions, context); }
+    StrokesList GetStrokes (IFacetOptionsR facetOptions, ViewContextR context);
     GeomPartCPtr GetPart() const { return _GetPart(); }
     void SetInCache(bool inCache) { _SetInCache(inCache); }
+    void SetClipVector(ClipVectorCP clip) { m_clip = nullptr != clip ? ClipVector::CreateCopy(*clip) : nullptr; }
 
     //! Create a Geometry for an IGeometry
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint);
@@ -814,8 +817,8 @@ private:
     bool                        m_checkGlyphBoxes = false;
     DRange3d                    m_tileRange;
 
-    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, bool disjoint);
-    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range, bool disjoint);
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, DRange3dCR range, bool disjoint);
 
     MeshBuilderMap ToMeshBuilderMap(GeometryOptionsCR, double tolerance, FeatureTableP, ViewContextR) const;
 public:
@@ -825,7 +828,7 @@ public:
     void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
 
-    DGNPLATFORM_EXPORT bool Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform, bool disjoint);
+    DGNPLATFORM_EXPORT bool Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
     DGNPLATFORM_EXPORT bool Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform);
