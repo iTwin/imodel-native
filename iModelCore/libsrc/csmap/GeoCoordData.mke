@@ -5,6 +5,10 @@
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
+
+# The vast majority of data is pre-built and was moved to the thirdparty-csmap_data_2017A repo.
+# However, one file remained in the source repo for a non-minimal build.
+
 #----------------------------------------------------------------
 #
 # Make file for CS_MAP GeoCoordinate Data that must be shipped with the GeoCoord libraries.
@@ -25,7 +29,6 @@
 #   We link the CSMap data subdirectories to our output directory
 #----------------------------------------------------------------------
 csDictionarySourcesDir    	= $(baseDir)DictionarySources/
-csDictionariesDir           = $(baseDir)Dictionaries/
 
 #----------------------------------------------------------------------
 #   Create output directories.
@@ -34,43 +37,6 @@ always:
     !~@mkdir $(o)
     ~@mkdir $(GeoCoordData)
 
-# The two following symbolic link are required to build the dictionary
-# After creation of link, the compilation of dictionary is performed.
-# Note that compiled binary dictionary is now built compile time and not 
-# source code controlled.
-# THIS IS WHAT SHOULD HAVE BEEN DONE BUT TO SOLVE ADMINISTRATIVE PROBLEMS UPON iOS AND ANDROID BUILD
-# WE REVERTED TO BUILDING MANUALLY THE DICTIONARY AND CHECKING IT INTO SOURCE CODE TREE.
-# THE APPROPRIATE MANAGERS ARE READY TO LIVE WITH MANUAL MAINTENANCE AND CLUTTERING OF MERCURIAL SERVER
-# WITH BINARY FILES
-#always:
-#    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
-#    CreateSymLinks.py   -f"$(OutputRootDir)build/csmap/OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
-#	$(OutputRootDir)build/csmap/cs_comp.exe -b $(csDictionarySourcesDir) $(OutputRootDir)build/csmap/
-
-#---------------------------------------------------------------------
-#   This is the minimal set of data for products that don't allow selection
-#   of Geographic Coordinate Systems. It allows datum conversion only for
-#   simple cases because it does not ship the large datum shift data files.
-#---------------------------------------------------------------------
-%if defined(Minimal)
-always:
-    CreateSymLinks.py   -f"$(GeoCoordData)datum.dty=$(csDictionariesDir)datum.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticPath.dty=$(csDictionariesDir)GeodeticPath.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)GeodeticTransform.dty=$(csDictionariesDir)GeodeticTransform.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)ellipsoid.dty=$(csDictionariesDir)ellipsoid.dty"
-    CreateSymLinks.py   -f"$(GeoCoordData)license.txt=$(csDictionariesDir)license.txt"
-
-%endif
-
-#---------------------------------------------------------------------
-#   This is the set of data needed to convert between NAD27 and NAD83
-#---------------------------------------------------------------------
-%if !defined (Minimal) || defined (NAD27ConvNAD83)
-always:
-    CreateSymLinks.py   -m"$(GeoCoordData)Usa/Nadcon=$(csDictionariesDir)Usa/Nadcon/*"
-
-%endif
-
 #---------------------------------------------------------------------
 #   This is the remainder of the datum conversion data and the coordinate system dictionary.
 #---------------------------------------------------------------------
@@ -78,29 +44,7 @@ always:
 
 #    Geodetic Data Catalog files, which are used in conjunction with .las, .los files:
 always:
-    CreateSymLinks.py   -f"$(GeoCoordData)GeoidHeight.gdc=$(csDictionariesDir)GeoidHeight.gdc"
-    CreateSymLinks.py   -f"$(GeoCoordData)Vertcon.gdc=$(csDictionariesDir)Vertcon.gdc"
-
-always:
-    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty=$(csDictionariesDir)coordsys.dty"
     CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
-    CreateSymLinks.py   -f"$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionariesDir)UserOverrideGeodeticTransformSeed.asc"
-    CreateSymLinks.py   -f"$(GeoCoordData)NameMapper.csv=$(csDictionariesDir)NameMapper.csv"
-    CreateSymLinks.py   -f"$(GeoCoordData)WW15MGH.GRD=$(csDictionariesDir)WW15MGH.GRD"
-    CreateSymLinks.py   -f"$(GeoCoordData)OSTN02.txt=$(csDictionariesDir)OSTN02.txt"
-    CreateSymLinks.py   -f"$(GeoCoordData)OSTN97.txt=$(csDictionariesDir)OSTN97.txt"
-    CreateSymLinks.py   -d"$(GeoCoordData)Australia=$(csDictionariesDir)Australia"
-    CreateSymLinks.py   -d"$(GeoCoordData)Canada=$(csDictionariesDir)Canada"
-    CreateSymLinks.py   -d"$(GeoCoordData)Brazil=$(csDictionariesDir)Brazil"
-    CreateSymLinks.py   -d"$(GeoCoordData)France=$(csDictionariesDir)France"
-    CreateSymLinks.py   -d"$(GeoCoordData)Germany=$(csDictionariesDir)Germany"
-    CreateSymLinks.py   -d"$(GeoCoordData)Japan=$(csDictionariesDir)Japan"
-    CreateSymLinks.py   -d"$(GeoCoordData)NewZealand=$(csDictionariesDir)NewZealand"
-    CreateSymLinks.py   -d"$(GeoCoordData)SouthAfrica=$(csDictionariesDir)SouthAfrica"
-    CreateSymLinks.py   -d"$(GeoCoordData)Spain=$(csDictionariesDir)Spain"
-    CreateSymLinks.py   -d"$(GeoCoordData)Switzerland=$(csDictionariesDir)Switzerland"
-    CreateSymLinks.py   -d"$(GeoCoordData)Usa/Harn=$(csDictionariesDir)Usa/Harn"
-    CreateSymLinks.py   -d"$(GeoCoordData)Usa/Vertcon=$(csDictionariesDir)Usa/Vertcon"
 %endif
     
 ##### NOT_NOW_GRAPHITE_WIP #####
