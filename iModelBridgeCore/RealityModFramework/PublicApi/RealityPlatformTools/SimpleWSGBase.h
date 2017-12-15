@@ -33,12 +33,12 @@ struct WSGRequestManager
     {
     REALITYDATAPLATFORM_EXPORT static void SetCallback(WSG_FeedbackFunction piFunc) { s_callback = piFunc; }
     REALITYDATAPLATFORM_EXPORT static void SetErrorCallback(WSG_FeedbackFunction piFunc) { s_errorCallback = piFunc; }
-    
+    REALITYDATAPLATFORM_EXPORT static Utf8String MakeBuddiCall(WString serviceName);
+
 protected:
     REALITYDATAPLATFORM_EXPORT static void Report(Utf8String message);
     REALITYDATAPLATFORM_EXPORT static void ReportError(Utf8String message);
-    REALITYDATAPLATFORM_EXPORT static Utf8String MakeBuddiCall(WString serviceName);
-
+    
     static WSG_FeedbackFunction    s_callback;
     static WSG_FeedbackFunction    s_errorCallback;
     };
