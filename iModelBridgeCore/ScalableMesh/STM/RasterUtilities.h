@@ -40,9 +40,9 @@ class RasterUtilities
         static HFCPtr<HRFRasterFile> LoadRasterFile(WString path);
         static HFCPtr<HRARASTER> LoadRaster(WString path);
         static HFCPtr<HRARASTER> LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS);
-        static HFCPtr<HRARASTER> LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS);
+        static HFCPtr<HRARASTER> LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, bool forceProjective = false);
 
-        static StatusInt CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster);
+        static StatusInt CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster, bool isRGBA = false, bool addHeader = true);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

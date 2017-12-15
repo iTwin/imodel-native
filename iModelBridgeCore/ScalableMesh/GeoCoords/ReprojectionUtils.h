@@ -30,7 +30,7 @@ inline void ReprojectPt(DPoint3d& ptOut, const DPoint3d& ptIn, BaseGCSPtr& sourc
         GeoPoint srcLatLong;
         GeoPoint dstLatLong;
 
-        if (geoInterSrc == GeoCoordinates::GeoCoordInterpretation::Cartesian)
+        if (geoInterSrc == GeoCoordInterpretation::Cartesian)
             {
             sourceGcs->LatLongFromCartesian(srcLatLong, ptIn);
             }
@@ -41,7 +41,7 @@ inline void ReprojectPt(DPoint3d& ptOut, const DPoint3d& ptIn, BaseGCSPtr& sourc
 
         sourceGcs->LatLongFromLatLong(dstLatLong, srcLatLong, *destinationGcs);
 
-        if (geoInterDst == GeoCoordinates::GeoCoordInterpretation::Cartesian)
+        if (geoInterDst == GeoCoordInterpretation::Cartesian)
             {
             destinationGcs->CartesianFromLatLong(ptOut, dstLatLong);
             }

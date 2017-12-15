@@ -94,6 +94,12 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::GetRequiredNodes(bvector<ISca
     return _GetRequiredNodes(meshNodes, queryId);
     }
 
+BentleyStatus IScalableMeshProgressiveQueryEngine::GetRequiredTextureTiles(bvector<SMRasterTile>& rasterTiles,
+                                                                           int                    queryId)
+    {
+    return _GetRequiredTextureTiles(rasterTiles, queryId);
+    }
+
 BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
     {
     return _ClearCaching(clearRanges, scalableMeshPtr);
@@ -147,12 +153,13 @@ bool IScalableMeshProgressiveQueryEngine::IsQueryComplete(int queryId)
     return _IsQueryComplete(queryId);
     }
 
-IScalableMeshProgressiveQueryEnginePtr IScalableMeshProgressiveQueryEngine::Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
+IScalableMeshProgressiveQueryEnginePtr IScalableMeshProgressiveQueryEngine::Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture)
     {    
-    return new ScalableMeshProgressiveQueryEngine(scalableMeshPtr, displayCacheManagerPtr);
+    return new ScalableMeshProgressiveQueryEngine(scalableMeshPtr, displayCacheManagerPtr, loadTexture);
     }
 
 static bool s_keepSomeInvalidate = true; 
+static bool s_preloadInQueryThread = true;
                                             
 template <class POINT, class EXTENT> class NodeQueryProcessor : public RefCountedBase, public IStopQuery
     {
@@ -398,8 +405,25 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
 //NEEDS_WORK_SM : Set to true it can lead to race condition, should be removed (and maybe m_areWorkingThreadRunning[threadId] too).
 static bool s_delayJoinThread = true;
 
+void ScalableMeshProgressiveQueryEngine::CancelPreload(ScalableMesh<DPoint3d>* smP)
+    {
+    ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());
+    
+    dataStore->CancelPreloadData();
+    }
+
+static bool s_doPreload = true;
+
+#ifdef VANCOUVER_API
+//Imagepp on Topaz is different then Imagepp (the redesigned Imagepp) on DgnDb06/Bim02 platform, and thus less thread safe.
+extern std::mutex s_imageppCopyFromLock;
+#endif
+
 void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload)
     {
+    //Currently the preload is just use for streaming texture source.
+    if (SMTextureType::Streaming != smP->GetMainIndexP()->IsTextured() || !s_doPreload)
+        return;    
     
     bvector<DRange3d> tileRanges;
 
@@ -411,13 +435,21 @@ void ScalableMeshProgressiveQueryEngine::PreloadData(ScalableMesh<DPoint3d>* smP
     
     ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());    
 
-    if (cancelLastPreload)
+#ifdef VANCOUVER_API
+    s_imageppCopyFromLock.lock();    
+#endif
+
+    if (cancelLastPreload)        
         dataStore->CancelPreloadData();
 
     dataStore->PreloadData(tileRanges);
+
+#ifdef VANCOUVER_API
+    s_imageppCopyFromLock.unlock();    
+#endif
     }
 
-static bool s_doPreLoad = false;
+//static bool s_doPreLoad = true;
 
 class QueryProcessor
     {
@@ -495,7 +527,7 @@ private:
             TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_LOAD, visibleNode->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode, -1)
 
 
-            if ((meshNode->IsLoaded(displayCacheManagerPtr.get()) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get()) == false) || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
+            if ((meshNode->IsLoaded(displayCacheManagerPtr.get(), loadTexture) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) == false) || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
                 {
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
                 meshNode->ApplyAllExistingClips(scalableMeshPtr->GetReprojectionTransform());
@@ -568,6 +600,16 @@ private:
             //NEEDS_WORK_MST : Maybe we should prioritize the first processing query found
             if (processingQueryPtr != 0 && m_run)
                 {
+                if (s_preloadInQueryThread)
+                    {                    
+                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == SMTextureType::Streaming) && processingQueryPtr->m_loadTexture;
+
+                    if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0 && doPreLoad)
+                        {
+                        ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), processingQueryPtr->m_toLoadNodes[threadId], false);
+                        }
+                    }
+
                 HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
 
                 //processingQueryPtr->m_searchingNodeMutexes[threadId].lock();
@@ -584,8 +626,10 @@ private:
                     {
                     ProducedNodeContainer<DPoint3d, Extent3dType> producedFoundNodes;
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();                   
+                    
+                    bool doPreLoad = (((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get())->GetMainIndexP()->IsTextured() == SMTextureType::Streaming) && processingQueryPtr->m_loadTexture;
 
-                    if (s_doPreLoad)
+                    if (doPreLoad)
                         {                        
                         processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &producedFoundNodes, threadId);
                         }
@@ -603,7 +647,7 @@ private:
                         {
                         processingQueryPtr->m_nodeQueryProcessors[threadId]->DoQuery();
 
-                        if (producedFoundNodes.GetNodes().size() > 0 && s_doPreLoad)
+                        if (producedFoundNodes.GetNodes().size() > 0 && doPreLoad)
                             {                                         
                             ScalableMeshProgressiveQueryEngine::PreloadData((ScalableMesh<DPoint3d>*)processingQueryPtr->m_scalableMeshPtr.get(), producedFoundNodes.GetNodes(), false);
 
@@ -620,28 +664,32 @@ private:
 
                     continue;
                     }
-                
+                                
                 //Load unloaded node
                 //HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;                
-                if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
-                    {                    
-                    nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();                    
-                    }
 
-                if (nodePtr != 0)
-                    {       
-                    IScalableMeshCachedDisplayNodePtr meshNodePtr;
+                while (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
+                    {   
+                    if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
+                        {                    
+                        nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();                    
+                        }
 
-                    LoadNodeDisplayData(meshNodePtr, nodePtr, processingQueryPtr->m_loadTexture, processingQueryPtr->m_clipVisibilities, processingQueryPtr->m_scalableMeshPtr, processingQueryPtr->m_displayCacheManagerPtr);                            
+                    if (nodePtr != 0)
+                        {       
+                        IScalableMeshCachedDisplayNodePtr meshNodePtr;
+
+                        LoadNodeDisplayData(meshNodePtr, nodePtr, processingQueryPtr->m_loadTexture, processingQueryPtr->m_clipVisibilities, processingQueryPtr->m_scalableMeshPtr, processingQueryPtr->m_displayCacheManagerPtr);                            
                           
-                    processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
-                    processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
-                    processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();  
+                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].lock();
+                        processingQueryPtr->m_foundMeshNodes[threadId].push_back(meshNodePtr);
+                        processingQueryPtr->m_foundMeshNodeMutexes[threadId].unlock();  
 
-                    processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
-                    processingQueryPtr->m_toLoadNodes[threadId].pop_back();                                        
-                    processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
-                    }                   
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].lock();
+                        processingQueryPtr->m_toLoadNodes[threadId].pop_back();                                        
+                        processingQueryPtr->m_toLoadNodeMutexes[threadId].unlock();
+                        }                   
+                    }
 
                 size_t m_nbMissed = 0;
                 static size_t MAX_MISSED = 5;
@@ -976,7 +1024,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
             {
             node->ApplyAllExistingClips(m_smOverviews[&node - &m_overviewNodes[0]]->GetReprojectionTransform());
             node->RemoveDisplayDataFromCache();                    
-            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
+            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, m_loadTexture, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
             assert(node->HasCorrectClipping(m_activeClips));                 
             }
         }   
@@ -985,7 +1033,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {     
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
-    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || node->GetNbPoints() == 0);
+    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get(), m_loadTexture) == false || node->GetNbPoints() == 0);
     
     SMMeshIndexNode<DPoint3d, Extent3dType>* smNode = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr());
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
@@ -993,8 +1041,8 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
 
     meshNode->ApplyAllExistingClips(sMesh->GetReprojectionTransform());
     meshNode->RemoveDisplayDataFromCache();                    
-    meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, sMesh->ShouldInvertClips());                               
-    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || meshNode->HasCorrectClipping(m_activeClips));
+    meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, m_loadTexture, sMesh->ShouldInvertClips());
+    assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get(), m_loadTexture) == false || meshNode->HasCorrectClipping(m_activeClips));
 
     m_overviewNodes.push_back(meshNode);
         
@@ -1051,9 +1099,9 @@ void EstimateMeanNbPointsPerNode(int64_t& nbObjects, int64_t& nbNodes, HFCPtr<SM
 
 static double s_minScreenPixelCorrectionFactor = 1.0;
  
-ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
+ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture)
     {
-
+    m_loadTexture = loadTexture;
     m_displayCacheManagerPtr = displayCacheManagerPtr;            
         
     HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)scalableMeshPtr.get())->GetRootNode());
@@ -1067,7 +1115,7 @@ ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalable
 
     if (rootNodePtr == nullptr) return;
 	if (std::find(m_smOverviews.begin(), m_smOverviews.end(), scalableMeshPtr.get()) == m_smOverviews.end())
-		PreloadOverview(rootNodePtr, scalableMeshPtr.get());       
+		PreloadOverview(rootNodePtr, scalableMeshPtr.get());
 
     if (rootNodePtr->GetMinResolution() == 0)
         {
@@ -1184,7 +1232,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_1, parentNodePtr->GetBlockID().m_integerID,(uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNodePtr.get(), -1)
 
     
-    if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
+    if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {        
         FindOverview(lowerResOverviewNodes, extentToCover/*meshNodePtr->GetContentExtent()*/, parentNodePtr, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr);
         }
@@ -1305,7 +1353,7 @@ class NewQueryStartingNodeProcessor
                     {                
                     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr.get()));
               
-                    if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                    if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                         {            
                         FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr, displayCacheManagerPtr);
                         }
@@ -1322,7 +1370,7 @@ class NewQueryStartingNodeProcessor
                 
                 ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd], scalableMeshPtr.get()));
                               
-                if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), m_newQuery->m_loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                
                     FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr, displayCacheManagerPtr);
                                         
@@ -1485,7 +1533,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     while (currentInd < nodesToSearch.GetNodes().size())
         {
         //Increase display responsiveness, especially for streaming.
-        if (!nodesToSearch.GetNodes()[currentInd]->IsLoaded())
+        if (!nodesToSearch.GetNodes()[currentInd]->IsLoaded() /*&& !s_doPreLoad*/)
         {
             currentInd--; //TFS# 669028 -- otherwise the current node never gets loaded
             break;
@@ -1493,9 +1541,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 
         nodesToSearch.GetNodes()[currentInd]->QueryVisibleNode (queryObjectP, s_maxLevel, overviewNodes, foundNodes, nodesToSearch, nullptr);
         
-
-        if ((clock() - startTime) > s_firstNodeSearchingDelay)
-            {
+        if ((clock() - startTime) > s_firstNodeSearchingDelay /*&& !s_doPreLoad*/)
+            {                    
             break;
             }
         
@@ -1512,13 +1559,20 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
 
     newQuery.m_overviewMeshNodes.insert(newQuery.m_overviewMeshNodes.end(), lowerResOverviewNodes.begin(), lowerResOverviewNodes.end());                    
 
-    //PRE
-    
-    if (toLoadNodes.size() > 0 && s_doPreLoad)
-        {         
-        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
+    //PRE        
+    if (!s_preloadInQueryThread)
+        { 
+        if (toLoadNodes.size() > 0 && (newQuery).m_loadTexture)
+            {         
+            ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
 
-        ScalableMeshProgressiveQueryEngine::PreloadData(smP, toLoadNodes, true);
+            ScalableMeshProgressiveQueryEngine::PreloadData(smP, toLoadNodes, true);
+            }
+        }
+    else    
+        {
+        ScalableMesh<DPoint3d>* smP(dynamic_cast<ScalableMesh<DPoint3d>*>(newQuery.m_meshToQuery.get()));
+        ScalableMeshProgressiveQueryEngine::CancelPreload(smP);
         }
     //PRE
 
@@ -1778,6 +1832,56 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredNodes(bvector<BENT
 
     return status;
     }
+
+BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredTextureTiles(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::SMRasterTile>& rasterTiles,
+                                                                           int                                                   queryId) const
+    {    
+    bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr> meshNodes;
+
+    BentleyStatus status = _GetRequiredNodes(meshNodes, queryId);
+                        
+    if (status != SUCCESS)
+        return status;
+
+    bvector<DRange3d> tileRanges;
+
+    for (auto& nodes : meshNodes)
+        {
+        //tileRanges.push_back(loadNode->GetContentExtent());
+        tileRanges.push_back(nodes->GetNodeExtent());
+        }
+
+
+    RequestedQuery* requestedQueryP = 0;
+
+    for (auto& query : m_requestedQueries)
+        {
+        if (query.m_queryId == queryId)
+            {
+            requestedQueryP = &query;
+            break;
+            }
+        }    
+
+    if (requestedQueryP == 0)
+        {
+        return ERROR;
+        }
+
+
+    ScalableMesh<DPoint3d>* smP((ScalableMesh<DPoint3d>*)requestedQueryP->m_meshToQuery.get());
+
+    ISMDataStoreTypePtr<Extent3dType> dataStore(smP->m_scmIndexPtr->GetDataStore());
+
+#ifdef VANCOUVER_API
+    //s_imageppCopyFromLock.lock();
+#endif
+       
+    dataStore->ComputeRasterTiles(rasterTiles, tileRanges);
+    
+    return status;
+    }
+
 
 BentleyStatus ScalableMeshProgressiveQueryEngine::_StopQuery(int queryId)
     {

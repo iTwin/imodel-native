@@ -896,6 +896,18 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     return true;
     }
 
+//=======================================================================================
+// @bsimethod                                                 Elenie.Godzaridis 09/17
+//=======================================================================================
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::RemoveNonDisplayPoolData()
+{
+	if (GetBlockID().IsValid())
+	{
+		SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
+		m_pointsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+	}
+}
+
 
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::FindNodes(bvector < HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d) const
     {
@@ -5028,7 +5040,7 @@ template<class POINT, class EXTENT> size_t SMPointIndexNode<POINT, EXTENT>::AddA
             ExtentOp<EXTENT>::SetYMax(m_nodeHeader.m_nodeExtent, (ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent) + ExtentOp<EXTENT>::GetThickness(m_nodeHeader.m_nodeExtent)));
             }
        
-        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex, are3dPoints, isRegularGrid);
+        AddArrayUnconditional (&(pointsArray[startPointIndex]), endPointIndex - startPointIndex, are3dPoints, isRegularGrid);
 
 
         if (endPointIndex < countPoints)
@@ -6917,6 +6929,13 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
     if (!IsLoaded())
         Load();
 
+    static std::atomic<uint64_t> currentIter = 0;
+
+    if (progress != nullptr && this->m_nodeHeader.m_level == 0)
+        {
+        currentIter = 0;
+        }
+
     pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
     
     if (!m_nodeHeader.m_IsLeaf)
@@ -6969,7 +6988,6 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
     // Report progress
     if (progress != nullptr)
         {
-        static std::atomic<uint64_t> currentIter = 0;
         static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++currentIter);
         }
     return true;
@@ -7774,7 +7792,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_terrainDepth = (size_t)-1;
     m_indexHeader.m_resolution = 0.0f;
-    m_indexHeader.m_textured = IndexTexture::None;
+    m_indexHeader.m_textured = SMTextureType::None;
     m_isGenerating = true;
     m_loadNeighbors = true;
 
@@ -7887,7 +7905,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     GetRootNode()->SaveGroupedNodeHeaders(group, nullptr /*no progress*/);
 
     // Handle all open groups 
-    strategy->SaveAllOpenGroups();
+    strategy->SaveAllOpenGroups(true /*save root*/);
 
     // Save group master file which contains info about all the generated groups (groupID and blockID)
     BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());
@@ -8930,7 +8948,7 @@ bool SMPointIndex<POINT, EXTENT>::IsBalanced() const
     }
 
 template<class POINT, class EXTENT>
-IndexTexture SMPointIndex<POINT, EXTENT>::IsTextured() const
+SMTextureType SMPointIndex<POINT, EXTENT>::IsTextured() const
     {
     HINVARIANTS;
 
@@ -8938,7 +8956,7 @@ IndexTexture SMPointIndex<POINT, EXTENT>::IsTextured() const
     }
 
 template<class POINT, class EXTENT>
-void SMPointIndex<POINT, EXTENT>::SetTextured(IndexTexture textureState)
+void SMPointIndex<POINT, EXTENT>::SetTextured(SMTextureType textureState)
     {
     m_indexHeader.m_textured = textureState;
     }

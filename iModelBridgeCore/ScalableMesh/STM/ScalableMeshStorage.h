@@ -267,6 +267,9 @@ class GenericLinearStorageEditor : public Import::BackInserter
                  }
 
              // Append to index
+			 ISMStore::FeatureType type = myFeature->GetType();
+			 if ((DTMFeatureType)type == DTMFeatureType::TinHull)
+				 type = (ISMStore::FeatureType)DTMFeatureType::Hull;
              m_rIndex.AddFeatureDefinition(myFeature->GetType(),newFeature, featureExtent);
              ++m_importedFeatures;
              }

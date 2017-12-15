@@ -6,7 +6,7 @@
 |       $Date: 2015/09/08 15:28:13 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -52,6 +52,8 @@ class Clipper
     const int32_t* m_uvIndices;
     DRange3d m_range;
     DRange3d m_nodeRange;
+	size_t m_widthOfTexData;
+	size_t m_heightOfTexData;
 
     enum PointClassification
         {
@@ -67,8 +69,14 @@ class Clipper
 
     public:
         Clipper(const DPoint3d* vertexBuffer, size_t nVertices, const int32_t* indexBuffer, size_t nIndices, DRange3d extent, DRange3d nodeRange, const DPoint2d* uvBuffer = nullptr, const int32_t* uvIndices = nullptr) :
-            m_vertexBuffer(vertexBuffer), m_nVertices(nVertices), m_indexBuffer(indexBuffer), m_nIndices(nIndices), m_range(extent), m_nodeRange(nodeRange), m_uvBuffer(uvBuffer), m_uvIndices(uvIndices)
+            m_vertexBuffer(vertexBuffer), m_nVertices(nVertices), m_indexBuffer(indexBuffer), m_nIndices(nIndices), m_range(extent), m_nodeRange(nodeRange), m_uvBuffer(uvBuffer), m_uvIndices(uvIndices), m_widthOfTexData(1024), m_heightOfTexData(1024)
             {}
+
+		void SetTextureDimensions(size_t width, size_t height)
+		{
+			m_widthOfTexData = width;
+			m_heightOfTexData = height;
+		}
 
         void MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtm);
         bool GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons);

@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,6 @@
 #include <mutex> 
 #include <excpt.h> 
 #include <map>
-
 
 
 #include <Bentley\BeStringUtilities.h>
@@ -38,6 +37,11 @@
 #include <DgnPlatform\ElementHandlerManager.h>
 #include <DgnPlatform\ScanCriteria.h>
 #endif
+
+#ifndef VANCOUVER_API
+#include <DgnPlatform\ImageUtilities.h>
+#endif
+
 
 #include <DgnPlatform\DgnPlatform.r.h>
 #ifdef VANCOUVER_API

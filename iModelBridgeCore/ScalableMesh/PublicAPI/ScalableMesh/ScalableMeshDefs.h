@@ -140,6 +140,7 @@ enum SMStatus
     S_ERROR_NOT_SUPPORTED,
     S_ERROR_NOT_FOUND,
     S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
+	S_ERROR_CANCELED_BY_USER,
     S_QTY,
     };
 
@@ -157,6 +158,22 @@ enum class SMClipGeometryType
     Qty
     };
 
+enum class SMTextureType
+    {
+    None = 0,
+    Embedded,
+    Streaming
+    };
+
+
+struct SMRasterTile
+    {
+    uint64_t m_posX;          //In pixels
+    uint64_t m_posY;          //In pixels
+    uint64_t m_sizeX;         //In pixels
+    uint64_t m_sizeY;         //In pixels
+    uint64_t m_resolutionInd;
+    };
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 

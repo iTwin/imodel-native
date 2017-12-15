@@ -12,8 +12,10 @@
 //#include <DgnPlatform/DgnGeoCoord.h>
 //#include <DgnPlatform/AutoRestore.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
+
 #include <stdio.h>
 #include "../STM/Stores/ISMDataStore.h"
+#include "../STM/Edits/ClipUtilities.h"
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)
     #define TILEPUBLISHER_EXPORT EXPORT_ATTRIBUTE
@@ -61,75 +63,28 @@ struct  ScalableMeshTileNode : ModelTileNode
     {
     IScalableMeshNodePtr    m_node;
     Transform               m_transform;
+    uint64_t                m_coverageID;
+    bool                    m_isClipBoundary;
+    ClipVectorPtr           m_clips;
+    bool                    m_outputTexture;
+
     //DgnModelId              m_modelId;
     //PublishTileNode(DgnModelId modelId, SceneR scene, NodeR node, TransformCR transformDbToTile, DRange3dCR dgnRange, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent, ClipVectorCP clip)
     //    : ModelTileNode(dgnRange, transformDbToTile, depth, siblingIndex, parent, tolerance), m_scene(&scene), m_node(&node), m_clip(clip), m_modelId(modelId) { }
 #ifndef VANCOUVER_API
-    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, BentleyApi::Dgn::TileNodeP parent) :
-        /*m_modelId(modelId), */m_node(node), m_transform(transform), BentleyApi::Dgn::ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
+    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, BentleyApi::Dgn::TileNodeP parent, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, bool outputTexture) :
+        /*m_modelId(modelId), */m_node(node), m_transform(transform), m_clips(clips), m_coverageID(coverageID), m_isClipBoundary(isClipBoundary), m_outputTexture(outputTexture), BentleyApi::Dgn::ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
 #else
-    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
-        /*m_modelId(modelId), */m_node(node), m_transform(transform), ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
+    ScalableMeshTileNode(/*DgnModelId modelId,*/ IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, bool outputTexture) :
+        /*m_modelId(modelId), */m_node(node), m_transform(transform), m_clips(clips), m_coverageID(coverageID), m_isClipBoundary(isClipBoundary), m_outputTexture(outputTexture), ModelTileNode(transformedRange, transform, node->GetLevel(), siblingIndex, parent, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount())
 #endif
         {}
 
 #ifndef VANCOUVER_API
-    virtual TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override
+    virtual TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override;
 #else
-    TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const
-#endif
-        {
-        TileMeshList        tileMeshes;
-        //
-        //if (m_node->GetChildrenNodes().empty())
-        //    {
-        //    BeAssert(false);
-        //    return tileMeshes;
-        //    }
-        //
-        //
-        //for (auto& child : m_node->GetChildrenNodes())
-        //    {
-        //
-        auto child = m_node;
-            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
-            //bvector<bool> clips;
-            auto meshP = child->GetMesh(flags);
-            if (!meshP.IsValid() || meshP->GetNbFaces() == 0) return tileMeshes;
-            //if (!meshP.IsValid() || meshP->GetNbFaces() == 0) continue;
-            TileMeshBuilderPtr      builder;
-            TileDisplayParamsPtr    displayParams;
-        
-            if (child->IsTextured())
-                {
-                auto textureP = child->GetTextureCompressed();
-                ImageSource jpgTex(ImageSource::Format::Jpeg, ByteStream(textureP->GetData(), (uint32_t)textureP->GetSize()));
-                //memcpy(myImage.GetDataP(), textureP->GetData(), textureP->GetDimension().x* textureP->GetDimension().y * 3);
-                //Image image(textureP->GetDimension().x, textureP->GetDimension().y, std::move(myImage), Image::Format::Rgb);
-                //ImageSource jpgTex(image, ImageSource::Format::Jpeg, 100);
-                //{
-                //FILE*               file = fopen(("d:\\tmp\\texture_" + std::to_string(child->GetNodeId()) + ".jpg").c_str(), "w");
-                //
-                //fwrite(jpgTex.GetByteStream().GetData(), 1, jpgTex.GetByteStream().size(), file);
-                //fclose(file);
-                //}
-                TileTextureImagePtr     tileTexture = TileTextureImage::Create(jpgTex);
-                displayParams = TileDisplayParams::Create(0xffffff, tileTexture, true);
-                }
-            else
-                {
-                TileTextureImagePtr     tileTexture = nullptr;
-                displayParams = TileDisplayParams::Create(0x007700, tileTexture, false);
-                }
-            builder = TileMeshBuilder::Create(displayParams, 0.0);
-            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*meshP->GetPolyfaceQuery()); visitor->AdvanceToNextFace();)
-                builder->AddTriangle(*visitor, /*DgnMaterialId(), dgnDb, m_modelId,*/ false, twoSidedTriangles);
-        
-            tileMeshes.push_back(builder->GetMesh());
-        //    }
-        //
-        return tileMeshes;
-        }
+    TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const;
+#endif            
 
     };  //  ScalableMeshTileNode
 

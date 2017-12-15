@@ -941,8 +941,8 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, /*DgnMaterialId mate
         newTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
         }
 
-    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
-    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+    //BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
+    //BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
 
     AddTriangle(newTriangle);
     ++m_triangleIndex;
@@ -986,14 +986,10 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, BeInt64Id ent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifndef VANCOUVER_API
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, BeInt64Id entityId, bool twoSidedTriangles)
-#else
 void TileMeshBuilder::AddPolyface(PolyfaceQueryCR polyface, bool twoSidedTriangles)
-#endif
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
-        AddTriangle(*visitor, /*materialId, dgnDb, entityId,*/ false, twoSidedTriangles);
+        AddTriangle(*visitor, false, twoSidedTriangles);
     }
 
 

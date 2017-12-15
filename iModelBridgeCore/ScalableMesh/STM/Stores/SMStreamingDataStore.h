@@ -16,6 +16,7 @@
 #include <json/json.h>
 #include <codecvt>
 #include <ImagePP/all/h/HCDCodecIJG.h>
+#include <ScalableMesh\IScalableMeshRDSProvider.h>
 
 extern bool s_stream_from_wsg;
 extern bool s_stream_using_cesium_3d_tiles_format;
@@ -130,6 +131,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             };
         typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMStreamingSettings> SMStreamingSettingsPtr;
 
+        IScalableMeshRDSProviderPtr m_smRDSProvider = nullptr;
+
     private : 
         
         bool m_use_node_header_grouping = false;
@@ -146,6 +149,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         Transform m_transform;
 
         SMNodeGroupPtr m_CesiumGroup;
+
+		IClipDefinitionDataProviderPtr m_clipProvider;
 
     protected : 
 
@@ -167,7 +172,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
     
         SMStreamingStore(const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
 
-        SMStreamingStore(const SMStreamingSettingsPtr& settings);
+        SMStreamingStore(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider);
 
         virtual ~SMStreamingStore();
 
@@ -176,9 +181,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             {
             return new SMStreamingStore(path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
             }
-        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings)
+        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
             {
-            return new SMStreamingStore(settings);
+            return new SMStreamingStore(settings, smRDSProvider);
             }
 #endif
 
@@ -225,10 +230,20 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
 
         virtual void CancelPreloadData() override;
+        
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
+
+        virtual bool IsTextureAvailable() override;        
 
         virtual void Register(const uint64_t& smID) override;
 
         virtual void Unregister(const uint64_t& smID) override;
+
+		virtual bool DoesClipFileExist() const override;
+
+		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
+
+		virtual void WriteClipDataToProjectFilePath() override;
         
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
                 

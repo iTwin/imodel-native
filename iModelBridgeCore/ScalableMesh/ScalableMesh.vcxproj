@@ -218,7 +218,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64  </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -397,6 +397,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshDocumentEnv.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshFeature.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshInfo.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshMoniker.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshNodeCreator.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshPolicy.h" />
@@ -451,7 +452,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\Edits\Skirts.h" />
     <ClInclude Include="STM\ISMDataStore.h" />
     <ClInclude Include="STM\ISMDataStore.hpp" />
-    <ClInclude Include="stm\MapBoxTextureProvider.h" />
     <ClInclude Include="STM\MosaicTextureProvider.h" />
     <ClInclude Include="stm\RasterUtilities.h" />
     <ClInclude Include="stm\ReprojectionModel.h" />
@@ -459,6 +459,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
     <ClInclude Include="STM\ScalableMeshGroup.h" />
+    <ClInclude Include="STM\ScalableMeshInfo.h" />
     <ClInclude Include="STM\SharedTextureManager.h" />
     <ClInclude Include="STM\SmCachedDisplayData.h" />
     <ClInclude Include="STM\SMDataSourceParams.h" />
@@ -567,6 +568,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="stm\Stores\SMStreamedSourceStore.hpp" />
     <ClInclude Include="STM\Stores\SMStreamingDataStore.h" />
     <ClInclude Include="STM\Stores\SMStreamingDataStore.hpp" />
+    <ClInclude Include="STM\StreamTextureProvider.h" />
     <ClInclude Include="STM\Threading\LightThreadPool.h" />
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
@@ -644,13 +646,13 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
     <ClCompile Include="STM\ImportPlugins\PODImporter_dgndb.cpp" />
-    <ClCompile Include="stm\MapboxTextureProvider.cpp" />
     <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\RasterUtilities.cpp" />
     <ClCompile Include="stm\ReprojectionModel.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshFrom3MX.cpp" />
     <ClCompile Include="STM\ScalableMeshGroup.cpp" />
+    <ClCompile Include="STM\ScalableMeshInfo.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
@@ -731,6 +733,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />
+    <ClCompile Include="STM\StreamTextureProvider.cpp" />
     <ClCompile Include="STM\TextureProvider.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />

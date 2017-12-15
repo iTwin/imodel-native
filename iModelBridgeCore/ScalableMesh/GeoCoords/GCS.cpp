@@ -1011,8 +1011,7 @@ GCS GCSFactory::Impl::CreateFromComposedCS (const WChar*             wktBegin,
     const WKTSection& composedCSSection = root.GetSection();
 
     if (!HasBentleyAsAuthority(composedCSSection))
-        {
-        assert(!"Possibly invalid Wkt flavor!");
+        {        
         // This is not ours. Try extracting GCS using BaseCS facilities.
         return CreateFromBaseCS(wktBegin, wktFlavor, localTransformP, status); 
         }

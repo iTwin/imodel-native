@@ -574,6 +574,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
 		virtual void _SetTransform(Transform myTransform);
 
+		virtual void _RemoveSlivers(double edgeLengthRatio) override;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const override;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
 
@@ -1176,6 +1178,7 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
     protected:
         DPlane3d m_plane;
         double m_depth;
+		size_t m_level;
 
         virtual void _SetPlane(DPlane3d plane) override
             {
@@ -1205,8 +1208,14 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
             assert(false && "Not supported by this query");
         }
 
-        virtual size_t _GetLevel() override { return 0; }
-        virtual void _SetLevel(size_t depth) override {};
+		virtual void _SetLevel(size_t level) override
+		{
+			m_level = level;
+		}
+		virtual size_t _GetLevel() override
+		{
+			return m_level;
+		}
         virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
         virtual bool _GetUseAllResolutions() override { return false; };
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
@@ -1279,17 +1288,20 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
 
         //NEEDS_WORK_SM : Load graph required since removed from file?
         bool m_loadGraph;
+        bool m_loadClips;
         bool m_loadIndices;
         bool m_loadTexture;
         bool m_saveToCache;
         bool m_precomputeBoxes;
 
+        virtual bool _ShouldLoadClips() const override;
         virtual bool _ShouldLoadTexture() const override;
         virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
         virtual bool _ShouldSaveToCache() const override;
         virtual bool _ShouldPrecomputeBoxes() const override;
 
+        virtual void _SetLoadClips(bool loadClips) override;
         virtual void _SetLoadTexture(bool loadTexture) override;
         virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
@@ -1300,6 +1312,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
         ScalableMeshMeshFlags()
             {
             m_loadGraph = false;
+            m_loadClips = false;
             m_loadTexture = false;
             m_loadIndices = true;
             m_saveToCache = false;
@@ -1326,6 +1339,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
+
+        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
@@ -1382,6 +1397,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const override;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const override;
+
+		virtual void _ClearCachedData() override;
 
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
@@ -1542,8 +1559,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             void LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool invertClips = false);
 
             bool IsLoaded() const;
-            bool IsLoaded(IScalableMeshDisplayCacheManager* mgr) const;
-            bool IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr) const;
+            bool IsLoaded(IScalableMeshDisplayCacheManager* mgr, bool isTextureRequired) const;
+            bool IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr, bool isTextureRequired) const;
                 
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 

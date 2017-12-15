@@ -22,6 +22,7 @@
 #include <ImagePP\all\h\HCDException.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
 #include "ScalableMesh\ScalableMeshLib.h"
+#include "SMExternalProviderDataStore.h"
 
 USING_NAMESPACE_IMAGEPP
 
@@ -132,11 +133,14 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString
     //    }
     }
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStreamingSettingsPtr& settings)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
     : SMSQLiteSisterFile(nullptr),
-      m_settings(settings)
+      m_settings(settings),
+      m_smRDSProvider(smRDSProvider)
     {
     m_transform.InitIdentity();
+
+	m_clipProvider = nullptr;
 
     if (m_pathToHeaders.empty())
         {
@@ -178,7 +182,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     DataSourceAccount::AccountKey               account_key;
     DataSourceService                       *   service;
     DataSourceService::ServiceName              service_name;
-    std::unique_ptr<std::function<string()>> wsgCallback = nullptr;
     std::unique_ptr<std::function<string(const Utf8String& docGuid)>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
@@ -204,44 +207,23 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         account_name = L"LocalFileAccount";
         account_prefix = DataSourceURL(settings->GetURL().c_str());
         }
-    else if (!settings->IsPublic())
-        {
-        service_name = L"DataSourceServiceWSG";
-        account_name = L"WSGAccount";
-        account_prefix = DataSourceURL(settings->GetURL().c_str());
-        account_identifier = settings->GetServerID().c_str();
-
-        Utf8String tokenUtf8 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
-        assert(!tokenUtf8.empty());
-
-        account_key = WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str(); // WSG token in this case
-
-        sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
-        assert(!sslCertificatePath.empty());
-
-        wsgCallback.reset(new std::function<string()>([]() -> std::string
-            {
-            return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
-            }));
-        }
     else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
         //account_name = (L"AzureCURLAccount" + settings->GetGUID()).c_str();
         account_name = L"AzureCURLAccount";
         account_key = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
-        BeFileName url(settings->GetURL().c_str());
-        m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
-        account_prefix = DataSourceURL(settings->GetGUID().c_str());
-        account_prefix.append(DataSourceURL(BEFILENAME(GetDirectoryName, url).c_str()));
-        account_identifier = settings->GetServerID().c_str();
 
-        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([](const Utf8String& docGuid) -> std::string
+        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([this](const Utf8String& docGuid) -> std::string
             {
-            if (ScalableMesh::ScalableMeshLib::IsInitialized())
-                return ScalableMesh::ScalableMeshLib::GetHost().GetSASTokenAdmin().GetToken(docGuid).c_str();
-            return std::string();
+            return m_smRDSProvider->GetToken().c_str();
             }));
+
+        WString url(m_smRDSProvider->GetAzureURLAddress().c_str(), BentleyCharEncoding::Utf8);
+        m_masterFileName = BeFileName(m_smRDSProvider->GetRootDocument());
+        account_prefix = DataSourceURL(settings->GetGUID().c_str());
+        auto firstSeparatorPos = url.find(L".");
+        account_identifier = DataSourceAccount::AccountIdentifier(url.substr(8, firstSeparatorPos - 8).c_str());
         }
     else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
@@ -268,8 +250,16 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     // Create an account on the file service streaming
     if ((account = service->createAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+    
+    ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
 
-    if (wsgCallback != nullptr) account->setWSGTokenGetterCallback(*wsgCallback.get());
+    if (!proxyInfo.m_serverUrl.empty())
+        {
+        assert(dynamic_cast<DataSourceAccountCURL*>(account) != nullptr);
+        static_cast<DataSourceAccountCURL*>(account)->setProxy(proxyInfo.m_user, proxyInfo.m_password, proxyInfo.m_serverUrl);
+        }
+
+
     if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
     account->setPrefixPath(account_prefix);
@@ -420,7 +410,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         indexHeader->m_isTerrain = false; // default, always non terrain
         indexHeader->m_singleFile = false; // default, always multifile
         indexHeader->m_isCesiumFormat = true; // default, always cesium datasets
-        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+        indexHeader->m_rootNodeBlockID = HPMBlockID(rootNodeBlockID); // default, starts at 0
 
         BeFileName baseUrl(m_masterFileName.c_str());
         auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
@@ -444,6 +434,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
+            indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
             }
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
@@ -1120,13 +1111,92 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::CompactProjectFiles()
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges) 
     {
-    assert(!"No implemented yet");
+    // NEEDS_WORK_SM_STREAMING: does streaming need this?
+    // assert(!"No implemented yet");
     }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::CancelPreloadData()
     {
-    assert(!"No implemented yet");
+    // NEEDS_WORK_SM_STREAMING: does streaming need this?
+    // assert(!"No implemented yet");
     }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges)
+    {    
+    assert(!"Only for streaming texture (e.g. BingMap), which are not supported by the streaming store.");
+    }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::IsTextureAvailable()
+    {    
+    return true;
+    }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::DoesClipFileExist() const
+{
+	if (!IsProjectFilesPathSet())
+		return false;
+
+	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
+}
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
+   {
+	m_clipProvider = provider;
+   }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::WriteClipDataToProjectFilePath()
+{
+	CopyClipSisterFile(SMStoreDataType::DiffSet);
+	SMIndexNodeHeader<EXTENT>* nodeHeader = nullptr;
+	if (m_clipProvider.IsValid())
+	{
+		ISM3DPtDataStorePtr dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, m_clipProvider.get());
+
+		SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::ClipDefinition, true, false);
+
+		if (!sqlFilePtr.IsValid())
+			return;
+
+		ISM3DPtDataStorePtr dataStoreTarget = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::ClipDefinition, nodeHeader, sqlFilePtr);
+		IClipDefinitionExtOpsPtr extOps, extOpsTarget;
+		dataStore->GetClipDefinitionExtOps(extOps);
+		dataStoreTarget->GetClipDefinitionExtOps(extOpsTarget);
+		if (!extOps.IsValid() || !extOpsTarget.IsValid())
+			return;
+		bvector<uint64_t> existingIds;
+
+		extOps->GetAllIDs(existingIds);
+		for (auto& id : existingIds)
+		{
+			bool isActive;
+			bvector<DPoint3d> clipData;
+			SMClipGeometryType geom;
+			SMNonDestructiveClipType type;
+			extOps->LoadClipWithParameters(clipData, id, geom, type, isActive);
+			extOpsTarget->StoreClipWithParameters(clipData, id, geom, type, isActive);
+		}
+		existingIds.clear();
+		extOps->GetAllCoverageIDs(existingIds);
+
+		ISMCoverageNameDataStorePtr coverageNameSource = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		ISMCoverageNameDataStorePtr coverageNameTarget = new SMSQLiteNodeDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, sqlFilePtr);
+
+		for (auto& id : existingIds)
+		{
+			size_t count = coverageNameSource->GetBlockDataCount(HPMBlockID(id));
+			bvector<Utf8String> coverages(count);
+			if (count != 0)
+			{
+				coverageNameSource->LoadBlock(coverages.data(), count, HPMBlockID(id));
+				coverageNameTarget->StoreBlock(coverages.data(), count, HPMBlockID(id));
+			}
+		}
+	}
+	else
+	{
+		CopyClipSisterFile(SMStoreDataType::ClipDefinition);
+	}
+}
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::Register(const uint64_t & smID)
     {
@@ -1349,9 +1419,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             }
 
         if (nodeHeader.isMember("nodeCount")) header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
-        //header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
-        header->m_arePoints3d = false; // NEEDS_WORK_SM_STREAMING : Always true for Cesium original datasets?
-        //assert(header->m_arePoints3d == nodeHeader["arePoints3d"].asBool());
+
+        header->m_arePoints3d = nodeHeader.isMember("arePoints3d") ? nodeHeader["arePoints3d"].asBool() : false;
 
         //header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
 
@@ -1662,6 +1731,13 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
     {
+
+	if (m_clipProvider.IsValid())
+	{
+		dataStore = new SMExternalProviderDataStore<Utf8String, EXTENT>(SMStoreDataType::CoverageName, nodeHeader, m_clipProvider.get());
+		return true;
+	}
+
     SMSQLiteFilePtr sqlFilePtr;
 
     sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
@@ -1677,6 +1753,12 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile)
     {
     assert(dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon);
+
+	if (m_clipProvider.IsValid() && (dataType == SMStoreDataType::ClipDefinition || dataType == SMStoreDataType::CoveragePolygon))
+	{
+		dataStore = new SMExternalProviderDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_clipProvider.get());
+		return true;
+	}
 
     SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
 
@@ -2154,7 +2236,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, SMStoreDataT
         {
         std::unique_ptr<DataSource::Buffer[]> dest;
         auto readSize = this->LoadDataBlock(dataSourceAccount, dest, dataSizeKnown);
-        assert(readSize > 0); // something went wrong loading streaming data block
+        //assert(readSize > 0); // something went wrong loading streaming data block
         if (readSize > 0)
             {
             m_pIsLoaded = true;
@@ -2455,7 +2537,6 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
         m_tileData.numUvs = uv_buffer_pointer.count;
         m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
-        auto& uvDecodeMatrixJson = uvAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
 
         this->resize(m_tileData.numIndices * sizeof(int32_t) + m_tileData.numPoints * sizeof(DPoint3d) + m_tileData.numUvs * sizeof(DPoint2d) + m_tileData.textureSize);
 
@@ -2463,8 +2544,16 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             {
             m_tileData.uvOffset = 0; // m_tileData.pointOffset + m_tileData.numPoints * sizeof(DPoint3d);
             m_tileData.m_uvData = reinterpret_cast<DPoint2d *>(this->data() + m_tileData.uvOffset);
+
             if (uvs_are_quantized)
                 {
+                auto& uvQuantizedAttr = uvAccessor["extensions"]["WEB3D_quantized_attributes"];
+                auto& uvDecodeMatrixJson = uvQuantizedAttr["decodeMatrix"];
+                auto& uvDecodeMin = uvQuantizedAttr["decodedMin"];
+                auto& uvDecodeMax = uvQuantizedAttr["decodedMax"];
+                DPoint2d decMin = { uvDecodeMin[0].asFloat(), uvDecodeMin[1].asFloat() };
+                DPoint2d decMax = { uvDecodeMax[0].asFloat(), uvDecodeMax[1].asFloat() };
+
                 const FPoint3d scale = { uvDecodeMatrixJson[0].asFloat(), uvDecodeMatrixJson[4].asFloat() };
                 const FPoint3d translate = { uvDecodeMatrixJson[6].asFloat(), uvDecodeMatrixJson[7].asFloat() };
                 //const DPoint3d scale = { uvDecodeMatrixJson[0].asDouble(), uvDecodeMatrixJson[4].asDouble() };
@@ -2473,7 +2562,14 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
                 auto uv_array = (uint16_t*)(buffer + uv_buffer_pointer.offset);
                 for (uint32_t i = 0; i < m_tileData.numUvs; i++)
                     {
-                    m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y));
+                    m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y);
+                    auto& x = m_tileData.m_uvData[i].x;
+                    auto& y = m_tileData.m_uvData[i].y;
+                    if (x < decMin.x) x = decMin.x;
+                    if (y < decMin.y) y = decMin.y;
+                    if (x > decMax.x) x = decMax.x;
+                    if (y > decMax.y) y = decMax.y;
+                    m_tileData.m_uvData[i].y = 1.0f - m_tileData.m_uvData[i].y;
                     }
 
                 }

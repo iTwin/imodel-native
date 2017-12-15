@@ -59,9 +59,19 @@ DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const Acc
     OpenSSLMutexes::CreateInstance(CRYPTO_num_locks());
 
     CRYPTO_set_locking_callback(CURLHandle::OpenSSLLockingFunction);
-
     }
 
+void DataSourceAccountCURL::setProxy(const Utf8String& proxyUserIn, const Utf8String& proxyPasswordIn, const Utf8String& proxyServerUrlIn)
+    {
+    proxyUser = proxyUserIn;
+    proxyPassword = proxyPasswordIn;  
+    proxyServerUrl = proxyServerUrlIn;
+    }
+
+void DataSourceAccountCURL::setCertificateAuthoritiesUrl(const Utf8String& certificateAuthoritiesUrlIn)
+    {
+    certificateAuthoritiesUrl = certificateAuthoritiesUrlIn;
+    }
 
 DataSource * DataSourceAccountCURL::createDataSource(void)
 {
@@ -168,18 +178,21 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+
+    setupCertificateAuthorities(curl);
+    setupProxyToCurl(curl);
     
     auto res = curl_easy_perform(curl);
     if (CURLE_OK != res)
         {
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        assert(!"cURL error, download failed");
+        //assert(!"cURL error, download failed");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
 
     if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
         {
-        assert(!"HTTP error, download failed or resource not found");
+        //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
 
@@ -211,6 +224,35 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         }
 
     return status;
+    }
+
+void DataSourceAccountCURL::setupProxyToCurl(CURL* curl)
+    {
+    assert(curl != nullptr);
+    
+    if (!proxyServerUrl.empty())
+        {
+        curl_easy_setopt(curl, CURLOPT_PROXY, proxyServerUrl);
+        curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+        if (!proxyUser.empty() && !proxyPassword.empty())
+            {
+            Utf8String proxyCreds = proxyUser;
+            proxyCreds.append(":");
+            proxyCreds.append(proxyPassword);
+            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds);
+            }
+        }
+    }
+
+void DataSourceAccountCURL::setupCertificateAuthorities(CURL* curl)
+    {
+    assert(curl != nullptr);
+
+    if (!certificateAuthoritiesUrl.empty())
+        {
+        curl_easy_setopt(curl, CURLOPT_CAINFO, certificateAuthoritiesUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+        }
     }
 
 DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
@@ -260,6 +302,10 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
     curl_easy_setopt(curl, CURLOPT_HEADERDATA,       &response_header);
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, size);
 
+    setupCertificateAuthorities(curl);
+    setupProxyToCurl(curl);
+    
+    
     /* put it! */
     CURLcode res = curl_easy_perform(curl);
 
@@ -291,7 +337,7 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSource &dataSource, D
 size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * contents, size_t size, size_t nmemb, void * userp)
     {
     if (userp == nullptr) return 0;
-
+ 
     struct CURLDataResponseHeader *header = (struct CURLDataResponseHeader *)userp;
 
     std::istringstream resp((char*)contents);
@@ -307,7 +353,17 @@ size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * content
             }
         else if ((index = line.find('/', 0)) != std::string::npos)
             {
-            header->data.insert(std::make_pair(line.substr(0, index), line.substr(index + 1)));
+            std::map<std::string, std::string>::iterator findIter(header->data.find(line.substr(0, index)));
+                
+            if (findIter == header->data.end())
+                { 
+                header->data.insert(std::make_pair(line.substr(0, index), line.substr(index + 1)));
+                }
+            else //When doing proxy connection multiple http statements are sent, keep the last one.
+            if (stricmp(findIter->first.c_str(), "http") == 0)
+                {
+                findIter->second = line.substr(index + 1);                
+                }            
             }
         }
 

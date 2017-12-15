@@ -166,8 +166,8 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
             {
             DPoint3d newTri[3];
             newTri[0] = pts[polyIndexes[0] - 1];
-            newTri[1] = pts[polyIndexes[1] - 1];
-            newTri[2] = pts[polyIndexes[2] - 1];
+            newTri[1] = pts[polyIndexes[j] - 1];
+            newTri[2] = pts[polyIndexes[j+1] - 1];
             if (bsiDPoint3d_pointEqualTolerance(&newTri[0], &newTri[1], 1.0e-8) || bsiDPoint3d_pointEqualTolerance(&newTri[0], &newTri[2], 1.0e-8) ||
                 bsiDPoint3d_pointEqualTolerance(&newTri[2], &newTri[1], 1.0e-8)) continue;
             double signedArea = bsiGeom_getXYPolygonArea(newTri, 3); //make sure new triangles are oriented the same as the original ones
@@ -187,10 +187,10 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
         }
 #if DEBUG && SM_TRACE_CLIP_MESH 
     s += "END CLIP\n";
-    std::ofstream f;
+  /*  std::ofstream f;
     f.open("d:\\stitching\\meshes\\logclip_" + std::to_string(nodeRange.low.x) + "_" + std::to_string(nodeRange.low.y) + "_" + std::to_string(nodeRange.high.x) + "_" + std::to_string(nodeRange.high.y), ios_base::app);
     f << s << endl;
-    f.close();
+    f.close();*/
 #endif 
     }
 

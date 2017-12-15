@@ -6,7 +6,7 @@
 |       $Date: 2012/01/19 20:04:54 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -178,6 +178,9 @@ bool IsUndefinedModificationTime (const Time& time)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Time GetFileLastModificationTimeFor(const WChar*  filePath)
     {
+    if (BeFileName::IsUrl(filePath))
+        return CreateTimeFrom(0);
+
     struct _stat64 fileStats;
     int status = _wstat64(filePath, &fileStats);
     

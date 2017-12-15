@@ -23,6 +23,21 @@ enum class SMFrom3MXStatus
     SeveralGeometriesError  // Special case not handled by the converter: node with several geometries
 };
 
+// Scoped enum for the conversion warnings
+enum class SMFrom3MXWarningCode
+{
+    Missing3MXB = 1
+};
+
+struct SMFrom3MXWarning
+{
+    SMFrom3MXWarningCode code;
+    std::wstring info;
+};
+
+typedef bvector<SMFrom3MXWarning> SMFrom3MXWarnings;
+
+
 
 // Interface for the GCS handler used during conversion
 class EXPORT_VTABLE_ATTRIBUTE IScalableMeshFrom3MXGCSHandler
@@ -39,7 +54,8 @@ BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
     BeFileNameCR output3SMPath,									// Path to the output 3SM file
     IScalableMeshFrom3MXGCSHandler& gcsHandler,					// Object handling the GCS operations
-    IScalableMeshProgressPtr progressHandler                    // Object handling the progress. If nullptr, no progress handling
+    IScalableMeshProgressPtr progressHandler,                   // Object handling the progress. If nullptr, no progress handling
+    SMFrom3MXWarnings& warnings                                 // Output warnings
 );
 
 // Reprojection to specified GCS; No progress handling
@@ -48,7 +64,8 @@ BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
     BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
     BeFileNameCR output3SMPath,									// Path to the output 3SM file
     GeoCoordinates::BaseGCSPtr outputGCS,						// Output GCS for reprojection. If nullptr, no reprojection
-    IScalableMeshProgressPtr progressHandler                    // Object handling the progress. If nullptr, no progress handling
+    IScalableMeshProgressPtr progressHandler,                   // Object handling the progress. If nullptr, no progress handling
+    SMFrom3MXWarnings& warnings                                 // Output warnings
 );
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

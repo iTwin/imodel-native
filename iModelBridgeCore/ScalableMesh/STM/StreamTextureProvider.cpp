@@ -1,6 +1,6 @@
 #include "ScalableMeshPCH.h"
 #include <ScalableMesh/IScalableMesh.h>
-#include "MapBoxTextureProvider.h"
+#include "StreamTextureProvider.h"
 #include "ImagePPHeaders.h"
 #include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRARaster.h>
@@ -15,22 +15,33 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-DPoint2d MapBoxTextureProvider::_GetMinPixelSize()
+static double s_minPixelSizeLimit = 0;
+
+DPoint2d StreamTextureProvider::_GetMinPixelSize()
     {
     DPoint2d minSize;
 
     minSize.x = m_minExt.GetWidth();
-    minSize.y = m_minExt.GetHeight();
+    minSize.y = m_minExt.GetHeight();  
+
+#ifndef NDEBUG
+    if (s_minPixelSizeLimit != 0)
+        {
+        minSize.x = s_minPixelSizeLimit;
+        minSize.y = s_minPixelSizeLimit;
+        }
+#endif
+
     return minSize;
     }
 
-DRange2d MapBoxTextureProvider::_GetTextureExtent()
+DRange2d StreamTextureProvider::_GetTextureExtent()
     {
     DRange2d rasterBox = DRange2d::From(m_totalExt);
     return rasterBox;
     }
 
-StatusInt MapBoxTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
+StatusInt StreamTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
     {
     double unitsPerPixelX = (area.high.x - area.low.x) / width;
     double unitsPerPixelY = (area.high.y - area.low.y) / height;
@@ -41,13 +52,11 @@ StatusInt MapBoxTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     return SUCCESS;
     }
 
-MapBoxTextureProvider::MapBoxTextureProvider(WString url, DRange3d totalExtent, GeoCoordinates::BaseGCSCPtr targetCS)
+StreamTextureProvider::StreamTextureProvider(HFCPtr<HRARASTER>& textureSource, DRange3d totalExtent)
     {
-    m_totalExt = totalExtent;
-
-    DRange2d extent2d = DRange2d::From(m_totalExt);
-    auto mapBoxRaster = RasterUtilities::LoadRaster(url, targetCS, extent2d);
+    m_totalExt = totalExtent;    
+    
     HGF2DExtent maxExt;
-    mapBoxRaster->GetPixelSizeRange(m_minExt, maxExt);
-    m_minExt.ChangeCoordSys(mapBoxRaster->GetCoordSys());
+    textureSource->GetPixelSizeRange(m_minExt, maxExt);
+    m_minExt.ChangeCoordSys(textureSource->GetCoordSys());
     }

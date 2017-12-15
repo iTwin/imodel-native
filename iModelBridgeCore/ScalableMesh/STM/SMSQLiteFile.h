@@ -66,12 +66,7 @@ struct SQLiteNodeHeader
         }
     };
 
-enum class IndexTexture
-    {
-    None =0,
-    Embedded,
-    Streaming
-    };
+
 
 struct SQLiteIndexHeader
     {
@@ -80,11 +75,11 @@ struct SQLiteIndexHeader
     bool                    m_HasMaxExtent;                 // indicated if the index is extent limited.
 
     bool                    m_balanced;                     // Control variable that indicates if the tree must be balanced
-    IndexTexture                    m_textured;
+    SMTextureType           m_textured;
     bool                    m_singleFile;
     size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
     size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.
-    int              m_rootNodeBlockID;
+    int                     m_rootNodeBlockID;
     size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
     bool                    m_isTerrain;                    //can the Scalable Mesh be used as a terrain, e.g. for design applications
     float                   m_resolution;                   //Maximum resolution (of either texture or geometry) for the dataset. This may not be available in all areas. 0 if not computed.

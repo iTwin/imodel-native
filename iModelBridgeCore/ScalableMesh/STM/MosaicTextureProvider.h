@@ -8,8 +8,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct MosaicTextureProvider : virtual public ITextureProvider
     {
     private:
-        HIMMosaic* m_targetMosaic;
-        HGF2DExtent m_minExt;
+        HFCPtr<HIMMosaic> m_targetMosaic;
+        HGF2DExtent       m_minExt;
 
     protected:
 
@@ -20,6 +20,6 @@ struct MosaicTextureProvider : virtual public ITextureProvider
         virtual StatusInt _GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area) override;
     public:
 
-        MosaicTextureProvider(HIMMosaic* mosaic);
+        MosaicTextureProvider(HFCPtr<HIMMosaic>& mosaic);
     };
 END_BENTLEY_SCALABLEMESH_NAMESPACE

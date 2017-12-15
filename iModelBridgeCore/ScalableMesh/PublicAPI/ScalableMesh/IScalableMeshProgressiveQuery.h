@@ -34,6 +34,8 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
     public:                                         
         
         virtual BentleyStatus _CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
+                                                size_t&                 usedMemInBytes,
+                                                bool&                   isStoredOnGpu,
                                                 size_t                  nbVertices,
                                                 DPoint3d const*         positionOrigin,
                                                 float*                  positions,
@@ -44,15 +46,17 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
                                                 SmCachedDisplayTexture* cachedTexture,
                                                 uint64_t nodeId,
                                                 uint64_t smId) = 0;
-
+        
         virtual BentleyStatus _DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh) = 0; 
 
         virtual BentleyStatus _CreateCachedTexture(SmCachedDisplayTexture*& cachedDisplayTexture, 
+                                                   size_t&                  usedMemInBytes,
+                                                   bool&                    isStoredOnGpu,
                                                    int                      xSize,                       
                                                    int                      ySize,                       
                                                    int                      enableAlpha,                 
                                                    int                      format,      // => see QV_*_FORMAT definitions above
-                                                   unsigned char const *    texels) = 0; // => texel image)
+                                                   unsigned char const *    texels) = 0; // => texel image)        
 
         virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) = 0; 
 
@@ -60,7 +64,7 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
 
         virtual BentleyStatus _DeleteFromVideoMemory(SmCachedDisplayTexture* cachedDisplayTex) = 0;
 
-        virtual bool _IsUsingVideoMemory() = 0;
+        virtual bool _IsUsingVideoMemory() = 0;        
 
 		//called when a resource was deleted but dependent resources (which may or may not be in use) need to be regenerated
 		//virtual void _SetCacheDirty(bool isDirty) = 0;
@@ -93,6 +97,10 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         virtual BentleyStatus _GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                int                                                                queryId) const = 0;
 
+
+        virtual BentleyStatus _GetRequiredTextureTiles(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::SMRasterTile>& rasterTiles,
+                                                       int                                                          queryId) const = 0;
+        
         virtual BentleyStatus _StopQuery(int queryId) = 0; 
 
         virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr) = 0;
@@ -125,6 +133,9 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         BENTLEY_SM_EXPORT BentleyStatus GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                         int                                                   queryId);
 
+        BENTLEY_SM_EXPORT BentleyStatus GetRequiredTextureTiles(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::SMRasterTile>& rasterTiles,
+                                                                int                                                   queryId);        
+
         BENTLEY_SM_EXPORT BentleyStatus StopQuery(int queryId); 
 
         BENTLEY_SM_EXPORT bool IsQueryComplete(int queryId); 
@@ -133,7 +144,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         BENTLEY_SM_EXPORT void SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
 
-        BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
+        BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture = true);
 
         BENTLEY_SM_EXPORT void InitScalableMesh(IScalableMeshPtr& scalableMeshPtr);
 

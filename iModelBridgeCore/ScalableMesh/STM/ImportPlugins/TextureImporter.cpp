@@ -264,7 +264,13 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
         {
         try
             {
-            const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+            HFCPtr<HFCURL> urlPtr;
+
+            if (!BeFileName::IsUrl(pi_rSourceRef.GetPathCStr()))                
+                urlPtr = HFCURL::Instanciate(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+            else
+                urlPtr = HFCURL::Instanciate(pi_rSourceRef.GetPathCStr());
+
             const HRFRasterFileCreator* foundCreatorP = HRFRasterFileFactory::GetInstance()->FindCreator(urlPtr, HFC_READ_ONLY);
 
             if (foundCreatorP == nullptr)
@@ -285,8 +291,14 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
     virtual SourceBase*             _Create                                (const LocalFileSourceRef&   sourceRef,
                                                                             Log&                        warningLog) const override
         {
-        const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + sourceRef.GetPathCStr());
-        const HFCPtr<HRFRasterFile> rasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(urlPtr, HFC_READ_ONLY));
+        HFCPtr<HFCURL> urlPtr;
+
+        if (!BeFileName::IsUrl(sourceRef.GetPathCStr()))
+            urlPtr = HFCURL::Instanciate(WString(L"file://") + sourceRef.GetPathCStr());
+        else
+            urlPtr = HFCURL::Instanciate(sourceRef.GetPathCStr());
+
+        const HFCPtr<HRFRasterFile> rasterFile(HRFRasterFileFactory::GetInstance()->OpenFile(urlPtr, HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
                         
         ContentDescriptor descriptor(CreateDescriptor(rasterFile));
 

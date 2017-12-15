@@ -34,7 +34,7 @@ struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
     protected:                         
              
         //Synchonization with data sources functions
-        virtual StatusInt _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) = 0;        
+        virtual SMStatus _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) = 0;        
 
         virtual StatusInt _SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs) = 0;
 
@@ -47,7 +47,7 @@ struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
           
     public:
       
-        BENTLEY_SM_EXPORT StatusInt ExtractAndEmbed(const BeFileName& coverageTempDataFolder);   
+        BENTLEY_SM_EXPORT SMStatus ExtractAndEmbed(const BeFileName& coverageTempDataFolder);
 
         BENTLEY_SM_EXPORT StatusInt SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs);
         

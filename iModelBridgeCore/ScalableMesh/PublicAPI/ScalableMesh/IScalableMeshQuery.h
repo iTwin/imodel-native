@@ -317,6 +317,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
 		virtual void _SetTransform(Transform newTransform) = 0;
 
+		virtual void _RemoveSlivers(double edgeLengthRatio) = 0;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const = 0;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const = 0;
 
@@ -348,6 +350,8 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
 
 		BENTLEY_SM_EXPORT void SetTransform(Transform newTransform);
+
+		BENTLEY_SM_EXPORT void RemoveSlivers(double edgeLengthRatio=1e-6);
                 
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
@@ -402,12 +406,14 @@ typedef size_t ScalableMeshTextureID;
 struct IScalableMeshMeshFlags abstract: public RefCountedBase
     {
     protected:
+        virtual bool _ShouldLoadClips() const = 0;
         virtual bool _ShouldLoadTexture() const = 0;
         virtual bool _ShouldLoadIndices() const = 0;
         virtual bool _ShouldLoadGraph() const = 0;
         virtual bool _ShouldSaveToCache() const = 0;
         virtual bool _ShouldPrecomputeBoxes() const = 0;
 
+        virtual void _SetLoadClips(bool loadClips) = 0;
         virtual void _SetLoadTexture(bool loadTexture) = 0;
         virtual void _SetLoadIndices(bool loadIndices) = 0;        
         virtual void _SetLoadGraph(bool loadGraph) = 0;
@@ -416,12 +422,14 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
 
     public:
         
+        BENTLEY_SM_EXPORT bool ShouldLoadClips() const;
         BENTLEY_SM_EXPORT bool ShouldLoadTexture() const;
         BENTLEY_SM_EXPORT bool ShouldLoadIndices() const;
         BENTLEY_SM_EXPORT bool ShouldLoadGraph() const;
         BENTLEY_SM_EXPORT bool ShouldSaveToCache() const;
         BENTLEY_SM_EXPORT bool ShouldPrecomputeBoxes() const;
 
+        BENTLEY_SM_EXPORT void SetLoadClips(bool loadClips);
         BENTLEY_SM_EXPORT void SetLoadTexture(bool loadTexture);
         BENTLEY_SM_EXPORT void SetLoadIndices(bool loadIndices);
         BENTLEY_SM_EXPORT void SetLoadGraph(bool loadGraph);
@@ -431,6 +439,7 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create();
 
         BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create(bool shouldLoadTexture, bool shouldLoadGraph);
+        BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create(bool shouldLoadTexture, bool shouldLoadGraph, bool shouldLoadClips);
     };
 
 
@@ -448,6 +457,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const = 0;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const = 0;
+
+        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const = 0;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const = 0;
 
@@ -505,6 +516,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const = 0;
 
+		virtual void _ClearCachedData() = 0;
+
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
 
@@ -526,6 +539,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMesh(IScalableMeshMeshFlagsPtr& flags) const;
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags,uint64_t clip) const;
+
+        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const;
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bset<uint64_t>& clipsToShow) const;
 
@@ -585,6 +600,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const;
 
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const;
+
+		BENTLEY_SM_EXPORT void ClearCachedData();
 
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
