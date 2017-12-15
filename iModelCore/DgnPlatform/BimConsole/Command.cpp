@@ -711,7 +711,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             }
 
         ECInstanceKey changeSummaryKey;
-        if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, changeset) != SUCCESS)
+        if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)) != SUCCESS)
             {
             BimConsole::WriteErrorLine("Failed to extract change summary.");
             return;
