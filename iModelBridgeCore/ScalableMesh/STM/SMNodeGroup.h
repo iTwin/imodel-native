@@ -72,6 +72,8 @@ public:
     DataSourceAccount*      GetDataSourceAccount();
     StrategyType            GetStrategyType() { return m_strategyType; }
     uint32_t                GetNextNodeID() { return m_nextNodeID++; }
+    WString                 GetWellKnownText() { return m_wktStr; }
+    void                    SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
 
     static Ptr Create(StrategyType strategy, DataSourceAccount* account);
 
@@ -85,6 +87,7 @@ private:
     StrategyType          m_strategyType = NORMAL;
     DataSourceAccount*    m_account = nullptr;
     std::atomic<uint32_t> m_nextNodeID = 0;
+    WString               m_wktStr;
     };
 
 struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase 
@@ -469,8 +472,6 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         size_t GetNumberNodes() { return m_groupHeader->size(); }
 
         size_t GetSizeOfHeaders() { return m_rawHeaders.size(); }
-
-        bool  GetWKTString(Utf8String& wkt);
 
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
 
@@ -1203,6 +1204,9 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         SMMasterHeader["IsTerrain"] = m_GroupMasterHeader.IsTerrain();
         SMMasterHeader["DataResolution"] = m_GroupMasterHeader.GetResolution();
         SMMasterHeader["IsTextured"] = (uint32_t)m_GroupMasterHeader.IsTextured();
+        auto wktString = pi_Group->GetParameters()->GetWellKnownText();
+        if (!wktString.empty())
+            SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;

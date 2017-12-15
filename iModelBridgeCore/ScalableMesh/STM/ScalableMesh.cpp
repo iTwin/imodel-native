@@ -1213,7 +1213,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     0,
                     0);
 
-                if (stream_settings->IsGCSStringSet())
+                if (false/*stream_settings->IsGCSStringSet()*/)
                     {
                     // even if it is 3DTiles, the GCS is extracted so the data is not cessessarily xyz
                     m_isCesium3DTiles = false;
@@ -3211,6 +3211,12 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
         rootTileset->AppendChildGroup(converageTileset);
         converageTileset->Close<Extent3dType>();
         }
+
+    WString wktStr;
+    if (m_smSQLitePtr != nullptr)
+        m_smSQLitePtr->GetWkt(wktStr);
+
+    rootTileset->GetParameters()->SetWellKnownText(wktStr);
 
     // Force save of root tileset and take into account coverages
     rootTileset->Close<Extent3dType>();

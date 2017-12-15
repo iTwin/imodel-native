@@ -436,7 +436,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
             indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
+
+            if (masterJSON.isMember("GCS"))
+                {
+                Utf8String wktString = masterJSON["GCS"].asString();
+                m_settings->SetGCSString(wktString);
+                }
             }
+
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
         //m_settings->SetGCSString(wkt);
