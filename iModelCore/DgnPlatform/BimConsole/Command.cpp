@@ -94,9 +94,9 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
 //---------------------------------------------------------------------------------------
 Utf8String OpenCommand::_GetUsage() const
     {
-    return " .open [readonly|readwrite] [attachchangecache] <iModel/ECDb/BeSQLite file>\r\n"
+    return " .open [readonly|readwrite] [attachchanges] <iModel/ECDb/BeSQLite file>\r\n"
         COMMAND_USAGE_IDENT "Opens iModel, ECDb, or BeSQLite file. Default open mode: read-only.\r\n"
-        COMMAND_USAGE_IDENT "if attachchangecache is specified, the EC changes cache is attached (and created if necessary).\r\n";
+        COMMAND_USAGE_IDENT "if attachchanges is specified, the EC changes cache file is attached (and created if necessary).\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -135,7 +135,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                 openMode = Db::OpenMode::ReadWrite;
             else if (arg.EqualsI("asecdb"))
                 openAsECDb = true;
-            else if (arg.EqualsI("attachchangecache"))
+            else if (arg.EqualsI("attachchanges"))
                 changeCacheMode = ECDb::ChangeCacheMode::AttachAndCreateIfNotExists;
             }
         }
