@@ -1715,11 +1715,8 @@ void DgnElements::SetHilited(DgnElementR el, bool hilited)
         return;
         }
 
-    if (el.m_flags.m_hilited != hilited)
-        {
-        el.m_flags.m_hilited = hilited;
-        SetInHiliteSet(elemId, hilited);
-        }
+    el.m_flags.m_hilited = hilited;
+    SetInHiliteSet(elemId, hilited);
 
     BeAssert(hilited == (m_hilitedSet.end() != m_hilitedSet.find(elemId)));
     }
