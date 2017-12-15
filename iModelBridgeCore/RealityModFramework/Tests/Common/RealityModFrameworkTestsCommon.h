@@ -81,7 +81,7 @@ struct MockRDSRequestManager : RDSRequestManager
         {
         }
 
-    MOCK_METHOD0(MakeBuddiCall, Utf8String());
+    MOCK_METHOD0(Setup, void());
     };
 
 //=====================================================================================

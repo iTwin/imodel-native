@@ -27,21 +27,11 @@ RealityDataService* SimpleRDSFixture::s_realityDataServices = nullptr;
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  12/2017
 //=====================================================================================
-TEST_F(SimpleRDSFixture, SetServerComponents)
+TEST_F(SimpleRDSFixture, BuddiTest)
     {
-    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
-        {
-        response.status = ::OK;
-        response.responseCode = 200;
-        response.toolCode = CURLE_OK;
-        response.header = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\WSGHeader.json");
-        }));
+    Utf8String url = RDSRequestManager::MakeBuddiCall(L"RealityDataServices");
 
-    RDSRequestManager::Setup();
-
-    // Test the SetServerComponents set by RDSRequestManager
-    EXPECT_TRUE(RealityDataService::AreParametersSet());
-    EXPECT_TRUE(RealityDataService::GetServerName().ContainsI("realitydataservices"));
+    EXPECT_TRUE(url.ContainsI("realitydataservices"));
     }
 
 //=====================================================================================
