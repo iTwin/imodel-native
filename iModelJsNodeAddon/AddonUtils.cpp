@@ -63,6 +63,8 @@ private:
         return BeSQLite::L10N::SqlangFiles(sqlang);
         }
 
+    RepositoryAdmin& _SupplyRepositoryAdmin() override {return AddonUtils::GetRepositoryAdmin();}
+
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
         {
         if (s_assertHandler)

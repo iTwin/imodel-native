@@ -55,11 +55,13 @@ CCompPDBName    =% $(appName)
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)nodejs_addon$(oext) : $(baseDir)nodejs_addon.cpp $(DgnV8Depends) ${MultiCompileDepends}
+$(o)nodejs_addon$(oext) : $(baseDir)nodejs_addon.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends}
 
 $(o)AddonUtils$(oext) : $(baseDir)AddonUtils.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
 
 $(o)AddonUtilsDgnDb$(oext) : $(baseDir)AddonUtilsDgnDb.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
+
+$(o)AddonUtilsBriefcaseManager$(oext) : $(baseDir)AddonUtilsBriefcaseManager.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
 
 %include MultiCppCompileGo.mki
 

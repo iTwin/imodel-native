@@ -54,6 +54,27 @@ declare class NodeAddonBriefcaseManagerResourcesRequest {
     toJSON(): string;
 }
 
+/** How to handle a conflict */
+export const enum NodeAddonBriefcaseManagerConflictResolution {
+    /** Reject the incoming change */
+    Reject = 0,
+    /** Accept the incoming change */
+    Take = 1,
+}
+
+/** The options for how conflicts are to be handled during change-merging in an OptimisticConcurrencyControlPolicy.
+ * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
+ * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
+ */
+export interface NodeAddonBriefcaseManagerConflictResolutionPolicy {
+    /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
+    updateVsUpdate: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+    /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
+    updateVsDelete: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+    /** What to do with the incoming change in the case where an entity was deleted locally and would be updated by the incoming change. */
+    deleteVsUpdate: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+}
+
 /* The NodeAddonDgnDb class that is projected by the iModelJs node addon. */
 declare class NodeAddonDgnDb {
   constructor();
@@ -237,24 +258,23 @@ declare class NodeAddonDgnDb {
     */
     buildBriefcaseManagerResourcesRequestForModel(req: NodeAddonBriefcaseManagerResourcesRequest, modelProps: string, opcode: DbOpcode): RepositoryStatus;
 
-    /**
-     * Try to acquire the requested resources from iModelHub.
-     * This function may fulfill some requests and fail to fulfill others. This function returns a zero status
-     * if all requests were fulfilled. It returns a non-zero status if some or all requests could not be fulfilled.
-     * This function updates req to remove the requests that were successfully fulfilled. Therefore, if a non-zero
-     * status is returned, the caller can look at req to see which requests failed.
-     * @param req On input, this is the list of resource requests to be fulfilled. On return, this is the list of
-     * requests that could not be fulfilled.
-     * @return 0 if all resources were acquired, or non-zero if some could not be acquired.
-     */
-    requestBriefcaseManagerResources(req: NodeAddonBriefcaseManagerResourcesRequest): RepositoryStatus;
+    /** Start bulk update mode. Valid only with the pessimistic concurrency control policy */
+    briefcaseManagerStartBulkOperation(): RepositoryStatus;
+
+    /** End bulk update mode. This will wait for locks and codes. Valid only with the pessimistic concurrency control policy */
+    briefcaseManagerEndBulkOperation(): RepositoryStatus;
 
     /**
-     * Check to see if *all* of the requested resources could be acquired from iModelHub.
-     * @param req the list of resource requests to be fulfilled.
-     * @return true if all resources could be acquired or false if any could not be acquired.
+     *  The the pessimistic concurrency control policy.
      */
-    areBriefcaseManagerResourcesAvailable(req: NodeAddonBriefcaseManagerResourcesRequest): boolean;
+    setBriefcaseManagerPessimisticConcurrencyControlPolicy(): RepositoryStatus;
+
+    /** Set the optimistic concurrency control policy.
+     * @param policy The policy to used
+     * @return non-zero if the policy could not be set
+     */
+    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: NodeAddonBriefcaseManagerConflictResolutionPolicy): RepositoryStatus;
+
 }
 
 /* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */

@@ -1414,6 +1414,38 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(req->m_req, GetDgnDb(), modelPropsJson, (BeSQLite::DbOpcode)dbop));
         }
 
+    Napi::Value SetBriefcaseManagerOptimisticConcurrencyControlPolicy(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, conflictRes);
+        AddonUtils::BriefcaseManagerConflictResolution uu = (AddonUtils::BriefcaseManagerConflictResolution)conflictRes.Get("updateVsUpdate").ToNumber().Int32Value();
+        AddonUtils::BriefcaseManagerConflictResolution ud = (AddonUtils::BriefcaseManagerConflictResolution)conflictRes.Get("updateVsDelete").ToNumber().Int32Value();
+        AddonUtils::BriefcaseManagerConflictResolution du = (AddonUtils::BriefcaseManagerConflictResolution)conflictRes.Get("deleteVsUpdate").ToNumber().Int32Value();
+        if (AddonUtils::BriefcaseManagerConflictResolution::Take != uu && AddonUtils::BriefcaseManagerConflictResolution::Reject != uu
+          ||AddonUtils::BriefcaseManagerConflictResolution::Take != ud && AddonUtils::BriefcaseManagerConflictResolution::Reject != ud
+          ||AddonUtils::BriefcaseManagerConflictResolution::Take != du && AddonUtils::BriefcaseManagerConflictResolution::Reject != du)
+            {
+            Napi::TypeError::New(Env(), "Invalid conflict resolution value").ThrowAsJavaScriptException();\
+            return Napi::Number::New(Env(), 1);
+            }
+
+        return Napi::Number::New(Env(), (int)AddonUtils::SetBriefcaseManagerOptimisticConcurrencyControlPolicy(GetDgnDb(), uu, ud, du));
+        }
+
+    Napi::Value SetBriefcaseManagerPessimisticConcurrencyControlPolicy(const Napi::CallbackInfo& info)
+        {
+        return Napi::Number::New(Env(), (int)AddonUtils::SetBriefcaseManagerPessimisticConcurrencyControlPolicy(GetDgnDb()));
+        }
+
+    Napi::Value BriefcaseManagerStartBulkOperation(const Napi::CallbackInfo& info)
+        {
+        return Napi::Number::New(Env(), (int)AddonUtils::BriefcaseManagerStartBulkOperation(GetDgnDb()));
+        }
+
+    Napi::Value BriefcaseManagerEndBulkOperation(const Napi::CallbackInfo& info)
+        {
+        return Napi::Number::New(Env(), (int)AddonUtils::BriefcaseManagerEndBulkOperation(GetDgnDb()));
+        }
+
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
@@ -1450,6 +1482,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("getExtents", &NodeAddonDgnDb::GetExtents),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
+            InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NodeAddonDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
+            InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NodeAddonDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
+            InstanceMethod("briefcaseManagerStartBulkOperation", &NodeAddonDgnDb::BriefcaseManagerStartBulkOperation),
+            InstanceMethod("briefcaseManagerEndBulkOperation", &NodeAddonDgnDb::BriefcaseManagerEndBulkOperation),
         });
 
         target.Set("NodeAddonDgnDb", t);

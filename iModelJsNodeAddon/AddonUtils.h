@@ -63,6 +63,14 @@ struct AddonUtils
         static BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement& stmt, JsonValueCR bindings);
         };
 
+    /** How to handle a conflict */
+    enum class BriefcaseManagerConflictResolution {
+    /** Reject the incoming change */
+    Reject = 0,
+    /** Accept the incoming change */
+    Take = 1,
+    };
+    
     typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
@@ -95,11 +103,17 @@ struct AddonUtils
     static void GetRootSubjectInfo(JsonValueR rootSubjectInfo, DgnDbCR dgndb);
     static void GetExtents(JsonValueR extentsJson, DgnDbCR dgndb);
 
+    static DgnPlatformLib::Host::RepositoryAdmin& GetRepositoryAdmin();
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElementById(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemIdJson, BeSQLite::DbOpcode opcode);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForModel(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToLockModel(IBriefcaseManager::Request& req, DgnDbR dgndb, DgnModelId mid, LockLevel level);
+
+    static RepositoryStatus SetBriefcaseManagerOptimisticConcurrencyControlPolicy(DgnDbR dgndb, BriefcaseManagerConflictResolution uu, BriefcaseManagerConflictResolution ud, BriefcaseManagerConflictResolution du);
+    static RepositoryStatus SetBriefcaseManagerPessimisticConcurrencyControlPolicy(DgnDbR dgndb);
+    static RepositoryStatus BriefcaseManagerStartBulkOperation(DgnDbR dgndb);
+    static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
     static NativeLogging::ILogger& GetLogger();
     
