@@ -429,11 +429,6 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRule
     GetLocaters().SetRulesetCallbacksHandler(this);
     GetUserSettingsManager().SetChangesListener(this);
     connections.AddListener(*this);
-
-    BeFileName supplementalRulesetsDirectory = paths.GetAssetsDirectory();
-    supplementalRulesetsDirectory.append(L"UI\\");
-    supplementalRulesetsDirectory.append(L"PresentationRules\\");
-    GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalRulesetsDirectory.GetNameUtf8().c_str())));
     }
 
 /*---------------------------------------------------------------------------------**//**

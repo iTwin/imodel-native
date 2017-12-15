@@ -188,6 +188,11 @@ private:
         m_wrapped->UnregisterEventHandler(*this);
         }
 protected:
+    void _OnClassUsed(ECDbCR db, ECClassCR ecClass, bool polymorphically) override
+        {
+        // wip: may need to pass to DgnClientFx executor
+        m_wrapped->NotifyClassUsed(db, ecClass, polymorphically);
+        }
     void _OnECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) override
         {
         if (nullptr == m_connections.GetConnection(db))
