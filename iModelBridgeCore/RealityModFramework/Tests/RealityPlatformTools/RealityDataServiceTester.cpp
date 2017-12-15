@@ -996,6 +996,29 @@ TEST_F(RealityDataServiceFixture, RealityDataByIdRequestGoodRequest)
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataExtendedByIdRequestGoodRequest)
+    {
+    EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataExtended/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\SingleRealityData-Helsinki.json");
+        }));
+
+    RealityDataExtendedByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a5");
+    RawServerResponse rawResponse{};
+
+    auto realityData = s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(realityData->GetName(), "Helsinki");
+
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
 TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestGoodRequest)
 	{
     EXPECT_CALL(*s_errorClass, errorCallBack(_, _)).Times(0);

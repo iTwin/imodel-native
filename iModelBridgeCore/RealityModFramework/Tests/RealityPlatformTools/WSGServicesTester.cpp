@@ -970,3 +970,58 @@ TEST_F(WSGServicesRequestFixture, WSGObjectListPagedRequestPrepareString)
 	EXPECT_STREQ(stringRequest.c_str(), "https://myserver.com/v99/Repositories/repoID/mySchema/myClass?$skip=0&$top=25");
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(WSGServicesRequestFixture, ProxyTest)
+    {
+    ProxyManager pm = ProxyManager::GetInstance();
+    pm.SetProxyUrlAndCredentials("test", "test2");
+    Utf8String url, cred;
+    pm.GetCurrentProxyUrlAndCredentials(url, cred);
+    EXPECT_TRUE(url.Equals("test"));
+    EXPECT_TRUE(cred.Equals("test2"));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(WSGServicesRequestFixture, ConnectTokenManagerTest)
+    {
+    ConnectTokenManager ctm = ConnectTokenManager::GetInstance();
+    EXPECT_TRUE(!ctm.GetToken().empty());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(WSGServicesRequestFixture, CertificateTest)
+    {
+    BeFileName cert = BeFileName(L"C:/CertificateHere/cert.pem");
+    WSGRequest::GetInstance().SetCertificatePath(cert);
+    EXPECT_TRUE(cert.Equals(WSGRequest::GetInstance().GetCertificatePath()));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Remi.Charbonneau                         05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(WSGServicesRequestFixture, PagedRequestOperations)
+    {
+    WSGObjectListPagedRequest pReq = WSGObjectListPagedRequest("myserver.com", "99", "repoID", "mySchema", "myClass");
+
+    pReq.SetPageSize(20);
+    EXPECT_TRUE(pReq.GetPageSize() == 20);
+
+    pReq.SetStartIndex(5);
+    EXPECT_TRUE(pReq.GetStartIndex() == 5);
+   
+    pReq.RewindPage();
+    EXPECT_TRUE(pReq.GetStartIndex() == 0);
+
+    pReq.GoToPage(50);
+    EXPECT_TRUE(pReq.GetStartIndex() == (50 * pReq.GetPageSize()));
+
+    /*WSGObjectListPagedRequest pReqCopy = pReq;
+    EXPECT_TRUE(pReqCopy.GetPageSize() == 20);
+    EXPECT_TRUE(pReqCopy.GetStartIndex() == 50);*/
+    }

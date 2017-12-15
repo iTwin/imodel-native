@@ -57,6 +57,30 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatCloneTest)
+    {
+    RealityDataEnterpriseStat stat = RealityDataEnterpriseStat();
+
+    stat.SetNbRealityData(100);
+    stat.SetTotalSizeKB(1000);
+    stat.SetOrganizationId("orgID");
+    stat.SetUltimateId("ultID");
+    stat.SetUltimateSite("ultSite");
+    stat.SetDate(DateTime::GetCurrentTimeUtc());
+
+    ConnectedRealityDataEnterpriseStat cStat = ConnectedRealityDataEnterpriseStat(stat);
+
+    EXPECT_EQ(stat.GetNbRealityData(), cStat.GetNbRealityData());
+    EXPECT_EQ(stat.GetTotalSizeKB(), cStat.GetTotalSizeKB());
+    EXPECT_EQ(stat.GetOrganizationId(), cStat.GetOrganizationId());
+    EXPECT_EQ(stat.GetUltimateId(), cStat.GetUltimateId());
+    EXPECT_EQ(stat.GetUltimateSite(), cStat.GetUltimateSite());
+    EXPECT_EQ(stat.GetDate(), cStat.GetDate());
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  10/2017
+//=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipIdRequestTest)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
