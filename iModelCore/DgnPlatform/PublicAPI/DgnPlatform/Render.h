@@ -1493,7 +1493,7 @@ public:
 
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
 
-    void SetCurrentClip(ClipVectorPtr clip) { m_currClip = clip; }
+    void SetCurrentClip(ClipVectorP clip) { m_currClip = clip; }
     ClipVectorCP GetCurrentClip() const {return m_currClip.get();}
     CreateParams const& GetCreateParams() const {return m_createParams;}
     DgnDbR GetDgnDb() const {return m_createParams.GetDgnDb();}
