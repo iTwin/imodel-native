@@ -1260,7 +1260,7 @@ int HitList::AddHit (HitDetail* newHit, bool allowDuplicates, bool comparePriori
         int comparison = Compare(currHit->get(), newHit, comparePriority, true);
         if (comparison >= 0)
             continue;
-        index = (rend() - currHit);
+        index = std::distance(begin(), currHit.base());
         break;
         }
 
