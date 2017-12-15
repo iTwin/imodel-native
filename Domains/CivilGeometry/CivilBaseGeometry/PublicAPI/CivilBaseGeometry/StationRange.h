@@ -13,6 +13,7 @@
 BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StationRange)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(StationRangeEdit)
 
 //=======================================================================================
 // Possible overlap types: (refer to comment in StationRange.h)
