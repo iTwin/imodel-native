@@ -20,6 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 TableSpaceSchemaManager const* SchemaManager::Dispatcher::GetManager(Utf8CP tableSpaceName) const
     {
+    BeMutexHolder lock(m_mutex);
     if (DbTableSpace::IsAny(tableSpaceName))
         {
         BeAssert(false && "tableSpaceName must not be empty for this call");
@@ -42,6 +43,7 @@ TableSpaceSchemaManager const* SchemaManager::Dispatcher::GetManager(Utf8CP tabl
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaManager::Dispatcher::Iterable SchemaManager::Dispatcher::GetIterable(Utf8CP tableSpaceName) const
     {
+    BeMutexHolder lock(m_mutex);
     if (DbTableSpace::IsAny(tableSpaceName))
         return Iterable(*this);
 
@@ -56,6 +58,7 @@ SchemaManager::Dispatcher::Iterable SchemaManager::Dispatcher::GetIterable(Utf8C
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaManager::Dispatcher::AddManager(DbTableSpace const& tableSpace) const
     {
+    BeMutexHolder lock(m_mutex);
     if (!tableSpace.IsAttached())
         {
         BeAssert(tableSpace.IsValid() && "Should have been caught before as this method is expected to be called during attaching the db");
@@ -80,6 +83,7 @@ BentleyStatus SchemaManager::Dispatcher::AddManager(DbTableSpace const& tableSpa
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaManager::Dispatcher::RemoveManager(DbTableSpace const& tableSpace) const
     {
+    BeMutexHolder lock(m_mutex);
     if (!tableSpace.IsAttached())
         {
         BeAssert(tableSpace.IsAttached());
@@ -126,8 +130,6 @@ void SchemaManager::Dispatcher::InitMain()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSchemaPtr SchemaManager::Dispatcher::LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR ctx, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -147,8 +149,6 @@ ECSchemaPtr SchemaManager::Dispatcher::LocateSchema(ECN::SchemaKeyR key, ECN::Sc
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECSchemaCP> SchemaManager::Dispatcher::GetSchemas(bool loadSchemaEntities, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return bvector<ECSchemaCP>();
@@ -173,9 +173,7 @@ bool SchemaManager::Dispatcher::ContainsSchema(Utf8StringCR schemaNameOrAlias, S
         BeAssert(false && "schemaNameOrAlias argument to ContainsSchema must not be null or empty string.");
         return false;
         }
-
-    BeMutexHolder lock(m_mutex);
-
+    
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return false;
@@ -195,8 +193,6 @@ bool SchemaManager::Dispatcher::ContainsSchema(Utf8StringCR schemaNameOrAlias, S
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSchemaCP SchemaManager::Dispatcher::GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -216,8 +212,6 @@ ECSchemaCP SchemaManager::Dispatcher::GetSchema(Utf8StringCR schemaNameOrAlias, 
 //+---------------+---------------+---------------+---------------+---------------+------
 ECClassCP SchemaManager::Dispatcher::GetClass(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -237,8 +231,6 @@ ECClassCP SchemaManager::Dispatcher::GetClass(Utf8StringCR schemaNameOrAlias, Ut
 //+---------------+---------------+---------------+---------------+---------------+------
 ECClassCP SchemaManager::Dispatcher::GetClass(ECN::ECClassId classId, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -258,8 +250,6 @@ ECClassCP SchemaManager::Dispatcher::GetClass(ECN::ECClassId classId, Utf8CP tab
 //+---------------+---------------+---------------+---------------+---------------+------
 ECClassId SchemaManager::Dispatcher::GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return ECClassId();
@@ -279,8 +269,6 @@ ECClassId SchemaManager::Dispatcher::GetClassId(Utf8StringCR schemaNameOrAlias, 
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMap const* SchemaManager::Dispatcher::GetClassMap(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -300,8 +288,6 @@ ClassMap const* SchemaManager::Dispatcher::GetClassMap(Utf8StringCR schemaNameOr
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMap const* SchemaManager::Dispatcher::GetClassMap(ECClassCR ecClass, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -320,8 +306,6 @@ ClassMap const* SchemaManager::Dispatcher::GetClassMap(ECClassCR ecClass, Utf8CP
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaManager::Dispatcher::LoadDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return ERROR;
@@ -340,8 +324,6 @@ BentleyStatus SchemaManager::Dispatcher::LoadDerivedClasses(ECN::ECClassCR baseC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP SchemaManager::Dispatcher::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -361,8 +343,6 @@ ECEnumerationCP SchemaManager::Dispatcher::GetEnumeration(Utf8StringCR schemaNam
 //+---------------+---------------+---------------+---------------+---------------+------
 KindOfQuantityCP SchemaManager::Dispatcher::GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -382,8 +362,6 @@ KindOfQuantityCP SchemaManager::Dispatcher::GetKindOfQuantity(Utf8StringCR schem
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyCategoryCP SchemaManager::Dispatcher::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
-    BeMutexHolder lock(m_mutex);
-
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
         return nullptr;
@@ -507,28 +485,30 @@ BentleyStatus TableSpaceSchemaManager::TryGetClassMap(ClassMap*& classMap, Class
         BeAssert(false && "ECClass must have an ECClassId when mapping to the ECDb.");
         return ERROR;
         }
-
-    classMap = DoGetClassMap(ecClass);
-    if (classMap != nullptr)
+    {
+    BeMutexHolder(GetECDb().GetImpl().GetMutex());
+    classMap = nullptr;
+    auto it = m_classMapDictionary.find(ecClass.GetId());
+    if (m_classMapDictionary.end() != it)
+        {
+        classMap = it->second.get();
         return SUCCESS;
+        }
+    }
+
+    BeSqliteDbMutexHolder(const_cast<ECDb&>(GetECDb()));
+    BeMutexHolder(GetECDb().GetImpl().GetMutex());
+    auto it = m_classMapDictionary.find(ecClass.GetId());
+    if (m_classMapDictionary.end() != it)
+        {
+        classMap = it->second.get();
+        return SUCCESS;
+        }
 
     //lazy loading the class map implemented with const-casting the actual loading so that the 
     //get method itself can remain const (logically const)
     return TryLoadClassMap(classMap, ctx, ecClass);
     }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan         08/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClassMap* TableSpaceSchemaManager::DoGetClassMap(ECClassCR ecClass) const
-    {
-    auto it = m_classMapDictionary.find(ecClass.GetId());
-    if (m_classMapDictionary.end() == it)
-        return nullptr;
-    else
-        return it->second.get();
-    }
-
 
 //---------------------------------------------------------------------------------------
 //* @bsimethod                                 Affan.Khan                           07 / 2012
@@ -642,7 +622,6 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         }
 
     BeMutexHolder lock(m_mutex);
-
     bvector<ECSchemaCP> schemasToMap;
     if (SUCCESS != PersistSchemas(ctx, schemasToMap, schemas))
         return ERROR;

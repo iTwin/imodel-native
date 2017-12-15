@@ -35,7 +35,6 @@ private:
     TableSpaceSchemaManager(TableSpaceSchemaManager const&) = delete;
     TableSpaceSchemaManager& operator=(TableSpaceSchemaManager const&) = delete;
 
-    ClassMap* DoGetClassMap(ECN::ECClassCR) const;
     BentleyStatus TryLoadClassMap(ClassMap*&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
 
 protected:

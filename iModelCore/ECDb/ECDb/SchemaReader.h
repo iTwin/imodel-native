@@ -106,21 +106,46 @@ struct SchemaReader final
 
     private:
         TableSpaceSchemaManager const& m_schemaManager;
+        struct ReaderCache final
+            {
+            private:
+                ECDb const& m_ecdb;
+                mutable std::map<ECN::ECSchemaId, std::unique_ptr<SchemaDbEntry>> m_schemaCache;
+                mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
+                mutable std::map<ECN::ECEnumerationId, std::unique_ptr<EnumDbEntry>> m_enumCache;
+                mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<KindOfQuantityDbEntry>> m_koqCache;
+                mutable std::map<ECN::PropertyCategoryId, std::unique_ptr<PropertyCategoryDbEntry>> m_propCategoryCache;
+                mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
+            public:
+                explicit ReaderCache(ECDb const& ecdb):m_ecdb(ecdb)
+                    {}
+                void Clear() const;
+                SchemaDbEntry* Find(ECN::ECSchemaId id) const;
+                ClassDbEntry* Find(ECN::ECClassId id) const;
+                EnumDbEntry* Find(ECN::ECEnumerationId id) const;
+                KindOfQuantityDbEntry* Find(ECN::KindOfQuantityId id) const;
+                PropertyCategoryDbEntry* Find(ECN::PropertyCategoryId id) const;
+                ECN::ECClassId Find(Utf8StringCR schemaName, Utf8StringCR className) const;
+                bool HasClassEntry(ECN::ECClassId id) const;
+                void SetClassEntryToNull(ECN::ECClassId id) const;
+                bool Insert(std::unique_ptr<SchemaDbEntry> entry) const;
+                bool Insert(std::unique_ptr<ClassDbEntry> entry) const;
+                bool Insert(std::unique_ptr<EnumDbEntry> entry) const;
+                bool Insert(std::unique_ptr<KindOfQuantityDbEntry> entry) const;
+                bool Insert(std::unique_ptr<PropertyCategoryDbEntry> entry) const;
+                bool Insert(Utf8StringCR schemaName, Utf8StringCR className, ECN::ECClassId id) const;
+            };
 
-        mutable std::map<ECN::ECSchemaId, std::unique_ptr<SchemaDbEntry>> m_schemaCache;
-        mutable std::map<ECN::ECClassId, std::unique_ptr<ClassDbEntry>> m_classCache;
-        mutable std::map<ECN::ECEnumerationId, std::unique_ptr<EnumDbEntry>> m_enumCache;
-        mutable std::map<ECN::KindOfQuantityId, std::unique_ptr<KindOfQuantityDbEntry>> m_koqCache;
-        mutable std::map<ECN::PropertyCategoryId, std::unique_ptr<PropertyCategoryDbEntry>> m_propCategoryCache;
-        mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
-
+        ReaderCache m_cache;
         //not copyable
         SchemaReader(SchemaReader const&) = delete;
         SchemaReader& operator=(SchemaReader const&) = delete;
 
+        std::unique_ptr<BeMutexHolder> LockECDb() const;
+        std::unique_ptr<BeSqliteDbMutexHolder> LockDb() const;
+
         ECN::ECSchemaCP GetSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetClass(Context&, ECN::ECClassId) const;
-        bool TryGetClassFromCache(ECN::ECClassP&, ECN::ECClassId) const;
         BentleyStatus LoadSchemaEntitiesFromDb(SchemaDbEntry*, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
         BentleyStatus LoadSchemaFromDb(SchemaDbEntry*&, ECN::ECSchemaId) const;
         BentleyStatus LoadClassComponentsFromDb(Context&, ECN::ECClassR) const;
@@ -144,7 +169,7 @@ struct SchemaReader final
         CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
 
     public:
-        SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaManager(manager) {}
+        SchemaReader(TableSpaceSchemaManager const& manager);
         ~SchemaReader() {}
 
         BentleyStatus GetSchemas(bvector<ECN::ECSchemaCP>&, bool loadSchemaEntities) const;
