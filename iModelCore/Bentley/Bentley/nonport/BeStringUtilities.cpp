@@ -1837,7 +1837,7 @@ static _locale_t getEnUsLocale()
 int BentleyApi::BeUtf8StringGuessLength(CharCP fmt, va_list ap)
     {
 #ifdef _MSC_VER
-    return _vscprintf_l(fmt, getEnUsLocale(), ap);
+    return _vscprintf_p_l(fmt, getEnUsLocale(), ap);
 #else
     return FORMAT_RESULT_BUFFER_GUESS;
 #endif
@@ -1849,7 +1849,7 @@ int BentleyApi::BeUtf8StringGuessLength(CharCP fmt, va_list ap)
 int BentleyApi::BeWStringGuessLength(WCharCP fmt, va_list ap)
     {
 #ifdef _MSC_VER
-    return _vscwprintf(fmt, ap);
+    return _vscwprintf_p(fmt, ap);
 #else
     return FORMAT_RESULT_BUFFER_GUESS;
 #endif
@@ -1869,7 +1869,7 @@ int BentleyApi::BeUtf8StringSprintf(Utf8String& outStr, CharCP fmt, va_list ap, 
     ScopedArray<Utf8Char> buffer(initialLengthGuess+1);
 
 #ifdef _MSC_VER
-        auto result = _vsnprintf_l(buffer.GetData(), initialLengthGuess + 1, fmt, getEnUsLocale(), ap);
+        auto result = _vsprintf_p_l(buffer.GetData(), initialLengthGuess + 1, fmt, getEnUsLocale(), ap);
 #else
         auto result = vsnprintf(buffer.GetData(), initialLengthGuess + 1, fmt, ap);
 #endif
@@ -1901,7 +1901,11 @@ int BentleyApi::BeWStringSprintf(WString& outStr, WCharCP fmt, va_list ap, int i
 
     ScopedArray<wchar_t> buffer(initialLengthGuess+1);    // output buffer must have space for trailing \0
 
-    auto result = vswprintf(buffer.GetData(), initialLengthGuess+1, fmt, ap); // output buffer must have space for trailing \0
+#ifdef _MSC_VER
+    auto result = _vswprintf_p(buffer.GetData(), initialLengthGuess + 1, fmt, ap); // output buffer must have space for trailing \0
+#else
+    auto result = vswprintf(buffer.GetData(), initialLengthGuess + 1, fmt, ap); // output buffer must have space for trailing \0
+#endif
 
     if (result < 0)   // Note: on Windows (MSVC) result will never by < 0. That's because BeWStringGuessLength (which calls _vscwprintf) will always give an accurate size for buffer, and so the formatted string will always fit.
         return result;
