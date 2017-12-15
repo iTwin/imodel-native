@@ -189,11 +189,7 @@ public:
     DPoint3d pvc;
     DPoint3d pvt;
 
-    double length;
-    bool holdLength;
-
     double radius;
-    DPoint3d center;
     Orientation orientation;
     };
     //=======================================================================================
@@ -234,7 +230,7 @@ private:
 public:
     CIVILBASEGEOMETRY_EXPORT AlignmentPVI();
     CIVILBASEGEOMETRY_EXPORT void InitGradeBreak(DPoint3dCR pviPoint);
-    CIVILBASEGEOMETRY_EXPORT void InitArc(DPoint3dCR pviPoint, double radius, double length = 0.0, bool holdLength = false);
+    CIVILBASEGEOMETRY_EXPORT void InitArc(DPoint3dCR pviPoint, double radius);
     CIVILBASEGEOMETRY_EXPORT void InitParabola(DPoint3dCR pviPoint, double length = 0.0, bool holdLength = false);
     void InitInvalid(Type pviType); //! @private
 
@@ -245,6 +241,11 @@ public:
 
     // Returns the x-range this PVI occupies
     CIVILBASEGEOMETRY_EXPORT StationRange GetStationRange() const;
+    // Returns the station range from PVC to PVI
+    CIVILBASEGEOMETRY_EXPORT StationRange GetStationRangePVCPVI() const;
+    // Returns the station range from PVI to PVT
+    CIVILBASEGEOMETRY_EXPORT StationRange GetStationRangePVIPVT() const;
+
     // Returns the PVC location
     // @remarks for GradeBreak, returns the PVI
     CIVILBASEGEOMETRY_EXPORT DPoint3dCR GetPVCLocation() const;
@@ -254,16 +255,8 @@ public:
     // @remarks for GradeBreak, returns the PVI
     CIVILBASEGEOMETRY_EXPORT DPoint3dCR GetPVTLocation() const;
 
+    CIVILBASEGEOMETRY_EXPORT bool SetPVILocation(DPoint3dCR pviPoint);
     CIVILBASEGEOMETRY_EXPORT static double Slope(DPoint3dCR p0, DPoint3dCR p1);
-
-    // Updates the length on PVIs that supports it
-    void UpdateLength(double length);
-    // Updates PVC.z on a PVI that supports it
-    // @remarks returns the range over which changes happened
-    StationRange UpdatePVCz(AlignmentPVICR prevPVI);
-    // Updates PVT.z on a PVI that supports it
-    // @remarks returns the range over which changes happened
-    StationRange UpdatePVTz(AlignmentPVICR nextPVI);
 
     GradeBreakInfoCP GetGradeBreak() const  { return (TYPE_GradeBreak == m_type) ? &m_gradeBreakInfo : nullptr; }
     GradeBreakInfoP GetGradeBreakP()        { return (TYPE_GradeBreak == m_type) ? &m_gradeBreakInfo : nullptr; }
@@ -427,6 +420,19 @@ public:
 
 
 protected:
+    //=======================================================================================
+    // @bsiclass
+    //=======================================================================================
+    struct VerticalEditResult
+    {
+    StationRange modifiedRange;
+    CurveVectorPtr vtCurve;
+    };
+    // Helper to reduce duplication of code
+    // Calls _SolvePVI() on adjacent PVIs, _ValidatePVIs() and _BuildCurveVectorFromPVIs().
+    VerticalEditResult SolveValidateAndBuild(bvector<AlignmentPVI>& pvis, size_t index, bool isDelete) const;
+
+    bool AreStationsEqual(double station0, double station1) const;
     bool AreStationsEqual(DPoint3dCR p0, DPoint3dCR p1) const;
     // Checks whether the PVI at the given index overlaps the previous or next PVI
     // @remarks only looks for PVI and ignores PVC/PVT
@@ -434,8 +440,14 @@ protected:
     // Computes the maximum length a PVI can have and still fit in between adjacent PVIs
     double ComputeMaximumLength(bvector<AlignmentPVI> const& pvis, size_t index) const;
 
-    bool GetArcPVI(AlignmentPVIR pi, size_t primitiveIdx) const;
-    bool GetParabolaPVI(AlignmentPVIR pvi, size_t primitiveIdx) const;
+    // Returns the index of the first PVI whose station is greater or equal to the station
+    // @remarks returns pvis.size() when all PVIs have smaller stations
+    size_t FindNexOrEqualPVIIndex(bvector<AlignmentPVI> const& pvis, double station) const;
+    size_t FindEqualPVIIndex(bvector<AlignmentPVI> const& pvis, double station) const;
+    bool FindEqualPVCorPVT(size_t& pviIndex, bool& isPVC, bvector<AlignmentPVI> const& pvis, double station) const;
+    
+    bool LoadVerticalArcData(AlignmentPVIR pi, ICurvePrimitiveCR primitiveArc) const;
+    bool LoadVerticalParabolaData(AlignmentPVIR pvi, ICurvePrimitiveCR primitiveParabola) const;
 
     // Creates an arc primitive
     // @return Arc or invalid primitive
@@ -444,6 +456,12 @@ protected:
     // @return MSBSpline or invalid primitive
     ICurvePrimitivePtr BuildVerticalParabola(AlignmentPVI::ParabolaInfoCR info) const;
 
+    // Fits the arc PVI given the arc radius and adjacent PVIs
+    // Updates the PVI information upon success
+    bool SolveArcPVI(bvector<AlignmentPVI>& pis, size_t index) const;
+    // Fits the parabola PVI given length and adjacent PVIs
+    // Updates the PVI information upon success
+    bool SolveParabolaPVI(bvector<AlignmentPVI>& pis, size_t index) const;
     //! Builds a CurveVector off a vector of PVIs
     //! @remarks caller should make sure all PVIs are solved and validated before calling this
     CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr _BuildCurveVectorFromPVIs(bvector<AlignmentPVI> const& pvis) const;
@@ -468,26 +486,35 @@ public:
     // return the maximum grade change |G1-G2| for the vertical design
     CIVILBASEGEOMETRY_EXPORT virtual double MaximumGradeChangeInPercent ();
 
+#endif
     // Editing Tools
     // Allow the move elevation of a pvi, will return invalid if appropriate
-    CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr MovePVI (DPoint3d fromPt, DPoint3d toPt, StationRangeEditR editRange);
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MovePVI(size_t index, DPoint3dCR toPt, StationRangeEditP pRangeEdit = nullptr) const;
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MovePVI(size_t index, AlignmentPVIR inOutPVI, StationRangeEditP pRangeEdit = nullptr) const;
     // allow the move of a tangent segment up or down (pass the old center x,z and new center x, z)
-    CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr MoveVerticalTangent (DPoint3d fromPt, DPoint3d toPt, StationRangeEditR editRange);
-    // Allow the move of a pvc or pvt based on station.  Will return invalid if the result
-    // produces any overlapping curve or a 0 or negative length curve
-    CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr MovePVCorPVT (double fromSta, double toSta, StationRangeEditR editRange);
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MoveVerticalTangent(DPoint3dCR fromPt, DPoint3dCR toPt, StationRangeEditP pRAngeEdit = nullptr) const;
+    // Allow the move of a parabola pvc or pvt based on station. Result may be invalid
+    // Updates the length based on the new position of the pvc/pvt and the 'holdLength' flag
+    //&&AG needswork with 'holdLength' property.
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MoveParabolaPVCorPVT(double fromDistanceAlong, double toDistanceAlong, StationRangeEditP pEditRange = nullptr) const;
+    // Allow the move of an arc pvc or pvt based on station. Result may be invalid
+    // Updates the arc radius based on the new position of the pvc/pvt
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MoveArcPVCorPVT(double fromDistanceAlong, double toDistanceAlong, StationRangeEditP pEditRange = nullptr) const;
     // insert a pvi to a vertical alignment
-    CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr InsertPVI (DPoint3d pviPt, double lengthOfCurve, StationRangeEditR editRange);
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr InsertPVI(AlignmentPVICR pi, StationRangeEditP pRangeEdit = nullptr) const;
     // delete a pvi in a vertical alignment
-    CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr DeletePVI (DPoint3d pviPt, StationRangeEditR editRange);
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr DeletePVI(DPoint3dCR pviPoint, StationRangeEditP pRangeEdit = nullptr) const;
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr DeletePVI(size_t index, StationRangeEditP pRangeEdit = nullptr) const;
+    // remove all PVIS between station range, primary use case is the removal of a grade crossing when an intersection changes
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr DeletePVIs(StationRangeCR range, StationRangeEditP pRangeEdit = nullptr) const;
+
+#if 0
     // enforce pvi's to have some distance, unless no grade change
     CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr ValidateVerticalData (bool updateInternalCurveVector = false);
     // force a vertical curve or tangent through a point (point in x, z)
     CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr ForceThroughPoint (DPoint3d pt, StationRangeEditR editRange);
     // force a grade at a station, will hold the previous PVI and modify beyond.
     CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr ForceGradeAtStation (const double& station, const double& slopeAbsolute, StationRangeEditR editRange);
-    // remove all PVIS between station range, primary use case is the removal of a grade crossing when an intersection changes
-    CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr RemovePVIs (const double& fromSta, const double& toSta, StationRangeEditR editRange);
 
     // Add data for an start intersection
     CIVILBASEGEOMETRY_EXPORT virtual bool InsertStartIntersection (CurveVectorCR drapeVector, double lengthofgradeapproachinmeters, double endSlope, StationRangeEditP editP = nullptr);
@@ -513,7 +540,8 @@ public:
     CIVILBASEGEOMETRY_EXPORT StationRangeEdit ComputeHorizontalEditRange (CurveVectorCR newHorizontal);
 #endif
     CIVILBASEGEOMETRY_EXPORT bvector<AlignmentPVI> GetPVIs() const;
-
+    // get a specific AlignmentPVI
+    CIVILBASEGEOMETRY_EXPORT bool GetPVI(AlignmentPVIR pvi, size_t index) const;
 
 #if 0
 public:

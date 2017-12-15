@@ -13,6 +13,7 @@
 BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StationRange)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(StationRangeEdit)
 
 //=======================================================================================
 // Possible overlap types: (refer to comment in StationRange.h)
@@ -140,6 +141,7 @@ public:
 public:
     // Creates the object with (reversed) infinite range
     StationRange() : startStation(DBL_MAX), endStation(-DBL_MAX) {}
+    StationRange(double station) : startStation(station), endStation(station) {}
     StationRange(double start, double end) : startStation(start), endStation(end) {}
 
     // Should always do comparisons using the appropriate method
@@ -175,20 +177,18 @@ public:
 //=======================================================================================
 struct StationRangeEdit
 {
+public:
     StationRange preEditRange;
     StationRange postEditRange;
 
+public:
     StationRangeEdit() {}
     StationRangeEdit(StationRangeCR stationRange) : preEditRange(stationRange), postEditRange(stationRange) {}
     StationRangeEdit(StationRangeCR preEdit, StationRangeCR postEdit) : preEditRange(preEdit), postEditRange(postEdit) {}
 
     double Delta() const { return postEditRange.Length() - preEditRange.Length(); }
-    double Ratio() const
-        {
-        if (0.0 == preEditRange.Length())
-            return 1.0;
-        return postEditRange.Length() / preEditRange.Length();
-        }
+    double Ratio() const { return (0.0 == preEditRange.Length()) ? 1.0 : postEditRange.Length() / preEditRange.Length(); }
+
 }; // StationRangeEdit
 
 END_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE

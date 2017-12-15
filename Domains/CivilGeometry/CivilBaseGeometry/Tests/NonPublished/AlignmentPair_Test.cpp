@@ -64,6 +64,23 @@ void expectEqualCurves(CurveVectorCR expected, CurveVectorCR actual)
         EXPECT_EQ_DPOINT3D(eEnd, aEnd);
         }
     }
+//---------------------------------------------------------------------------------------
+// toleranced asserts
+// Make sure each primitive starts exactly where the previous primitive ends
+//---------------------------------------------------------------------------------------
+void expectCurveHasNoGaps(CurveVectorCR cv)
+    {
+    if (cv.empty())
+        return;
+
+    DPoint3d currStart, prevEnd, dummy;
+    for (size_t i = 1; i < cv.size(); ++i)
+        {
+        cv[i - 1]->GetStartEnd(dummy, prevEnd);
+        cv[i]->GetStartEnd(currStart, dummy);
+        EXPECT_EQ_DPOINT3D(prevEnd, currStart);
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // Creates an line alignment with:
@@ -1274,6 +1291,7 @@ void AlignmentPVI_Tests()
     EXPECT_EQ_DPOINT3D(disconnect, pvi.GetPVTLocation());
     EXPECT_EQ_DOUBLE(0.0, AlignmentPVI::Slope(pvi.GetPVCLocation(), pvi.GetPVILocation()));
     EXPECT_EQ_DOUBLE(0.0, AlignmentPVI::Slope(pvi.GetPVILocation(), pvi.GetPVTLocation()));
+    EXPECT_FALSE(pvi.SetPVILocation(DPoint3d::FromZero()));
 
     // GradeBreak
     pvi.InitGradeBreak(DPoint3d::FromOne());
@@ -1288,6 +1306,7 @@ void AlignmentPVI_Tests()
 
     EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().startStation);
     EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().endStation);
+    EXPECT_TRUE(pvi.SetPVILocation(DPoint3d::FromZero()));
 
     // Arc
     pvi.InitArc(DPoint3d::From(2, 0, 4), 60.0);
@@ -1295,7 +1314,6 @@ void AlignmentPVI_Tests()
     EXPECT_TRUE(nullptr != pvi.GetArcP());
     EXPECT_TRUE(pvi.IsInitialized());
     EXPECT_EQ(AlignmentPVI::TYPE_Arc, pvi.GetType());
-    pvi.GetArcP()->length = 20.0;
     pvi.GetArcP()->pvc.x -= 10.0;
     pvi.GetArcP()->pvt.x += 10.0;
     EXPECT_EQ_DPOINT3D(DPoint3d::From(-8, 0, 4), pvi.GetPVCLocation());
@@ -1304,6 +1322,7 @@ void AlignmentPVI_Tests()
     EXPECT_EQ_DOUBLE(-8.0, pvi.GetStationRange().startStation);
     EXPECT_EQ_DOUBLE(12.0, pvi.GetStationRange().endStation);
     EXPECT_EQ_DOUBLE(60.0, pvi.GetArc()->radius);
+    EXPECT_TRUE(pvi.SetPVILocation(DPoint3d::FromZero()));
 
     // Parabola
     pvi.InitParabola(DPoint3d::From(14.0, 0, 8), 204.0);
@@ -1321,6 +1340,12 @@ void AlignmentPVI_Tests()
     EXPECT_EQ_DPOINT3D(DPoint3d::From(19.0, 0, 7.0), pvi.GetPVTLocation());
     EXPECT_EQ_DOUBLE(9.0, pvi.GetStationRange().startStation);
     EXPECT_EQ_DOUBLE(19.0, pvi.GetStationRange().endStation);
+
+    EXPECT_EQ_DOUBLE(9.0, pvi.GetStationRangePVCPVI().startStation);
+    EXPECT_EQ_DOUBLE(14.0, pvi.GetStationRangePVCPVI().endStation);
+    EXPECT_EQ_DOUBLE(14.0, pvi.GetStationRangePVIPVT().startStation);
+    EXPECT_EQ_DOUBLE(19.0, pvi.GetStationRangePVIPVT().endStation);
+
     EXPECT_EQ_DOUBLE(10.0, pvi.GetParabola()->length);
     EXPECT_EQ_DOUBLE(0.2, AlignmentPVI::Slope(pvi.GetPVCLocation(), pvi.GetPVILocation()));
     EXPECT_EQ_DOUBLE(-0.2, AlignmentPVI::Slope(pvi.GetPVILocation(), pvi.GetPVTLocation()));
@@ -1341,6 +1366,11 @@ void AlignmentPVI_Tests()
     pvi.InitParabola(DPoint3d::FromOne(), 0.0);
     EXPECT_EQ_DOUBLE(0.0, pvi.GetParabola()->KValue());
     EXPECT_EQ_DOUBLE(0.0, pvi.GetParabola()->LengthFromK(60.0));
+
+    // Setting the PVI location should reset the PVC and PVT locations.
+    EXPECT_TRUE(pvi.SetPVILocation(DPoint3d::FromOne()));
+    EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().startStation);
+    EXPECT_EQ_DOUBLE(1.0, pvi.GetStationRange().endStation);
     }
 
 
@@ -1923,7 +1953,7 @@ void AlignmentPairEditor_MoveBS_MoveES()
     AlignmentPI::SCSInfoCP pSCS = pis[1].GetSCS();
     ASSERT_TRUE(nullptr != pSCS);
 
-    EXPECT_EQ_DOUBLE(67.0, pSCS->spiral1.length); // &&AG PLACEHOLDER
+    EXPECT_EQ_DOUBLE(67.0, pSCS->spiral1.length);
 
     // Try to move the BS point to make the spiral 25m long
     DVec3d vec1 = DVec3d::FromStartEndNormalize(pSCS->spiral1.endPoint, pSCS->spiral1.startPoint);
@@ -2142,283 +2172,571 @@ void AlignmentPairEditor_RemoveSpirals_AddSpirals()
     result = editor->AddSpirals(10, 5.0);
     EXPECT_FALSE(result.IsValid());
     }
-
-
-#if 0 //&&AG NEEDSWORK EDITOR
-//=======================================================================================
-//=======================================================================================
-// AlignmentPairEditor starts here
 //---------------------------------------------------------------------------------------
-// Creates a vertical alignment with:
-//  vt: (0, 0, 100) -> (length, 0, slope*length)
+// @betest                              Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-AlignmentPairEditorPtr createLinearVtAlignmentXZ(double length, double slope)
+void AlignmentPairEditor_GetPVIs()
     {
-    const double zEnd = slope * length;
+    AlignmentPairPtr pair = createLinearPair();
+    ASSERT_TRUE(pair.IsValid());
 
-    CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0, 0, 0), DPoint3d::From(length, 0, zEnd))));
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*pair);
+    ASSERT_TRUE(editor.IsValid());
 
-    return AlignmentPairEditor::CreateVerticalOnly(*vt, false);
-    }
+    // Straight line
+    bvector<AlignmentPVI> pvis = editor->GetPVIs();
+    ASSERT_EQ(2, pvis.size());
+    ASSERT_EQ(AlignmentPVI::TYPE_GradeBreak, pvis[0].GetType());
+    ASSERT_EQ(AlignmentPVI::TYPE_GradeBreak, pvis[1].GetType());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 800), pvis[0].GetGradeBreak()->pvi);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 815), pvis[1].GetGradeBreak()->pvi);
 
-
-
-
-//---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        10/2016
-//---------------------------------------------------------------------------------------
-void AlignmentPairEditor_RoadPVITests()
-    {
-    RoadPVI pvi(DPoint3d::FromZero(), 0.0);
-    EXPECT_EQ_DOUBLE(0.0, pvi.KValue());
-    EXPECT_EQ_DOUBLE(0.0, pvi.LengthFromK(0.0));
-    EXPECT_EQ_DOUBLE(0.0, pvi.LengthFromK(100.0));
-
-    RoadPVI pvi2(DPoint3d::FromOne(), 10.0);
-    EXPECT_EQ_DOUBLE(0.0, pvi2.KValue());
-    EXPECT_EQ_DOUBLE(0.0, pvi2.LengthFromK(0.0));
-    EXPECT_EQ_DOUBLE(0.0, pvi2.LengthFromK(100.0));
-
-    RoadPVI pvi3(DPoint3d::From(10.0, 0.0, 1.0), DPoint3d::FromZero(), DPoint3d::From(20.0, 0.0, 1.0), 20.0);
-    EXPECT_EQ_DOUBLE(2.0, pvi3.KValue());
-    EXPECT_EQ_DOUBLE(0, pvi3.LengthFromK(0.0));
-    EXPECT_EQ_DOUBLE(100.0, pvi3.LengthFromK(10.0));
-
-    RoadPVI pvi4(DPoint3d::From(30.0, 0.0, 12.0), DPoint3d::From(00.0, 0.0, 0.0), DPoint3d::From(60.0, 0.0, 0.0), 60.00);
-    EXPECT_EQ_DOUBLE(0.75, pvi4.KValue());
-    EXPECT_EQ_DOUBLE(0.0, pvi4.LengthFromK(0.0));
-    EXPECT_EQ_DOUBLE(4307.2, pvi4.LengthFromK(53.84));
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        11/2016
-//---------------------------------------------------------------------------------------
-void AlignmentPairEditor_Create()
-    {
-    CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-
-    //! Empty hz
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
-    EXPECT_TRUE(editor.IsValid()) << "Editor with empty hz is considered valid";
-
-    //! Hz with single line primitive
-    hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0))));
-    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::Create(*hz, nullptr);
-    EXPECT_TRUE(editor2.IsValid()) << "Failed to create editor with single hz primitive (no vt)";
-
-    //! Hz with single line primitive, empty vt
-    CurveVectorPtr emptyVt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    AlignmentPairEditorPtr editor3 = AlignmentPairEditor::Create(*hz, emptyVt.get());
-    EXPECT_TRUE(editor3.IsValid()) << "Failed to create editor with single hz primitive (empty vt)";
-
-    //! Vt-only
-    CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    AlignmentPairEditorPtr editor4 = AlignmentPairEditor::CreateVerticalOnly(*vt, false);
-    EXPECT_TRUE(editor4.IsValid()) << "Empty vertical alignment is considered valid";
-
-    // Create straight vt from [0, 0, 100] to [100, 0, 115]
-    vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0.0, 0.0, 100.0), DPoint3d::From(100.0, 0.0, 115.0))));
-
-    //! Hz with single line primitive, valid vt
-    AlignmentPairEditorPtr editor5 = AlignmentPairEditor::Create(*hz, vt.get());
-    EXPECT_TRUE(editor5.IsValid()) << "Failed to create editor with single hz primitive (valid vt)";
-    
-    //! Vt-only
-    AlignmentPairEditorPtr editor6 = AlignmentPairEditor::CreateVerticalOnly(*vt, false);
-    EXPECT_TRUE(editor6.IsValid());
-
-    //! Before using anywhere else, make sure the helper methods create something valid
-    AlignmentPairEditorPtr editor7 = createLinearVtAlignmentXZ(100.0, 0.0);
-    ASSERT_TRUE(editor7.IsValid());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        12/2016
-//---------------------------------------------------------------------------------------
-void AlignmentPairEditor_CreateFromSingleCurveVector()
-    {
-    CurveVectorPtr curve3d = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateFromSingleCurveVector(*curve3d);
-    EXPECT_FALSE(editor.IsValid());
-
-    bvector<DPoint3d> points;
-    points.push_back(DPoint3d::From(6400, 3200, 1408));
-    points.push_back(DPoint3d::From(6500, 3300, 1504.6));
-    points.push_back(DPoint3d::From(6501, 3301, 1504.7));
-    curve3d->push_back(ICurvePrimitive::CreateLineString(points));
-
-    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::CreateFromSingleCurveVector(*curve3d);
-    ASSERT_TRUE(editor2.IsValid());
-    EXPECT_TRUE(editor2->HorizontalCurveVector().IsValid());
-    EXPECT_TRUE(editor2->VerticalCurveVector().IsValid());
-
-    CurveVectorPtr hz2 = editor2->HorizontalCurveVector();
-    ASSERT_TRUE(hz2.IsValid());
-    ASSERT_EQ(2, hz2->size());
-    ASSERT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line, hz2->front()->GetCurvePrimitiveType());
-    ASSERT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line, hz2->back()->GetCurvePrimitiveType());
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(6400, 3200, 0), hz2->front()->GetLineCP()->point[0]);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(6500, 3300, 0), hz2->front()->GetLineCP()->point[1]);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(6500, 3300, 0), hz2->back()->GetLineCP()->point[0]);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(6501, 3301, 0), hz2->back()->GetLineCP()->point[1]);
-    
-    CurveVectorPtr vt2 = editor2->VerticalCurveVector();
-    ASSERT_TRUE(vt2.IsValid());
-    ASSERT_EQ(2, vt2->size());
-    ASSERT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line, vt2->front()->GetCurvePrimitiveType());
-    ASSERT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line, vt2->back()->GetCurvePrimitiveType());
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 1408), vt2->front()->GetLineCP()->point[0]);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(141.42135623730951, 0.0, 1504.6), vt2->front()->GetLineCP()->point[1]);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(141.42135623730951, 0.0, 1504.6), vt2->back()->GetLineCP()->point[0]);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(142.83556979968262, 0.0, 1504.7), vt2->back()->GetLineCP()->point[1]);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        12/2016
-//---------------------------------------------------------------------------------------
-void AlignmentPairEditor_IsVerticalValid()
-    {
-    AlignmentPairEditorPtr editor = createLinearVtAlignmentXZ(100.0, 0.0);
-    EXPECT_TRUE(editor->IsVerticalValid());
+    AlignmentPVI pvi;
+    EXPECT_TRUE(editor->GetPVI(pvi, 0));
+    EXPECT_TRUE(editor->GetPVI(pvi, 1));
+    EXPECT_FALSE(editor->GetPVI(pvi, 2));
 
     editor->UpdateVerticalCurveVector(nullptr);
-    EXPECT_FALSE(editor->IsVerticalValid());
+    pvis = editor->GetPVIs();
+    EXPECT_EQ(0, pvis.size());
 
-    CurveVectorPtr empty = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    editor->UpdateVerticalCurveVector(empty.get());
-    EXPECT_FALSE(editor->IsVerticalValid());
+    // Unsupported primitive type
+    CurveVectorPtr vt = CurveVector::CreateLinear({DPoint3d::FromZero(), DPoint3d::From(10, 0, 5)});
+    editor->UpdateVerticalCurveVector(vt.get());
+    pvis = editor->GetPVIs();
+    EXPECT_EQ(0, pvis.size());
     }
-
-
 //---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        11/2016
+// @betest                              Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
 void AlignmentPairEditor_InsertPVI()
     {
-    AlignmentPairEditorPtr editor = createLinearVtAlignmentXZ(100, 0.0);
-    RoadStationRangeEdit editRange;
+    CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*vt);
+    EXPECT_FALSE(editor.IsValid());
 
-    //! Can't insert PVI at start
-    DPoint3d pvi = DPoint3d::FromZero();
-    CurveVectorPtr result = editor->InsertParabolicPVI(pvi, 0.0, editRange);
+    AlignmentPairPtr pair = createLinearPair();
+    editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    ASSERT_TRUE(editor.IsValid());
+
+    AlignmentPVI pvi;
+    CurveVectorPtr result = editor->InsertPVI(pvi);
     EXPECT_FALSE(result.IsValid());
-    CurveVectorPtr result2 = editor->InsertParabolicPVI(pvi, 12.4, editRange);
-    EXPECT_FALSE(result2.IsValid());
 
-    //! Can't insert PVI at end
-    DPoint3d pvi2 = DPoint3d::From(100.0, 0, 4.32);
-    CurveVectorPtr result3 = editor->InsertParabolicPVI(pvi2, 0.0,  editRange);
-    EXPECT_FALSE(result3.IsValid());
-    CurveVectorPtr result4 = editor->InsertParabolicPVI(pvi2, 12.4,  editRange);
-    EXPECT_FALSE(result4.IsValid());
+    // Insert over start PVI
+    pvi.InitGradeBreak(DPoint3d::FromZero());
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
 
-    //! Insert PVI on the alignment
-    DPoint3d pvi3 = DPoint3d::From(15.0, 0, 104.0);
-    CurveVectorPtr result5 = editor->InsertParabolicPVI(pvi3, 0.0,  editRange);
-    ASSERT_TRUE(result5.IsValid());
-    EXPECT_EQ_DOUBLE(1.0, editRange.Ratio());
+    // Insert over end PVI
+    pvi.InitGradeBreak(DPoint3d::From(100, 0, 0));
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
 
-    //! Insert PVI that fits 'tight'
-    CurveVectorPtr result6 = editor->InsertParabolicPVI(pvi3, 29.99,  editRange);
-    EXPECT_TRUE(result6.IsValid());
+    // Insert before first PVI
+    pvi.InitGradeBreak(DPoint3d::From(-10.0, 0, 0));
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid()) << "Cannot insert PVI at start of alignment";
 
-    //! Insert PVI that doesn't fit
-    CurveVectorPtr result7 = editor->InsertParabolicPVI(pvi3, 30.00,  editRange);
-    EXPECT_FALSE(result7.IsValid());
+    // Insert after last PVI
+    pvi.InitGradeBreak(DPoint3d::From(110.0, 0, 805));
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid()) << "Cannot insert PVI at end of alignment";
 
+    pvi.InitGradeBreak(DPoint3d::From(10.0, 0, 805));
+    StationRangeEdit rangeEdit;
+    result = editor->InsertPVI(pvi, &rangeEdit);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(2, result->size());
+    EXPECT_EQ(0.0, rangeEdit.preEditRange.startStation);
+    EXPECT_EQ(100.0, rangeEdit.preEditRange.endStation);
+    EXPECT_EQ(0.0, rangeEdit.postEditRange.startStation);
+    EXPECT_EQ(100.0, rangeEdit.postEditRange.endStation);
 
-    editor->UpdateVerticalCurveVector(result6.get());
+    // Arc PVI
+    pvi.InitArc(DPoint3d::From(-10, 0.0, 795.0), 0.0);
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
 
-    //! Insert PVI over existing PVI
-    CurveVectorPtr result8 = editor->InsertParabolicPVI(pvi3, 6.0,  editRange);
-    EXPECT_FALSE(result8.IsValid());
+    pvi.InitArc(DPoint3d::From(110, 0.0, 795.0), 0.0);
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    pvi.InitArc(DPoint3d::From(50, 0.0, 795.0), 0.0);
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid()) << "Arc PVI with radius of 0.0 is invalid";
+
+    pvi.GetArcP()->radius = 60.0;
+    result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    ASSERT_EQ(3, result->size());
+    expectCurveHasNoGaps(*result);
+
+    DPoint3d start, end;
+    result->at(1)->GetStartEnd(start, end);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(35.384328940962654, 0.0, 796.46156710590378), start);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(63.637992663468793, 0.0, 800.45519706538755), end);
+
+    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    ASSERT_TRUE(editor2.IsValid());
+    pvi.InitArc(DPoint3d::From(45, 0.0, 794.0), 20.0);
+    result = editor2->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    pvi.InitArc(DPoint3d::From(55.0, 0.0, 796.0), 20.0);
+    result = editor2->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    // Parabola PVI
+    pvi.InitParabola(DPoint3d::From(-10.0, 0, 795), 5.0);
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid()) << "Parabola PVI can't be the first PVI";
+
+    pvi.InitParabola(DPoint3d::From(110.0, 0, 795), 5.0);
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid()) << "Parabola PVI can't be the last PVI";
+
+    pvi.InitParabola(DPoint3d::From(50.0, 0.0, 795.0), 0.0);
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid()) << "Parabola PVI with length <= 0.0 is invalid";
+
+    pvi.InitParabola(DPoint3d::From(50.0, 0.0, 795.0), 120.0);
+    result = editor->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid()) << "Parabola PVI should not fit";
+
+    pvi.GetParabolaP()->length = 40.0;
+    result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    ASSERT_EQ(3, result->size());
+    expectCurveHasNoGaps(*result);
+
+    result->at(1)->GetStartEnd(start, end);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(30.0, 0, 797.0), start);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(70.0, 0, 803), end);
+
+    editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    ASSERT_TRUE(editor2.IsValid());
+
+    pvi.InitParabola(DPoint3d::From(35.0, 0.0, 794.0), 25.0);
+    result = editor2->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    pvi.InitParabola(DPoint3d::From(75.0, 0.0, 794.0), 25.0);
+    result = editor2->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    pvi.InitGradeBreak(DPoint3d::From(36.0, 0, 795.0));
+    result = editor2->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    pvi.InitGradeBreak(DPoint3d::From(62.0, 0, 800));
+    result = editor2->InsertPVI(pvi);
+    EXPECT_FALSE(result.IsValid());
     }
-
 //---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        11/2016
+// @betest                              Alexandre.Gagnon                        12/2017
 //---------------------------------------------------------------------------------------
-void AlignmentPairEditor_DeletePVI()
+    void AlignmentPairEditor_DeletePVI_DeletePVIs()
     {
-    AlignmentPairEditorPtr editor = createLinearVtAlignmentXZ(100, 0.0);
-    RoadStationRangeEdit editRange;
+    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    ASSERT_TRUE(editor.IsValid());
 
-    CurveVectorPtr vtWith3PIs = editor->InsertParabolicPVI(DPoint3d::From(15.0, 0, 104.0), 12.0,  editRange);
-    ASSERT_TRUE(vtWith3PIs.IsValid());
+    CurveVectorPtr result = editor->DeletePVI(0);
+    EXPECT_FALSE(result.IsValid()) << "Deleting First PVI should fail";
+    
+    result = editor->DeletePVI(1);
+    EXPECT_FALSE(result.IsValid()) << "Deleting Last PVI should fail";
 
-    editor->UpdateVerticalCurveVector(vtWith3PIs.get());
+    result = editor->DeletePVI(2);
+    EXPECT_FALSE(result.IsValid()) << "Deleting PVI with index out of bounds";
 
-    //! Can't delete PVI at start
-    CurveVectorPtr result = editor->DeletePVI(DPoint3d::FromZero(), editRange);
+    result = editor->DeletePVI(DPoint3d::FromZero());
     EXPECT_FALSE(result.IsValid());
 
-    //! Can't delete PVI at end
-    CurveVectorPtr result2 = editor->DeletePVI(DPoint3d::From(100, 0, 0), editRange);
-    EXPECT_FALSE(result2.IsValid());
+    result = editor->DeletePVI(DPoint3d::From(100, 0, 0));
+    EXPECT_FALSE(result.IsValid());
 
-    //! Delete PVI at wrong X location
-    CurveVectorPtr result3 = editor->DeletePVI(DPoint3d::From(14.0, 0, 104.0), editRange);
-    EXPECT_FALSE(result3.IsValid());
+    result = editor->DeletePVI(DPoint3d::From(50.0, 0, 0));
+    EXPECT_FALSE(result.IsValid());
+    
+    // Add a pvi and try to delete it
+    AlignmentPVI pvi;
+    pvi.InitGradeBreak(DPoint3d::From(50.0, 0, 805.0));
+    result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    editor->UpdateVerticalCurveVector(result.get());
 
-    //! Delete the center PVI.
-    //! notice this method doesn't care about z-value of the point we're passing. Only uses 'point.x'
-    CurveVectorPtr result4 = editor->DeletePVI(DPoint3d::From(15.0, 0, 999.0), editRange);
-    ASSERT_TRUE(result4.IsValid());
+    StationRangeEdit editRange;
+    result = editor->DeletePVI(DPoint3d::From(50.0, 0, 0), &editRange);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(1, result->size());
+
+    DPoint3d start, end;
+    result->GetStartEnd(start, end);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 800), start);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 815), end);
+    EXPECT_EQ_DOUBLE(0.0, editRange.preEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, editRange.preEditRange.endStation);
+    EXPECT_EQ_DOUBLE(0.0, editRange.postEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, editRange.postEditRange.endStation);
+
+    result = editor->DeletePVI(1);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(1, result->size());
+    editor->UpdateVerticalCurveVector(result.get());
+
+    // DeletePVIs. We need a few PVIs to test this properly
+
+    // Cannot delete if only start/end PVIs
+    result = editor->DeletePVIs(StationRange(0.0, 100.0));
+    EXPECT_FALSE(result.IsValid());
+
+    bvector<DPoint3d> pviPointsToAdd
+        {
+        DPoint3d::From(10.0, 0.0, 798),
+        DPoint3d::From(15.0, 0.0, 800),
+        DPoint3d::From(35.0, 0, 820),
+        DPoint3d::From(75, 0, 780),
+        DPoint3d::From(90, 0, 812)
+        };
+    for (auto& pviPoint : pviPointsToAdd)
+        {
+        pvi.InitGradeBreak(pviPoint);
+        result = editor->InsertPVI(pvi);
+        ASSERT_TRUE(result.IsValid());
+        editor->UpdateVerticalCurveVector(result.get());
+        }
+
+    ASSERT_EQ(7, editor->GetPVIs().size());
+    ASSERT_EQ(6, editor->GetVerticalCurveVector()->size());
+
+    // Cannot delete if range is invalid
+    result = editor->DeletePVIs(StationRange());
+    EXPECT_FALSE(result.IsValid());
+
+    // Doesn't delete anything
+    result = editor->DeletePVIs(StationRange(105.0, 110.0));
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->DeletePVIs(StationRange(0.0, 15.0), &editRange);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(4, result->size());
+    EXPECT_EQ(0.0, editRange.postEditRange.startStation);
+    EXPECT_EQ(35.0, editRange.postEditRange.endStation);
+
+    result = editor->DeletePVIs(StationRange(1.0, 15.0), &editRange);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(4, result->size());
+    EXPECT_EQ(0.0, editRange.postEditRange.startStation);
+    EXPECT_EQ(35.0, editRange.postEditRange.endStation);
+
+    result = editor->DeletePVIs(StationRange(15.0, 90.0), &editRange);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(2, result->size());
+    EXPECT_EQ(10.0, editRange.postEditRange.startStation);
+    EXPECT_EQ(100.0, editRange.postEditRange.endStation);
+
+    result = editor->DeletePVIs(StationRange(0.0, 100.0), &editRange);
+    ASSERT_TRUE(result.IsValid());
+    EXPECT_EQ(1, result->size());
+    EXPECT_EQ(0.0, editRange.postEditRange.startStation);
+    EXPECT_EQ(100.0, editRange.postEditRange.endStation);
     }
-
 //---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        11/2016
+// @bsimethod                           Alexandre.Gagnon                        12/2017
 //---------------------------------------------------------------------------------------
 void AlignmentPairEditor_MovePVI()
     {
-    AlignmentPairEditorPtr editor = createLinearVtAlignmentXZ(100, 0.0);
-    RoadStationRangeEdit editRange;
+    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    ASSERT_TRUE(editor.IsValid());
 
-    CurveVectorPtr vtWith3PIs = editor->InsertParabolicPVI(DPoint3d::From(15.0, 0, 104.0), 12.0,  editRange);
-    ASSERT_TRUE(vtWith3PIs.IsValid());
-    editor->UpdateVerticalCurveVector(vtWith3PIs.get());
+    // Uninitialized PVI
+    AlignmentPVI pvi;
+    CurveVectorPtr result = editor->MovePVI(1, pvi);
+    EXPECT_FALSE(result.IsValid());
 
-
-    //! Can't modify 'x' of start PVI. It will only update the 'z'
-    CurveVectorPtr result = editor->MovePVI(DPoint3d::FromZero(), DPoint3d::From(1.0, 0.0, 1.0), editRange);
+    // PVI to move is out of bounds
+    result = editor->MovePVI(2, DPoint3d::FromZero());
+    EXPECT_FALSE(result.IsValid());
+    
+    // Move start PVI: should only change elevation
+    StationRangeEdit rangeEdit;
+    result = editor->MovePVI(0, DPoint3d::From(12, 0, 795), &rangeEdit);
     ASSERT_TRUE(result.IsValid());
-    DPoint3d start, dummy;
-    result->GetStartEnd(start, dummy);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(0.0, 0.0, 1.0), start);
+    DPoint3d start, end;
+    result->GetStartEnd(start, end);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 795), start);
+    EXPECT_EQ_DOUBLE(0.0, rangeEdit.preEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, rangeEdit.preEditRange.endStation);
+    EXPECT_EQ_DOUBLE(0.0, rangeEdit.postEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, rangeEdit.postEditRange.endStation);
 
-    //! Modify 'z' of start PVI
-    CurveVectorPtr result2 = editor->MovePVI(DPoint3d::FromZero(), DPoint3d::From(0, 0, 5.0), editRange);
-    ASSERT_TRUE(result2.IsValid());
-    DPoint3d start2;
-    result2->GetStartEnd(start2, dummy);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 5.0), start2);
+    // Move end PVI : should only change elevation
+    result = editor->MovePVI(1, DPoint3d::From(100, 0, 583), &rangeEdit);
+    ASSERT_TRUE(result.IsValid());
+    result->GetStartEnd(start, end);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 583), end);
+    EXPECT_EQ_DOUBLE(0.0, rangeEdit.preEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, rangeEdit.preEditRange.endStation);
+    EXPECT_EQ_DOUBLE(0.0, rangeEdit.postEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, rangeEdit.postEditRange.endStation);
 
-    //! Can't modify 'x' of end PVI. It will only update the 'z'
-    CurveVectorPtr result3 = editor->MovePVI(DPoint3d::From(100, 0, 0), DPoint3d::From(99, 0, 2.4), editRange);
-    ASSERT_TRUE(result3.IsValid());
-    DPoint3d end3;
-    result3->GetStartEnd(dummy, end3);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 2.4), end3);
+    pvi.InitGradeBreak(DPoint3d::FromZero());
+    result = editor->MovePVI(0, pvi);
+    EXPECT_TRUE(result.IsValid());
 
-    //! Modify 'z' of end PVI
-    CurveVectorPtr result4 = editor->MovePVI(DPoint3d::From(100, 0, 0), DPoint3d::From(100, 0, 4.5), editRange);
-    ASSERT_TRUE(result4.IsValid());
-    DPoint3d end4;
-    result4->GetStartEnd(dummy, end4);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 4.5), end4);
+    // Add a PVI in the middle and move it
+    pvi.InitGradeBreak(DPoint3d::From(50.0, 0.0, 824));
+    result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    editor->UpdateVerticalCurveVector(result.get());
 
-    //! Can modify XZ of center PVI
-    CurveVectorPtr result5 = editor->MovePVI(DPoint3d::From(15.0, 0, 104.0), DPoint3d::From(12.0, 0, 98.0), editRange);
-    ASSERT_TRUE(result5.IsValid());
+    result = editor->MovePVI(1, DPoint3d::From(65.0, 14.0, 830.0));
+    EXPECT_TRUE(result.IsValid());
 
-    //! Can't modify XZ of center PVI if it results in overlapping
-    CurveVectorPtr result6 = editor->MovePVI(DPoint3d::From(15.0, 0, 104.0), DPoint3d::From(5.0, 0, 94.0), editRange);
-    EXPECT_FALSE(result6.IsValid());
+    // Move before start
+    result = editor->MovePVI(1, DPoint3d::From(-1.0, 0.0, 745));
+    EXPECT_FALSE(result.IsValid());
+    // Move over start
+    result = editor->MovePVI(1, DPoint3d::FromZero());
+    EXPECT_FALSE(result.IsValid());
+    
+    pvi.InitGradeBreak(DPoint3d::FromZero());
+    result = editor->MovePVI(1, pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    // Move past end
+    result = editor->MovePVI(1, DPoint3d::From(101, 0, 816));
+    EXPECT_FALSE(result.IsValid());
+    // Move over end
+    result = editor->MovePVI(1, DPoint3d::From(100, 0, 816));
+    EXPECT_FALSE(result.IsValid());
+
+
+    // Convert Start to Arc (invalid)
+    pvi.InitArc(DPoint3d::From(0.0, 0.0, 785), 120.0);
+    result = editor->MovePVI(0, pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    // Convert End to Arc (invalid)
+    pvi.InitArc(DPoint3d::From(100, 0, 805), 90.0);
+    result = editor->MovePVI(2, pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    // Convert middle PVI to arc (valid)
+    pvi.InitArc(DPoint3d::From(50, 0, 824), 120.0);
+    result = editor->MovePVI(1, pvi);
+    EXPECT_TRUE(result.IsValid());
+
+    // Convert Start to Parabola (invalid)
+    pvi.InitParabola(DPoint3d::From(0.0, 0.0, 785), 24.0);
+    result = editor->MovePVI(0, pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    // Convert End to Parabola (invalid)
+    pvi.InitParabola(DPoint3d::From(100, 0, 820), 22.0);
+    result = editor->MovePVI(2, pvi);
+    EXPECT_FALSE(result.IsValid());
+
+    // Convert middle PVI to parabola (valid)
+    pvi.InitParabola(DPoint3d::From(50, 0, 785), 24.0);
+    result = editor->MovePVI(1, pvi);
+    EXPECT_TRUE(result.IsValid());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_MoveVerticalTangent()
+    {
+    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    ASSERT_TRUE(editor.IsValid());
+
+    // Add a PVI in the middle
+    AlignmentPVI pvi;
+    pvi.InitGradeBreak(DPoint3d::From(50.0, 0, 805));
+    CurveVectorPtr result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    ASSERT_EQ(2, result->size());
+    editor->UpdateVerticalCurveVector(result.get());
+    
+    bvector<AlignmentPVI> pvis = editor->GetPVIs();
+    ASSERT_EQ(3, pvis.size());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 800), pvis[0].GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(50, 0, 805), pvis[1].GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 815), pvis[2].GetPVILocation());
+
+    StationRangeEdit rangeEdit;
+
+    // No tangent before first PVI
+    result = editor->MoveVerticalTangent(DPoint3d::From(-1.0, 0, 0), DPoint3d::From(1, 0, 10));
+    EXPECT_FALSE(result.IsValid());
+    
+    // No tangent after last PVI
+    result = editor->MoveVerticalTangent(DPoint3d::From(101, 0, 0), DPoint3d::From(102, 0, -5));
+    EXPECT_FALSE(result.IsValid());
+
+    // First tangent between ]0, 50[
+    result = editor->MoveVerticalTangent(DPoint3d::From(20.0, 0, 0), DPoint3d::From(25, 0, 6), &rangeEdit);
+    ASSERT_TRUE(result.IsValid());
+    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    pvis = editor2->GetPVIs();
+    ASSERT_EQ(3, pvis.size());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 806), pvis[0].GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(50, 0, 811), pvis[1].GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 815), pvis[2].GetPVILocation()); // Didn't move
+    EXPECT_EQ_DOUBLE(0.0, rangeEdit.preEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, rangeEdit.preEditRange.endStation);
+    EXPECT_EQ_DOUBLE(0.0, rangeEdit.postEditRange.startStation);
+    EXPECT_EQ_DOUBLE(100.0, rangeEdit.postEditRange.endStation);
+    
+    // Second tangent between ]50, 100[
+    result = editor->MoveVerticalTangent(DPoint3d::From(60.0, 0, 14), DPoint3d::From(-12233.0, 0, 0), &rangeEdit);
+    ASSERT_TRUE(result.IsValid());
+    editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    pvis = editor2->GetPVIs();
+    ASSERT_EQ(3, pvis.size());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 800), pvis[0].GetPVILocation()); // Didn't move
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(50, 0, 791), pvis[1].GetPVILocation());
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 801), pvis[2].GetPVILocation()); 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_MoveParabolaPVCorPVT()
+    {
+    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    ASSERT_TRUE(editor.IsValid());
 
+    // Add a PVI in the middle
+    AlignmentPVI pvi;
+    pvi.InitParabola(DPoint3d::From(50.0, 0.0, 824), 24.0);
+    CurveVectorPtr result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    ASSERT_EQ(3, result->size());
+    editor->UpdateVerticalCurveVector(result.get());
+    DPoint3d start, end;
+    result->at(1)->GetStartEnd(start, end);
+    ASSERT_EQ(DPoint3d::From(38.0, 0, 818.24), start);
+    ASSERT_EQ(DPoint3d::From(62.0, 0, 821.84), end);
+
+    // Move PVC
+    StationRangeEdit rangeEdit;
+    result = editor->MoveParabolaPVCorPVT(38.0, 42.0, &rangeEdit);
+    ASSERT_TRUE(result.IsValid());
+    
+    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    ASSERT_TRUE(editor2->GetPVI(pvi, 1));
+    ASSERT_TRUE(nullptr != pvi.GetParabola());
+    EXPECT_EQ(16.0, pvi.GetParabola()->length);
+
+    // Move PVT
+    result = editor->MoveParabolaPVCorPVT(62.0, 70.0);
+    ASSERT_TRUE(result.IsValid());
+    editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    ASSERT_TRUE(editor2->GetPVI(pvi, 1));
+    ASSERT_TRUE(nullptr != pvi.GetParabola());
+    EXPECT_EQ(40.0, pvi.GetParabola()->length);
+
+    // Move PVC through PVI (invalid)
+    result = editor->MoveParabolaPVCorPVT(38.0, 50.0);
+    EXPECT_FALSE(result.IsValid());
+    result = editor->MoveParabolaPVCorPVT(38.0, 51.0);
+    EXPECT_FALSE(result.IsValid());
+
+    // move PVT through PVI (invalid)
+    result = editor->MoveParabolaPVCorPVT(62.0, 50.0);
+    EXPECT_FALSE(result.IsValid());
+    result = editor->MoveParabolaPVCorPVT(62.0, 49.0);
+    EXPECT_FALSE(result.IsValid());
+
+    // Move an invalid PVC/PVT location
+    result = editor->MoveParabolaPVCorPVT(39, 52.0);
+    EXPECT_FALSE(result.IsValid());
+    result = editor->MoveParabolaPVCorPVT(64.0, 44.0);
+    EXPECT_FALSE(result.IsValid());
+
+    // Try with an ARC. Should fail
+    editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    pvi.InitArc(DPoint3d::From(50, 0.0, 795.0), 60.0);
+    result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    editor->UpdateVerticalCurveVector(result.get());
+
+    result = editor->MoveParabolaPVCorPVT(35.384328940962654, 32.0);
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->MoveParabolaPVCorPVT(63.637992663468793, 68.0);
+    EXPECT_FALSE(result.IsValid());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+// Arc PVI start: 35.384328940962654
+// Arc PVI end: 63.637992663468793
+// Parabola PVI start : 38.0
+// Parabola PVI end  : 62.0
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_MoveArcPVCorPVT()
+    {
+    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+
+    AlignmentPVI pvi;
+    pvi.InitArc(DPoint3d::From(50, 0.0, 795.0), 60.0);
+    CurveVectorPtr result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    editor->UpdateVerticalCurveVector(result.get());
+
+    StationRangeEdit rangeEdit;
+    result = editor->MoveArcPVCorPVT(35.384328940962654, 32.0, &rangeEdit);
+    ASSERT_TRUE(result.IsValid());
+
+    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    ASSERT_TRUE(editor2->GetPVI(pvi, 1));
+    ASSERT_TRUE(nullptr != pvi.GetArc());
+    EXPECT_EQ_DOUBLE(76.450262210750566, pvi.GetArc()->radius);
+
+    result = editor->MoveArcPVCorPVT(63.637992663468793, 70.0);
+    ASSERT_TRUE(result.IsValid());
+    editor2 = AlignmentPairEditor::CreateVerticalOnly(*result);
+    ASSERT_TRUE(editor2->GetPVI(pvi, 1));
+    ASSERT_TRUE(nullptr != pvi.GetArc());
+    EXPECT_EQ_DOUBLE(84.944735789723381, pvi.GetArc()->radius);
+    
+    // Move PVC through PVI (invalid)
+    result = editor->MoveArcPVCorPVT(35.384328940962654, 55.0);
+    EXPECT_FALSE(result.IsValid());
+
+    // Move PVT through PVI (invalid)
+    result = editor->MoveArcPVCorPVT(63.637992663468793, 45.0);
+    EXPECT_FALSE(result.IsValid());
+
+    // Move an invalid PVC/PVT location
+    result = editor->MoveArcPVCorPVT(43.0, 54.0);
+    EXPECT_FALSE(result.IsValid());
+    result = editor->MoveArcPVCorPVT(64.0, 44.0);
+    EXPECT_FALSE(result.IsValid());
+
+
+    // Try with a Parabola. Should fail
+    editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    pvi.InitParabola(DPoint3d::From(50.0, 0.0, 824), 24.0);
+    result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    editor->UpdateVerticalCurveVector(result.get());
+
+    result = editor->MoveArcPVCorPVT(38.0, 34.0);
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->MoveArcPVCorPVT(62.0, 70.0);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+#if 0
 //---------------------------------------------------------------------------------------
 // @betest                               Colin.Jin                         08/2017
 //---------------------------------------------------------------------------------------
@@ -2603,98 +2921,7 @@ void AlignmentPairEditor_MoveTwoPVIsWithK()
     CurveVectorPtr result6 = editor->MovePVIWithK(DPoint3d::From(40.0, 0, -20.0), DPoint3d::From(60.0, 20.0, 0.0), editRange);
     EXPECT_FALSE(result6.IsValid());
     }
-
-//---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        11/2016
-//---------------------------------------------------------------------------------------
-void AlignmentPairEditor_MoveVerticalTangent()
-    {
-    // [0, 0, 0] --> [100, 0, 10]
-    AlignmentPairEditorPtr editor = createLinearVtAlignmentXZ(100, 0.10); // 10% slope
-    RoadStationRangeEdit editRange;
-
-    CurveVectorPtr result = editor->MoveVerticalTangent(DPoint3d::From(50.0, 0, 0), DPoint3d::From(50.0, 0, 10), editRange);
-    ASSERT_TRUE(result.IsValid());
-    DPoint3d start, end;
-    result->GetStartEnd(start, end);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 10), start);
-    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 20), end);
-
-    CurveVectorPtr vtWith3PIs = editor->InsertParabolicPVI(DPoint3d::From(15.0, 0, 104.0), 12.0,  editRange);
-    ASSERT_TRUE(vtWith3PIs.IsValid());
-    AlignmentPairEditorPtr editor2 = AlignmentPairEditor::CreateVerticalOnly(*vtWith3PIs, false);
-    ASSERT_TRUE(editor2.IsValid());
-
-
-    const double zBefore = editor2->GetVerticalElevationAtStation(15.0);
-    CurveVectorPtr result2 = editor2->MoveVerticalTangent(DPoint3d::From(7.0, 0, 10.0), DPoint3d::From(7.0, 0, 15.0), editRange);
-    ASSERT_TRUE(result2.IsValid());
-    editor2->UpdateVerticalCurveVector(result2.get());
-
-    const double zAfter = editor2->GetVerticalElevationAtStation(15.0);
-    EXPECT_EQ_DOUBLE(4.9117647058823479, zAfter - zBefore);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                              Alexandre.Gagnon                        11/2016
-//---------------------------------------------------------------------------------------
-void AlignmentPairEditor_MovePVCorPVT()
-    {
-    AlignmentPairEditorPtr editor = createLinearVtAlignmentXZ(30, 0.0);
-    RoadStationRangeEdit editRange;
-
-    //! PVI at [15, 0, 104]
-    //! PVC at x = 9.0
-    //! PVT at x = 21.0
-    CurveVectorPtr vtWith3PIs = editor->InsertParabolicPVI(DPoint3d::From(15.0, 0, 104.0), 12.0,  editRange);
-    ASSERT_TRUE(vtWith3PIs.IsValid());
-    editor->UpdateVerticalCurveVector(vtWith3PIs.get());
-
-    //! move PVC over start PVI
-    CurveVectorPtr result = editor->MovePVCorPVT(9.0, 0.0, editRange);
-    EXPECT_FALSE(result.IsValid());
-
-    //! move PVC over its PVI
-    //! this is valid and leads to a PVI with a length of 0.0
-    CurveVectorPtr result2 = editor->MovePVCorPVT(9.0, 15.0, editRange);
-    EXPECT_TRUE(result2.IsValid());
-
-    //! move PVC beyond its PVI
-    CurveVectorPtr result3 = editor->MovePVCorPVT(9.0, 16.0, editRange);
-    EXPECT_FALSE(result3.IsValid());
-
-    //! move PVT over end PVI
-    CurveVectorPtr result4 = editor->MovePVCorPVT(21.0, 30.0, editRange);
-    EXPECT_FALSE(result4.IsValid());
-
-    //! move PVC over its PVI
-    // this is valid and leads to a PVI with a length of 0.0
-    CurveVectorPtr result5 = editor->MovePVCorPVT(21.0, 15.0, editRange);
-    EXPECT_TRUE(result5.IsValid());
-
-    //! move PVC beyond its PVI
-    CurveVectorPtr result6 = editor->MovePVCorPVT(21.0, 14.0, editRange);
-    EXPECT_FALSE(result6.IsValid());
-
-    //! move PVC a bit on the left (longer PVI)
-    CurveVectorPtr result7 = editor->MovePVCorPVT(9.0, 7.0, editRange);
-    EXPECT_TRUE(result7.IsValid());
-
-    //! move PVC a bit on the right (shorter PVI)
-    CurveVectorPtr result8 = editor->MovePVCorPVT(9.0, 11.0, editRange);
-    EXPECT_TRUE(result8.IsValid());
-
-    //! move PVT a bit on the left (shorter PVI)
-    CurveVectorPtr result9 = editor->MovePVCorPVT(21.0, 19.0, editRange);
-    EXPECT_TRUE(result9.IsValid());
-
-    //! move PVT a bit on the right (longer PVI)
-    CurveVectorPtr result10 = editor->MovePVCorPVT(21.0, 23.0, editRange);
-    EXPECT_TRUE(result10.IsValid());
-    }
-
-
-
+    
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 AlignmentPairEditorPtr RoadVGeometrySetup()
@@ -2867,10 +3094,10 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
 
     // AlignmentPairEditor tests
     AlignmentPairEditor_Create_Clone();
-    AlignmentPairEditor_GetPIs();
     AlignmentPairEditor_UpdateCurveVectors();
 
     // AlignmentPairEditor - Hz edits
+    AlignmentPairEditor_GetPIs();
     AlignmentPairEditor_InsertPI();
     AlignmentPairEditor_DeletePI();
     AlignmentPairEditor_MovePI();
@@ -2881,6 +3108,14 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     AlignmentPairEditor_RemoveSpirals_AddSpirals();
 
     // AlignmentPairEditor - Vt edits
+    AlignmentPairEditor_GetPVIs();
+    AlignmentPairEditor_InsertPVI();
+    AlignmentPairEditor_DeletePVI_DeletePVIs();
+    AlignmentPairEditor_MovePVI();
+    AlignmentPairEditor_MoveVerticalTangent();
+    AlignmentPairEditor_MoveParabolaPVCorPVT();
+    AlignmentPairEditor_MoveArcPVCorPVT();
+
 
 
 #if 0 //&&AG NEEDSWORK EDITOR
