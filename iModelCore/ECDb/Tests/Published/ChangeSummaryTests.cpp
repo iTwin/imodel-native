@@ -391,7 +391,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
     ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
 
     ECInstanceKey summary1Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary1Key, changeset1));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary1Key, ChangeSetArg(changeset1)));
 
     tracker.Restart();
 
@@ -401,7 +401,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
     ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
 
     ECInstanceKey summary2Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary2Key, changeset2));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary2Key, ChangeSetArg(changeset2)));
 
     tracker.Restart();
 
@@ -411,7 +411,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
     ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
 
     ECInstanceKey summary3Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary3Key, changeset3));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary3Key, ChangeSetArg(changeset3)));
 
     tracker.EndTracking();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
@@ -527,7 +527,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
     tracker.EndTracking();
 
     ECInstanceKey summaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset)));
     Utf8String summaryId = summaryKey.GetInstanceId().ToString();
 
     ECSqlStatement stmt;
@@ -612,9 +612,9 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
         {
         ECInstanceKey summaryKey;
         if (expectedSuccess)
-            EXPECT_EQ(SUCCESS, ecdb.ExtractChangeSummary(summaryKey, changeset)) << assertMessage;
+            EXPECT_EQ(SUCCESS, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
         else
-            EXPECT_EQ(ERROR, ecdb.ExtractChangeSummary(summaryKey, changeset)) << assertMessage;
+            EXPECT_EQ(ERROR, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
         };
 
     TestChangeTracker tracker(m_ecdb);
@@ -800,7 +800,7 @@ TEST_F(ChangeSummaryTestFixture, UserAndChangeSetInfos)
         return str;
         };
 
-    DateTime pushDate(DateTime::Kind::Utc, 2017, 12, 15, 12, 24);
+    DateTime pushDate(DateTime::Kind::Unspecified, 2017, 12, 15, 12, 24);
     std::vector<ChangeSetArg> args {ChangeSetArg(changeset),
         ChangeSetArg(changeset).SetId("1-0-0-1"),
         ChangeSetArg(changeset).SetId("1-0-0-2").SetParentId("2-0-0-1").SetPushDate(pushDate),
@@ -1008,7 +1008,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
         tracker.Restart();
         ECInstanceKey changeSummary1Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1))) << scenario;
 
         //Changeset 2
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Person SET Name='Mary'")) << scenario;
@@ -1018,7 +1018,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker)) << scenario;
         //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2))) << scenario;
         tracker.Restart();
 
         //Changeset 3
@@ -1029,7 +1029,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         tracker.EndTracking();
         //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary3Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3))) << scenario;
 
         Utf8String maryIdStr = maryKey.GetInstanceId().ToHexStr();
         Utf8String samIdStr = samKey.GetInstanceId().ToHexStr();
@@ -1227,7 +1227,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker)) << scenario;
         //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary1Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1))) << scenario;
 
         //Changeset 2
         tracker.Restart();
@@ -1245,7 +1245,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker)) << scenario;
         //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2))) << scenario;
         tracker.EndTracking();
 
         Utf8String hallIdStr = hallKey.GetInstanceId().ToHexStr();
@@ -1510,7 +1510,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker)) << scenario;
         //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary1Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1))) << scenario;
 
         //Changeset 2
         tracker.Restart();
@@ -1529,7 +1529,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker)) << scenario;
         //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2))) << scenario;
 
         //Changeset 3
         tracker.Restart();
@@ -1540,7 +1540,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker)) << scenario;
         //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary3Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3)) << scenario;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3))) << scenario;
         tracker.EndTracking();
 
         Utf8String hallIdStr = hallKey.GetInstanceId().ToHexStr();
@@ -1703,7 +1703,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
     //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary1Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
 
 
     //changeset 2
@@ -1713,7 +1713,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
     //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary2Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2)));
 
     //changeset 3
     tracker.Restart();
@@ -1722,7 +1722,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
     ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
     //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary3Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3)));
     tracker.EndTracking();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
@@ -1851,7 +1851,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset)) << "Expected to fail because RelClassId wasn't inserted along with Nav id";
+    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset))) << "Expected to fail because RelClassId wasn't inserted along with Nav id";
     tracker.EndTracking();
     }
 
@@ -1898,7 +1898,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
         ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
         //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary1Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1));
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
 
 
         //changeset 2
@@ -1908,7 +1908,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
         ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
         //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary2Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2));
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2)));
 
         //changeset 3
         tracker.Restart();
@@ -1917,7 +1917,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
         ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
         //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary3Key;
-        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3));
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3)));
         tracker.EndTracking();
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
@@ -2048,7 +2048,7 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     tracker.EndTracking();
     //now delete the child so that its unmodified values show up as NULL in the Changes function
@@ -2113,7 +2113,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
     //printf("Changeset 1: %s\r\n", changeset1.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary1Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, changeset1));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary1Key, ChangeSetArg(changeset1)));
 
 
     //changeset 2
@@ -2123,7 +2123,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
     //printf("Changeset 2: %s\r\n", changeset2.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary2Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, changeset2));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary2Key, ChangeSetArg(changeset2)));
 
     //changeset 3
     tracker.Restart();
@@ -2132,7 +2132,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
     //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummary3Key;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, changeset3));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3)));
     tracker.EndTracking();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
@@ -2244,7 +2244,7 @@ TEST_F(ChangeSummaryTestFixture, SchemaChange)
     ASSERT_EQ(BE_SQLITE_OK, result);
 
     ECInstanceKey summaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, changeSet, ECDb::ChangeSummaryExtractOptions(false)));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeSet), ECDb::ChangeSummaryExtractOptions(false)));
 
     tracker.Restart();
 
@@ -2254,7 +2254,7 @@ TEST_F(ChangeSummaryTestFixture, SchemaChange)
 
     changeSet.Free();
     ASSERT_EQ(BE_SQLITE_OK, changeSet.FromChangeTrack(tracker));
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, changeSet, ECDb::ChangeSummaryExtractOptions(false)));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeSet), ECDb::ChangeSummaryExtractOptions(false)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -2376,11 +2376,11 @@ TEST_F(ChangeSummaryTestFixture, Crud)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }//---------------------------------------------------->>>
 
-    TestChangeSet rev1;
-    ASSERT_EQ(BE_SQLITE_OK, rev1.FromChangeTrack(tracker));
+    TestChangeSet changeset;
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, rev1));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
     m_ecdb.SaveChanges();
 
     {
@@ -2513,7 +2513,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
     m_ecdb.SaveChanges();
     {
     ECSqlStatement stmt;
@@ -2568,7 +2568,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     /*
     BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
@@ -2639,7 +2639,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     /*
     Code:"C1"
@@ -2700,7 +2700,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     /*
     Code:"C1"
@@ -2767,7 +2767,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     /*
     Code:"C1"
@@ -2845,7 +2845,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(3, GetPropertyValueChangeCount());
@@ -2922,7 +2922,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     EXPECT_EQ(1, GetInstanceChangeCount(changeSummaryKey.GetInstanceId()));
     EXPECT_EQ(2, GetPropertyValueChangeCount());
@@ -2950,7 +2950,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
 
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     DumpChangeSummary(changeSummaryKey, "ChangeSummary after inserting instances");
 
@@ -2995,7 +2995,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     changeset.Free();
 
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     DumpChangeSummary(changeSummaryKey, "ChangeSummary after inserting relationships");
 
@@ -3035,7 +3035,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     changeset.Free();
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     DumpChangeSummary(changeSummaryKey, "ChangeSummary after updating (deleting and inserting different) relationships");
 
@@ -3132,7 +3132,7 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
     TestChangeSet changeset;
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, changeset));
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)));
 
     /*
     BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect

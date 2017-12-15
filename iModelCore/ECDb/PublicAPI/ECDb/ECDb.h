@@ -379,11 +379,11 @@ public:
     //! when opening the %ECDb file. If the cache is not attached, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
-    //! @param[in] changeSetInfo Change set and additional information about the change set to generate the summary from
+    //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
     //! @param[in] options Extraction options
     //! @return SUCCESS or ERROR
     //! @see @ref ECDbChange
-    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
     
     //! @}
 
