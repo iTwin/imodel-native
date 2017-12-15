@@ -12,7 +12,6 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <CivilBaseGeometry/CivilBaseGeometryApi.h>
 
-USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_CIVILBASEGEOMETRY
 
 //=======================================================================================

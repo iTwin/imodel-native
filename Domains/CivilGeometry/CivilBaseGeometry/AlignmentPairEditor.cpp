@@ -13,7 +13,8 @@
 #define APPROACH_STATION_LIMIT_FACTOR 0.4
 #define TOLERANCE_VALIDATION_OF_DISTANCE_SQUARED 1E-04
 
-#define WIP_ENABLE_VERTICAL 0
+#define PVI_LENGTH_FIT_SAFETY_FACTOR 0.05 // 5% safety factor
+
 
 //=======================================================================================
 // AlignmentPI
@@ -48,7 +49,7 @@ void AlignmentPI::InitNoCurve(DPoint3dCR piPoint)
 void AlignmentPI::InitArc(DPoint3dCR piPoint, double radius)
     {
     ArcInfo aInfo;
-    aInfo.arc.orientation = ORIENTATION_Unknown;
+    aInfo.arc.orientation = Orientation::ORIENTATION_Unknown;
     aInfo.arc.piPoint = DPoint3d::From(piPoint.x, piPoint.y, 0.0);
     aInfo.arc.radius = radius;
 
@@ -67,7 +68,7 @@ void AlignmentPI::InitSCS(DPoint3dCR overallPI, double arcRadius, double spiralL
     SCSInfo scsInfo;
     scsInfo.overallPI = DPoint3d::From(overallPI.x, overallPI.y, 0.0);
     scsInfo.arc.radius = arcRadius;
-    scsInfo.arc.orientation = ORIENTATION_Unknown;
+    scsInfo.arc.orientation = Orientation::ORIENTATION_Unknown;
     scsInfo.spiral1.length = spiralLength1;
     scsInfo.spiral2.length = spiralLength2;
 
@@ -201,17 +202,97 @@ double AlignmentPI::GetPseudoTangentLength() const
 
 //=======================================================================================
 // AlignmentPVI
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+AlignmentPVI::AlignmentPVI()
+    {
+#ifndef NDEBUG
+    int size = sizeof(AlignmentPVI);
+    memset(this, 0xBAADF00D, size);
+#endif
+
+    m_gradeBreakInfo = GradeBreakInfo();
+    m_gradeBreakInfo.pvi.InitDisconnect();
+    m_type = TYPE_Uninitialized;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPVI::InitGradeBreak(DPoint3dCR pviPoint)
+    {
+    GradeBreakInfo gbInfo;
+    gbInfo.pvi = DPoint3d::From(pviPoint.x, 0.0, pviPoint.z);
+
+    m_gradeBreakInfo = gbInfo;
+    m_type = TYPE_GradeBreak;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPVI::InitArc(DPoint3dCR pviPoint, double radius)
+    {
+    ArcInfo aInfo;
+    aInfo.pvi = DPoint3d::From(pviPoint.x, 0.0, pviPoint.z);
+    aInfo.radius = radius;
+    aInfo.orientation = Orientation::ORIENTATION_Unknown;
+
+    // Set same point for pvc/pvt/center so we can check whether that PVI has been solved or not
+    aInfo.pvc = aInfo.pvi;
+    aInfo.pvt = aInfo.pvi;
+
+    m_arcInfo = aInfo;
+    m_type = TYPE_Arc;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPVI::InitParabola(DPoint3dCR pviPoint, double length, bool holdLength)
+    {
+    ParabolaInfo parInfo;
+    parInfo.pvi = DPoint3d::From(pviPoint.x, 0.0, pviPoint.z);
+    parInfo.length = length;
+    parInfo.holdLength = holdLength;
+
+    // Set same point for pvc/pvt so we can check whether that PVI has been solved or not
+    parInfo.pvc = parInfo.pvi;
+    parInfo.pvt = parInfo.pvi;
+
+    m_parabolaInfo = parInfo;
+    m_type = TYPE_Parabola;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        11/2017
+//---------------------------------------------------------------------------------------
+void AlignmentPVI::InitInvalid(AlignmentPVI::Type pviType)
+    {
+    switch (pviType)
+        {
+        case TYPE_Arc:
+            m_arcInfo = ArcInfo();
+            break;
+        case TYPE_Parabola:
+            m_parabolaInfo = ParabolaInfo();
+            break;
+        case TYPE_GradeBreak:
+        default:
+            m_gradeBreakInfo = GradeBreakInfo();
+            pviType = TYPE_GradeBreak;
+            break;
+        }
+    m_type = pviType;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     04/2016
 // k = L / | G1-G2 |
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AlignmentPVI::KValue () const
+double AlignmentPVI::ParabolaInfo::KValue() const
     {
-    if (VerticalGeometryType::Parabola != geometryType)
+    if (0.0 == length)
         return 0.0;
 
-    const double G1 = 100 * GetFrontSlope();
-    const double G2 = 100 * GetBackSlope();
+    const double G1 = 100 * Slope(pvc, pvi);
+    const double G2 = 100 * Slope(pvi, pvt);
 
     const double diff = fabs(G1 - G2);
     if (DoubleOps::AlmostEqual(0.0, diff))
@@ -222,29 +303,55 @@ double AlignmentPVI::KValue () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AlignmentPVI::LengthFromK (double kvalue) const
+double AlignmentPVI::ParabolaInfo::LengthFromK(double kvalue) const
     {
-    if (VerticalGeometryType::Parabola != geometryType)
+    if (0.0 == length)
         return 0.0;
 
-    const double G1 = 100 * GetFrontSlope();
-    const double G2 = 100 * GetBackSlope();
+    const double G1 = 100 * Slope(pvc, pvi);
+    const double G2 = 100 * Slope(pvi, pvt);
     return fabs(G1 - G2) * kvalue;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+StationRange AlignmentPVI::GetStationRange() const
+    {
+    return StationRange(GetPVCLocation().x, GetPVTLocation().x);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+StationRange AlignmentPVI::GetStationRangePVCPVI() const
+    {
+    return StationRange(GetPVCLocation().x, GetPVILocation().x);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+StationRange AlignmentPVI::GetStationRangePVIPVT() const
+    {
+    return StationRange(GetPVILocation().x, GetPVTLocation().x);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        12/2017
 //---------------------------------------------------------------------------------------
 DPoint3dCR AlignmentPVI::GetPVCLocation() const
     {
-    switch (geometryType)
+    switch (m_type)
         {
-        case VerticalGeometryType::Parabola:
-        case VerticalGeometryType::SingleArc:
-            return poles[PVC];
-        case VerticalGeometryType::None:
-            return poles[PVI];
+        case TYPE_Arc:
+            return m_arcInfo.pvc;
+        case TYPE_Parabola:
+            return m_parabolaInfo.pvc;
+        case TYPE_GradeBreak:
+            return m_gradeBreakInfo.pvi;
+        case TYPE_Uninitialized:
         default:
-            return poles[PVI];
+            {
+            REPLACEMENT_LOGW("AlignmentPVI::GetPVCLocation - unexpected PVI type");
+            return m_gradeBreakInfo.pvi;
+            }
         }
     }
 //---------------------------------------------------------------------------------------
@@ -252,22 +359,79 @@ DPoint3dCR AlignmentPVI::GetPVCLocation() const
 //---------------------------------------------------------------------------------------
 DPoint3dCR AlignmentPVI::GetPVILocation() const
     {
-    return poles[PVI];
+    switch (m_type)
+        {
+        case TYPE_Arc:
+            return m_arcInfo.pvi;
+        case TYPE_Parabola:
+            return m_parabolaInfo.pvi;
+        case TYPE_GradeBreak:
+            return m_gradeBreakInfo.pvi;
+        case TYPE_Uninitialized:
+        default:
+            {
+            REPLACEMENT_LOGW("AlignmentPVI::GetPVILocation - unexpected PVI type");
+            return m_gradeBreakInfo.pvi;
+            }
+        }
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        12/2017
 //---------------------------------------------------------------------------------------
 DPoint3dCR AlignmentPVI::GetPVTLocation() const
     {
-    switch (geometryType)
+    switch (m_type)
         {
-        case VerticalGeometryType::Parabola:
-        case VerticalGeometryType::SingleArc:
-            return poles[PVT];
-        case VerticalGeometryType::None:
-            return poles[PVI];
+        case TYPE_Arc:
+            return m_arcInfo.pvt;
+        case TYPE_Parabola:
+            return m_parabolaInfo.pvt;
+        case TYPE_GradeBreak:
+            return m_gradeBreakInfo.pvi;
+        case TYPE_Uninitialized:
         default:
-            return poles[PVI];
+            {
+            REPLACEMENT_LOGW("AlignmentPVI::GetPVTLocation - unexpected PVI type");
+            return m_gradeBreakInfo.pvi;
+            }
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPVI::SetPVILocation(DPoint3dCR pviPoint)
+    {
+    const DPoint3d pviPointXZ = DPoint3d::From(pviPoint.x, 0.0, pviPoint.z);
+
+    switch (m_type)
+        {
+        case TYPE_GradeBreak:
+            {
+            m_gradeBreakInfo.pvi = pviPointXZ;
+            return true;
+            }
+        case TYPE_Arc:
+            {
+            // Also set PVC,PVT to indicate we need to solve this PVI
+            m_arcInfo.pvi = pviPointXZ;
+            m_arcInfo.pvc = pviPointXZ;
+            m_arcInfo.pvt = pviPointXZ;
+            return true;
+            }
+        case TYPE_Parabola:
+            {
+            // Also set PVC,PVT to indicate we need to solve this PVI
+            m_parabolaInfo.pvi = pviPointXZ;
+            m_parabolaInfo.pvc = pviPointXZ;
+            m_parabolaInfo.pvt = pviPointXZ;
+            return true;
+            }
+        case TYPE_Uninitialized:
+        default:
+            {
+            REPLACEMENT_LOG("AlignmentPVI::SetPVILocation - unexpected PVI type");
+            return false;
+            }
         }
     }
 //---------------------------------------------------------------------------------------
@@ -275,35 +439,13 @@ DPoint3dCR AlignmentPVI::GetPVTLocation() const
 //---------------------------------------------------------------------------------------
 double AlignmentPVI::Slope(DPoint3dCR p0, DPoint3dCR p1)
     {
-    if (DBL_EPSILON < fabs(p0.z - p1.z))
-        {
-        if (DBL_EPSILON < fabs(p0.x - p1.x))
-            return (p0.z - p1.z) / (p0.x / p1.x);
+    if (DoubleOps::AlmostEqual(p0.z, p1.z))
+        return 0.0;
 
+    if (DoubleOps::AlmostEqual(p0.x, p1.x))
         return CS_PVI_INFINITY;
-        }
 
-    return 0.0;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Alexandre.Gagnon                        12/2017
-//---------------------------------------------------------------------------------------
-double AlignmentPVI::GetFrontSlope() const
-    {
-    if (VerticalGeometryType::None == geometryType)
-        return 0.0;
-
-    return Slope(poles[PVC], poles[PVI]);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Alexandre.Gagnon                        12/2017
-//---------------------------------------------------------------------------------------
-double AlignmentPVI::GetBackSlope() const
-    {
-    if (VerticalGeometryType::None == geometryType)
-        return 0.0;
-
-    return Slope(poles[PVI], poles[PVT]);
+    return (p0.z - p1.z) / (p0.x - p1.x);
     }
 
 
@@ -338,6 +480,7 @@ void AlignmentPairEditor::_UpdateHorizontalCurveVector(CurveVectorCR horizontalA
 void AlignmentPairEditor::_UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment)
     {
     T_Super::_UpdateVerticalCurveVector(pVerticalAlignment);
+    m_cachedPVIs.clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,7 +541,7 @@ bool AlignmentPairEditor::LoadArcData(AlignmentPI::Arc& arc, ICurvePrimitiveCR p
     arc.piPoint = ComputePIFromPointsAndVectors(start, startTangent, end, endTangent);
     arc.centerPoint = pEllipse->center;
     arc.centerPoint.z = 0.0;
-    arc.orientation = pEllipse->IsCCWSweepXY() ? AlignmentPI::ORIENTATION_CCW : AlignmentPI::ORIENTATION_CW;
+    arc.orientation = pEllipse->IsCCWSweepXY() ? Orientation::ORIENTATION_CCW : Orientation::ORIENTATION_CW;
     return true;
     }
 //---------------------------------------------------------------------------------------
@@ -477,10 +620,7 @@ bool AlignmentPairEditor::GetArcPI(AlignmentPIR pi, size_t primitiveIdx) const
     pi.InitInvalid(AlignmentPI::TYPE_Arc);
     AlignmentPI::ArcInfoP pArc = pi.GetArcP();
 
-    if (!LoadArcData(pArc->arc, *GetHorizontalCurveVector()[primitiveIdx]))
-        return false;
-
-    return true;
+    return LoadArcData(pArc->arc, *GetHorizontalCurveVector()[primitiveIdx]);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
@@ -646,8 +786,8 @@ bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
 
 #ifndef NDEBUG
     // DEBUG-Only sanity check. We should be able to rebuild the curve off the PIs we've just retrieved
-    CurveVectorPtr sanityPVICurve = _BuildCurveVectorFromPIs(pis);
-    BeAssert(sanityPVICurve.IsValid());
+    CurveVectorPtr sanityCurve = _BuildCurveVectorFromPIs(pis);
+    BeAssert(sanityCurve.IsValid());
 #endif
 
     m_cachedPIs = pis;
@@ -658,7 +798,7 @@ bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, AlignmentPI::Orientation orientation) const
+ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR currPI, DPoint3dCR nextPI, double radius, Orientation orientation) const
     {
     if (0.0 >= radius)
         {
@@ -705,9 +845,9 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildArc(DPoint3dCR prevPI, DPoint3dCR c
         return nullptr;
         }
 
-    if (AlignmentPI::ORIENTATION_Unknown != orientation)
+    if (Orientation::ORIENTATION_Unknown != orientation)
         {
-        if (ellipse.IsCCWSweepXY() && AlignmentPI::ORIENTATION_CCW != orientation)
+        if (ellipse.IsCCWSweepXY() && Orientation::ORIENTATION_CCW != orientation)
             ellipse.ComplementSweep();
         }
 
@@ -998,17 +1138,14 @@ bool AlignmentPairEditor::SolveArcPI(bvector<AlignmentPI>& pis, size_t index) co
     const DPoint3d currPI = pis[index].GetPILocation();
     const DPoint3d nextPI = (index + 1 < pis.size()) ? pis[index + 1].GetPILocation() : pInfo->arc.endPoint;
     const double radius = pInfo->arc.radius;
-    const AlignmentPI::Orientation orientation = pInfo->arc.orientation;
+    const Orientation orientation = pInfo->arc.orientation;
 
     ICurvePrimitivePtr primitive = BuildArc(prevPI, currPI, nextPI, radius, orientation);
     if (!primitive.IsValid())
         return false;
 
     // Update PI with new data
-    if (!LoadArcData(pInfo->arc, *primitive))
-        return false;
-
-    return true;
+    return LoadArcData(pInfo->arc, *primitive);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
@@ -1093,8 +1230,7 @@ bool AlignmentPairEditor::SolveSSPI(bvector<AlignmentPI>& pis, size_t index) con
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPairEditor::_SolvePI(bvector<AlignmentPI>& pis, size_t index) const
     {
-    if (index >= pis.size())
-        return false;
+    BeAssert(index < pis.size());
 
     switch (pis[index].GetType())
         {
@@ -1251,7 +1387,6 @@ AlignmentPairEditorPtr AlignmentPairEditor::CreateFromSingleCurveVector (CurveVe
     }
 #endif
 
-#if 1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1277,7 +1412,15 @@ AlignmentPairEditorPtr AlignmentPairEditor::CreateVerticalOnly(CurveVectorCR ver
 
     return new AlignmentPairEditor(*hzCurve, &verticalAlignment);
     }
-#endif
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+TransformCR AlignmentPairEditor::GetFlipYZTransform()
+    {
+    static Transform s_transform = Transform::FromOriginAndVectors(DPoint3d::FromZero(), DVec3d::UnitX(), DVec3d::UnitZ(), DVec3d::UnitY());
+    return s_transform;
+    }
+
 #if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     10/2015
@@ -1476,71 +1619,309 @@ bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs ()
 
     return _GetPVIs(*GetVerticalCurveVector());
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<AlignmentPVI> AlignmentPairEditor::_GetPVIs(CurveVectorCR vt)
+#endif
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+AlignmentPairEditor::VerticalEditResult AlignmentPairEditor::SolveValidateAndBuild(bvector<AlignmentPVI>& pvis, size_t index, bool isDelete) const
     {
+    BeAssert(index < pvis.size());
+
+    VerticalEditResult result;
+    result.modifiedRange = StationRange(pvis[index].GetPVILocation().x);
+
+    if (!_SolvePVI(pvis, index))
+        return result;
+
+    if (0 < index)
+        {
+        if (!_SolvePVI(pvis, index - 1))
+            return result;
+
+        result.modifiedRange.Extend(pvis[index - 1].GetStationRangePVIPVT());
+        }
+
+    // If we deleted PVIs, we just need to update the previous and the current PVI,
+    // as the index now points to the PVI that was after the deleted PVIs
+    if (!isDelete && index + 1 < pvis.size())
+        {
+        if (!_SolvePVI(pvis, index + 1))
+            return result;
+
+        result.modifiedRange.Extend(pvis[index + 1].GetStationRangePVCPVI());
+        }
+
+    if (!_ValidatePVIs(pvis))
+        return result;
+
+    result.vtCurve = _BuildCurveVectorFromPVIs(pvis);
+    return result;
+    }
+
+    /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AlignmentPairEditor::AreStationsEqual(double station0, double station1) const
+    {
+    return DoubleOps::AlmostEqual(station0, station1);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Scott.Devoe                     09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AlignmentPairEditor::AreStationsEqual(DPoint3dCR p0, DPoint3dCR p1) const
+    {
+    return AreStationsEqual(p0.x, p1.x);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::LoadVerticalArcData(AlignmentPVIR pvi, ICurvePrimitiveCR primitiveArc) const
+    {
+    BeAssert(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == primitiveArc.GetCurvePrimitiveType());
+
+    // Cheat: put it in XY and use the logic from the horizontal
+    ICurvePrimitivePtr xyPrimitive = primitiveArc.Clone();
+    xyPrimitive->TransformInPlace(GetFlipYZTransform());
+
+    // Load Arc data using vertical code
+    AlignmentPI::Arc arc;
+    if (!LoadArcData(arc, *xyPrimitive))
+        return false;
+
+    pvi.InitInvalid(AlignmentPVI::TYPE_Arc);
+    AlignmentPVI::ArcInfoP pArc = pvi.GetArcP();
+
+    pArc->orientation = arc.orientation;
+    pArc->pvc = DPoint3d::From(arc.startPoint.x, 0.0, arc.startPoint.y);
+    pArc->pvi = DPoint3d::From(arc.piPoint.x, 0.0, arc.piPoint.y);
+    pArc->pvt = DPoint3d::From(arc.endPoint.x, 0.0, arc.endPoint.y);
+    pArc->radius = arc.radius;
+    return true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::LoadVerticalParabolaData(AlignmentPVIR pvi, ICurvePrimitiveCR primitiveParabola) const
+    {
+    BeAssert(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve == primitiveParabola.GetCurvePrimitiveType());
+
+    pvi.InitInvalid(AlignmentPVI::TYPE_Parabola);
+    AlignmentPVI::ParabolaInfoP pPara = pvi.GetParabolaP();
+
+    MSBsplineCurveCP pSpline = primitiveParabola.GetBsplineCurveCP();
+    size_t count = pSpline->GetNumPoles();
+    if (3 == count)
+        {
+        bvector<DPoint3d> poles;
+        pSpline->GetPoles(poles);
+
+        pPara->pvc = DPoint3d::From(poles[0].x, 0.0, poles[0].z);
+        pPara->pvi = DPoint3d::From(poles[1].x, 0.0, poles[1].z);
+        pPara->pvt = DPoint3d::From(poles[2].x, 0.0, poles[2].z);
+        pPara->length = fabs(poles[2].x - poles[0].x);
+        pPara->holdLength = primitiveParabola.GetMarkerBit(VERTICAL_HOLD_CURVE_LENGTH);
+        }
+
+    return (3 == count);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+ICurvePrimitivePtr AlignmentPairEditor::BuildVerticalArc(AlignmentPVI::ArcInfoCR info) const
+    {
+    DPoint3d xyPVC = DPoint3d::From(info.pvc.x, info.pvc.z, 0.0);
+    DPoint3d xyPVI = DPoint3d::From(info.pvi.x, info.pvi.z, 0.0);
+    DPoint3d xyPVT = DPoint3d::From(info.pvt.x, info.pvt.z, 0.0);
+
+    if (0.0 >= info.radius)
+        {
+        REPLACEMENT_LOGW("AlignmentPairEditor::BuildVerticalArc - null or negative radius");
+        return nullptr;
+        }
+
+    const DVec3d v0 = DVec3d::FromStartEndNormalize(xyPVI, xyPVC);
+    const DVec3d v1 = DVec3d::FromStartEndNormalize(xyPVI, xyPVT);
+    const DVec3d poi = DVec3d::From(xyPVI);
+
+    // Returns angle between -pi to +pi
+    const double angle = std::abs(v0.AngleToXY(v1));
+    if (0.0 == angle)
+        {
+        REPLACEMENT_LOGW("AlignmentPairEditor::BuildVerticalArc - null angle");
+        return nullptr;
+        }
+
+    DVec3d bisector = DVec3d::FromSumOf(v0, v1);
+    bisector.ScaleToLength(info.radius / sin(0.5 * angle));
+    const DPoint3d center = DPoint3d::FromSumOf(poi, bisector);
+
+    // Compute distance from poi tangentArc
+    const double tangentArcLength = info.radius / tan(0.5 * angle);
+    const DPoint3d tangentArcPt = DPoint3d::FromSumOf(poi, v0, tangentArcLength);
+    const DPoint3d arcTangentPt = DPoint3d::FromSumOf(poi, v1, tangentArcLength);
+
+    DEllipse3d ellipse;
+    if (!ellipse.InitFromArcCenterStartEnd(center, tangentArcPt, arcTangentPt))
+        {
+        REPLACEMENT_LOGW("AlignmentPairEditor::BuildVerticalArc - failed to create arc");
+        return nullptr;
+        }
+
+    if (Orientation::ORIENTATION_Unknown != info.orientation)
+        {
+        if (ellipse.IsCCWSweepXY() && Orientation::ORIENTATION_CCW != info.orientation)
+            ellipse.ComplementSweep();
+        }
+
+    // primitive is created in XY. We need to flip it
+    ICurvePrimitivePtr primitive = ICurvePrimitive::CreateArc(ellipse);
+    if (primitive.IsValid())
+        primitive->TransformInPlace(GetFlipYZTransform());
+
+    return primitive;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+ICurvePrimitivePtr AlignmentPairEditor::BuildVerticalParabola(AlignmentPVI::ParabolaInfoCR info) const
+    {
+    const bvector<DPoint3d> poles { info.pvc, info.pvi, info.pvt };
+
+    MSBsplineCurvePtr parabolaCurve = MSBsplineCurve::CreateFromPolesAndOrder(poles, NULL, NULL, 3, false, false);
+
+    ICurvePrimitivePtr primitive = parabolaCurve.IsValid() ? ICurvePrimitive::CreateBsplineCurve(parabolaCurve) : nullptr;
+    if (primitive.IsValid())
+        primitive->SetMarkerBit(VERTICAL_HOLD_CURVE_LENGTH, info.holdLength);
+
+    return primitive;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<AlignmentPVI> AlignmentPairEditor::GetPVIs() const
+    {
+    if (nullptr == GetVerticalCurveVector())
+        return bvector<AlignmentPVI>();
+
+    if (!m_cachedPVIs.empty())
+        return m_cachedPVIs;
+
+    CurveVectorCR vt = *GetVerticalCurveVector();
+
+    DPoint3d vtStart, vtEnd;
+    vt.GetStartEnd(vtStart, vtEnd);
+    vtStart.y = 0.0;
+    vtEnd.y = 0.0;
+
+    bool isError = false;
     bvector<AlignmentPVI> pvis;
-    int count = 0;
-    DPoint3d start = DPoint3d::From (0.0, 0.0, 0.0), end = DPoint3d::From (0.0, 0.0, 0.0), lastPt = DPoint3d::From (0.0, 0.0, 0.0);
-    
-    ICurvePrimitive::CurvePrimitiveType lastCurveType = ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PartialCurve;
-    for (auto primitive : vt)
+
+    for (size_t i = 0; i < vt.size(); ++i)
         {
-        primitive->GetStartEnd (start, end);
-        if (count == 0)
+        switch (vt[i]->GetCurvePrimitiveType())
             {
-            AlignmentPVI startpvi (start, 0.0);
-            pvis.push_back (startpvi);
-            lastPt = start;
-            }
-        switch (primitive->GetCurvePrimitiveType ())
-            {
-                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line:
-                    if (lastCurveType == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
-                        {
-                        DPoint3d segStart, segEnd;
-                        primitive->GetStartEnd (segStart, segEnd);
-                        AlignmentPVI apvi (segStart, segStart, segStart, 0.0);
-                        if (!_StationCompare (apvi.poles[PVI].x, lastPt.x))
-                            {
-                            pvis.push_back (apvi);;
-                            lastPt = segStart;
-                            }
-                        }
-                    break;
-                case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                {
+                AlignmentPVI pvi;
+                if (0 == i)
                     {
-                    MSBsplineCurveCP bspline = primitive->GetBsplineCurveCP ();
-                    size_t count = bspline->GetNumPoles ();
-                    if (count == 3)
-                        {
-                        bvector<DPoint3d> poles;
-                        bspline->GetPoles (poles);
-                        AlignmentPVI apvi (poles.at (1), poles.at (0), poles.at (2), poles.at (0).DistanceXY (poles.at (2)));
-                        pvis.push_back (apvi);;
-                        lastPt = poles.at (1);
-                        }
+                    pvi.InitGradeBreak(vtStart);
+                    pvis.push_back(pvi);
                     }
-                    break;
+                
+                if (i + 1 < vt.size() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == vt[i + 1]->GetCurvePrimitiveType())
+                    {
+                    DPoint3d start, end;
+                    vt[i]->GetStartEnd(start, end);
+                    end.y = 0.0;
+                    pvi.InitGradeBreak(end);
+                    pvis.push_back(pvi);
+                    }
+
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+                {
+                AlignmentPVI pvi;
+                if (LoadVerticalArcData(pvi, *vt.at(i)))
+                    pvis.push_back(pvi);
+                else
+                    isError = true;
+
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PartialCurve:
+                {
+                ICurvePrimitivePtr parent = vt[i]->GetPartialCurveDetailCP()->parentCurve;
+                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve != parent->GetCurvePrimitiveType())
+                    isError = true;
+
+                BeAssert(!"&&AG NEEDSWORK PARTIAL CURVES");
+                AlignmentPVI pvi;
+                if (LoadVerticalParabolaData(pvi, *vt[i]))
+                    pvis.push_back(pvi);
+                else
+                    isError = true;
+
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+                {
+                AlignmentPVI pvi;
+                if (LoadVerticalParabolaData(pvi, *vt[i]))
+                    pvis.push_back(pvi);
+                else
+                    isError = true;
+
+                break;
+                }
+            default:
+                {
+                REPLACEMENT_LOG("AlignmentPairEditor::GetPVIs - unexpected primitive type");
+                isError = true;
+                break;
+                }
             }
-        lastCurveType = primitive->GetCurvePrimitiveType ();
-        count++;
-        }
-    if (count > 0)
-        {
-        if (!_StationCompare (end, lastPt))
+
+        if (isError)
             {
-            AlignmentPVI endPvi (end, 0.0);
-            endPvi.poles[PVC].x = endPvi.poles[PVT].x = endPvi.poles[PVI].x;
-            pvis.push_back (endPvi); // add the end point
+            REPLACEMENT_LOGW("AlignmentPairEditor::GetPVIs - error");
+            return bvector<AlignmentPVI>();
             }
         }
+
+
+    // Add the end PVI unless the last PVI exceeds the vt length (which means we have a partial curve at the end)
+    if (!pvis.empty() && pvis.back().GetPVTLocation().x < vtEnd.x)
+        {
+        AlignmentPVI endPVI;
+        endPVI.InitGradeBreak(vtEnd);
+        pvis.push_back(endPVI);
+        }
+
+#ifndef NDEBUG
+    // DEBUG-Only sanity check. We should be able to rebuild the curve off the PVIs we've just retrieved
+    CurveVectorPtr sanityPVICurve = _BuildCurveVectorFromPVIs(pvis);
+    BeAssert(sanityPVICurve.IsValid());
+#endif
+
+    m_cachedPVIs = pvis;
     return pvis;
     }
-#endif
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::GetPVI(AlignmentPVIR pvi, size_t index) const
+    {
+    auto pvis = GetPVIs();
+    if (index < pvis.size())
+        {
+        pvi = pvis[index];
+        return true;
+        }
+
+    return false;
+    }
 
 
 //---------------------------------------------------------------------------------------
@@ -1553,80 +1934,56 @@ CurveVectorPtr AlignmentPairEditor::_BuildCurveVectorFromPVIs(bvector<AlignmentP
 
     BeAssert(_ValidatePVIs(pvis) && "Caller is expected to validate PVIs before calling this");
 
-    CurveVectorPtr verticalAlignment = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-
+    CurveVectorPtr vtCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     
-#if WIP_ENABLE_VERTICAL
     for (size_t i = 0; i < pvis.size(); ++i)
         {
         //! Tie with last PVI if PVC/PVT don't overlap
         if (0 < i)
             {
-            if (!AreStationsEqual(pvis[i - 1].poles[PVT], pvis[i].poles[PVC]))
-                {
-                ICurvePrimitivePtr primitive = CreateLineBetweenPVIs(pvis[i - 1], pvis[i]);
-                verticalAlignment->push_back(primitive);
-                }
+            DPoint3dCR lastPVT = pvis[i - 1].GetPVTLocation();
+            DPoint3dCR currPVC = pvis[i].GetPVCLocation();
+
+            if (!AreStationsEqual(lastPVT, currPVC))
+                vtCurve->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(lastPVT, currPVC)));
             }
 
-        if (VerticalGeometryType::None != pvis[i].geometryType)
+        switch (pvis[i].GetType())
             {
-            if (VerticalGeometryType::SingleArc == pvis[i].geometryType)
+            case AlignmentPVI::TYPE_GradeBreak:
                 {
-                if (pvis[i].radius > 0.0)
-                    {
-                    // Creates a tangential primitive arc between grades
-                    DEllipse3d ellipse = DEllipse3d::FromArcCenterStartEnd(pvis[i].arc.centerPoint, pvis[i].arc.startPoint, pvis[i].arc.endPoint);
-                    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
-                    verticalAlignment->push_back(arc);
-                    }
-                else
-                    {
-                    // Do not insert the IP point, it will be the line - line connection point
-                    }
+                break;
                 }
-            else if (VerticalGeometryType::Parabola == pvis[i].geometryType)
+            case AlignmentPVI::TYPE_Arc:
                 {
-                if (pvis[i].length > 0.0)
-                    {
-                    // If PVC is less than zero, we have a partial parabola at start. Get the fraction where it starts
-                    const double fraction0 = (0.0 > pvis[i].poles[PVC].x) ? (-1 * pvis[i].poles[PVC].x) / pvis[i].length : 0.0;
+                ICurvePrimitivePtr primitive = BuildVerticalArc(*pvis[i].GetArc());
+                if (!primitive.IsValid())
+                    return nullptr;
 
-                    // If the PVT is greater than the length, we have a partial parabola at end. Get the fraction where it ends
-                    const double fraction1 = (matchLen < pvis[i].poles[PVT].x) ? (matchLen - pvis[i].poles[PVC].x) / pvis[i].length : 1.0;
+                vtCurve->push_back(primitive);
+                break;
+                }
+            case AlignmentPVI::TYPE_Parabola:
+                {
+                ICurvePrimitivePtr primitive = BuildVerticalParabola(*pvis[i].GetParabola());
+                if (!primitive.IsValid())
+                    return nullptr;
 
-                    if (fraction0 == fraction1 || fraction0 > fraction1 || 0.0 > fraction0 || 1.0 < fraction1)
-                        return nullptr;
-
-                    MSBsplineCurvePtr parabolaCurve = MSBsplineCurve::CreateFromPolesAndOrder(pvis[i].poles, NULL, NULL, 3, false, false);
-                    ICurvePrimitivePtr bSpline = ICurvePrimitive::CreateBsplineCurve(parabolaCurve);
-                    ICurvePrimitivePtr cp = static_cast<ICurvePrimitiveP>(bSpline.get());
-                    if (cp.IsValid())
-                        cp->SetMarkerBit(VERTICAL_HOLD_CURVE_LENGTH, pvis[i].holdLength);
-
-                    if (!DoubleOps::AlmostEqual(0.0, fraction0) || !DoubleOps::AlmostEqual(1.0, fraction1))
-                        {
-                        if (DoubleOps::AlmostEqual(fraction0, fraction1))
-                            return nullptr;
-
-                        ICurvePrimitivePtr partial = ICurvePrimitive::CreatePartialCurve(bSpline.get(), fraction0, fraction1);
-                        verticalAlignment->push_back(partial);
-                        }
-                    else
-                        verticalAlignment->push_back(bSpline);
-                    }
-                else
-                    {
-                    // Do not insert the IP point, it will be the line - line connection point
-                    }
+                //&&AG needswork partial curves
+                vtCurve->push_back(primitive);
+                break;
+                }
+            default:
+                {
+                REPLACEMENT_LOG("AlignmentPairEditor::_BuildCurveVectorFromPVIs - invalid PVI type");
+                return nullptr;
                 }
             }
         }
-#endif
 
-    if (!verticalAlignment->empty())
-        return verticalAlignment;
-        
+    if (!vtCurve->empty())
+        return vtCurve;
+            
     return nullptr;
     }
 
@@ -2349,113 +2706,108 @@ CurveVectorPtr AlignmentPairEditor::ValidateVerticalData (bool updateInternalCur
 
     return newVertical;
     }
+#endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr AlignmentPairEditor::MovePVI (DPoint3d fromPt, DPoint3d toPt, StationRangeEditR editRange)
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::MovePVI(size_t index, DPoint3dCR toPt, StationRangeEditP pRangeEdit) const
     {
-    bvector<AlignmentPVI> pvis = _GetPVIs ();
-    if (pvis.size () <= 0)
+    bvector<AlignmentPVI> pvis = GetPVIs();
+    if (index >= pvis.size())
         return nullptr;
-    bool changed = false;
-    for (int i = 0; i < pvis.size () && changed == false; i++)
+
+    AlignmentPVI pvi = pvis[index];
+    // Only allow update elevation for start/end pvis
+    if (0 == index || index + 1 == pvis.size())
         {
-        if (_StationCompare (pvis[i].poles.at (VC::PVI), fromPt))  // found pvi to move
-            {
-            if (i == 0)  // special case first point, can't move in X only Z
-                {
-                pvis[i].poles[PVI].z = toPt.z;
-                // update next pole
-                pvis[i + 1].poles[PVC].z = pvis[i + 1].poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i + 1].length );
-                changed = true;
-
-                editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i].poles[PVI].x;
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i + 1].poles[PVT].x;
-                }
-            else if (i == ( pvis.size () - 1 ))  // special case last point, cant't move in X only Z
-                {
-                pvis[i].poles[PVI].z = toPt.z;
-                // update previous poles
-                pvis[i - 1].poles[PVT].z = pvis[i - 1].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i].poles[PVI]) * 0.5 * pvis[i - 1].length );
-                changed = true;
-
-                editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i - 1].poles[PVC].x;
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i].poles[PVI].x;
-                }
-            else
-                {
-                if (pvis[i].length == 0.0)
-                    {
-                    pvis[i].length = _GetDesignLength (toPt, pvis, i);
-                    pvis[i].poles[PVC].x = pvis[i].poles[PVI].x - (pvis[i].length * 0.5);
-                    pvis[i].poles[PVT].x = pvis[i].poles[PVI].x + ( pvis[i].length * 0.5 );
-                    }
-                double minSta, maxSta;
-                _GetValidEditRange (pvis, i, &minSta, &maxSta);
-                if (toPt.x < minSta || toPt.x > maxSta)
-                    break;
-                // update the current pvi and curves
-                pvis[i].poles[PVI].z = toPt.z;
-                pvis[i].poles[PVI].x = toPt.x;
-                pvis[i].poles[PVC].x = pvis[i].poles[PVI].x - ( pvis[i].length * 0.5 );
-                pvis[i].poles[PVC].z = pvis[i].poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i].poles[PVI]) * 0.5 * pvis[i].length );
-                pvis[i].poles[PVT].x = pvis[i].poles[PVI].x + ( pvis[i].length * 0.5 );
-                pvis[i].poles[PVT].z = pvis[i].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i].length );
-
-                // update the next and previous
-                pvis[i + 1].poles[PVC].z = pvis[i + 1].poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i + 1].length );
-                pvis[i - 1].poles[PVT].z = pvis[i - 1].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i].poles[PVI]) * 0.5 * pvis[i - 1].length );
-                changed = true;
-
-                editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i - 1].poles[PVC].x;
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i + 1].poles[PVT].x;
-                }
-            break;
-            }
+        DPoint3d pviLocation = pvi.GetPVILocation();
+        pviLocation.z = toPt.z;
+        pvi.SetPVILocation(pviLocation);
         }
-    if (changed == false)
+    else
+        pvi.SetPVILocation(toPt);
+
+    return MovePVI(index, pvi, pRangeEdit);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::MovePVI(size_t index, AlignmentPVIR inOutPVI, StationRangeEditP pRangeEdit) const
+    {
+    bvector<AlignmentPVI> pvis = GetPVIs();
+    if (index >= pvis.size() || !inOutPVI.IsInitialized())
         return nullptr;
 
-    // rebuild curve vector based on AlignmentPVI
-    return _BuildVectorFromPVIS (pvis);
-    }
+    // Only allow update elevation for start/end pvis
+    if (0 == index || index + 1 == pvis.size())
+        {
+        DPoint3d pviLocation = pvis[index].GetPVILocation();
+        pviLocation.z = inOutPVI.GetPVILocation().z;
+        inOutPVI.SetPVILocation(pviLocation);
+        }
 
+    pvis[index] = inOutPVI;
+
+    VerticalEditResult result = SolveValidateAndBuild(pvis, index, false/*isDelete*/);
+    if (result.vtCurve.IsValid())
+        {
+        inOutPVI = pvis[index];
+
+        if (nullptr != pRangeEdit)
+            *pRangeEdit = StationRangeEdit(result.modifiedRange);
+        }
+
+    return result.vtCurve;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 * allow the move of a tangent segment up or down (pass the old center x,z and new center x, z)
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr AlignmentPairEditor::MoveVerticalTangent (DPoint3d fromPt, DPoint3d toPt, StationRangeEditR editRange)
+CurveVectorPtr AlignmentPairEditor::MoveVerticalTangent(DPoint3dCR fromPt, DPoint3dCR toPt, StationRangeEditP pRangeEdit) const
     {
-    bvector<AlignmentPVI> pvis = _GetPVIs ();
-    if (pvis.size () <= 0)
-        return nullptr;
-    bool changed = false;
-    double deltaZ = toPt.z - fromPt.z;
-    StationRangeEdit edit1, edit2;
-    for (int i = 0; i < ( pvis.size () - 1 ) && changed == false; i++)
+    bvector<AlignmentPVI> pvis = GetPVIs();
+
+    for (size_t i = 1; i < pvis.size(); ++i)
         {
-        // maybe should do a better check, but this will identify the tangent line
-        // and the delta Z is what matters here.
-        if (fromPt.x > pvis[i].poles[PVI].x && fromPt.x < pvis[i + 1].poles[PVI].x)
+        if (fromPt.x > pvis[i - 1].GetPVILocation().x && fromPt.x < pvis[i].GetPVILocation().x)
             {
-            AlignmentPairEditorPtr vGeom = AlignmentPairEditor::Create (GetHorizontalCurveVector(), GetVerticalCurveVector());
-            // move the two pvis vertically and update the corresponding curves if necessary
-            DPoint3d newPVILocation = DPoint3d::From (pvis[i].poles[PVI].x, 0.0, pvis[i].poles[PVI].z + deltaZ);
-            CurveVectorPtr newVertical;
-            if ((newVertical = vGeom->MovePVI (pvis[i].poles[PVI], newPVILocation, edit1)) == nullptr)
-                return nullptr;
-            vGeom->UpdateVerticalCurveVector(newVertical.get());
-            newPVILocation = DPoint3d::From (pvis[i + 1].poles[PVI].x, 0.0, pvis[i + 1].poles[PVI].z + deltaZ);
-            if (( newVertical = vGeom->MovePVI (pvis[i + 1].poles[PVI], newPVILocation, edit2) ) == nullptr)
-                return nullptr;
-            editRange.preEditRange.startStation = editRange.postEditRange.startStation = fmin (edit1.preEditRange.startStation, edit2.preEditRange.startStation);
-            editRange.preEditRange.endStation = editRange.postEditRange.endStation = fmax (edit1.preEditRange.endStation, edit2.preEditRange.endStation);
-            return newVertical;
+            const double deltaZ = toPt.z - fromPt.z;
+            
+            DPoint3d prevLocation = pvis[i - 1].GetPVILocation();
+            prevLocation.z += deltaZ;
+            pvis[i - 1].SetPVILocation(prevLocation);
+
+            DPoint3d currLocation = pvis[i].GetPVILocation();
+            currLocation.z += deltaZ;
+            pvis[i].SetPVILocation(currLocation);
+
+            // We've edited pvis[i - 1] and pvis[i].
+            // We must also solve pvis[i - 2] and pvis[i + 1] if they are defined
+
+            // Solve pvis[i - 2] (if applicable)
+            if (1 < i && !_SolvePVI(pvis, i - 2))
+                return false;
+
+            // this will solve pvis[i - 1], pvis[i], pvis[i + 1] (if applicable)
+            VerticalEditResult result = SolveValidateAndBuild(pvis, i, false/*isDelete*/);
+            if (result.vtCurve.IsValid())
+                {
+                if (1 < i)
+                    result.modifiedRange.Extend(pvis[i - 1].GetStationRangePVIPVT());
+
+                if (nullptr != pRangeEdit)
+                    *pRangeEdit = StationRangeEdit(result.modifiedRange);
+                }
+
+            return result.vtCurve;
             }
         }
-    return nullptr;  // not found
+
+    return nullptr; // not found
     }
+#if 0
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     02/2016
@@ -2482,235 +2834,233 @@ CurveVectorPtr AlignmentPairEditor::ForceGradeAtStation (const double& station, 
         }
     return nullptr;
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 * Allow the move of a pvc or pvt based on station.  Will return invalid if the result
 * produces any overlapping curve or a 0 or negative length curve
 * the result edit range is only the vertical curve
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr AlignmentPairEditor::MovePVCorPVT (double fromSta, double toSta, StationRangeEditR editRange)
+CurveVectorPtr AlignmentPairEditor::MoveParabolaPVCorPVT(double fromDistanceAlong, double toDistanceAlong, StationRangeEditP pRangeEdit) const
     {
-    bvector<AlignmentPVI> pvis = _GetPVIs ();
-    if (pvis.size () <= 0)
+    bvector<AlignmentPVI> pvis = GetPVIs();
+
+    size_t index;
+    bool isPVC;
+    if (!FindEqualPVCorPVT(index, isPVC, pvis, fromDistanceAlong))
         return nullptr;
-    bool changed = false;
-    for (int i = 1; i < ( pvis.size () - 1 ) && changed == false; i++)
+
+    if (AlignmentPVI::TYPE_Parabola != pvis[index].GetType())
+        return nullptr;
+
+    if (isPVC)
         {
-        if (pvis[i].length > 0.0)
-            {
-            if (_StationCompare (pvis[i].poles[PVC].x, fromSta) == true)
-                {
-                if (toSta >= pvis[i].poles[PVI].x)
-                    return nullptr;
-                if (pvis[i - 1].length > 0.0)
-                    {
-                    if (toSta < pvis[i - 1].poles[PVT].x)
-                        return nullptr;
-                    }
-                pvis[i].length = fabs (toSta - pvis[i].poles[PVI].x) * 2.0;
-                // update the current vertical curve at the point we've found
-                pvis[i].poles[PVC].x = pvis[i].poles[PVI].x - ( pvis[i].length * 0.5 );
-                pvis[i].poles[PVC].z = pvis[i].poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i].poles[PVI]) * 0.5 * pvis[i].length );
-                pvis[i].poles[PVT].x = pvis[i].poles[PVI].x + ( pvis[i].length * 0.5 );
-                pvis[i].poles[PVT].z = pvis[i].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i].length );
-
-                editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i].poles[PVC].x;
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i].poles[PVT].x;
-                changed = true;
-                }
-            else if (_StationCompare (pvis[i].poles[PVT].x, fromSta) == true)
-                {
-                if (toSta <= pvis[i].poles[PVI].x)
-                    return nullptr;
-                if (pvis[i + 1].length > 0.0)
-                    {
-                    if (toSta > pvis[i + 1].poles[PVC].x)
-                        return nullptr;
-                    }
-                pvis[i].length = fabs (toSta - pvis[i].poles[PVI].x) * 2.0;
-                // update the current vertical curve at the point we've found
-                pvis[i].poles[PVC].x = pvis[i].poles[PVI].x - ( pvis[i].length * 0.5 );
-                pvis[i].poles[PVC].z = pvis[i].poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i].poles[PVI]) * 0.5 * pvis[i].length );
-                pvis[i].poles[PVT].x = pvis[i].poles[PVI].x + ( pvis[i].length * 0.5 );
-                pvis[i].poles[PVT].z = pvis[i].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i].length );
-
-                editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i].poles[PVC].x;
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i].poles[PVT].x;
-                changed = true;
-                }
-            }
-        }
-    if (changed == false)
-        return nullptr;
-
-    // rebuild curve vector based on AlignmentPVI
-    return _BuildVectorFromPVIS (pvis);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr AlignmentPairEditor::InsertPVI (DPoint3d pviPt, double lengthOfCurve, StationRangeEditR editRange)
-    {
-    bvector<AlignmentPVI> pvis = _GetPVIs ();
-    if (pvis.size () <= 0)
-        return nullptr;
-    bool changed = false;
-    bvector<AlignmentPVI>::iterator iter = pvis.begin ();
-    for (int i = 0; i < ( pvis.size () - 1 ) && changed == false; i++)
-        {
-        ++iter;
-        if (pviPt.x == 0.0)// not sure what to do...(update start z?)
+        if (toDistanceAlong >= pvis[index].GetPVILocation().x)
             return nullptr;
-        if (pviPt.x < pvis[i + 1].poles[PVI].x)
-            {
-            // check for previous curve / pvi overlap
-            if (pvis[i].poles[PVI].x > pviPt.x - ( 0.5 * lengthOfCurve ))
-                return nullptr;
-            if (pvis[i].length > 0.0)
-                {
-                if (pvis[i].poles[PVT].x > pviPt.x - ( 0.5 * lengthOfCurve ))
-                    return nullptr;
-                }
-            // check for next curve / pvi overlap
-            if (pvis[i + 1].poles[PVI].x < pviPt.x + ( 0.5 * lengthOfCurve ))
-                return nullptr;
-            if (pvis[i + 1].length > 0.0)
-                {
-                if (pvis[i + 1].poles[PVC].x < pviPt.x + ( 0.5 * lengthOfCurve ))
-                    return nullptr;
-                }
-            AlignmentPVI newItem (pviPt, lengthOfCurve);
-            newItem.poles[PVC].x = pviPt.x - ( 0.5* lengthOfCurve );
-            newItem.poles[PVT].x = pviPt.x + ( 0.5 * lengthOfCurve );
-            newItem.poles[PVC].z = newItem.poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i].poles[PVI], newItem.poles[PVI]) * 0.5 * lengthOfCurve );
-            newItem.poles[PVT].z = newItem.poles[PVI].z + ( AlignmentPairEditor::_Slope (newItem.poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * lengthOfCurve );
-
-            // change the previous curve's pvt if necessary
-            if (i > 0)
-                {
-                if (pvis[i].length > 0.0)
-                    {
-                    pvis[i].poles[PVT].z = pvis[i].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i].poles[PVI], newItem.poles[PVI]) * 0.5 * pvis[i].length );
-                    editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i].poles[PVC].x;
-                    }
-                else
-                    editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i].poles[PVI].x;
-                }
-            else
-                editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[0].poles[PVI].x;
-
-            // change the forward curve's pvc if necessary
-            if (pvis[i + 1].length > 0.0)
-                {
-                pvis[i + 1].poles[PVC].z = pvis[i + 1].poles[PVI].z - ( AlignmentPairEditor::_Slope (newItem.poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i + 1].length );
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i + 1].poles[PVT].x;
-                }
-            else
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i + 1].poles[PVI].x;
-
-            pvis.insert (iter, newItem);
-            changed = true;
-            break;
-            }
         }
-    if (changed == false)
+    else
+        {
+        if (toDistanceAlong <= pvis[index].GetPVILocation().x)
+            return nullptr;
+        }
+
+    const double newLength = 2.0 * fabs(toDistanceAlong - pvis[index].GetPVILocation().x);
+
+    pvis[index].GetParabolaP()->length = newLength;
+
+    VerticalEditResult result = SolveValidateAndBuild(pvis, index, false/*isDelete*/);
+    if (nullptr != pRangeEdit && result.vtCurve.IsValid())
+        *pRangeEdit = StationRangeEdit(result.modifiedRange);
+
+    return result.vtCurve;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::MoveArcPVCorPVT(double fromDistanceAlong, double toDistanceAlong, StationRangeEditP pRangeEdit) const
+    {
+    bvector<AlignmentPVI> pvis = GetPVIs();
+
+    size_t index;
+    bool isPVC;
+    if (!FindEqualPVCorPVT(index, isPVC, pvis, fromDistanceAlong))
         return nullptr;
 
-    // rebuild curve vector based on AlignmentPVI
-    return _BuildVectorFromPVIS (pvis);
+    AlignmentPVIR pvi = pvis[index];
+    if (AlignmentPVI::TYPE_Arc != pvi.GetType())
+        return nullptr;
+
+    if (isPVC)
+        {
+        if (toDistanceAlong >= pvi.GetPVILocation().x)
+            return nullptr;
+        }
+    else
+        {
+        if (toDistanceAlong <= pvi.GetPVILocation().x)
+            return nullptr;
+        }
+
+    // Compute the ratio of movement of the PVC/PVT and apply the same ratio to the radius value
+    const double oldLength = pvis[index].GetStationRange().Length();
+    const double newLength = 2.0 * fabs(toDistanceAlong - pvi.GetPVILocation().x);
+    const double ratio = newLength / oldLength;
+    const double newRadius = ratio * pvi.GetArc()->radius;
+
+    pvi.GetArcP()->radius = newRadius;
+
+    VerticalEditResult result = SolveValidateAndBuild(pvis, index, false/*isDelete*/);
+    if (nullptr != pRangeEdit && result.vtCurve.IsValid())
+        *pRangeEdit = StationRangeEdit(result.modifiedRange);
+
+    return result.vtCurve;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+size_t AlignmentPairEditor::FindNexOrEqualPVIIndex(bvector<AlignmentPVI> const& pvis, double station) const
+    {
+    for (size_t i = pvis.size(); i > 0; --i)
+        {
+        if (pvis[i - 1].GetPVILocation().x < station)
+            return i;
+        }
+
+    return 0;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+size_t AlignmentPairEditor::FindEqualPVIIndex(bvector<AlignmentPVI> const& pvis, double station) const
+    {
+    for (size_t i = 0; i < pvis.size(); ++i)
+        {
+        if (AreStationsEqual(pvis[i].GetPVILocation().x, station))
+            return i;
+        }
+
+    return pvis.size();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::FindEqualPVCorPVT(size_t& pviIndex, bool& isPVC, bvector<AlignmentPVI> const& pvis, double station) const
+    {
+    for (size_t i = 0; i < pvis.size(); ++i)
+        {
+        if (AreStationsEqual(pvis[i].GetPVCLocation().x, station))
+            {
+            isPVC = true;
+            pviIndex = i;
+            return true;
+            }
+        if (AreStationsEqual(pvis[i].GetPVTLocation().x, station))
+            {
+            isPVC = false;
+            pviIndex = i;
+            return true;
+            }
+        }
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr AlignmentPairEditor::DeletePVI (DPoint3d pviPt, StationRangeEditR editRange)
+CurveVectorPtr AlignmentPairEditor::InsertPVI(AlignmentPVICR pvi, StationRangeEditP pRangeEdit) const
     {
-    bvector<AlignmentPVI> pvis = _GetPVIs ();
-    if (pvis.size () <= 2)
+    // Find the index to insert this point
+    bvector<AlignmentPVI> pvis = GetPVIs();
+    if (2 > pvis.size() || !pvi.IsInitialized())
         return nullptr;
 
-    bool changed = false;
-    int i = 0;
-    for (bvector<AlignmentPVI>::iterator iter = pvis.begin (); iter != pvis.end (); ++iter)
-        {
-        if (_StationCompare (iter->poles[PVI], pviPt) == true)
-            {
-            if (i == 0 || i == ( pvis.size () - 1 )) // can't delete beginning or end for now
-                return nullptr;
+    size_t index = FindNexOrEqualPVIIndex(pvis, pvi.GetPVILocation().x);
 
-            // update previous and next curves
-            if (i - 1 > 0)
-                {
-                pvis[i - 1].poles[PVT].z = pvis[i - 1].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i - 1].length );
-                }
-            if (( i + 1 ) < ( pvis.size () - 1 ))
-                {
-                pvis[i + 1].poles[PVC].z = pvis[i + 1].poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i + 1].length );
-                }
-            editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i - 1].poles[PVC].x;
-            editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i + 1].poles[PVT].x;
+    if (0 == index || index == pvis.size())
+        return nullptr; // todo start and end?
 
-            pvis.erase (iter);
-            changed = true;
-            break;
-            }
-        i++;
-        }
-    if (changed == false)
+    // Can't insert over an existing PVI
+    if (AreStationsEqual(pvis[index].GetPVILocation(), pvi.GetPVILocation()))
         return nullptr;
 
-    return _BuildVectorFromPVIS (pvis);
+    pvis.insert(pvis.begin() + index, pvi);
+
+    VerticalEditResult result = SolveValidateAndBuild(pvis, index, false);
+    if (nullptr != pRangeEdit && result.vtCurve.IsValid())
+        *pRangeEdit = StationRangeEdit(result.modifiedRange);
+
+    return result.vtCurve;
     }
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     02/2016
+* @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr AlignmentPairEditor::RemovePVIs (const double& fromSta, const double& toSta, StationRangeEditR editRange) 
-    { 
-    bvector<AlignmentPVI> pvis = _GetPVIs ();
-    if (pvis.size () <= 2)
+CurveVectorPtr AlignmentPairEditor::DeletePVI(DPoint3dCR pviPoint, StationRangeEditP pRangeEdit) const
+    {
+    bvector<AlignmentPVI> pvis = GetPVIs();
+
+    size_t index = FindEqualPVIIndex(pvis, pviPoint.x);
+    if (index == pvis.size())
         return nullptr;
 
-    bool changed = false;
-    int i = 0;
-    for (bvector<AlignmentPVI>::iterator iter = pvis.begin (); iter != pvis.end (); ++iter)
-        {
-        if (iter->poles[PVI].x > fromSta && iter->poles[PVI].x < toSta)
-            {
-            if (i == 0 || i == ( pvis.size () - 1 )) // can't delete beginning or end for now
-                continue;
-
-            // update previous and next curves
-            if (i - 1 > 0)
-                {
-                pvis[i - 1].poles[PVT].z = pvis[i - 1].poles[PVI].z + ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i - 1].length );
-                }
-            if (( i + 1 ) < ( pvis.size () - 1 ))
-                {
-                pvis[i + 1].poles[PVC].z = pvis[i + 1].poles[PVI].z - ( AlignmentPairEditor::_Slope (pvis[i - 1].poles[PVI], pvis[i + 1].poles[PVI]) * 0.5 * pvis[i + 1].length );
-                }
-            if (changed)
-                {
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i + 1].poles[PVT].x;
-                }
-            else
-                {
-                editRange.preEditRange.startStation = editRange.postEditRange.startStation = pvis[i - 1].poles[PVC].x;
-                editRange.preEditRange.endStation = editRange.postEditRange.endStation = pvis[i + 1].poles[PVT].x;
-                }
-            changed = true;
-            pvis.erase (iter);
-            }
-        i++;
-        }
-    if (changed == false)
-        return nullptr;
-
-    return _BuildVectorFromPVIS (pvis);
+    return DeletePVI(index, pRangeEdit);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::DeletePVI(size_t index, StationRangeEditP pRangeEdit) const
+    {
+    bvector<AlignmentPVI> pvis = GetPVIs();
+    if (index >= pvis.size())
+        return nullptr;
 
+    if (0 == index || index + 1 == pvis.size())
+        return nullptr; // todo start and end?
+
+    pvis.erase(pvis.begin() + index);
+
+    VerticalEditResult result = SolveValidateAndBuild(pvis, index, true/*isDelete*/);
+    if (nullptr != pRangeEdit && result.vtCurve.IsValid())
+        *pRangeEdit = StationRangeEdit(result.modifiedRange);
+
+    return result.vtCurve;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::DeletePVIs(StationRangeCR range, StationRangeEditP pRangeEdit) const
+    {
+    bvector<AlignmentPVI> pvis = GetPVIs();
+    if (2 >= pvis.size())
+        return nullptr;
+
+    if (!range.IsValid())
+        return nullptr;
+
+    size_t lastDeleted = pvis.size();
+
+    for (size_t i = pvis.size(); i > 0; --i)
+        {
+        // Can't delete start or end PVI for now
+        if (i == pvis.size() || i == 1)
+            continue;
+
+        if (range.ContainsInclusive(pvis[i - 1].GetPVILocation().x))
+            {
+            lastDeleted = (i - 1);
+            pvis.erase(pvis.begin() + (i - 1));
+            }
+        }
+
+    if (pvis.size() == lastDeleted)
+        return nullptr;
+
+    VerticalEditResult result = SolveValidateAndBuild(pvis, lastDeleted, true/*isDelete*/);
+    if (nullptr != pRangeEdit && result.vtCurve.IsValid())
+        *pRangeEdit = StationRangeEdit(result.modifiedRange);
+
+    return result.vtCurve;
+    }
+#if 0
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 * based on a horizontal change, the length of the vertical profile must change also
@@ -2915,83 +3265,123 @@ bool AlignmentPairEditor::_SolveAllPVIs (bvector<AlignmentPVI>& pvis)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        12/2017
 //---------------------------------------------------------------------------------------
-bool AlignmentPairEditor::SolveGradeBreakPVI(bvector<AlignmentPVI>& pvis, size_t index) const
+bool AlignmentPairEditor::IsPVIOverlap(bvector<AlignmentPVI> const& pvis, size_t index) const
     {
-#if WIP_ENABLE_VERTICAL
-    AlignmentPVIR pvi = pvis[index];
+    AlignmentPVICR pvi = pvis[index];
 
     if (0 < index && pvis[index - 1].GetPVILocation().x >= pvi.GetPVILocation().x)
-        return false;
+        return true;
 
     if ((index + 1) < pvis.size() && pvis[index + 1].GetPVILocation().x <= pvi.GetPVILocation().x)
-        return false;
+        return true;
 
-
-
-#endif
-    return true;
+    return false;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        12/2017
 //---------------------------------------------------------------------------------------
-bool AlignmentPairEditor::SolveParabolicPVI(bvector<AlignmentPVI>& pvis, size_t index) const
+double AlignmentPairEditor::ComputeMaximumLength(bvector<AlignmentPVI> const& pvis, size_t index) const
     {
-#if WIP_ENABLE_VERTICAL
+    double maxLength = CS_PVI_INFINITY;
 
-#endif
-    return false;
+    if (0 < index)
+        {
+        const double prevLength = 2.0 * (pvis[index].GetPVILocation().x - pvis[index - 1].GetPVTLocation().x);
+        if (prevLength < maxLength)
+            maxLength = prevLength;
+        }
+
+    if (index + 1 < pvis.size())
+        {
+        const double nextLength = 2.0 * (pvis[index + 1].GetPVCLocation().x - pvis[index].GetPVILocation().x);
+        if (nextLength < maxLength)
+            maxLength = nextLength;
+        }
+
+    return maxLength;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::SolveArcPVI(bvector<AlignmentPVI>& pvis, size_t index) const
+    {
+    if (IsPVIOverlap(pvis, index))
+        return false;
 
+    if (0 == index || index + 1 == pvis.size())
+        return false; // todo start and end?
+
+    AlignmentPVI::ArcInfoP pArc = pvis[index].GetArcP();
+    if (0.0 >= pArc->radius)
+        return false;
+
+    pArc->pvc = pvis[index - 1].GetPVILocation();
+    pArc->pvt = pvis[index + 1].GetPVILocation();
+
+    ICurvePrimitivePtr primitive = BuildVerticalArc(*pArc);
+    if (!primitive.IsValid())
+        return false;
+
+    // Update PVI with new data
+    return LoadVerticalArcData(pvis[index], *primitive);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        12/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentPairEditor::SolveParabolaPVI(bvector<AlignmentPVI>& pvis, size_t index) const
+    {
+    if (IsPVIOverlap(pvis, index))
+        return false;
+
+    if (0 == index || index + 1 == pvis.size())
+        return false; // todo start and end?
+
+    AlignmentPVI::ParabolaInfoP pParabola = pvis[index].GetParabolaP();
+    if (0.0 >= pParabola->length)
+        return false;
+
+    const double maxLength = ComputeMaximumLength(pvis, index);
+
+    //&&AG TODO FORCE FIT
+    if (maxLength < pParabola->length)
+        return false;
+
+    const double frontSlope = AlignmentPVI::Slope(pvis[index - 1].GetPVILocation(), pvis[index].GetPVILocation());
+    pParabola->pvc.x = pParabola->pvi.x - (0.5 * pParabola->length);
+    pParabola->pvc.z = pParabola->pvi.z - (0.5 * pParabola->length * frontSlope);
+
+    const double backSlope = AlignmentPVI::Slope(pvis[index].GetPVILocation(), pvis[index + 1].GetPVILocation());
+    pParabola->pvt.x = pParabola->pvi.x + (0.5 * pParabola->length);
+    pParabola->pvt.z = pParabola->pvi.z + (0.5 * pParabola->length * backSlope);
+
+    ICurvePrimitivePtr primitive = BuildVerticalParabola(*pParabola);
+    if (!primitive.IsValid())
+        return false;
+
+    // Update PVI with new data
+    return LoadVerticalParabolaData(pvis[index], *primitive);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPairEditor::_SolvePVI(bvector<AlignmentPVI>& pvis, size_t index) const
     {
-    if (index >= pvis.size())
-        return false;
+    BeAssert(index < pvis.size());
 
-#if WIP_ENABLE_VERTICAL
-    AlignmentPVIR pvi = pvis[index];
-    double maxHalfLength = CS_PVI_INFINITY;
-
-    if (0 < index)
+    switch (pvis[index].GetType())
         {
-        if (pvis[index - 1].GetPVILocation().x >= pvi.GetPVILocation().x)
-            return false;
-
-        maxHalfLength = MIN(maxHalfLength, pvi.GetPVILocation().x - pvis[index - 1].GetPVTLocation().x);
-        }
-
-    if ((index + 1) < pvis.size())
-        {
-        if (pvis[index + 1].GetPVILocation().x <= pvi.GetPVILocation().x)
-            return false;
-
-        maxHalfLength = MIN(maxHalfLength, pvis[index + 1].GetPVCLocation().x - pvi.GetPVILocation().x);
-        }
-
-    //&&AG todo use maxHalfLength if we ever need to fit the PVI
-static bool s_agForceFit = false; 
-
-    if (0.0 < pvi.length)
-        {
-        if (maxHalfLength < 0.5 * pvi.length)
+        case AlignmentPVI::TYPE_GradeBreak:
+            return !IsPVIOverlap(pvis, index);
+        case AlignmentPVI::TYPE_Arc:
+            return SolveArcPVI(pvis, index);
+        case AlignmentPVI::TYPE_Parabola:
+            return SolveParabolaPVI(pvis, index);
+        default:
             {
-            // No room
-            if (!s_agForceFit)
-                return false;
-
-            pvi.length = 2.0 * maxHalfLength;
+            REPLACEMENT_LOG("AlignmentPairEditor::_SolvePVI - Invalid PVI type");
+            return false;
             }
         }
-
-    pvi.poles[PVC].x = pvi.poles[PVI].x - ( 0.5 * pvi.length );
-    pvi.poles[PVT].x = pvi.poles[PVI].x + ( 0.5 * pvi.length );
-    pvi.poles[PVC].z = pvi.poles[PVI].z - ( AlignmentPairEditor::_Slope (prevPVI.poles[PVI], pviToSolve.poles[PVI]) * 0.5 * pviToSolve.length );
-    pvi.poles[PVT].z = pvi.poles[PVI].z + ( AlignmentPairEditor::_Slope (pviToSolve.poles[PVI], nextPVI.poles[PVI]) * 0.5 * pviToSolve.length );
-#endif
-
-    return true;
     }
 
 //---------------------------------------------------------------------------------------

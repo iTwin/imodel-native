@@ -10,8 +10,7 @@
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
 #include <Geom/GeomApi.h>
-
-#include <DgnPlatform/DgnPlatformApi.h> //&&AG todo remove this dependency
+#include <DgnPlatform/DgnPlatform.r.h> // Only required for Dgn::StandardUnit
 
 // This Dll is not expected to contain any other dependencies other than GeomLibs and the BentleyApi
 

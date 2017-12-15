@@ -893,10 +893,7 @@ double computeMinimumRadius(CurveVectorCR hz, bool wantsCCW)
             continue;
 
         double radius;
-        if (!pArc->IsCircularXY(radius))
-            continue;
-
-        if (radius < minRadius)
+        if (pArc->IsCircularXY(radius) && radius < minRadius)
             minRadius = radius;
         }
 
