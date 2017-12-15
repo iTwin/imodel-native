@@ -20,9 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChangeIteratorImpl.cpp" />
+    <ClCompile Include="ChangeManager.cpp" />
     <ClCompile Include="ChangeSummaryExtractor.cpp" />
     <ClCompile Include="ChangeSummaryImpl.cpp" />
-    <ClCompile Include="ChangeSummaryManager.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
@@ -145,9 +145,9 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\SchemaManager.h" />
     <ClInclude Include="ChangeIteratorImpl.h" />
+    <ClInclude Include="ChangeManager.h" />
     <ClInclude Include="ChangeSummaryExtractor.h" />
     <ClInclude Include="ChangeSummaryImpl.h" />
-    <ClInclude Include="ChangeSummaryManager.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
@@ -250,9 +250,7 @@
     <None Include="ECSql\parser\sqlflex.l" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDbChangeSummaries.01.00.00.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="ECSchemas\ECDbChange.01.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />

@@ -1,0 +1,204 @@
+<ECSchema schemaName="ECDbChange" alias="change" version="01.00.00" displayLabel="ECDb Change" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+
+    <ECEntityClass typeName="ChangeSet" displayLabel="Changeset" modifier="Sealed">
+        <ECCustomAttributes>
+            <DbIndexList xmlns="ECDbMap.02.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>uix_change_ChangeSet_GlobalId</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>GlobalId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>
+
+        <ECProperty propertyName="GlobalId" typeName="string" />
+        <ECNavigationProperty propertyName="Parent" relationshipName="ChangeSetOwnsChildChangeSet" direction="backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="CreatedBy" relationshipName="UserHasChangeSets" direction="backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <OnDeleteAction>SetNull</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="PushDate" typeName="dateTime" >
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ChangeSetOwnsChildChangeSet" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(0..1)" roleLabel="is parent of" polymorphic="false">
+            <Class class="ChangeSet"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is child of" polymorphic="false">
+            <Class class="ChangeSet"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="User" displayLabel="User" modifier="Sealed">
+        <ECCustomAttributes>
+            <DbIndexList xmlns="ECDbMap.02.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>uix_change_User_GlobalId</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties> 
+                            <string>GlobalId</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
+                        <Name>ix_change_User_Name</Name>
+                        <Properties>
+                            <string>Name</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>
+        <ECProperty propertyName="GlobalId" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="UserHasChangeSets" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="created" polymorphic="false">
+            <Class class="User"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is created by" polymorphic="false">
+            <Class class="ChangeSet"/>
+        </Target>
+    </ECRelationshipClass>
+    
+    <ECEntityClass typeName="ChangeSummary" displayLabel="Summary" modifier="Sealed">
+        <ECNavigationProperty propertyName="StartChangeSet" relationshipName="ChangeSummaryHasStartChangeSet" direction="backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <OnDeleteAction>SetNull</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECNavigationProperty propertyName="EndChangeSet" relationshipName="ChangeSummaryHasEndChangeSet" direction="backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <OnDeleteAction>SetNull</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="ChangeSummaryHasStartChangeSet" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+            <Class class="ChangeSummary"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is start changeset" polymorphic="false">
+            <Class class="ChangeSet"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ChangeSummaryHasEndChangeSet" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+            <Class class="ChangeSummary"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is end changeset" polymorphic="false">
+            <Class class="ChangeSet"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEnumeration typeName="OpCode" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="1" displayLabel="Insert"/>
+        <ECEnumerator value="2" displayLabel="Update"/>
+        <ECEnumerator value="4" displayLabel="Delete"/>
+    </ECEnumeration>
+
+    <ECStructClass typeName="InstanceKey" displayLabel="InstanceKey" modifier="Sealed">
+        <ECProperty propertyName="Id" typeName="long" />
+        <ECProperty propertyName="ClassId" typeName="long" />
+    </ECStructClass>
+    
+    <ECEntityClass typeName="InstanceChange" displayLabel="Instance Change"  modifier="Sealed" description="Represents an instance change in a change summary">
+        <ECCustomAttributes>
+            <DbIndexList xmlns="ECDbMap.02.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>uix_change_InstanceChange_SummaryId_ChangedInstance</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Summary.Id</string>
+                            <string>ChangedInstance.Id</string>
+                            <string>ChangedInstance.ClassId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryContainsInstanceChanges" direction="backward" >
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty> 
+        <ECStructProperty propertyName="ChangedInstance" typeName="InstanceKey" description="Key of the change instance"/>
+        <ECProperty propertyName="OpCode" typeName="OpCode"/>
+        <ECProperty propertyName="IsIndirect" typeName="bool" description="Change happened due to a foreign key action or trigger"/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="PropertyValueChange" displayLabel="Property Value Change" modifier="Sealed" description="Represents an property value change of an instance change in a change summary">
+        <ECCustomAttributes>
+            <DbIndexList xmlns="ECDbMap.02.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>uix_change_PropertyValueChange_InstanceChangeId_AccessString</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>InstanceChange.Id</string>
+                            <string>AccessString</string>
+                        </Properties>
+                    </DbIndex>		
+                </Indexes>
+            </DbIndexList>            
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="InstanceChange" relationshipName="InstanceChangeOwnsPropertyValueChanges" direction="backward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                    <OnDeleteAction>Cascade</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="AccessString" typeName="string"/>
+        <ECProperty propertyName="RawOldValue" typeName="binary" description="Untyped old value"/>
+        <ECProperty propertyName="RawNewValue" typeName="binary" description="Untyped new value"/>
+    </ECEntityClass>
+    
+    <ECRelationshipClass typeName="ChangeSummaryContainsInstanceChanges" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="ChangeSummary"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
+            <Class class="InstanceChange"/>
+        </Target>
+    </ECRelationshipClass>
+    
+    <ECRelationshipClass typeName="InstanceChangeOwnsPropertyValueChanges" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
+            <Class class="InstanceChange"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained in" polymorphic="false">
+            <Class class="PropertyValueChange"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

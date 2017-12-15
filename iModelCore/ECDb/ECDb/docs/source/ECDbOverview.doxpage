@@ -61,7 +61,7 @@
     - <b>ECSchema management</b> capabilities (e.g. importing or updating ECSchemas into an @ref ECDbFile "ECDb file",
     retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::SchemaManager and @ref ECDbECSchemaRules))
     - Internally maps %EC data to SQLite tables and columns
-    - Accessing the history of changes to the EC data (see @ref ECDbChangeSummaries)
+    - Accessing the history of changes to the EC data (see @ref ECDbChange)
 
     @section ECDbMapping ECSQL hides away the database mapping of EC data
     A key feature of @ref ECSQLOverview "ECSQL" is that it <b>targets the
@@ -97,7 +97,7 @@
     - @ref ECSQLSamples
     - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business
     data in the @ref ECDbFile "ECDb file".
-    - @ref ECDbChangeSummaries
+    - @ref ECDbChange
     - @ref ECDbECSchemaRules
     - @ref ECDbSchemaMappingCustomization
     - @ref ECDbCreatingECDbFromScratch
@@ -115,7 +115,7 @@
     @li @subpage ECSQLOverview
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
-    @li @subpage ECDbChangeSummaries
+    @li @subpage ECDbChange
     @li @subpage ECDbSchemas
     @li @subpage ECDbECSchemaImportAndUpgrade
     @li @subpage ECDbECSchemaRules
@@ -191,7 +191,6 @@
     @section ECDbBuiltInSchemas Built-in schemas
     Every ECDb file comes with the following ECSchemas already included. That means you don't have to import them anymore:
     
-    - %ECDbChangeSummaries (see also @ref ECDbChangeSummaries)
     - %ECDbFileInfo (see also @ref ECDbFileInfo)
     - %ECDbMeta
     - %ECDbMap
@@ -798,34 +797,34 @@
     */
 
     /**
-    @page ECDbChangeSummaries Change Summaries
+    @page ECDbChange EC Changes
     
     ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called <b>change summaries</b>.
     ECDb persists them locally in a <b>change summary cache %ECDb file</b> next to the actual %ECDb file, so that they can be accessed across sessions.
     
-    The <b>change summary cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeSummaryCache. Alternatively, you
+    The <b>change summary cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeCache. Alternatively, you
     can have it attached when opening the primary %ECDb by specify the respective @ref BentleyApi::BeSQLite::EC::ECDb::OpenParams "open parameter".
 
     Once attached the change summary cache file is visible in ECSQL under the table space @b changesummaries.
 
-    @see BentleyApi::BeSQLite::EC::ECDb::AttachChangeSummaryCache
+    @see BentleyApi::BeSQLite::EC::ECDb::AttachChangeCache
     @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
-    @see BentleyApi::BeSQLite::EC::ECDb::ChangeSummaryCacheMode
-    @see BentleyApi::BeSQLite::EC::ECDb::IsChangeSummaryCacheAttached
-    @see BentleyApi::BeSQLite::EC::ECDb::GetChangeSummaryCachePath
+    @see BentleyApi::BeSQLite::EC::ECDb::ChangeCacheMode
+    @see BentleyApi::BeSQLite::EC::ECDb::IsChangeCacheAttached
+    @see BentleyApi::BeSQLite::EC::ECDb::GetChangeCachePath
     @see BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary
 
     ### Querying into the change summaries
-    You can use ECSQL against the @b ECDbChangeSummaries ECSchema to find out what ECInstances and what properties in them have changed 
-    in a given changeset. The @b ECDbChangeSummaries ECSchema is built into every <b>ChangeSummary cache %ECDb file</b>. Once attached
+    You can use ECSQL against the @b ECDbChange ECSchema to find out what ECInstances and what properties in them have changed 
+    in a given changeset. The @b ECDbChange ECSchema is built into every <b>Change cache %ECDb file</b>. Once attached
     the entities of that schema can be referenced by the table space mentioned above.
 
     Example:
 
-        SELECT ChangedInstance.Id, OpCode FROM changesummaries.change.InstanceChange WHERE Summary.Id=?
+        SELECT ChangedInstance.Id, OpCode FROM ecchange.change.InstanceChange WHERE Summary.Id=?
 
     ### Querying for the changed values
-    Whereas the @b ECDbChangeSummaries ECSchema yields information about what ECInstances and what properties have changed, querying for the actual
+    Whereas the @b ECDbChange ECSchema yields information about what ECInstances and what properties have changed, querying for the actual
     changed values is done with the ECSQL function @b Changes.
 
     Syntax:
@@ -900,7 +899,7 @@
     
     After having extracting change summaries for each of the three changesets the following ECSQL examples would return the following results.
 
-    ### ECSQL against ECDbChangeSummaries ECSchema
+    ### ECSQL against ECDbChange ECSchema
 
     <table>
     <tr><th>ECSQL</th><th>Result</th></tr>
@@ -915,7 +914,7 @@
         </table>
         @b Note 
             - <c>ChangedInstance.Id</c> is the ECInstanceId of the changed instance, i.e. the changed @c Person instance in this example.
-            - The @c OpCode values refer to the @c OpCode %ECEnumeration as defined in the @b ECDbChangeSummaries ECSchema.
+            - The @c OpCode values refer to the @c OpCode %ECEnumeration as defined in the @b ECDbChange ECSchema.
         </td>
      </tr>
     <tr><td align="left" valign="top"><c>SELECT i.ChangedInstance.Id, p.AccessString, i.OpCode FROM change.PropertyValueChange p 

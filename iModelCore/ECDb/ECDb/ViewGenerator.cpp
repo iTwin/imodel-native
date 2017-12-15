@@ -213,9 +213,9 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
         }
 
-    if (!ctx.GetECDb().IsChangeSummaryCacheAttached())
+    if (!ctx.GetECDb().IsChangeCacheAttached())
         {
-        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the ChangeSummary cache file must have been attached before.");
+        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the Change cache file must have been attached before.");
         return ERROR;
         }
 
@@ -232,7 +232,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
 
 #define TABLEALIAS_InstanceChange "ic"
-#define TABLE_InstanceChange ECSCHEMA_ALIAS_ECDbChangeSummaries "_" ECDBCHANGE_CLASS_InstanceChange
+#define TABLE_InstanceChange ECSCHEMA_ALIAS_ECDbChange "_" ECDBCHANGE_CLASS_InstanceChange
 #define TABLE_InstanceChange_COL_Id "Id"
 #define TABLE_InstanceChange_COL_SummaryId "SummaryId"
 #define TABLE_InstanceChange_COL_OpCode "OpCode"
@@ -285,7 +285,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         }
 
     viewSql.AppendParenLeft();
-    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ChangeSummaries "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
+    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
 
     if (ctx.IsPolymorphicQuery())
         viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s", 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ChangeSummaryManager.cpp $
+|     $Source: ECDb/ChangeManager.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,42 +9,42 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define CHANGESUMMARIES_PROPSPEC_NAMESPACE "ec_ChangeSummaries"
+#define CHANGE_PROPSPEC_NAMESPACE "ec_Change"
 
 //****************************************************************************
-// ChangeSummaryManager
+// ChangeManager
 //****************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-//Must match version of ECDbChangeSummaries ECSchema:
+//Must match version of ECDbChange ECSchema:
 //ProfileVersion::Major == ECSchema VersionMajor
 //ProfileVersion::Minor == ECSchema VersionWrite
 //ProfileVersion::Sub1 == ECSchema VersionMinor
 //static
-ProfileVersion const* ChangeSummaryManager::s_expectedCacheVersion = new ProfileVersion(1, 0, 0, 0);
+ProfileVersion const* ChangeManager::s_expectedCacheVersion = new ProfileVersion(1, 0, 0, 0);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryManager::Extract(ECInstanceKey& summaryKey, BeSQLite::IChangeSet& changeset, ECDb::ChangeSummaryExtractOptions const& options) const
+BentleyStatus ChangeManager::ExtractChangeSummary(ECInstanceKey& summaryKey, ChangeSetArg const& changesetInfo, ECDb::ChangeSummaryExtractOptions const& options) const
     {
     BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
-    return m_extractor.Extract(summaryKey, const_cast<ChangeSummaryManager&>(*this), changeset, options);
+    return m_extractor.Extract(summaryKey, const_cast<ChangeManager&>(*this), changesetInfo, options);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     12/2017
 //---------------------------------------------------------------------------------------
-bool ChangeSummaryManager::IsChangeSummaryCacheAttachedAndValid(bool logError) const
+bool ChangeManager::IsChangeCacheAttachedAndValid(bool logError) const
     {
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM " TABLESPACE_ChangeSummaries ".meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChangeSummaries "'"))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM " TABLESPACE_ECChange ".meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'"))
         {
         if (logError)
-            m_ecdb.GetImpl().Issues().Report("Change summary cache file is not attached or another file has been attached with the same table space (" TABLESPACE_ChangeSummaries ")");
+            m_ecdb.GetImpl().Issues().Report("Changes cache file is not attached or another file has been attached with the same table space (" TABLESPACE_ECChange ")");
 
         return false; //if file is not attached or not an ECDb file
         }
@@ -52,7 +52,7 @@ bool ChangeSummaryManager::IsChangeSummaryCacheAttachedAndValid(bool logError) c
     if (stmt.Step() != BE_SQLITE_ROW)
         {
         if (logError)
-            m_ecdb.GetImpl().Issues().Report("Attached file with table space '" TABLESPACE_ChangeSummaries "' is not a Change Summary cache file.");
+            m_ecdb.GetImpl().Issues().Report("Attached file with table space '" TABLESPACE_ECChange "' is not a Changes cache file.");
 
         return false;
         }
@@ -65,7 +65,7 @@ bool ChangeSummaryManager::IsChangeSummaryCacheAttachedAndValid(bool logError) c
         return true;
 
     if (logError)
-        m_ecdb.GetImpl().Issues().Report("Attached file is a Change Summary cache file with a mismatching version. Expected cache file version: %s. Actual version: %d.%d.%d", 
+        m_ecdb.GetImpl().Issues().Report("Attached file is a Change cache file with a mismatching version. Expected cache file version: %s. Actual version: %d.%d.%d", 
                                          s_expectedCacheVersion->ToString().c_str(), versionDigit1, versionDigit2, versionDigit3);
 
     return false;
@@ -75,22 +75,22 @@ bool ChangeSummaryManager::IsChangeSummaryCacheAttachedAndValid(bool logError) c
 // @bsimethod                                              Krischan.Eberle     12/2017
 //---------------------------------------------------------------------------------------
 //static
-bool ChangeSummaryManager::IsChangeSummaryCacheValid(ECDbCR cacheECDb, bool logError)
+bool ChangeManager::IsChangeCacheValid(ECDbCR cacheECDb, bool logError)
     {
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(cacheECDb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChangeSummaries "'"))
+    if (ECSqlStatus::Success != stmt.Prepare(cacheECDb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'"))
         {
         if (logError)
-            cacheECDb.GetImpl().Issues().Report("Invalid Change summary cache file '%s' : File is not an ECDb file.", cacheECDb.GetDbFileName());
+            cacheECDb.GetImpl().Issues().Report("Invalid Change cache file '%s' : File is not an ECDb file.", cacheECDb.GetDbFileName());
 
         return false; //if file is not attached or not an ECDb file
         }
 
     if (stmt.Step() != BE_SQLITE_ROW)
         {
-        //it is an ECDb file but not a change summary cache (because it doesn't have the change summary ECSchema)
+        //it is an ECDb file but not a change cache (because it doesn't have the change ECSchema)
         if (logError)
-            cacheECDb.GetImpl().Issues().Report("Invalid Change summary cache file '%s'.", cacheECDb.GetDbFileName());
+            cacheECDb.GetImpl().Issues().Report("Invalid Change cache file '%s'.", cacheECDb.GetDbFileName());
 
         return false;
         }
@@ -103,7 +103,7 @@ bool ChangeSummaryManager::IsChangeSummaryCacheValid(ECDbCR cacheECDb, bool logE
         return true;
 
     if (logError)
-        cacheECDb.GetImpl().Issues().Report("Invalid Change summary cache file '%s' : Mismatching versions. Expected cache file version: %s. Actual version: %d.%d.%d",
+        cacheECDb.GetImpl().Issues().Report("Invalid Change cache file '%s' : Mismatching versions. Expected cache file version: %s. Actual version: %d.%d.%d",
                                             cacheECDb.GetDbFileName(), s_expectedCacheVersion->ToString().c_str(), versionDigit1, versionDigit2, versionDigit3);
 
     return false;
@@ -111,20 +111,20 @@ bool ChangeSummaryManager::IsChangeSummaryCacheValid(ECDbCR cacheECDb, bool logE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExists) const
+DbResult ChangeManager::AttachChangeCacheFile(bool createIfNotExists) const
     {
     if (!m_ecdb.IsDbOpen())
         return BE_SQLITE_ERROR;
 
     if (Utf8String::IsNullOrEmpty(m_ecdb.GetDbFileName()))
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to attach the ChangeSummary cache file. Primary file is an in-memory or temporary ECDb file for which ChangeSummary cache files are not supported.");
+        m_ecdb.GetImpl().Issues().Report("Failed to attach the Changes cache file. Primary file is an in-memory or temporary ECDb file for which Change cache files are not supported.");
         return BE_SQLITE_ERROR;
         }
 
-    if (ChangeSummaryTableSpaceExists())
+    if (ChangeTableSpaceExists())
         {
-        if (!IsChangeSummaryCacheAttachedAndValid(true))
+        if (!IsChangeCacheAttachedAndValid(true))
             return BE_SQLITE_ERROR;
 
         return BE_SQLITE_OK;
@@ -148,14 +148,14 @@ DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExis
         return BE_SQLITE_ERROR;
         }
 
-    DbResult r = m_ecdb.AttachDb(cachePath.GetNameUtf8().c_str(), TABLESPACE_ChangeSummaries);
+    DbResult r = m_ecdb.AttachDb(cachePath.GetNameUtf8().c_str(), TABLESPACE_ECChange);
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to attach ChangeSummaries cache file '%s': %s", cachePath.GetNameUtf8().c_str(), m_ecdb.GetLastError().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to attach Change cache file '%s': %s", cachePath.GetNameUtf8().c_str(), m_ecdb.GetLastError().c_str());
         return r;
         }
 
-    if (cacheAlreadyExisted && !IsChangeSummaryCacheAttachedAndValid(true))
+    if (cacheAlreadyExisted && !IsChangeCacheAttachedAndValid(true))
         return BE_SQLITE_ERROR;
 
     return BE_SQLITE_OK;
@@ -165,26 +165,26 @@ DbResult ChangeSummaryManager::AttachChangeSummaryCacheFile(bool createIfNotExis
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryManager::CreateCacheFile(BeFileNameCR cachePath) const
+DbResult ChangeManager::CreateCacheFile(BeFileNameCR cachePath) const
     {
-    BeAssert(!IsChangeSummaryCacheAttachedAndValid());
+    BeAssert(!IsChangeCacheAttachedAndValid());
 
     if (cachePath.DoesPathExist())
         {
         if (BeFileNameStatus::Success != cachePath.BeDeleteFile())
             {
-            m_ecdb.GetImpl().Issues().Report("Failed to create ChangeSummaries cache file '%s'. The file already exists and could not be deleted.", cachePath.GetNameUtf8().c_str());
+            m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists and could not be deleted.", cachePath.GetNameUtf8().c_str());
             return BE_SQLITE_ERROR;
             }
 
-        LOG.warningv("A ChangeSummaries cache file '%s' already exists for the new ECDb file. The existing cache file has been deleted.", cachePath.GetNameUtf8().c_str());
+        LOG.warningv("A Change cache file '%s' already exists for the new ECDb file. The existing cache file has been deleted.", cachePath.GetNameUtf8().c_str());
         }
 
     ECDb cacheDb;
     DbResult r = cacheDb.CreateNewDb(cachePath);
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new ChangeSummaries cache file '%s': %s", cachePath.GetNameUtf8().c_str(), Db::InterpretDbResult(r));
+        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': %s", cachePath.GetNameUtf8().c_str(), Db::InterpretDbResult(r));
         cacheDb.AbandonChanges();
         return r;
         }
@@ -198,25 +198,25 @@ DbResult ChangeSummaryManager::CreateCacheFile(BeFileNameCR cachePath) const
     ecdbStandardSchemasFolder.AppendToPath(L"ECDb");
     context->AddSchemaPath(ecdbStandardSchemasFolder);
 
-    ECN::SchemaKey schemaKey(ECSCHEMA_ECDbChangeSummaries, 1, 0, 0);
+    ECN::SchemaKey schemaKey(ECSCHEMA_ECDbChange, 1, 0, 0);
     if (context->LocateSchema(schemaKey, ECN::SchemaMatchType::LatestWriteCompatible) == nullptr)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new ChangeSummaries cache file '%s': Could not locate ECSchema " ECSCHEMA_ECDbChangeSummaries, cachePath.GetNameUtf8().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': Could not locate ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());
         cacheDb.AbandonChanges();
         return BE_SQLITE_ERROR;
         }
 
     if (SUCCESS != cacheDb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), cacheDb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new ChangeSummaries cache file '%s': Could not import ECSchema " ECSCHEMA_ECDbChangeSummaries, cachePath.GetNameUtf8().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': Could not import ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());
         cacheDb.AbandonChanges();
         return BE_SQLITE_ERROR;
         }
 
-    r = AddMetadataToChangeSummaryCacheFile(cacheDb, m_ecdb);
+    r = AddMetadataToChangeCacheFile(cacheDb, m_ecdb);
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new ChangeSummaries cache file '%s'. Could not add metadata to the file: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s'. Could not add metadata to the file: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
         cacheDb.AbandonChanges();
         return r;
         }
@@ -224,7 +224,7 @@ DbResult ChangeSummaryManager::CreateCacheFile(BeFileNameCR cachePath) const
     r = cacheDb.SaveChanges();
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create new ChangeSummaries cache file '%s'. Could not commit changes: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s'. Could not commit changes: %s", cachePath.GetNameUtf8().c_str(), cacheDb.GetLastError().c_str());
         return r;
         }
 
@@ -234,18 +234,18 @@ DbResult ChangeSummaryManager::CreateCacheFile(BeFileNameCR cachePath) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryManager::AddMetadataToChangeSummaryCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const
+DbResult ChangeManager::AddMetadataToChangeCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const
     {
     BeGuid primaryFileGuid = m_ecdb.GetDbGuid();
     if (primaryFileGuid.IsValid())
         {
-        const DbResult r = cacheFile.SavePropertyString(PropertySpec("ECDbGuid", CHANGESUMMARIES_PROPSPEC_NAMESPACE), primaryFileGuid.ToString().c_str());
+        const DbResult r = cacheFile.SavePropertyString(PropertySpec("ECDbGuid", CHANGE_PROPSPEC_NAMESPACE), primaryFileGuid.ToString().c_str());
         if (BE_SQLITE_OK != r)
             return r;
         }
     else
         {
-        const DbResult r = cacheFile.SavePropertyString(PropertySpec("ECDbPath", CHANGESUMMARIES_PROPSPEC_NAMESPACE), m_ecdb.GetDbFileName());
+        const DbResult r = cacheFile.SavePropertyString(PropertySpec("ECDbPath", CHANGE_PROPSPEC_NAMESPACE), m_ecdb.GetDbFileName());
         if (BE_SQLITE_OK != r)
             return r;
         }
@@ -255,12 +255,12 @@ DbResult ChangeSummaryManager::AddMetadataToChangeSummaryCacheFile(ECDb& cacheFi
     if (BE_SQLITE_OK != r || ecdbProfileVersion.IsEmpty())
         return r;
 
-    return cacheFile.SavePropertyString(PropertySpec("ECDbSchemaVersion", CHANGESUMMARIES_PROPSPEC_NAMESPACE), ecdbProfileVersion.ToJson().c_str());
+    return cacheFile.SavePropertyString(PropertySpec("ECDbSchemaVersion", CHANGE_PROPSPEC_NAMESPACE), ecdbProfileVersion.ToJson().c_str());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-void ChangeSummaryManager::RegisterSqlFunctions() const
+void ChangeManager::RegisterSqlFunctions() const
     {
     m_ecdb.AddFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
 
@@ -271,7 +271,7 @@ void ChangeSummaryManager::RegisterSqlFunctions() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-void ChangeSummaryManager::UnregisterSqlFunction() const
+void ChangeManager::UnregisterSqlFunction() const
     {
     m_ecdb.RemoveFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
 
@@ -285,7 +285,7 @@ void ChangeSummaryManager::UnregisterSqlFunction() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-void ChangeSummaryManager::ClearCache()
+void ChangeManager::ClearCache()
     {
     if (m_changedValueSqlFunction != nullptr)
         m_changedValueSqlFunction->ClearCache();
@@ -295,7 +295,7 @@ void ChangeSummaryManager::ClearCache()
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-Nullable<ChangeOpCode> ChangeSummaryManager::ToChangeOpCode(DbOpcode opCode)
+Nullable<ChangeOpCode> ChangeManager::ToChangeOpCode(DbOpcode opCode)
     {
     switch (opCode)
         {
@@ -315,7 +315,7 @@ Nullable<ChangeOpCode> ChangeSummaryManager::ToChangeOpCode(DbOpcode opCode)
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-Nullable<ChangeOpCode> ChangeSummaryManager::ToChangeOpCode(int val)
+Nullable<ChangeOpCode> ChangeManager::ToChangeOpCode(int val)
     {
     if (val == Enum::ToInt(ChangeOpCode::Insert))
         return ChangeOpCode::Insert;
@@ -333,7 +333,7 @@ Nullable<ChangeOpCode> ChangeSummaryManager::ToChangeOpCode(int val)
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-Nullable<DbOpcode> ChangeSummaryManager::ToDbOpCode(ChangeOpCode op)
+Nullable<DbOpcode> ChangeManager::ToDbOpCode(ChangeOpCode op)
     {
     switch (op)
         {
@@ -353,7 +353,7 @@ Nullable<DbOpcode> ChangeSummaryManager::ToDbOpCode(ChangeOpCode op)
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-Nullable<ChangedValueState> ChangeSummaryManager::ToChangedValueState(int val)
+Nullable<ChangedValueState> ChangeManager::ToChangedValueState(int val)
     {
     if (val == Enum::ToInt(ChangedValueState::AfterInsert))
         return ChangedValueState::AfterInsert;
@@ -374,7 +374,7 @@ Nullable<ChangedValueState> ChangeSummaryManager::ToChangedValueState(int val)
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-Nullable<ChangedValueState> ChangeSummaryManager::ToChangedValueState(Utf8CP strVal)
+Nullable<ChangedValueState> ChangeManager::ToChangedValueState(Utf8CP strVal)
     {
     if (BeStringUtilities::StricmpAscii("AfterInsert", strVal) == 0)
         return ChangedValueState::AfterInsert;
@@ -395,7 +395,7 @@ Nullable<ChangedValueState> ChangeSummaryManager::ToChangedValueState(Utf8CP str
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-Nullable<ChangeOpCode> ChangeSummaryManager::DetermineOpCodeFromChangedValueState(ChangedValueState state)
+Nullable<ChangeOpCode> ChangeManager::DetermineOpCodeFromChangedValueState(ChangedValueState state)
     {
     if (state == ChangedValueState::AfterInsert)
         return ChangeOpCode::Insert;
@@ -414,10 +414,10 @@ Nullable<ChangeOpCode> ChangeSummaryManager::DetermineOpCodeFromChangedValueStat
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-BeFileName ChangeSummaryManager::DetermineCachePath(ECDbCR ecdb)
+BeFileName ChangeManager::DetermineCachePath(ECDbCR ecdb)
     {
     BeFileName path(ecdb.GetDbFileName());
-    path.append(FILEEXT_ChangeSummaryCache);
+    path.append(FILEEXT_ChangeCache);
     return path;
     }
 
@@ -425,10 +425,10 @@ BeFileName ChangeSummaryManager::DetermineCachePath(ECDbCR ecdb)
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-BeFileName ChangeSummaryManager::DetermineCachePath(BeFileNameCR ecdbPath)
+BeFileName ChangeManager::DetermineCachePath(BeFileNameCR ecdbPath)
     {
     BeFileName path(ecdbPath);
-    path.append(FILEEXT_ChangeSummaryCache);
+    path.append(FILEEXT_ChangeCache);
     return path;
     }
 

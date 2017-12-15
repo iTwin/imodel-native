@@ -153,7 +153,7 @@ struct SchemaImportContext final
         bset<Utf8CP, CompareIUtf8Ascii> m_builtinSchemaNames;
        
     public:
-        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options), m_builtinSchemaNames(ProfileManager::GetBuiltinSchemaNames()) {}
+        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options), m_builtinSchemaNames(ProfileManager::GetECDbSchemaNames()) {}
         SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
         Phase GetPhase() const { return m_phase; }
         void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }

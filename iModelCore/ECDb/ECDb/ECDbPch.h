@@ -60,7 +60,7 @@
 #include "SchemaValidator.h"
 #include "SchemaImportContext.h"
 
-#include "ChangeSummaryManager.h"
+#include "ChangeManager.h"
 #include "ChangeIteratorImpl.h"
 #include "ChangeSummaryExtractor.h"
 

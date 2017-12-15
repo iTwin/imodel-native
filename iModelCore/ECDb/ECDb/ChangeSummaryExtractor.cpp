@@ -14,23 +14,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, ChangeSummaryManager& manager, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const& options) const
+BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, ChangeManager& manager, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const& options) const
     {
     Context ctx(manager);
     if (BE_SQLITE_OK != ctx.OpenChangeSummaryECDb())
         return ERROR; //errors already logged in above call
 
-    if (InsertSummary(summaryKey, ctx) != SUCCESS)
+    if (InsertSummary(summaryKey, ctx, changeSetInfo) != SUCCESS)
         return ERROR;
 
     // Pass 1
-    if (SUCCESS != Extract(ctx, summaryKey.GetInstanceId(), changeSet, ExtractMode::InstancesOnly))
+    if (SUCCESS != Extract(ctx, summaryKey.GetInstanceId(), changeSetInfo.GetChangeSet(), ExtractMode::InstancesOnly))
         return ERROR;
 
     // Pass 2
     if (options.IncludeRelationshipInstances())
         {
-        if (SUCCESS != Extract(ctx, summaryKey.GetInstanceId(), changeSet, ExtractMode::RelationshipInstancesOnly))
+        if (SUCCESS != Extract(ctx, summaryKey.GetInstanceId(), changeSetInfo.GetChangeSet(), ExtractMode::RelationshipInstancesOnly))
             return ERROR;
         }
 
@@ -220,7 +220,7 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(Context& ctx, ECInsta
     {
     InstanceChange instanceChange;
 
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT OpCode,IsIndirect FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT OpCode,IsIndirect FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -235,14 +235,14 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(Context& ctx, ECInsta
         return instanceChange;
 
     int opCodeVal = stmt->GetValueInt(0);
-    Nullable<ChangeOpCode> opCode = ChangeSummaryManager::ToChangeOpCode(opCodeVal);
+    Nullable<ChangeOpCode> opCode = ChangeManager::ToChangeOpCode(opCodeVal);
     if (opCode.IsNull())
         {
         BeAssert(false);
         return instanceChange;
         }
 
-    Nullable<DbOpcode> dbOpCode = ChangeSummaryManager::ToDbOpCode(opCode.Value());
+    Nullable<DbOpcode> dbOpCode = ChangeManager::ToDbOpCode(opCode.Value());
     if (dbOpCode.IsNull()) // enum has changed -> fatal error
         return instanceChange;
 
@@ -254,7 +254,7 @@ InstanceChange ChangeSummaryExtractor::QueryInstanceChange(Context& ctx, ECInsta
 //---------------------------------------------------------------------------------------
 ECInstanceId ChangeSummaryExtractor::FindChangeId(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
     {
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND ChangedInstance.ClassId=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.Id=? AND ChangedInstance.ClassId=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -274,16 +274,133 @@ ECInstanceId ChangeSummaryExtractor::FindChangeId(Context& ctx, ECInstanceId sum
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Affan.Khan           11/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceKey& summaryKey, Context& ctx) const
+BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceKey& summaryKey, Context& ctx, ChangeSetArg const& changeSetInfo) const
     {
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_ChangeSummary "(ECInstanceId) VALUES(NULL)");
+    ECInstanceKey changeSetKey;
+    if (!changeSetInfo.GetId().empty())
+        {
+        if (SUCCESS != FindOrInsertChangeset(changeSetKey, ctx, changeSetInfo))
+            return ERROR;
+        }
+
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_ChangeSummary "(StartChangeSet.Id,EndChangeSet.Id) VALUES(?,?)");
+    if (!changeSetKey.IsValid())
+        {
+        //for now we only support a single changeset per summary. so start and end is the same
+        stmt->BindId(1, changeSetKey.GetInstanceId());
+        stmt->BindId(2, changeSetKey.GetInstanceId());
+        }
+
+    if (stmt->Step(summaryKey) != BE_SQLITE_DONE)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Krischan.Eberle           12/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummaryExtractor::FindOrInsertChangeset(ECInstanceKey& changesetKey, Context& ctx, ChangeSetArg const& changeSetInfo) const
+    {
+    if (changeSetInfo.GetId().empty())
+        return SUCCESS;
+
+    ECInstanceKey userKey;
+    if (SUCCESS != FindOrInsertUser(userKey, ctx, changeSetInfo))
+        return ERROR;
+
+    //see whether changeset was already inserted
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId,ECClassId FROM " ECSCHEMA_ALIAS_ECDbChange ".ChangeSet WHERE GlobalId=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    if (stmt->Step(summaryKey) != BE_SQLITE_DONE)
+    stmt->BindText(1, changeSetInfo.GetId().c_str(), IECSqlBinder::MakeCopy::No);
+
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        changesetKey = ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+        BeAssert(BE_SQLITE_DONE == stmt->Step() && "Only one row expected for change set global id");
+        return SUCCESS;
+        }
+
+    //find parent changeset
+    ECInstanceKey parentChangeSetKey;
+    if (!changeSetInfo.GetParentId().empty())
+        {
+        stmt->Reset();
+        stmt->ClearBindings();
+        stmt->BindText(1, changeSetInfo.GetParentId().c_str(), IECSqlBinder::MakeCopy::No);
+        if (BE_SQLITE_ROW == stmt->Step())
+            {
+            parentChangeSetKey = ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+            BeAssert(BE_SQLITE_DONE == stmt->Step() && "Only one row expected for change set global id");
+            }
+        }
+
+    //now insert new changeset record
+    stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange ".ChangeSet(GlobalId,Parent.Id,PushDate,CreatedBy.Id) VALUES(?,?,?,?)");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    stmt->BindText(1, changeSetInfo.GetId().c_str(), IECSqlBinder::MakeCopy::No);
+    if (parentChangeSetKey.IsValid())
+        stmt->BindId(2, parentChangeSetKey.GetInstanceId());
+
+    if (changeSetInfo.GetPushDate().IsValid())
+        stmt->BindDateTime(3, changeSetInfo.GetPushDate());
+
+    if (userKey.IsValid())
+        stmt->BindId(4, userKey.GetInstanceId());
+
+    if (BE_SQLITE_DONE == stmt->Step(changesetKey))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Krischan.Eberle           12/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus ChangeSummaryExtractor::FindOrInsertUser(ECInstanceKey& userKey, Context& ctx, ChangeSetArg const& changeSetInfo) const
+    {
+    if (!changeSetInfo.GetCreatedBy().IsValid())
+        return ERROR;
+
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId,ECClassId FROM " ECSCHEMA_ALIAS_ECDbChange ".User WHERE GlobalId=?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    stmt->BindText(1, changeSetInfo.GetCreatedBy().m_id.c_str(), IECSqlBinder::MakeCopy::No);
+
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        userKey = ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
+        BeAssert(BE_SQLITE_DONE == stmt->Step() && "Only one row expected for user hub id");
+        return SUCCESS;
+        }
+
+
+    stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange ".User(GlobalId,Name) VALUES(?,?)");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    stmt->BindText(1, changeSetInfo.GetCreatedBy().m_id.c_str(), IECSqlBinder::MakeCopy::No);
+    if (!changeSetInfo.GetCreatedBy().m_name.empty())
+        stmt->BindText(1, changeSetInfo.GetCreatedBy().m_name.c_str(), IECSqlBinder::MakeCopy::No);
+
+    if (BE_SQLITE_DONE == stmt->Step(userKey))
         return ERROR;
 
     return SUCCESS;
@@ -308,14 +425,14 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(Context& ctx, InstanceChange con
 
     DbOpcode dbOpcode = instance.GetDbOpcode();
 
-    Nullable<ChangeOpCode> op = ChangeSummaryManager::ToChangeOpCode(dbOpcode);
+    Nullable<ChangeOpCode> op = ChangeManager::ToChangeOpCode(dbOpcode);
     if (op.IsNull()) // DbOpCode enum has changed -> fatal error code needs to be adjusted
         return BE_SQLITE_ERROR;
 
     InstanceChange foundInstanceChange = QueryInstanceChange(ctx, instance.GetSummaryId(), instance.GetKeyOfChangedInstance());
     if (!foundInstanceChange.IsValid())
         {
-        CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, Summary.Id) VALUES(?,?,?,?,?)");
+        CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_InstanceChange "(ChangedInstance.ClassId,ChangedInstance.Id, OpCode, IsIndirect, Summary.Id) VALUES(?,?,?,?,?)");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -332,7 +449,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(Context& ctx, InstanceChange con
 
     if (foundInstanceChange.GetDbOpcode() == DbOpcode::Update && dbOpcode != DbOpcode::Update)
         {
-        CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("UPDATE " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " SET OpCode=?, IsIndirect=? WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+        CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("UPDATE " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_InstanceChange " SET OpCode=?, IsIndirect=? WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
         if (stmt == nullptr)
             {
             BeAssert(false);
@@ -355,7 +472,7 @@ DbResult ChangeSummaryExtractor::InsertOrUpdate(Context& ctx, InstanceChange con
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryExtractor::Delete(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const
     {
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("DELETE FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("DELETE FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_InstanceChange " WHERE ChangedInstance.ClassId=? AND ChangedInstance.Id=? AND Summary.Id=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -376,7 +493,7 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(Context& ctx, ECInsta
     {
     ECInstanceId changeId = FindChangeId(ctx, summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -398,7 +515,7 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(Context& ctx, ECInsta
     {
     ECInstanceId changeId = FindChangeId(ctx, summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -424,7 +541,7 @@ DbResult ChangeSummaryExtractor::InsertPropertyValueChange(Context& ctx, ECInsta
     {
     ECInstanceId changeId = FindChangeId(ctx, summaryId, keyOfChangedInstance);
 
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChangeSummaries  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange  "." ECDBCHANGE_CLASS_PropertyValueChange "(InstanceChange.Id, AccessString, RawOldValue, RawNewValue) VALUES (?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -755,35 +872,35 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
 //---------------------------------------------------------------------------------------
-ChangeSummaryExtractor::Context::Context(ChangeSummaryManager& manager) : m_manager(manager), m_changeSummaryStmtCache(15) {}
+ChangeSummaryExtractor::Context::Context(ChangeManager& manager) : m_manager(manager), m_changeSummaryStmtCache(15) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
 //---------------------------------------------------------------------------------------
 ChangeSummaryExtractor::Context::~Context()
     {
-    if (!m_changeSummaryECDb.IsDbOpen())
+    if (!m_changeCacheECDb.IsDbOpen())
         return;
 
     if (m_extractCompletedSuccessfully)
         {
-        if (BE_SQLITE_OK != m_changeSummaryECDb.SaveChanges())
+        if (BE_SQLITE_OK != m_changeCacheECDb.SaveChanges())
             {
-            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummary cache file %s", m_changeSummaryECDb.GetDbFileName());
+            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummary cache file %s", m_changeCacheECDb.GetDbFileName());
             BeAssert(false);
             }
         }
     else
         {
-        m_changeSummaryECDb.AbandonChanges();
+        m_changeCacheECDb.AbandonChanges();
         }
 
     m_changeSummaryStmtCache.Empty();
-    m_changeSummaryECDb.CloseDb();
+    m_changeCacheECDb.CloseDb();
 
     if (m_wasChangeSummaryFileAttached)
         {
-        if (BE_SQLITE_OK != m_manager.AttachChangeSummaryCacheFile(false))
+        if (BE_SQLITE_OK != m_manager.AttachChangeCacheFile(false))
             {
             Issues().Report("Failed to extract ChangeSummaries from changeset: Could not re-attach ChangeSummary cache file  to %s", GetPrimaryECDb().GetDbFileName());
             BeAssert(false);
@@ -796,16 +913,16 @@ ChangeSummaryExtractor::Context::~Context()
 //---------------------------------------------------------------------------------------
 DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
     {
-    if (m_manager.ChangeSummaryTableSpaceExists())
+    if (m_manager.ChangeTableSpaceExists())
         {
-        m_wasChangeSummaryFileAttached = m_manager.IsChangeSummaryCacheAttachedAndValid(true);
+        m_wasChangeSummaryFileAttached = m_manager.IsChangeCacheAttachedAndValid(true);
         if (!m_wasChangeSummaryFileAttached)
             return BE_SQLITE_ERROR;
         }
 
     if (m_wasChangeSummaryFileAttached)
         {
-        DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ChangeSummaries);
+        DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ECChange);
         if (BE_SQLITE_OK != r)
             {
             Issues().Report("Failed to extract ChangeSummaries from changeset: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
@@ -813,8 +930,8 @@ DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
             }
         }
 
-    BeAssert(!m_changeSummaryECDb.IsDbOpen());
-    BeFileName path = GetPrimaryECDb().GetChangeSummaryCachePath();
+    BeAssert(!m_changeCacheECDb.IsDbOpen());
+    BeFileName path = GetPrimaryECDb().GetChangeCachePath();
     if (!path.DoesPathExist())
         {
         Issues().Report("Failed to extract ChangeSummaries from changeset: ChangeSummary cache file  %s not found.", path.GetNameUtf8().c_str());
@@ -822,11 +939,11 @@ DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
         }
 
     //Must open the cache file with "DoNotAttach" to avoid that a cache to the cache is being created
-    DbResult r = m_changeSummaryECDb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::ReadWrite).Set(ECDb::ChangeSummaryCacheMode::DoNotAttach));
+    DbResult r = m_changeCacheECDb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::ReadWrite).Set(ECDb::ChangeCacheMode::DoNotAttach));
     if (BE_SQLITE_OK != r)
         return r;
 
-    if (!ChangeSummaryManager::IsChangeSummaryCacheValid(m_changeSummaryECDb, true))
+    if (!ChangeManager::IsChangeCacheValid(m_changeCacheECDb, true))
         return BE_SQLITE_ERROR;
 
     return BE_SQLITE_OK;

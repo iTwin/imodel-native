@@ -82,10 +82,10 @@ public:
     //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
     static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion& actualProfileVersion, ECDbCR ecdb, bool openModeIsReadOnly);
 
-    static bset<Utf8CP, CompareIUtf8Ascii> GetBuiltinSchemaNames()
+    static bset<Utf8CP, CompareIUtf8Ascii> GetECDbSchemaNames()
         { 
         bset<Utf8CP, CompareIUtf8Ascii> names;
-        names.insert("ECDbChangeSummaries");
+        names.insert("ECDbChange");
         names.insert("ECDbFileInfo");
         names.insert("ECDbMap");
         names.insert("ECDbMeta");

@@ -55,11 +55,11 @@
     <Filter Include="ChangeSummary_deprecated">
       <UniqueIdentifier>{ab551814-340e-4afa-abd0-bc5b227d4c11}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ChangeSummary">
-      <UniqueIdentifier>{9778f9f9-eca7-4301-9580-fd4a67e200b8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SchemaManager\Mapping">
       <UniqueIdentifier>{79bf8ac1-b52e-46b0-9b4f-156574cb4cff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Change">
+      <UniqueIdentifier>{9778f9f9-eca7-4301-9580-fd4a67e200b8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -399,20 +399,20 @@
       <Filter>SchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ChangeSummaryExtractor.h">
-      <Filter>ChangeSummary</Filter>
+      <Filter>Change</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ChangeIterator.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
     <ClInclude Include="ChangeIteratorImpl.h">
-      <Filter>ChangeSummary</Filter>
-    </ClInclude>
-    <ClInclude Include="ChangeSummaryManager.h">
-      <Filter>ChangeSummary</Filter>
+      <Filter>Change</Filter>
     </ClInclude>
     <ClInclude Include="DbUtilities.h" />
     <ClInclude Include="SchemaManagerDispatcher.h">
       <Filter>SchemaManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ChangeManager.h">
+      <Filter>Change</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -749,17 +749,17 @@
       <Filter>ECSql\OSQLParser</Filter>
     </ClCompile>
     <ClCompile Include="ChangeSummaryExtractor.cpp">
-      <Filter>ChangeSummary</Filter>
+      <Filter>Change</Filter>
     </ClCompile>
     <ClCompile Include="ChangeIteratorImpl.cpp">
-      <Filter>ChangeSummary</Filter>
-    </ClCompile>
-    <ClCompile Include="ChangeSummaryManager.cpp">
-      <Filter>ChangeSummary</Filter>
+      <Filter>Change</Filter>
     </ClCompile>
     <ClCompile Include="DbUtilities.cpp" />
     <ClCompile Include="SchemaManagerDispatcher.cpp">
       <Filter>SchemaManager</Filter>
+    </ClCompile>
+    <ClCompile Include="ChangeManager.cpp">
+      <Filter>Change</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -772,10 +772,10 @@
     <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
-    <Xml Include="ECSchemas\ECDbChangeSummaries.01.00.00.ecschema.xml">
+    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
-    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
+    <Xml Include="ECSchemas\ECDbChange.01.00.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
   </ItemGroup>

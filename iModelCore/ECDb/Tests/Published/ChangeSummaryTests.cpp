@@ -322,7 +322,7 @@ struct ChangeSummaryTestFixtureV1 : public ECDbTestFixture
 TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("changesummary_schemaandapiconsistency.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     //verify that the expected change summary cache file alias
     {
@@ -338,10 +338,10 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
         attachedTableSpaceCount++;
         ASSERT_STREQ("changesummaries", tableSpaceName);
        }
-    ASSERT_EQ(1, attachedTableSpaceCount) << "Only changesummaries table space is expected to be attached";
+    ASSERT_EQ(1, attachedTableSpaceCount) << "Only ecchanges table space is expected to be attached";
     }
 
-    ECEnumeration const* opCodeECEnum = m_ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode");
+    ECEnumeration const* opCodeECEnum = m_ecdb.Schemas().GetEnumeration("ECDbChange", "OpCode");
     ASSERT_TRUE(opCodeECEnum != nullptr);
 
     ASSERT_EQ(3, (int) opCodeECEnum->GetEnumeratorCount());
@@ -379,7 +379,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionInput)
                 <ECProperty propertyName="Origin" typeName="Point2d" />
             </ECEntityClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -515,7 +515,7 @@ TEST_F(ChangeSummaryTestFixture, ChangesFunctionOnlyForSelect)
                 <ECProperty propertyName="I" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -577,13 +577,13 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
 
     auto assertCache = [] (ECDbCR ecdb, bool expectedIsValidCache, Utf8CP assertMessage)
         {
-        EXPECT_EQ(expectedIsValidCache, ecdb.IsChangeSummaryCacheAttached()) << assertMessage;
-        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChangeSummaries")) << assertMessage;
-        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChangeSummaries", SchemaLookupMode::ByName, "changesummaries")) << assertMessage;
-        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetClass("ECDbChangeSummaries", "ChangeSummary") != nullptr) << assertMessage;
-        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetClass("ECDbChangeSummaries", "ChangeSummary", SchemaLookupMode::ByName, "changesummaries") != nullptr) << assertMessage;
-        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode") != nullptr) << assertMessage;
-        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetEnumeration("ECDbChangeSummaries", "OpCode", SchemaLookupMode::ByName, "changesummaries") != nullptr) << assertMessage;
+        EXPECT_EQ(expectedIsValidCache, ecdb.IsChangeCacheAttached()) << assertMessage;
+        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChange")) << assertMessage;
+        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().ContainsSchema("ECDbChange", SchemaLookupMode::ByName, "ecchange")) << assertMessage;
+        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetClass("ECDbChange", "ChangeSummary") != nullptr) << assertMessage;
+        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetClass("ECDbChange", "ChangeSummary", SchemaLookupMode::ByName, "ecchange") != nullptr) << assertMessage;
+        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetEnumeration("ECDbChange", "OpCode") != nullptr) << assertMessage;
+        EXPECT_EQ(expectedIsValidCache, ecdb.Schemas().GetEnumeration("ECDbChange", "OpCode", SchemaLookupMode::ByName, "ecchange") != nullptr) << assertMessage;
 
         ECSqlStatement stmt;
         if (expectedIsValidCache)
@@ -594,9 +594,9 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
         stmt.Finalize();
 
         if (expectedIsValidCache)
-            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM changesummaries.change.InstanceChange")) << assertMessage;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM ecchange.change.InstanceChange")) << assertMessage;
         else
-            EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "SELECT * FROM changesummaries.change.InstanceChange")) << assertMessage;
+            EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "SELECT * FROM ecchange.change.InstanceChange")) << assertMessage;
 
         stmt.Finalize();
 
@@ -628,40 +628,40 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
-    BeFileName cachePath = m_ecdb.GetChangeSummaryCachePath();
+    BeFileName cachePath = m_ecdb.GetChangeCachePath();
 
     assertCache(m_ecdb, false, "Cache does not exist and is not attached");
     assertExtraction(m_ecdb, revision1, false, "Cache does not exist");
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
     assertCache(m_ecdb, true, "Cache has been attached");
     assertExtraction(m_ecdb, revision1, true, "Cache exists and is attached");
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::DoNotAttach)));
-    assertCache(m_ecdb, false, "Opened with ChangeSummaryCacheMode::DoNotAttach");
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach)));
+    assertCache(m_ecdb, false, "Opened with ChangeCacheMode::DoNotAttach");
     assertExtraction(m_ecdb, revision1, true, "Cache exists and is not attached");
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
-    assertCache(m_ecdb, true, "Opened with ChangeSummaryCacheMode::AttachIfExists where cache exists");
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
+    assertCache(m_ecdb, true, "Opened with ChangeCacheMode::AttachIfExists where cache exists");
     assertExtraction(m_ecdb, revision1, true, "Cache exists and is attached");
 
     CloseECDb();
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
-    ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
-    assertCache(m_ecdb, false, "Opened with ChangeSummaryCacheMode::AttachIfExists where cache does not exist");
-    assertExtraction(m_ecdb, revision1, false, "Opened with ChangeSummaryCacheMode::AttachIfExists where cache does not exist");
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
-    assertCache(m_ecdb, true, "Opened with ChangeSummaryCacheMode::AttachAndCreateIfNotExists where cache does not exist");
-    assertExtraction(m_ecdb, revision1, true, "Opened with ChangeSummaryCacheMode::AttachAndCreateIfNotExists");
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
-    assertCache(m_ecdb, true, "Opened with ChangeSummaryCacheMode::AttachAndCreateIfNotExists where cache did exist");
-    assertExtraction(m_ecdb, revision1, true, "Opened with ChangeSummaryCacheMode::AttachAndCreateIfNotExists where cache did exist");
+    ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
+    assertCache(m_ecdb, false, "Opened with ChangeCacheMode::AttachIfExists where cache does not exist");
+    assertExtraction(m_ecdb, revision1, false, "Opened with ChangeCacheMode::AttachIfExists where cache does not exist");
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
+    assertCache(m_ecdb, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists where cache does not exist");
+    assertExtraction(m_ecdb, revision1, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists");
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
+    assertCache(m_ecdb, true, "Opened with ChangeSumChangeCacheModemaryCacheMode::AttachAndCreateIfNotExists where cache did exist");
+    assertExtraction(m_ecdb, revision1, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists where cache did exist");
 
     CloseECDb();
 
     //attach cache with plain SQL command
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS changesummaries", cachePath.GetNameUtf8().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS ecchanges", cachePath.GetNameUtf8().c_str()).c_str()));
     Savepoint sp(m_ecdb, "");
-    assertCache(m_ecdb, false, "Attached change summary with SQL command (expected to not be recognized by ECDb)");
-    assertExtraction(m_ecdb, revision1, false, "Attached change summary with SQL command (expected to not be recognized by ECDb)");
+    assertCache(m_ecdb, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
+    assertExtraction(m_ecdb, revision1, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
     sp.Cancel();
 
     //open with default open params when cache doesn't exist
@@ -672,7 +672,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     assertExtraction(m_ecdb, revision1, false, "Opened with default open params where cache did not exist");
     CloseECDb();
 
-    //create non-ChangeSummary non-ECDb file
+    //create non-Change non-ECDb file
     {
     ASSERT_FALSE(cachePath.DoesPathExist());
 
@@ -681,17 +681,17 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     }
 
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeSummaryCache()) << "Non-ECDb file with same path exists";
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache()) << "Non-ECDb file with same path exists";
     assertCache(m_ecdb, false, "Attach failed because non-ECDb file with same path exists");
     assertExtraction(m_ecdb, revision1, false, "non-ECDb file with same path exists");
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::DoNotAttach)));
-    assertCache(m_ecdb, false, "Open with ChangeSummaryCacheMode::DoNotAttach failed because non-ECDb file with same path exists");
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach)));
+    assertCache(m_ecdb, false, "Open with ChangeCacheMode::DoNotAttach failed because non-ECDb file with same path exists");
     assertExtraction(m_ecdb, revision1, false, "non-ECDb file with same path exists");
-    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
-    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
+    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
+    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
     CloseECDb();
 
-    //create non-ChangeSummary ECDb file
+    //create non-Change ECDb file
     {
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
 
@@ -700,15 +700,15 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     }
 
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeSummaryCache()) << "Non-ChangeSummary ECDb file with same path exists";
-    assertCache(m_ecdb, false, "Attach failed because Non-ChangeSummary ECDb file with same path exists");
-    assertExtraction(m_ecdb, revision1, false, "Non-ChangeSummary ECDb file with same path exists - not attached");
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache()) << "Non-Change ECDb file with same path exists";
+    assertCache(m_ecdb, false, "Attach failed because Non-Change ECDb file with same path exists");
+    assertExtraction(m_ecdb, revision1, false, "Non-Change ECDb file with same path exists - not attached");
 
-    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::DoNotAttach)));
-    assertCache(m_ecdb, false, "Open with ChangeSummaryCacheMode::DoNotAttach where non-ChangeSumamry ECDb file with same path exists");
-    assertExtraction(m_ecdb, revision1, false, "Non-ChangeSummary ECDb file with same path exists - not attached");
-    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachIfExists)));
-    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists)));
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach)));
+    assertCache(m_ecdb, false, "Open with ChangeCacheMode::DoNotAttach where non-ChangeSumamry ECDb file with same path exists");
+    assertExtraction(m_ecdb, revision1, false, "Non-Change ECDb file with same path exists - not attached");
+    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
+    ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -718,11 +718,11 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CloseClearCacheDestroyWithAttachedCache.ecdb"));
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
-    BeFileName cachePath = m_ecdb.GetChangeSummaryCachePath();
+    BeFileName cachePath = m_ecdb.GetChangeCachePath();
 
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
     ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
-    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChangeSummaries", "InstanceChange") != nullptr);
+    ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     m_ecdb.CloseDb();
     ASSERT_EQ(BeFileNameStatus::Success, ecdbPath.BeDeleteFile());
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
@@ -730,9 +730,9 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache());
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
-    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChangeSummaries", "InstanceChange") != nullptr);
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     }
     ASSERT_EQ(BeFileNameStatus::Success, ecdbPath.BeDeleteFile());
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
@@ -740,9 +740,9 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     {
     ECDb ecdb;
     ASSERT_EQ(BE_SQLITE_OK, ecdb.CreateNewDb(ecdbPath));
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AttachChangeCache());
     ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
-    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChangeSummaries", "InstanceChange") != nullptr);
+    ASSERT_TRUE(ecdb.Schemas().GetClass("ECDbChange", "InstanceChange") != nullptr);
     ecdb.ClearECDbCache();
     }
     }
@@ -768,7 +768,7 @@ TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
             </ECEntityClass>
         </ECSchema>)xml")));
 
-    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeSummaryCache()) << "cannot create a change summary cache for an in-memory primary file";
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache()) << "cannot create a change cache for an in-memory primary file";
     }
 
 //---------------------------------------------------------------------------------------
@@ -901,7 +901,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         {
         Utf8StringCR scenario = kvPair.first;
         ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflow.ecdb", *kvPair.second)) << scenario;
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache()) << scenario;
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache()) << scenario;
 
         TestChangeTracker tracker(m_ecdb);
         tracker.EnableTracking(true);
@@ -1103,7 +1103,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         {
         Utf8StringCR scenario = kvPair.first;
         ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithPointProp.ecdb", *kvPair.second)) << scenario;
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache()) << scenario;
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache()) << scenario;
 
         TestChangeTracker tracker(m_ecdb);
         tracker.EnableTracking(true);
@@ -1388,7 +1388,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         {
         Utf8StringCR scenario = kvPair.first;
         ASSERT_EQ(SUCCESS, SetupECDb("SimpleWorkflowWithStructProp.ecdb", *kvPair.second)) << scenario;
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache()) << scenario;
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache()) << scenario;
 
         TestChangeTracker tracker(m_ecdb);
         tracker.EnableTracking(true);
@@ -1590,7 +1590,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_NonV
                 </Target>
         </ECRelationshipClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Rel");
     ASSERT_TRUE(relClassId.IsValid());
@@ -1744,7 +1744,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
                 </Target>
         </ECRelationshipClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
 
@@ -1787,7 +1787,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
                 </Target>
         </ECRelationshipClass>
         </ECSchema>)xml")));
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
         TestChangeTracker tracker(m_ecdb);
 
@@ -1939,7 +1939,7 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
                 </Target>
         </ECRelationshipClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
 
@@ -2002,7 +2002,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
 
@@ -2138,7 +2138,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
 TEST_F(ChangeSummaryTestFixture, SchemaChange)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     // Test1: Change to be_Prop table - should cause empty change summary without errors
     TestChangeTracker tracker(m_ecdb);
@@ -2202,7 +2202,7 @@ TEST_F(ChangeSummaryTestFixture, Crud)
                     </Target>
                 </ECRelationshipClass>
             </ECSchema>)")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     ECInstanceKey i1, i2, i3, i4, i5, i6;
     {//---------------------------------------------------->>>
@@ -2336,7 +2336,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
         "        <ECStructArrayProperty propertyName='arrayOfST2' typeName='ST2' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -2463,7 +2463,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
                 <ECProperty propertyName="B" typeName="boolean"/>
             </ECEntityClass>
         </ECSchema>)xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -2525,7 +2525,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
         "        <ECStructProperty propertyName='SP' typeName='StructProp'/>"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -2584,7 +2584,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
         "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -2646,7 +2646,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
         "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -2717,7 +2717,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
         "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -2793,7 +2793,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -2843,7 +2843,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
@@ -3022,7 +3022,7 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
         "        <ECProperty propertyName='T' typeName='string'/>"
         "    </ECEntityClass>"
         "</ECSchema>")));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
 
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);

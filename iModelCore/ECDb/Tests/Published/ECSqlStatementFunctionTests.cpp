@@ -33,7 +33,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
-    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeSummaryCache());
+    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeCache());
 
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},

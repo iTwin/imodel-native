@@ -46,7 +46,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define TABLESPACE_Main "main"
 #define TABLESPACE_Temp "temp"
-#define TABLESPACE_ChangeSummaries "changesummaries"
+#define TABLESPACE_ECChange "ecchange"
 
 //The SQLVAL_xxx defines are meant to be only used in SQL strings. Potential redundancy
 //is ok to avoid the expensiveness of compose strings at runtime using expensive methods like Utf8String.Sprintf

@@ -47,12 +47,12 @@ void ChangedValueStateToOpCodeSqlFunction::_ComputeScalar(Context& ctx, int nArg
     const bool isIntegerVal = stateValue.GetValueType() == DbValueType::IntegerVal;
     Nullable<ChangedValueState> state;
     if (isIntegerVal)
-        state = ChangeSummaryManager::ToChangedValueState(stateValue.GetValueInt());
+        state = ChangeManager::ToChangedValueState(stateValue.GetValueInt());
     else
-        state = ChangeSummaryManager::ToChangedValueState(stateValue.GetValueText());
+        state = ChangeManager::ToChangedValueState(stateValue.GetValueText());
 
     Nullable<ChangeOpCode> opCode;
-    if (state.IsNull() || (opCode = ChangeSummaryManager::DetermineOpCodeFromChangedValueState(state.Value())).IsNull())
+    if (state.IsNull() || (opCode = ChangeManager::DetermineOpCodeFromChangedValueState(state.Value())).IsNull())
         {
         Utf8String msg;
         if (isIntegerVal)
@@ -105,9 +105,9 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
     const bool stateIsIntegerVal = changedValueStateValue.GetValueType() == DbValueType::IntegerVal;
     Nullable<ChangedValueState> state;
     if (stateIsIntegerVal)
-        state = ChangeSummaryManager::ToChangedValueState(changedValueStateValue.GetValueInt());
+        state = ChangeManager::ToChangedValueState(changedValueStateValue.GetValueInt());
     else
-        state = ChangeSummaryManager::ToChangedValueState(changedValueStateValue.GetValueText());
+        state = ChangeManager::ToChangedValueState(changedValueStateValue.GetValueText());
 
     if (state.IsNull())
         {
@@ -125,9 +125,9 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     Utf8CP ecsql = nullptr;
     if (state == ChangedValueState::BeforeUpdate || state == ChangedValueState::BeforeDelete)
-        ecsql = "SELECT RawOldValue, TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+        ecsql = "SELECT RawOldValue, TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
     else
-        ecsql = "SELECT RawNewValue, TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChangeSummaries "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+        ecsql = "SELECT RawNewValue, TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
 
     CachedECSqlStatementPtr stmt = m_statementCache.GetPreparedStatement(m_ecdb, ecsql);
     if (stmt == nullptr)

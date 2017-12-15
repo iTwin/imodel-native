@@ -185,12 +185,12 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
             return BE_SQLITE_ERROR;
             }
 
-        BeFileName changeSummaryCachePath = ECDb::GetChangeSummaryCachePath(ecdbFilePath);
-        if (changeSummaryCachePath.DoesPathExist())
+        BeFileName changeCachePath = ECDb::GetChangeCachePath(ecdbFilePath);
+        if (changeCachePath.DoesPathExist())
             {
-            if (BeFileNameStatus::Success != changeSummaryCachePath.BeDeleteFile())
+            if (BeFileNameStatus::Success != changeCachePath.BeDeleteFile())
                 {
-                EXPECT_FALSE(true) << "Could not delete change summary cache file " << changeSummaryCachePath.GetNameUtf8().c_str();
+                EXPECT_FALSE(true) << "Could not delete change cache file " << changeCachePath.GetNameUtf8().c_str();
                 return BE_SQLITE_ERROR;
                 }
             }
@@ -222,10 +222,10 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
     BeFileName::CreateNewDirectory(BeFileName::GetDirectoryName(clonePath).c_str());
     BeFileName::BeCopyFile(seedFilePath, clonePath);
 
-    //clone ChangeSummaries cache file
-    BeFileName seedChangeSummariesCachePath = ECDb::GetChangeSummaryCachePath(seedFilePath);
-    if (seedChangeSummariesCachePath.DoesPathExist())
-        BeFileName::BeCopyFile(seedChangeSummariesCachePath, ECDb::GetChangeSummaryCachePath(clonePath));
+    //clone Change cache file
+    BeFileName seedChangeCachePath = ECDb::GetChangeCachePath(seedFilePath);
+    if (seedChangeCachePath.DoesPathExist())
+        BeFileName::BeCopyFile(seedChangeCachePath, ECDb::GetChangeCachePath(clonePath));
 
     return clone.OpenBeSQLiteDb(clonePath, openParams);
     }
@@ -260,7 +260,7 @@ BentleyStatus ECDbTestFixture::PopulateECDb(int instanceCountPerClass)
         for (ECSchemaCP schema : schemas)
             {
             if (schema->IsStandardSchema() || schema->IsSystemSchema() || 
-                schema->GetName().EqualsIAscii("ECDbChangeSummaries") || schema->GetName().EqualsIAscii("ECDbFileInfo") || schema->GetName().EqualsIAscii("ECDbSystem"))
+                schema->GetName().EqualsIAscii("ECDbChange") || schema->GetName().EqualsIAscii("ECDbFileInfo") || schema->GetName().EqualsIAscii("ECDbSystem"))
                 continue;
 
             if (SUCCESS != PopulateECDb(*schema, instanceCountPerClass))

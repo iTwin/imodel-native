@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ChangeSummaryManager.h $
+|     $Source: ECDb/ChangeManager.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,8 +15,8 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
-#define ECSCHEMA_ECDbChangeSummaries "ECDbChangeSummaries"
-#define ECSCHEMA_ALIAS_ECDbChangeSummaries "change"
+#define ECSCHEMA_ECDbChange "ECDbChange"
+#define ECSCHEMA_ALIAS_ECDbChange "change"
 
 #define ECDBCHANGE_CLASS_ChangeSummary "ChangeSummary"
 #define ECDBCHANGE_CLASS_InstanceChange "InstanceChange"
@@ -24,12 +24,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 #define TABLE_ChangeSummary "change_" ECDBCHANGE_CLASS_ChangeSummary
 
-#define FILEEXT_ChangeSummaryCache L".changesummaries"
+#define FILEEXT_ChangeCache L".ecchanges"
 
 //=======================================================================================
 // @bsiclass                                            Krischan.Eberle      11/2017
 //=======================================================================================
-struct ChangeSummaryManager final
+struct ChangeManager final
     {
     private:
         ECDbCR m_ecdb;
@@ -39,29 +39,29 @@ struct ChangeSummaryManager final
         static ProfileVersion const* s_expectedCacheVersion;
 
         //not copyable
-        ChangeSummaryManager(ChangeSummaryManager const&) = delete;
-        ChangeSummaryManager& operator=(ChangeSummaryManager const&) = delete;
+        ChangeManager(ChangeManager const&) = delete;
+        ChangeManager& operator=(ChangeManager const&) = delete;
 
         DbResult CreateCacheFile(BeFileNameCR cachePath) const;
-        DbResult AddMetadataToChangeSummaryCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;
+        DbResult AddMetadataToChangeCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;
 
     public:
-        explicit ChangeSummaryManager(ECDbCR ecdb) : m_ecdb(ecdb) {}
+        explicit ChangeManager(ECDbCR ecdb) : m_ecdb(ecdb) {}
 
-        BentleyStatus Extract(ECInstanceKey& summaryKey, BeSQLite::IChangeSet&, ECDb::ChangeSummaryExtractOptions const&) const;
+        BentleyStatus ExtractChangeSummary(ECInstanceKey& summaryKey, ChangeSetArg const&, ECDb::ChangeSummaryExtractOptions const&) const;
 
-        //! Expected version of the ChangeSummary Cache file (which always matches the version of the ECDbChangeSummaries ECSchema)
+        //! Expected version of the Change Cache file (which always matches the version of the ECDbChange ECSchema)
         static ProfileVersion const& GetExpectedCacheVersion() { return *s_expectedCacheVersion; }
         static BeFileName DetermineCachePath(ECDbCR);
         static BeFileName DetermineCachePath(BeFileNameCR ecdbPath);
 
         //! This only checks whether a file with the change summary alias was attached. It could be any file though.
-        //! Use IsChangeSummaryCacheAttached to find out whether the attached file is a valid change summary cache file
-        bool ChangeSummaryTableSpaceExists() const { return DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ChangeSummaries); }
-        bool IsChangeSummaryCacheAttachedAndValid(bool logError = false) const;
-        static bool IsChangeSummaryCacheValid(ECDbCR cacheFile, bool logError = false);
+        //! Use IsChangeCacheAttached to find out whether the attached file is a valid change summary cache file
+        bool ChangeTableSpaceExists() const { return DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ECChange); }
+        bool IsChangeCacheAttachedAndValid(bool logError = false) const;
+        static bool IsChangeCacheValid(ECDbCR cacheFile, bool logError = false);
 
-        DbResult AttachChangeSummaryCacheFile(bool createIfNotExists) const;
+        DbResult AttachChangeCacheFile(bool createIfNotExists) const;
 
         ChangeSummaryExtractor const& GetExtractor() const { return m_extractor; }
 

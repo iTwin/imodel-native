@@ -20,10 +20,10 @@ struct ECCrudWriteToken;
 struct SchemaImportToken;
 
 //=======================================================================================
-//! Enum which mirrors the ECEnumeration OpCode in the ECDbChangeSummaries ECSchema.
+//! Enum which mirrors the ECEnumeration OpCode in the ECDbChange ECSchema.
 //! The enum can be used when programmatically binding values to the OpCode in an ECSQL
-//! against the ECDbChangeSummaries ECSchema.
-//! @see @ref ECDbChangeSummaries
+//! against the ECDbChange ECSchema.
+//! @see @ref ECDbChange
 // @bsienum                                              Krischan.Eberle      11/2017
 //+===============+===============+===============+===============+===============+======
 enum class ChangeOpCode
@@ -39,7 +39,7 @@ enum class ChangeOpCode
 //! @b Changes.
 //! The enum can be used when programmatically binding values to the ChangedValueState argument
 //! in an ECSQL using the Changes ECSQL function.
-//! @see @ref ECDbChangeSummaries
+//! @see @ref ECDbChange
 // @bsienum                                                             11/2017
 //+===============+===============+===============+===============+===============+======
 enum class ChangedValueState
@@ -48,6 +48,42 @@ enum class ChangedValueState
     BeforeUpdate = 2, //!< query for the changed property values of an updated row before the update
     AfterUpdate = 3, //!< query for the changed property values of an updated row after the update
     BeforeDelete = 4 //!< query for the property values of a deleted row before the delete
+    };
+
+//=======================================================================================
+//! @ingroup ECDbGroup
+// @bsiclass                                                            12/2017
+//+===============+===============+===============+===============+===============+======
+struct ChangeSetArg final
+    {
+    struct User final
+        {
+        Utf8String m_id;
+        Utf8String m_name;
+
+        bool IsValid() const { return !m_id.empty(); }
+        };
+
+    private:
+        BeSQLite::IChangeSet& m_changeSet;
+
+        Utf8String m_changeSetId;
+        Utf8String m_parentChangeSetId;
+        DateTime m_pushDate;
+        User m_createdBy;
+
+    public:
+        ChangeSetArg(BeSQLite::IChangeSet& changeSet) : m_changeSet(changeSet) {}
+
+        BeSQLite::IChangeSet& GetChangeSet() const { return m_changeSet; }
+        Utf8StringCR GetId() const { return m_changeSetId; }
+        Utf8StringCR GetParentId() const { return m_parentChangeSetId; }
+        DateTime const& GetPushDate() const { return m_pushDate; }
+        User const& GetCreatedBy() const { return m_createdBy; }
+        ChangeSetArg& SetId(Utf8StringCR id) { m_changeSetId.assign(id); return *this; }
+        ChangeSetArg& SetParentId(Utf8StringCR parentId) { m_parentChangeSetId.assign(parentId); return *this; }
+        ChangeSetArg& SetPushDate(DateTimeCR pushDate) { m_pushDate = pushDate; return *this; }
+        ChangeSetArg& SetCreatedBy(User const& createdBy) { m_createdBy = createdBy; return *this; }
     };
 
 //=======================================================================================
@@ -65,11 +101,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
     //=======================================================================================
-    //! Options that control what to do with the ChangeSummary cache file when opening an ECDb file
-    //! @see ECDb::OpenParams @see ECDb::AttachChangeSummaryCache  @see @ref ECDbChangeSummaries
+    //! Options that control what to do with the Change cache file when opening an ECDb file
+    //! @see ECDb::OpenParams @see ECDb::AttachChangeCache  @see @ref ECDbChange
     // @bsienum                                                    11/17
     //=======================================================================================
-    enum class ChangeSummaryCacheMode
+    enum class ChangeCacheMode
         {
         AttachAndCreateIfNotExists,
         AttachIfExists,
@@ -82,25 +118,25 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
         {
         private:
-            ChangeSummaryCacheMode m_changeSummaryCacheMode = ChangeSummaryCacheMode::DoNotAttach;
+            ChangeCacheMode m_changeCacheMode = ChangeCacheMode::DoNotAttach;
 
         public:
             explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
-            OpenParams(OpenMode openMode, ChangeSummaryCacheMode changeSummaryCacheMode) : Db::OpenParams(openMode, BeSQLite::DefaultTxn::Yes), m_changeSummaryCacheMode(changeSummaryCacheMode) {}
+            OpenParams(OpenMode openMode, ChangeCacheMode changeCacheMode) : Db::OpenParams(openMode, BeSQLite::DefaultTxn::Yes), m_changeCacheMode(changeCacheMode) {}
             virtual ~OpenParams() {}
 
-            //! Sets the ChangeSummaryCacheMode in the params
+            //! Sets the ChangeCacheMode in the params
             //!@note If a profile upgrade has to be performed while opening a file,
-            //!the specified mode is ignored and ChangeSummaryCacheMode::AttachAndCreateIfNotExists is used.
-            //! @param[in] mode ChangeSummaryCacheMode to set
+            //!the specified mode is ignored and ChangeCacheMode::AttachAndCreateIfNotExists is used.
+            //! @param[in] mode ChangeCacheMode to set
             //! @return the params object itself for fluid API calls
-            OpenParams& Set(ChangeSummaryCacheMode mode) { m_changeSummaryCacheMode = mode; return *this; }
+            OpenParams& Set(ChangeCacheMode mode) { m_changeCacheMode = mode; return *this; }
 
-            //! Gets the ChangeSummaryCacheMode
+            //! Gets the ChangeCacheMode
             //!@note If a profile upgrade has to be performed while opening a file,
-            //!the specified mode is ignored and ChangeSummaryCacheMode::AttachAndCreateIfNotExists is used.
-            //! @return ChangeSummaryCacheMode
-            ChangeSummaryCacheMode GetChangeSummaryCacheMode() const { return m_changeSummaryCacheMode; }
+            //!the specified mode is ignored and ChangeCacheMode::AttachAndCreateIfNotExists is used.
+            //! @return ChangeCacheMode
+            ChangeCacheMode GetChangeCacheMode() const { return m_changeCacheMode; }
         };
 
     //=======================================================================================
@@ -292,54 +328,54 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
-    //! @name ChangeSummaries
+    //! @name History
     //! @{
 
-    //! Determines whether the ChangeSummary cache file is attached to this %ECDb file or not.
-    //! @return true if the ChangeSummary cache file is attached and valid. false otherwise
-    //! @see @ref ECDbChangeSummaries
-    ECDB_EXPORT bool IsChangeSummaryCacheAttached() const;
+    //! Determines whether the Changes cache file is attached to this %ECDb file or not.
+    //! @return true if the Changes cache file is attached and valid. false otherwise
+    //! @see @ref ECDbChange
+    ECDB_EXPORT bool IsChangeCacheAttached() const;
 
-    //! Attaches the ChangeSummary cache file to this %ECDb file (if it isn't attached already).
+    //! Attaches the Changes cache file to this %ECDb file (if it isn't attached already).
     //! If it does not exist, a new one is created and attached.
     //! @note Attaching a file means that any open transactions are committed first (see BentleyApi::BeSQLite::Db::AttachDb).
     //! 
-    //! Alternatively you can specify a corresponding ECDb::ChangeSummaryCacheMode so that the cache
+    //! Alternatively you can specify a corresponding ECDb::ChangeCacheMode so that the cache
     //! is attached at opening time already.
     //!
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
-    //! @see @ref ECDbChangeSummaries
+    //! @see @ref ECDbChange
     //! @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
-    //! @see BentleyApi::BeSQLite::EC::ECDb::ChangeSummaryCacheMode
-    ECDB_EXPORT DbResult AttachChangeSummaryCache() const;
+    //! @see BentleyApi::BeSQLite::EC::ECDb::ChangeCacheMode
+    ECDB_EXPORT DbResult AttachChangeCache() const;
 
-    //! Gets the file path to the ChangeSummary cache file for this %ECDb file.
-    //! @return Path to ChangeSummary cache file
-    //! @see @ref ECDbChangeSummaries
-    ECDB_EXPORT BeFileName GetChangeSummaryCachePath() const;
+    //! Gets the file path to the Change cache file for this %ECDb file.
+    //! @return Path to Change cache file
+    //! @see @ref ECDbChange
+    ECDB_EXPORT BeFileName GetChangeCachePath() const;
 
-    //! Gets the file path to the ChangeSummary cache file for the specified %ECDb path.
-    //! @param[in] ecdbPath Path to %ECDb file for which ChangeSummary cache path is returned
-    //! @return Path to ChangeSummary cache file
-    //! @see @ref ECDbChangeSummaries
-    ECDB_EXPORT static BeFileName GetChangeSummaryCachePath(BeFileNameCR ecdbPath);
+    //! Gets the file path to the Change cache file for the specified %ECDb path.
+    //! @param[in] ecdbPath Path to %ECDb file for which Change cache path is returned
+    //! @return Path to Changes cache file
+    //! @see @ref ECDbChange
+    ECDB_EXPORT static BeFileName GetChangeCachePath(BeFileNameCR ecdbPath);
 
     //! Extracts and generates the change summary from the specified change set.
-    //! @remarks The change summary is persisted as as instance of the ECClass @b ECDbChangeSummaries.ChangeSummary and its related classes
-    //! @b ECDbChangeSummaries.InstanceChange and @b ECDbChangeSummaries.PropertyValueChange.
+    //! @remarks The change summary is persisted as as instance of the ECClass @b ECDbChange.ChangeSummary and its related classes
+    //! @b ECDbChange.InstanceChange and @b ECDbChange.PropertyValueChange.
     //! The method returns the ECInstanceKey of the generated ChangeSummary which serves as input to any query into the changes
-    //! using the @b ECDbChangeSummary ECClasses or using the ECSQL function @b ChangeSummary.
+    //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
     //! @note The change summaries are persisted in a separate cache file. Before extracting you must make sure
-    //! the cache exists and has been attached. Either call ECDb::AttachChangeSummaryCache first or specify the appropriate ECDb::ChangeSummaryCacheMode
+    //! the cache exists and has been attached. Either call ECDb::AttachChangeCache first or specify the appropriate ECDb::ChangeCacheMode
     //! when opening the %ECDb file. If the cache is not attached, the method returns ERROR.
     //!
-    //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChangeSummaries.ChangeSummary)
-    //! @param[in] changeSet Change set to generate the summary from
+    //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
+    //! @param[in] changeSetInfo Change set and additional information about the change set to generate the summary from
     //! @param[in] options Extraction options
     //! @return SUCCESS or ERROR
-    //! @see @ref ECDbChangeSummaries
-    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeSQLite::IChangeSet& changeSet, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+    //! @see @ref ECDbChange
+    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
     
     //! @}
 

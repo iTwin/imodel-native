@@ -46,18 +46,18 @@ DbResult ECDb::Impl::OnDbOpening() const
 DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
     {
     ECDb::OpenParams const* ecdbParams = dynamic_cast<ECDb::OpenParams const*> (&params);
-    ChangeSummaryCacheMode changeSummaryCacheMode = ChangeSummaryCacheMode::DoNotAttach;
+    ChangeCacheMode changeCacheMode = ChangeCacheMode::DoNotAttach;
     if (ecdbParams != nullptr)
-        changeSummaryCacheMode = ecdbParams->GetChangeSummaryCacheMode();
+        changeCacheMode = ecdbParams->GetChangeCacheMode();
 
-    if (changeSummaryCacheMode != ChangeSummaryCacheMode::DoNotAttach)
+    if (changeCacheMode != ChangeCacheMode::DoNotAttach)
         {
-        PERFLOG_START("ECDb", "Open> Attach ChangeSummary cache file");
+        PERFLOG_START("ECDb", "Open> Attach Changes cache file");
         //attach before a potential profile upgrade happens, so that the profile upgrade can update tables in the change summary cache file as well
-        const DbResult r = m_changeSummaryManager.AttachChangeSummaryCacheFile(changeSummaryCacheMode == ChangeSummaryCacheMode::AttachAndCreateIfNotExists);
+        const DbResult r = m_changeManager.AttachChangeCacheFile(changeCacheMode == ChangeCacheMode::AttachAndCreateIfNotExists);
         if (BE_SQLITE_OK != r)
             return r;
-        PERFLOG_FINISH("ECDb", "Open> Attach ChangeSummary cache file");
+        PERFLOG_FINISH("ECDb", "Open> Attach Changes cache file");
         }
 
     return BE_SQLITE_OK;
@@ -275,7 +275,7 @@ void ECDb::Impl::ClearECDbCache(Utf8CP tableSpace) const
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache(tableSpace);
 
-    const_cast<ChangeSummaryManager&>(m_changeSummaryManager).ClearCache();
+    const_cast<ChangeManager&>(m_changeManager).ClearCache();
 
     const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
@@ -331,7 +331,7 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::RegisterBuiltinFunctions() const
     {
-    m_changeSummaryManager.RegisterSqlFunctions();
+    m_changeManager.RegisterSqlFunctions();
     }
 
 //---------------------------------------------------------------------------------------
@@ -342,7 +342,7 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (!m_ecdb.IsDbOpen())
         return;
 
-    m_changeSummaryManager.UnregisterSqlFunction();
+    m_changeManager.UnregisterSqlFunction();
     }
 
 //---------------------------------------------------------------------------------------

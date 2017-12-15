@@ -64,7 +64,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbMapSchemaHelper.h \
                 $(baseDir)PolicyManager.h \
                 $(baseDir)ChangeIteratorImpl.h \
-                $(baseDir)ChangeSummaryManager.h \
+                $(baseDir)ChangeManager.h \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
@@ -218,7 +218,7 @@ $(o)ECInstanceFinder$(oext):                                  $(baseDir)ECInstan
 
 $(o)ViewGenerator$(oext):                                     $(baseDir)ViewGenerator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ChangeSummaryManager$(oext):                              $(baseDir)ChangeSummaryManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ChangeManager$(oext):                                     $(baseDir)ChangeManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSummaryExtractor$(oext):                            $(baseDir)ChangeSummaryExtractor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -474,7 +474,7 @@ $(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)E
 $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbSchemaPolicies.01.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ECDbChangeSummaries.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbChangeSummaries.01.00.00.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbChange.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbChange.01.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------

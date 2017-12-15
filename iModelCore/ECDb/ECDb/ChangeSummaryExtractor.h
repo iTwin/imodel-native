@@ -45,7 +45,7 @@ struct InstanceChange final
         bool IsIndirect() const { return m_isIndirect; }
     };
 
-struct ChangeSummaryManager;
+struct ChangeManager;
 
 //=======================================================================================
 // @bsiclass                                            Krischan.Eberle      11/2017
@@ -58,13 +58,13 @@ struct ChangeSummaryExtractor final
         struct Context final
             {
             private:
-                ChangeSummaryManager& m_manager;
-                ECDb m_changeSummaryECDb;
+                ChangeManager& m_manager;
+                ECDb m_changeCacheECDb;
                 ECSqlStatementCache m_changeSummaryStmtCache;
                 bool m_wasChangeSummaryFileAttached = false;
                 bool m_extractCompletedSuccessfully = false;
             public:
-                explicit Context(ChangeSummaryManager& manager);
+                explicit Context(ChangeManager& manager);
                 //Performs clean-up: 
                 //*saves changes to change summary ECDb and closes it
                 //*reattaches the change summary ECDb to the primary ECDb if it was attached before extraction
@@ -72,8 +72,7 @@ struct ChangeSummaryExtractor final
 
                 DbResult OpenChangeSummaryECDb();
                 void ExtractCompletedSuccessfully() { m_extractCompletedSuccessfully = true; }
-                ECDbCR GetChangeSummaryECDb() const { return m_changeSummaryECDb; }
-                CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const { return m_changeSummaryStmtCache.GetPreparedStatement(m_changeSummaryECDb, ecsql); }
+                CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const { return m_changeSummaryStmtCache.GetPreparedStatement(m_changeCacheECDb, ecsql); }
                 ECDbCR GetPrimaryECDb() const;
                 MainSchemaManager const& GetSchemaManager() const;
                 IssueReporter const& Issues() const;
@@ -106,7 +105,7 @@ struct ChangeSummaryExtractor final
         ChangeSummaryExtractor(ChangeSummaryExtractor const&) = delete;
         ChangeSummaryExtractor& operator=(ChangeSummaryExtractor const&) = delete;
 
-        BentleyStatus Extract(Context&, ECInstanceId summaryId, IChangeSet& changeSet, ExtractMode) const;
+        BentleyStatus Extract(Context&, ECInstanceId summaryId, BeSQLite::IChangeSet&, ExtractMode) const;
         BentleyStatus ExtractInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
         BentleyStatus ExtractRelInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
 
@@ -119,7 +118,9 @@ struct ChangeSummaryExtractor final
         bool ContainsChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(ctx, summaryId, keyOfChangedInstance).IsValid(); }
 
 
-        BentleyStatus InsertSummary(ECInstanceKey& summaryKey, Context&) const;
+        BentleyStatus InsertSummary(ECInstanceKey& summaryKey, Context&, ChangeSetArg const&) const;
+        BentleyStatus FindOrInsertChangeset(ECInstanceKey& changeSetKey, Context&, ChangeSetArg const&) const;
+        BentleyStatus FindOrInsertUser(ECInstanceKey& userKey, Context&, ChangeSetArg const&) const;
         DbResult InsertOrUpdate(Context&, InstanceChange const&) const;
         DbResult Delete(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
 
@@ -133,7 +134,7 @@ struct ChangeSummaryExtractor final
     public:
         ChangeSummaryExtractor()  {}
 
-        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ChangeSummaryManager&, IChangeSet& changeSet, ECDb::ChangeSummaryExtractOptions const&) const;
+        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ChangeManager&, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&) const;
     };
 
 

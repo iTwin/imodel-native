@@ -247,7 +247,7 @@ struct SchemaManager::Dispatcher final
 
         void ClearCache(Utf8CP tableSpace) const;
 
-        static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem", "ChangeSummary"}; }
+        static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem", "ECDbChange"}; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
