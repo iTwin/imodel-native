@@ -1401,9 +1401,23 @@ void RevisionManager::AbandonCreateRevision()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    02/2017
+// @bsimethod                                Ramanujam.Raman                    12/2017
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
+    {
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        {
+        BeAssert(false && "Cannot reverse a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.");
+        return RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen;
+        }
+
+    return DoReverseRevision(revision);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoReverseRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
@@ -1434,9 +1448,23 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    02/2017
+// @bsimethod                                Ramanujam.Raman                    12/2017
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::ReinstateRevision(DgnRevisionCR revision)
+    {
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        {
+        BeAssert(false && "Cannot reverse a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.");
+        return RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen;
+        }
+
+    return DoReinstateRevision(revision);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoReinstateRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
     BeAssert(!IsCreatingRevision());

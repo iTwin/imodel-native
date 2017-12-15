@@ -171,7 +171,8 @@ enum class RevisionStatus : int
     SQLiteError, //!< Error performing a SQLite operation on the Db
     WrongDgnDb, //!< Revision originated in a different Db
     CouldNotOpenDgnDb, //!< Could not open the DgnDb to merge revision
-    MergeSchemaChangesOnOpen, //! Cannot merge schema change in a previously opened DgnDb. Merge it when the file is opened. 
+    MergeSchemaChangesOnOpen, //! Cannot merge changes in a previously opened DgnDb. Do the operation when the file is opened. 
+    ReverseOrReinstateSchemaChangesOnOpen, //! Cannot reverse or reinstate changes in a previously opened DgnDb. Do the operation when the file is opened. 
     CannotMergeIntoReadonly, //! Cannot merge changes into a Readonly DgnDb.
     CannotMergeIntoMaster, //! Cannot merge changes into a Master DgnDb.
     };

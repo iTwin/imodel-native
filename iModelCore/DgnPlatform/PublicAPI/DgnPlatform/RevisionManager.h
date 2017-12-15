@@ -185,6 +185,8 @@ private:
 
     DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId);
     RevisionStatus DoMergeRevision(DgnRevisionCR revision);
+    RevisionStatus DoReverseRevision(DgnRevisionCR revision);
+    RevisionStatus DoReinstateRevision(DgnRevisionCR revision);
 
     BeSQLite::DbResult SaveContainsSchemaChanges();
     BeSQLite::DbResult ClearContainsSchemaChanges();
