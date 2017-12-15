@@ -23,5 +23,9 @@ struct GridSplineSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridSplineSurface, GridSplineSurface, GridSplineSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
+struct SketchSplineGridSurfaceHandler : GridArcSurfaceHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SketchSplineGridSurface, SketchSplineGridSurface, SketchSplineGridSurfaceHandler, GridSplineSurfaceHandler, GRIDHANDLERS_EXPORT)
+    };
 
 END_GRIDS_NAMESPACE

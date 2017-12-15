@@ -34,6 +34,7 @@ GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     RegisterHandler(SketchArcGridSurfaceHandler::GetHandler());
     RegisterHandler(PlanCartesianGridSurfaceHandler::GetHandler ());
     RegisterHandler(GridSplineSurfaceHandler::GetHandler ());
+    RegisterHandler(SketchSplineGridSurfaceHandler::GetHandler());
 
     RegisterHandler(OrthogonalGridHandler::GetHandler ());
     RegisterHandler(RadialGridHandler::GetHandler ());

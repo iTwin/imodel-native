@@ -126,4 +126,77 @@ CreateParams const& params
 ) : T_Super(params), IPlanGridSurface(*this, params, params.m_classId)
     {
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchSplineGridSurface::SketchSplineGridSurface
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetBaseSpline(params.m_splinePrimitive);
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchSplineGridSurfacePtr             SketchSplineGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    SketchSplineGridSurfacePtr surface = new SketchSplineGridSurface (params);
+
+    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
+        return nullptr;
+    
+    return surface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            SketchSplineGridSurface::SetBaseSpline
+(
+ICurvePrimitivePtr splinePrimitive
+)
+    {
+    if (!splinePrimitive.IsValid()) //if spline is null, return
+        return;
+
+    IGeometryPtr geometryPtr = IGeometry::Create (splinePrimitive);
+
+    ECN::ECValue spline2dValue;
+    spline2dValue.SetIGeometry (*geometryPtr);
+
+    SetPropertyValue (prop_Spline2d (), spline2dValue);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr              SketchSplineGridSurface::GetBaseSpline
+(
+) const
+    {
+    ECN::ECValue spline2dValue;
+
+    GetPropertyValue (spline2dValue, prop_Spline2d());
+
+    IGeometryPtr geometryPtr = spline2dValue.GetIGeometry ();
+    if (!geometryPtr.IsValid ())
+        return nullptr;
+
+    ICurvePrimitivePtr curve = geometryPtr->GetAsICurvePrimitive ();
+
+    return curve;
+    }
+
 END_GRIDS_NAMESPACE

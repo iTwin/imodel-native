@@ -56,7 +56,6 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanGridSplineSurface : GridSplineSurface, IPlanGridSurface
     {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_PlanGridSplineSurface, GridSplineSurface);
     DEFINE_T_SUPER (GridSplineSurface);
     public:
 
@@ -87,6 +86,62 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGridSplineSurface : GridSplineSurface, IPlanG
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGridSplineSurface, GRIDELEMENTS_EXPORT)
 
+    };
+
+//=======================================================================================
+//! plan grid planar surface element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SketchSplineGridSurface : PlanGridSplineSurface
+    {
+    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_SketchSplineGridSurface, PlanGridSplineSurface);
+    DEFINE_T_SUPER (PlanGridSplineSurface);
+    public:
+        struct CreateParams : T_Super::CreateParams
+            {
+            DEFINE_T_SUPER (SketchSplineGridSurface::T_Super::CreateParams);
+            ICurvePrimitivePtr m_splinePrimitive;
+
+            //! Creates create parameters for orthogonal grid
+            //! @param[in] model              model for the PlanCartesianGridSurface
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double staElevation, double endElevation, ICurvePrimitiveCR splinePrimitive) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId (), staElevation, endElevation)
+                {
+                m_splinePrimitive = splinePrimitive.Clone();
+                }
+
+            //! Constructor from base params. Chiefly for internal use.
+            //! @param[in]      params   The base element parameters
+            //! @return 
+            explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
+                : T_Super (params)
+                {
+                m_splinePrimitive = nullptr;
+                }
+            };
+
+    private:
+        BE_PROP_NAME (Spline2d)
+
+
+    protected:
+        explicit GRIDELEMENTS_EXPORT SketchSplineGridSurface (CreateParams const& params);
+        friend struct SketchSplineGridSurfaceHandler;
+
+    public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchSplineGridSurface, GRIDELEMENTS_EXPORT)
+
+        //! Creates a SketchSplineGridSurface surface
+        //! @param[in]  params           params to create SketchSplineGridSurface
+        GRIDELEMENTS_EXPORT static  SketchSplineGridSurfacePtr Create (CreateParams const& params);
+
+        //! Gets Spline2d of this SketchSplineGridSurface
+        //! @return base spline of this SketchSplineGridSurface
+        GRIDELEMENTS_EXPORT ICurvePrimitivePtr  GetBaseSpline () const;
+
+        //! Sets Line2d of this SketchSplineGridSurface
+        //! @param[in]   splinePrimitive        base spline of gridSurface in local coordinates, on zero Z plane
+        //! @Note: Only splines on zero Z plane pass as valid geometry
+        GRIDELEMENTS_EXPORT void                SetBaseSpline (ICurvePrimitivePtr splinePrimitive);
     };
 
 END_GRIDS_NAMESPACE
