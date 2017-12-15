@@ -1237,7 +1237,7 @@ TEST_F(iModelManagerTests, FailingLocksResponseOptions)
     ExpectLocksCount(*briefcase1, 2);
     db1.SaveChanges();
     PushPendingChanges(*briefcase1, false);
-    ExpectLocksCount(*briefcase1, 2);
+    ExpectLocksCount(*briefcase1, 6);
 
     EXPECT_EQ(DgnDbStatus::Success, model1_1->Delete());
     EXPECT_EQ(DgnDbStatus::Success, model1_2->Delete());
@@ -1246,11 +1246,17 @@ TEST_F(iModelManagerTests, FailingLocksResponseOptions)
     EXPECT_SUCCESS(briefcase2->PullAndMerge()->GetResult());
     DgnModelPtr model2_1 = db2.Models().GetModel(model1_1->GetModelId());
 
+    DgnLockSet locks;
+    locks.insert(DgnLock(LockableId(model2_1->GetModelId()), LockLevel::None));
+    DgnCodeSet codes;
+    StatusResult result = briefcase2->GetiModelConnection().DemoteCodesLocks(locks, codes, briefcase1->GetBriefcaseId(), db2.GetDbGuid())->GetResult();
+    EXPECT_SUCCESS(result);
+	
     IBriefcaseManager::Request req;
     EXPECT_EQ(RepositoryStatus::Success, db2.BriefcaseManager().PrepareForModelDelete(req, *model2_1, IBriefcaseManager::PrepareAction::Acquire)); 
     EXPECT_EQ(DgnDbStatus::Success, model2_1->Delete());
     db2.SaveChanges();
-    ExpectLocksCount(*briefcase1, 2);
+    ExpectLocksCount(*briefcase1, 5);
     ExpectLocksCount(*briefcase2, 2);
 
     StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();
