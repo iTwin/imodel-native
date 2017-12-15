@@ -17,6 +17,7 @@ Note that searching for symbols increases code coverage runtime. So keep this sm
                    <Path>$(outroot)Winx64\build\RealityModFramework\RealityAdmin</Path>
                    <Path>$(outroot)Winx64\build\RealityModFramework\RealityPlatformTools</Path>
                    <Path>$(outroot)Winx64\build\RealityModFramework\CrawlerLib</Path>
+                   <Path>$(outroot)Winx64\build\RealityModFramework\SpatioTemporalSelector</Path>
             </SymbolSearchPaths>  
 
             <!--  
@@ -34,6 +35,7 @@ Included items must then not match any entries in the exclude list to remain inc
                 <ModulePath>.*RealityPlatformTools.*$</ModulePath>
                 <ModulePath>.*RealityAdmin.*$</ModulePath>
                 <ModulePath>.*CrawlerLib.*$</ModulePath>
+                <ModulePath>.*SpatioTemporalSelector.*$</ModulePath>
               </Include>
               <Exclude>
                 <ModulePath>.*RealityModFrameworkTest*</ModulePath>
