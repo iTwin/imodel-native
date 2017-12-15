@@ -284,7 +284,7 @@ BentleyStatus ChangeSummaryExtractor::InsertSummary(ECInstanceKey& summaryKey, C
         }
 
     CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_ChangeSummary "(StartChangeSet.Id,EndChangeSet.Id) VALUES(?,?)");
-    if (!changeSetKey.IsValid())
+    if (changeSetKey.IsValid())
         {
         //for now we only support a single changeset per summary. so start and end is the same
         stmt->BindId(1, changeSetKey.GetInstanceId());
@@ -309,8 +309,15 @@ BentleyStatus ChangeSummaryExtractor::FindOrInsertChangeset(ECInstanceKey& chang
     if (SUCCESS != FindOrInsertUser(userKey, ctx, changeSetInfo))
         return ERROR;
 
+    ECInstanceKey parentKey;
+    if (!changeSetInfo.GetParentId().empty())
+        {
+        if (SUCCESS != FindOrInsertChangeset(parentKey, ctx, ChangeSetArg(changeSetInfo.GetChangeSet()).SetId(changeSetInfo.GetParentId())))
+            return ERROR;
+        }
+
     //see whether changeset was already inserted
-    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId,ECClassId FROM " ECSCHEMA_ALIAS_ECDbChange ".ChangeSet WHERE GlobalId=?");
+    CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId,ECClassId,Description,Parent.Id,PushDate,CreatedBy.Id FROM " ECSCHEMA_ALIAS_ECDbChange ".ChangeSet WHERE GlobalId=?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -319,49 +326,95 @@ BentleyStatus ChangeSummaryExtractor::FindOrInsertChangeset(ECInstanceKey& chang
 
     stmt->BindText(1, changeSetInfo.GetId().c_str(), IECSqlBinder::MakeCopy::No);
 
+    enum class RequiredOp
+        {
+        None,
+        NeedsInsert,
+        NeedsUpdate
+        };
+
+    RequiredOp requiredOp = RequiredOp::None;
     if (BE_SQLITE_ROW == stmt->Step())
         {
         changesetKey = ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
-        BeAssert(BE_SQLITE_DONE == stmt->Step() && "Only one row expected for change set global id");
-        return SUCCESS;
-        }
+        const bool descrIsNull = stmt->IsValueNull(2);
+        const bool parentIdIsNull = stmt->IsValueNull(3);
+        const bool pushDateIsNull = stmt->IsValueNull(4);
+        const bool userIsNull = stmt->IsValueNull(5);
 
-    //find parent changeset
-    ECInstanceKey parentChangeSetKey;
-    if (!changeSetInfo.GetParentId().empty())
-        {
-        stmt->Reset();
-        stmt->ClearBindings();
-        stmt->BindText(1, changeSetInfo.GetParentId().c_str(), IECSqlBinder::MakeCopy::No);
-        if (BE_SQLITE_ROW == stmt->Step())
+        if ((!changeSetInfo.GetDescription().empty() && descrIsNull) ||
+            (!changeSetInfo.GetParentId().empty() && parentIdIsNull) ||
+            (changeSetInfo.GetPushDate().IsValid() && pushDateIsNull) ||
+            (userKey.IsValid() && userIsNull))
             {
-            parentChangeSetKey = ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
-            BeAssert(BE_SQLITE_DONE == stmt->Step() && "Only one row expected for change set global id");
+            requiredOp = RequiredOp::NeedsUpdate;
             }
+        BeAssert(BE_SQLITE_DONE == stmt->Step() && "Only one row expected for change set global id");
         }
+    else
+        requiredOp = RequiredOp::NeedsInsert;
 
-    //now insert new changeset record
-    stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange ".ChangeSet(GlobalId,Parent.Id,PushDate,CreatedBy.Id) VALUES(?,?,?,?)");
-    if (stmt == nullptr)
+    stmt = nullptr;
+
+    switch (requiredOp)
         {
-        BeAssert(false);
-        return ERROR;
-        }
+            case RequiredOp::None:
+                return SUCCESS; //changeset exists and has all meta data
 
-    stmt->BindText(1, changeSetInfo.GetId().c_str(), IECSqlBinder::MakeCopy::No);
-    if (parentChangeSetKey.IsValid())
-        stmt->BindId(2, parentChangeSetKey.GetInstanceId());
 
-    if (changeSetInfo.GetPushDate().IsValid())
-        stmt->BindDateTime(3, changeSetInfo.GetPushDate());
+            case RequiredOp::NeedsInsert:
+            {
+            stmt = ctx.GetChangeSummaryStatement("INSERT INTO " ECSCHEMA_ALIAS_ECDbChange ".ChangeSet(GlobalId,Description,Parent.Id,PushDate,CreatedBy.Id) VALUES(?,?,?,?,?)");
+            if (stmt == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
 
-    if (userKey.IsValid())
-        stmt->BindId(4, userKey.GetInstanceId());
+            stmt->BindText(1, changeSetInfo.GetId().c_str(), IECSqlBinder::MakeCopy::No);
+            stmt->BindText(2, changeSetInfo.GetDescription().c_str(), IECSqlBinder::MakeCopy::No);
+            if (parentKey.IsValid())
+                stmt->BindId(3, parentKey.GetInstanceId());
 
-    if (BE_SQLITE_DONE == stmt->Step(changesetKey))
-        return ERROR;
+            if (changeSetInfo.GetPushDate().IsValid())
+                stmt->BindDateTime(4, changeSetInfo.GetPushDate());
 
-    return SUCCESS;
+            if (userKey.IsValid())
+                stmt->BindId(5, userKey.GetInstanceId());
+
+            return BE_SQLITE_DONE == stmt->Step(changesetKey) ? SUCCESS : ERROR;
+            }
+
+            case RequiredOp::NeedsUpdate:
+            {
+            //update the stub changeset (GlobalId was already set at insert time)
+            stmt = ctx.GetChangeSummaryStatement("UPDATE " ECSCHEMA_ALIAS_ECDbChange ".ChangeSet SET Description=?,Parent.Id=?,PushDate=?,CreatedBy.Id=? WHERE ECInstanceId=?");
+            if (stmt == nullptr)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            if (!changeSetInfo.GetDescription().empty())
+                stmt->BindText(1, changeSetInfo.GetDescription().c_str(), IECSqlBinder::MakeCopy::No);
+
+            if (parentKey.IsValid())
+                stmt->BindId(2, parentKey.GetInstanceId());
+
+            if (changeSetInfo.GetPushDate().IsValid())
+                stmt->BindDateTime(3, changeSetInfo.GetPushDate());
+
+            if (userKey.IsValid())
+                stmt->BindId(4, userKey.GetInstanceId());
+
+            stmt->BindId(5, changesetKey.GetInstanceId());
+            return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+            }
+
+        default:
+            BeAssert(false);
+            return ERROR;
+        };
     }
 
 //---------------------------------------------------------------------------------------
@@ -370,7 +423,7 @@ BentleyStatus ChangeSummaryExtractor::FindOrInsertChangeset(ECInstanceKey& chang
 BentleyStatus ChangeSummaryExtractor::FindOrInsertUser(ECInstanceKey& userKey, Context& ctx, ChangeSetArg const& changeSetInfo) const
     {
     if (!changeSetInfo.GetCreatedBy().IsValid())
-        return ERROR;
+        return SUCCESS;
 
     CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ECInstanceId,ECClassId FROM " ECSCHEMA_ALIAS_ECDbChange ".User WHERE GlobalId=?");
     if (stmt == nullptr)
@@ -379,7 +432,7 @@ BentleyStatus ChangeSummaryExtractor::FindOrInsertUser(ECInstanceKey& userKey, C
         return ERROR;
         }
 
-    stmt->BindText(1, changeSetInfo.GetCreatedBy().m_id.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt->BindText(1, changeSetInfo.GetCreatedBy().GetId().c_str(), IECSqlBinder::MakeCopy::No);
 
     if (BE_SQLITE_ROW == stmt->Step())
         {
@@ -396,14 +449,11 @@ BentleyStatus ChangeSummaryExtractor::FindOrInsertUser(ECInstanceKey& userKey, C
         return ERROR;
         }
 
-    stmt->BindText(1, changeSetInfo.GetCreatedBy().m_id.c_str(), IECSqlBinder::MakeCopy::No);
-    if (!changeSetInfo.GetCreatedBy().m_name.empty())
-        stmt->BindText(1, changeSetInfo.GetCreatedBy().m_name.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt->BindText(1, changeSetInfo.GetCreatedBy().GetId().c_str(), IECSqlBinder::MakeCopy::No);
+    if (!changeSetInfo.GetCreatedBy().GetName().empty())
+        stmt->BindText(2, changeSetInfo.GetCreatedBy().GetName().c_str(), IECSqlBinder::MakeCopy::No);
 
-    if (BE_SQLITE_DONE == stmt->Step(userKey))
-        return ERROR;
-
-    return SUCCESS;
+    return BE_SQLITE_DONE == stmt->Step(userKey) ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------

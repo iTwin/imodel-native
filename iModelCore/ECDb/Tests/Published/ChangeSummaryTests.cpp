@@ -336,9 +336,9 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
             continue;
 
         attachedTableSpaceCount++;
-        ASSERT_STREQ("changesummaries", tableSpaceName);
+        ASSERT_STREQ("ecchange", tableSpaceName);
        }
-    ASSERT_EQ(1, attachedTableSpaceCount) << "Only ecchanges table space is expected to be attached";
+    ASSERT_EQ(1, attachedTableSpaceCount) << "Only ecchange table space is expected to be attached";
     }
 
     ECEnumeration const* opCodeECEnum = m_ecdb.Schemas().GetEnumeration("ECDbChange", "OpCode");
@@ -658,7 +658,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
 
     //attach cache with plain SQL command
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, DefaultTxn::No)));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS ecchanges", cachePath.GetNameUtf8().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS ecchange", cachePath.GetNameUtf8().c_str()).c_str()));
     Savepoint sp(m_ecdb, "");
     assertCache(m_ecdb, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
     assertExtraction(m_ecdb, revision1, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
@@ -769,6 +769,98 @@ TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
         </ECSchema>)xml")));
 
     ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache()) << "cannot create a change cache for an in-memory primary file";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, UserAndChangeSetInfos)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("UserAndChangeSetInfos.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ecdbf.ExternalFileInfo(Name) VALUES('MyLogFile')"));
+    ASSERT_TRUE(tracker.HasChanges());
+    TestChangeSet changeset;
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+    tracker.EndTracking();
+
+    auto argToString = [] (ChangeSetArg const& arg)
+        {
+        Utf8String str("Id: ");
+        str.append(arg.GetId()).append(" ParentId: ").append(arg.GetParentId());
+        if (arg.GetPushDate().IsValid())
+            str.append(" PushDate: ").append(arg.GetPushDate().ToString());
+
+        str.append(" UserId: ").append(arg.GetCreatedBy().GetId()).append(" UserName: ").append(arg.GetCreatedBy().GetName());
+        return str;
+        };
+
+    DateTime pushDate(DateTime::Kind::Utc, 2017, 12, 15, 12, 24);
+    std::vector<ChangeSetArg> args {ChangeSetArg(changeset),
+        ChangeSetArg(changeset).SetId("1-0-0-1"),
+        ChangeSetArg(changeset).SetId("1-0-0-2").SetParentId("2-0-0-1").SetPushDate(pushDate),
+        ChangeSetArg(changeset).SetId("1-0-0-3").SetParentId("2-0-0-2").SetPushDate(pushDate).SetCreatedBy(ChangeSetArg::User("5-5-5-5", "Audrey Winter"))
+        };
+
+    std::vector<ECInstanceId> changeSummaryIds;
+
+    for (ChangeSetArg const& arg : args)
+        {
+        ECInstanceKey changeSummaryKey;
+        ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, arg)) << argToString(arg);
+        changeSummaryIds.push_back(changeSummaryKey.GetInstanceId());
+        }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,
+                                                 "SELECT cset.GlobalId,parentCset.GlobalId ParentGlobalId,cset.PushDate,User.GlobalId UserGlobalId, User.Name UserName FROM change.ChangeSummary csum "
+                                                 "LEFT JOIN change.ChangeSet cset ON csum.StartChangeSet.Id=cset.ECInstanceId "
+                                                 "LEFT JOIN change.ChangeSet parentCset ON cset.Parent.Id=parentCset.ECInstanceId "
+                                                 "LEFT JOIN change.User ON cset.CreatedBy.Id=User.ECInstanceId "
+                                                 "WHERE csum.ECInstanceId=?"));
+    JsonECSqlSelectAdapter jsonAdapter(stmt);
+
+    for (size_t i = 0; i < args.size(); i++)
+        {
+        ChangeSetArg const& arg = args[i];
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, changeSummaryIds[i])) << argToString(arg);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << argToString(arg);
+        Json::Value actual;
+        EXPECT_EQ(SUCCESS, jsonAdapter.GetRow(actual)) << argToString(arg);
+
+        if (arg.GetId().empty())
+            EXPECT_FALSE(actual.isMember("GlobalId")) << argToString(arg);
+        else
+            EXPECT_STREQ(arg.GetId().c_str(),actual["GlobalId"].asCString()) << argToString(arg);
+
+        if (arg.GetParentId().empty())
+            EXPECT_FALSE(actual.isMember("ParentGlobalId")) << argToString(arg);
+        else
+            EXPECT_STREQ(arg.GetParentId().c_str(), actual["ParentGlobalId"].asCString()) << argToString(arg);
+
+        if (!arg.GetPushDate().IsValid())
+            EXPECT_FALSE(actual.isMember("PushDate")) << argToString(arg);
+        else
+            EXPECT_STREQ(arg.GetPushDate().ToString().c_str(), actual["PushDate"].asCString()) << argToString(arg);
+
+        if (arg.GetCreatedBy().GetId().empty())
+            EXPECT_FALSE(actual.isMember("UserGlobalId")) << argToString(arg);
+        else
+            EXPECT_STREQ(arg.GetCreatedBy().GetId().c_str(), actual["UserGlobalId"].asCString()) << argToString(arg);
+
+        if (arg.GetCreatedBy().GetName().empty())
+            EXPECT_FALSE(actual.isMember("UserName")) << argToString(arg);
+        else
+            EXPECT_STREQ(arg.GetCreatedBy().GetName().c_str(), actual["UserName"].asCString()) << argToString(arg);
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
     }
 
 //---------------------------------------------------------------------------------------
