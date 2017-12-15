@@ -20,9 +20,8 @@
 #include <json/value.h>
 #include "AddonUtils.h"
 #include <ECObjects/ECSchema.h>
-#include <ECPresentation/ECPresentation.h>
-#include <ECPresentation/RulesDriven/PresentationManager.h>
 #include <rapidjson/rapidjson.h>
+#include "ECPresentationUtils.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -1617,6 +1616,103 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         }
 };
 
+//=======================================================================================
+// Projects the NodeAddonECPresentationManager class into JS.
+//! @bsiclass
+//=======================================================================================
+struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentationManager>
+    {
+    static Napi::FunctionReference s_constructor;
+
+    ConnectionManager m_connections;
+    std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
+    
+    NodeAddonECPresentationManager(const Napi::CallbackInfo& info) 
+        : Napi::ObjectWrap<NodeAddonECPresentationManager>(info)
+        {
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
+        }
+
+    static bool HasInstance(Napi::Value val) {
+        Napi::Env env = val.Env();
+        Napi::HandleScope scope(env);
+        if (!val.IsObject())
+            return false;
+        Napi::Object obj = val.As<Napi::Object>();
+        return obj.InstanceOf(s_constructor.Value());
+        }
+
+    //  Create projections
+    static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
+        {
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "NodeAddonECPresentationManager", {
+          InstanceMethod("handleRequest", &NodeAddonECPresentationManager::HandleRequest)
+        });
+
+        target.Set("NodeAddonECPresentationManager", t);
+
+        s_constructor = Napi::Persistent(t);
+        s_constructor.SuppressDestruct();             // ??? what is this?
+        }
+
+    Napi::Value HandleRequest(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonDgnDb, db);    // contract pre-conditions
+        REQUIRE_ARGUMENT_STRING(1, serializedRequest);
+
+        if (!db->IsOpen())
+            return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
+
+        m_connections.NotifyConnectionOpened(db->GetDgnDb());
+
+        Json::Value request;
+        Json::Reader().parse(serializedRequest, request);
+        if (request.isNull())
+            return NodeUtils::CreateErrorObject0(ERROR, nullptr, Env());
+
+        Utf8CP requestId = request["requestId"].asCString();
+        if (Utf8String::IsNullOrEmpty(requestId))
+            return NodeUtils::CreateErrorObject0(ERROR, nullptr, Env());
+
+        JsonValueCR params = request["params"];
+        rapidjson::Document response;
+        if (0 == strcmp("GetRootNodesCount", requestId))
+            ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetRootNodes", requestId))
+            ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetChildrenCount", requestId))
+            ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetChildren", requestId))
+            ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetNodePaths", requestId))
+            ECPresentationUtils::GetNodePaths(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetFilteredNodesPaths", requestId))
+            ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetContentDescriptor", requestId))
+            ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetContent", requestId))
+            ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetContentSetSize", requestId))
+            ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("GetDistinctValues", requestId))
+            ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("SaveValueChange", requestId))
+            ECPresentationUtils::SaveValueChange(*m_presentationManager, db->GetDgnDb(), params, response);
+        else
+            return NodeUtils::CreateErrorObject0(ERROR, nullptr, Env());
+
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        response.Accept(writer);
+
+        return Napi::String::New(Env(), buffer.GetString());
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1646,6 +1742,7 @@ static void registerModule(Napi::Env env, Napi::Object exports, Napi::Object mod
     // NodeAddonECDb::Init(env, exports, module);
     NodeAddonECSqlStatement::Init(env, exports, module);
     NodeAddonBriefcaseManagerResourcesRequest::Init(env, exports, module);
+    NodeAddonECPresentationManager::Init(env, exports, module);
 
     exports.DefineProperties(
         {
@@ -1656,6 +1753,7 @@ static void registerModule(Napi::Env env, Napi::Object exports, Napi::Object mod
 Napi::FunctionReference NodeAddonBriefcaseManagerResourcesRequest::s_constructor;
 Napi::FunctionReference NodeAddonECSqlStatement::s_constructor;
 Napi::FunctionReference NodeAddonDgnDb::s_constructor;
+Napi::FunctionReference NodeAddonECPresentationManager::s_constructor;
 //Napi::FunctionReference NodeAddonECDb::s_constructor;
 
 NODE_API_MODULE(AddonUtils, registerModule)

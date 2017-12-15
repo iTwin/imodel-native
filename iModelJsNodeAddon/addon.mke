@@ -63,6 +63,8 @@ $(o)AddonUtilsDgnDb$(oext) : $(baseDir)AddonUtilsDgnDb.cpp $(baseDir)AddonUtils.
 
 $(o)AddonUtilsBriefcaseManager$(oext) : $(baseDir)AddonUtilsBriefcaseManager.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
 
+$(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends} 
+
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
