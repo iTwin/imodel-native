@@ -17,7 +17,6 @@ DOMAIN_DEFINE_MEMBERS(StructuralCommonDomain)
 StructuralCommonDomain::StructuralCommonDomain() : DgnDomain(BENTLEY_STRUCTURAL_COMMON_SCHEMA_NAME, "Bentley Structural Common Domain", 1)
     {
     RegisterHandler(StructuralPhysicalModelHandler::GetHandler());
-    RegisterHandler(StructuralTypeDefinitionModelHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

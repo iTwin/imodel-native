@@ -38,7 +38,6 @@
   <ItemGroup>
     <ClCompile Include="StructuralCommon\StructuralCommonDomain.cpp" />
     <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp" />
-    <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp" />
     <ClCompile Include="StructuralDomainUtilities.cpp" />
     <ClCompile Include="StructuralMaterial\ConcreteMaterialProperties.cpp" />
     <ClCompile Include="StructuralMaterial\MaterialProperties.cpp" />
@@ -65,7 +64,6 @@
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDefinitions.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralPhysicalModel.h" />
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralTypeDefinitionModel.h" />
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\ConcreteMaterialProperties.h" />
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\MaterialProperties.h" />
     <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\SteelMaterialProperties.h" />

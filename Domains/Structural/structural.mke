@@ -70,7 +70,6 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h \
     $(StructCommonPublicAPI)StructuralCommonDomain.h \
     $(StructCommonPublicAPI)StructuralPhysicalModel.h \
-    $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h \
     $(StructPhysPublicAPI)StructuralPhysicalApi.h \
     $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
     $(StructPhysPublicAPI)StructuralPhysicalDomain.h \
@@ -101,11 +100,6 @@ $(o)StructuralCommonDomain$(oext) : $(StructCommon)StructuralCommonDomain.cpp \
 $(o)StructuralPhysicalModel$(oext) : $(StructCommon)StructuralPhysicalModel.cpp \
     ${MultiCompileDepends} \
     $(StructCommonPublicAPI)StructuralPhysicalModel.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)StructuralTypeDefinitionModel$(oext) : $(StructCommon)StructuralTypeDefinitionModel.cpp \
-    ${MultiCompileDepends} \
-    $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 # Structural Physical

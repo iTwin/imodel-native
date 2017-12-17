@@ -29,13 +29,11 @@ struct StructuralDomainUtilities
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaPtr                 GetUpdateableSchema(StructuralPhysicalModelCPtr model);
     STRUCTURAL_DOMAIN_EXPORT static Utf8String                       GetSchemaNameFromModel(StructuralPhysicalModelCPtr model);
     STRUCTURAL_DOMAIN_EXPORT static StructuralPhysicalModelPtr       GetStructuralPhysicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static StructuralTypeDefinitionModelPtr GetStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECClassCP                   GetExistingECClass(Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR className);
 
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                  CreateStructuralDynamicSchema(Utf8StringCR modelCodeName, StructuralPhysicalModelPtr model);
     STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                    CreateStructuralModels(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr, bool createDynamicSchema = true, ECN::ECSchemaPtr suppliedDynamicSchema = nullptr);
     STRUCTURAL_DOMAIN_EXPORT static StructuralPhysicalModelPtr       CreateStructuralPhysicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static StructuralTypeDefinitionModelPtr CreateStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
     STRUCTURAL_DOMAIN_EXPORT static Dgn::PhysicalElementPtr          CreatePhysicalElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName = nullptr);
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECEntityClassP              CreatePhysicalElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR className);
 

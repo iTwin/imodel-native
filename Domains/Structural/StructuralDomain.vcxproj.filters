@@ -65,9 +65,6 @@
     <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp">
       <Filter>StructuralCommon</Filter>
     </ClCompile>
-    <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp">
-      <Filter>StructuralCommon</Filter>
-    </ClCompile>
     <ClCompile Include="StructuralPhysical\StructuralPhysicalDomain.cpp">
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
@@ -137,9 +134,6 @@
       <Filter>StructuralCommon</Filter>
     </ClInclude>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralPhysicalModel.h">
-      <Filter>StructuralCommon</Filter>
-    </ClInclude>
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralTypeDefinitionModel.h">
       <Filter>StructuralCommon</Filter>
     </ClInclude>
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Beam.h">

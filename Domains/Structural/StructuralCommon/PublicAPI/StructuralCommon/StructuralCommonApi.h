@@ -12,5 +12,4 @@
 #include "StructuralCommonDefinitions.h"
 #include "StructuralCommonDomain.h"
 #include "StructuralPhysicalModel.h"
-#include "StructuralTypeDefinitionModel.h"
 

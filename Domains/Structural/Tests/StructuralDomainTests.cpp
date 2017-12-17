@@ -7,12 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
 #include <StructuralDomain/StructuralDomainApi.h>
-#include <FormsDomain/Forms.h>
 #include <FormsDomain/FormsDomainDefinitions.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>
 #include <Bentley\BeAssert.h>
+#include <FormsDomain/Form.h>
+#include <FormsDomain/StraightExtrusion.h>
 
 
 #define MODEL_TEST_NAME              "SampleModel"
@@ -730,10 +731,17 @@ TEST_F(StructuralDomainTestFixture, FormClassTests)
 
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
-    Forms::FormPtr formAspect = Forms::Form::Create();
-    Forms::Form::SetAspect(*pw, *formAspect); //set aspect to wall
+   // Forms::FormPtr formAspect = Forms::Form::Create();
+   // Forms::Form::SetAspect(*pw, *formAspect); //set aspect to wall
 
+    Forms::StraightExtrusionPtr se = Forms::StraightExtrusion::Create();
+    Forms::Form::SetAspect(*pw, *se); //set aspect to wall
+
+    //se->SetLength(45.00);
     pw->Insert(&status);
+
+    //double dbLength = se->GetLength();
+
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
     }
 

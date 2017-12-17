@@ -52,11 +52,8 @@
 // ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define STRUCTURAL_COMMON_CLASS_StructuralPhysicalModel              "StructuralPhysicalModel"
-#define STRUCTURAL_COMMON_CLASS_StructuralTypeDefinitionModel        "StructuralTypeDefinitionModel"
-#define STRUCTURAL_COMMON_CLASS_FormAspect                           "Form"
 
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------
 STRUCTURAL_POINTER_TYPEDEFS(StructuralPhysicalModel)
-STRUCTURAL_POINTER_TYPEDEFS(StructuralTypeDefinitionModel)

@@ -170,23 +170,6 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
  //---------------------------------------------------------------------------------------
  // @bsimethod                                   Bentley.Systems
  //---------------------------------------------------------------------------------------
- StructuralTypeDefinitionModelPtr StructuralDomainUtilities::GetStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
-     {
-     if (parentSubject.IsNull())
-         parentSubject = db.Elements().GetRootSubject();
-
-     Dgn::DgnCode partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, BuildTypeDefinitionModelCode(modelCodeName));
-     Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
-     Dgn::DefinitionPartitionCPtr partition = db.Elements().Get<Dgn::DefinitionPartition>(partitionId);
-     if (!partition.IsValid())
-         return nullptr;
-
-     return dynamic_cast<StructuralTypeDefinitionModelP>(partition->GetSubModel().get());
-     }
-
- //---------------------------------------------------------------------------------------
- // @bsimethod                                   Bentley.Systems
- //---------------------------------------------------------------------------------------
  ECN::ECClassCP StructuralDomainUtilities::GetExistingECClass(Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR className)
      {
      ECN::ECSchemaCP schema = db->Schemas().GetSchema(schemaName.c_str());
@@ -269,11 +252,6 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
              return BentleyStatus::ERROR;
          }
 
-     StructuralTypeDefinitionModelPtr typeDefinitionModel = CreateStructuralTypeDefinitionModel(modelCodeName, db, parentSubject);
-
-     if (!typeDefinitionModel.IsValid())
-         return BentleyStatus::ERROR;
-
      return BentleyStatus::SUCCESS;
      }
 
@@ -288,7 +266,6 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
          }
 
      // Create the partition and the StructuralPhysicalModel.
-
      Utf8String phyModelCode = BuildPhysicalModelCode(modelCodeName);
 
      Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*parentSubject, phyModelCode);
@@ -299,26 +276,6 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
      StructuralPhysicalModelPtr physicalModel = StructuralPhysicalModel::Create(*partition);
 
      return physicalModel;
-     }
-
- //---------------------------------------------------------------------------------------
- // @bsimethod                                   Bentley.Systems
- //---------------------------------------------------------------------------------------
- StructuralTypeDefinitionModelPtr StructuralDomainUtilities::CreateStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
-     {
-     if (parentSubject.IsNull())
-         parentSubject = db.Elements().GetRootSubject();
-
-     Utf8String defModelCode = BuildTypeDefinitionModelCode(modelCodeName);
-
-     Dgn::DefinitionPartitionCPtr defPartition = Dgn::DefinitionPartition::CreateAndInsert(*parentSubject, defModelCode);
-
-     if (!defPartition.IsValid())
-         return nullptr;
-
-     StructuralTypeDefinitionModelPtr typeDefinitionModel = StructuralTypeDefinitionModel::Create(*defPartition);
-
-     return typeDefinitionModel;
      }
 
  //---------------------------------------------------------------------------------------
