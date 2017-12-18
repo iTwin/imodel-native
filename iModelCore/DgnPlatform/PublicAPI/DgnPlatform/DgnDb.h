@@ -295,14 +295,7 @@ public:
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
 
     //! @private
-    DGNPLATFORM_EXPORT void DestroyBriefcaseManager() 
-        {
-        if (m_briefcaseManager.IsValid())
-            {
-            m_briefcaseManager->OnDgnDbDestroyed();
-            m_briefcaseManager = nullptr;
-            }
-        }
+    DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported. 

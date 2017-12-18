@@ -89,11 +89,7 @@ void DgnDb::Destroy()
     m_lineStyles = nullptr;
     m_revisionManager.reset(nullptr);
     ClearECSqlCache();
-    if (m_briefcaseManager.IsValid())
-        {
-        m_briefcaseManager->OnDgnDbDestroyed();
-        m_briefcaseManager = nullptr;
-        }
+    DestroyBriefcaseManager();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,6 +103,18 @@ DgnDb::~DgnDb()
         SaveChanges(); // make sure we save changes before we remove the change tracker (really, the app shouldn't have left them uncommitted!)
         }
     Destroy();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::DestroyBriefcaseManager() 
+    {
+    if (m_briefcaseManager.IsValid())
+        {
+        m_briefcaseManager->OnDgnDbDestroyed();
+        m_briefcaseManager = nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
