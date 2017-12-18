@@ -294,6 +294,16 @@ public:
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
 
+    //! @private
+    DGNPLATFORM_EXPORT void DestroyBriefcaseManager() 
+        {
+        if (m_briefcaseManager.IsValid())
+            {
+            m_briefcaseManager->OnDgnDbDestroyed();
+            m_briefcaseManager = nullptr;
+            }
+        }
+
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported. 
     //! @remarks 

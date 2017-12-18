@@ -336,11 +336,11 @@ public:
     //! @note Not a general purpose method, only to be used by RepositoryManager to initialize from a JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value);
     
-    BE_JSON_NAME(spec)
-    BE_JSON_NAME(scope)
-    BE_JSON_NAME(value)
-    DGNPLATFORM_EXPORT Json::Value ToJson2() const; //!< Convert to json, format 2
-    DGNPLATFORM_EXPORT static DgnCode FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2
+    BE_JSON_NAME(spec)  // This is the imodeljs wire format. Do not change.
+    BE_JSON_NAME(scope) // This is the imodeljs wire format. Do not change.
+    BE_JSON_NAME(value) // This is the imodeljs wire format. Do not change.
+    DGNPLATFORM_EXPORT Json::Value ToJson2() const; //!< Convert to json, format 2. This is the imodeljs wire format. Do not change.
+    DGNPLATFORM_EXPORT static DgnCode FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2. This is the imodeljs wire format. Do not change.
 };
 
 typedef bset<DgnCode> DgnCodeSet;
