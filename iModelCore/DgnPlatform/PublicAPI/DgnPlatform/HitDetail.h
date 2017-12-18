@@ -197,7 +197,6 @@ protected:
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
     virtual void _Draw(DecorateContextR context) const;
-    virtual void _SetHilited(bool) const;
 
 public:
     DGNPLATFORM_EXPORT HitDetail(DgnViewportR, Sheet::Attachment::ViewportP attachVp, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
@@ -206,14 +205,12 @@ public:
     void SetLocateSource(HitSource source) {m_locateSource = source;}
     void SetHitPoint(DPoint3dCR pt) {_SetHitPoint(pt);}
     void SetTestPoint(DPoint3dCR pt) {_SetTestPoint(pt);}
-    void SetHilited(bool state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
     bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
     Sheet::Attachment::ViewportP GetSheetAttachViewport() const {return m_sheetViewport;}
     void Draw(DecorateContextR context) const {_Draw(context);}
     DGNPLATFORM_EXPORT Utf8String GetInfoString(Utf8CP delimiter) const;
-    DGNPLATFORM_EXPORT bool IsHilited() const;
-    DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
+    DGNVIEW_EXPORT bool IsInSelectionSet() const;
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
     DgnElementId GetElementId() const {return m_elementId;}
     DGNPLATFORM_EXPORT DgnModelP GetDgnModel() const;
@@ -371,7 +368,6 @@ private:
 
     void _Draw(DecorateContextR) const override;
     HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
-    DGNPLATFORM_EXPORT void _SetHilited(bool) const override;
     DGNPLATFORM_EXPORT bool _IsSameHit(HitDetailCP otherHit) const override;
     SnapDetailP _Clone() const override;
 

@@ -571,58 +571,6 @@ DgnElementCPtr HitDetail::GetElement() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::IsInSelectionSet() const
-    {
-    DgnElementCPtr   element = GetElement();
-    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    return (nullptr != source ? source->IsInSelectionSet() : false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::IsHilited() const
-    {
-    DgnElementCPtr   element = GetElement();
-    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    if (nullptr == source)
-        {
-        IElemTopologyCP elemTopo = GetElemTopology();
-        source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
-        }
-
-    return nullptr != source && source->IsHilited();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    06/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_SetHilited(bool hilited) const
-    {
-    DgnElementCPtr   element = GetElement();
-    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    if (nullptr == source)
-        {
-        IElemTopologyCP elemTopo = GetElemTopology();
-        source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr);
-        }
-
-    if (nullptr == source)
-        return;
-    
-    // don't turn on/off hilite bit for elements in the selection set.
-    if (source->IsInSelectionSet())
-        return;
-
-    source->SetHilited(hilited);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HitDetail::_IsSameHit(HitDetailCP otherHit) const
@@ -889,15 +837,6 @@ bool IntersectDetail::_IsSameHit(HitDetailCP otherPath) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    06/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_SetHilited(bool newState) const
-    {
-    T_Super::_SetHilited(newState);
-    m_secondHit->SetHilited(newState);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * IntersctPaths override the "DrawInView" method to hilite/unhilte BOTH paths that are part of the
 * intersction. The "base" path is drawn using the drawmode of the call, but the "second" path
 * is drawn using a dashed symbology.
@@ -910,16 +849,19 @@ void IntersectDetail::_Draw(DecorateContextR context) const
 
     SnapDetail tmpSnapDetail(m_secondHit); // So display handlers know this is from a snap...
 
+#if defined(WIP_HILITE)
     // NOTE: When we're flashing, the hilite flags are not necessarily set on the elements. So to get the second path
     //       drawn hilited, we need to turn on its hilited flag temporarily, and then restore it.
     bool currHilite = tmpSnapDetail.IsHilited();
 
     tmpSnapDetail.SetHilited(true);
-
+#endif
     tmpSnapDetail.SetSubSelectionMode(GetSubSelectionMode()); // Set correct flash mode...
     tmpSnapDetail.Draw(context);
 
+#if defined(WIP_HILITE)
     tmpSnapDetail.SetHilited(currHilite);
+#endif
     }
 
 /*=================================================================================**//**

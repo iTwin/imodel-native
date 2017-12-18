@@ -1656,99 +1656,54 @@ Transform GeometrySource::GetPlacementTransform() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometrySource::IsUndisplayed() const
+    {
+    DgnElementCP el = _ToElement();
+    return nullptr != el && el->GetDgnDb().Elements().IsUndisplayed(el->GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometrySource::SetUndisplayed(bool yesNo) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
     if (nullptr != el)
-        el->GetDgnDb().Elements().SetUndisplayed(*el, yesNo);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SetUndisplayed(DgnElementR el, bool isUndisplayed)
-    {
-    DgnDb::VerifyClientThread();
-    auto elemId = el.GetElementId();
-    if (!elemId.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if (el.m_flags.m_undisplayed != isUndisplayed)
-        {
-        el.m_flags.m_undisplayed = isUndisplayed;
-        if (isUndisplayed)
-            m_undisplayedSet.insert(elemId);
-        else
-            m_undisplayedSet.erase(elemId);
-
-        T_HOST._OnUndisplayedSetChanged(GetDgnDb());
-        }
-
-    BeAssert(isUndisplayed == (m_undisplayedSet.end() != m_undisplayedSet.find(elemId)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::_SetHilited(bool hilited) const
-    {
-    DgnElementP el = const_cast<DgnElementP>(_ToElement());
-    if (nullptr != el)
-        el->GetDgnDb().Elements().SetHilited(*el, hilited);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SetHilited(DgnElementR el, bool hilited)
-    {
-    DgnDb::VerifyClientThread();
-    auto elemId = el.GetElementId();
-    if (!elemId.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    el.m_flags.m_hilited = hilited;
-    SetInHiliteSet(elemId, hilited);
-
-    BeAssert(hilited == (m_hilitedSet.end() != m_hilitedSet.find(elemId)));
+        el->GetDgnDb().Elements().SetUndisplayed(el->GetElementId(), yesNo);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SetInHiliteSet(DgnElementId id, bool hilited)
+bool DgnElements::IsUndisplayed(DgnElementId id) const
     {
-    // This takes an ID because elements in the selection set can get unloaded from memory;
-    // SelectionSetManager will try to find loaded element, fail, and do nothing - so they
-    // remain hilited in tile graphics.
-    if (hilited)
-        m_hilitedSet.insert(id);
-    else
-        m_hilitedSet.erase(id);
+    DgnDb::VerifyClientThread();
 
-    T_HOST._OnHilitedSetChanged(GetDgnDb());
+    return m_undisplayedSet.find(id) != m_undisplayedSet.end();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/15
+* @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::SetInSelectionSet(bool yesNo) const
+void DgnElements::SetUndisplayed(DgnElementId id, bool isUndisplayed)
     {
-    DgnElementP el = const_cast<DgnElementP>(_ToElement());
+    DgnDb::VerifyClientThread();
 
-    if (nullptr == el)
+    // std::map has a stupid defect disallowing erase() using const_iterator so we potentially must do the lookup twice...
+    bool wasUndisplayed = IsUndisplayed(id);
+    if (wasUndisplayed == isUndisplayed)
         return;
 
-    el->m_flags.m_inSelectionSet = yesNo; 
-    SetHilited(yesNo);
+    if (isUndisplayed)
+        m_undisplayedSet.insert(id);
+    else
+        m_undisplayedSet.erase(id);
+
+    T_HOST._OnUndisplayedSetChanged(GetDgnDb());
+
+    BeAssert(isUndisplayed == IsUndisplayed(id));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4138,8 +4093,8 @@ void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  GeometricElement::_OnDeleted() const { T_Super::_OnDeleted(); }
-void  GeometricElement2d::_OnDeleted() const { SetHilited(false); T_Super::_OnDeleted(); }
-void  GeometricElement3d::_OnDeleted() const { SetHilited(false); T_Super::_OnDeleted(); }
+void  GeometricElement2d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
+void  GeometricElement3d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16

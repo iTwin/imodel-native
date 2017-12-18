@@ -527,7 +527,6 @@ public:
         virtual Http::HttpClient::Options* _SupplyHttpClientOptions() {return nullptr;}
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
-        virtual void _OnHilitedSetChanged(DgnDbR) {}
         virtual void _OnNewTileReady(DgnDbR) {}
 
         Host()
