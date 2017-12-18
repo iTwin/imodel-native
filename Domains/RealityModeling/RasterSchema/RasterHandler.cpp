@@ -28,19 +28,16 @@ struct RasterBorderGeometrySource : public GeometrySource3d, RefCountedBase
     virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
     virtual Placement3dCR _GetPlacement() const override { return m_placement; }
     virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
-    virtual bool _IsHilited() const override { return m_hilited; }
 
     virtual DgnElementCP _ToElement() const override { return nullptr; }
     virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
     virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return DgnDbStatus::Success; }
     virtual DgnDbStatus _SetPlacement(Placement3dCR placement) override { return DgnDbStatus::Success; }
-    virtual void _SetHilited(bool newState) const override { m_hilited = newState; }
 
     DgnDbR                      m_dgnDb;
     DgnCategoryId               m_categoryId;
     Placement3d                 m_placement;
     GeometryStream              m_geom;
-    mutable bool                m_hilited;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,8 +58,7 @@ static DgnCategoryId getDefaultCategoryId(DgnDbR db)
 //----------------------------------------------------------------------------------------
 RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, RasterModel& model)
     :m_dgnDb(model.GetDgnDb()),
-    m_categoryId(getDefaultCategoryId(model.GetDgnDb())),
-    m_hilited(false)
+    m_categoryId(getDefaultCategoryId(model.GetDgnDb()))
     {
     GeometryBuilderPtr builder = GeometryBuilder::Create(*this);
     Render::GeometryParams geomParams;
