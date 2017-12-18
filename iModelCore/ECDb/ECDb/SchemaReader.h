@@ -141,9 +141,6 @@ struct SchemaReader final
         SchemaReader(SchemaReader const&) = delete;
         SchemaReader& operator=(SchemaReader const&) = delete;
 
-        std::unique_ptr<BeMutexHolder> LockECDb() const;
-        std::unique_ptr<BeSqliteDbMutexHolder> LockDb() const;
-
         ECN::ECSchemaCP GetSchema(Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         ECN::ECClassP GetClass(Context&, ECN::ECClassId) const;
         BentleyStatus LoadSchemaEntitiesFromDb(SchemaDbEntry*, Context&, std::set<SchemaDbEntry*>& fullyLoadedSchemas) const;
@@ -165,6 +162,8 @@ struct SchemaReader final
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
         ECDbCR GetECDb() const;
+        ECDb& GetECDbR() const;
+        BeMutex& GetECDbMutex() const;
         DbTableSpace const& GetTableSpace() const;
         CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
 

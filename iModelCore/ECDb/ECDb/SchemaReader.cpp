@@ -18,22 +18,6 @@ SchemaReader::SchemaReader(TableSpaceSchemaManager const& manager) : m_schemaMan
     {}
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BeMutexHolder> SchemaReader::LockECDb() const
-    {
-    return std::unique_ptr<BeMutexHolder>(new BeMutexHolder(GetECDb().GetImpl().GetMutex()));
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<BeSqliteDbMutexHolder> SchemaReader::LockDb() const
-    {
-    return std::unique_ptr<BeSqliteDbMutexHolder>(new BeSqliteDbMutexHolder(const_cast<ECDb&>(GetECDb())));
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
  BentleyStatus SchemaReader::GetSchemas(bvector<ECN::ECSchemaCP>& schemas, bool loadSchemaEntities) const
@@ -150,7 +134,7 @@ ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
         return nullptr;
 
         {
-        auto lockECDb = LockECDb();
+        BeMutexHolder ecdbLock(GetECDbMutex());
         ClassDbEntry* cacheEntry = m_cache.Find(ecClassId);
         if (cacheEntry == nullptr)
             {
@@ -164,8 +148,8 @@ ECClassCP SchemaReader::GetClass(ECClassId ecClassId) const
             return cacheEntry->m_cachedClass;
         }
 
-    auto lockDb = LockDb();
-    auto lockECDb = LockECDb();
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
     Context ctx;
     ECClassCP ecclass = GetClass(ctx, ecClassId);
     if (ecclass != nullptr)
@@ -406,14 +390,14 @@ ECClassId SchemaReader::GetClassId(Utf8StringCR schemaName, Utf8StringCR classNa
     //Always looking up the ECClassId from the DB seems too slow. Therefore cache the requested ids.
     ECClassId ecClassId;
     {
-    auto lockECDb = LockECDb();
+    BeMutexHolder ecdbLock(GetECDbMutex());
     ecClassId = m_cache.Find(schemaName, className);
     if (ecClassId.IsValid())
         return ecClassId;
     }
 
-    auto lockDb = LockDb();
-    auto lockECDb = LockECDb();
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
 
     ecClassId = SchemaPersistenceHelper::GetClassId(GetECDb(), GetTableSpace(), schemaName.c_str(), className.c_str(), lookupMode);
 
@@ -592,7 +576,7 @@ ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
 BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
     {
     {
-    auto lockECDb = LockECDb();
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (ClassDbEntry* entry = m_cache.Find(ecClassId))
         {
         if (entry->m_ensureDerivedClassesExist)
@@ -601,8 +585,8 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
         }
     }
 
-    auto dbLock = LockDb();
-    auto lockECDb = LockECDb();
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (ClassDbEntry* entry = m_cache.Find(ecClassId))
         {
         if (entry->m_ensureDerivedClassesExist)
@@ -647,7 +631,7 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
 BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx, ECEnumerationId enumId) const
     {
     {
-    auto lockECDb = LockECDb();
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (EnumDbEntry* entry = m_cache.Find(enumId))
         {
         ecEnum = entry->m_cachedEnum;
@@ -663,8 +647,8 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
     const int isStrictColIx = 5;
     const int valuesColIx = 6;
 
-    auto dbLock = LockDb();
-    auto lockECDb = LockECDb();
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (EnumDbEntry* entry = m_cache.Find(enumId))
         {
         ecEnum = entry->m_cachedEnum;
@@ -728,7 +712,7 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
 BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ctx, KindOfQuantityId koqId) const
     {
     {
-    auto lockECDb = LockECDb();
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
         {
         koq = entry->m_cachedKoq;
@@ -744,8 +728,8 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     const int relErrorColIx = 5;
     const int presUnitColIx = 6;
 
-    auto dbLock = LockDb();
-    auto lockECDb = LockECDb();
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (KindOfQuantityDbEntry* entry = m_cache.Find(koqId))
         {
         koq = entry->m_cachedKoq;
@@ -813,7 +797,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
 BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context& ctx, PropertyCategoryId catId) const
     {
     {
-    auto lockECDb = LockECDb();
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
         {
         cat = entry->m_cachedCategory;
@@ -827,8 +811,8 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
     const int descriptionColIx = 3;
     const int priorityColIx = 4;
 
-    auto dbLock = LockDb();
-    auto lockECDb = LockECDb();
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (PropertyCategoryDbEntry* entry = m_cache.Find(catId))
         {
         cat = entry->m_cachedCategory;
@@ -886,7 +870,7 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
 BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECSchemaId ecSchemaId) const
     {
     {
-    auto lockECDb = LockECDb();
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (schemaEntry = m_cache.Find(ecSchemaId))
         {
         BeAssert(schemaEntry->m_cachedSchema != nullptr);
@@ -894,8 +878,8 @@ BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bv
         }
     }
 
-    auto dbLock = LockDb();
-    auto lockECDb = LockECDb();
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (schemaEntry = m_cache.Find(ecSchemaId))
         {
         BeAssert(schemaEntry->m_cachedSchema != nullptr);
@@ -1881,6 +1865,16 @@ ECDbCR SchemaReader::GetECDb() const { return m_schemaManager.GetECDb(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2017
 //---------------------------------------------------------------------------------------
+ECDb& SchemaReader::GetECDbR() const { return const_cast<ECDb&>(m_schemaManager.GetECDb()); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2017
+//---------------------------------------------------------------------------------------
+BeMutex& SchemaReader::GetECDbMutex() const { return m_schemaManager.GetECDb().GetImpl().GetMutex(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2017
+//---------------------------------------------------------------------------------------
 DbTableSpace const& SchemaReader::GetTableSpace() const { return m_schemaManager.GetTableSpace(); }
 
 //---------------------------------------------------------------------------------------
@@ -1891,10 +1885,7 @@ CachedStatementPtr SchemaReader::GetCachedStatement(Utf8CP sql) const { return G
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaReader::ClearCache() const
-    {
-    m_cache.Clear();
-    }
+void SchemaReader::ClearCache() const { m_cache.Clear(); }
 
 
 //---------------------------------------------------------------------------------------

@@ -62,6 +62,10 @@ struct LightweightCache final
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
         
         CachedStatementPtr GetCachedStatement(Utf8CP sql) const;
+
+        BeMutex& GetECDbMutex() const;
+        ECDb& GetECDbR() const;
+
     public:
         explicit LightweightCache(TableSpaceSchemaManager const&);
         ~LightweightCache() {}
