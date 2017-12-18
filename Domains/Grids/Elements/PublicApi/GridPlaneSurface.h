@@ -210,7 +210,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
     {
-    DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_PlanCartesianGridSurface, PlanGridPlanarSurface);
+    DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_PlanRadialGridSurface, PlanGridPlanarSurface);
     DEFINE_T_SUPER(PlanGridPlanarSurface);
     public:
         struct CreateParams : T_Super::CreateParams

@@ -239,7 +239,7 @@
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Radius" displayLabel="Radius" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="StartnAngle" displayLabel="StartAngle" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="StartAngle" displayLabel="StartAngle" typeName="double" kindOfQuantity="Angle"/>
       <ECProperty propertyName="EndAngle" displayLabel="EndAngle" typeName="double" kindOfQuantity="Angle"/>
     </ECEntityClass>
   

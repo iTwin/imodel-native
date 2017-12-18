@@ -207,4 +207,35 @@ DEllipse3dR arc
     return BentleyStatus::SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCircumferentialGridSurface::PlanCircumferentialGridSurface
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetRadius(params.m_radius);
+        SetStartAngle(params.m_startAngle);
+        SetEndAngle(params.m_endAngle);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCircumferentialGridSurfacePtr             PlanCircumferentialGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    PlanCircumferentialGridSurfacePtr gridSurface = new PlanCircumferentialGridSurface (params);
+
+    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
+        return nullptr;
+
+    return gridSurface;
+    }
 END_GRIDS_NAMESPACE

@@ -12,4 +12,5 @@ USING_NAMESPACE_GRIDS
 
 HANDLER_DEFINE_MEMBERS(GridArcSurfaceHandler)
 HANDLER_DEFINE_MEMBERS(SketchArcGridSurfaceHandler)
+HANDLER_DEFINE_MEMBERS(PlanCircumferentialGridSurfaceHandler)
 
