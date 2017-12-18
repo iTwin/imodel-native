@@ -674,9 +674,7 @@ void CurlHttpRequest::PrepareRequest()
     m_transferInfo->progressInfo.wasCanceled = false;
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
-        {
         LOG.infov("> HTTP #%lld %s %s", GetNumber(), m_httpRequest.GetMethod().c_str(), m_httpRequest.GetUrl().c_str());
-        }
 
     m_transferInfo->SetActive();
     }
@@ -810,7 +808,7 @@ HttpStatus CurlHttpRequest::ResolveHttpStatus(int httpStatusInt)
 ConnectionStatus CurlHttpRequest::ResolveConnectionStatus(CURLcode curlStatus)
     {
     if (CURLE_OK != curlStatus && LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        LOG.debugv("* HTTP #%lld Connection error: '%s'", GetNumber(), curl_easy_strerror(curlStatus));
+        LOG.debugv("* HTTP #%lld Connection status: '%s' (%d)", GetNumber(), curl_easy_strerror(curlStatus), curlStatus);
 
     if (m_transferInfo->requestNeedsToReset)
         return ConnectionStatus::ConnectionLost;
@@ -951,13 +949,21 @@ CurlHttpRequest::ProgressResult CurlHttpRequest::OnProgress(double dltotal, doub
 
     ProgressInfo& progressInfo = m_transferInfo->progressInfo;
 
-    if (progressInfo.wasCanceled ||             // Check for wasCanceled because curl makes one more call to progress callback after CURL_READFUNC_ABORT
-        m_transferInfo->requestNeedsToReset ||    // Stop request for possible reset
-        (progressInfo.cancellationToken && progressInfo.cancellationToken->IsCanceled()))
+    if (m_transferInfo->requestNeedsToReset) 
         {
-        progressInfo.wasCanceled = true;
-        return ProgressResult::Abort;
+        LOG.debugv("* HTTP #%lld Cancelled via forced reset", GetNumber());
+        progressInfo.wasCanceled = true; // Stop request for possible reset
         }
+
+    if (progressInfo.cancellationToken && progressInfo.cancellationToken->IsCanceled())
+        {
+        LOG.debugv("* HTTP #%lld Cancelled via cancellation token", GetNumber());
+        progressInfo.wasCanceled = true;
+        }
+
+    // Always check for wasCanceled because curl makes one more call to progress callback after CURL_READFUNC_ABORT
+    if (progressInfo.wasCanceled)
+        return ProgressResult::Abort;
 
     return ProgressResult::Continue;
     }
