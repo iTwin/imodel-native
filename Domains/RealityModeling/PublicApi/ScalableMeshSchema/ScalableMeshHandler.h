@@ -51,7 +51,7 @@ typedef RefCountedPtr<ScalableMeshDrawingInfo> ScalableMeshDrawingInfoPtr;
 class ScalableMeshDrawingInfo : public RefCountedBase
 {
 private:
-    DrawPurpose   m_drawPurpose;
+    BentleyApi::Dgn::DrawPurpose m_drawPurpose;
     DMatrix4d     m_localToViewTransformation;
     DRange3d      m_range;
     bset<__int64> m_ancestorsOfCorrectNodes;
@@ -90,7 +90,7 @@ public:
         {
         }
 
-    DrawPurpose GetDrawPurpose()
+    BentleyApi::Dgn::DrawPurpose GetDrawPurpose()
         {
         return m_drawPurpose;
         }
@@ -254,11 +254,11 @@ struct IScalableMeshLocationProvider : public RefCountedBase
     {
     protected:
 
-        virtual BentleyStatus _GetExtraFileDirectory(BeFileNameR extraFileDir, DgnDbCR dgnDb) const = 0;
+        virtual BentleyStatus _GetExtraFileDirectory(BeFileNameR extraFileDir, BentleyApi::Dgn::DgnDbCR dgnDb) const = 0;
 
     public:
 
-        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetExtraFileDirectory(BeFileNameR extraFileDir, DgnDbCR dgnDb) const;
+        SCALABLEMESH_SCHEMA_EXPORT BentleyStatus GetExtraFileDirectory(BeFileNameR extraFileDir, BentleyApi::Dgn::DgnDbCR dgnDb) const;
     };
 
 typedef RefCountedPtr<IScalableMeshLocationProvider> IScalableMeshLocationProviderPtr;
@@ -369,12 +369,12 @@ protected:
     bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
     BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override { classifiers = m_classifiers; return SUCCESS; }
     SCALABLEMESH_SCHEMA_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
-        virtual DgnDbStatus _OnDelete() override;
+        virtual BentleyApi::Dgn::DgnDbStatus _OnDelete() override;
     SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
         void RefreshClips();
 
-        BeFileName GenerateClipFileName(BeFileNameCR smFilename, DgnDbR dgnProject);
+        BeFileName GenerateClipFileName(BeFileNameCR smFilename, BentleyApi::Dgn::DgnDbR dgnProject);
 public:
     //Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo() override;
         SCALABLEMESH_SCHEMA_EXPORT static BentleyStatus SetLocationProvider(IScalableMeshLocationProvider& locationProviderPtr);
@@ -387,7 +387,7 @@ public:
     SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
 
         SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb, WString terrainName, BeFileName terrainPath);
-    void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
+    void OpenFile(BeFileNameCR smFilename, BentleyApi::Dgn::DgnDbR dgnProject);
 
         SCALABLEMESH_SCHEMA_EXPORT void CloseFile();
     void SetFileNameProperty(BeFileNameCR smFilename);
@@ -481,6 +481,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     MODELHANDLER_DECLARE_MEMBERS("ScalableMeshModel", ScalableMeshModel, ScalableMeshModelHandler, Dgn::dgn_ModelHandler::Spatial, SCALABLEMESH_SCHEMA_EXPORT)
 public :
     //NEEDS_WORK_SM : Currently for testing only
-    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true, Dgn::ClipVectorCP clip = nullptr, ModelSpatialClassifiersCP classifiers = nullptr);
+    SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(BentleyApi::Dgn::DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true, Dgn::ClipVectorCP clip = nullptr, ModelSpatialClassifiersCP classifiers = nullptr);
 };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
