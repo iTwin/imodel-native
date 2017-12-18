@@ -62,7 +62,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.2/Info", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -80,7 +80,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsBadRequestAndNoWSGError
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::BadRequest, "Foo Error Message"));
-    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.2/Info", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -115,7 +115,7 @@ TEST_F(WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_SendsG
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
-    GetHandler().ForRequest(3, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/Pages/About.aspx", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -477,7 +477,7 @@ TEST_F(WSClientTests, RegisterServerInfoListener_NotSupportedServer_ListenerNotN
     auto listener = std::make_shared<MockServerInfoListener>();
 
     EXPECT_CALL(*listener, OnServerInfoReceived(_)).Times(0);
-    GetHandler().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
         return StubHttpResponse(HttpStatus::OK, "{}");
         });
