@@ -48,11 +48,9 @@ protected:
     DGNPLATFORM_EXPORT void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
-    DGNPLATFORM_EXPORT void _AddTriMesh(Render::TriMeshArgsCR) override;
     DGNPLATFORM_EXPORT void _AddBody(IBRepEntityCR entity) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
-    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
     DGNPLATFORM_EXPORT void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;

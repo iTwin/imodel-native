@@ -163,8 +163,6 @@ public:
         dp->Resolve(db, sys);
         return dp;
         }
-    DGNPLATFORM_EXPORT static DisplayParamsCPtr CreateForTile(GraphicParamsCR gf, GeometryParamsCP geom, TextureCR texture);
-
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
         {
         return new DisplayParams(Type::Linear, gf, geom, false);
@@ -1014,7 +1012,6 @@ protected:
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR) override;
     DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags) override;
     DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth) override;
-    DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const& args) override { } // WIP.
     DGNPLATFORM_EXPORT void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
     DGNPLATFORM_EXPORT void _AddCurveVector(CurveVectorCR curves, bool isFilled) override;
     DGNPLATFORM_EXPORT void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override;
@@ -1038,7 +1035,6 @@ protected:
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
     void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform()); }
-    void AddTile(TileCorners const& corners, DisplayParamsCR params);
     void AddCurveVector(CurveVectorR curves, bool isFilled, bool isDisjoint);
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
     void SetElementId(DgnElementId id) { m_accum.SetElementId(id); }
@@ -1071,13 +1067,10 @@ struct PrimitiveBuilder : GeometryListBuilder
 protected:
     bvector<GraphicPtr> m_primitives;
 
-    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
     DGNPLATFORM_EXPORT Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
     void _Reset() override { m_primitives.clear(); }
-
-    void AddTriMesh(TriMeshArgsCR args);
 
     DGNPLATFORM_EXPORT double ComputeTolerance(GeometryAccumulatorR) const;
 public:

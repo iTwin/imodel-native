@@ -71,12 +71,28 @@ void DgnModels::DropLoadedModel(DgnModelR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_PreDestroy()
+    {
+    // We're about to synchronously wait for all tile loads to terminate in all models.
+    // Before we do that, make sure all active loads are canceled, so that they will terminate quickly
+    if (m_root.IsValid())
+        m_root->CancelAllTileLoads();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::Empty()
     {
     // Tile-loader threads may be executing, so must release roots (and wait for loaders to cancel) first
     // Must be done before destroying Elements because tile loaders may have ref-counted ptrs to elements
+    // First, cancel all loads asynchronously.
+    for (auto& kvp : m_models)
+        kvp.second->_PreDestroy();
+
+    // Now, synchronously wait for all loads to terminate - should be fast since we've marked them all canceled.
     for (auto& kvp : m_models)
         kvp.second->_Destroy();
 
