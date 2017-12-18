@@ -3566,7 +3566,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreateObjectWithFiles_CallbacksC
 
     MockFunction<void(ECInstanceKeyCR)> mockFunction;
 
-    options.SetFileUploadFinishCallaback(std::function<void(ECInstanceKeyCR)>([&] (ECInstanceKeyCR key)
+    options.SetFileUploadFinishCallback(std::function<void(ECInstanceKeyCR)>([&] (ECInstanceKeyCR key)
         {
         mockFunction.Call(key);
         }));
