@@ -246,6 +246,7 @@ protected:
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
     virtual void _Destroy() { }
+    virtual void _PreDestroy() { }
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
 
@@ -885,6 +886,7 @@ protected:
     DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(Render::SystemP);
     DGNPLATFORM_EXPORT void ReleaseTileTree();
     void _Destroy() override { ReleaseTileTree(); }
+    DGNPLATFORM_EXPORT void _PreDestroy() override;
 
     virtual void _PickTerrainGraphics(PickContextR) const {}
 
@@ -944,7 +946,6 @@ protected:
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
-    ~GeometricModel3d() { ReleaseTileTree(); }
 };
 
 //=======================================================================================
@@ -963,7 +964,6 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
-    ~GeometricModel2d() { ReleaseTileTree(); }
 };
 
 //=======================================================================================

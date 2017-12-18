@@ -311,7 +311,6 @@ protected:
 
     void _AddPolyface(PolyfaceQueryCR, bool) override;
     void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
-    void _AddTile(TextureCR tx, TileCorners const& corners) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
     bool _WantPreBakedBody(IBRepEntityCR) override;
@@ -517,15 +516,6 @@ void TileBuilder::_AddPolyface(PolyfaceQueryCR geom, bool filled)
 void TileBuilder::_AddPolyfaceR(PolyfaceHeaderR geom, bool filled)
     {
     Add(geom, filled);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileBuilder::_AddTile(TextureCR tx, TileCorners const& corners)
-    {
-    auto dp = DisplayParams::CreateForTile(GetGraphicParams(), GetGeometryParams(), tx);
-    AddTile(corners, *dp);
     }
 
 /*---------------------------------------------------------------------------------**//**
