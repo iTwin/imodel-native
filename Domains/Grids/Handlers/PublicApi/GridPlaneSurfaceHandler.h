@@ -23,6 +23,10 @@ struct PlanCartesianGridSurfaceHandler : GridPlanarSurfaceHandler
     ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_PlanCartesianGridSurface, PlanCartesianGridSurface, PlanCartesianGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
     };
 
+struct PlanRadialGridSurfaceHandler : GridPlanarSurfaceHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_PlanRadialGridSurface, PlanRadialGridSurface, PlanRadialGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
+    };
 
 struct ElevationGridSurfaceHandler : GridPlanarSurfaceHandler
     {

@@ -343,6 +343,38 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+PlanRadialGridSurface::PlanRadialGridSurface
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetAngle(params.m_angle);
+        SetStartRadius(params.m_startRadius);
+        SetEndRadius(params.m_endRadius);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanRadialGridSurfacePtr             PlanRadialGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    PlanRadialGridSurfacePtr gridSurface = new PlanRadialGridSurface (params);
+
+    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
+        return nullptr;
+
+    return gridSurface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 ElevationGridSurface::ElevationGridSurface
 (
 CreateParams const& params
