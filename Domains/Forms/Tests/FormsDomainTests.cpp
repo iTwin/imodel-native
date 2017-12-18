@@ -1,5 +1,5 @@
 #include "FormsDomainTestFixture.h"
-#include "..\PublicAPI\FormsDomain\FormsDomainUtilities.h"
+#include "FormsDomain\FormsDomainUtilities.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>

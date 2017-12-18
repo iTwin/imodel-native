@@ -3,7 +3,7 @@
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 
-#include "..\PublicAPI\FormsDomain\FormsDomainUtilities.h"
+#include "FormsDomain\FormsDomainUtilities.h"
 
 using namespace BeSQLite;
 using namespace Dgn;

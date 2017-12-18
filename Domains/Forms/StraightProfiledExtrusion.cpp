@@ -1,4 +1,4 @@
-#include "PublicAPI\FormsDomain\StraightProfiledExtrusion.h"
+#include "FormsDomain\StraightProfiledExtrusion.h"
 
 BEGIN_BENTLEY_FORMS_NAMESPACE
 

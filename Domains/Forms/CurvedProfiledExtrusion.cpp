@@ -1,4 +1,4 @@
-#include "PublicAPI\FormsDomain\CurvedProfiledExtrusion.h"
+#include "FormsDomain\CurvedProfiledExtrusion.h"
 
 BEGIN_BENTLEY_FORMS_NAMESPACE
 HANDLER_DEFINE_MEMBERS(CurvedProfiledExtrusionHandler)

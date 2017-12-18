@@ -1,4 +1,4 @@
-#include "PublicAPI\FormsDomain\ProfiledExtrusion.h"
+#include "FormsDomain\ProfiledExtrusion.h"
 
 BEGIN_BENTLEY_FORMS_NAMESPACE
 

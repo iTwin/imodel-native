@@ -1,4 +1,4 @@
-#include "PublicAPI\FormsDomain\FormsDomain.h"
+#include "FormsDomain\FormsDomain.h"
 
 BEGIN_BENTLEY_FORMS_NAMESPACE
 
