@@ -841,6 +841,7 @@ protected:
     DgnModelCPtr            m_model;
     FeatureAttributesMap    m_attributes;
     bool                    m_isEmpty;
+    std::pair<Utf8String, Json::Value> m_tileCustomMetadata;
 
     TileNode(DgnModelCR model, TransformCR transformFromDgn) : TileNode(model, DRange3d::NullRange(), transformFromDgn, 0, 0, nullptr) { }
     TileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
@@ -896,7 +897,18 @@ public:
     PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, bool doInstancing=true, ITileGenerationFilterCP filter = nullptr) const
         { return _GeneratePublishableGeometry(dgndb, normalMode, doSurfacesOnly, doInstancing,  filter); }
     DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount = 3);
-};
+
+    void GetTileCustomMetadata(Utf8StringR name, Json::Value& metadata) const
+        {
+        name = m_tileCustomMetadata.first;
+        metadata = m_tileCustomMetadata.second;
+        }
+
+    void ExtractCustomMetadataFrom(TileTree::TileCR inputTile)
+        {
+        inputTile.GetCustomMetadata(m_tileCustomMetadata.first, m_tileCustomMetadata.second);
+        }
+    };
 
 //=======================================================================================
 //! A TileNode generated from a set of elements.

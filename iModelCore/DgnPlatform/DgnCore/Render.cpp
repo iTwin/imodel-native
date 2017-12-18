@@ -1036,3 +1036,12 @@ GraphicBuilder::CreateParams::CreateParams(DgnViewportR vp, TransformCR tf, Grap
     //
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type)
+    : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type)
+    {
+    //
+    }
+

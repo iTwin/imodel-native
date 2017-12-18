@@ -237,7 +237,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 
         // Wait for requests to complete
         // Note we are ignoring any time spent creating tile trees above...
-        context.m_requests.RequestMissing(plan.GetQuitTime());
+        context.m_requests.RequestMissing(BeTimePoint::Now() - plan.GetQuitTime());
         for (auto pair : m_roots)
             {
             if (nullptr != pair.second)

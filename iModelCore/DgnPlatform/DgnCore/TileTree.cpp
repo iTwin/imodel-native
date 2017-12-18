@@ -597,7 +597,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize, bool httpOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeTimePoint deadline)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -606,7 +606,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
         }
 
     if (nullptr == loads)
-        loads = std::make_shared<TileLoadState>(tile, deadline);
+        loads = std::make_shared<TileLoadState>(tile, partialTimeout);
 
     TileLoaderPtr loader = tile._CreateTileLoader(loads, renderSys);
     if (!loader.IsValid())
@@ -831,7 +831,7 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     {
     // NB: We test for region culling before IsDisplayable() - otherwise we will never unload children of undisplayed tiles when
     // they are outside frustum
-    if (IsRegionCulled(args))
+    if (IsEmpty() || IsRegionCulled(args))
         return Visibility::OutsideFrustum;
 
     // some nodes are merely for structure and don't have any geometry
@@ -885,11 +885,6 @@ void Root::DrawInView(SceneContextR context)
 
     DrawArgs args = CreateDrawArgs(context);
     bvector<TileCPtr> selectedTiles = SelectTiles(args);
-
-    std::sort(selectedTiles.begin(), selectedTiles.end(), [&](TileCPtr const& lhs, TileCPtr const& rhs)
-        {
-        return args.ComputeTileDistance(*lhs) < args.ComputeTileDistance(*rhs);
-        });
 
     for (auto const& selectedTile : selectedTiles)
         {
@@ -1105,7 +1100,7 @@ void DrawArgs::DrawGraphics()
 * be cancelled - we have determined we do not need them to draw the current frame.
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
+void Root::RequestTiles(MissingNodesCR missingNodes, BeDuration partialTimeout)
     {
     uint32_t numCanceled = 0;
 
@@ -1132,8 +1127,8 @@ void Root::RequestTiles(MissingNodesCR missingNodes, BeTimePoint deadline)
         {
         if (missing->IsNotLoaded())
             {
-            TileLoadStatePtr loads = std::make_shared<TileLoadState>(*missing, deadline);
-            _RequestTile(const_cast<TileR>(*missing), loads, nullptr, deadline);
+            TileLoadStatePtr loads = std::make_shared<TileLoadState>(*missing, partialTimeout);
+            _RequestTile(const_cast<TileR>(*missing), loads, nullptr, partialTimeout);
             }
         }
 
@@ -1611,7 +1606,7 @@ void Root::CancelTileLoad(TileCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileRequests::RequestMissing(BeTimePoint deadline) const
+void TileRequests::RequestMissing(BeDuration partialTimeout) const
     {
 #if defined(DEBUG_REQUEST_MISSING)
     size_t nRequested = 0;
@@ -1628,7 +1623,7 @@ void TileRequests::RequestMissing(BeTimePoint deadline) const
 
     for (auto const& kvp : m_map)
         if (!kvp.second.empty())
-            kvp.first->RequestTiles(kvp.second, deadline);
+            kvp.first->RequestTiles(kvp.second, partialTimeout);
     }
 
 /*---------------------------------------------------------------------------------**//**

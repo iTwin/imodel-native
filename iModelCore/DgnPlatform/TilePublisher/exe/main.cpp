@@ -250,6 +250,7 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
             case ParamId::GlobeImagery:
                 m_imageryProvider = Utf8String(arg.m_value.c_str());
+                m_globeMode = PublisherContext::GlobeMode::On;
                 break;
             case ParamId::GlobeTerrain:
                 m_terrainProvider = Utf8String(arg.m_value.c_str());

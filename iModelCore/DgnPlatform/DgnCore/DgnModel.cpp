@@ -20,7 +20,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     {
-    m_classId = JsonUtils::DgnClassIdFromJson(val[DgnModel::json_classFullName()], db);
+    m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(val[DgnModel::json_classFullName()], db.GetClassLocater());
     m_modeledElementId.FromJson(val[DgnModel::json_modeledElement()]);
     m_isPrivate = false;
     if (val.isMember(DgnModel::json_isPrivate()))

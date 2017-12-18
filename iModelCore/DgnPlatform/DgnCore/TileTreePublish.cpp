@@ -216,8 +216,7 @@ static folly::Future<BentleyStatus> requestTile(Context context)
         TileTree::TileLoadStatePtr loadState;
         return context.m_requestTileQueue->Push([=]()
             {
-            BeTimePoint deadline;
-            return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem.get(), deadline);
+            return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem.get(), BeDuration());
             });
         }
         
@@ -234,6 +233,7 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
         // The range and tolerance were s set when the output tile was constructed - but the input node may have not been loaded then, so reset them here. (3SM)
         context.m_outputTile->SetDgnRange(context.m_inputTile->GetRange());
         context.m_outputTile->SetTolerance(calculateTolerance(*context.m_inputTile));
+        context.m_outputTile->ExtractCustomMetadataFrom(*context.m_inputTile);
 
         if (SUCCESS != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
             return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));

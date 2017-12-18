@@ -8,26 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include "BisCoreNames.h"
 #include "ElementECInstanceAdapter.h"
-
-/*---------------------------------------------------------------------------------**//**
-* get the class id from a string in the form "Schema:ClassName"
-* @bsimethod                                    Keith.Bentley                   08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId JsonUtils::DgnClassIdFromJson(JsonValueCR json, DgnDbR db)
-    {
-    auto name = json.asString();
-    if (name.empty())
-        {
-        BeDataAssert(false && "JSON representation of classid must be a string in the form \"Schema:ClassName\"");
-        return DgnClassId();
-        }
-
-    auto dot = name.find(':');
-    if (Utf8String::npos == dot || name.length() <= dot + 1)
-        return DgnClassId();
-
-    return db.Schemas().GetClassId(name.substr(0, dot), name.substr(dot+1));
-    }
+#include <ECObjects/ECJsonUtilities.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/16
@@ -1221,7 +1202,7 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
 
     m_id.FromJson(val[json_id()]);
     if (m_id.IsValid())
-        m_relClassId = JsonUtils::DgnClassIdFromJson(val[json_relClass()], db);
+        m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[json_relClass()], db.GetClassLocater());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1574,7 +1555,7 @@ void DgnElement::_FromJson(JsonValueR props)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     {
-    m_classId = JsonUtils::DgnClassIdFromJson(val[DgnElement::json_classFullName()], db);
+    m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(val[DgnElement::json_classFullName()], db.GetClassLocater());
     m_modelId.FromJson(val[DgnElement::json_model()]);
     m_code = DgnCode::FromJson2(val[DgnElement::json_code()]);
     m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
@@ -1734,18 +1715,26 @@ void DgnElements::SetHilited(DgnElementR el, bool hilited)
         return;
         }
 
-    if (el.m_flags.m_hilited != hilited)
-        {
-        el.m_flags.m_hilited = hilited;
-        if (hilited)
-            m_hilitedSet.insert(elemId);
-        else
-            m_hilitedSet.erase(elemId);
-
-        T_HOST._OnHilitedSetChanged(GetDgnDb());
-        }
+    el.m_flags.m_hilited = hilited;
+    SetInHiliteSet(elemId, hilited);
 
     BeAssert(hilited == (m_hilitedSet.end() != m_hilitedSet.find(elemId)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::SetInHiliteSet(DgnElementId id, bool hilited)
+    {
+    // This takes an ID because elements in the selection set can get unloaded from memory;
+    // SelectionSetManager will try to find loaded element, fail, and do nothing - so they
+    // remain hilited in tile graphics.
+    if (hilited)
+        m_hilitedSet.insert(id);
+    else
+        m_hilitedSet.erase(id);
+
+    T_HOST._OnHilitedSetChanged(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**

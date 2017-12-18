@@ -143,7 +143,7 @@ struct TxnTable : RefCountedBase
     virtual void _OnAppliedAdd(BeSQLite::Changes::Change const& change) {}
 
     //! Called after apply an update record from the change set
-    //! @param[in] change The change recor for the update. The pre-changed data about the row will be in the "old values" of change, 
+    //! @param[in] change The change record for the update. The pre-changed data about the row will be in the "old values" of change, 
     //! and the post-changed data will be in the "new values". Columns that are unchanged are in neither values.
     virtual void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) {}
     //@}
@@ -499,7 +499,7 @@ public:
     //@}
 
     //! Get a summary of changes from all transactions starting with the specified TxnId. 
-    //! @remarks Errors out if there are any uncommited changes in the current transaction. i.e., @ref HasChanges() has to 
+    //! @remarks Errors out if there are any uncommitted changes in the current transaction. i.e., @ref HasChanges() has to 
     //! return false. Call @ref BeSQLite::Db::SaveChanges() or @ref BeSQLite::Db::AbandonChanges() before calling this method. 
     DGNPLATFORM_EXPORT BentleyStatus GetChangeSummary(BeSQLite::EC::ChangeSummary& changeSummary, TxnId startTxnId);
 
@@ -617,7 +617,7 @@ namespace dgn_TxnTable
 
     bool HasChanges() const {return m_changes;}
     Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
-    //! Make sure that the Elements table is index on the ECClaassId column. Call this if you plan to query for changes by ECClassId repeatedly.
+    //! Make sure that the Elements table is index on the ECClassId column. Call this if you plan to query for changes by ECClassId repeatedly.
     void CreateIndexOnECClassId();
     };
 

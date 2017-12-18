@@ -80,9 +80,18 @@ enum class DomainUpgradeOptions : int
     UseDefaults //!< Upgrade domain schemas depending on the application's development phase. If the application is in Certified/Beta phase, the setting allows CompatibleOnly upgrades. Otherwise, it will allow IncompatibleAlso. @see DgnPlatformLib::Host::_SupplyDevelopmentPhase(). 
     };
 
+//! Option to control the revision upgrades
+enum class RevisionUpgradeOptions : int
+    {
+    Merge, //!< Revisions will be merged in
+    Reverse, //!< Revisions will be reversed
+    Reinstate //!< Revisions will be reinstated
+    };
+
 private:
     DomainUpgradeOptions m_domainUpgradeOptions;
     bvector<DgnRevisionCP> m_upgradeRevisions;
+    RevisionUpgradeOptions m_revisionUpgradeOptions;
 
 public:
     //! Default constructor
@@ -91,8 +100,8 @@ public:
     //! Constructor to setup schema upgrades from the registered domains
     SchemaUpgradeOptions(DomainUpgradeOptions domainOptions) { SetUpgradeFromDomains(domainOptions); }
 
-    //! Constructor to setup schema upgrades by merging a revision (that may contain schema changes).
-    SchemaUpgradeOptions(DgnRevisionCR revision) { SetUpgradeFromRevision(revision); }
+    //! Constructor to setup schema upgrades by merging/reversing/reinstating a revision (that may contain schema changes).
+    SchemaUpgradeOptions(DgnRevisionCR revision, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge) { SetUpgradeFromRevision(revision, revisionOptions); }
 
     //! Constructor to setup schema upgrades by merging revisions (that may contain schema changes).
     SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions) { SetUpgradeFromRevisions(revisions); }
@@ -104,16 +113,18 @@ public:
         }
 
     //! Setup Schema upgrades by merging a revision (that may contain schema changes)
-    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision)
+    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge)
         {
         m_upgradeRevisions.clear();
         m_upgradeRevisions.push_back(&upgradeRevision);
+        m_revisionUpgradeOptions = revisionOptions;
         }
 
     //! Setup Schema upgrades by merging a revision (that contains schema changes)
-    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions)
+    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge)
         {
         m_upgradeRevisions = upgradeRevisions;
+        m_revisionUpgradeOptions = revisionOptions;
         }
 
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
@@ -121,6 +132,9 @@ public:
 
     //! Gets the revisions that are to be merged
     bvector<DgnRevisionCP> const& GetUpgradeRevisions() const { return m_upgradeRevisions; }
+
+    //! Get the option that controls the upgrade of revisions 
+    RevisionUpgradeOptions GetRevisionUpgradeOptions() const { return m_revisionUpgradeOptions;  }
 
     //! Returns true if schemas are to be upgraded from the domains.
     bool AreDomainUpgradesAllowed() const;
@@ -449,7 +463,7 @@ public:
     //! domain schemas are imported or upgraded when the DgnDb is created or opened. 
     //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
     //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommited or committed). These need to be flushed by committing 
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
     //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb);
