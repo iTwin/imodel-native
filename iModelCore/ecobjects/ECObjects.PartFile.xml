@@ -21,6 +21,7 @@
         <SubPart PartName="RapidJson"               PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
         <SubPart PartName="UnitsNative"             PartFile="Units"            Repository="Units" />
         <Bindings>
+            
             <Libs>Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
@@ -113,6 +114,7 @@
     <Part Name="Tests" DeferType="BuildUnitTests">
         <SubPart PartName="PublishedTests" />
         <SubPart PartName="NonPublishedTests" />
+        <SubPart PartName="TestsSqlang"  PartFile="Units" Repository="Units" />
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
