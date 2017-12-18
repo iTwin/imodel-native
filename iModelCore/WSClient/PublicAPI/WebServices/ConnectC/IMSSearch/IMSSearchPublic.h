@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/ConnectC/IMSSearch/IMSSearchPublic.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,12 +10,12 @@
 
 #include <WebServices/ConnectC/CWSCC.h>
 
-/************************************************************************************//**
+/****************************************************************************************
 * \defgroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
 * \{
 ****************************************************************************************/
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Generic REST utility
 * \param[in] apiHandle Previously created API object
 * \param[out] projectBuffer of User Project data

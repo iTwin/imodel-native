@@ -13,7 +13,7 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_DefaultGroup_True)
@@ -23,7 +23,7 @@ TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_DefaultGrou
     EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_SyncedDependencyNotInSet_True)
@@ -38,7 +38,7 @@ TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_SyncedDepen
     EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_SyncedDependencyInSet_True)
@@ -54,7 +54,7 @@ TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_SyncedDepen
     EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_UnsyncedDependencyNotInSet_False)
@@ -69,7 +69,7 @@ TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_UnsyncedDep
     EXPECT_FALSE(group.AreAllUnsyncedDependenciesInSet(groups));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_UnsyncedDependencyNotInSet_True)
@@ -85,7 +85,7 @@ TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_UnsyncedDep
     EXPECT_TRUE(group.AreAllUnsyncedDependenciesInSet(groups));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_TwoUnsyncedDependencyAndOneNotInSet_False)
@@ -104,7 +104,7 @@ TEST_F(ChangeGraphTests, ChangeGroup_AreAllUnsyncedDependenciesInSet_TwoUnsynced
     EXPECT_FALSE(group.AreAllUnsyncedDependenciesInSet(groups));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildChangeGroups_EmptyChanges_ReturnsEmpty)
@@ -113,7 +113,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_EmptyChanges_ReturnsEmpty)
     EXPECT_TRUE(ChangesGraph(changes).BuildCacheChangeGroups().empty());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithRelationship_ReturnsOneChangeGroup)
@@ -133,7 +133,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithRelationship_Re
     EXPECT_EQ(keyAB, groups[0]->GetRelationshipChange().GetInstanceKey());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithFile_ReturnsOneChangeGroup)
@@ -153,7 +153,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithFile_ReturnsOne
     EXPECT_EQ(keyA, groups[0]->GetFileChange().GetInstanceKey());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ModifiedObjectWithFile_ReturnsSeperateChangeGroups)
@@ -174,7 +174,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ModifiedObjectWithFile_ReturnsSe
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, groups[1]->GetFileChange().GetChangeStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ObjectsCreatedFromRelatedExistingToNew_OrderedFromTopToBottom)
@@ -203,7 +203,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ObjectsCreatedFromRelatedExistin
     EXPECT_EQ(keyAB, groups[1]->GetRelationshipChange().GetInstanceKey());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ObjectsCreatedFromNewToRelatedExisting_OrderedFromBottomToTop)
@@ -232,7 +232,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ObjectsCreatedFromNewToRelatedEx
     EXPECT_EQ(keyBE, groups[2]->GetRelationshipChange().GetInstanceKey());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_TwoSeperateObjectTreesCreated_SeperateGroupsForEach)
@@ -261,7 +261,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_TwoSeperateObjectTreesCreated_Se
     EXPECT_EQ(keyBE, groups[1]->GetRelationshipChange().GetInstanceKey());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectsWithCyclicRelationship_FirstObjectSyncedSeperately)
@@ -296,7 +296,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectsWithCyclicRelation
     EXPECT_EQ(keyCA, groups[3]->GetRelationshipChange().GetInstanceKey());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithTwoRelationships_LastRelationshipInSeperateGroup)
@@ -326,7 +326,7 @@ TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithTwoRelationship
     EXPECT_EQ(IChangeManager::ChangeStatus::Created, groups[1]->GetRelationshipChange().GetChangeStatus());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ModifiedObjectWithCreatedRelationship_SeperateGroups)

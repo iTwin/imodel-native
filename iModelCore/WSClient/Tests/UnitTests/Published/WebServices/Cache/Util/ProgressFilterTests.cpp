@@ -11,7 +11,7 @@
 
 using namespace ::testing;
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_CreatedWithProgressOfNullptr_DoesNothing)
@@ -21,7 +21,7 @@ TEST_F(ProgressFilterTests, Execute_CreatedWithProgressOfNullptr_DoesNothing)
     filteredProgress(55);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_CreatedWithFunctionOfOneArgument_ProgressExcecutes)
@@ -37,7 +37,7 @@ TEST_F(ProgressFilterTests, Execute_CreatedWithFunctionOfOneArgument_ProgressExc
     EXPECT_EQ(1, count);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_CreatedWithFunctionOfTwoArguments_ProgressExcecutes)
@@ -54,7 +54,7 @@ TEST_F(ProgressFilterTests, Execute_CreatedWithFunctionOfTwoArguments_ProgressEx
     EXPECT_EQ(1, count);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_MultipleTimesAndMinDelayIsZero_ProgressIsCalledEveryTime)
@@ -75,7 +75,7 @@ TEST_F(ProgressFilterTests, Execute_MultipleTimesAndMinDelayIsZero_ProgressIsCal
     EXPECT_EQ(10, count);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_TwiceAndExecuteWithInsufficientDelay_ProgressIsCalledOnce)
@@ -93,7 +93,7 @@ TEST_F(ProgressFilterTests, Execute_TwiceAndExecuteWithInsufficientDelay_Progres
     EXPECT_EQ(1, count);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_TwiceAndExecuteWithSufficiantDelay_ProgressIsCalledTwice)
@@ -110,7 +110,7 @@ TEST_F(ProgressFilterTests, Execute_TwiceAndExecuteWithSufficiantDelay_ProgressI
     EXPECT_EQ(2, count);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_MultipleTimesWhenShouldSkipFilterReturnsTrue_ProgressIsCalledMultipleTimes)
@@ -132,7 +132,7 @@ TEST_F(ProgressFilterTests, Execute_MultipleTimesWhenShouldSkipFilterReturnsTrue
     EXPECT_EQ(4, count);
     }
     
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_MultipleTimesWhenShouldSkipFilterReturnsFalse_ProgressIsCalledOnce)
@@ -154,7 +154,7 @@ TEST_F(ProgressFilterTests, Execute_MultipleTimesWhenShouldSkipFilterReturnsFals
     EXPECT_EQ(1, count);
     }
     
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProgressFilterTests, Execute_MultipleTimesAndShouldSkipFilterTrueOnce_ProgressIsCalledTwice)

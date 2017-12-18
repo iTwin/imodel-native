@@ -18,7 +18,7 @@ iModelManager::iModelManager(iModelConnectionPtr connection) : m_connection(conn
     SetCancellationToken([]()->ICancellationTokenPtr { return nullptr; });
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SetCodesLocksStates(IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, 
@@ -49,7 +49,7 @@ void SetCodesLocksStates(IBriefcaseManager::Response& response, IBriefcaseManage
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas             07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus iModelManager::GetResponseStatus(Result<void> result)
@@ -76,7 +76,7 @@ RepositoryStatus iModelManager::GetResponseStatus(Result<void> result)
     return RepositoryStatus::ServerUnavailable;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas             07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response iModelManager::HandleError(Request const& request, Result<void> result, IBriefcaseManager::RequestPurpose purpose)
@@ -121,7 +121,7 @@ IBriefcaseManager::Response iModelManager::HandleError(Request const& request, R
     return response;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManager::Response iModelManager::_ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
@@ -151,7 +151,7 @@ IBriefcaseManager::Response iModelManager::_ProcessRequest(Request const& req, D
     return HandleError(req, *result, purpose);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus iModelManager::_Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
@@ -174,7 +174,7 @@ RepositoryStatus iModelManager::_Demote(DgnLockSet const& locks, DgnCodeSet cons
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus iModelManager::_Relinquish(Resources which, DgnDbR db)
@@ -196,7 +196,7 @@ RepositoryStatus iModelManager::_Relinquish(Resources which, DgnDbR db)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus iModelManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, 
@@ -229,7 +229,7 @@ RepositoryStatus iModelManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSe
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus iModelManager::_QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, 

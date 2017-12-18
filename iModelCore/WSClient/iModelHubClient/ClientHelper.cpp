@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 ClientHelper* ClientHelper::s_instance = nullptr;
 BeMutex ClientHelper::s_mutex{};
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState * ls)
@@ -44,7 +44,7 @@ ClientHelper* ClientHelper::Initialize(ClientInfoPtr clientInfo, IJsonLocalState
     return s_instance;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientHelper* ClientHelper::GetInstance()
@@ -53,7 +53,7 @@ ClientHelper* ClientHelper::GetInstance()
     return s_instance;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials credentials)
@@ -71,7 +71,7 @@ ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials 
     return SignInWithManager(m_signinMgr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Andrius.Zonys                   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token)
@@ -89,7 +89,7 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
     return SignInWithManager(m_signinMgr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas            03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
@@ -102,7 +102,7 @@ ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
     return client;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas            03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr, WebServices::UrlProvider::Environment environment)
@@ -111,7 +111,7 @@ ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr, We
     return SignInWithManager(managerPtr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository)

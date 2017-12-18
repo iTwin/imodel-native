@@ -13,7 +13,7 @@
 #include <BeHttp/ProxyHttpHandler.h>
 #include <curl/curl.h>
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, RequestToken_ProdUrls_RetrievesToken)
@@ -34,7 +34,7 @@ TEST_F(ImsClientTests, RequestToken_ProdUrls_RetrievesToken)
     BeDebugLog(tokenAuthStr.c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, RequestToken_QaUrls_RetrievesToken)
@@ -55,7 +55,7 @@ TEST_F(ImsClientTests, RequestToken_QaUrls_RetrievesToken)
     BeDebugLog(tokenAuthStr.c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, RequestToken_NoLifetimeSpecified_RetrievesTokenWithDefaultLifetime)
@@ -77,7 +77,7 @@ TEST_F(ImsClientTests, RequestToken_NoLifetimeSpecified_RetrievesTokenWithDefaul
     EXPECT_NE(0, token->GetLifetime());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, RequestToken_LifetimeSpecified_RetrievesTokenWithSpecifiedLifetime)
@@ -99,7 +99,7 @@ TEST_F(ImsClientTests, RequestToken_LifetimeSpecified_RetrievesTokenWithSpecifie
     EXPECT_EQ(5, token->GetLifetime());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_RetrievesTokenWithSpecifiedLifetime)
@@ -123,7 +123,7 @@ TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_Retriev
     EXPECT_EQ(5, token->GetLifetime());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/    
 TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForValidRPUris)
@@ -187,7 +187,7 @@ TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForVal
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 Tomas.Tamasauskas                       08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ImsClientTests, GetA2PUrl)

@@ -31,7 +31,7 @@
 #include "../WebServices/Connect/MockConnectionClientInterface.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MockTests, Ctor_Default_Builds)

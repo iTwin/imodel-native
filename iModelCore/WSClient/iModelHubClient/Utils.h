@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
 #include <WebServices/iModelHub/Common.h>
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/DgnPlatformLib.h>

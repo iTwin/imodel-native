@@ -67,7 +67,7 @@ CallStatus CreateDummyTestProject_v4(CWSCCHANDLE apiHandle)
         nullptr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
@@ -92,7 +92,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyUrl_ApiIsNull)
     ASSERT_TRUE(api == nullptr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCredentialsAreRequired_ApiIsNull)
@@ -121,7 +121,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidProxyCredentialsWhenProxyCred
         ASSERT_TRUE(api == nullptr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitialization)
@@ -147,7 +147,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitializa
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_ApiIsNull)
@@ -171,7 +171,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_
     ASSERT_TRUE(api == nullptr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_ApiIsNull)
@@ -194,7 +194,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidCredentialsAndInvalidProductId_
     ASSERT_TRUE(api == nullptr);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull)
@@ -220,7 +220,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNull
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetreival)
@@ -259,7 +259,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetre
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCodeReturned)
@@ -289,7 +289,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCod
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned_SuccessfulRetreival)
@@ -325,7 +325,7 @@ TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturnedWithFulfilledProjectProperties_SuccessfulRetreivalOfProperties)
@@ -374,7 +374,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_AppropriateStatusCodeReturned)
@@ -424,7 +424,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_Appropriate
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeButInvalidPropertyType_AppropriateStatusCodeReturned)
@@ -464,7 +464,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeB
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeAndValidPropertyTypeButInvalidProperty_AppropriateStatusCodeReturned)
@@ -518,7 +518,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
@@ -543,7 +543,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Succ
         );
     ASSERT_TRUE(api != nullptr);
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new project
     * \param[in] apiHandle API object
     * \param[in] Name
@@ -646,7 +646,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Succ
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
@@ -668,7 +668,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_Su
         );
     ASSERT_TRUE(api != nullptr);
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new Project_V4
     * \param[in] apiHandle API object
     * \param[in] Name
@@ -770,7 +770,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_Su
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
@@ -792,7 +792,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful
         );
     ASSERT_TRUE(api != nullptr);
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new organization
     * \param[in] apiHandle API object
     * \param[in] OrganizationGuid
@@ -821,7 +821,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessful
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSuccessful_SuccessfulCodesReturned)
@@ -843,7 +843,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucce
         );
     ASSERT_TRUE(api != nullptr);
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new project
     * \param[in] apiHandle API object
     * \param[in] Name
@@ -926,7 +926,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucce
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_SuccessfulCodesReturned)
@@ -948,7 +948,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_S
         );
     ASSERT_TRUE(api != nullptr);
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new project
     * \param[in] apiHandle API object
     * \param[in] Name
@@ -1009,7 +1009,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_S
     WString wProjectInstanceId;
     wProjectInstanceId.AssignUtf8(instanceId.c_str());
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new projectmru
     * \param[in] apiHandle API object
     * \param[in] ProjectGuid
@@ -1051,7 +1051,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_S
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 David.Jones                           05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
@@ -1073,7 +1073,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful
         );
     ASSERT_TRUE(api != nullptr);
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new project
     * \param[in] apiHandle API object
     * \param[in] Name
@@ -1134,7 +1134,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful
     WString wProjectInstanceId;
     wProjectInstanceId.AssignUtf8(instanceId.c_str());
 
-    /************************************************************************************//**
+    /****************************************************************************************
     * \brief Create a new projectmru
     * \param[in] apiHandle API object
     * \param[in] ProjectGuid
@@ -1162,7 +1162,7 @@ TEST_F(ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful
     ASSERT_TRUE(status == SUCCESS);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 Robert.Priest                           03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds)
@@ -1219,7 +1219,7 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_OpenOrCreate__Succeeds
     status = ConnectWebServicesClientC_FreeApi(api);
     ASSERT_TRUE(status == SUCCESS);
     }
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                 Robert.Priest                           03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_SuccessfulCodesReturned)
