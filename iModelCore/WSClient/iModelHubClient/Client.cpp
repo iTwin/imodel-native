@@ -1093,6 +1093,11 @@ ICancellationTokenPtr cancellationToken
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result->GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result->GetError()));
         }
+    if (result->GetValue().empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid version id.");
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(Error::Id::InvalidVersion));
+        }
 
     return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult->GetValue()), result->GetValue(), fileNameCallBack, callback, cancellationToken);
     }

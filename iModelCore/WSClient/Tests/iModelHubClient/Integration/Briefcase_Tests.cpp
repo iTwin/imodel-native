@@ -599,6 +599,35 @@ TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
         }
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Gintare.Grazulyte    12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BriefcaseTests, DownloadStandaloneBriefcaseUpdatedToVersionInvalidVersion)
+    {
+    //create changeSets
+    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 7);
+    auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    auto changeSets = changeSetsResult.GetValue();
+
+    auto versionManager = m_imodelConnection->GetVersionsManager();
+    VersionInfoPtr version1 = new VersionInfo("Version1", "Description", changeSets.at(2)->GetId());
+    auto versionResult = versionManager.CreateVersion(*version1)->GetResult();
+    EXPECT_SUCCESS(versionResult);
+    version1 = versionResult.GetValue();
+
+    BeFileNameResult acquireResult = m_client->DownloadStandaloneBriefcaseUpdatedToVersion(*m_imodel, "InvalidId", [=](iModelInfo imodelInfo, FileInfo fileInfo)
+        {
+        BeFileName filePath = m_pHost->GetOutputDirectory();
+        filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
+        filePath.AppendToPath(BeFileName("InvalidId"));
+        filePath.AppendToPath(BeFileName(fileInfo.GetFileName()));
+        return filePath;
+        })->GetResult();
+        EXPECT_FALSE(acquireResult.IsSuccess());
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Algirdas.Mikoliunas    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
