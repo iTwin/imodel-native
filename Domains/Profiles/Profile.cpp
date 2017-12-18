@@ -1,4 +1,4 @@
-#include "PublicAPI\ProfilesDomain\Profile.h"
+#include "ProfilesDomain\Profile.h"
 #include <Bentley/bvector.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE

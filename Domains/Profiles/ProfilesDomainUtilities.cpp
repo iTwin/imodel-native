@@ -1,4 +1,4 @@
-#include "PublicAPI\ProfilesDomain\ProfilesDomainUtilities.h"
+#include "ProfilesDomain\ProfilesDomainUtilities.h"
 
 BE_JSON_NAME(ProfilesDomain)
 

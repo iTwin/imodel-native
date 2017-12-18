@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicAPI\ProfilesDomain\ProfilesModel.h"
+#include "ProfilesDomain\ProfilesModel.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 

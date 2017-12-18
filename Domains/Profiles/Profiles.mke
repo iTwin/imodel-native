@@ -1,3 +1,10 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Profiles.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
 %include mdl.mki
 
 CompileOptionsMki   = $(SrcRoot)DgnDomains/Profiles/ProfilesCompileOptions.mki
@@ -7,7 +14,7 @@ CompileOptionsMki   = $(SrcRoot)DgnDomains/Profiles/ProfilesCompileOptions.mki
 #   Macros
 #--------------------------------------------------------------------------------------
 appSrc              = $(_MakeFilePath)
-appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+appPublicApi        = $(appSrc)PublicAPI/
 MultiCompileDepends = $(_MakeFileSpec) $(appPublicApi)ProfilesDomainDefinitions.h $(appPublicApi)ProfilesDomainApi.h
 
 always:
@@ -32,7 +39,7 @@ CCPchOpts = $(UsePrecompiledHeaderOptions)
 CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 ProfilesBase            = $(_MakeFilePath)
-ProfilesBasePublicAPI   = $(ProfilesBase)PublicAPI/ProfilesDomain/
+ProfilesBasePublicAPI   = $(ProfilesBase)PublicAPI/
 
 
 #--------------------------------------------------------------------------------------

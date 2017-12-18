@@ -1,4 +1,4 @@
-#include "PublicAPI\ProfilesDomain\BuiltUpProfile.h"
+#include "ProfilesDomain\BuiltUpProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS(BuiltUpProfileHandler)

@@ -1,11 +1,11 @@
-#include "PublicAPI\ProfilesDomain\ProfilesDomain.h"
+#include "ProfilesDomain\ProfilesDomain.h"
 
-#include "PublicAPI\ProfilesDomain\Profile.h"
-#include "PublicAPI\ProfilesDomain\ConstantProfile.h"
-#include "PublicAPI\ProfilesDomain\BuiltUpProfile.h"
-#include "PublicAPI\ProfilesDomain\BuiltUpProfileComponent.h"
-#include "PublicAPI\ProfilesDomain\ParametricProfile.h"
-#include "PublicAPI\ProfilesDomain\PublishedProfile.h"
+#include "ProfilesDomain\Profile.h"
+#include "ProfilesDomain\ConstantProfile.h"
+#include "ProfilesDomain\BuiltUpProfile.h"
+#include "ProfilesDomain\BuiltUpProfileComponent.h"
+#include "ProfilesDomain\ParametricProfile.h"
+#include "ProfilesDomain\PublishedProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 

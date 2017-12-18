@@ -1,16 +1,16 @@
 #include "ProfilesDomainTestFixture.h"
-#include "..\PublicAPI\ProfilesDomain\ProfilesDomainUtilities.h"
+#include "ProfilesDomain\ProfilesDomainUtilities.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>
 #include <Bentley\BeAssert.h>
 
-#include <..\PublicAPI\ProfilesDomain\ConstantProfile.h>
-#include <..\PublicAPI\ProfilesDomain\BuiltUpProfile.h>
-#include <..\PublicAPI\ProfilesDomain\ParametricProfile.h>
-#include <..\PublicAPI\ProfilesDomain\PublishedProfile.h>
-#include <..\PublicAPI\ProfilesDomain\BuiltUpProfileComponent.h>
-#include <..\PublicAPI\ProfilesDomain\ProfilesDomainDefinitions.h>
+#include <ProfilesDomain\ConstantProfile.h>
+#include <ProfilesDomain\BuiltUpProfile.h>
+#include <ProfilesDomain\ParametricProfile.h>
+#include <ProfilesDomain\PublishedProfile.h>
+#include <ProfilesDomain\BuiltUpProfileComponent.h>
+#include <ProfilesDomain\ProfilesDomainDefinitions.h>
 #include "ProfilesTestUtils.h"
 
 

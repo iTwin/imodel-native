@@ -1,7 +1,7 @@
 #pragma once
-#include <..\PublicAPI\ProfilesDomain\ProfilesModel.h>
-#include <..\PublicAPI\ProfilesDomain\ProfilesPartition.h>
-#include <..\PublicAPI\ProfilesDomain\ProfilesDomainDefinitions.h>
+#include <ProfilesDomain\ProfilesModel.h>
+#include <ProfilesDomain\ProfilesPartition.h>
+#include <ProfilesDomain\ProfilesDomainDefinitions.h>
 #include <Bentley\Bentley.h>
 
 #include <Bentley/WString.h>

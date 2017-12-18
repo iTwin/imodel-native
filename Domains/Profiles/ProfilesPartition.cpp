@@ -1,4 +1,4 @@
-#include "PublicAPI\ProfilesDomain\ProfilesPartition.h"
+#include "ProfilesDomain\ProfilesPartition.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
