@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: CivilBaseGeometry/build/CivilBaseGeometry.mki $
+#     $Source: CivilBaseGeometry/CivilBaseGeometry.mki $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -14,7 +14,7 @@ ContextDeliveryDir = $(BuildContext)Delivery/
 # Define commonly used locations
 #--------------------------------------------------------------------------------------
 appName         = CivilBaseGeometry
-appSrc          = $(SrcRoot)Civil/Geometry/CivilBaseGeometry/
+appSrc          = $(SrcRoot)Civil/Geometry/CivilBaseGeometry/Native/
 appPublicApi    = $(appSrc)PublicAPI/$(appName)/
 o               = $(OutBuildDir)/$(appName)/
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CivilBaseGeometry/PublicAPI/CivilBaseGeometry/AlignmentPair.h $
+|     $Source: CivilBaseGeometry/Native/PublicAPI/CivilBaseGeometry/AlignmentPair.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

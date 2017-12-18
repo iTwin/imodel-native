@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CivilBaseGeometry/RoadAlignmentPairEditor.cpp $
+|     $Source: CivilBaseGeometry/Native/RoadAlignmentPairEditor.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

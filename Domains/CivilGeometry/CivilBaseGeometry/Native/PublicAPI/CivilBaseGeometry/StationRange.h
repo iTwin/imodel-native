@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CivilBaseGeometry/PublicAPI/CivilBaseGeometry/StationRange.h $
+|     $Source: CivilBaseGeometry/Native/PublicAPI/CivilBaseGeometry/StationRange.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

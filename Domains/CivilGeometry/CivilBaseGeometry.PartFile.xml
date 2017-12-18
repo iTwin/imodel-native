@@ -19,13 +19,13 @@
 
   
   <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
-  <Part Name="PublicAPI" BentleyBuildMakeFile="CivilBaseGeometry/build/prewire.mke" Scope="Private">
+  <Part Name="PublicAPI" BentleyBuildMakeFile="CivilBaseGeometry/prewire.mke" Scope="Private">
     <Bindings>
       <PublicAPI Domain="CivilBaseGeometry"/>
     </Bindings>
   </Part>
 
-  <Part Name="CivilBaseGeometryDll" BentleyBuildMakeFile="CivilBaseGeometry/build/CivilBaseGeometry.mke" Scope="Private">
+  <Part Name="CivilBaseGeometryDll" BentleyBuildMakeFile="CivilBaseGeometry/CivilBaseGeometry.mke" Scope="Private">
     <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
     <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>

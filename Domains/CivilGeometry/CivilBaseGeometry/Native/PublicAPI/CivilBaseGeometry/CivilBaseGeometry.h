@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CivilBaseGeometry/PublicAPI/CivilBaseGeometry/CivilBaseGeometry.h $
+|     $Source: CivilBaseGeometry/Native/PublicAPI/CivilBaseGeometry/CivilBaseGeometry.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

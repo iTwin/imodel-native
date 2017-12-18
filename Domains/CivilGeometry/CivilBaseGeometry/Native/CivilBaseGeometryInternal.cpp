@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CivilBaseGeometry/CivilBaseGeometryInternal.cpp $
+|     $Source: CivilBaseGeometry/Native/CivilBaseGeometryInternal.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
