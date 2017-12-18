@@ -72,7 +72,8 @@ struct CurlHttpRequest
         static int    CurlProgressCallback(CurlHttpRequest* request, double dltotal, double dlnow, double ultotal, double ulnow);
         static int    CurlDebugCallback(CURL* handle, curl_infotype type, char* data, size_t size, CurlHttpRequest* request);
 
-        void SetupCurl();
+        void SetPrematureError(ConnectionStatus status);
+        BentleyStatus SetupCurl ();
         void SetupHeaders();
         void SetupCurlCallbacks();
 
@@ -101,7 +102,9 @@ struct CurlHttpRequest
 
         //! Should be called before request execution. GetCurlHandle() should be called after this.
         void PrepareRequest();
-        //! Get CURL handle and execute request. FinalizeRequest() should be called after execution.
+        //! Get CURL handle to execute request. 
+        //! When non NULL value is returned - CURL handle should be used to execute request and called after FinalizeRequest().
+        //! When NULL is returned - ResolveResponse() should be called to handle error.
         CURL* GetCurlHandle();
         //! Should be called after request execution. ShouldRetry() should be called after this.
         void FinalizeRequest(CURLcode curlStatus);

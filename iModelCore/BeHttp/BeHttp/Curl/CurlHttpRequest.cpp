@@ -404,9 +404,23 @@ void CurlHttpRequest::SetupCurlCallbacks()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlHttpRequest::SetPrematureError(ConnectionStatus status)
+    {
+    if (nullptr != m_curl)
+        m_curlPool.ReturnHandle(m_curl);
+
+    m_curl = nullptr;
+    m_transferInfo->curl = nullptr;
+
+    m_transferInfo->status = status;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CurlHttpRequest::SetupCurl()
+BentleyStatus CurlHttpRequest::SetupCurl ()
     {
     if (m_httpRequest.GetUseNewConnection())
         {
@@ -475,8 +489,12 @@ void CurlHttpRequest::SetupCurl()
             }
         else
             {
-            HttpProxy defaultProxy = HttpProxy::GetDefaultProxy();
-            m_transferInfo->proxies = defaultProxy.GetProxiesForUrl(m_httpRequest.GetUrl());
+            HttpProxy defaultProxy = HttpProxy::GetDefaultProxy ();
+            if (SUCCESS != defaultProxy.GetProxiesForUrl(m_httpRequest.GetUrl(), m_transferInfo->proxies))
+                {
+                SetPrematureError(ConnectionStatus::CouldNotResolveProxy);
+                return ERROR;
+                }
             }
         }
 
@@ -553,6 +571,8 @@ void CurlHttpRequest::SetupCurl()
     // Setup headers
     SetupHeaders();
     curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_headers);
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -659,12 +679,8 @@ void CurlHttpRequest::PrepareRequest()
         m_transferInfo->requestBody = requestBody;
         }
 
-    if (!m_transferInfo->requestBody.IsNull())
-        {
+    if (m_transferInfo->requestBody.IsValid())
         m_transferInfo->requestBody->SetPosition(0);
-        }
-
-    SetupCurl();
 
     m_transferInfo->status = ConnectionStatus::None;
     m_transferInfo->responseContent->GetHeaders().Clear();
@@ -672,6 +688,9 @@ void CurlHttpRequest::PrepareRequest()
 
     m_transferInfo->requestNeedsToReset.store(false);
     m_transferInfo->progressInfo.wasCanceled = false;
+
+    if (SUCCESS != SetupCurl())
+        return;
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         LOG.infov("> HTTP #%lld %s %s", GetNumber(), m_httpRequest.GetMethod().c_str(), m_httpRequest.GetUrl().c_str());
@@ -706,6 +725,11 @@ bool CurlHttpRequest::ShouldRetry()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CurlHttpRequest::GetShouldRetry()
     {
+    if (nullptr == m_transferInfo)
+        return false;
+    if (nullptr == m_curl)
+        return false;
+
     ConnectionStatus status = m_transferInfo->status;
 
     if (!m_transferInfo->proxies.empty() &&
@@ -756,8 +780,11 @@ Response CurlHttpRequest::ResolveResponse()
     if (m_transferInfo->status == ConnectionStatus::OK)
         httpStatus = ResolveHttpStatus(httpStatusCode);
 
-    char* effectiveUrl = nullptr;
-    curl_easy_getinfo(m_curl, CURLINFO_EFFECTIVE_URL, &effectiveUrl);
+    const char* effectiveUrl = nullptr;
+    if (nullptr == m_curl)
+        effectiveUrl = m_httpRequest.GetUrl().c_str();
+    else
+        curl_easy_getinfo(m_curl, CURLINFO_EFFECTIVE_URL, &effectiveUrl);
 
     Response response(m_transferInfo->responseContent, effectiveUrl, m_transferInfo->status, httpStatus);
 

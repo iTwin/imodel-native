@@ -218,6 +218,19 @@ TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfully)
+    {
+    Request request("http://httpbin.org/ip");
+
+    Response response = request.PerformAsync()->GetResult();
+
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
@@ -231,6 +244,42 @@ TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_RequestSuccessfull_SetsEffectiveUrl)
+    {
+    Request request("http://httpbin.org/ip");
+    Response response = request.Perform().get();
+
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ("http://httpbin.org/ip", response.GetEffectiveUrl());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_RequestWithRedirect_SetsEffectiveUrlFromRedirect)
+    {
+    Request request("http://httpbin.org/redirect-to?url=http%3A%2F%2Fexample.com%2F");
+    Response response = request.Perform().get();
+
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ("http://example.com/", response.GetEffectiveUrl());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_RequestCouldNotConnect_SetsEffectiveUrlToRequestUrl)
+    {
+    Request request("http://foo.boo.test.not.existing");
+    Response response = request.Perform().get();
+
+    EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
+    EXPECT_EQ("http://foo.boo.test.not.existing/", response.GetEffectiveUrl());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -379,6 +428,27 @@ TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
     Response response = request.Perform().get();
 
     EXPECT_EQ(HttpStatus::Found, response.GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChainedTask)
+    {
+    Response response;
+    Request request("http://httpbin.org/ip");
+
+    auto task = request.PerformAsync()->Then(
+        [&] (Response& finishedResponse)
+        {
+        response = finishedResponse;
+        });
+
+    task->Wait();
+
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -788,7 +858,7 @@ INSTANTIATE_TEST_CASE_P(DifferentMethods, HttpRequestTestsMethods, Values(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(HttpRequestTestsMethods, Perform_BeforeMovedToBackground_RequestFinishesInBackground)
+TEST_P(HttpRequestTestsMethods, PerformAsync_BeforeMovedToBackground_RequestFinishesInBackground)
     {
     Request request = GetParam().CreateRequest();
 
@@ -812,7 +882,7 @@ TEST_P(HttpRequestTestsMethods, Perform_BeforeMovedToBackground_RequestFinishesI
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(HttpRequestTestsMethods, Perform_WhenMovedToBackground_RequestDoesNothingUntilInForeground)
+TEST_P(HttpRequestTestsMethods, PerformAsync_WhenMovedToBackground_RequestDoesNothingUntilInForeground)
     {
     Request request = GetParam().CreateRequest();
 
@@ -845,7 +915,7 @@ TEST_P(HttpRequestTestsMethods, Perform_WhenMovedToBackground_RequestDoesNothing
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(HttpRequestTestsMethods, Perform_AfterMovedFromBackgroundToForeground_ExecutesRequestAsUsual)
+TEST_P(HttpRequestTestsMethods, PerformAsync_AfterMovedFromBackgroundToForeground_ExecutesRequestAsUsual)
     {
     Request request = GetParam().CreateRequest();
 
@@ -868,7 +938,7 @@ TEST_P(HttpRequestTestsMethods, Perform_AfterMovedFromBackgroundToForeground_Exe
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(HttpRequestTestsMethods, Perform_ExecutingInBackgroundWithDownloadAndUploadProgressCallbacks_IntermediateProgressIsNotReported)
+TEST_P(HttpRequestTestsMethods, PerformAsync_ExecutingInBackgroundWithDownloadAndUploadProgressCallbacks_IntermediateProgressIsNotReported)
     {
     Request request = GetParam().CreateRequest();
 
@@ -900,7 +970,7 @@ TEST_P(HttpRequestTestsMethods, Perform_ExecutingInBackgroundWithDownloadAndUplo
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(HttpRequestTestsMethods, Perform_NonRetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestReturnsError)
+TEST_P(HttpRequestTestsMethods, PerformAsync_NonRetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestReturnsError)
     {
     std::function<void()> onExpired;
     Backdoor::InitStartBackgroundTask([&] (Utf8CP, std::function<void()>, std::function<void()> _onExpired)
@@ -938,7 +1008,7 @@ TEST_P(HttpRequestTestsMethods, Perform_NonRetryaleRequestAndBackgroundTimeExpir
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(HttpRequestTestsMethods, Perform_RetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestRestartedWhenInForeground)
+TEST_P(HttpRequestTestsMethods, PerformAsync_RetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestRestartedWhenInForeground)
     {
     std::function<void()> onExpired;
     Backdoor::InitStartBackgroundTask([&] (Utf8CP, std::function<void()>, std::function<void()> _onExpired)
@@ -1094,25 +1164,76 @@ TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyUrlSet_ExecutesViaProxy)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                Vincas.Razma                           12/16
+* @bsimethod                                Vincas.Razma                           12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSet_ExecutesViaProxy)
+TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrl_CouldNotResolveProxy)
     {
     VerifyProxyLogEmpty();
 
     Request request("http://httpbin.org/ip");
     HttpProxy proxy;
-    proxy.SetPacUrl(LOCAL_SERVER_URL "/Data/pac1.js");
+    proxy.SetPacUrl("boofoo.js");
     HttpProxy::SetDefaultProxy(proxy);
 
     Response response = request.Perform().get();
-    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
 
-    EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                Vincas.Razma                           12/16
+* @bsimethod                                Vincas.Razma                           12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrlAndPOSTRequest_CouldNotResolveProxy)
+    {
+    VerifyProxyLogEmpty();
+
+    Request request("http://httpbin.org/ip", "POST");
+    HttpProxy proxy;
+    proxy.SetPacUrl("boofoo.js");
+    HttpProxy::SetDefaultProxy(proxy);
+
+    Response response = request.Perform().get();
+    EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
+
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToNotExisting_CouldNotResolveProxy)
+    {
+    VerifyProxyLogEmpty();
+
+    Request request("http://httpbin.org/ip");
+    HttpProxy proxy;
+    proxy.SetPacUrl(NONEXISTING_PROXY_URL "/foo.js");
+    HttpProxy::SetDefaultProxy(proxy);
+
+    Response response = request.Perform().get();
+    EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
+
+    EXPECT_THAT(GetLocalProxyLog().c_str(), Not(HasSubstr("GET http://httpbin.org/ip")));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetToInvalidUrl_SetsEffectiveUrl)
+    {
+    Request request("http://httpbin.org/ip");
+    HttpProxy proxy;
+    proxy.SetPacUrl("boofoo.js");
+    HttpProxy::SetDefaultProxy(proxy);
+
+    Response response = request.Perform().get();
+    EXPECT_EQ(ConnectionStatus::CouldNotResolveProxy, response.GetConnectionStatus());
+    EXPECT_EQ("http://httpbin.org/ip", response.GetEffectiveUrl());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTestsProxy, Perform_DefaultProxyPacUrlSetWithDirect_ExecutesDirectly)
     {

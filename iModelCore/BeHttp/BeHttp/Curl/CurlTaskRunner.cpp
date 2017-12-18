@@ -278,47 +278,60 @@ void CurlTaskRunner::AddTaskToCurlMultiMap(std::shared_ptr<AsyncTask> task)
 
     HttpClient::BeginNetworkActivity();
 
-    auto httpTask = std::static_pointer_cast<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, Response>> (task);
+    auto requestTask = std::static_pointer_cast<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>, Response>> (task);
+    std::shared_ptr<CurlHttpRequest> request = requestTask->GetData();
 
-    std::shared_ptr<CurlHttpRequest> request = httpTask->GetData();
     request->PrepareRequest();
+    CURL* curl = request->GetCurlHandle();
+    if (nullptr == curl)
+        {
+        ResolveRequestTask(requestTask);
+        return;
+        }
 
-    auto status = curl_multi_add_handle(m_multi, request->GetCurlHandle());
+    auto status = curl_multi_add_handle(m_multi, curl);
     BeAssert(CURLM_OK == status);
 
-    m_curlToRequestMap[request->GetCurlHandle()] = httpTask;
+    m_curlToRequestMap[curl] = requestTask;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CurlTaskRunner::ResolveFinishedCurl(CURLMsg* curlMsg)
+void CurlTaskRunner::ResolveFinishedCurl (CURLMsg* curlMsg)
     {
-    HttpClient::EndNetworkActivity();
-
     CURL* finishedCurl = curlMsg->easy_handle;
     CURLcode code = curlMsg->data.result;
 
-    auto status = curl_multi_remove_handle(m_multi, finishedCurl);
-    BeAssert(CURLM_OK == status);
+    auto status = curl_multi_remove_handle (m_multi, finishedCurl);
+    BeAssert (CURLM_OK == status);
 
-    auto finishedRequestTask = m_curlToRequestMap[finishedCurl];
-    finishedRequestTask->GetData()->FinalizeRequest(code);
+    auto requestTask = m_curlToRequestMap[finishedCurl];
+    requestTask->GetData()->FinalizeRequest(code);
 
-    m_curlToRequestMap.erase(finishedCurl);
+    m_curlToRequestMap.erase (finishedCurl);
 
-    if (finishedRequestTask->GetData()->ShouldRetry())
+    ResolveRequestTask(requestTask);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::ResolveRequestTask(CurlHttpRequestTaskPtr requestTask)
+    {
+    HttpClient::EndNetworkActivity();
+
+    if (requestTask->GetData()->ShouldRetry())
         {
-        GetTaskScheduler()->Push(finishedRequestTask);
+        GetTaskScheduler()->Push(requestTask);
+        return;
         }
-    else
-        {
-        Response response = finishedRequestTask->GetData()->ResolveResponse();
-        SetCurrentRunningTask(finishedRequestTask);
 
-        finishedRequestTask->OnFinished(response);
-        SetCurrentRunningTask(nullptr);
-        }
+    Response response = requestTask->GetData()->ResolveResponse();
+
+    SetCurrentRunningTask(requestTask);
+    requestTask->OnFinished(response);
+    SetCurrentRunningTask(nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlPool.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,8 +13,7 @@ USING_NAMESPACE_BENTLEY_HTTP
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurlPool::CurlPool (size_t maximumPoolSize)
-: m_maximumPoolSize (maximumPoolSize)
+CurlPool::CurlPool(size_t maximumPoolSize) : m_maximumPoolSize(maximumPoolSize)
     {
     BeAssert (m_maximumPoolSize >= 0);
     }
@@ -24,14 +23,10 @@ CurlPool::CurlPool (size_t maximumPoolSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurlPool::~CurlPool ()
     {
-    m_poolCriticalSection.Enter ();
+    BeMutexHolder lock(m_poolCriticalSection);
 
     for (CURL* handle : m_pool)
-        {
-        curl_easy_cleanup (handle);
-        }
-
-    m_poolCriticalSection.Leave ();
+        curl_easy_cleanup(handle);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -39,19 +34,15 @@ CurlPool::~CurlPool ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlPool::Resize (size_t maximumPoolSize)
     {
-    m_poolCriticalSection.Enter ();
+    BeMutexHolder lock(m_poolCriticalSection);
 
     m_maximumPoolSize = maximumPoolSize;
-    for (size_t i = m_maximumPoolSize; i < m_pool.size (); i++)
-        {
-        curl_easy_cleanup (m_pool[i]);
-        }
-    if (m_pool.size () > m_maximumPoolSize)
-        {
-        m_pool.resize (m_maximumPoolSize);
-        }
 
-    m_poolCriticalSection.Leave ();
+    for (size_t i = m_maximumPoolSize; i < m_pool.size(); i++)
+        curl_easy_cleanup(m_pool[i]);
+
+    if (m_pool.size() > m_maximumPoolSize)
+        m_pool.resize(m_maximumPoolSize);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -59,8 +50,8 @@ void CurlPool::Resize (size_t maximumPoolSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CURL* CurlPool::RetrieveHandle ()
     {
+    BeMutexHolder lock(m_poolCriticalSection);
     CURL* handle;
-    m_poolCriticalSection.Enter ();
 
     if (m_pool.size () > 0)
         {
@@ -72,7 +63,6 @@ CURL* CurlPool::RetrieveHandle ()
         handle = curl_easy_init ();
         }
 
-    m_poolCriticalSection.Leave ();
     return handle;
     }
 
@@ -81,7 +71,10 @@ CURL* CurlPool::RetrieveHandle ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  CurlPool::ReturnHandle (CURL* handle)
     {
-    m_poolCriticalSection.Enter ();
+    BeMutexHolder lock(m_poolCriticalSection);
+
+    if (nullptr == handle)
+        return;
 
     if (m_pool.size () < m_maximumPoolSize)
         {
@@ -92,6 +85,4 @@ void  CurlPool::ReturnHandle (CURL* handle)
         {
         curl_easy_cleanup (handle);
         }
-
-    m_poolCriticalSection.Leave ();
     }

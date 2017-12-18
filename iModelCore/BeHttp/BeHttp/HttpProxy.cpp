@@ -113,11 +113,13 @@ Utf8String HttpProxy::ToString() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Travis.Cobbs           09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<HttpProxy> HttpProxy::GetProxiesForUrl(Utf8String url) const
+BentleyStatus HttpProxy::GetProxiesForUrl(Utf8StringCR requestUrl, bvector<HttpProxy>& proxiesOut) const
     {
-    bvector<HttpProxy> proxies;
-    if (ShouldBypassUrl(url))
-        return proxies;
+    proxiesOut.clear();
+
+    if (ShouldBypassUrl(requestUrl))
+        return SUCCESS;
+
     if (m_pacResponseTask)
         {
         Response& pacResponse = m_pacResponseTask->GetResult();
@@ -127,27 +129,27 @@ bvector<HttpProxy> HttpProxy::GetProxiesForUrl(Utf8String url) const
             if (nullptr != body)
                 m_pacScript = body->AsString();
             m_pacResponseTask = nullptr;
-            LOG.infov("HttpProxy: PAC downloaded and loaded");
+            LOG.infov("HttpProxy: PAC file '%s' downloaded and loaded", pacResponse.GetEffectiveUrl().c_str());
             }
         else
             {
             Utf8String status = Response::ToStatusString(pacResponse.GetConnectionStatus(), pacResponse.GetHttpStatus());
-            LOG.infov("HttpProxy: PAC did not download %s", status.c_str());
+            LOG.errorv("HttpProxy: PAC file '%s' did not download: '%s'", pacResponse.GetEffectiveUrl().c_str(), status.c_str());
+            return ERROR;
             }
-        if (m_pacScript.empty())
-            m_pacUrl.clear();
         }
+
     bvector<Utf8String> proxyUrls;
-    if (!m_pacUrl.empty())
-        proxyUrls = GetProxyUrlsFromPacScript(url);
+    if (!m_pacUrl.empty() && SUCCESS != GetProxyUrlsFromPacScript(requestUrl, proxyUrls))
+        return ERROR;
     if (proxyUrls.empty() && !m_proxyUrl.empty())
         proxyUrls.push_back(m_proxyUrl);
-    proxies.reserve(proxyUrls.size());
+
+    proxiesOut.reserve(proxyUrls.size());
     for (auto const& proxyUrl : proxyUrls)
-        {
-        proxies.push_back(HttpProxy(proxyUrl, m_credentials));
-        }
-    return proxies;
+        proxiesOut.push_back(HttpProxy(proxyUrl, m_credentials));
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -168,46 +170,134 @@ bool HttpProxy::ShouldBypassUrl(Utf8StringCR url) const
     return false;
     }
 
+#if defined(BENTLEY_WIN32)
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HttpProxy::GetLastErrorAsString()
+    {
+    //Returns the last Win32 error, in string format. Returns an empty string if there is no error.
+
+    //Get the error message, if any.
+    DWORD errorId = ::GetLastError();
+    if (errorId == 0)
+        return "0"; // No error message has been recorded
+
+    LPSTR buffer = nullptr;
+    size_t size = FormatMessageA 
+        (
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr, errorId, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR) &buffer, 0, nullptr
+        );
+
+    Utf8String message(buffer, size);
+    LocalFree(buffer);
+
+    if (message.empty())
+        {
+        // Handle common errors in HttpProxy code
+        Utf8CP label = nullptr;
+        switch (errorId)
+            {
+            case ERROR_WINHTTP_UNRECOGNIZED_SCHEME :
+                label = "The URL specified a scheme other than HTTP or HTTPS."; break;
+            case ERROR_WINHTTP_UNABLE_TO_DOWNLOAD_SCRIPT :
+                label = "The PAC file cannot be downloaded."; break;
+            case ERROR_WINHTTP_BAD_AUTO_PROXY_SCRIPT:
+                label = "An error occurred executing the script code in the Proxy Auto-Configuration (PAC) file."; break;
+            default:
+                label = "Windows error"; break;
+            }
+        message.Sprintf("%s (%d)", label, errorId);
+        }
+
+    return message;
+    }
+#endif // BENTLEY_WIN32
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Travis.Cobbs           09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR url) const
+BentleyStatus HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvector<Utf8String>& proxyUrlsOut) const
     {
-    bvector<Utf8String> proxyUrls;
+    BentleyStatus result = SUCCESS;
 #if defined(BENTLEYCONFIG_OS_APPLE)
-    CFStringRef pacScript = CFStringCreateWithCString(nullptr, m_pacScript.c_str(), kCFStringEncodingUTF8);
-    CFStringRef urlString = CFStringCreateWithCString(nullptr, url.c_str(), kCFStringEncodingUTF8);
+    CFStringRef pacScript = CFStringCreateWithCStringNoCopy(nullptr, m_pacScript.c_str(), kCFStringEncodingUTF8, kCFAllocatorNull);
+    CFStringRef urlString = CFStringCreateWithCStringNoCopy(nullptr, requestUrl.c_str(), kCFStringEncodingUTF8, kCFAllocatorNull);
     CFURLRef urlRef = CFURLCreateWithString(nullptr, urlString, nullptr);
-    CFArrayRef proxies = CFNetworkCopyProxiesForAutoConfigurationScript(pacScript, urlRef, nullptr);
-    CFRelease(pacScript);
-    CFRelease(urlString);
-    CFRelease(urlRef);
-    if (proxies == nullptr)
+
+    Utf8String errorStr;
+    CFErrorRef error = nullptr;
+    CFArrayRef proxies = nullptr;
+    
+    if (nullptr != pacScript && nullptr != urlRef)
         {
-        return proxyUrls;
+        proxies = CFNetworkCopyProxiesForAutoConfigurationScript(pacScript, urlRef, &error);
         }
-    for (CFIndex i = 0; i < CFArrayGetCount(proxies); ++i)
+    else
         {
-        CFDictionaryRef proxyDict = (CFDictionaryRef)CFArrayGetValueAtIndex(proxies, i);
-        CFStringRef proxyType = (CFStringRef)CFDictionaryGetValue(proxyDict, kCFProxyTypeKey);
-        if (CFStringCompare(proxyType, kCFProxyTypeHTTP, 0) == kCFCompareEqualTo ||
-            CFStringCompare(proxyType, kCFProxyTypeHTTPS, 0) == kCFCompareEqualTo)
+        errorStr = "HttpProxy: Failed to read PAC script";
+        }
+
+    if (nullptr != pacScript)
+        CFRelease(pacScript);
+    if (nullptr != urlString)
+        CFRelease(urlString);
+    if (nullptr != urlRef)
+        CFRelease(urlRef);
+    
+    if (nullptr != error)
+        {
+        CFStringRef errorStrCf = CFErrorCopyDescription(error);
+        char buffer[256];
+        CFStringGetCString(errorStrCf, buffer, sizeof(buffer), kCFStringEncodingUTF8);
+        errorStr = buffer;
+        if (errorStr.empty())
+            errorStr = "Uknown error";
+        CFRelease(errorStrCf);
+        CFRelease(error);
+        }
+
+    if (errorStr.empty() && nullptr == proxies)
+        {
+        if (errorStr.empty())
+            errorStr = "Uknown error";
+        }
+
+    if (nullptr != proxies)
+        {
+        for (CFIndex i = 0; i < CFArrayGetCount(proxies); ++i)
             {
-            Utf8String proxyUrl = GetProxyUrlIos(proxyDict, kCFProxyHostNameKey, kCFProxyPortNumberKey);
-            if (!proxyUrl.empty())
-                proxyUrls.push_back(proxyUrl);
+            CFDictionaryRef proxyDict = (CFDictionaryRef)CFArrayGetValueAtIndex(proxies, i);
+            CFStringRef proxyType = (CFStringRef)CFDictionaryGetValue(proxyDict, kCFProxyTypeKey);
+            if (CFStringCompare(proxyType, kCFProxyTypeHTTP, 0) == kCFCompareEqualTo ||
+                CFStringCompare(proxyType, kCFProxyTypeHTTPS, 0) == kCFCompareEqualTo)
+                {
+                Utf8String proxyUrl = GetProxyUrlIos(proxyDict, kCFProxyHostNameKey, kCFProxyPortNumberKey);
+                if (!proxyUrl.empty())
+                    proxyUrlsOut.push_back(proxyUrl);
+                }
+            else if (CFStringCompare(proxyType, kCFProxyTypeNone, 0) == kCFCompareEqualTo)
+                proxyUrlsOut.push_back("");
             }
-        else if (CFStringCompare(proxyType, kCFProxyTypeNone, 0) == kCFCompareEqualTo)
-            proxyUrls.push_back("");
         }
-    CFRelease(proxies);
+
+    if (nullptr != proxies)
+        CFRelease(proxies);
+
+    if (!errorStr.empty())
+        {
+        LOG.errorv("HttpProxy: Failed to get proxy URL from PAC file '%s'. Error: '%s'", m_pacUrl.c_str(), errorStr.c_str());
+        return ERROR;
+        }
+
 #else // BENTLEYCONFIG_OS_APPLE
 #if defined(BENTLEY_WIN32)
     HINTERNET hSession = WinHttpOpen(L"User", WINHTTP_ACCESS_TYPE_NO_PROXY, nullptr, nullptr, 0);
     if (nullptr != hSession)
         {
-        WString urlw(url.c_str(), true);
+        WString urlw(requestUrl.c_str(), true);
         WString pacUrlw(m_pacUrl.c_str(), true);
         WINHTTP_AUTOPROXY_OPTIONS pacOptions;
         WINHTTP_PROXY_INFO proxyInfo;
@@ -222,19 +312,16 @@ bvector<Utf8String> HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR url) const
                 Utf8String proxyServerSetting(proxyInfo.lpszProxy);
                 bvector<Utf8String> hosts;
                 SplitHosts(proxyServerSetting, hosts);
-                if (!hosts.empty())
+                for (Utf8StringCR host : hosts)
                     {
-                    for (Utf8StringCR host : hosts)
+                    Utf8String scheme = BeUri(host).GetScheme();
+                    if (scheme.empty())
                         {
-                        Utf8String scheme = BeUri(host).GetScheme();
-                        if (scheme.empty())
-                            {
-                            proxyUrls.push_back("http://" + host);
-                            }
-                        else if (scheme == "http" || scheme == "https")
-                            {
-                            proxyUrls.push_back(host);
-                            }
+                        proxyUrlsOut.push_back("http://" + host);
+                        }
+                    else if (scheme == "http" || scheme == "https")
+                        {
+                        proxyUrlsOut.push_back(host);
                         }
                     }
                 }
@@ -243,17 +330,19 @@ bvector<Utf8String> HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR url) const
             }
         else
             {
-            LOG.errorv("HttpProxy::GetProxyUrlsFromPacScript() WinHttpGetProxyForUrl() failed: %d", GetLastError());
+            LOG.errorv("HttpProxy: Failed to get proxy URL from PAC file '%s'. Error: '%s'", m_pacUrl.c_str(), GetLastErrorAsString().c_str());
+            result = ERROR;
             }
         WinHttpCloseHandle(hSession);
         }
     else
         {
-        LOG.errorv("HttpProxy::GetProxyUrlsFromPacScript() WinHttpOpen() failed: %d", GetLastError());
+        LOG.errorv("HttpProxy: WinHttpOpen failed. Error: '%s'", GetLastErrorAsString().c_str());
+        result = ERROR;
         }
 #endif // BENTLEY_WIN32
 #endif // !BENTLEYCONFIG_OS_APPLE
-    return proxyUrls;
+    return result;
     }
 
 #if defined(BENTLEYCONFIG_OS_APPLE)
@@ -496,7 +585,7 @@ bool HttpProxy::DownloadPacScriptIfNeeded()
         {
         // The PAC URL isn't file://, http://, or https://, so we don't know what
         // to do with it. Ignore it.
-        m_pacUrl.clear();
+        LOG.infov("HttpProxy: Unknown scheme in PAC URL: '%s'", m_pacUrl.c_str());
         }
     return !m_proxyUrl.empty();
 #endif // !BENTLEY_WIN32

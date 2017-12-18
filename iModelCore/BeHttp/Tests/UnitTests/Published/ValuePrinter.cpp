@@ -22,13 +22,14 @@ std::ostream& operator << (std::ostream &o, ConnectionStatus status)
     {
     static std::map<ConnectionStatus, Utf8String> names
         {
-        TO_VALUE_STRING_PAIR (ConnectionStatus::None),
-        TO_VALUE_STRING_PAIR (ConnectionStatus::OK),
-        TO_VALUE_STRING_PAIR (ConnectionStatus::Canceled),
-        TO_VALUE_STRING_PAIR (ConnectionStatus::CouldNotConnect),
-        TO_VALUE_STRING_PAIR (ConnectionStatus::ConnectionLost),
-        TO_VALUE_STRING_PAIR (ConnectionStatus::Timeout),
-        TO_VALUE_STRING_PAIR (ConnectionStatus::UnknownError),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::None),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::OK),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::Canceled),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::CouldNotConnect),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::CouldNotResolveProxy),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::ConnectionLost),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::Timeout),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::UnknownError),
         };
 
     Utf8String name = names[status];

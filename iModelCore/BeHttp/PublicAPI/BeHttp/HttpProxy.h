@@ -40,7 +40,8 @@ private:
     bool LoadSystemProxySettings();
     bool ShouldBypassUrl(Utf8StringCR url) const;
     bool DownloadPacScriptIfNeeded();
-    bvector<Utf8String> GetProxyUrlsFromPacScript(Utf8StringCR url) const;
+    BentleyStatus GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvector<Utf8String>& proxyUrlsOut) const;
+    static Utf8String GetLastErrorAsString();
 
 public:
     //! Create empty proxy
@@ -63,8 +64,11 @@ public:
     void SetProxyUrl(Utf8StringCR proxyUrl) { m_proxyUrl = proxyUrl; }
     BEHTTP_EXPORT void SetProxyServer(Utf8StringCR server, int port);
 
-    //! Resolve proxies for given URL. Will use available information for URL or PAC script
-    BEHTTP_EXPORT bvector<HttpProxy> GetProxiesForUrl(Utf8String url) const;
+    //! Resolve proxies for given URL. Will use available information in proxy configuration - proxy URL or PAC script.
+    //! @param[in] requestUrl HTTP request URL to get proxy for.
+    //! @param[out] proxiesOut proxies to use. Should use first working proxy or fail request. Will override provided list.
+    //! @return ERROR if proxy configuration is incorrect or could not resolve proxies. SUCCESS otherwise.
+    BEHTTP_EXPORT BentleyStatus GetProxiesForUrl(Utf8StringCR requestUrl, bvector<HttpProxy>& proxiesOut) const;
 
     //! Set Proxy Access Configuration script URL to use for proxy URLs
     BEHTTP_EXPORT void SetPacUrl(Utf8StringCR pacUrl);

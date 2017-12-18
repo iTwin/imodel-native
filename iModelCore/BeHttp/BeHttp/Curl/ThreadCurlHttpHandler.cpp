@@ -58,6 +58,8 @@ AsyncTaskPtr<Response> ThreadCurlHttpHandler::PerformThreadedRequest(RequestCR r
                     continue;
 
                 CURL* curl = curlRequest.GetCurlHandle();
+                if (nullptr == curl)
+                    break;
                 CURLcode status = curl_easy_perform(curl);
                 curlRequest.FinalizeRequest(status);
                 retry = curlRequest.ShouldRetry();
@@ -86,7 +88,8 @@ AsyncTaskPtr<Response> ThreadCurlHttpHandler::PerformThreadedRequest(RequestCR r
 //                {
 //                request.PrepareRequest ();
 //                CURL* curl = request.GetCurlHandle ();
-//
+//                  //if (nullptr == curl)
+//                  // break;
 //                culrmStatus = curl_multi_add_handle (multi, curl);
 //                BeAssert (CURLM_OK == culrmStatus);
 //
