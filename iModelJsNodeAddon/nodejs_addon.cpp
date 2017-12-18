@@ -1126,6 +1126,34 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         }
 
     //=======================================================================================
+    // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value InsertCodeSpecSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, name);
+        REQUIRE_ARGUMENT_INTEGER(1, specType);
+        REQUIRE_ARGUMENT_INTEGER(2, scopeReq);
+
+        if ((uint32_t)CodeScopeSpec::Type::Model != specType && (uint32_t)CodeScopeSpec::Type::ParentElement != specType &&
+            (uint32_t)CodeScopeSpec::Type::RelatedElement != specType && (uint32_t)CodeScopeSpec::Type::ParentElement != specType)
+            {
+            Napi::TypeError::New(Env(), "Argument 1 must be a CodeScopeSpec.Type").ThrowAsJavaScriptException();
+            }
+        else if ((uint32_t)CodeScopeSpec::ScopeRequirement::ElementId != scopeReq && (uint32_t)CodeScopeSpec::ScopeRequirement::FederationGuid != scopeReq)
+            {
+            Napi::TypeError::New(Env(), "Argument 2 must be a CodeScopeSpec.ScopeRequirement").ThrowAsJavaScriptException();
+            }
+        
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Utf8String idStr;
+        DgnDbStatus status = AddonUtils::InsertCodeSpec(idStr, GetDgnDb(), name, (CodeScopeSpec::Type)specType, (CodeScopeSpec::ScopeRequirement)scopeReq);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), idStr.c_str()));
+        }
+
+    //=======================================================================================
     // insert a new Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
     //! @bsimethod
     //=======================================================================================
@@ -1472,6 +1500,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("insertModelSync", &NodeAddonDgnDb::InsertModelSync),
             InstanceMethod("updateModelSync", &NodeAddonDgnDb::UpdateModelSync),
             InstanceMethod("deleteModelSync", &NodeAddonDgnDb::DeleteModelSync),
+            InstanceMethod("insertCodeSpecSync", &NodeAddonDgnDb::InsertCodeSpecSync),
             InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::StartGetElementPropertiesForDisplayWorker),
             InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::StartGetECClassMetaData),
             InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),

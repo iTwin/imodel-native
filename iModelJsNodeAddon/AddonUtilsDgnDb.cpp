@@ -303,6 +303,38 @@ DgnDbStatus AddonUtils::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static CodeScopeSpec getCodeScopeSpec(CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq)
+    {
+    switch (cstype)
+        {
+        case CodeScopeSpec::Type::Repository:       return CodeScopeSpec::CreateRepositoryScope(cssreq);
+        case CodeScopeSpec::Type::Model:            return CodeScopeSpec::CreateModelScope(cssreq);
+        case CodeScopeSpec::Type::ParentElement:    return CodeScopeSpec::CreateParentElementScope(cssreq);
+        case CodeScopeSpec::Type::RelatedElement:   return CodeScopeSpec::CreateRelatedElementScope(nullptr, cssreq);
+        }
+
+    BeAssert(false && "it's up to imodeljs-backend to keep these enums straight!");
+    return CodeScopeSpec::CreateRepositoryScope();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AddonUtils::InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq)
+    {
+    CodeSpecPtr codeSpec = CodeSpec::Create(db, name.c_str(), getCodeScopeSpec(cstype, cssreq));
+    if (!codeSpec.IsValid())
+        return DgnDbStatus::BadRequest;
+    DgnDbStatus status = codeSpec->Insert();
+    if (DgnDbStatus::Success != status)
+        return status;
+    idStr = codeSpec->GetCodeSpecId().ToHexStr();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus AddonUtils::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)

@@ -82,6 +82,7 @@ struct AddonUtils
     static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value& props);
     static DgnDbStatus UpdateElement(DgnDbR db, Json::Value& props);
     static DgnDbStatus DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static DgnDbStatus InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq);
     static DgnDbStatus InsertModel(JsonValueR results, DgnDbR db, Json::Value& props);
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value& props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);

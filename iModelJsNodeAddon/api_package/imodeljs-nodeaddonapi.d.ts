@@ -191,6 +191,15 @@ declare class NodeAddonDgnDb {
   deleteElementSync(elemIdJson: string): IModelStatus;
 
   /**
+   * Insert a new CodeSpec
+   * @param name name of the CodeSpec
+   * @param specType must be one of CodeScopeSpec::Type
+   * @param scopeReq must be one of CodeScopeSpec::ScopeRequirement
+   * @return an error or the ID of the new CodeSpec (as a hex string)
+   */
+  insertCodeSpecSync(name: string, specType: number, scopeReq: number): ErrorStatusOrResult<IModelStatus, string>;
+
+  /**
    * Insert a model.
    * @param modelProps The model's properties, in stringified JSON format.
    * @return non-zero error status if the operation failed.
