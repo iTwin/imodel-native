@@ -205,6 +205,12 @@ declare class NodeAddonDgnDb {
    */
   executeQuery(ecsql: string, bindings: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<DbResult>, string>): void;
 
+  /**
+   * Execute a test known to exist using the id recognized by the addon's test execution handler
+   * @param id The id of the test you wish to execute
+   * @param params A JSON string that should all of the data/parameters the test needs to function correctly
+   */
+  executeTestById(id: number, params: string): any;
 }
 
 /* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */

@@ -19,6 +19,7 @@
 
 #include <json/value.h>
 #include "AddonUtils.h"
+#include "TestUtils.h"
 #include <ECObjects/ECSchema.h>
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
@@ -1324,6 +1325,35 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
         }
 
+	// ========================================================================================
+	// Test method handler
+	// Note: This is where the developer may specify, given an ID from JS, what function should
+	//		 executed and returned.
+	// ========================================================================================
+	Napi::Value ExecuteTestById(const Napi::CallbackInfo& info)
+		{
+		REQUIRE_DB_TO_BE_OPEN_SYNC
+		REQUIRE_ARGUMENT_INTEGER(0, testId);
+		REQUIRE_ARGUMENT_STRING(1, params);
+		RETURN_IF_HAD_EXCEPTION_SYNC
+
+		switch (testId)
+			{
+			case 1:
+				return Napi::String::New(Env(), TestUtils::ViewStateCreate(params).ToString().c_str());
+			case 2:
+				return Napi::String::New(Env(), TestUtils::ViewStateVolumeAdjustments(params).ToString().c_str());
+			case 3:
+				return Napi::String::New(Env(), TestUtils::ViewStateLookAt(params).ToString().c_str());
+			case 4:
+				return Napi::String::New(Env(), TestUtils::DeserializeGeometryStream(params).ToString().c_str());
+			case 5:
+				return Napi::String::New(Env(), TestUtils::BuildKnownGeometryStream(params).ToString().c_str());
+			default:
+				return Napi::String::New(Env(), "{}");
+			}
+		}
+
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
         {
@@ -1351,6 +1381,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("insertModelSync", &NodeAddonDgnDb::InsertModelSync),
             InstanceMethod("updateModelSync", &NodeAddonDgnDb::UpdateModelSync),
             InstanceMethod("deleteModelSync", &NodeAddonDgnDb::DeleteModelSync),
+			InstanceMethod("executeTestById", &NodeAddonDgnDb::ExecuteTestById),
             InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::StartGetElementPropertiesForDisplayWorker),
             InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::StartGetECClassMetaData),
             InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),
