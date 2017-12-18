@@ -57,6 +57,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)nodejs_addon$(oext) : $(baseDir)nodejs_addon.cpp $(DgnV8Depends) ${MultiCompileDepends}
 
+$(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp $(baseDir)TestUtils.h ${MultiCompileDepends}
+
 $(o)AddonUtils$(oext) : $(baseDir)AddonUtils.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
 
 $(o)AddonUtilsDgnDb$(oext) : $(baseDir)AddonUtilsDgnDb.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
@@ -139,6 +141,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 

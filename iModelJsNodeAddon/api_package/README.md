@@ -68,8 +68,8 @@ If you change the addon's API in native code, e.g., by adding a method, you must
 You must rebuild the addon itself and the packages whenever you change the version. Note that the version number is *burned into the code*. This allows imodeljs-backend to do its runtime version-compatibility check. So, it's not enough just to regenerate the packages -- you must also rebuild the addon. After changing the version number, re-build like this:
 
 ```
-bb "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages -c
-bb "iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages
+bb -s"iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages -c
+bb -s"iModelJsNodeAddon;BuildAll" re iModelJsNodeAddonLib* MakePackages
 ```
 
 ## Test
