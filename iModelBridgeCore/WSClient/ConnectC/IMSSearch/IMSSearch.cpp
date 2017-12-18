@@ -8,7 +8,7 @@
 
 #include "CWSCCInternal.h"
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                                    07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* imsUserBuffer)

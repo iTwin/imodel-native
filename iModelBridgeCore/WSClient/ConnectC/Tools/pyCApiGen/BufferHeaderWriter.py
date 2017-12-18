@@ -30,7 +30,7 @@ class BufferHeaderWriter(Writer):
         self.__write_wsg_get_functions()
 
     def __write_wsg_free_buffer_function_definition(self):
-        self._file.write("/************************************************************************************//**\n")
+        self._file.write("/****************************************************************************************\n")
         self._file.write("* Free an allocated wsg buffer\n")
         self._file.write("****************************************************************************************/\n")
         self._file.write("CallStatus WSG_DataBufferFree\n")

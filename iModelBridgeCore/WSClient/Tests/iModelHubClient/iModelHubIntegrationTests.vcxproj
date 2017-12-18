@@ -73,11 +73,14 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\WebServices\iModelHub\iModelHubTests.h" />
     <ClInclude Include="IMHSClientExe\IMHSClientExe.h" />
     <ClInclude Include="Integration\EventParserTests.h" />
+    <ClInclude Include="Integration\FakeServer.h" />
     <ClInclude Include="Integration\IntegrationTestsBase.h" />
     <ClInclude Include="Integration\IntegrationTestsHelper.h" />
     <ClInclude Include="Integration\MockHttpHandler.h" />
+    <ClInclude Include="Integration\MockIMHubHttpHandler.h" />
     <ClInclude Include="Integration\PerformanceTestsHelper.h" />
     <ClInclude Include="Integration\LRPJobBackdoorAPI.h" />
+    <ClInclude Include="Integration\RequestHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\ScopedDgnDbServerHost.cpp" />
@@ -88,11 +91,15 @@
     <ClCompile Include="Integration\EventParserTests.cpp" />
     <ClCompile Include="Integration\Events_Tests.cpp" />
     <ClCompile Include="Integration\Failure_Tests.cpp" />
+    <ClCompile Include="Integration\FakeServer.cpp" />
+    <ClCompile Include="Integration\FakeServerTests.cpp" />
     <ClCompile Include="Integration\LRP_Tests.cpp" />
+    <ClCompile Include="Integration\MockIMHubHttpHandler.cpp" />
     <ClCompile Include="Integration\MultiProgressCallbackHandlerTests.cpp" />
     <ClCompile Include="Integration\Performance_Tests.cpp" />
     <ClCompile Include="Integration\iModelManager_Tests.cpp" />
     <ClCompile Include="Integration\WebsiteSeedFile_Tests.cpp" />
+    <ClCompile Include="Integration\RequestHandler.cpp" />
     <ClCompile Include="Integration\Retry_Tests.cpp" />
     <ClCompile Include="Integration\IntegrationTestsBase.cpp" />
     <ClCompile Include="Integration\IntegrationTestsHelper.cpp" />

@@ -18,11 +18,11 @@
 
 #include <WebServices/ConnectC/CWSCC.h>
 
-/************************************************************************************//**
+/****************************************************************************************
 * \defgroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
 * \{
 ****************************************************************************************/
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of files
 * \param[in] apiHandle API object
 * \param[out] fileBuffer Buffer of File data
@@ -34,7 +34,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* fileBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new file
 * \param[in] apiHandle API object
 * \param[in] Alias
@@ -78,7 +78,7 @@ bool* DownloadAccess,
 CWSCCDATABUFHANDLE folderHasContentBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get file information buffer
 * \param[in] apiHandle API object
 * \param[in] fileId File ID to select
@@ -92,7 +92,7 @@ WCharCP fileId,
 CWSCCDATABUFHANDLE* fileBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Update an existing file
 * \param[in] apiHandle API object
 * \param[in] fileId File ID to update
@@ -136,7 +136,7 @@ WCharCP DeletedTimeStamp,
 bool* DownloadAccess
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Delete a file
 * \param[in] apiHandle API object
 * \param[in] fileId File ID to remove
@@ -148,7 +148,7 @@ CWSCCHANDLE apiHandle,
 WCharCP fileId
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of folders
 * \param[in] apiHandle API object
 * \param[out] folderBuffer Buffer of Folder data
@@ -160,7 +160,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* folderBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new folder
 * \param[in] apiHandle API object
 * \param[in] FolderName
@@ -196,7 +196,7 @@ WCharCP DeletedTimeStamp,
 CWSCCDATABUFHANDLE folderHasContentBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get folder information buffer
 * \param[in] apiHandle API object
 * \param[in] folderId Folder ID to select
@@ -210,7 +210,7 @@ WCharCP folderId,
 CWSCCDATABUFHANDLE* folderBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Update an existing folder
 * \param[in] apiHandle API object
 * \param[in] folderId Folder ID to update
@@ -246,7 +246,7 @@ bool* IsAutomatedPublishingFolder,
 WCharCP DeletedTimeStamp
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Delete a folder
 * \param[in] apiHandle API object
 * \param[in] folderId Folder ID to remove
@@ -258,7 +258,7 @@ CWSCCHANDLE apiHandle,
 WCharCP folderId
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of publishfiles
 * \param[in] apiHandle API object
 * \param[out] publishfileBuffer Buffer of PublishFile data
@@ -270,7 +270,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* publishfileBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new publishfile
 * \param[in] apiHandle API object
 * \param[in] InputFiles
@@ -282,7 +282,7 @@ CWSCCHANDLE apiHandle,
 WCharCP InputFiles
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get publishfile information buffer
 * \param[in] apiHandle API object
 * \param[in] publishfileId PublishFile ID to select
@@ -296,7 +296,7 @@ WCharCP publishfileId,
 CWSCCDATABUFHANDLE* publishfileBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Update an existing publishfile
 * \param[in] apiHandle API object
 * \param[in] publishfileId PublishFile ID to update
@@ -310,7 +310,7 @@ WCharCP publishfileId,
 WCharCP InputFiles
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Delete a publishfile
 * \param[in] apiHandle API object
 * \param[in] publishfileId PublishFile ID to remove
@@ -323,7 +323,7 @@ WCharCP publishfileId
 );
 
 /** \} */
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Initialize a folderhascontent buffer
 * \param[out] folderhascontentBuffer Buffer of folderhascontent data
 * \param[in] FolderId

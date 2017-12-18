@@ -8,7 +8,7 @@
 #include "CWSCCInternal.h"
 #include <Bentley/BeSystemInfo.h>
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * Initializer.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -69,7 +69,7 @@ void* securityStoreInitializer
         );
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -118,7 +118,7 @@ void* securityStoreInitializer
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * Constructor.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -172,7 +172,7 @@ void* securityStoreInitializer
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle)
@@ -185,7 +185,7 @@ CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle)
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V4
@@ -233,7 +233,7 @@ WCharCP ProjectGuid
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebSServiceClientC_CreateRootProjectShareStorage
@@ -300,7 +300,7 @@ WCharCP projectGuid
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE apiHandle)
@@ -312,7 +312,7 @@ CharCP ConnectWebServicesClientC_GetLastStatusMessage(CWSCCHANDLE apiHandle)
     return api->GetLastStatusMessage().c_str();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle)
@@ -324,7 +324,7 @@ CharCP ConnectWebServicesClientC_GetLastStatusDescription(CWSCCHANDLE apiHandle)
     return api->GetLastStatusDescription().c_str();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE apiHandle, Utf8String& instanceId)
@@ -337,7 +337,7 @@ CallStatus ConnectWebServicesClientC_GetLastCreatedObjectInstanceId(CWSCCHANDLE 
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebServicesClientC_ConfigureWebProxy
@@ -363,7 +363,7 @@ Utf8CP password
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus wsresultToConnectWebServicesClientCStatus(LPCWSCC api, WSError::Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription)
@@ -411,7 +411,7 @@ CallStatus wsresultToConnectWebServicesClientCStatus(LPCWSCC api, WSError::Id er
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                                    04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description)
@@ -433,7 +433,7 @@ CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus sta
 
 WSLocalState ConnectWebServicesClientC_internal::s_localState = WSLocalState();
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectWebServicesClientC_internal::ConnectWebServicesClientC_internal
@@ -472,7 +472,7 @@ void*   secureStoreInitializer
         );
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::Initialize
@@ -531,7 +531,7 @@ void* securityStoreInitializer
     m_connectSignInManager->CheckAndUpdateToken();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectWebServicesClientC_internal::~ConnectWebServicesClientC_internal()
@@ -542,7 +542,7 @@ ConnectWebServicesClientC_internal::~ConnectWebServicesClientC_internal()
     UrlProvider::Uninitialize();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectWebServicesClientC_internal::AttemptLoginUsingCredentials(Credentials credentials)
@@ -557,7 +557,7 @@ bool ConnectWebServicesClientC_internal::AttemptLoginUsingCredentials(Credential
     return isSuccess;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectWebServicesClientC_internal::AttemptLoginUsingToken(SamlTokenPtr token)
@@ -572,7 +572,7 @@ bool ConnectWebServicesClientC_internal::AttemptLoginUsingToken(SamlTokenPtr tok
     return isSuccess;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::CreateProxyHttpClient
@@ -587,7 +587,7 @@ Utf8String password
     m_customHandler = proxy;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::CreateWSRepositoryClient
@@ -601,7 +601,7 @@ Utf8String repositoryId
     m_repositoryClients.insert(make_bpair(serverUrl + repositoryId, clientPtr));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::CreateSolrClient
@@ -624,7 +624,7 @@ Utf8String collection
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::SetStatusMessage(Utf8String message)
@@ -632,7 +632,7 @@ void ConnectWebServicesClientC_internal::SetStatusMessage(Utf8String message)
     m_lastStatusMessage = message;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::SetStatusDescription(Utf8String desc)
@@ -640,7 +640,7 @@ void ConnectWebServicesClientC_internal::SetStatusDescription(Utf8String desc)
     m_lastStatusDescription = desc;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::SetCreatedObjectResponse (WSUploadResponse response)
@@ -648,7 +648,7 @@ void ConnectWebServicesClientC_internal::SetCreatedObjectResponse (WSUploadRespo
     m_lastCreatedObjectResponse = response;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::SetObjectsResponse (WSObjectsResponse response)
@@ -656,7 +656,7 @@ void ConnectWebServicesClientC_internal::SetObjectsResponse (WSObjectsResponse r
     m_lastObjectsResponse = response;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusMessage()
@@ -664,7 +664,7 @@ Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusMessage()
     return m_lastStatusMessage;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
@@ -672,7 +672,7 @@ Utf8StringCR ConnectWebServicesClientC_internal::GetLastStatusDescription()
     return m_lastStatusDescription;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectWebServicesClientC_internal::GetLastCreatedObjectInstanceId (Utf8String& instanceId)

@@ -18,11 +18,11 @@
 
 #include <WebServices/ConnectC/CWSCC.h>
 
-/************************************************************************************//**
+/****************************************************************************************
 * \defgroup ConnectWebServicesClientCAPIFunctions ConnectWebServicesClientC API Function Declarations
 * \{
 ****************************************************************************************/
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of organization_v2s
 * \param[in] apiHandle API object
 * \param[out] organization_v2Buffer Buffer of Organization_V2 data
@@ -34,7 +34,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* organization_v2Buffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new organization_v2
 * \param[in] apiHandle API object
 * \param[in] OrganizationGuid
@@ -48,7 +48,7 @@ WCharCP OrganizationGuid,
 WCharCP OrganizationName
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get organization_v2 information buffer
 * \param[in] apiHandle API object
 * \param[in] organization_v2Id Organization_V2 ID to select
@@ -62,7 +62,7 @@ WCharCP organization_v2Id,
 CWSCCDATABUFHANDLE* organization_v2Buffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of orgprojects
 * \param[in] apiHandle API object
 * \param[out] orgprojectBuffer Buffer of OrgProject data
@@ -74,7 +74,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* orgprojectBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new orgproject
 * \param[in] apiHandle API object
 * \param[in] Name
@@ -92,7 +92,7 @@ int32_t* Status,
 bool* IsRbacEnabled
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get orgproject information buffer
 * \param[in] apiHandle API object
 * \param[in] orgprojectId OrgProject ID to select
@@ -106,7 +106,7 @@ WCharCP orgprojectId,
 CWSCCDATABUFHANDLE* orgprojectBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Update an existing orgproject
 * \param[in] apiHandle API object
 * \param[in] orgprojectId OrgProject ID to update
@@ -126,7 +126,7 @@ int32_t* Status,
 bool* IsRbacEnabled
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Delete a orgproject
 * \param[in] apiHandle API object
 * \param[in] orgprojectId OrgProject ID to remove
@@ -138,7 +138,7 @@ CWSCCHANDLE apiHandle,
 WCharCP orgprojectId
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of project_v4s
 * \param[in] apiHandle API object
 * \param[out] project_v4Buffer Buffer of Project_V4 data
@@ -150,7 +150,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* project_v4Buffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new project_v4
 * \param[in] apiHandle API object
 * \param[in] UltimateRefId
@@ -192,7 +192,7 @@ WCharCP Data_Location_Guid,
 WCharCP Country_Code
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get project_v4 information buffer
 * \param[in] apiHandle API object
 * \param[in] project_v4Id Project_V4 ID to select
@@ -206,7 +206,7 @@ WCharCP project_v4Id,
 CWSCCDATABUFHANDLE* project_v4Buffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Update an existing project_v4
 * \param[in] apiHandle API object
 * \param[in] project_v4Id Project_V4 ID to update
@@ -250,7 +250,7 @@ WCharCP Data_Location_Guid,
 WCharCP Country_Code
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Delete a project_v4
 * \param[in] apiHandle API object
 * \param[in] project_v4Id Project_V4 ID to remove
@@ -262,7 +262,7 @@ CWSCCHANDLE apiHandle,
 WCharCP project_v4Id
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of projectfavorite_v4s
 * \param[in] apiHandle API object
 * \param[out] projectfavorite_v4Buffer Buffer of ProjectFavorite_V4 data
@@ -274,7 +274,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* projectfavorite_v4Buffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get projectfavorite_v4 information buffer
 * \param[in] apiHandle API object
 * \param[in] projectfavorite_v4Id ProjectFavorite_V4 ID to select
@@ -288,7 +288,7 @@ WCharCP projectfavorite_v4Id,
 CWSCCDATABUFHANDLE* projectfavorite_v4Buffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Delete a projectfavorite_v4
 * \param[in] apiHandle API object
 * \param[in] projectfavorite_v4Id ProjectFavorite_V4 ID to remove
@@ -300,7 +300,7 @@ CWSCCHANDLE apiHandle,
 WCharCP projectfavorite_v4Id
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of projectmrus
 * \param[in] apiHandle API object
 * \param[out] projectmruBuffer Buffer of ProjectMRU data
@@ -312,7 +312,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* projectmruBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Create a new projectmru
 * \param[in] apiHandle API object
 * \param[in] ProjectGuid
@@ -328,7 +328,7 @@ WCharCP ProjectName,
 WCharCP LastModified
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get projectmru information buffer
 * \param[in] apiHandle API object
 * \param[in] projectmruId ProjectMRU ID to select
@@ -342,7 +342,7 @@ WCharCP projectmruId,
 CWSCCDATABUFHANDLE* projectmruBuffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Query WSG to get list of projectmrudetail_v4s
 * \param[in] apiHandle API object
 * \param[out] projectmrudetail_v4Buffer Buffer of ProjectMRUDetail_V4 data
@@ -354,7 +354,7 @@ CWSCCHANDLE apiHandle,
 CWSCCDATABUFHANDLE* projectmrudetail_v4Buffer
 );
 
-/************************************************************************************//**
+/****************************************************************************************
 * \brief Get projectmrudetail_v4 information buffer
 * \param[in] apiHandle API object
 * \param[in] projectmrudetail_v4Id ProjectMRUDetail_V4 ID to select

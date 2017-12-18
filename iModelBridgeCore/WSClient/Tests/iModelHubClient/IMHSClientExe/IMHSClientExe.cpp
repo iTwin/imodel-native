@@ -19,14 +19,14 @@ USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Algirdas.Mikoliunas                12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IMHSClientExe::IMHSClientExe()
     {
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Algirdas.Mikoliunas                12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
@@ -60,7 +60,7 @@ BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
     return BSISUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Algirdas.Mikoliunas                12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, Utf8String guid)
@@ -87,7 +87,7 @@ BriefcasePtr IMHSClientExe::AcquireBriefcase(iModelConnectionPtr connection, Utf
     return briefcaseResult.GetValue();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Algirdas.Mikoliunas                12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 int IMHSClientExe::CreateNewModelAndPush(Utf8String projectId, Utf8String imodelId)
@@ -133,7 +133,7 @@ int IMHSClientExe::CreateNewModelAndPush(Utf8String projectId, Utf8String imodel
     return 0;
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas              12/16
 * This exe is used in the integration test PerformanceTests.PullMergeAndPush_PerformanceTests
 * This test acquires briefcase from imodel, adds one model, waits 5 seconds and pushes changes to the server

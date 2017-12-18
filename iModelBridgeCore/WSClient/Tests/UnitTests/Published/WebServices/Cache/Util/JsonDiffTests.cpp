@@ -35,7 +35,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 using namespace ::testing;
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_OldAndNewAreNull_ReturnsEmptyJson)
@@ -46,7 +46,7 @@ TEST_F(JsonDiffTests, GetChanges_OldAndNewAreNull_ReturnsEmptyJson)
         R"({ })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_OldIsNull_ReturnsAllNew)
@@ -57,7 +57,7 @@ TEST_F(JsonDiffTests, GetChanges_OldIsNull_ReturnsAllNew)
         R"({"A" : "foo"})");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_NewIsNullAndIgnoreDeletions_ReturnsEmpty)
@@ -68,7 +68,7 @@ TEST_F(JsonDiffTests, GetChanges_NewIsNullAndIgnoreDeletions_ReturnsEmpty)
         R"({ })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_NewIsNullAndFindDeletions_ReturnsAllOldAsDeleted)
@@ -79,7 +79,7 @@ TEST_F(JsonDiffTests, GetChanges_NewIsNullAndFindDeletions_ReturnsAllOldAsDelete
         R"({"A" : null})");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_EmptyJsons_ReturnsEmptyJson)
@@ -90,7 +90,7 @@ TEST_F(JsonDiffTests, GetChanges_EmptyJsons_ReturnsEmptyJson)
         R"({ })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_EqualJson_ReturnsEmptyJson)
@@ -141,7 +141,7 @@ TEST_F(JsonDiffTests, GetChanges_EqualJson_ReturnsEmptyJson)
         R"({ })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_MemberValueDifferent_ReturnsDiff)
@@ -177,7 +177,7 @@ TEST_F(JsonDiffTests, GetChanges_MemberValueDifferent_ReturnsDiff)
         R"({ "A" : "2", "C" : "3" })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_MemberAdded_ReturnsDiff)
@@ -228,7 +228,7 @@ TEST_F(JsonDiffTests, GetChanges_MemberAdded_ReturnsDiff)
         R"({ "A" : [1,2,3] })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_MemberDeleted_IgnoresDeletedMembers)
@@ -279,7 +279,7 @@ TEST_F(JsonDiffTests, GetChanges_MemberDeleted_IgnoresDeletedMembers)
         R"({ })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_MemberDeletedAndFindDeletions_ReturnsNullMember)
@@ -335,7 +335,7 @@ TEST_F(JsonDiffTests, GetChanges_MemberDeletedAndFindDeletions_ReturnsNullMember
         R"({ "A" : null, "B" : "boo" })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_MemberDeletedExistsInOutputAndFindDeletions_ReturnsNullMember)
@@ -347,7 +347,7 @@ TEST_F(JsonDiffTests, GetChanges_MemberDeletedExistsInOutputAndFindDeletions_Ret
         R"({ "A" : null })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_MemberTypeChanged_ReturnsNewMember)
@@ -436,7 +436,7 @@ TEST_F(JsonDiffTests, GetChanges_MemberTypeChanged_ReturnsNewMember)
         R"({ "A" : [] })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_StringPropertyDifferentAndExistsInOutput_ReturnsDiff)
@@ -490,7 +490,7 @@ TEST_F(JsonDiffTests, GetChanges_StringPropertyDifferentAndExistsInOutput_Return
         R"({ "A" : "bar" })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_PropertyDifferentExistsInDeepOutput_ReturnsDiff)
@@ -520,7 +520,7 @@ TEST_F(JsonDiffTests, GetChanges_PropertyDifferentExistsInDeepOutput_ReturnsDiff
         R"({ "A" : false, "B" : { "C" : [4,5], "D" : "bar" } })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_PropertyDifferentDeeply_ReturnsDiff)
@@ -561,7 +561,7 @@ TEST_F(JsonDiffTests, GetChanges_PropertyDifferentDeeply_ReturnsDiff)
         R"({ "B": { "C" : false } })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsElementRemoved_ReturnsEmptyJson)
@@ -572,7 +572,7 @@ TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsElementRemoved_ReturnsEmptyJson)
         R"({ "A" : [] })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyEqual_ReturnsEmptyJson)
@@ -583,7 +583,7 @@ TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyEqual_ReturnsEmptyJson)
         R"({ })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyDifferent_ReturnsNewArray)
@@ -594,7 +594,7 @@ TEST_F(JsonDiffTests, GetChanges_ArrayOfIntsPropertyDifferent_ReturnsNewArray)
         R"({ "A" : [3,4] })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_ArrayOfObjectsPropertyEqual_ReturnsEmptyJson)
@@ -605,7 +605,7 @@ TEST_F(JsonDiffTests, GetChanges_ArrayOfObjectsPropertyEqual_ReturnsEmptyJson)
         R"({ })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_ArrayOfObjectsPropertyDifferent_ReturnsEmptyJson)
@@ -616,7 +616,7 @@ TEST_F(JsonDiffTests, GetChanges_ArrayOfObjectsPropertyDifferent_ReturnsEmptyJso
         R"({ "A" : [ {"A":2} ] })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_ArrayOfDeepObjectsPropertyDifferent_ReturnsEmptyJson)
@@ -627,7 +627,7 @@ TEST_F(JsonDiffTests, GetChanges_ArrayOfDeepObjectsPropertyDifferent_ReturnsEmpt
         R"({ "A" : [ {"A":[ {"A":"eq", "B":false} ]} ] })");
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(JsonDiffTests, GetChanges_ArrayOfDeepObjectsPropertyEqual_ReturnsEmptyJson)

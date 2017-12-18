@@ -36,7 +36,7 @@ struct TestKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ProxyServerAdmin : Dgn::DgnPlatformLib::Host::RepositoryAdmin

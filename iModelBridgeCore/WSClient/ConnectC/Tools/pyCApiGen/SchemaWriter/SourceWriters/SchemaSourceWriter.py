@@ -4,7 +4,7 @@ from SchemaWriter.SchemaWriter import SchemaWriter
 
 
 class SchemaSourceWriter(SchemaWriter):
-    _COMMENT_BsiMethod = "/*---------------------------------------------------------------------------------**//**\n" \
+    _COMMENT_BsiMethod = "/*--------------------------------------------------------------------------------------+\n" \
                          "* @bsimethod                                                                    {0}\n"       \
                          "+---------------+---------------+---------------+---------------+---------------+------*/\n" \
         .format(datetime.date.today().strftime('%m/%Y'))

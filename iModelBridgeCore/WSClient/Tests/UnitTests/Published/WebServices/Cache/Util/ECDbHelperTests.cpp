@@ -13,7 +13,7 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap)
@@ -32,7 +32,7 @@ TEST_F(ECDbHelperTests, Erase_MultipleInstanceKeysInMap_ErasesSpecificKeyFromMap
     ASSERT_EQ(ECInstanceId(UINT64_C(3)), map.begin()->second);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, ToECInstanceIdList_MultipleInstanceKeysInMap_CombinesToCommaSeperatedList)
@@ -45,7 +45,7 @@ TEST_F(ECDbHelperTests, ToECInstanceIdList_MultipleInstanceKeysInMap_CombinesToC
     EXPECT_STREQ("4,5,6", ECDbHelper::ToECInstanceIdList(map.begin(), map.end()).c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, ToECInstanceIdList_EmptyMap_EmptyString)
@@ -54,7 +54,7 @@ TEST_F(ECDbHelperTests, ToECInstanceIdList_EmptyMap_EmptyString)
     EXPECT_STREQ("", ECDbHelper::ToECInstanceIdList(map.begin(), map.end()).c_str());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_BothMapsEmpty_ReturnsEmpty)
@@ -67,7 +67,7 @@ TEST_F(ECDbHelperTests, MergeMultiMaps_BothMapsEmpty_ReturnsEmpty)
     ASSERT_EQ(0, mergedMap.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_FirstMapEmpty_ReturnsSecondMap)
@@ -82,7 +82,7 @@ TEST_F(ECDbHelperTests, MergeMultiMaps_FirstMapEmpty_ReturnsSecondMap)
     EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(1))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_SecondMapEmpty_ReturnsFirstMap)
@@ -98,7 +98,7 @@ TEST_F(ECDbHelperTests, MergeMultiMaps_SecondMapEmpty_ReturnsFirstMap)
     EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(1))));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, MergeMultiMaps_MultipleValues_ReturnsMerged)

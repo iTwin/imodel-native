@@ -12,7 +12,7 @@
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelAdmin::iModelAdmin(ClientP client) : m_client(client)
@@ -20,7 +20,7 @@ iModelAdmin::iModelAdmin(ClientP client) : m_client(client)
     m_managers = std::make_unique<bmap<Utf8String, iModelManagerPtr>>();
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRepositoryManagerP iModelAdmin::_GetRepositoryManager(DgnDbR db) const

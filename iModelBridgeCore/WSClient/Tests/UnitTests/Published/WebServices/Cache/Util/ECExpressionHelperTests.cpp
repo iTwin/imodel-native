@@ -14,7 +14,7 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_EmptyString_ReturnsEmpty)
@@ -31,7 +31,7 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_EmptyString_ReturnsEmpty)
     EXPECT_EQ(0, properties.size());
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithPropertyAndVariousSymbols_ReturnsProperty)
@@ -62,7 +62,7 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithPropertyAndVario
     EXPECT_CONTAINS(properties, ecProperty);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithMultipleProperties_ReturnsProperties)
@@ -85,7 +85,7 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithMultipleProperti
     }
 
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithFakeProperties_ReturnsOnlyValidProperties)

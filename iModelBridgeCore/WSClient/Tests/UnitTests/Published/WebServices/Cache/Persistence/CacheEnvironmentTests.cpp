@@ -13,7 +13,7 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheEnvironmentTests, Ctor_Default_EmptyPaths)
@@ -24,7 +24,7 @@ TEST_F(CacheEnvironmentTests, Ctor_Default_EmptyPaths)
     EXPECT_EQ(L"", env.externalFileCacheDir);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheEnvironmentTests, Ctor_PersistentAndTemporaryPaths_SetsPaths)
@@ -35,7 +35,7 @@ TEST_F(CacheEnvironmentTests, Ctor_PersistentAndTemporaryPaths_SetsPaths)
     EXPECT_EQ(L"", env.externalFileCacheDir);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheEnvironmentTests, GetPath_UnknownLocationPassed_Empty)
@@ -49,7 +49,7 @@ TEST_F(CacheEnvironmentTests, GetPath_UnknownLocationPassed_Empty)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheEnvironmentTests, GetPath_FileCacheLocationPassed_ReturnsApproapriatePath)
@@ -63,7 +63,7 @@ TEST_F(CacheEnvironmentTests, GetPath_FileCacheLocationPassed_ReturnsApproapriat
     EXPECT_EQ(L"C", env.GetPath(FileCache::External));
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheEnvironmentTests, GetRootFolderId_UnknownLocationPassed_Negative)
@@ -73,7 +73,7 @@ TEST_F(CacheEnvironmentTests, GetRootFolderId_UnknownLocationPassed_Negative)
     BeTest::SetFailOnAssert(true);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CacheEnvironmentTests, GetRootFolderId_FileCacheLocationPassed_ReturnsValid)
