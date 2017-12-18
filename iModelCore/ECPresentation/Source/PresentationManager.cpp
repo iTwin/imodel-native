@@ -26,6 +26,11 @@ IECPresentationManagerR IECPresentationManager::GetManager() {BeAssert(nullptr !
 folly::Future<DataContainer<NavNodeCPtr>> IECPresentationManager::GetRootNodes(ECDbCR db, PageOptionsCR pageOptions, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return DataContainer<NavNodeCPtr>();
+        }
     return _GetRootNodes(*connection, pageOptions, options);
     }
 
@@ -35,6 +40,11 @@ folly::Future<DataContainer<NavNodeCPtr>> IECPresentationManager::GetRootNodes(E
 folly::Future<size_t> IECPresentationManager::GetRootNodesCount(ECDbCR db, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return 0;
+        }
     return _GetRootNodesCount(*connection, options);
     }
 
@@ -44,6 +54,11 @@ folly::Future<size_t> IECPresentationManager::GetRootNodesCount(ECDbCR db, JsonV
 folly::Future<DataContainer<NavNodeCPtr>> IECPresentationManager::GetChildren(ECDbCR db, NavNodeCR node, PageOptionsCR pageOptions, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return DataContainer<NavNodeCPtr>();
+        }
     return _GetChildren(*connection, node, pageOptions, options);
     }
 
@@ -53,6 +68,11 @@ folly::Future<DataContainer<NavNodeCPtr>> IECPresentationManager::GetChildren(EC
 folly::Future<size_t> IECPresentationManager::GetChildrenCount(ECDbCR db, NavNodeCR node, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return 0;
+        }
     return _GetChildrenCount(*connection, node, options);
     }
 
@@ -62,6 +82,11 @@ folly::Future<size_t> IECPresentationManager::GetChildrenCount(ECDbCR db, NavNod
 folly::Future<NavNodeCPtr> IECPresentationManager::GetParent(ECDbCR db, NavNodeCR node, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::makeFuture<NavNodeCPtr>(nullptr);
+        }
     return _GetParent(*connection, node, options);
     }
 
@@ -71,6 +96,11 @@ folly::Future<NavNodeCPtr> IECPresentationManager::GetParent(ECDbCR db, NavNodeC
 folly::Future<bvector<SelectClassInfo>> IECPresentationManager::GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, bvector<ECClassCP> const& input, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return bvector<SelectClassInfo>();
+        }
     return _GetContentClasses(*connection, preferredDisplayType, input, options);
     }
 
@@ -80,6 +110,11 @@ folly::Future<bvector<SelectClassInfo>> IECPresentationManager::GetContentClasse
 folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::makeFuture<ContentDescriptorCPtr>(nullptr);
+        }
     return _GetContentDescriptor(*connection, preferredDisplayType, selectionInfo, options);
     }
 
@@ -89,6 +124,11 @@ folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescripto
 folly::Future<ContentCPtr> IECPresentationManager::GetContent(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::makeFuture<ContentCPtr>(nullptr);
+        }
     return _GetContent(*connection, descriptor, selectionInfo, pageOptions, options);
     }
 
@@ -98,6 +138,11 @@ folly::Future<ContentCPtr> IECPresentationManager::GetContent(ECDbCR db, Content
 folly::Future<size_t> IECPresentationManager::GetContentSetSize(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return 0;
+        }
     return _GetContentSetSize(*connection, descriptor, selectionInfo, options);
     }
 
@@ -107,6 +152,11 @@ folly::Future<size_t> IECPresentationManager::GetContentSetSize(ECDbCR db, Conte
 folly::Future<NavNodeCPtr> IECPresentationManager::GetNode(ECDbCR db, uint64_t nodeId)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::makeFuture<NavNodeCPtr>(nullptr);
+        }
     return _GetNode(*connection, nodeId);
     }
 
@@ -116,6 +166,11 @@ folly::Future<NavNodeCPtr> IECPresentationManager::GetNode(ECDbCR db, uint64_t n
 folly::Future<folly::Unit> IECPresentationManager::NotifyNodeChecked(ECDbCR db, uint64_t nodeId)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::unit;
+        }
     return _OnNodeChecked(*connection, nodeId);
     }
 
@@ -125,6 +180,11 @@ folly::Future<folly::Unit> IECPresentationManager::NotifyNodeChecked(ECDbCR db, 
 folly::Future<folly::Unit> IECPresentationManager::NotifyNodeUnchecked(ECDbCR db, uint64_t nodeId) 
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::unit;
+        }
     return _OnNodeUnchecked(*connection, nodeId);
     }
 
@@ -134,6 +194,11 @@ folly::Future<folly::Unit> IECPresentationManager::NotifyNodeUnchecked(ECDbCR db
 folly::Future<folly::Unit> IECPresentationManager::NotifyNodeExpanded(ECDbCR db, uint64_t nodeId) 
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::unit;
+        }
     return _OnNodeExpanded(*connection, nodeId);
     }
 
@@ -143,6 +208,11 @@ folly::Future<folly::Unit> IECPresentationManager::NotifyNodeExpanded(ECDbCR db,
 folly::Future<folly::Unit> IECPresentationManager::NotifyNodeCollapsed(ECDbCR db, uint64_t nodeId) 
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::unit;
+        }
     return _OnNodeCollapsed(*connection, nodeId);
     }
 
@@ -152,6 +222,11 @@ folly::Future<folly::Unit> IECPresentationManager::NotifyNodeCollapsed(ECDbCR db
 folly::Future<folly::Unit> IECPresentationManager::NotifyAllNodesCollapsed(ECDbCR db, JsonValueCR options) 
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return folly::unit;
+        }
     return _OnAllNodesCollapsed(*connection, options);
     }
 
@@ -161,6 +236,11 @@ folly::Future<folly::Unit> IECPresentationManager::NotifyAllNodesCollapsed(ECDbC
 folly::Future<bool> IECPresentationManager::HasChild(ECDbCR db, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR extendedOptions) 
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return false;
+        }
     return _HasChild(*connection, parentNode, childNodeKey, extendedOptions);
     }
 
@@ -328,6 +408,11 @@ folly::Future<ECInstanceChangeResult> IECPresentationManager::SaveValueChange(EC
 folly::Future<bvector<ECInstanceChangeResult>> IECPresentationManager::SaveValueChange(ECDbCR db, bvector<ChangedECInstanceInfo> const& instanceInfos, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR extendedOptions)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return bvector<ECInstanceChangeResult>();
+        }
     return _SaveValueChange(*connection, instanceInfos, propertyAccessor, value, extendedOptions);
     }
 
@@ -424,6 +509,11 @@ static NodesPathElement GetPath(NavNodeCR root, bmap<uint64_t, bvector<NavNodeCP
 folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNodesPaths(ECDbCR db, Utf8CP filterText, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
+    if (connection.IsNull())
+        {
+        BeAssert(false && "Unknown connection");
+        return bvector<NodesPathElement>();
+        }
     return _GetFilteredNodes(*connection, filterText, options).then([&](bvector<NavNodeCPtr> filteredNodes)
         {
         bvector<NavNodeCPtr> roots;
