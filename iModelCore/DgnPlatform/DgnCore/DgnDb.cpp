@@ -154,7 +154,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
 
     DbResult result;
-    if (BE_SQLITE_OK != (result = MergeSchemaRevisions(params)))
+    if (BE_SQLITE_OK != (result = ProcessSchemaRevisions(params)))
         return result;
 
     if (status == SchemaStatus::SchemaUpgradeRequired && domainUpgradeOptions != SchemaUpgradeOptions::DomainUpgradeOptions::SkipUpgrade)
@@ -189,12 +189,14 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::MergeSchemaRevisions(Db::OpenParams const& params)
+DbResult DgnDb::ProcessSchemaRevisions(Db::OpenParams const& params)
     {
-    bvector<DgnRevisionCP> revisions = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions()).GetUpgradeRevisions();
+    SchemaUpgradeOptions schemaUpgradeOptions = (((DgnDb::OpenParams&) params).GetSchemaUpgradeOptions());
+    bvector<DgnRevisionCP> revisions = schemaUpgradeOptions.GetUpgradeRevisions();
     if (revisions.empty())
         return BE_SQLITE_OK;
 
+    SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions = schemaUpgradeOptions.GetRevisionUpgradeOptions();
     for (DgnRevisionCP revision : revisions)
         {
         if (!revision)
@@ -203,7 +205,23 @@ DbResult DgnDb::MergeSchemaRevisions(Db::OpenParams const& params)
             return BE_SQLITE_ERROR_SchemaUpgradeFailed;
             }
 
-        if (RevisionStatus::Success != Revisions().DoMergeRevision(*revision))
+        RevisionStatus status = RevisionStatus::Success;
+        switch (revisionUpgradeOptions)
+            {
+            case SchemaUpgradeOptions::RevisionUpgradeOptions::Merge:
+                status = Revisions().DoMergeRevision(*revision);
+                break;
+            case SchemaUpgradeOptions::RevisionUpgradeOptions::Reverse:
+                status = Revisions().DoReverseRevision(*revision);
+                break;
+            case SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate:
+                status = Revisions().DoReinstateRevision(*revision);
+                break;
+            default:
+                BeAssert(false && "Unkonwn revision upgrade option");
+            }
+
+        if (RevisionStatus::Success != status)
             return BE_SQLITE_ERROR_SchemaUpgradeFailed;
         }
 

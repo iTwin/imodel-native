@@ -48,7 +48,10 @@ protected:
     void RestoreTestFile(Db::OpenMode openMode = Db::OpenMode::ReadWrite);
 
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
-    void MergeSchemaRevision(DgnRevisionCR revision);
+    void ProcessSchemaRevision(DgnRevisionCR revision, SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions);
+    void MergeSchemaRevision(DgnRevisionCR revision) { ProcessSchemaRevision(revision, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge); }
+    void ReverseSchemaRevision(DgnRevisionCR revision) { ProcessSchemaRevision(revision, SchemaUpgradeOptions::RevisionUpgradeOptions::Reverse); }
+    void ReinstateSchemaRevision(DgnRevisionCR revision) { ProcessSchemaRevision(revision, SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate); }
 
     static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueUtf8CP()); }
     static void ExpectCode(DgnCodeCR code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
@@ -217,13 +220,13 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2017
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::MergeSchemaRevision(DgnRevisionCR revision)
+void RevisionTestFixture::ProcessSchemaRevision(DgnRevisionCR revision, SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions)
     {
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
     CloseDgnDb();
     
     DbResult openStatus;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revision));
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revision, revisionUpgradeOptions));
     m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
@@ -1463,6 +1466,20 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     ASSERT_TRUE(m_db->ColumnExists("TestTable2", "Column2"));
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=1", 0)); // i.e., null value
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=2", 0)); // i.e., null value
+
+    // Reverse revision 4
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen, m_db->Revisions().ReverseRevision(*revision4));
+    BeTest::SetFailOnAssert(true);
+    ReverseSchemaRevision(*revision4);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // i.e., null value
+
+    // Reinstate revision 4
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen, m_db->Revisions().ReinstateRevision(*revision4));
+    BeTest::SetFailOnAssert(true);
+    ReinstateSchemaRevision(*revision4);
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 1)); // i.e., null value
     }
 
 //---------------------------------------------------------------------------------------

@@ -1156,6 +1156,7 @@ int HitList::Compare(HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority,
 +---------------+---------------+---------------+---------------+---------------+------*/
 int HitList::AddHit (HitDetail* newHit, bool allowDuplicates, bool comparePriority)
     {
+#if defined (NOT_NOW_USE_REVERSE_ITERATOR)
     HitList::iterator currHit = begin();
 
     HitDetail*  oldHit;
@@ -1190,6 +1191,24 @@ int HitList::AddHit (HitDetail* newHit, bool allowDuplicates, bool comparePriori
 
     // this increments ref count of newHit
     insert(begin()+index, newHit);
+#else
+    // NOTE: Starting from the end ensures that all edge hits will get compared against surface hits to properly
+    //       determine their visiblity. With a forward iterator, an edge hit could end up being chosen that is obscured
+    //       if it is closer to the eye than an un-obscured edge hit.
+    size_t index = 0;
+
+    for (auto currHit = rbegin(); currHit != rend(); ++currHit)
+        {
+        int comparison = Compare(currHit->get(), newHit, comparePriority, true);
+        if (comparison >= 0)
+            continue;
+        index = std::distance(begin(), currHit.base());
+        break;
+        }
+
+    // this increments ref count of newHit
+    insert(begin()+index, newHit);
+#endif
 
 #if defined (NOT_NOT_DUMP)
     printf("HIT LIST COUNT: %d\n", GetCount());
