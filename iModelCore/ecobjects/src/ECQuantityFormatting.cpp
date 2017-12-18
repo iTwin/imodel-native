@@ -145,10 +145,19 @@ Json::Value ECQuantityFormatting::FormatQuantityJson(BEU::QuantityCR qty, BEF::F
 BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, Utf8CP unitName)
     {
     Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, unitName);
-    BEU::Quantity qty = fps.GetQuantity();
+    Formatting::FormatProblemCode prob;
+    BEU::Quantity qty = fps.GetQuantity(&prob);
     return qty;
     }
 
+BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, Formatting::FormatUnitSetCR fus)
+    {
+    Utf8String unitName = fus.GetUnitName();
+    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, unitName.c_str());
+    Formatting::FormatProblemCode prob;
+    BEU::Quantity qty = fps.GetQuantity(&prob, &fus);
+    return qty;
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------

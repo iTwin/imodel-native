@@ -39,6 +39,7 @@ struct ECQuantityFormatting
     ECOBJECTS_EXPORT ECValue static GetQuantityValue(BEU::QuantityCR qty, UnitCP useUnit = nullptr);
 
     ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr);
+    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, Formatting::FormatUnitSetCR fus);
     ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist = nullptr, KindOfQuantityCP koq = nullptr, size_t indx = 0, Formatting::FormatProblemCode* prob = nullptr);
 
     //! Create FormatUnitGroup from a KindOfQuantity. Use FormatUnitGroup::HasProblem to test returned FormatUnitGroup.
