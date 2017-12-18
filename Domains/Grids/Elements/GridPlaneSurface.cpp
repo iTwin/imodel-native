@@ -516,6 +516,46 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchLineGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    double height = GetEndElevation() - GetStartElevation();
+
+    if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    DPoint2d staPt, endPt;
+    DPoint3d startPoint, endPoint;
+    endPoint.z = startPoint.z = 0.0;
+    if (BentleyStatus::SUCCESS != GetBaseLine(staPt, endPt))
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    startPoint.x = staPt.x;
+    startPoint.y = staPt.y;
+    endPoint.x = endPt.x;
+    endPoint.y = endPt.y;
+
+    CurveVectorPtr newBase = CurveVector::CreateLinear({ startPoint, endPoint }, CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+
+    Transform translation = Transform::From(0.0, 0.0, GetStartElevation());
+
+    DVec3d up = DVec3d::From(0, 0, height);
+    DgnExtrusionDetail detail = DgnExtrusionDetail(newBase->Clone(translation), up, false);
+    ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
+
+    SetGeometry(geometry);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void                            SketchLineGridSurface::SetBaseLine
 (
 DPoint2d startPoint,

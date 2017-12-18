@@ -162,6 +162,39 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchSplineGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    double height = GetEndElevation() - GetStartElevation();
+
+    if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    ICurvePrimitivePtr baseSpline = GetBaseSpline();
+
+    if (baseSpline.IsNull())
+        return Dgn::DgnDbStatus::ValidationFailed;  //if failed to get base spline, fail
+
+    Transform translation = Transform::From(0.0, 0.0, GetStartElevation());
+
+    CurveVectorPtr newBase = CurveVector::Create(baseSpline);
+    DVec3d up = DVec3d::From(0, 0, height);
+    DgnExtrusionDetail detail = DgnExtrusionDetail(newBase->Clone(translation), up, false);
+    ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
+
+    SetGeometry(geometry);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void                            SketchSplineGridSurface::SetBaseSpline
 (
 ICurvePrimitivePtr splinePrimitive
