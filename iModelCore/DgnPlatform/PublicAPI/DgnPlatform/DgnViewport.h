@@ -90,8 +90,8 @@ protected:
     DecorationAnimator(BeDuration duration) : m_start(BeTimePoint::Now()), m_stop(m_start + duration) { }
 
     //! Override to update animation state, which can then be used on the next call to produce decorations.
-    //! @param IN viewport The viewport being animated
-    //! @param IN durationPercent The ratio of duration elapsed, in [0.0,1.0]
+    //! @param[in] viewport The viewport being animated
+    //! @param[in] durationPercent The ratio of duration elapsed, in [0.0,1.0]
     //! @returns RemoveMe::Yes to immediately remove this animator, RemoveMe::No to continue animating until duration elapsed or animator interrupted.
     //! If this animator is interrupted, this function will be immediately invoked with durationPercent=1.0.
     virtual RemoveMe _AnimateDecorations(DgnViewportR viewport, double durationPercent) { return RemoveMe::No; }
