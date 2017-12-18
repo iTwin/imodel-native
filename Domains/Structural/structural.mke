@@ -41,20 +41,20 @@ always:
 CCPchOpts = $(UsePrecompiledHeaderOptions)
 CPchOpts  = $(UsePrecompiledHeaderOptions)
 
-StructBase            = $(_MakeFilePath)
-StructBasePublicAPI   = $(StructBase)PublicAPI/StructuralDomain/
+StructBase              = $(_MakeFilePath)
+StructBasePublicAPI     = $(StructBase)PublicAPI/
 
 StructCommon            = $(_MakeFilePath)StructuralCommon/
-StructCommonPublicAPI   = $(StructCommon)PublicAPI/StructuralCommon/
+StructCommonPublicAPI   = $(_MakeFilePath)PublicAPI/StructuralCommon/
 
-StructPhys            = $(_MakeFilePath)StructuralPhysical/
-StructPhysPublicAPI   = $(StructPhys)PublicAPI/StructuralPhysical/
+StructPhys              = $(_MakeFilePath)StructuralPhysical/
+StructPhysPublicAPI     = $(_MakeFilePath)PublicAPI/StructuralPhysical/
 
-StructProfiles            = $(_MakeFilePath)StructuralProfiles/
-StructProfilesPublicAPI   = $(StructProfiles)PublicAPI/StructuralProfiles/
+StructProfiles          = $(_MakeFilePath)StructuralProfiles/
+StructProfilesPublicAPI = $(_MakeFilePath)PublicAPI/StructuralProfiles/
 
-StructMaterial            = $(_MakeFilePath)StructuralMaterial/
-StructMaterialPublicAPI   = $(StructMaterial)PublicAPI/StructuralMaterial/
+StructMaterial          = $(_MakeFilePath)StructuralMaterial/
+StructMaterialPublicAPI = $(_MakeFilePath)PublicAPI/StructuralMaterial/
 #--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------

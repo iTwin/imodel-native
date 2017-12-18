@@ -11,7 +11,7 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <BeSQLite/BeSQLite.h>
 #include <Json/Json.h>
-#include <Bentley\BeAssert.h>
+#include <Bentley/BeAssert.h>
 #include <FormsDomain/Form.h>
 #include <FormsDomain/StraightExtrusion.h>
 

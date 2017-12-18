@@ -7,15 +7,11 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-targetAPIDir = $(BuildContext)PublicAPI/StructuralDomain/
+always:
+    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\=$(_MakeFilePath)PublicAPI\*.h"
+    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\StructuralCommon\=$(_MakeFilePath)PublicAPI\StructuralCommon\*.h"
+    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\StructuralMaterial\=$(_MakeFilePath)PublicAPI\StructuralMaterial\*.h"
+    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\StructuralPhysical\=$(_MakeFilePath)PublicAPI\StructuralPhysical\*.h"
+    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralCommon.ecschema.xml=$(_MakeFilePath)StructuralCommon\StructuralCommon.ecschema.xml"
+    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralPhysical.ecschema.xml=$(_MakeFilePath)StructuralPhysical\StructuralPhysical.ecschema.xml"
 
-targetSchemasDir = $(BuildContext)ECSchemas/Domain/
-
-$(targetAPIDir)StructuralDomainApi.h : $(_MakeFilePath)PublicAPI\StructuralDomain\StructuralDomainApi.h
-    $(LinkFirstDepToFirstTarget)
-	
-$(targetAPIDir)StructuralDomainUtilities.h : $(_MakeFilePath)PublicAPI\StructuralDomain\StructuralDomainUtilities.h
-    $(LinkFirstDepToFirstTarget)
-
-%include $(_MakeFilePath)StructuralCommon/StructuralCommon.prewire.mki
-%include $(_MakeFilePath)StructuralPhysical/StructuralPhysical.prewire.mki
