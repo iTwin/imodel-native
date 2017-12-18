@@ -77,6 +77,7 @@ struct FormattingTestFixture
         static Utf8CP TestGrabber(Utf8CP input, size_t start= 0);
         static void TestSegments(Utf8CP input, size_t start, Utf8CP unitName);
         static void ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr);
+        static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer = nullptr);
         static void NamedSpecToJson(Utf8CP stdName);
         static void FormattingTraitsTest();
         static void FormattingSpecTraitsTest(Utf8CP testName, NumericFormatSpecCR spec, bool verbose);
@@ -89,6 +90,8 @@ struct FormattingTestFixture
         static void CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat);
         static void StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint = false);
         static void StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result);
+        static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);
+
         //static void LoadUnitSynonymsTest();
     };
 

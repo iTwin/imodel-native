@@ -669,7 +669,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         dval = -dval;
         sign = (m_signOption == ShowSignOption::NegativeParentheses) ? '(' : '-';
         }
-    bool sci = (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
+    bool sci = ((dval > 1.0e12) ||m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal);
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
     bool stops = (m_presentationType == PresentationType::Stop100 || m_presentationType == PresentationType::Stop1000);

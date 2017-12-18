@@ -245,7 +245,9 @@ TEST(FormattingTest, StdFormatting)
     FormattingTestFixture::TearDownL10N();
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, TestFUS)
     {
     LOG.infov("\n================  Testing FUS (start) ===========================");
@@ -276,15 +278,26 @@ TEST(FormattingTest, TestFUS)
     FormattingTestFixture::CrossValidateFUS("{\"unitName\":\"IN\"}", "{\"unitName\":\"IN\", \"formatName\":\"real\"}");
     FormattingTestFixture::CrossValidateFUS("{\"unitName\":\"CM\"}", "{\"unitName\":\"CM\", \"formatName\":\"real\"}");
 
-    //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
-    //FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
-    //FormattingTestFixture::ShowFUS("W/(M*C)");
-    //FormattingTestFixture::ShowFUS("TONNE/HR(real4");
-    //FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");
+    FormattingTestFixture::ShowQuantifiedValue("3' 4\"", "real", "IN");
+    FormattingTestFixture::ShowQuantifiedValue("3' 4\"", "realu", "IN", "_");
+    FormattingTestFixture::ShowQuantifiedValue("3'4\"", "realu", "IN", "_");
+    FormattingTestFixture::ShowQuantifiedValue("3'4 1/8\"", "realu", "IN", "_");
+    FormattingTestFixture::ShowQuantifiedValue("3'4 1/8\"", "fract16u", "IN", "_");
+    FormattingTestFixture::ShowQuantifiedValue("3'4 1/8\"", "fract16", "IN");
+    FormattingTestFixture::ShowQuantifiedValue("3.5 FT", "fract16", "IN");
+    FormattingTestFixture::ShowQuantifiedValue("3.6 FT", "real", "IN");
+    FormattingTestFixture::ShowQuantifiedValue("3.75 FT", "realu", "IN", "-");
+    FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "IN");
+    FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "M");
+    FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "MM");
+
     FormattingTestFixture::TearDownL10N();
 LOG.infov("================  Testing FUS (end) ===========================\n");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, FullySpecifiedFUS)
     {
     LOG.infov("\n================  FullySpecifiedFUS (start) ===========================");
@@ -923,6 +936,33 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", 2).c_str());
     EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", 2).c_str());
     
+    }
+
+    /*---------------------------------------------------------------------------------**//**
+                                                                                          * @bsimethod                            David.Fox-Rabinovitz                      01/17
+                                                                                          +---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FormattingTest, LargeNumbers)
+    {
+    LOG.info("\n=============== Testing Large Numbers ==================");
+    FormattingTestFixture::FormatDoubleTest(1.0, "real4");
+    FormattingTestFixture::FormatDoubleTest(1000.0, "real4");
+    FormattingTestFixture::FormatDoubleTest(1234567.0, "real4");
+    FormattingTestFixture::FormatDoubleTest(1234567891.0, "real4");
+    FormattingTestFixture::FormatDoubleTest(1234567891.0e+3, "real4");
+    FormattingTestFixture::FormatDoubleTest(1234567891.0e+6, "real4");
+    FormattingTestFixture::FormatDoubleTest(1234567891.0e+9, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+15, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+18, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+21, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+22, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+23, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+24, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+25, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+26, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+29, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+31, "real4");
+    FormattingTestFixture::FormatDoubleTest(-3.0479999999999998e+35, "real4");
+    LOG.info("\n=============== Testing Large Numbers (end) ==================\n");
     }
 
 /*---------------------------------------------------------------------------------**//**

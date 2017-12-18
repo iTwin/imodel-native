@@ -23,6 +23,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(CursorScanPoint)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericAccumulator)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumberGrabber)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSegment)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSet)
 
 struct CursorScanPoint
     {
@@ -191,6 +192,10 @@ struct FormatParsingSet
         BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
 
         UNITS_EXPORT void Init(Utf8CP input, size_t start, BEU::UnitCP unit);
+        //! Process's "colonized" expression using a Composite FUS
+        //! Returns error codes when FUS does not match the expression.
+        //! The input expression signature code mus be provided by the caller
+        UNITS_EXPORT BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatProblemCode* probCode = nullptr, FormatUnitSetCP fusP = nullptr);
 
     public:
         UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
@@ -198,7 +203,9 @@ struct FormatParsingSet
         void AddSegment(FormatParsingSegmentCR seg) { m_segs.push_back(seg); }
         bvector<FormatParsingSegment> GetSegments() { return m_segs; }
         UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
-        UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr);
+        UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatUnitSetCP fusP = nullptr);
+
+        //UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr);
     };
 
 struct NumericAccumulator

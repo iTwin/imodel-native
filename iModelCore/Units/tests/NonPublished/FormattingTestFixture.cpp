@@ -738,6 +738,23 @@ void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP u
         }
     LOG.info("=========== Parsing To Quantity End =============");
     }
+
+void FormattingTestFixture::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer)
+    {
+    FormatUnitSet fus = FormatUnitSet(formatName, fusUnit);
+    FormatParsingSet fps = FormatParsingSet(input, 0, fusUnit);
+    if (fus.HasProblem())
+        {
+        LOG.errorv("FUS-problem: %s", fus.GetProblemDescription().c_str());
+        return;
+        }
+    FormatProblemCode probCode;
+    BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
+    Utf8String qtyT = fus.FormatQuantity(qty, spacer);
+    LOG.errorv("Input:%s Quantity %s", input, qtyT.c_str());
+    return;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1167,7 +1184,15 @@ void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8
     LOG.info("=========== StandaloneFUSTest=============\n");
     }
 
+void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int prec, double round, Utf8CP expect)
+    {
+    Utf8String txt = NumericFormatSpec::StdFormatDouble(fmtName, dval, prec, round);
+    if(Utils::IsNameNullOrEmpty(expect))
+       LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
+    else
+        EXPECT_STREQ (expect, txt.c_str());
 
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 
