@@ -118,7 +118,7 @@
     <ECRelationshipClass typeName="StructuralElementOwnsFormAspect" description="" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="StructuralMember"/>
+            <Class class="StructuralElement"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
             <Class class="frm:Form"/>

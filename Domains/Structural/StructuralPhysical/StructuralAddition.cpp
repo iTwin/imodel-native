@@ -22,7 +22,7 @@ STRUCTURAL_DOMAIN_EXPORT StructuralAdditionPtr StructuralAddition::Create(Struct
     if (!modelId.IsValid())
         {
         return nullptr;
-            }
+        }
 
     Dgn::DgnDbR db = model.get()->GetDgnDb();
 
