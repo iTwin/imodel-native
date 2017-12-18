@@ -6,6 +6,10 @@ USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 
 RequestHandler::RequestHandler()
     {
+    BeFileName outPath;
+    BeTest::GetHost().GetOutputRoot(outPath);
+    outPath.AppendToPath(L"Server");
+    serverPath = outPath.GetWCharCP();
     }
 
 RequestHandler::~RequestHandler()
@@ -64,15 +68,29 @@ Response RequestHandler::PerformGetRequest(Request req)
     //get request with iModel--Nr
     return resp;
     }
-Response CreateiModel(Request req)
+Response RequestHandler::CreateiModel(Request req)
     {
     printf("here in Post\n");
+    HttpBodyPtr reqBody = req.GetRequestBody();
+    char readBuff[1000] ;
+    size_t buffSize = 100000;
+    reqBody->Read(readBuff, buffSize);
+    Utf8String reqBodyRead(readBuff);
+    Json::Reader reader;
+    Json::Value settings;
+
     Response resp;
+    if (!reader.Parse(reqBodyRead, settings))
+        return resp;
+
+    Utf8String fileName = settings["instance"]["properties"]["Name"].asString();
+    BeFileName fileToCreate(fileName);
+    FakeServer::CreateiModel(serverPath, fileToCreate.GetWCharCP());
     return resp;
     }
 Response RequestHandler::PerformOtherRequest(Request req)
     {
-    CreateiModel(req);
+    RequestHandler::CreateiModel(req);
     Response resp;
     return resp;
     }

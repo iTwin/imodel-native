@@ -1,7 +1,6 @@
 #include "FakeServer.h"
 
 
-
 BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath, WCharP seedFile)
     {
     //here place the seed file on mockserver and return a mock response
@@ -14,7 +13,7 @@ BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP 
         return BeFileNameStatus::UnknownError;
     return BeFileNameStatus::Success;
     }
-BeFileNameStatus FakeServer::CreateiModel(WCharCP serverPath, WCharP seedFile)
+BeFileNameStatus FakeServer::CreateiModel(WCharCP serverPath, WCharCP seedFile)
     {
 
     BeFileName servPathFile(serverPath);
