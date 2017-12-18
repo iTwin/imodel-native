@@ -1530,7 +1530,7 @@ void DgnElement::_FromJson(JsonValueR props)
         m_modelId.FromJson(props[json_model()]);
 
     if (props.isMember(json_code()))
-        m_code.FromJson2(props[json_code()]);
+        m_code = DgnCode::FromJson2(props[json_code()]);
 
     if (props.isMember(json_federationGuid()))
         m_federationGuid.FromString(props[json_federationGuid()].asString().c_str());
@@ -1557,7 +1557,7 @@ DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     {
     m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(val[DgnElement::json_classFullName()], db.GetClassLocater());
     m_modelId.FromJson(val[DgnElement::json_model()]);
-    m_code.FromJson(val[DgnElement::json_code()]);
+    m_code = DgnCode::FromJson2(val[DgnElement::json_code()]);
     m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
     m_userLabel = val[DgnElement::json_userLabel()].asString();
 

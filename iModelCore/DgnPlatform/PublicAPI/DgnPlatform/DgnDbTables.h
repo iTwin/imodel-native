@@ -339,8 +339,8 @@ public:
     BE_JSON_NAME(spec)
     BE_JSON_NAME(scope)
     BE_JSON_NAME(value)
-    DGNPLATFORM_EXPORT Json::Value ToJson2() const; //!< Convert to json, format 2
-    DGNPLATFORM_EXPORT static DgnCode FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2
+    DGNPLATFORM_EXPORT Json::Value ToJson2() const; //!< Convert to json, format 2. This is the imodeljs wire format. Do not change.
+    DGNPLATFORM_EXPORT static DgnCode FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2. This is the imodeljs wire format. Do not change.
 };
 
 typedef bset<DgnCode> DgnCodeSet;
