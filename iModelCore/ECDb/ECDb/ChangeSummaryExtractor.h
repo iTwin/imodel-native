@@ -119,8 +119,6 @@ struct ChangeSummaryExtractor final
 
 
         BentleyStatus InsertSummary(ECInstanceKey& summaryKey, Context&, ChangeSetArg const&) const;
-        BentleyStatus FindOrInsertChangeset(ECInstanceKey& changeSetKey, Context&, ChangeSetArg const&) const;
-        BentleyStatus FindOrInsertUser(ECInstanceKey& userKey, Context&, ChangeSetArg const&) const;
         DbResult InsertOrUpdate(Context&, InstanceChange const&) const;
         DbResult Delete(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
 

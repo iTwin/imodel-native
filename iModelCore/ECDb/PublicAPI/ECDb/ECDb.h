@@ -11,6 +11,7 @@
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
 #include <ECObjects/ECObjectsAPI.h>
+#include <json/json.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -56,42 +57,17 @@ enum class ChangedValueState
 //+===============+===============+===============+===============+===============+======
 struct ChangeSetArg final
     {
-    struct User final
-        {
-    private:
-        Utf8String m_id;
-        Utf8String m_name;
-
-    public:
-        User() {}
-        User(Utf8StringCR id, Utf8StringCR name) : m_id(id), m_name(name) {}
-        bool IsValid() const { return !m_id.empty(); }
-        Utf8StringCR GetId() const { return m_id; }
-        Utf8StringCR GetName() const { return m_name; }
-        };
-
     private:
         BeSQLite::IChangeSet& m_changeSet;
-        Utf8String m_changeSetId;
-        Utf8String m_description;
-        Utf8String m_parentChangeSetId;
-        DateTime m_pushDate;
-        User m_createdBy;
+        Utf8String m_extendedPropertiesJson;
 
     public:
         explicit ChangeSetArg(BeSQLite::IChangeSet& changeSet) : m_changeSet(changeSet) {}
-        ChangeSetArg& SetId(Utf8StringCR id) { m_changeSetId.assign(id); return *this; }
-        ChangeSetArg& SetDescription(Utf8StringCR description) { m_description = description; return *this; }
-        ChangeSetArg& SetParentId(Utf8StringCR parentId) { m_parentChangeSetId.assign(parentId); return *this; }
-        ChangeSetArg& SetPushDate(DateTimeCR pushDate) { m_pushDate = pushDate; return *this; }
-        ChangeSetArg& SetCreatedBy(User const& createdBy) { m_createdBy = createdBy; return *this; }
-
+        //!@param[in] extendedPropertiesJson JSON additional properties about the ChangeSet which are inserted
+        //!into the ChangeSummary::ExtendedProperties property.
+        ChangeSetArg(BeSQLite::IChangeSet& changeSet, Utf8StringCR extendedPropertiesJson) : m_changeSet(changeSet), m_extendedPropertiesJson(extendedPropertiesJson) {}
         BeSQLite::IChangeSet& GetChangeSet() const { return m_changeSet; }
-        Utf8StringCR GetId() const { return m_changeSetId; }
-        Utf8StringCR GetDescription() const { return m_description; }
-        Utf8StringCR GetParentId() const { return m_parentChangeSetId; }
-        DateTime const& GetPushDate() const { return m_pushDate; }
-        User const& GetCreatedBy() const { return m_createdBy; }
+        Utf8String const& GetExtendedPropertiesJson() const { return m_extendedPropertiesJson; }
     };
 
 //=======================================================================================
