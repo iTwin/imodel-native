@@ -63,7 +63,7 @@
         <Source multiplicity="(0..*)" roleLabel="BuiltUpProfileComponentUsesProfile" polymorphic="false">
             <Class class="BuiltUpProfileComponent"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="BuiltUpProfileComponentUsesProfile (Reversed)" polymorphic="false">
+        <Target multiplicity="(1..1)" roleLabel="BuiltUpProfileComponentUsesProfile (Reversed)" polymorphic="true">
             <Class class="ConstantProfile"/>
         </Target>
     </ECRelationshipClass>
