@@ -1577,7 +1577,8 @@ SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRa
         : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)    
-    PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
+    if (DgnDb::ThreadId::Client != DgnDb::GetThreadId())
+        PK_BODY_change_partition(PSolidUtil::GetEntityTag (*m_entity), PSolidThreadUtil::GetThreadPartition());
 #endif
     }
 
