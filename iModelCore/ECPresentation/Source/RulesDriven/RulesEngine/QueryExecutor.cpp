@@ -246,6 +246,7 @@ void ContentQueryExecutor::_Reset()
     {
     QueryExecutor::_Reset();
     m_records.clear();
+    m_readKeys.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -655,6 +656,13 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         contractId = statement.GetValueUInt64(columnIndex++);
         primaryRecordKeys = ValueHelpers::GetECInstanceKeysFromSerializedJson(statement.GetValueText(columnIndex++));
         BeAssert(1 == primaryRecordKeys.size() || resultsMerged);
+        if (!resultsMerged)
+            {
+            auto readKeysIter = m_readKeys.find(primaryRecordKeys[0]);
+            if (m_readKeys.end() != readKeysIter)
+                return;
+            m_readKeys.insert(readKeysIter, primaryRecordKeys[0]);
+            }
         }
     
     ContentValueAppender values;

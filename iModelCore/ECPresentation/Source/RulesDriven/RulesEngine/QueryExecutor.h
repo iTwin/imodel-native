@@ -110,6 +110,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentQueryExecutor : QueryExecutor
 private:
     ContentQueryCPtr m_query;
     mutable bvector<ContentSetItemPtr> m_records;
+    mutable bset<ECInstanceKey> m_readKeys;
     IECPropertyFormatter const* m_propertyFormatter;
     
 protected:
