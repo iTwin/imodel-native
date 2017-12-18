@@ -12,7 +12,7 @@
 #include <Bentley/Bentley.h>
 #include <Geom/GeomApi.h>
 
-USING_NAMESPACE_BENTLEY_CIVILBASEGEOMETRY
+USING_NAMESPACE_BENTLEY_CIVILGEOMETRY
 
 #if 0 //&&AG not sure whether we should be logging errors or not at this level
     //-----------------------------------------------------------------------------------------

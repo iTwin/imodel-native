@@ -11,7 +11,7 @@
 #include "AlignmentPair.h"
 #include "StationRange.h"
 
-BEGIN_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE
+BEGIN_BENTLEY_CIVILGEOMETRY_NAMESPACE
 
 typedef struct AlignmentPI& AlignmentPIR;
 typedef struct AlignmentPI const& AlignmentPICR;
@@ -555,4 +555,4 @@ public:
 #endif
 }; // AlignmentPairEditor
 
-END_BENTLEY_CIVILBASEGEOMETRY_NAMESPACE
+END_BENTLEY_CIVILGEOMETRY_NAMESPACE
