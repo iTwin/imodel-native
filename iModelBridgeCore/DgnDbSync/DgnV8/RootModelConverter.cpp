@@ -94,8 +94,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             continue;
             }
 
-        // If the relationship class inherits from one of the two biscore base relationship classes, then it is a link table relationship, and can use the API
-        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements) || relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
+        // If the relationship class inherits from one ElementRefersToElements base relationship class, then it is a link table relationship, and can use the API
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
             {
             BeSQLite::EC::ECInstanceKey relKey;
             if (BE_SQLITE_OK != GetDgnDb().InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceInstanceKey.GetInstanceId(), targetInstanceKey.GetInstanceId()))
@@ -122,7 +122,16 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
 
         ECN::ECClassCP targetClass = GetDgnDb().Schemas().GetClass(targetInstanceKey.GetClassId());
         // Otherwise, the converter should have created a navigation property on the target class, so we need to set the target instance's ECValue
-        ECN::ECPropertyP prop = targetClass->GetPropertyP(relClass->GetName().c_str());
+        ECN::ECPropertyP prop = nullptr;
+        
+        // If the class is an ElementOwnsMultiAspects base, then need to use the NavigationProperty 'Element' that is defined on the base MultiAspect class.
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
+            {
+            prop = targetClass->GetPropertyP("Element");
+            }
+        else
+            prop = targetClass->GetPropertyP(relClass->GetName().c_str());
+
         if (nullptr == prop)
             {
             Utf8String errorMsg;
@@ -167,9 +176,9 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
         ECN::ECValue val;
         val.SetNavigationInfo((BeInt64Id) targetInstanceKey.GetInstanceId().GetValue(), relClass->GetRelationshipClassCP());
 
-        DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
         if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
             {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
             DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, targetInstanceKey.GetInstanceId());
             if (nullptr == aspect)
                 {
@@ -209,6 +218,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             }
         else
             {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
             if (DgnDbStatus::Success != element->SetPropertyValue(navProp->GetName().c_str(), val))
                 {
                 Utf8String errorMsg;
@@ -833,7 +843,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
 	// FindSpatialV8Models has already forced children of a spatial root to be spatial
 
-    SubjectCR parentRefsSubject = _GetSpatialParentSubject();
+    SubjectCPtr parentRefsSubject = &_GetSpatialParentSubject();
 
     bool hasPushedReferencesSubject = false;
     for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
@@ -846,7 +856,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
         if (!hasPushedReferencesSubject)
             {
-            SubjectCPtr myRefsSubject = GetOrCreateModelSubject(parentRefsSubject, v8mm.GetDgnModel().GetName(), ModelSubjectType::References);
+            SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, v8mm.GetDgnModel().GetName(), ModelSubjectType::References);
             if (!myRefsSubject.IsValid())
                 {
                 BeAssert(false);
@@ -874,7 +884,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
         }
 
     if (hasPushedReferencesSubject)
-        SetSpatialParentSubject(parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
+        SetSpatialParentSubject(*parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
     }
 
 /*---------------------------------------------------------------------------------**//**
