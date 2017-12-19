@@ -422,6 +422,7 @@ private:
 
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     virtual void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source);
+    bool _WantUndisplayed() override {return true;} //!< Writeable copy of undisplayed element being drawn in dynamics should not be skipped...only want to check this for persistent elements...
     DynamicsContext(DgnViewportR, Render::Task::Priority);
     ~DynamicsContext();
     void VisitWriteableElement(DgnElementCR element, IRedrawOperationP redrawOp);
