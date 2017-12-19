@@ -1880,6 +1880,8 @@ TEST_F(iModelManagerTests, QueryInformationAboutSpecificInvalidBriefcase)
 
     auto result = imodelConnection->QueryBriefcaseInfo(BeSQLite::BeBriefcaseId())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
+    result = imodelConnection->QueryBriefcaseInfo(BeSQLite::BeBriefcaseId(100))->GetResult();
+    EXPECT_FALSE(result.IsSuccess());
     }
 
 //---------------------------------------------------------------------------------------

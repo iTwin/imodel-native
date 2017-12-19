@@ -38,6 +38,8 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiSourceDir)FileLock.h                         \
                                 $(iModelHubClientMkiSourceDir)MultiProgressCallbackHandler.h     \
                                 $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
+                                $(iModelHubClientMkiPublicApiDir)Client/FileAccessKey.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/BaseFileInfo.h           \
                                 $(iModelHubClientMkiPublicApiDir)Client/FileInfo.h               \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
                                 $(iModelHubClientMkiPublicApiDir)Client/BriefcaseInfo.h          \
@@ -67,6 +69,10 @@ $(o)iModelInfo$(oext)                      : $(iModelHubClientMkiSourceDir)iMode
 $(o)BriefcaseInfo$(oext)                   : $(iModelHubClientMkiSourceDir)BriefcaseInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSetInfo$(oext)                   : $(iModelHubClientMkiSourceDir)ChangeSetInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileAccessKey$(oext)                   : $(iModelHubClientMkiSourceDir)FileAccessKey.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)BaseFileInfo$(oext)                    : $(iModelHubClientMkiSourceDir)BaseFileInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)FileInfo$(oext)                        : $(iModelHubClientMkiSourceDir)FileInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

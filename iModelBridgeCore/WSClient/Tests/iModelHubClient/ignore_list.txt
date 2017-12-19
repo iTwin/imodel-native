@@ -2,9 +2,8 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 FailureTests.Crash*
+WebsiteSeedFileTests.CreateSeedFile
 
 #----------------------------------------------------------------------------------------
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
-BriefcaseTests.SuccessfulAcquireBriefcaseAfterMergeJob
-ClientTests.SuccessfulCreateiModelWithASpaceInName

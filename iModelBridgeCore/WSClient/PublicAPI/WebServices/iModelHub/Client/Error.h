@@ -103,9 +103,9 @@ public:
         ConnectionError,
         Canceled,
 
-        //Revision Manager Errors
+        //ChangeSet Manager Errors
         MergeError = 500,
-        RevisionManagerError,
+        ChangeSetManagerError,
         MergeSchemaChangesOnOpen,
 
         AzureError,
