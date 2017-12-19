@@ -263,9 +263,12 @@ if __name__ == '__main__':
         
         publishPackage(generate_addon_for_platform(outdirParent, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);
 
-    # Generate the other packages that describe or re-deliver the platform-specific addon packages
-    publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
-    publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
-    publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    # Generate the other packages that describe or re-deliver the platform-specific addon packages.
+    # Note that we do this only in a Windows build (and for the win32 platform). That is the "master" build.
+    # Builds for all other platforms only publish their platform-specific addon packages.
+    if nodeOS == 'win32':
+        publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
+        publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+        publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
 
     exit(0)

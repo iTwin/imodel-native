@@ -1,5 +1,5 @@
 {
-  "name": "@bentley/imodeljs-nodeaddon",
+  "name": "@bentley/imodeljs-electronaddon",
   "version": "${PACKAGE_VERSION}",
   "description": "The native code addon for Electron apps",
   "license": "UNLICENSED",
