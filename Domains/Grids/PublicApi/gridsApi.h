@@ -29,6 +29,6 @@
 #include "Handlers/IntersectionCurveHandlers.h"
 #include "Handlers/PortionHandlers.h"
 #include "Handlers/GridHandlers.h"
-
+#include "Strategies/GridStrategies.h"
 
 

@@ -67,11 +67,23 @@
       </Bindings>
     </Part>
 
+    <Part Name="GridStrategies" BentleyBuildMakeFile="Grids/Strategies/GridStrategies.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="ConstraintModel" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
+        <SubPart PartName="GridElements"/>
+        <SubPart PartName="GridsApi"/>
+        <Bindings>
+        <Libs>Delivery/$(libprefix)GridStrategies$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)GridStrategies$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+        
     <Part Name="Grids" >
       <SubPart PartName="GridsDomain"/>
       <SubPart PartName="GridElements"/>
       <SubPart PartName="GridHandlers"/>
       <SubPart PartName="GridsSchema"/>
+      <SubPart PartName="GridStrategies"/>
     </Part>
 
 

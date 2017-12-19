@@ -31,5 +31,9 @@ __GridsMKI__  = 1
     GridHandlersPublicApi           = $(SrcRoot)DgnDomains/Grids/Grids/Handlers/PublicApi/
 %endif
 
+%if !defined (GridStrategiesPublicApi)
+    GridStrategiesPublicApi           = $(SrcRoot)DgnDomains/Grids/Grids/Strategies/PublicApi/
+%endif
+
 %include $(SrcRoot)DgnDomains/ConstraintSystem/PublicMki/ConstraintSystem.mki
 
