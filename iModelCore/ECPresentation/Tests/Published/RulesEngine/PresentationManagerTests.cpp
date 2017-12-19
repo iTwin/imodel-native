@@ -345,6 +345,65 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_CallsHandlerOnlyWi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_OverloadCallsHandlerWithValidECValueParameter)
+    {
+    ECClassCP widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    ECInstanceKey widgetKey(widgetClass->GetId(), ECInstanceId((uint64_t)111));
+
+    TestECInstanceChangeHandlerPtr handler = TestECInstanceChangeHandler::Create();
+    m_manager->RegisterECInstanceChangeHandler(*handler);
+
+    handler->SetCanHandleHandler([&](ECDbCR, ECClassCR ecClass) -> bool {return true;});
+    size_t count = 0;
+    handler->SetChangeHandler([&](ECDbCR, ChangedECInstanceInfo const& changeInfo, Utf8CP, ECValueCR) -> ECInstanceChangeResult
+        {
+        BeAssert(widgetClass == &changeInfo.GetPrimaryInstanceClass());
+        BeAssert(widgetKey.GetInstanceId() == changeInfo.GetPrimaryInstanceId());
+        count++;
+        return ECInstanceChangeResult::Success(ECValue(1));
+        });
+
+    ChangedECInstanceInfo info(*widgetClass, widgetKey.GetInstanceId());
+    ECInstanceChangeResult result = m_manager->SaveValueChange(s_project->GetECDb(), info, "test", ECValue()).get();
+
+    EXPECT_EQ(1, count);
+    EXPECT_EQ(SUCCESS, result.GetStatus());
+    EXPECT_EQ(ECValue(1), result.GetChangedValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_OverloadCallsHandlerWithValidJsonValueParameter)
+    {
+    ECClassCP widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
+    ECInstanceKey widgetKey(widgetClass->GetId(), ECInstanceId((uint64_t)111));
+
+    TestECInstanceChangeHandlerPtr handler = TestECInstanceChangeHandler::Create();
+    m_manager->RegisterECInstanceChangeHandler(*handler);
+
+    handler->SetCanHandleHandler([&](ECDbCR, ECClassCR ecClass) -> bool {return true;});
+    size_t count = 0;
+    handler->SetChangeHandler([&](ECDbCR, ChangedECInstanceInfo const& changeInfo, Utf8CP, ECValueCR value) -> ECInstanceChangeResult
+        {
+        BeAssert(widgetClass == &changeInfo.GetPrimaryInstanceClass());
+        BeAssert(widgetKey.GetInstanceId() == changeInfo.GetPrimaryInstanceId());
+        BeAssert(ECValue(123) == value);
+        count++;
+        return ECInstanceChangeResult::Success(ECValue(1));
+        });
+
+    ChangedECInstanceInfo info(*widgetClass, widgetKey.GetInstanceId());
+    ECInstanceChangeResult result = m_manager->SaveValueChange(s_project->GetECDb(), info, "IntProperty", Json::Value(123)).get();
+
+    EXPECT_EQ(1, count);
+    EXPECT_EQ(SUCCESS, result.GetStatus());
+    EXPECT_EQ(ECValue(1), result.GetChangedValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_PutsResultsInCorrectOrderWhenUsingMultipleHandlers)
