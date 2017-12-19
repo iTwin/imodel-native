@@ -22,7 +22,7 @@ BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * Helps the caller with tasks such as signing into the iModel Hub Services via Connect
-* and looking up a project ID from a project name.
+* and looking up a project ID from a project number.
 * @bsiclass                                                     Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ClientHelper
@@ -34,7 +34,7 @@ private:
     static ClientHelper* s_instance;
     static BeMutex s_mutex;
 
-    static Utf8CP str_BentleyConnectGlobal() {return "BentleyCONNECT.Global--CONNECT.GLOBAL";}
+    static Utf8CP str_BentleyConnectMain() {return "BentleyCONNECT--Main";}
 
     //! Construct the helper
     ClientHelper(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr) : m_clientInfo(clientInfo), m_localState(ls) {}
@@ -71,13 +71,13 @@ public:
     //! @return a connected client if signin succeeds
     IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithManager(ConnectSignInManagerPtr signInManagerPtr, WebServices::UrlProvider::Environment environment);
 
-    //! Look up a BCS project ID from a BCS project name
+    //! Look up a BCS project ID from a BCS project number
     //! @param wserrorOut     Optional. If not null, then details about a query failure are returned here if the failure is due to a communications error or some 
-    //! server failure. No details would be returned if the lookup failed simply because the project name was not found.
-    //! @param bcsProjectName  The project name to look up
+    //! server failure. No details would be returned if the lookup failed simply because the project number was not found.
+    //! @param bcsProjectNumber  The project number to look up
     //! @param wsgBentleyConnectRepository The WSG Bentley Connect repository to query.
     //! @return the project ID if the lookup succeeded or the empty string if not
-    IMODELHUBCLIENT_EXPORT Utf8String QueryProjectId(WSError* wserrorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository = str_BentleyConnectGlobal());
+    IMODELHUBCLIENT_EXPORT Utf8String QueryProjectId(WSError* wserrorOut, Utf8StringCR bcsProjectNumber, Utf8CP wsgBentleyConnectRepository = str_BentleyConnectMain());
 
     //! Get user information stored in identity token
     IMODELHUBCLIENT_EXPORT ConnectSignInManager::UserInfo GetUserInfo() { return m_signinMgr->GetUserInfo(); }

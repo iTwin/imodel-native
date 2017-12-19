@@ -114,7 +114,7 @@ ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr, We
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProjectName, Utf8CP wsgBentleyConnectRepository)
+Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProjectNumber, Utf8CP wsgBentleyConnectRepository)
     {
     if (m_signinMgr == nullptr)
         {
@@ -124,12 +124,12 @@ Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProje
 
     AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
-    auto authHandler = m_signinMgr->GetAuthenticationHandler(UrlProvider::Urls::ConnectWsgGlobal.Get());
-    auto client = WSRepositoryClient::Create(UrlProvider::Urls::ConnectWsgGlobal.Get(), wsgBentleyConnectRepository, m_clientInfo, nullptr, authHandler);
+    auto authHandler = m_signinMgr->GetAuthenticationHandler(UrlProvider::Urls::ConnectedContext.Get());
+    auto client = WSRepositoryClient::Create(UrlProvider::Urls::ConnectedContext.Get(), wsgBentleyConnectRepository, m_clientInfo, nullptr, authHandler);
 
-    WSQuery query("GlobalSchema", "Project");
+    WSQuery query("ConnectedContext", "Project");
     query.SetSelect("$id");
-    query.SetFilter(Utf8PrintfString("Active+eq+true+and+Number+eq+'%s'", bcsProjectName.c_str()));
+    query.SetFilter(Utf8PrintfString("Status+eq+1+and+Number+eq+'%s'", bcsProjectNumber.c_str()));
 
     auto result = ExecuteAsync(client->SendQueryRequest(query));
     if (!result->IsSuccess())
