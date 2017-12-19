@@ -187,6 +187,11 @@ bool ECDb::IsChangeCacheAttached() const { return m_pimpl->GetChangeManager().Is
 DbResult ECDb::AttachChangeCache() const { return m_pimpl->GetChangeManager().AttachChangeCacheFile(true); }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::CreateChangeCache() const { return m_pimpl->GetChangeManager().CreateChangeCacheFile(); }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
 BeFileName ECDb::GetChangeCachePath() const { return ChangeManager::DetermineCachePath(*this); }

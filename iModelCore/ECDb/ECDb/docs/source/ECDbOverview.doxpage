@@ -800,14 +800,15 @@
     @page ECDbChange EC Changes
     
     ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called <b>change summaries</b>.
-    ECDb persists them locally in a <b>change summary cache %ECDb file</b> next to the actual %ECDb file, so that they can be accessed across sessions.
+    ECDb persists them locally in a <b>change cache %ECDb file</b> next to the actual %ECDb file, so that they can be accessed across sessions.
     
-    The <b>change summary cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeCache. Alternatively, you
+    The <b>change cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeCache. Alternatively, you
     can have it attached when opening the primary %ECDb by specify the respective @ref BentleyApi::BeSQLite::EC::ECDb::OpenParams "open parameter".
 
-    Once attached the change summary cache file is visible in ECSQL under the table space @b changesummaries.
+    Once attached the change cache file is visible in ECSQL under the table space @b ecchange.
 
     @see BentleyApi::BeSQLite::EC::ECDb::AttachChangeCache
+    @see BentleyApi::BeSQLite::EC::ECDb::CreateChangeCache
     @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
     @see BentleyApi::BeSQLite::EC::ECDb::ChangeCacheMode
     @see BentleyApi::BeSQLite::EC::ECDb::IsChangeCacheAttached
@@ -849,6 +850,31 @@
     If the row in the current state doesn't exist anymore (because it was deleted in subsequent changesets), null will be returned
     for the unchanged values.
     See @ref ECDbChangeSummariesExampleScenario for examples.
+
+    @section ECDbChangeCacheFileCustomization Cache File Customization
+    As the <b>change cache file</b> is a regular @ref ECDbFile "ECDb file", you can add other information to it at your discretion.
+    ECDb will not take ownership of that, so that you have to maintain any extra information yourself.
+
+    A typical use case is to add information about the changeset (e.g. the push date, the user name) from which a change summary has 
+    been extracted to the cache file. This can then be used in queries against the change summaries.
+    
+    @note Changeset information is not built into the ECDbChange ECSchema because different use cases require different pieces of information.
+    
+    ### Using ChangeSummary::ExtendedProperties
+    The @b ChangeSummary ECClass has a property called @b ExtendedProperties which can be used to add additional information to the change summary.
+    Typically you would format the value of that property as a JSON string.
+    Specify the ExtendedProperties value in the @ref BentleyApi::BeSQLite::EC::ChangeSetArg "ChangeSetArg" object passed to
+    @ref BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary "ECDb::ExtractChangeSummary".
+
+    ### Using custom ECSchemas
+    You can import any other ECSchema into the cache file and populate it with your additional information.
+    
+    This sample code is an example for a typical use case:
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_CustomizeChangeCacheFile,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_CustomizeChangeCacheFile.sampleCode
+    $SAMPLECODE_END
+    
 
     @section ECDbChangeSummariesExampleScenario Example Scenario
 

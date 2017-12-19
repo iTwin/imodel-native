@@ -163,6 +163,21 @@ DbResult ChangeManager::AttachChangeCacheFile(bool createIfNotExists) const
 
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Krischan.Eberle     12/2017
+//---------------------------------------------------------------------------------------
+DbResult ChangeManager::CreateChangeCacheFile() const
+    {
+    BeFileName cachePath = m_ecdb.GetChangeCachePath();
+    if (cachePath.DoesPathExist())
+        {
+        m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists.", cachePath.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR;
+        }
+
+    return CreateCacheFile(cachePath);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 DbResult ChangeManager::CreateCacheFile(BeFileNameCR cachePath) const

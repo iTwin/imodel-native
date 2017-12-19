@@ -62,6 +62,7 @@ struct ChangeManager final
         static bool IsChangeCacheValid(ECDbCR cacheFile, bool logError = false);
 
         DbResult AttachChangeCacheFile(bool createIfNotExists) const;
+        DbResult CreateChangeCacheFile() const;
 
         ChangeSummaryExtractor const& GetExtractor() const { return m_extractor; }
 

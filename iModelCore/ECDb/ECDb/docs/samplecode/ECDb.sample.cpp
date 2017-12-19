@@ -8,6 +8,7 @@
 //__PUBLISH_EXTRACT_START__ Overview_ECDb_Include.sampleCode
 // this includes the standard ECDb headers and its dependencies
 #include <ECDb/ECDbApi.h>
+#include <Bentley/DateTime.h>
 //__PUBLISH_EXTRACT_END__
 
 USING_NAMESPACE_BENTLEY_EC
@@ -155,6 +156,82 @@ BentleyStatus ECDbSchemaManagerGetClass()
 
     // do something with the ECClass
     // ...
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
+
+bvector<ECN::ECSchemaCP> ReadSchema(Utf8CP);
+BeSQLite::IChangeSet& GetChangeSetInfoFromHub(DateTime& pushDate, Utf8String& createdBy, Utf8CP changeSetHubId);
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   12/17
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbCustomizeChangeCacheFile()
+    {
+    ECDb primaryECDb;
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_CustomizeChangeCacheFile.sampleCode
+
+    //*** Step 1: Set-up Change Cache File
+    primaryECDb.CreateChangeCache();
+    BeFileName cacheFilePath = primaryECDb.GetChangeCachePath();
+
+    ECDb cacheFile;
+    cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+
+    //Read a custom schema (the method ReadSchema is just a place holder function to keep the example simple) 
+    bvector<ECN::ECSchemaCP> customSchemas = ReadSchema(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+         <ECSchema schemaName="ChangeSets" alias="cset" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="ECDbChange" version="01.00.00" alias="change"/>
+          <ECEntityClass typeName="ChangeSet" modifier="Sealed">
+              <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryExtractedFromChangeSet" direction="Backward"/>
+              <ECProperty propertyName="ChangeSetHubId" typeName="string" />
+              <ECProperty propertyName="PushDate" typeName="dateTime" />
+              <ECProperty propertyName="CreatedBy" typeName="string" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="ChangeSummaryExtractedFromChangeSet" modifier="Sealed" strength="referencing">
+                <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+                    <Class class="change:ChangeSummary"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="refers to" polymorphic="false">
+                    <Class class="ChangeSet"/>
+                </Target>
+           </ECRelationshipClass>
+         </ECSchema>
+             )xml");
+
+    cacheFile.Schemas().ImportSchemas(customSchemas);
+    cacheFile.SaveChanges();
+    cacheFile.CloseDb();
+
+    //***Step 2: Add additional information to extracted change summary
+    
+    //retrieve changeset and additional information from elsewhere (using a place holder function to keep the example simple) 
+    Utf8CP changeSetHubId = "ec1efd72621d42a0642bf135bdca409e94a454ed";
+    DateTime pushDate;
+    Utf8String createdBy;
+    BeSQLite::IChangeSet& changeSet = GetChangeSetInfoFromHub(pushDate, createdBy, changeSetHubId);
+    
+    //extract the change summary
+    ECInstanceKey changeSummaryKey;
+    primaryECDb.ExtractChangeSummary(changeSummaryKey,ChangeSetArg(changeSet));
+
+    //add additional information and relate it to the new change summary
+    cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+
+    ECSqlStatement insertChangeSetStmt;
+    insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)");
+    insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId());
+    insertChangeSetStmt.BindText(2, changeSetHubId, IECSqlBinder::MakeCopy::No);
+    insertChangeSetStmt.BindDateTime(3, pushDate);
+    insertChangeSetStmt.BindText(4, createdBy.c_str(), IECSqlBinder::MakeCopy::No);
+    insertChangeSetStmt.Step();
+    insertChangeSetStmt.ClearBindings();
+    insertChangeSetStmt.Reset();
+
+    cacheFile.SaveChanges();
+    cacheFile.CloseDb();
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;

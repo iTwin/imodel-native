@@ -337,6 +337,17 @@ public:
     //! @see BentleyApi::BeSQLite::EC::ECDb::ChangeCacheMode
     ECDB_EXPORT DbResult AttachChangeCache() const;
 
+    //! Creates a new Changes cache file for %ECDb file but does not attach it to the primary file
+    //! @remarks This method will return an error, if the cache file already exists.
+    //!
+    //! This method can also be used if further set-up on the cache file is needed by the client.
+    //! For example, higher layer code can create the cache file using this method, then open a separate ECDb connection to 
+    //! it and import another schema.
+    //! Note though that any of this is ignored by ECDb and must be maintained by the code that added it.
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
+    //! @see @ref ECDbChange
+    ECDB_EXPORT DbResult CreateChangeCache() const;
+
     //! Gets the file path to the Change cache file for this %ECDb file.
     //! @return Path to Change cache file
     //! @see @ref ECDbChange
@@ -355,8 +366,8 @@ public:
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
     //! @note The change summaries are persisted in a separate cache file. Before extracting you must make sure
-    //! the cache exists and has been attached. Either call ECDb::AttachChangeCache first or specify the appropriate ECDb::ChangeCacheMode
-    //! when opening the %ECDb file. If the cache is not attached, the method returns ERROR.
+    //! the cache exists. Either call ECDb::AttachChangeCache first or specify the appropriate ECDb::ChangeCacheMode
+    //! when opening the %ECDb file. If the cache does not exist, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
     //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
