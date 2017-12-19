@@ -144,7 +144,7 @@ public:
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
     bool IsTextured() const { BeAssert(m_resolved); return m_textureMapping.IsValid(); }
-    bool HasBlankingFill() const { return FillFlags::None != (GetFillFlags() & FillFlags::Blanking); }
+    bool HasBlankingFill() const { return FillFlags::Blanking == (GetFillFlags() & FillFlags::Blanking); }
     bool NeverRegionOutline() const { return HasBlankingFill() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
     bool HasRegionOutline() const;
 

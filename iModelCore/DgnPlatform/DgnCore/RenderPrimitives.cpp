@@ -378,7 +378,7 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
         m_class = geomParams->GetGeometryClass();
         if (nullptr != geomParams->GetPatternParams())
             {
-            m_fillFlags = m_fillFlags | FillFlags::Blanking;
+            m_fillFlags = m_fillFlags | FillFlags::Behind;
             }
 
         if (!geomParams->IsResolved())
