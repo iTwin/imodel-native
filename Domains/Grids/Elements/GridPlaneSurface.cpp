@@ -436,6 +436,46 @@ Placement3dCR placement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                ElevationGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    CurveVectorPtr shape = GetSurface2d();
+
+    Transform translation = Transform::From(0.0, 0.0, GetElevation());
+
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
+
+    if (builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
+        {
+        if (SUCCESS != builder->Finish(*geomElem))
+            return Dgn::DgnDbStatus::WriteError;
+        }
+
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+
+    if (grid.IsNull())
+        return Dgn::DgnDbStatus::ValidationFailed;  //has no grid??
+
+    Placement3dCR currGridPlacement = grid->GetPlacement();
+
+    Placement3d thisPlacement(currGridPlacement);
+
+    if (!thisPlacement.TryApplyTransform(translation))
+        return Dgn::DgnDbStatus::WriteError;
+
+    SetPlacement(thisPlacement);
+    return status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void                            ElevationGridSurface::SetSurface2d
 (
 CurveVectorPtr surface
