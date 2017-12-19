@@ -441,22 +441,9 @@ Dgn::DgnDbStatus                ElevationGridSurface::_OnUpdate
 Dgn::DgnElementCR original
 )
     {
-    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
-    if (Dgn::DgnDbStatus::Success != status)
-        return status;
-
     CurveVectorPtr shape = GetSurface2d();
 
     Transform translation = Transform::From(0.0, 0.0, GetElevation());
-
-    Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
-    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
-
-    if (builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
-        {
-        if (SUCCESS != builder->Finish(*geomElem))
-            return Dgn::DgnDbStatus::WriteError;
-        }
 
     GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
 
@@ -471,7 +458,17 @@ Dgn::DgnElementCR original
         return Dgn::DgnDbStatus::WriteError;
 
     SetPlacement(thisPlacement);
-    return status;
+
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
+
+    if (builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
+        {
+        if (SUCCESS != builder->Finish(*geomElem))
+            return Dgn::DgnDbStatus::WriteError;
+        }
+
+    return T_Super::_OnUpdate(original);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
@@ -490,7 +487,7 @@ CurveVectorPtr surface
     bsiTransform_getOriginAndVectors (&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
 
     if (!DoubleOps::AlmostEqualFraction (surfacePlane.origin.z, 0.0) ||
-        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 0.0)) //must be a zero Z plane
+        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 1.0)) //must be a zero Z plane
         return;
 
     IGeometryPtr geometryPtr = IGeometry::Create (surface);
