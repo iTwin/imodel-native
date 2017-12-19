@@ -1,0 +1,28 @@
+{
+  "name": "@bentley/imodeljs-nodeaddon",
+  "version": "${PACKAGE_VERSION}",
+  "description": "The native code addon for Electron apps",
+  "license": "UNLICENSED",
+  "repository": {},
+  "keywords": [
+    "Bentley",
+    "BIM",
+    "iModel"
+  ],
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "http://www.bentley.com"
+  },
+  "dependencies": {
+    "@bentley/imodeljs-nodeaddonapi": "~${PACKAGE_VERSION}"
+  },
+  "//optionalDependencies": [
+    "These dependencies are optional because each one is specific to a single combination of version, platform, and CPU.",
+    "If there is an addon for current environment, then npm will select it and filter out the others.",
+    "NOTE: List only the addons that a nodejs app/service might need. Do not list Electron-specific addons."
+  ],
+  "optionalDependencies": {
+    "@bentley/imodeljs-e_1_6_11-win32-x64": "~${PACKAGE_VERSION}"
+  },
+  "types": "./${DECL_FILE_NAME}"
+}
