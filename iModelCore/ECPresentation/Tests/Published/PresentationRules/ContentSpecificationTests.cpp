@@ -63,6 +63,48 @@ TEST_F(ContentSpecificationsTests, LoadsFromXml)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenLabelForCalculatedPropertyIsNotSpecified)
+    {
+    static Utf8CP xmlString = R"(
+        <TestSpecification Priority="123" ShowImages="true">
+            <CalculatedProperties>
+                <Property>Expression1</Property>
+            </CalculatedProperties>
+        </TestSpecification>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    
+    TestContentSpecification spec;
+    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
+    EXPECT_EQ(0, spec.GetCalculatedProperties().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenValueForCalculatedPropertyIsNotSpecified)
+    {
+    static Utf8CP xmlString = R"(
+        <TestSpecification Priority="123" ShowImages="true">
+            <CalculatedProperties>
+                <Property Label="Label1"/>
+            </CalculatedProperties>
+        </TestSpecification>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    
+    TestContentSpecification spec;
+    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
+    EXPECT_EQ(0, spec.GetCalculatedProperties().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentSpecificationsTests, WritesToXml)
@@ -100,4 +142,76 @@ TEST_F(ContentSpecificationsTests, WritesToXml)
             R"(</TestSpecification>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecifications)
+    {
+    // Create spec1
+    TestContentSpecification spec1;
+    spec1.SetShowImages(true);
+    spec1.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("HiddenProperty", 456, false));
+    spec1.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
+        "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
+    spec1.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
+    spec1.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
+    spec1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
+
+    // Validate spec1
+    EXPECT_TRUE(spec1.GetShowImages());
+    EXPECT_EQ(1, spec1.GetRelatedProperties().size());
+    EXPECT_EQ(1, spec1.GetCalculatedProperties().size());
+    EXPECT_EQ(1, spec1.GetPropertiesDisplaySpecifications().size());
+    EXPECT_EQ(1, spec1.GetDisplayRelatedItems().size());   
+    EXPECT_EQ(1, spec1.GetPropertyEditors().size()); 
+
+    // Create spec2 via copy consstructor
+    TestContentSpecification spec2(spec1);
+
+    // Validate spec2
+    EXPECT_TRUE(spec2.GetShowImages());
+    EXPECT_EQ(1, spec2.GetRelatedProperties().size());
+    EXPECT_EQ(1, spec2.GetCalculatedProperties().size());
+    EXPECT_EQ(1, spec2.GetPropertiesDisplaySpecifications().size());
+    EXPECT_EQ(1, spec2.GetDisplayRelatedItems().size());   
+    EXPECT_EQ(1, spec2.GetPropertyEditors().size());   
+
+    // Validate specifications pointers
+    EXPECT_NE(spec1.GetRelatedProperties()[0], spec2.GetRelatedProperties()[0]);
+    EXPECT_NE(spec1.GetCalculatedProperties()[0], spec2.GetCalculatedProperties()[0]);
+    EXPECT_NE(spec1.GetPropertiesDisplaySpecifications()[0], spec2.GetPropertiesDisplaySpecifications()[0]);
+    EXPECT_NE(spec1.GetDisplayRelatedItems()[0], spec2.GetDisplayRelatedItems()[0]);   
+    EXPECT_NE(spec1.GetPropertyEditors()[0], spec2.GetPropertyEditors()[0]);   
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentSpecificationsTests, ComputesCorrectHashes)
+    {
+    TestContentSpecification spec1;
+    spec1.SetShowImages(true);
+    spec1.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("HiddenProperty", 456, false));
+    spec1.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
+        "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
+    spec1.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
+    spec1.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
+    spec1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
+    TestContentSpecification spec2;
+    spec2.SetShowImages(true);
+    spec2.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("HiddenProperty", 456, false));
+    spec2.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", 
+        "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
+    spec2.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
+    spec2.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
+    spec2.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
+    TestContentSpecification spec3;
+    spec3.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("HiddenProperty", 456, false));
+
+    // Hashes are same for identical specifications
+    EXPECT_STREQ(spec1.GetHash().c_str(), spec2.GetHash().c_str());
+    // Hashes differs for different specifications
+    EXPECT_STRNE(spec1.GetHash().c_str(), spec3.GetHash().c_str());
     }

@@ -245,6 +245,7 @@ void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeStringValue (CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE, CommonTools::FormatTargetTreeString (m_targetTree));
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
 
+    CommonTools::WriteRulesToXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions);
     CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList> (xmlNode, m_specifications);
     CommonTools::WriteRulesToXmlNode<CustomizationRule, ChildNodeCustomizationRuleList> (xmlNode, m_customizationRules);
     PresentationRule::_WriteXml (xmlNode);

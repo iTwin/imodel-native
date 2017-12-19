@@ -333,3 +333,4 @@ TEST_F(MultipleECDbSelectionTest, ClearSelection)
     ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->empty());
     ASSERT_TRUE(m_manager->GetSelection(s_project2->GetECDb())->empty());
     }
+

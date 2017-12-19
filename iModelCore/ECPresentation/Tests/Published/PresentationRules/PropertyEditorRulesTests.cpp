@@ -26,6 +26,9 @@ TEST_F(PropertyEditorRulesTests, LoadsFromXml)
     static Utf8CP xmlString = R"(
         <Editor PropertyName="TestProperty" EditorName="TestEditor">
             <JsonParams>{}</JsonParams>
+            <MultilineParams>{}</MultilineParams>
+            <RangeParams>{}</RangeParams>
+            <SliderParams Minimum="1.23" Maximum="4.56">{}</SliderParams>
         </Editor>
         )";
     BeXmlStatus xmlStatus;
@@ -36,7 +39,39 @@ TEST_F(PropertyEditorRulesTests, LoadsFromXml)
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("TestProperty", spec.GetPropertyName().c_str());
     EXPECT_STREQ("TestEditor", spec.GetEditorName().c_str());
-    EXPECT_EQ(1, spec.GetParameters().size());
+    EXPECT_EQ(4, spec.GetParameters().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyEditorRulesTests, LoadFromXmlFailsWhenPropertyNameIsNotSpecified)
+    {
+    static Utf8CP xmlString = R"(
+        <Editor EditorName="TestEditor"/>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    
+    PropertyEditorsSpecification spec;
+    EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyEditorRulesTests, LoadFromXmlFailsWhenEditorNameIsNotSpecified)
+    {
+    static Utf8CP xmlString = R"(
+        <Editor PropertyName="TestProperty"/>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    
+    PropertyEditorsSpecification spec;
+    EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -264,6 +299,38 @@ TEST_F(PropertyEditorRulesTests, LoadsDefaultSliderParamsFromXml)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyEditorRulesTests, LoadSliderParamsFromXmlFailsWhenMinimumAtributeIsNotSpecified)
+    {
+    static Utf8CP xmlString = R"(
+        <SliderParams Maximum="4.56"/>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    
+    PropertyEditorSliderParameters spec;
+    EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyEditorRulesTests, LoadSliderParamsFromXmlFailsWhenMaximumAtributeIsNotSpecified)
+    {
+    static Utf8CP xmlString = R"(
+        <SliderParams Minimum="4.56"/>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    
+    PropertyEditorSliderParameters spec;
+    EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertyEditorRulesTests, WritesSliderParamsToXml)
@@ -299,4 +366,26 @@ TEST_F(PropertyEditorRulesTests, WritesDefaultSliderParamsToXml)
             R"(<SliderParams Minimum="123" Maximum="456" Intervals="1" ValueFactor="1" Vertical="false" />)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyEditorRulesTests, ComputesCorrectHashes)
+    {
+    PropertyEditorsSpecification spec1("Property", "Editor");
+    spec1.AddParameter(*new PropertyEditorJsonParameters());
+    spec1.AddParameter(*new PropertyEditorMultilineParameters());
+    spec1.AddParameter(*new PropertyEditorRangeParameters());
+    PropertyEditorsSpecification spec2("Property", "Editor");
+    spec2.AddParameter(*new PropertyEditorJsonParameters());
+    spec2.AddParameter(*new PropertyEditorMultilineParameters());
+    spec2.AddParameter(*new PropertyEditorRangeParameters());
+    PropertyEditorsSpecification spec3("Property", "Editor");
+    spec3.AddParameter(*new PropertyEditorSliderParameters());
+
+    // Hashes are same for editor with same parameters
+    EXPECT_STREQ(spec1.GetHash().c_str(), spec2.GetHash().c_str());
+    // Hashes differs for editor with different parameters
+    EXPECT_STRNE(spec1.GetHash().c_str(), spec3.GetHash().c_str());
     }

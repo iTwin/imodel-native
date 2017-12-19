@@ -55,6 +55,20 @@ TEST_F(PropertiesDisplaySpecificationsTests, LoadsHiddenPropertiesSpecificationF
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertiesDisplaySpecificationsTests, HiddenPropertiesSpecification_LoadFromXmlFailsWhenPropertyNamesAttributeIsNotSpecified)
+    {
+    static Utf8CP xmlString = "<HiddenProperties/>";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+
+    PropertiesDisplaySpecification spec;
+    EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertiesDisplaySpecificationsTests, WritesDisplayedPropertiesSpecificationToXml)
