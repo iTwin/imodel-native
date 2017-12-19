@@ -14,4 +14,16 @@ Dgn::DgnDbStatus StraightProfiledExtrusion::_UpdateProperties(Dgn::DgnElementCR 
     return Dgn::DgnDbStatus::WriteError;
     }
 
+double StraightProfiledExtrusion::GetLength()
+{
+    ECN::ECValue value;
+    Dgn::DgnDbStatus status = GetPropertyValue(value, prop_Length(), Dgn::PropertyArrayIndex());
+
+    BeAssert(Dgn::DgnDbStatus::Success == status);
+    UNUSED_VARIABLE(status);
+
+    return value.IsNull() ? 0.0 : value.GetDouble();
+};
+
+
 END_BENTLEY_FORMS_NAMESPACE

@@ -41,9 +41,9 @@
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <ECProperty propertyName="Length" displayLabel="Length" typeName="double"/>
-        <ECNavigationProperty description="StraightProfiledExtrusion has Profile" propertyName="Profile" direction="Forward" relationshipName="StraightExtrusionHasProfile" />
+        <ECNavigationProperty description="StraightProfiledExtrusion has Profile" propertyName="Profile" direction="Forward" relationshipName="StraightProfiledExtrusionHasProfile" />
     </ECEntityClass>
-    <ECRelationshipClass typeName="StraightExtrusionHasProfile" description="StraightExtrusion has Profile" modifier="None" strength="holding">
+    <ECRelationshipClass typeName="StraightProfiledExtrusionHasProfile" description="StraightProfiledExtrusion has Profile" modifier="None" strength="holding">
         <Source multiplicity="(0..*)" roleLabel="linked to" polymorphic="true">
             <Class class="StraightProfiledExtrusion"/>
         </Source>

@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ClassDiagram2.cd" />
     <None Include="Forms.mke" />
     <None Include="Forms.prewire.mke" />
     <None Include="FormsCompileOptions.mki" />
@@ -37,7 +40,6 @@
     <ClCompile Include="Form.cpp" />
     <ClCompile Include="FormsDomain.cpp" />
     <ClCompile Include="FormsDomainUtilities.cpp" />
-    <ClCompile Include="ProfiledExtrusion.cpp" />
     <ClCompile Include="StraightExtrusion.cpp" />
     <ClCompile Include="StraightProfiledExtrusion.cpp" />
   </ItemGroup>
@@ -49,7 +51,6 @@
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainApi.h" />
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainDefinitions.h" />
     <ClInclude Include="PublicAPI\FormsDomain\FormsDomainUtilities.h" />
-    <ClInclude Include="PublicAPI\FormsDomain\ProfiledExtrusion.h" />
     <ClInclude Include="PublicAPI\FormsDomain\StraightExtrusion.h" />
     <ClInclude Include="PublicAPI\FormsDomain\StraightProfiledExtrusion.h" />
   </ItemGroup>
