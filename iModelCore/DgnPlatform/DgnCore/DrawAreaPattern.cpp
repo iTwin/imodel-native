@@ -433,7 +433,8 @@ double          scale
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool DrawCellTiles(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary, DgnGeometryPartCR symbol, DPoint2dCR low, DPoint2dCR high, DPoint2dCR spacing, double scale, TransformCR orgTrans, DPoint3dCP symbolCorners)
     {
-    ClipVectorPtr clip = ClipVector::CreateFromCurveVector(boundary, 0.0, Angle::FromDegrees(20.0).Radians());
+    auto tol = context.GetAreaPatternTolerance(boundary);
+    ClipVectorPtr clip = ClipVector::CreateFromCurveVector(boundary, tol.GetChordTolerance(), tol.GetAngleTolerance());
 
     if (!clip.IsValid())
         return false;
