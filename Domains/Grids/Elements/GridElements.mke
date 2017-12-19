@@ -88,6 +88,5 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ConstraintModel$(stlibext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(stlibext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(stlibext)
 
-
 %include $(sharedMki)linkLibrary.mki
 
