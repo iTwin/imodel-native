@@ -392,13 +392,7 @@ struct ViewFactory
         DVec3d m_extents;
         RotMatrix m_rot;
         Transform m_trans;
-        ViewDefinitionParams(Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d) : m_name(n), m_modelMapping(m), m_viewInfo(vi)
-            {
-            auto& db = m_modelMapping.GetDgnModel().GetDgnDb();
-            DefinitionModelR dictionary = db.GetDictionaryModel();
-            m_dstyle = !is3d ? (DisplayStyleP) new DisplayStyle2d(dictionary, m_name.c_str()) : new DisplayStyle3d(dictionary, m_name.c_str());
-            m_categories = new CategorySelector(dictionary, m_name.c_str());
-            }
+        ViewDefinitionParams(Converter* c, Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d);
 
         void Apply(ViewDefinitionR) const;
         DgnModel& GetDgnModel() const {return m_modelMapping.GetDgnModel();}
@@ -972,6 +966,7 @@ protected:
     ElementAspectConverter* m_elementAspectConverter;
     bvector<IFinishConversion*> m_finishers;
     bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
+    DgnModelId          m_jobDefinitionModelId;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1127,6 +1122,7 @@ public:
 
     void ValidateJob();
 
+    DefinitionModelPtr GetJobDefinitionModel();
     //! @}
 
     //! @name DgnDb properties

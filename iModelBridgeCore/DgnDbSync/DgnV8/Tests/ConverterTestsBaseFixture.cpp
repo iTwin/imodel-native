@@ -666,6 +666,25 @@ SubjectCPtr ConverterTestBaseFixture::GetFirstJobSubject(DgnDbR db)
     return nullptr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DefinitionModelPtr ConverterTestBaseFixture::GetJobDefinitionModel(DgnDbR db)
+    {
+    auto jobsubj = GetFirstJobSubject(db);
+    if (!jobsubj.IsValid())
+        return nullptr;
+
+    Utf8PrintfString partitionName("Definition Model For %s", jobsubj->GetDisplayLabel());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(*jobsubj, partitionName.c_str());
+    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    DgnModelId defModelId = DgnModelId(partitionId.GetValueUnchecked());
+    if (defModelId.IsValid())
+        return db.Models().Get<DefinitionModel>(defModelId);
+
+    return nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/

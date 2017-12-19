@@ -106,11 +106,14 @@ static void turnOnAllCategoriesUsedInModel(CategorySelectorR cats, DgnModel cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
     {
-    DefinitionModelR dictionary = GetDgnDb().GetDictionaryModel();
-    auto dstyle = new DisplayStyle2d(dictionary, m_name.c_str());
-    auto catSel = new CategorySelector(dictionary, m_name.c_str());
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
 
-    DrawingViewDefinitionPtr view = new DrawingViewDefinition(dictionary, m_name.c_str(), m_drawingModel.GetModelId(), *catSel, *dstyle);
+    auto dstyle = new DisplayStyle2d(*definitionModel, m_name.c_str());
+    auto catSel = new CategorySelector(*definitionModel, m_name.c_str());
+
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition(*definitionModel, m_name.c_str(), m_drawingModel.GetModelId(), *catSel, *dstyle);
 
     SetViewGeometry(*view);
 
@@ -140,12 +143,15 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     {
     BeAssert(!m_v8DgnAttachment.IsCameraOn());
 
-    DefinitionModelR dictionary = GetDgnDb().GetDictionaryModel();
-    ModelSelectorPtr models = new ModelSelector(dictionary, m_name.c_str());
-    auto dstyle = new DisplayStyle3d(dictionary, m_name.c_str());
-    auto catSel = new CategorySelector(dictionary, m_name.c_str());
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
 
-    SpatialViewDefinitionPtr view = new SpatialViewDefinition(dictionary, m_name.c_str(), *catSel, *dstyle, *models);
+    ModelSelectorPtr models = new ModelSelector(*definitionModel, m_name.c_str());
+    auto dstyle = new DisplayStyle3d(*definitionModel, m_name.c_str());
+    auto catSel = new CategorySelector(*definitionModel, m_name.c_str());
+
+    SpatialViewDefinitionPtr view = new SpatialViewDefinition(*definitionModel, m_name.c_str(), *catSel, *dstyle, *models);
 
     m_converter.CreateModelSet(view->GetModelSelector().GetModelsR(), m_spatialModel, *m_v8DgnAttachment.GetDgnModelP(), m_converter.GetRootTrans());
     SetViewGeometry(*view);     // (depends on modelselector, so populate that first!)
@@ -180,17 +186,20 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateModifiedCopyOfNamedView(DgnVie
     // Start with a copy of the named view
     SpatialViewDefinitionPtr newView = dynamic_cast<SpatialViewDefinition*>(existingView->Clone().get());
 
-    DefinitionModelR dictionary = GetDgnDb().GetDictionaryModel();
-    newView->SetCode(ViewDefinition::CreateCode(dictionary, m_name.c_str()));
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
+    newView->SetCode(ViewDefinition::CreateCode(*definitionModel, m_name.c_str()));
 
     // We'll share the same geometry, model selector, and clip with the named view
 
     // We'll adopt the attachment's view flags 
-    newView->SetDisplayStyle3d(*new DisplayStyle3d(dictionary, m_name.c_str()));
+    newView->SetDisplayStyle3d(*new DisplayStyle3d(*definitionModel, m_name.c_str()));
     SetViewFlags(newView->GetDisplayStyle());
 
     // And, we will create the category selector based on the attachment
-    newView->SetCategorySelector(*new CategorySelector(dictionary, m_name.c_str()));
+    newView->SetCategorySelector(*new CategorySelector(*definitionModel, m_name.c_str()));
     SetCategories(*newView, SyncInfo::Level::Type::Spatial);
 
     newView->SetIsPrivate(true);
@@ -214,17 +223,20 @@ DrawingViewDefinitionPtr DrawingViewHelper::CreateModifiedCopyOfNamedView(DgnVie
     // Start with a copy of the named view
     DrawingViewDefinitionPtr newView = dynamic_cast<DrawingViewDefinition*>(existingView->Clone().get());
 
-    DefinitionModelR dictionary = GetDgnDb().GetDictionaryModel();
-    newView->SetCode(ViewDefinition::CreateCode(dictionary, m_name.c_str()));
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
+    newView->SetCode(ViewDefinition::CreateCode(*definitionModel, m_name.c_str()));
 
     // We'll share the same geometry and basemodel with the named view
 
     // We'll adopt the attachment's view flags 
-    newView->SetDisplayStyle2d(*new DisplayStyle2d(dictionary, m_name.c_str()));
+    newView->SetDisplayStyle2d(*new DisplayStyle2d(*definitionModel, m_name.c_str()));
     SetViewFlags(newView->GetDisplayStyle());
 
     // And, we will create the category selector based on the attachment
-    newView->SetCategorySelector(*new CategorySelector(dictionary, m_name.c_str()));
+    newView->SetCategorySelector(*new CategorySelector(*definitionModel, m_name.c_str()));
     SetCategories(*newView, SyncInfo::Level::Type::Spatial);
 
     newView->SetIsPrivate(true);
@@ -329,7 +341,7 @@ SheetAttachmentViewHelper::SheetAttachmentViewHelper(Converter& c, DgnAttachment
     Utf8String baseName = m_converter.SheetsComputeViewAttachmentName(m_v8DgnAttachment);
     m_name = baseName;
     int iter=1;
-    while (ViewDefinition::QueryViewId(GetDgnDb().GetDictionaryModel(), m_name).IsValid())
+    while (ViewDefinition::QueryViewId(*c.GetJobDefinitionModel(), m_name).IsValid())
         {
         m_name = Utf8PrintfString("%s (%d)", baseName.c_str(), iter++);
         }
@@ -383,7 +395,7 @@ DgnViewId Converter::SheetsGetViewForAttachment(bool isFromProxyGraphics, Geomet
         DgnV8Api::NamedViewPtr nv = v8DgnAttachment.GetNamedView();
         if (nv.IsValid())
             {
-            nvId = ViewDefinition::QueryViewId(GetDgnDb().GetDictionaryModel(), Utf8String(nv->GetName().c_str()));
+            nvId = ViewDefinition::QueryViewId(*GetJobDefinitionModel(), Utf8String(nv->GetName().c_str()));
             if (!nvId.IsValid())
                 nvId = ConvertNamedView(*nv, GetRootTrans(), nvvf);
             //  If the attachment is based entirely on a named view, then use that.

@@ -74,6 +74,8 @@ struct ConverterTestBaseFixture : public testing::Test
     SubjectCPtr GetFirstJobSubject(DgnDbR db);
     SubjectCPtr GetJobHierarchySubject(DgnDbR db);
     SubjectCPtr GetReferencesChildSubjectOf(SubjectCR);
+
+    DefinitionModelPtr GetJobDefinitionModel(DgnDbR db);
     };
 
 struct TestRootModelCreator : RootModelConverter
