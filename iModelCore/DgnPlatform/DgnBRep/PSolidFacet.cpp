@@ -170,14 +170,30 @@ static void addEdgeChains (BlockedVector<PolyfaceEdgeChain>& edgeChains, T_EdgeI
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static CurveTopologyId     getUnidentifiedEdgeId(PK_EDGE_t edge, bmap<PK_EDGE_t, uint32_t> edgeToIdMap)
+    {
+    auto    found = edgeToIdMap.find(edge);
+
+    if (found != edgeToIdMap.end())
+        return CurveTopologyId(CurveTopologyId::Type::BRepUnIdentifiedEdge, found->second);
+
+    uint32_t        newId = (uint32_t)  edgeToIdMap.size();
+
+    edgeToIdMap.Insert(edge, newId);
+    return CurveTopologyId (CurveTopologyId::Type::BRepUnIdentifiedEdge, newId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFacetTopologyTable& ftt, IFacetOptionsCR facetOptions)
     {
-    bool                    edgeChainsRequired = facetOptions.GetEdgeChainsRequired();
-    T_FinToEdgeMap          finToEdgeMap;
-    bset<int32_t>           edgeSet;
+    bool                        edgeChainsRequired = facetOptions.GetEdgeChainsRequired();
+    T_FinToEdgeMap              finToEdgeMap;
     T_EdgeIdToPolyfaceEdgeMap   edgeIdToPolyfaceEdgeMap;
+    bmap<PK_EDGE_t, uint32_t>   edgeToIdMap;
         
     initPolyface (polyface, ftt);
     initFinToEdgeMap (finToEdgeMap, ftt, facetOptions.GetEdgeHiding());
@@ -248,16 +264,16 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
                     {
                     CurveTopologyId      curveTopologyId;
 
-                     if (ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
-                        {
-                        PolyfaceEdge             polyfaceEdge(1 + xyzIndex, 1 + ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]]);
-                        bvector<PolyfaceEdge>    indices(1, polyfaceEdge);  
+                     if (!ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
+                        curveTopologyId = getUnidentifiedEdgeId(found->second, edgeToIdMap);
+                
+                    PolyfaceEdge             polyfaceEdge(1 + xyzIndex, 1 + ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]]);
+                    bvector<PolyfaceEdge>    indices(1, polyfaceEdge);
 
-                        auto  insertPair = edgeIdToPolyfaceEdgeMap.Insert(curveTopologyId, indices);
+                    auto  insertPair = edgeIdToPolyfaceEdgeMap.Insert(curveTopologyId, indices);
 
-                        if (!insertPair.second)
-                            insertPair.first->second.push_back(polyfaceEdge);
-                        }
+                    if (!insertPair.second)
+                        insertPair.first->second.push_back(polyfaceEdge);
                     }
                 }
 
@@ -315,9 +331,10 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap<int
     DVec3dCP    ftt_normals          = ftt._GetNormal(); 
     Point2dCP   ftt_facetFin         = ftt._GetFacetFin ();
 
-    T_IndexRemap            pointIndexMap, normalIndexMap, paramIndexMap;
+    T_IndexRemap                pointIndexMap, normalIndexMap, paramIndexMap;
     T_EdgeIdToPolyfaceEdgeMap   edgeIdToPolyfaceEdgeMap;
-    bset<int32_t>           edgeSet;
+    bmap<PK_EDGE_t, uint32_t>   edgeToIdMap;
+
 
     int32_t thisFace, currentFace = -1;
 
@@ -372,16 +389,16 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap<int
                     {
                     CurveTopologyId curveTopologyId;
 
-                    if (ftt._GetEdgeCurveId (curveTopologyId, foundEdge->second, true))
-                        {
-                        PolyfaceEdge             polyfaceEdge(1 + pointIndexRemapped, 1 + nextPointIndexRemapped);
-                        bvector<PolyfaceEdge>    indices(1, polyfaceEdge);  
+                    if (!ftt._GetEdgeCurveId (curveTopologyId, foundEdge->second, true))
+                        curveTopologyId = getUnidentifiedEdgeId(foundEdge->second, edgeToIdMap);
 
-                        auto  insertPair = edgeIdToPolyfaceEdgeMap.Insert(curveTopologyId, indices);
+                    PolyfaceEdge             polyfaceEdge(1 + pointIndexRemapped, 1 + nextPointIndexRemapped);
+                    bvector<PolyfaceEdge>    indices(1, polyfaceEdge);
 
-                        if (!insertPair.second)
-                            insertPair.first->second.push_back(polyfaceEdge);
-                        }
+                    auto  insertPair = edgeIdToPolyfaceEdgeMap.Insert(curveTopologyId, indices);
+
+                    if (!insertPair.second)
+                        insertPair.first->second.push_back(polyfaceEdge);
                     }
                 }
 

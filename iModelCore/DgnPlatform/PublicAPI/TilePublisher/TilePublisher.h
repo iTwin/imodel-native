@@ -460,7 +460,7 @@ private:
 
     void WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR pointCloud);
     void WriteTileMeshes (std::FILE* outputFile, PublishableTileGeometryR geometry);
-    void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
+    void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes, Utf8StringCR batchTableStr);
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData const& tileData);
     void WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry, ModelSpatialClassifierCR classifier, DRange3dCR classifiedRange);
