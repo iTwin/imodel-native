@@ -1360,7 +1360,7 @@ PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode
     PolyfaceList clippedPolyfaces;
     for (auto& polyface : polyfaces)
         {
-        geomClipper.DoClip(clippedPolyfaces, polyface);
+        geomClipper.DoClipPolyface(clippedPolyfaces, polyface);
         }
 
     return clippedPolyfaces;
@@ -1380,7 +1380,7 @@ StrokesList Geometry::GetStrokes (IFacetOptionsR facetOptions, ViewContextR cont
     StrokesList clippedStrokes;
     for (auto& stroke : strokes)
         {
-        geomClipper.DoClip(clippedStrokes, stroke);
+        geomClipper.DoClipStrokes(clippedStrokes, stroke);
         }
 
     return clippedStrokes;

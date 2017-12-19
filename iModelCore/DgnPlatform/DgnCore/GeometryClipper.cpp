@@ -9,114 +9,187 @@
 
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
-// #define WIP_STROKE_CLIPPING
-#if defined(WIP_STROKE_CLIPPING)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClip(StrokesList& strokesOut, StrokesCR strokesIn)
+double GeometryClipper::SumIntervals(bvector<DSegment1d> &intervals, size_t iBegin, size_t iEnd)
     {
-    //if (nullptr != m_clip)
-    //if (0)
-        {
+    double s = 0.0;
+    for (size_t i = iBegin; i < iEnd; i++)
+        s += intervals[i].Delta();
+    return s;
+    }
 
-        ClipPlaneSetCP clipPlanes = nullptr;
-        ClipPlaneSetCP maskPlanes = nullptr;
-        if (nullptr != m_clip)
+#define TARGET_INTERVAL_SUM (0.99999999)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryClipper::ProcessSegments(bvector<DSegment3d>& segsUnclippedOut, bvector<DSegment3d>& segsClippedOut, const bvector<DSegment3d>& segsIn)
+    {
+    DSegment3d clipSeg;
+    bvector<DSegment1d> clipIntervals;
+
+    for (auto seg : segsIn) // clip each segment against each clipPrimitive
+        {
+        bool isClipped = false;
+
+        for (ClipPrimitivePtr const& clipPrimitive : *m_clip)
             {
-            for (ClipPrimitivePtr const& primitive : *m_clip)
+            auto clipPlaneSet = clipPrimitive->GetClipPlanes();
+
+            clipIntervals.clear();
+            clipPlaneSet->AppendIntervals(seg, clipIntervals); // find intervals for current segment (intervals = resulting segments from clip)
+
+            // if fractional intervals sum to less than roughly 1, we know that the line has been made shorter (clipped).
+            if (SumIntervals(clipIntervals, 0, clipIntervals.size()) < TARGET_INTERVAL_SUM)
                 {
-                clipPlanes = primitive->GetClipPlanes();
-                maskPlanes = primitive->GetMaskPlanes();
+                for (auto clipInterval : clipIntervals)
+                    {
+                    clipSeg = DSegment3d::FromFractionInterval(seg, clipInterval);
+                    segsClippedOut.push_back(clipSeg); // needs potential further clipping (against other planes)
+                    }
+                isClipped = true;
+                break;
                 }
             }
 
-        Strokes::PointLists strokePoints;
+        if (!isClipped)
+            {
+            segsUnclippedOut.push_back(seg); // guaranteed needs no further clipping (ready for final output, checked against all primitives)
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryClipper::ProcessLine(Strokes::PointLists& pointListsOut, const Strokes::PointList& pointListIn)
+    {
+    DSegment3d clipSeg;
+    bvector<DSegment3d> clipSegsFinal;
+    bvector<DSegment3d> clipSegsTemp0;
+    bvector<DSegment3d> clipSegsTemp1;
+
+    for (size_t i = 0; i + 1 < pointListIn.m_points.size(); i++)
+        {
+        clipSeg.Init(pointListIn.m_points[i], pointListIn.m_points[i + 1]);
+        clipSegsTemp0.push_back(clipSeg);
+        }
+
+    ProcessSegments(clipSegsFinal, clipSegsTemp1, clipSegsTemp0);
+
+    clipSegsTemp0.clear();
+    while (!clipSegsTemp1.empty())
+        {
+        ProcessSegments(clipSegsFinal, clipSegsTemp0, clipSegsTemp1);
+        clipSegsTemp1 = std::move(clipSegsTemp0);
+        }
+
+    bvector<DPoint3d> clipPts;
+    for (auto seg : clipSegsFinal)
+        {
+        if (clipPts.empty())
+            { // always add first point in a new pointList (clipPts is empty)
+            clipPts.push_back(seg.point[0]);
+            }
+        else
+            {
+            if (!clipPts.back().AlmostEqual(seg.point[0]))
+                { // submit previous pointList because points mismatch (will begin new pointList)
+                pointListsOut.push_back(Strokes::PointList(std::move(clipPts), pointListIn.m_rangeCenter));
+                clipPts.push_back(seg.point[0]); // add first point to new pointList
+                }
+            // else AlmostEqual() and will skip outputting seg.point[0] in order to continue previous line string
+            }
+
+        clipPts.push_back(seg.point[1]);
+        }
+    if (!clipPts.empty())
+        { // submit final pointList, if available
+        pointListsOut.push_back(Strokes::PointList(std::move(clipPts), pointListIn.m_rangeCenter));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryClipper::DoClipPoints(bvector<DPoint3d>& pointsOut, const bvector<DPoint3d>& pointsIn)
+    {
+    if (nullptr != m_clip)
+        {
+        for (auto ptIn : pointsIn)
+            {
+            if (m_clip->PointInside(ptIn))
+                {
+                pointsOut.push_back(ptIn);
+                }
+            }
+        }
+    else
+        {
+        for (auto ptIn : pointsIn)
+            {
+            pointsOut.push_back(ptIn);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, StrokesCR strokesIn)
+    {
+    if (nullptr != m_clip)
+        {
+        Strokes::PointLists newStrokePts;
 
         DisplayParamsCPtr displayParams = strokesIn.m_displayParams;
         bool isDisjoint = strokesIn.m_disjoint;
         bool isPlanar = strokesIn.m_isPlanar;
 
-        for (auto& strokes : strokesIn.m_strokes)
+        if (isDisjoint) // clip as individual points
             {
-            bvector<DPoint3d> points;
-            bvector<DSegment1d> intervals;
-            DSegment3d parentSeg;
+            bvector<DPoint3d> newPts;
 
-            // ###TODO: if isDisjoint, must iterate over points differently
-            // m_disjoint = points instead of lines
-
-            if (!isDisjoint)
+            for (auto& strokePts : strokesIn.m_strokes)
                 {
-                for (auto pt = strokes.m_points.begin(); pt != strokes.m_points.end(); /**/)
+                DoClipPoints(newPts, strokePts.m_points);
+
+                if (!newPts.empty())
                     {
-                    DPoint3d v0 = *pt;  pt++;
-                    DPoint3d v1 = *pt;
-
-                    if (nullptr != clipPlanes)
-                        {
-                        parentSeg.point[0] = v0;  parentSeg.point[1] = v1;
-                        intervals.clear();
-                        clipPlanes->AppendIntervals(parentSeg, intervals);
-                        }
-
-                    if (!intervals.empty())
-                        {
-                        for (auto& interval : intervals)
-                            {
-                            DSegment3d childSeg;  childSeg.FromFractionInterval(parentSeg, interval);
-                            //bvector<DPoint3d> childPts;  childPts.push_back(childSeg.point[0]);  childPts.push_back(childSeg.point[1]);
-                            bvector<DPoint3d> childPts;  childPts.push_back(v0);  childPts.push_back(v1);
-                            strokePoints.push_back(Strokes::PointList(std::move(childPts), strokes.m_rangeCenter));
-#if 0 // put into new list
-                            points.push_back(childSeg.point[0]);
-                            points.push_back(childSeg.point[1]);
-#endif
-                            }
-                        }
-    //                else
-//                        points.push_back(v0);
+                    newStrokePts.push_back(Strokes::PointList(std::move(newPts), strokePts.m_rangeCenter));
+                    newPts.clear();
                     }
                 }
-
-//GEOMDLLIMPEXP void AppendIntervals (DSegment3dCR segment, bvector<DSegment1d> &intervals) const;
-#if 0
-//!
-//! @description Return a segment defined by fractional start and end on a parent segment.
-//! @param [in] parent existing segment.
-//! @param [in] interval interval withs fractional start and end coordinates
-static DSegment3d FromFractionInterval
-(
-DSegment3dCR parent,
-DSegment1dCR interval
-);
-#endif
-
-            strokePoints.push_back(Strokes::PointList(std::move(points), strokes.m_rangeCenter));
+            if (!newStrokePts.empty())
+                {
+                strokesOut.push_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
+                }
             }
+        else // clip as line strings
+            {
+            for (auto& strokePts : strokesIn.m_strokes)
+                {
+                ProcessLine(newStrokePts, strokePts);
+                }
 
-        strokesOut.push_back(Strokes(*displayParams, std::move(strokePoints), isDisjoint, isPlanar));
+            if (!newStrokePts.empty())
+                {
+                strokesOut.push_back(Strokes(*displayParams, std::move(newStrokePts), isDisjoint, isPlanar));
+                }
+            }
         }
-    //else
-    //    strokesOut.push_back(strokesIn);
+    else
+        {
+        strokesOut.push_back(strokesIn);
+        }
     }
-
-#else // !defined(WIP_STROKE_CLIPPING)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClip(StrokesList& strokesOut, StrokesCR strokesIn)
-    {
-    strokesOut.push_back(strokesIn);
-    }
-
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mark.Schlosser  12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryClipper::DoClip(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn)
+void GeometryClipper::DoClipPolyface(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn)
     {
     if (nullptr != m_clip)
         {
@@ -137,6 +210,8 @@ void GeometryClipper::DoClip(PolyfaceList& polyfacesOut, PolyfaceCR polyfaceIn)
             }
         }
     else
+        {
         polyfacesOut.push_back(polyfaceIn);
+        }
     }
 
