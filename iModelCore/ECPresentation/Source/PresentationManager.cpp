@@ -85,7 +85,7 @@ folly::Future<NavNodeCPtr> IECPresentationManager::GetParent(ECDbCR db, NavNodeC
     if (connection.IsNull())
         {
         BeAssert(false && "Unknown connection");
-        return folly::makeFuture<NavNodeCPtr>(nullptr);
+        return folly::makeFuture(NavNodeCPtr(nullptr));
         }
     return _GetParent(*connection, node, options);
     }
@@ -113,7 +113,7 @@ folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescripto
     if (connection.IsNull())
         {
         BeAssert(false && "Unknown connection");
-        return folly::makeFuture<ContentDescriptorCPtr>(nullptr);
+        return folly::makeFuture(ContentDescriptorCPtr(nullptr));
         }
     return _GetContentDescriptor(*connection, preferredDisplayType, selectionInfo, options);
     }
@@ -127,7 +127,7 @@ folly::Future<ContentCPtr> IECPresentationManager::GetContent(ECDbCR db, Content
     if (connection.IsNull())
         {
         BeAssert(false && "Unknown connection");
-        return folly::makeFuture<ContentCPtr>(nullptr);
+        return folly::makeFuture(ContentCPtr(nullptr));
         }
     return _GetContent(*connection, descriptor, selectionInfo, pageOptions, options);
     }
@@ -155,7 +155,7 @@ folly::Future<NavNodeCPtr> IECPresentationManager::GetNode(ECDbCR db, uint64_t n
     if (connection.IsNull())
         {
         BeAssert(false && "Unknown connection");
-        return folly::makeFuture<NavNodeCPtr>(nullptr);
+        return folly::makeFuture(NavNodeCPtr(nullptr));
         }
     return _GetNode(*connection, nodeId);
     }
