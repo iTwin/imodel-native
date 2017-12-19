@@ -2620,6 +2620,7 @@ private:
         }
 
     StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
+    bool _WantUndisplayed() override {return true;}
 
     static Render::ViewFlags GetDefaultViewFlags()
         {
