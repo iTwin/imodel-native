@@ -312,7 +312,6 @@ protected:
 
     void _AddPolyface(PolyfaceQueryCR, bool) override;
     void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
-    void _AddTile(TextureCR tx, TileCorners const& corners) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
     bool _WantPreBakedBody(IBRepEntityCR) override;
@@ -404,7 +403,7 @@ protected:
     Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
     void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
-
+    bool _WantUndisplayed() override { return true; }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
 
 public:
@@ -523,15 +522,6 @@ void TileBuilder::_AddPolyfaceR(PolyfaceHeaderR geom, bool filled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileBuilder::_AddTile(TextureCR tx, TileCorners const& corners)
-    {
-    auto dp = DisplayParams::CreateForTile(GetGraphicParams(), GetGeometryParams(), tx);
-    AddTile(corners, *dp);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void TileBuilder::_AddSubGraphic(GraphicR mainGraphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip)
     {
     //
@@ -554,7 +544,7 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
         tileTransform.InverseOf(m_context.GetRoot().GetLocationForTileGeneration());
         tClip->TransformInPlace(tileTransform);
 
-        subGf->SetCurrentClip(tClip);
+        subGf->SetCurrentClip(tClip.get());
         }
 
     return subGf.get();

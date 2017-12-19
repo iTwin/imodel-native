@@ -1468,8 +1468,6 @@ protected:
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
-    virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
-    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
@@ -1493,7 +1491,7 @@ public:
 
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
 
-    void SetCurrentClip(ClipVectorPtr clip) { m_currClip = clip; }
+    void SetCurrentClip(ClipVectorP clip) { m_currClip = clip; }
     ClipVectorCP GetCurrentClip() const {return m_currClip.get();}
     CreateParams const& GetCreateParams() const {return m_createParams;}
     DgnDbR GetDgnDb() const {return m_createParams.GetDgnDb();}
@@ -1617,9 +1615,6 @@ public:
     //! @param[in] zDepth Z depth value.
     //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
     void AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) {_AddTriStrip2d(numPoints, points, asThickenedLine, zDepth);}
-
-    //! @private
-    void AddTile(TextureCR tile, TileCorners const& corners) {_AddTile(tile, corners);}
 
     //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}

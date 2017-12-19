@@ -309,10 +309,6 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 
     if (makePersistent)
         {
-        auto geomEl = el->ToGeometrySourceP();
-        if (nullptr != geomEl && m_selectionSet.Contains(el->GetElementId()))
-            geomEl->SetInSelectionSet(true);
-
         el->GetModel()->_OnLoadedElement(*el);
         AddToPool(*el);
         }

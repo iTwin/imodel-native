@@ -451,19 +451,6 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCPtr DisplayParams::CreateForTile(GraphicParamsCR gf, GeometryParamsCP geom, TextureCR texture)
-    {
-    // This is for Graphic::_AddTile() - a simple quad with an image texture.
-    DisplayParamsPtr dp = new DisplayParams(Type::Mesh, gf, geom, true);
-    dp->m_fillFlags |= (FillFlags::Always);
-    dp->m_textureMapping = TextureMapping(texture, TextureMapping::Params());
-    dp->m_resolved = true;
-    return dp.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part, DisplayParamsCR inst)
@@ -1370,7 +1357,7 @@ PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode
 
     GeometryClipper geomClipper(m_clip.get());
 
-	PolyfaceList clippedPolyfaces;
+    PolyfaceList clippedPolyfaces;
     for (auto& polyface : polyfaces)
         {
         geomClipper.DoClip(clippedPolyfaces, polyface);
@@ -2395,51 +2382,12 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mathieu.Marchand                1/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::_AddTile(TextureCR tile, TileCorners const& corners)
-    {
-    GraphicPtr gf = GetSystem()._CreateTile(tile, corners, GetDgnDb(), GetGraphicParams());
-    if (gf.IsValid())
-        m_primitives.push_back(gf);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PrimitiveBuilder::AddTriMesh(TriMeshArgsCR args)
-    {
-    // ###TODO: this is weird and not yet used...do we take the texture/material/etc from the args, or set them from the active GraphicParams?
-    GraphicPtr gf = GetSystem()._CreateTriMesh(args, GetDgnDb());
-    if (gf.IsValid())
-        m_primitives.push_back(gf);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool filled)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
     m_accum.Add(*curve, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform(), GetCurrentClip(), false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryListBuilder::AddTile(TileCorners const& corners, DisplayParamsCR params)
-    {
-    DPoint3d shapePoints[5] =
-        {
-        corners.m_pts[0],
-        corners.m_pts[1],
-        corners.m_pts[3],
-        corners.m_pts[2],
-        corners.m_pts[0]
-        };
-
-    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(shapePoints, 5));
-    m_accum.Add(*curve, false, params, GetLocalToWorldTransform(), GetCurrentClip(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**

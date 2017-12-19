@@ -44,6 +44,8 @@ void ECSqlCommand::_Run(Session& session, Utf8StringCR args) const
         return;
         }
 
+    BimConsole::WriteLine();
+
     if (ecsql.StartsWithIAscii("select") || ecsql.StartsWithIAscii("values"))
         ExecuteSelect(session, stmt);
     else if (ecsql.StartsWithIAscii("insert into"))
