@@ -88,6 +88,9 @@ private:
     RefCountedPtr<IDataSource<T> const> m_source;
     
 public:
+    //! Constructor. Creates an empty container.
+    DataContainer() : m_source(EmptyDataSource<T>::Create()) {}
+
     //! Constructor. Creates a container using the supplied data source.
     DataContainer(IDataSource<T> const& source) : m_source(&source) {}
 
