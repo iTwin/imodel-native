@@ -182,6 +182,36 @@ def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, packageVersio
     
     return outputpackagedir;
 
+# Generate imodeljs-electronaddon
+# @param outdirParent The path to the output package's parent directory
+# @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
+# @param packageVersion The semantic version number for the generated package
+# @return the full path to the generated package directory
+def generate_imodeljs_electronaddon(outputpackagedir, parentSourceDir, packageVersion):
+
+    outputpackagedir = os.path.join(outdirParent, 'imodeljs-electronaddon')
+
+    addonSourceDir = os.path.join(parentSourceDir, 'addon_package');
+
+    os.makedirs(outputpackagedir);
+
+    declFileName = 'NodeAddonLoader.d.ts'
+    packageTemplateFileName = 'electron-package.json.template'
+
+    # Copy some files into place without modifying them.
+    filesToCopy = [declFileName, 'NodeAddonLoader.js', 'README.md']
+
+    for fileToCopy in filesToCopy:
+        shutil.copyfile(os.path.join(addonSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
+
+    # Generate the package.json file
+    dstpackagefile = os.path.join(outputpackagedir, 'package.json')
+    shutil.copyfile(os.path.join(addonSourceDir, packageTemplateFileName), dstpackagefile);
+
+    setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, DECL_FILE_NAME = declFileName)
+    
+    return outputpackagedir;
+
 #
 #   main
 #
@@ -236,5 +266,6 @@ if __name__ == '__main__':
     # Generate the other packages that describe or re-deliver the platform-specific addon packages
     publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
     publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
 
     exit(0)
