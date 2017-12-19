@@ -7,15 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
+#include <BuildingShared/BuildingSharedMacros.h>
 #include <DgnPlatform\DgnDb.h>
 #include "IElementChangedHandler.h"
 
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 struct IBuildingUpdatedHandler : IElementChangedHandler
     {
     };
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE

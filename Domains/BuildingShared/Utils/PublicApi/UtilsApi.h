@@ -8,12 +8,9 @@
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnElement.h>
-#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
+#include <BuildingShared/BuildingSharedMacros.h>
 #include "BuildingMessages.h"
 #include "ShortestPath.h"
 #include "GeometryUtils.h"
 #include "BuildingUtils.h"
 #include "BuildingEvents.h"
-
-
-

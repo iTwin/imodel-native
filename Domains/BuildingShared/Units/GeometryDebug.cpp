@@ -12,7 +12,7 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 // initialization of debug-mutable class static ..
 int GeometryDebug::s_debug = 0;
@@ -158,4 +158,4 @@ void GeometryDebug::ClearDebugCurves()
     m_debugCurves.clear(); 
     }
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE

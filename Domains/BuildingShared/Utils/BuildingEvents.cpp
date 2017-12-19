@@ -20,7 +20,7 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 bvector<IToolSettingsChangedHandler*> BuildingEvents::s_RegisteredToolSettingsChangedHandlersVector;
 bvector<ICreatePressedHandler*> BuildingEvents::s_RegisteredCreatePressedHandlersVector;
@@ -344,5 +344,5 @@ void BuildingEvents::Initialize()
     DgnClientFx::DgnClientApp::App().Messages().AddHandler(*BuildingEventsHandler::GetInstance());
     }
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE
 

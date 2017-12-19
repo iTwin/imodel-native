@@ -12,10 +12,10 @@
 #include <DgnView/Locate.h>
 #include <DgnView\SelectionSetManager.h>
 #include <DgnView\AccuSnap.h>
-#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
+#include <BuildingShared/BuildingSharedMacros.h>
 #include <DgnView/DgnViewLib.h>
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 // Static methods to present geometry to debugger . .
 struct GeometryDebug
@@ -29,18 +29,18 @@ struct GeometryDebug
 
     static bvector<bpair<CurveVectorPtr, Dgn::ColorDef>> m_debugCurves;
 
-    BUILDINGUNITS_EXPORT static void SetDebugLevel(int dbg){ s_debug = dbg;};
-    BUILDINGUNITS_EXPORT static void Announce(CurveVectorCR cv, char const *name);
-    BUILDINGUNITS_EXPORT static void Announce(PolyfaceHeaderCR mesh, char const *name);
-    BUILDINGUNITS_EXPORT static void Announce(CurveVectorWithDistanceIndexCR path, char const *name);
-    BUILDINGUNITS_EXPORT static void Announce(bvector<PathLocationDetailPair> const &pathAIntervals, bvector<PathLocationDetailPair> const &pathBIntervals, char const * name);
+    BUILDINGSHAREDUNITS_EXPORT static void SetDebugLevel(int dbg){ s_debug = dbg;};
+    BUILDINGSHAREDUNITS_EXPORT static void Announce(CurveVectorCR cv, char const *name);
+    BUILDINGSHAREDUNITS_EXPORT static void Announce(PolyfaceHeaderCR mesh, char const *name);
+    BUILDINGSHAREDUNITS_EXPORT static void Announce(CurveVectorWithDistanceIndexCR path, char const *name);
+    BUILDINGSHAREDUNITS_EXPORT static void Announce(bvector<PathLocationDetailPair> const &pathAIntervals, bvector<PathLocationDetailPair> const &pathBIntervals, char const * name);
 
-    BUILDINGUNITS_EXPORT static void AddDebugCurve(CurveVectorP curve, Dgn::ColorDef color)         { m_debugCurves.push_back(bpair<CurveVectorPtr, Dgn::ColorDef>(curve, color)); }
-    BUILDINGUNITS_EXPORT static void AddDebugPrimitive(ICurvePrimitiveP prim, Dgn::ColorDef color)  { CurveVectorPtr c = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open); c->Add(prim); AddDebugCurve(c.get(), color); }
-    BUILDINGUNITS_EXPORT static void AddDebugPoints(bvector<DPoint3d>& points, Dgn::ColorDef color) { CurveVectorPtr c = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_None); c->Add(ICurvePrimitive::CreatePointString(points)); m_debugCurves.push_back(bpair<CurveVectorPtr, Dgn::ColorDef>(c, color)); }
-    BUILDINGUNITS_EXPORT static void AddDebugPoint(DPoint3d point, Dgn::ColorDef color)             { bvector<DPoint3d> points; points.push_back(point); AddDebugPoints(points, color); }
-    BUILDINGUNITS_EXPORT static const bvector<bpair<CurveVectorPtr, Dgn::ColorDef>>& GetDebugCurves() { return m_debugCurves; }
-    BUILDINGUNITS_EXPORT static void ClearDebugCurves();
+    BUILDINGSHAREDUNITS_EXPORT static void AddDebugCurve(CurveVectorP curve, Dgn::ColorDef color)         { m_debugCurves.push_back(bpair<CurveVectorPtr, Dgn::ColorDef>(curve, color)); }
+    BUILDINGSHAREDUNITS_EXPORT static void AddDebugPrimitive(ICurvePrimitiveP prim, Dgn::ColorDef color)  { CurveVectorPtr c = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open); c->Add(prim); AddDebugCurve(c.get(), color); }
+    BUILDINGSHAREDUNITS_EXPORT static void AddDebugPoints(bvector<DPoint3d>& points, Dgn::ColorDef color) { CurveVectorPtr c = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_None); c->Add(ICurvePrimitive::CreatePointString(points)); m_debugCurves.push_back(bpair<CurveVectorPtr, Dgn::ColorDef>(c, color)); }
+    BUILDINGSHAREDUNITS_EXPORT static void AddDebugPoint(DPoint3d point, Dgn::ColorDef color)             { bvector<DPoint3d> points; points.push_back(point); AddDebugPoints(points, color); }
+    BUILDINGSHAREDUNITS_EXPORT static const bvector<bpair<CurveVectorPtr, Dgn::ColorDef>>& GetDebugCurves() { return m_debugCurves; }
+    BUILDINGSHAREDUNITS_EXPORT static void ClearDebugCurves();
     };
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE

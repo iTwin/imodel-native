@@ -14,7 +14,7 @@ o = $(OutputRootDir)build/ConceptBuilding/BuildingUnits/
 #dirToSearch = $(ConstraintModelPublicApi)
 #%include cincapnd.mki
 
-nameToDefine = __BUILDINGUNITS_BUILD__
+nameToDefine = __BUILDINGSHAREDUNITS_BUILD__
 %include cdefapnd.mki
 
 %if !defined (BMAKE_DELETE_ALL_TARGETS)

@@ -1,0 +1,19 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: BuildingSharedApi.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+#link Public header file to build context    
+
+$(BuildContext)PublicAPI/BuildingShared/BuildingSharedMacros.h : $(_MakeFilePath)PublicAPI/BuildingShared/BuildingSharedMacros.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/BuildingShared/Units : $(_MakeFilePath)Units/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/Utils : $(_MakeFilePath)Utils/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)

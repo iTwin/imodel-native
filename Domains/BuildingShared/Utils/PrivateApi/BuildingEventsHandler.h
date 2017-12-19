@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
+#include <BuildingShared/BuildingSharedMacros.h>
 #include <DgnClientFx/Messages.h>
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 #define BuildingEventsHandlerPtr RefCountedPtr<BuildingEventsHandler>
 
 struct BuildingEventsHandler : RefCountedBase, DgnClientFx::IMessageHandler
@@ -20,11 +20,11 @@ struct BuildingEventsHandler : RefCountedBase, DgnClientFx::IMessageHandler
         ~BuildingEventsHandler();
 
     public:
-        BUILDINGUTILS_EXPORT static BuildingEventsHandlerPtr GetInstance();
+        BUILDINGSHAREDUTILS_EXPORT static BuildingEventsHandlerPtr GetInstance();
 
     protected:
         virtual void                _HandleMessage(DgnClientFx::JsonMessage const&, DgnClientFx::MessageResponse& response) override;
         virtual bset<Utf8String>    _GetMessageTypes() const override;
     };
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE

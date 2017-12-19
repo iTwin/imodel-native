@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_DGN
 
 #define CONTAINEMENT_TOLERANCE 0.001
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2522,5 +2522,5 @@ bool GeometryUtils::IsSameGeometry
     return true;
     }
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE
 

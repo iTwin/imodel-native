@@ -13,7 +13,7 @@
 //#include "PublicApi/BuildingEvents.h"
 //#include "PublicApi\BuildingMessages.h"
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 BuildingEventsHandlerPtr BuildingEventsHandler::s_instance = NULL;
 
@@ -66,4 +66,4 @@ bset<Utf8String> BuildingEventsHandler::_GetMessageTypes() const
     return set;
     }
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE

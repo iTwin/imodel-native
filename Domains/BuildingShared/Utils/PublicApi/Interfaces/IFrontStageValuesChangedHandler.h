@@ -7,14 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
+#include <BuildingShared/BuildingSharedMacros.h>
 #include <DgnClientFx/Messages.h>
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 struct EXPORT_VTABLE_ATTRIBUTE IFrontStageValuesChangedHandler
     {
-    BUILDINGUTILS_EXPORT virtual void OnFrontStageValuesChanged(JsonValueCR jsonValue, DgnClientFx::MessageResponse& response) = 0;
+    BUILDINGSHAREDUNITS_EXPORT virtual void OnFrontStageValuesChanged(JsonValueCR jsonValue, DgnClientFx::MessageResponse& response) = 0;
     };
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE

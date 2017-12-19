@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "PublicApi/UnitConverter.h"
 #include <ECObjects/ECSchema.h>
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -18,7 +17,7 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 static const double FPU = 3.28084;
 static const double MPU = 1.0;
@@ -465,5 +464,6 @@ void UnitConverter::DirectionToMeetsAndBoundsString(Utf8String & string, DVec3d 
 
     string = buffer;
     }
-END_BUILDING_NAMESPACE
+
+END_BUILDING_SHARED_NAMESPACE
 

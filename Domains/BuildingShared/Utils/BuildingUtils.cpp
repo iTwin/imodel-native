@@ -17,7 +17,7 @@
 #include <DgnPlatform/LineStyle.h>
 #include <RoadRailPhysical\RoadRailPhysicalApi.h>
 #include <RoadRailPhysical\RoadRailCategory.h>
-#include <ConstraintSystem/Units/UnitConverter.h>
+#include <BuildingShared/Units/UnitConverter.h>
 
 //TODO: these should NOT be here
 
@@ -62,7 +62,7 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -605,5 +605,5 @@ Dgn::ElementIterator BuildingElementsUtils::MakeIterator
     return elementIterator;
     }
 
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE
 

@@ -8,7 +8,7 @@
 
 #include "PublicApi\UtilsApi.h"
 
-BEGIN_BUILDING_NAMESPACE
+BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define UNDEFINED nullptr
 #define DISTANCE_INFINITY DBL_MAX
@@ -222,4 +222,4 @@ void Node::AddTwoElementsToGraph(WeightedGraphPtr& graph, NodePtr& parentNode, N
     else
         childNode = graph->GetNode(child);
     }
-END_BUILDING_NAMESPACE
+END_BUILDING_SHARED_NAMESPACE
