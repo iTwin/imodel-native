@@ -819,6 +819,10 @@ bool Loader::IsCacheable() const
     // Tile cache is really annoying when debugging tile generation code...
     return false;
 #else
+    // Host can specify no caching.
+    if (!T_HOST.GetTileAdmin()._WantCachedTiles(m_tile->GetRoot().GetDgnDb()))
+        return false;
+
     // Don't cache tiles refined for zoom...
     auto const& tile = GetElementTile();
     if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
@@ -1064,7 +1068,7 @@ BentleyStatus Loader::_LoadTile()
             m_loads->SetCanceled();
 
             // Also notify host that a new tile has become available, though it's only partial - otherwise it won't know to recreate the scene...
-            T_HOST._OnNewTileReady(root.GetDgnDb());
+            T_HOST.GetTileAdmin()._OnNewTileReady(root.GetDgnDb());
 
             return ERROR;
             }
