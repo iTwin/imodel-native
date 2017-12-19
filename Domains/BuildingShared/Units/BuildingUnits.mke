@@ -2,17 +2,12 @@
 #     $Source: Units/BuildingUnits.mke $
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
-
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/ConstraintSystem/PublicMki/ConstraintSystem.mki
 
 AppName = BuildingUnits
 CCompPDBName = $(AppName)
 
 o = $(OutputRootDir)build/ConceptBuilding/BuildingUnits/
-
-#dirToSearch = $(ConstraintModelPublicApi)
-#%include cincapnd.mki
 
 nameToDefine = __BUILDINGSHAREDUNITS_BUILD__
 %include cdefapnd.mki
@@ -27,6 +22,8 @@ nameToDefine = __BUILDINGSHAREDUNITS_BUILD__
 
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
+
+BuildingUnitsPublicApi = $(_MakeFilePath)PublicAPI/
 
 $(o)UnitConverter$(oext) : $(_MakeFilePath)UnitConverter.cpp ${MultiCompileDepends} $(BuildingUnitsPublicApi)UnitConverter.h
 

@@ -2,20 +2,12 @@
 #     $Source: Utils/BuildingUtils.mke $
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
-
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/ConstraintSystem/PublicMki/ConstraintSystem.mki
 
 AppName = BuildingUtils
 CCompPDBName = $(AppName)
 
 o = $(OutputRootDir)build/ConceptBuilding/BuildingUtils/
-
-#dirToSearch = $(BuildingUnitsPublicApi)
-#%include cincapnd.mki
-
-#dirToSearch = $(ConstraintModelPublicApi)
-#%include cincapnd.mki
 
 nameToDefine = __BUILDINGSHAREDUTILS_BUILD__
 %include cdefapnd.mki
@@ -30,6 +22,9 @@ nameToDefine = __BUILDINGSHAREDUTILS_BUILD__
 
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
+
+BuildingUtilsPublicApi = $(_MakeFilePath)PublicAPI/
+BuildingUtilsPrivateApi = $(_MakeFilePath)PrivateAPI/
 
 $(o)BuildingEvents$(oext) : $(_MakeFilePath)BuildingEvents.cpp ${MultiCompileDepends} \
                             $(BuildingUtilsPublicApi)BuildingEvents.h \
