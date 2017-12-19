@@ -2211,7 +2211,8 @@ enum class FillFlags : uint8_t
     None        = 0,                    //<! No fill, e.g. for any non-planar geometry.
     ByView      = 1 << 0,               //<! Use element fill color, when fill enabled by view
     Always      = 1 << 1,               //<! Use element fill color, even when fill is disabled by view
-    Blanking    = (1 << 2) | Always,    //<! Use element fill color, always rendered behind non-blanking geometry of the same element.
+    Behind      = 1 << 2,               //!< Always rendered behind other geometry belonging to the same element. e.g., text background.
+    Blanking    = Behind | Always,    //<! Use element fill color, always rendered behind other geometry belonging to the same element.
     Background  = 1 << 3,               //<! Use background color specified by view
 };
 

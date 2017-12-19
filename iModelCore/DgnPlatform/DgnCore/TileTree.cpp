@@ -77,7 +77,7 @@ folly::Future<BentleyStatus> TileLoader::Perform()
                 return ERROR;
                 }
             
-            T_HOST._OnNewTileReady(tile.GetRoot().GetDgnDb());
+            T_HOST.GetTileAdmin()._OnNewTileReady(tile.GetRoot().GetDgnDb());
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
             
             // On a successful load, potentially store the tile in the cache.   
