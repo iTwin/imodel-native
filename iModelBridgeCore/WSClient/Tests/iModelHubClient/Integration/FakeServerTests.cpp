@@ -54,6 +54,7 @@ class FakeServerFixture : public IntegrationTestsBase
             EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DeleteAlliModels(serverPath));
             }
     };
+/*
 TEST_F(FakeServerFixture, CreateiModelFromSeed) 
     {
     WCharCP serverPath = outPath.GetWCharCP();
@@ -64,8 +65,7 @@ TEST_F(FakeServerFixture, CreateiModelFromSeed)
     DgnDbPtr m_db = FakeServer::AcquireBriefcase(res, downloadPath, seedFile);
     EXPECT_EQ(DbResult::BE_SQLITE_OK, res);
     EXPECT_TRUE(m_db.IsValid());
-    
-    }
+    }*/
 
 Utf8String GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString)
     {
@@ -104,6 +104,8 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     properties[ServerSchema::Property::iModelDescription] = description;
     return iModelCreation;
     }
+
+#ifdef __WIP__ 
 TEST_F(FakeServerFixture, CreateiModel)
     {
     Utf8String projectId("7ffff-sdsd-wew");
@@ -141,3 +143,4 @@ TEST_F(FakeServerFixture, TestMockHandler)
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler> ();
     auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable(handlePtr);
     }
+#endif
