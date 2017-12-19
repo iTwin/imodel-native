@@ -90,12 +90,13 @@ private:
     ConnectionManager& m_manager;
     Utf8String m_id;
     ECDbR m_db;
+    bool m_isPrimary;
     bool m_isOpen;
 private:
-    TrackingConnection(ConnectionManager& manager, Utf8String id, ECDbR db)
-        : m_manager(manager), m_id(id), m_db(db)
+    TrackingConnection(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary)
+        : m_manager(manager), m_id(id), m_db(db), m_isPrimary(isPrimary)
         {
-        ECDbClosedNotifier::Register(*this, m_db, false);
+        ECDbClosedNotifier::Register(*this, m_db, true);
         m_isOpen = m_db.IsDbOpen();
         LOG_CONNECTIONS.infov("%p TrackingConnection[%s] created", this, m_id.c_str());
         }
@@ -125,8 +126,19 @@ protected:
         m_isOpen = false;
         m_manager.NotifyConnectionClosed(m_id);
         }
+    void _OnConnectionReloaded(ECDbCR db) override
+        {
+        VerifyThread();
+        BeAssert(&db == &m_db);
+        LOG_CONNECTIONS.infov("%p TrackingConnection[%s] reloaded", this, m_id.c_str());
+        m_manager.NotifyConnectionClosed(m_id);
+        if (m_isPrimary)
+            m_manager.NotifyPrimaryConnectionOpened(m_db);
+        else
+            m_manager.NotifyConnectionOpened(m_db);
+        }
 public:
-    static RefCountedPtr<TrackingConnection> Create(ConnectionManager& manager, Utf8String id, ECDbR db) {return new TrackingConnection(manager, id, db);}
+    static RefCountedPtr<TrackingConnection> Create(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary) {return new TrackingConnection(manager, id, db, isPrimary);}
 };
 
 //=======================================================================================
@@ -508,11 +520,12 @@ IConnectionPtr ConnectionManager::GetOrCreateConnection(ECDbR ecdb, bool isProje
     if (connection.IsValid())
         return connection;
 
-    RefCountedPtr<TrackingConnection> primaryConnection = TrackingConnection::Create(*this, connectionId, ecdb);
+    RefCountedPtr<TrackingConnection> primaryConnection = TrackingConnection::Create(*this, connectionId, ecdb, isProjectPrimary);
     m_activeConnections->Add(*primaryConnection);
     lock.unlock();
 
     BroadcastEvent(ConnectionEvent(*primaryConnection, isProjectPrimary, ConnectionEventType::Opened));
+    
     return primaryConnection;
     }
 

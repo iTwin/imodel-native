@@ -24,30 +24,29 @@ struct NotifiersComparer
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2016
 +===============+===============+===============+===============+===============+======*/
+template<typename TAppData>
 struct PriorityAppData : BeSQLite::Db::AppData
 {
-private:
-    static Key s_key;
+protected:
+    static BeSQLite::Db::AppData::Key s_key;
     mutable BeMutex m_mutex;
     bmap<int, bset<RefCountedPtr<ECDbClosedNotifier>>> m_priorityMap;
 
 public:
-    ~PriorityAppData() {Clear();}
-
-    static PriorityAppData* Get(ECDbCR db)
+    static TAppData* Get(ECDbCR db)
         {
         BeSQLite::Db::AppData* appdata = db.FindAppData(s_key);
-        return (nullptr != appdata) ? static_cast<PriorityAppData*>(appdata) : nullptr;
+        return (nullptr != appdata) ? static_cast<TAppData*>(appdata) : nullptr;
         }
 
-    static PriorityAppData& GetOrCreate(ECDbCR db, bool deleteOnClearCache)
+    static TAppData& GetOrCreate(ECDbCR db)
         {
         BeSQLite::Db::AppData* appdata = db.FindAppData(s_key);
         if (nullptr != appdata)
-            return static_cast<PriorityAppData&>(*appdata);
+            return static_cast<TAppData&>(*appdata);
 
-        PriorityAppData* thisAppData = new PriorityAppData();
-        db.AddAppData(s_key, thisAppData, deleteOnClearCache);
+        TAppData* thisAppData = new TAppData();
+        db.AddAppData(s_key, thisAppData, TAppData::DeleteOnClearCache());
         return *thisAppData;
         }
 
@@ -71,8 +70,16 @@ public:
             lock.unlock();
             }
         }
+};
+template<typename TAppData> BeSQLite::Db::AppData::Key PriorityAppData<TAppData>::s_key;
 
-    void Clear()
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2017
++===============+===============+===============+===============+===============+======*/
+struct CloseAppData : PriorityAppData<CloseAppData>
+    {
+    static bool DeleteOnClearCache() {return false;}
+    ~CloseAppData()
         {
         BeMutexHolder lock(m_mutex);
         bmap<int, bset<RefCountedPtr<ECDbClosedNotifier>>> copy = m_priorityMap;
@@ -84,8 +91,26 @@ public:
         for (auto& prioritySet : copy)
             prioritySet.second.clear();
         }
-};
-BeSQLite::Db::AppData::Key PriorityAppData::s_key;
+    };
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2017
++===============+===============+===============+===============+===============+======*/
+struct ReloadAppData : PriorityAppData<ReloadAppData>
+    {
+    static bool DeleteOnClearCache() {return true;}
+    ~ReloadAppData()
+        {
+        BeMutexHolder lock(m_mutex);
+
+        // make sure each priority set is notified in correct order:
+        // smallest priority notifiers are removed first, largest priority notifiers are removed last
+        for (auto& prioritySet : m_priorityMap)
+            {
+            for (RefCountedPtr<ECDbClosedNotifier> const& notifier : prioritySet.second)
+                notifier->GetListener().NotifyConnectionReloaded(notifier->GetConnection());
+            }
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
@@ -102,19 +127,25 @@ ECDbClosedNotifier::~ECDbClosedNotifier()
     if (nullptr != m_listener)
         {
         m_listener->m_notifiers.erase(this);
-        m_listener->_OnConnectionClosed(m_db);
+        m_listener->NotifyConnectionClosed(m_db);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECDbClosedNotifier> ECDbClosedNotifier::Register(IECDbClosedListener& listener, BeSQLite::EC::ECDbCR db, bool deleteOnClearCache)
+void ECDbClosedNotifier::Register(IECDbClosedListener& listener, BeSQLite::EC::ECDbCR db, bool deleteOnClearCache)
     {
-    RefCountedPtr<ECDbClosedNotifier> notifier = new ECDbClosedNotifier(listener, db);
-    PriorityAppData::GetOrCreate(db, deleteOnClearCache).Add(*notifier);
-    listener.m_notifiers.insert(notifier.get());
-    return notifier;
+    RefCountedPtr<ECDbClosedNotifier> closeNotifier = new ECDbClosedNotifier(listener, db);
+    CloseAppData::GetOrCreate(db).Add(*closeNotifier);
+    listener.m_notifiers.insert(closeNotifier.get());
+
+    if (deleteOnClearCache)
+        {
+        RefCountedPtr<ECDbClosedNotifier> reloadNotifier = new ECDbClosedNotifier(listener, db);
+        ReloadAppData::GetOrCreate(db).Add(*reloadNotifier);
+        listener.m_notifiers.insert(reloadNotifier.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -123,7 +154,14 @@ RefCountedPtr<ECDbClosedNotifier> ECDbClosedNotifier::Register(IECDbClosedListen
 void ECDbClosedNotifier::Unregister()
     {
     m_listener = nullptr;
-    PriorityAppData::Get(m_db)->Remove(*this);
+
+    CloseAppData* closeAppData = CloseAppData::Get(m_db);
+    if (nullptr != closeAppData)
+        closeAppData->Remove(*this);
+
+    ReloadAppData* reloadAppData = ReloadAppData::Get(m_db);
+    if (nullptr != reloadAppData)
+        reloadAppData->Remove(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
