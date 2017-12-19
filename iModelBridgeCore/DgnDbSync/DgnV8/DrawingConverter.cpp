@@ -701,7 +701,7 @@ ViewDefinitionPtr DrawingViewFactory::_MakeView(Converter& converter, ViewDefini
 
     converter._TurnOnExtractionCategories(*parms.m_categories);
 
-    DrawingViewDefinitionPtr view = new DrawingViewDefinition(db.GetDictionaryModel(), parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition(*converter.GetJobDefinitionModel(), parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());
 
     parms.Apply(*view);
 

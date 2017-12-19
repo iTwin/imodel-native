@@ -1823,6 +1823,35 @@ BentleyStatus Converter::InitSheetListModel()
     return BentleyStatus::SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DefinitionModelPtr Converter::GetJobDefinitionModel()
+    {
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    SubjectCR job = GetJobSubject();
+    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(job, partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    DefinitionPartitionPtr ed = DefinitionPartition::Create(job, partitionName.c_str());
+    DefinitionPartitionCPtr partition = ed->InsertT<DefinitionPartition>();
+    if (!partition.IsValid())
+        return DefinitionModelPtr();
+
+    DefinitionModelPtr defModel = DefinitionModel::CreateAndInsert(*partition);
+    if (!defModel.IsValid())
+        return DefinitionModelPtr();
+
+    m_jobDefinitionModelId = defModel->GetModelId();
+    return defModel;
+    }
+
 static const Utf8CP s_codeSpecName = "DgnV8"; // TBD: One CodeSpec per V8 file?
 
 /*---------------------------------------------------------------------------------**//**

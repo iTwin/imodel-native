@@ -456,7 +456,11 @@ BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap,
         }
 
     Point2d size = imageSource.GetSize();
-    DgnTexture texture(DgnTexture::CreateParams(GetDgnDb().GetDictionaryModel(), Utf8String(fileName), imageSource, size.x, size.y));
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return ERROR;
+
+    DgnTexture texture(DgnTexture::CreateParams(*definitionModel, Utf8String(fileName), imageSource, size.x, size.y));
     
     DgnDbStatus insertStatus = DgnDbStatus::Success;
     texture.Insert (&insertStatus);
@@ -683,6 +687,10 @@ void Converter::ConvertModelMaterials(DgnV8ModelR dgnModel)
     {
     DgnV8Api::CachedMaterialConstIterator iter(dgnModel, true), end(dgnModel, false);
 
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return;
+
     for (;iter != end;++iter)
         {
         DgnV8Api::Material const&   v8Material = *iter;
@@ -701,7 +709,7 @@ void Converter::ConvertModelMaterials(DgnV8ModelR dgnModel)
             }
 
         Utf8String utfMaterialName(v8Material.GetName().c_str()), utfPaletteName(v8Material.GetPalette().GetName().c_str());
-        RenderMaterial material(m_dgndb->GetDictionaryModel(), utfPaletteName, utfMaterialName);
+        RenderMaterial material(*definitionModel, utfPaletteName, utfMaterialName);
         material.SetRenderingAsset(renderMaterialJson);
 
         RenderMaterialCPtr dbMaterial = material.Insert();
