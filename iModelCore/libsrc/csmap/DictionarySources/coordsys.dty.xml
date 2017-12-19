@@ -6628,16 +6628,7 @@
                     <KeyName>GRMNY-S5</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN/BeTA2010.Gauss3d-2</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN/BeTA2010.Gauss3d-3</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN/BeTA2010.Gauss3d-4</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN/BeTA2010.Gauss3d-5</KeyName>
+                    <KeyName>DHDN/HeTA2010.Gauss3d-3</KeyName>
                   </Member>
                   <Member>
                     <KeyName>DHDN/BeTA.Gauss3d-2</KeyName>
@@ -29000,7 +28991,19 @@
                   </Member>                    
                   <Member>
                     <KeyName>DHDN/BeTA2010.Gauss3d-1</KeyName>
-                  </Member>                    
+                  </Member>                  
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-2</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-3</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-4</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/BeTA2010.Gauss3d-5</KeyName>
+                  </Member>  
                   <Member>
                     <KeyName>EPSG:31491</KeyName>
                   </Member>
@@ -32311,7 +32314,7 @@
                 <Name>Germany</Name>
                 <Members>
                   <Member>
-                    <KeyName>DHDN/BeTA2010.LL</KeyName>
+                    <KeyName>DHDN/HeTA2010.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>DHDN/BeTA.LL</KeyName>
@@ -34738,6 +34741,9 @@
               </Member>
               <Member>
                 <KeyName>EPSG:4724</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN/BeTA2010.LL</KeyName>
               </Member>
             </Members>
           </Group>
