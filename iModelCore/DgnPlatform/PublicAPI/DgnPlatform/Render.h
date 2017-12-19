@@ -2941,7 +2941,7 @@ struct GraphicBranch
     ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
 
-    void Add(Graphic& graphic) {m_entries.push_back(&graphic);}
+    void Add(Graphic& graphic) {m_entries.push_back(&graphic);BeAssert(m_entries.back().IsValid());}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
     void SetViewFlagsOverrides(ViewFlagsOverridesCR ovr) { m_viewFlagsOverrides = ovr; }
     ViewFlags GetViewFlags(ViewFlagsCR base) const { ViewFlags flags = base; m_viewFlagsOverrides.Apply(flags); return flags; }
