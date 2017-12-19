@@ -173,34 +173,22 @@
       -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Product Name="iModelBridgeFwkICSPlugin">
-      <SubPart PartName="iModelBridgeFwkICSPluginRequiredRepos"/>
       <SubPart PartName="iModelBridgeFwkICSPluginDll"/>
       <SubPart PartName="iModelBridgeFwkICSPluginConfigBootStrapperExe" />
       <Directories DirectoryListName="iModelBridgeFwkICSPluginDirList" />
     </Product>
-
-    <!--
-          Firebug and PRG do a single pull (as WinX64 right now), but build for multiple architectures.
-          Ensure that WinX64 pulls these required repos even though only the WinX86 will need them.
-      -->
-    <Part Name="iModelBridgeFwkICSPluginRequiredRepos" OnlyPlatforms="x64">
-      <RequiredRepository>pas100002Bin</RequiredRepository>
-      <RequiredRepository>orchfrwk100002Bin</RequiredRepository>
-    </Part>
 
     <ProductDirectoryList ListName="iModelBridgeFwkICSPluginDirList">
       <ProductDirectory Name="iModelBridgeFwkICSPluginBinaries" Path=""/>
     </ProductDirectoryList>
 
     <Part Name="iModelBridgeFwkICSPluginConfigBootStrapperExe" BMakeFile="iModelBridge/Fwk/bas/Bootstrapper/iModelBridgeFwkICSPluginConfigBootStrapper.mke" OnlyPlatforms="x86">
-      <RequiredRepository>pas100002Bin</RequiredRepository>
       <Bindings>
         <Assemblies ProductDirectoryName="iModelBridgeFwkICSPluginBinaries">Delivery/iModelBridgeFwkICSPluginConfigBootStrapper.exe</Assemblies>
       </Bindings>
     </Part>
 
     <Part Name="iModelBridgeFwkICSPluginDll" BMakeFile="iModelBridge/Fwk/bas/iModelBridgeFwkICSPlugin.mke" OnlyPlatforms="x86">
-      <SubPart PartName="iModelBridgeFwkICSPluginRequiredRepos"/>
       <Bindings>
         <Assemblies ProductDirectoryName="iModelBridgeFwkICSPluginBinaries">Delivery/iModelBridgeFwkICSPlugin.dll</Assemblies>
       </Bindings>
