@@ -17,7 +17,8 @@ struct NotifiersComparer
     {
     bool operator()(RefCountedPtr<ECDbClosedNotifier> const& lhs, RefCountedPtr<ECDbClosedNotifier> const& rhs) const
         {
-        return lhs->GetPriority() < rhs->GetPriority();
+        return lhs->GetPriority() < rhs->GetPriority()
+            || lhs->GetPriority() == rhs->GetPriority() && lhs.get() < rhs.get();
         }
     };
 
@@ -153,6 +154,7 @@ void ECDbClosedNotifier::Register(IECDbClosedListener& listener, BeSQLite::EC::E
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbClosedNotifier::Unregister()
     {
+    RefCountedPtr<ECDbClosedNotifier> notifier = this;
     m_listener = nullptr;
 
     CloseAppData* closeAppData = CloseAppData::Get(m_db);

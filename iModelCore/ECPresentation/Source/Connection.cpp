@@ -122,20 +122,26 @@ protected:
         {
         VerifyThread();
         BeAssert(&db == &m_db);
-        LOG_CONNECTIONS.infov("%p TrackingConnection[%s] closed", this, m_id.c_str());
-        m_isOpen = false;
-        m_manager.NotifyConnectionClosed(m_id);
+        if (m_isOpen)
+            {
+            LOG_CONNECTIONS.infov("%p TrackingConnection[%s] closed", this, m_id.c_str());
+            m_isOpen = false;
+            m_manager.NotifyConnectionClosed(m_id);
+            }
         }
     void _OnConnectionReloaded(ECDbCR db) override
         {
         VerifyThread();
         BeAssert(&db == &m_db);
-        LOG_CONNECTIONS.infov("%p TrackingConnection[%s] reloaded", this, m_id.c_str());
-        m_manager.NotifyConnectionClosed(m_id);
-        if (m_isPrimary)
-            m_manager.NotifyPrimaryConnectionOpened(m_db);
-        else
-            m_manager.NotifyConnectionOpened(m_db);
+        if (m_isOpen)
+            {
+            LOG_CONNECTIONS.infov("%p TrackingConnection[%s] reloaded", this, m_id.c_str());
+            m_manager.NotifyConnectionClosed(m_id);
+            if (m_isPrimary)
+                m_manager.NotifyPrimaryConnectionOpened(m_db);
+            else
+                m_manager.NotifyConnectionOpened(m_db);
+            }
         }
 public:
     static RefCountedPtr<TrackingConnection> Create(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary) {return new TrackingConnection(manager, id, db, isPrimary);}
