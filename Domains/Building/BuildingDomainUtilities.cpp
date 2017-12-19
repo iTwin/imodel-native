@@ -36,10 +36,10 @@ namespace BuildingDomain
         if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
             return BentleyStatus::ERROR;
 
-        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
             return BentleyStatus::ERROR;
 
-        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(Forms::FormsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
             return BentleyStatus::ERROR;
 
         if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))

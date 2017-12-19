@@ -10,6 +10,8 @@
 #include <ConstraintSystem/ConstraintSystemApi.h>
 #include <Grids/GridsApi.h>
 #include <StructuralDomain/StructuralDomainApi.h>
+#include <ProfilesDomain/ProfilesDomainApi.h>
+#include <FormsDomain/FormsDomainApi.h>
 
 
  

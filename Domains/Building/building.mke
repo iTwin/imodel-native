@@ -114,6 +114,8 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)AecUnits$
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)GridsDomain$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ConstraintModel$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)StructuralDomain$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ProfilesDomain$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)FormsDomain$(libext)
 
 
 
