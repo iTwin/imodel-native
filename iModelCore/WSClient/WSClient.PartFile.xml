@@ -260,6 +260,7 @@
         <SubPart PartName="iModelHubClient-Library"/>
         <SubPart PartName="iModelHubBackdoorForIntegrationTests"/>
         <SubPart PartName="IMHSClientExe"/>
+        <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHubNativeTests/Integration" SourceName="Delivery/iModelHubNativeTests/Objects/Integration"/>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/IntegrationTests.json</Files>

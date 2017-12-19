@@ -166,8 +166,8 @@ Error::Error(RevisionStatus const& status)
         }
     else
         {
-        m_id = Id::RevisionManagerError;
-        m_message = GetDefaultMessage(Id::RevisionManagerError);
+        m_id = Id::ChangeSetManagerError;
+        m_message = GetDefaultMessage(Id::ChangeSetManagerError);
         }
     }
 
@@ -208,7 +208,7 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
         map[Id::FileIsNotBriefcase] = ErrorLocalizedString(MESSAGE_FileIsNotBriefcase);
 
         map[Id::MergeError] = ErrorLocalizedString(MESSAGE_MergeError);
-        map[Id::RevisionManagerError] = ErrorLocalizedString(MESSAGE_RevisionManagerError);
+        map[Id::ChangeSetManagerError] = ErrorLocalizedString(MESSAGE_ChangeSetManagerError);
         map[Id::MergeSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_MergeSchemaChangesOnOpen);
         map[Id::ChangeSetDoesNotExist] = ErrorLocalizedString(MESSAGE_ChangeSetDoesNotExist);
 

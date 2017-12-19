@@ -56,20 +56,13 @@ TEST_F(WSClientTests, GetServerInfo_CalledFirstTime_SendsGetPluginsUrl)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, GetServerInfo_FirstResponseReturnNotFoundPokingFails_SendsGetInfoUrl)
+TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnNotFound_SendsGetInfoUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
-    GetHandler ().ExpectRequests (9);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (9, [=] (Http::RequestCR request)
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.2/Info", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -81,20 +74,13 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseReturnNotFoundPokingFails_Sends
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, GetServerInfo_FirstResponseReturnsBadRequestAndNoWSGErrorPokingFails_SendsGetInfoUrl)
+TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsBadRequestAndNoWSGError_SendsGetInfoUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
-    GetHandler ().ExpectRequests (9);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::BadRequest, "Foo Error Message"));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (9, [=] (Http::RequestCR request)
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::BadRequest, "Foo Error Message"));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.2/Info", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -122,21 +108,14 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponsesReturnsNotNotFoundAndWSGError_
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, GetServerInfo_First9ResponsesReturnNotFound_SendsGetAboutPageUrl)
+TEST_F(WSClientTests, GetServerInfo_FirstAndSecondResponsesReturnNotFound_SendsGetAboutPageUrl)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
-    GetHandler ().ExpectRequests (10);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (9, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (10, [=] (Http::RequestCR request)
+    GetHandler().ExpectRequests(3);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/Pages/About.aspx", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -148,23 +127,16 @@ TEST_F(WSClientTests, GetServerInfo_First9ResponsesReturnNotFound_SendsGetAboutP
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, GetServerInfo_First9ResponsesReturnNotFound_UsesAboutPageToIdentifyWSGR1)
+TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageToIdentifyWSGR1)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     auto aboutPageStub = R"(<span id="productNameLabel">Bentley Web Services Gateway 01.00</span>)";
 
-    GetHandler ().ExpectRequests (10);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (9, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (10, StubHttpResponse (HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
+    GetHandler().ExpectRequests(3);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(BeVersion(1, 0), info.GetValue().GetVersion());
@@ -173,23 +145,16 @@ TEST_F(WSClientTests, GetServerInfo_First9ResponsesReturnNotFound_UsesAboutPageT
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, GetServerInfo_First9ResponsesReturnNotFound_UsesAboutPageToIdentifyBentleyConnectWSGR1)
+TEST_F(WSClientTests, GetServerInfo_SecondResponseReturnsNotFound_UsesAboutPageToIdentifyBentleyConnectWSGR1)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     auto aboutPageStub = R"(Web Service Gateway for BentleyCONNECT ... any text here ... <span id="versionLabel">1.1.0.0</span>)";
 
-    GetHandler ().ExpectRequests (10);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (9, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (10, StubHttpResponse (HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
+    GetHandler().ExpectRequests(3);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, aboutPageStub, {{"Content-Type", "text/html"}}));
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(BeVersion(1, 0), info.GetValue().GetVersion());
@@ -199,21 +164,14 @@ TEST_F(WSClientTests, GetServerInfo_First9ResponsesReturnNotFound_UsesAboutPageT
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeaderPokingFails_RetriesOtherAndReturnsNotSupported)
+TEST_F(WSClientTests, GetServerInfo_FirstResponseDoesNotHaveServerHeader_RetriesOtherAndReturnsNotSupported)
     {
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
-    GetHandler ().ExpectRequests (10);
+    GetHandler().ExpectRequests(3);
     GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::OK, "some other html", {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}}));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (9, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (10, StubHttpResponse (HttpStatus::NotFound));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::NotFound));
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(WSError::Status::ServerNotSupported, info.GetError().GetStatus());
@@ -231,42 +189,6 @@ TEST_F(WSClientTests, GetServerInfo_FirstResponseHasProperServerHeader_Identifyi
 
     auto info = client->GetServerInfo()->GetResult();
     EXPECT_EQ(BeVersion(2, 0), info.GetValue().GetVersion());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (WSClientTests, GetServerInfo_IncorrectServerHeaderPokeWSG_IdentifyingWSG2_7)
-    {
-    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
-
-    GetHandler ().ExpectRequests (2);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::OK, "", {{"Server", "My-Very-Special-Proxy-Header/2.0"}}));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::OK, "", {{"Server", "My-Very-Special-Proxy-Header/2.0"}}));
-
-    auto info = client->GetServerInfo ()->GetResult ();
-    EXPECT_EQ (BeVersion (2, 7), info.GetValue ().GetVersion ());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (WSClientTests, GetServerInfo_IncorrectServerHeaderPokeWSG_IdentifyingWSG2_1)
-    {
-    auto client = WSClient::Create ("https://srv.com/ws", StubClientInfo (), GetHandlerPtr ());
-
-    GetHandler ().ExpectRequests (8);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::OK, "", {{"Server", "My-Very-Special-Proxy-Header/2.0"}}));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::OK));
-
-    auto info = client->GetServerInfo ()->GetResult ();
-    EXPECT_EQ (BeVersion (2, 1), info.GetValue ().GetVersion ());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -555,16 +477,10 @@ TEST_F(WSClientTests, RegisterServerInfoListener_NotSupportedServer_ListenerNotN
     auto listener = std::make_shared<MockServerInfoListener>();
 
     EXPECT_CALL(*listener, OnServerInfoReceived(_)).Times(0);
-    GetHandler ().ForRequest (1, StubHttpResponse (HttpStatus::OK, "{}"));
-    GetHandler ().ForRequest (2, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (3, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (4, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (5, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (6, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (7, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (8, StubHttpResponse (HttpStatus::NotFound));
-    GetHandler ().ForRequest (9, StubHttpResponse (HttpStatus::OK, "{}"));
-    GetHandler ().ForRequest (10, StubHttpResponse (HttpStatus::OK, "{}"));
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::OK, "{}");
+        });
 
     client->RegisterServerInfoListener(listener);
     client->SendGetInfoRequest()->Wait();

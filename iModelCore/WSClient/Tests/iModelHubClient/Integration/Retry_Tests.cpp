@@ -480,7 +480,7 @@ TEST_F(RetryTests, DownloadedChangeSetInvalid)
     BeTest::SetFailOnAssert(true);
     
     EXPECT_FALSE(pushResult.IsSuccess());
-    EXPECT_EQ(Error::Id::RevisionManagerError, pushResult.GetError().GetId());
+    EXPECT_EQ(Error::Id::ChangeSetManagerError, pushResult.GetError().GetId());
 
     // Second push should succeed
     pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();

@@ -100,6 +100,7 @@ struct UrlProvider
         struct Urls
             {
             WSCLIENT_EXPORT static const UrlDescriptor BIMReviewShare;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectedContext;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectEula;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectTermsOfServiceUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectProjectUrl;

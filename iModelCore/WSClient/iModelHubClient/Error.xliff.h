@@ -45,12 +45,11 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_BriefcaseWrongURL)                 // =="Briefcase belongs to another server."==
     L10N_STRING(MESSAGE_FileAlreadyExists)                 // =="Could not acquire briefcase. File with that name already exists."==
     L10N_STRING(MESSAGE_FileIsNotBriefcase)                // =="File is not a valid briefcase."==
-    L10N_STRING(MESSAGE_BriefcaseInfoParseError)           // =="Briefcase information could not be parsed."==
     L10N_STRING(MESSAGE_BriefcaseOutdated)                 // =="Briefcase is no longer valid. Seed file has been replaced."==
 
     //ChangeSet errors
     L10N_STRING(MESSAGE_MergeError)                        // =="ChangeSet merge error has occured."==
-    L10N_STRING(MESSAGE_RevisionManagerError)              // =="Revision manager error has occured."==
+    L10N_STRING(MESSAGE_ChangeSetManagerError)             // =="ChangeSet manager error has occured."==
     L10N_STRING(MESSAGE_MergeSchemaChangesOnOpen)          // =="Briefcase needs to be reopened in order to merge changes from the server."==
     L10N_STRING(MESSAGE_ChangeSetDoesNotExist)             // =="ChangeSet could not be found."==
 

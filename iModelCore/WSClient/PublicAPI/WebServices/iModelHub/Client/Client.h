@@ -27,12 +27,12 @@ DEFINE_TASK_TYPEDEFS(BriefcasePtr, Briefcase);
 DEFINE_TASK_TYPEDEFS(iModelManagerPtr, iModelManager);
 DEFINE_TASK_TYPEDEFS(BeFileName, BeFileName);
 
-typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, iModelInfoCR, FileInfoCR)> BriefcaseFileNameCallback;
+typedef std::function<BeFileName(BeFileName, iModelInfoCR, BriefcaseInfoCR)> BriefcaseFileNameCallback;
 typedef std::function<BeFileName(iModelInfoCR, FileInfoCR)> LocalBriefcaseFileNameCallback;
 
 //=======================================================================================
-//! Client of DgnDbServer.
-//! This class provides the interface for the operations with iModel hubs.
+//! Client of iModelHub.
+//! This class provides the interface for the operations with iModel Hub.
 //! Client class does not maintain a connection to services itself and just provides
 //! the required connection information to other iModel Hub Client classes.
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
@@ -52,8 +52,8 @@ private:
     Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler) : 
         m_clientInfo(clientInfo), m_customHandler(customHandler), m_iModelAdmin(this) { m_serverUrl = UrlProvider::Urls::iModelHubApi.Get(); }
 
-    StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
-                                   FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
+    StatusResult DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BriefcaseInfoCR briefcaseInfo,
+                                   bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                    ICancellationTokenPtr cancellationToken = nullptr) const;
     iModelTaskPtr CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR iModelName, Utf8StringCR description,
                                        ICancellationTokenPtr cancellationToken) const;
