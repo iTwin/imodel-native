@@ -63,6 +63,7 @@ enum class Type : uint8_t
     MeshEdgeVertices            = 24,       // SS3 Sheet edges stored only a single face edge which may not be unique. Replaced by start/end vertex edges.
     BRepPlanarFace              = 25,       // Draw Method Index, FaceId.   (For Planar Constraints).
     TriangulationBoundary       = 26,        // triangulation of points
+    BRepUnIdentifiedEdge        = 27,
     Max,
     };
 
