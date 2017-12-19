@@ -33,6 +33,21 @@ typedef std::shared_ptr<struct ConnectSignInManager> ConnectSignInManagerPtr;
 struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared_from_this<ConnectSignInManager>
     {
     public:
+        struct IListener
+            {
+            virtual ~IListener() {};
+            //! Will be called when token expiration is detected
+            virtual void _OnUserTokenExpired() {};
+            //! Will be called when user change is detected
+            virtual void _OnUserChanged() {};
+            //! Will be called after finalizing user sign-in
+            virtual void _OnUserSignedIn() {};
+            //! Will be called after user sign-out
+            virtual void _OnUserSignedOut() {};
+            //! Will be called after user signs in to Connection Client
+            virtual void _OnUserSignedInViaConnectionClient() {};
+            };
+
         struct UserInfo
             {
             Utf8String username;
@@ -102,6 +117,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         IConnectTokenProviderPtr m_publicIdentityTokenProvider;
         mutable bmap<Utf8String, std::shared_ptr<struct DelegationTokenProvider>> m_publicDelegationTokenProviders;
 
+        bset<IListener*> m_listeners;
         std::function<void()> m_tokenExpiredHandler;
         std::function<void()> m_userChangeHandler;
         std::function<void()> m_userSignInHandler;
@@ -131,6 +147,12 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         bool IsSignedInNoLock()  const;
 
         void InitializeConnectionClientInterface() const;
+              
+        void _OnUserTokenExpired() const;
+        void _OnUserChanged() const;
+        void _OnUserSignedIn() const;
+        void _OnUserSignedOut() const;
+        void _OnUserSignedInViaConnectionClient() const;
 
     public:
         //! Create manager. Call CheckAndUpdateToken() to update sign-in information seperately.
@@ -189,19 +211,20 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Get last or current user that was signed in. Returns empty if no user was signed in
         WSCLIENT_EXPORT Utf8String GetLastUsername() const;
 
-        //! Will be called when token expiration is detected
+        //! Register listener to get user state change events
+        WSCLIENT_EXPORT void RegisterListener(IListener* listener);
+        //! Unregister listener registered with RegisterListener()
+        WSCLIENT_EXPORT void UnregisterListener(IListener* listener);
+
+        //! DEPRECATED, Use RegisterListener()! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
-
-        //! Will be called when user change is detected. Should be set when starting application.
+        //! DEPRECATED, Use RegisterListener()! Will be called when user change is detected. Should be set when starting application.
         WSCLIENT_EXPORT void SetUserChangeHandler(std::function<void()> handler);
-
-        //! Will be called after finalizing user sign-in
+        //! DEPRECATED, Use RegisterListener()! Will be called after finalizing user sign-in
         WSCLIENT_EXPORT void SetUserSignInHandler(std::function<void()> handler);
-
-        //! Will be called after user sign-out
+        //! DEPRECATED, Use RegisterListener()! Will be called after user sign-out
         WSCLIENT_EXPORT void SetUserSignOutHandler(std::function<void()> handler);
-
-        //! Will be called after user signs in to Connection Client
+        //! DEPRECATED, Use RegisterListener()! Will be called after user signs in to Connection Client
         WSCLIENT_EXPORT void SetConnectionClientSignInHandler(std::function<void()> handler);
 
         //! Get authentication handler for specific server.
