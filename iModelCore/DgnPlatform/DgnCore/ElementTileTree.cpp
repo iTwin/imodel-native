@@ -404,6 +404,7 @@ protected:
     void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
     bool _WantUndisplayed() override { return true; }
+    AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
 
 public:
