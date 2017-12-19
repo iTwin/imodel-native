@@ -1531,7 +1531,7 @@ void Tile::Invalidate(DirtyRangesCR dirty)
         {
         // This tile needs to be regenerated
         m_root.CancelTileLoad(*this);
-        // SetNotLoaded(); NO! TFS#796257 - will be set to NotLoaded when tile thread finishes - otherwise we might request again while still processing on another thread!
+        SetNotLoaded();
         _Invalidate();
         }
 
