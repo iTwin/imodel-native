@@ -432,22 +432,18 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_balanced = masterJSON["Balanced"].asBool();
             indexHeader->m_depth = masterJSON["Depth"].asUInt();
             indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
-            bool isTextured = masterJSON["IsTextured"].asBool();
-            if (!isTextured)
-                {
-                indexHeader->m_textured = SMTextureType::None;                
-                }
-            else
-                {
-                indexHeader->m_textured = SMTextureType::Embedded;
-                }
-
-            indexHeader->m_isTerrain = masterJSON["IsTerrain"].asBool();
-
+            indexHeader->m_textured = SMTextureType(masterJSON["IsTextured"].asUInt());
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
             indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
+
+            if (masterJSON.isMember("GCS"))
+                {
+                Utf8String wktString = masterJSON["GCS"].asString();
+                m_settings->SetGCSString(wktString);
+                }
             }
+
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
         //m_settings->SetGCSString(wkt);

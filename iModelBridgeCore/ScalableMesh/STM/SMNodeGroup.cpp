@@ -540,33 +540,6 @@ void SMNodeGroup::LoadGroupParallel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SMNodeGroup::GetWKTString(Utf8String & wkt)
-    {
-    assert(m_tilesetRootNode.isMember("root"));
-    auto const& root = m_tilesetRootNode["root"];
-    if (!root.isMember("SMHeader")) return false;
-    auto const& smHeader = root["SMHeader"];
-    if (!smHeader.isMember("GCS")) return false;
-    wkt = Utf8String(smHeader["GCS"].asCString());
-    //ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wkt, wkt);
-    //BaseGCS::WktFlavor  wktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
-    //
-    //bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
-    //
-    //assert(result);
-    //
-    //SMStatus gcsCreateStatus;
-    //GCS gcs(GetGCSFactory().Create(wkt.c_str(), wktFlavor, gcsCreateStatus));
-    //
-    //if (SMStatus::S_SUCCESS != gcsCreateStatus)
-    //    return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Richard.Bois     03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceURL SMNodeGroup::GetDataURLForNode(HPMBlockID blockID)
     {
     const auto& jsonNode = *this->m_tileTreeMap[blockID.m_integerID];
