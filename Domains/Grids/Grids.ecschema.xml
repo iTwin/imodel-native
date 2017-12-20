@@ -111,6 +111,7 @@
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Elevation" displayLabel="Length" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="Surface2d" displayLabel="Surface2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="FreeGridSurface" description="a grid surface of any geometry.">

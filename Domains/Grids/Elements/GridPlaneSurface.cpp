@@ -436,6 +436,43 @@ Placement3dCR placement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                ElevationGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    CurveVectorPtr shape = GetSurface2d();
+
+    Transform translation = Transform::From(0.0, 0.0, GetElevation());
+
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+
+    if (grid.IsNull())
+        return Dgn::DgnDbStatus::ValidationFailed;  //has no grid??
+
+    Placement3dCR currGridPlacement = grid->GetPlacement();
+
+    Placement3d thisPlacement(currGridPlacement);
+
+    if (!thisPlacement.TryApplyTransform(translation))
+        return Dgn::DgnDbStatus::WriteError;
+
+    SetPlacement(thisPlacement);
+
+    Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
+
+    if (builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
+        {
+        if (SUCCESS != builder->Finish(*geomElem))
+            return Dgn::DgnDbStatus::WriteError;
+        }
+
+    return T_Super::_OnUpdate(original);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void                            ElevationGridSurface::SetSurface2d
 (
 CurveVectorPtr surface
@@ -450,7 +487,7 @@ CurveVectorPtr surface
     bsiTransform_getOriginAndVectors (&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
 
     if (!DoubleOps::AlmostEqualFraction (surfacePlane.origin.z, 0.0) ||
-        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 0.0)) //must be a zero Z plane
+        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 1.0)) //must be a zero Z plane
         return;
 
     IGeometryPtr geometryPtr = IGeometry::Create (surface);

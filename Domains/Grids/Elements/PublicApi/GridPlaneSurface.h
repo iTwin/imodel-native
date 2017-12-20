@@ -325,6 +325,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
         friend struct ElevationGridSurfaceHandler;
 
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _SetPlacement (Dgn::Placement3dCR placement) override;
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
         
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface, GRIDELEMENTS_EXPORT)
