@@ -952,12 +952,11 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindText(2, "ec1efd72621d42a0642bf135bdca409e94a454ed", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindDateTime(3, DateTime(DateTime::Kind::Utc, 2017, 12, 20, 11, 23)));
+    DateTime pushDate(DateTime::Kind::Unspecified, 2017, 12, 20, 11, 23);
+    ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindDateTime(3, pushDate));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindText(4, "john.smith@acme.com", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, insertChangeSetStmt.Step());
-    insertChangeSetStmt.ClearBindings();
-    insertChangeSetStmt.Reset();
-
+    insertChangeSetStmt.Finalize();
     cacheFile.SaveChanges();
     cacheFile.CloseDb();
 
@@ -972,7 +971,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     ASSERT_EQ(1, cset.m_value.size());
     ASSERT_STREQ(changeSummaryKey.GetInstanceId().ToHexStr().c_str(), cset.m_value[0]["Summary"][ECJsonUtilities::json_id()].asCString());
     ASSERT_STREQ("ec1efd72621d42a0642bf135bdca409e94a454ed", cset.m_value[0]["ChangeSetHubId"].asCString());
-    ASSERT_STREQ("2017-12-20T11:23:00", cset.m_value[0]["PushDate"].asCString());
+    ASSERT_STREQ(pushDate.ToString().c_str(), cset.m_value[0]["PushDate"].asCString());
     ASSERT_STREQ("john.smith@acme.com", cset.m_value[0]["CreatedBy"].asCString());
     }
 
