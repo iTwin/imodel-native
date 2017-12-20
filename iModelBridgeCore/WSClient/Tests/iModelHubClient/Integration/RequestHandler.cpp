@@ -70,7 +70,6 @@ Response RequestHandler::PerformGetRequest(Request req)
     }
 Response RequestHandler::CreateiModel(Request req)
     {
-    printf("here in Post\n");
     HttpBodyPtr reqBody = req.GetRequestBody();
     char readBuff[1000] ;
     size_t buffSize = 100000;

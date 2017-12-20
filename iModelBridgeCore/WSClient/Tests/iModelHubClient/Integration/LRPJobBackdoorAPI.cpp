@@ -53,10 +53,9 @@ namespace LRPJobBackdoorAPI
         {
         ObjectId lrpJobRecordObjectId(ServerSchema::Schema::Project, BackdoorAPISchema::Class::LRPJob, lrpJobRecordId);
 
-        WSObjectsResult const& result = projectConnection->SendGetObjectRequest(lrpJobRecordObjectId, nullptr, nullptr)->GetResult ();
-
+        auto result = projectConnection->SendGetObjectRequest(lrpJobRecordObjectId, nullptr, nullptr)->GetResult ();
         EXPECT_SUCCESS (result);
-
+        
         RapidJsonValueCR properties = (*result.GetValue().GetInstances().begin()).GetProperties();
         return properties[BackdoorAPISchema::Property::LRPJobState].GetInt ();
         }

@@ -453,6 +453,16 @@ public:
         m_statisticsManager = StatisticsManager(client);
         }
 
+    //! Gets AzureBlobStorageClient.
+    //! @return Returns Azure blob storage client
+    //! @private
+    IAzureBlobStorageClientPtr GetAzureBlobStorageClient() const { return m_azureClient; }
+
+    //! Sets AzureBlobStorageClient.
+    //! @param[in] client
+    //! @private
+    void SetAzureBlobStorageClient(IAzureBlobStorageClientPtr client) { m_azureClient = client; }
+
     //! Gets VersionsManager
     //! @return Versions manager
     IMODELHUBCLIENT_EXPORT VersionsManagerCR GetVersionsManager() const { return m_versionsManager; }

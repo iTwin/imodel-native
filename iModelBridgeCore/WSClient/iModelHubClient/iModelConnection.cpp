@@ -42,7 +42,7 @@ IHttpHandlerPtr            customHandler
     wsRepositoryClient->SetCredentials(credentials);
 
     SetRepositoryClient(wsRepositoryClient);
-    m_azureClient = AzureBlobStorageClient::Create();
+    SetAzureBlobStorageClient(AzureBlobStorageClient::Create());
     }
 
 //---------------------------------------------------------------------------------------
