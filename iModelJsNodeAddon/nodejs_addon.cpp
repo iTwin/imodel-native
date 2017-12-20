@@ -1126,6 +1126,52 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         }
 
     //=======================================================================================
+    // insert a new LinkTableRelationship -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value InsertLinkTableRelationshipSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, propsJsonStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value props = Json::Value::From(propsJsonStr);
+        Json::Value idJsonObj;
+        auto status = AddonUtils::InsertLinkTableRelationship(idJsonObj, GetDgnDb(), props);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), idJsonObj.asCString()));
+        }
+
+    //=======================================================================================
+    // update an existing LinkTableRelationship -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value UpdateLinkTableRelationshipSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, propsJsonStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value props = Json::Value::From(propsJsonStr);
+        auto status = AddonUtils::UpdateLinkTableRelationship(GetDgnDb(), props);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    //=======================================================================================
+    // delete an existing LinkTableRelationship -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value DeleteLinkTableRelationshipSync(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, propsJsonStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        Json::Value props = Json::Value::From(propsJsonStr);
+        auto status = AddonUtils::DeleteLinkTableRelationship(GetDgnDb(), props);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    //=======================================================================================
     // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
     //! @bsimethod
     //=======================================================================================
@@ -1432,6 +1478,24 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForElement(req->m_req, GetDgnDb(), elemPropsJson, (BeSQLite::DbOpcode)dbop));
         }
 
+    Napi::Value BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_STRING(1, props);
+        REQUIRE_ARGUMENT_INTEGER(2, dbop);
+        Json::Value propsJson = Json::Value::From(props);
+        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(req->m_req, GetDgnDb(), propsJson, (BeSQLite::DbOpcode)dbop));
+        }
+
+    Napi::Value BuildBriefcaseManagerResourcesRequestForCodeSpec(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_STRING(1, props);
+        REQUIRE_ARGUMENT_INTEGER(2, dbop);
+        Json::Value propsJson = Json::Value::From(props);
+        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForCodeSpec(req->m_req, GetDgnDb(), propsJson, (BeSQLite::DbOpcode)dbop));
+        }
+
     Napi::Value BuildBriefcaseManagerResourcesRequestForModel(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
@@ -1502,12 +1566,17 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("deleteModelSync", &NodeAddonDgnDb::DeleteModelSync),
             InstanceMethod("insertCodeSpecSync", &NodeAddonDgnDb::InsertCodeSpecSync),
             InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::StartGetElementPropertiesForDisplayWorker),
+            InstanceMethod("insertLinkTableRelationshipSync", &NodeAddonDgnDb::InsertLinkTableRelationshipSync),
+            InstanceMethod("updateLinkTableRelationshipSync", &NodeAddonDgnDb::UpdateLinkTableRelationshipSync),
+            InstanceMethod("deleteLinkTableRelationshipSync", &NodeAddonDgnDb::DeleteLinkTableRelationshipSync),
             InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::StartGetECClassMetaData),
             InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),
             InstanceMethod("executeQuery", &NodeAddonDgnDb::StartExecuteQueryWorker),
             InstanceMethod("getCachedBriefcaseInfosSync", &NodeAddonDgnDb::GetCachedBriefcaseInfosSync),
             InstanceMethod("getRootSubjectInfo", &NodeAddonDgnDb::GetRootSubjectInfo),
             InstanceMethod("getExtents", &NodeAddonDgnDb::GetExtents),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForCodeSpec", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForCodeSpec),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NodeAddonDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),

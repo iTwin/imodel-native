@@ -192,6 +192,24 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(IBrie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
+    {
+    // *** TODO: What should we lock?
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForCodeSpec(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
+    {
+    // *** TODO: What should we lock?
+    return RepositoryStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus AddonUtils::SetBriefcaseManagerOptimisticConcurrencyControlPolicy(DgnDbR dgndb, BriefcaseManagerConflictResolution uu, 
                                                                                 BriefcaseManagerConflictResolution ud, BriefcaseManagerConflictResolution du)
     {

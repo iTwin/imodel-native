@@ -303,6 +303,96 @@ DgnDbStatus AddonUtils::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECRelationshipClassCP parseRelClass(DgnDbR dgndb, JsonValueCR inJson)
+    {
+    auto relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(inJson[DgnElement::json_classFullName()], dgndb.GetClassLocater());
+    if (!relClassId.IsValid())
+        return nullptr;
+
+    auto ecClass = dgndb.Schemas().GetClass(relClassId);
+    if (nullptr == ecClass)
+        return nullptr;
+
+    return ecClass->GetRelationshipClassCP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECInstanceKey parseECReationshipInstanceKeyKey(DgnDbR dgndb, JsonValueCR inJson)
+    {
+    auto relClass = parseRelClass(dgndb, inJson);
+    if (nullptr == relClass)
+        return BeSQLite::EC::ECInstanceKey();
+
+    DgnElementId relId;
+    relId.FromJson(inJson["id"]);
+
+    return BeSQLite::EC::ECInstanceKey(relClass->GetId(), ECInstanceId(relId.GetValue()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult AddonUtils::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
+    {
+    auto relClass = parseRelClass(dgndb, inJson);
+    if (nullptr == relClass)
+        return BE_SQLITE_ERROR;
+
+    DgnElementId sourceId, targetid;
+    sourceId.FromJson(inJson["sourceId"]);
+    targetid.FromJson(inJson["targetId"]);
+
+    ECN::IECRelationshipInstanceCP props = nullptr;
+
+    BeSQLite::EC::ECInstanceKey relKey;
+    auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetid, props);
+    if (BE_SQLITE_OK != rc)
+        return rc;
+
+    outJson = relKey.GetInstanceId().ToHexStr();
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult AddonUtils::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
+    {
+    BeSQLite::EC::ECInstanceKey relKey = parseECReationshipInstanceKeyKey(dgndb, inJson);
+    auto relClass = parseRelClass(dgndb, inJson);
+    if (nullptr == relClass)
+        return BE_SQLITE_NOTFOUND;
+    // ECN::IECRelationshipInstanceP
+    auto props = relClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    for (auto const& jsPropName : inJson.getMemberNames())
+        {
+        ECPropertyP ecprop = relClass->GetPropertyP(jsPropName.c_str());
+        if (nullptr == ecprop || !ecprop->GetIsPrimitive())
+            continue; // TODO: support other property types
+
+        ECN::ECValue value;
+        ECUtils::ConvertJsonToECValue(value, inJson[jsPropName], ecprop->GetAsPrimitiveProperty()->GetType());
+
+        props->SetValue(jsPropName.c_str(), value);
+        }
+    return dgndb.UpdateLinkTableRelationshipProperties(relKey, *props);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult AddonUtils::DeleteLinkTableRelationship(DgnDbR dgndb, Json::Value& inJson)
+    {
+    BeSQLite::EC::ECInstanceKey relKey = parseECReationshipInstanceKeyKey(dgndb, inJson);
+    return dgndb.DeleteLinkTableRelationship(relKey);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static CodeScopeSpec getCodeScopeSpec(CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq)

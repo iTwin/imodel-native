@@ -89,24 +89,34 @@ That will print the location of the generated packages. For example:
 
 That message identifies the (generated) npm packages that contain the addon, as well as the API package. This example is from a Windows build. The messages from a Linux or MacOS build will be similar, but will show names that are specific to those platforms. Note MakePackages produces several packages from the same source. In the case of a Windows build, there is one addon package for use in a node app and another for an electron app. The API package is the same for both.
 
-Continuing this example, on Windows you would install your local build of the addon like this:
+Continuing this example, suppose your imodeljs git repository is here:
 
 ```
-cd source\backend
+\imjs\imodeljs-core
+```
+
+On Windows you would install your local build of the addon like this:
+
+```
+cd %OutRoot%Winx64\packages\imodeljs-nodeaddon
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
+cd \imjs\imodeljs-core\source\backend
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-cd ..\test
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
-cd ..\..
+cd \imjs\imodeljs-core\source\test
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon
+cd \imjs\imodeljs-core
 ```
 
 On Linux:
 
 ```
-cd source/backend
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi
-cd ../test
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64
-cd ../..
+cd $OutRoot/Winx64/packages/imodeljs-nodeaddon
+npm install --no-save  $OutRoot/Winx64/packages/imodeljs-n_8_9-win32-x64
+cd /imjs/imodeljs-core/source/backend
+npm install --no-save  $OutRoot/Winx64/packages/imodeljs-nodeaddonapi $OutRoot/Winx64/packages/imodeljs-nodeaddon
+cd /imjs/imodeljs-core/source/test
+npm install --no-save  $OutRoot/Winx64/packages/imodeljs-nodeaddonapi $OutRoot/Winx64/packages/imodeljs-nodeaddon
+cd /imjs/imodeljs-core
 ```
 
 To test other platforms or other versions, use the names of the generated packages that are displayed by the MakePackages part.

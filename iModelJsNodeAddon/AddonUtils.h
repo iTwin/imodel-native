@@ -82,6 +82,9 @@ struct AddonUtils
     static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value& props);
     static DgnDbStatus UpdateElement(DgnDbR db, Json::Value& props);
     static DgnDbStatus DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static DbResult InsertLinkTableRelationship(JsonValueR results, DgnDbR db, Json::Value& props);
+    static DbResult UpdateLinkTableRelationship(DgnDbR db, Json::Value& props);
+    static DbResult DeleteLinkTableRelationship(DgnDbR db, Json::Value& props);
     static DgnDbStatus InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq);
     static DgnDbStatus InsertModel(JsonValueR results, DgnDbR db, Json::Value& props);
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value& props);
@@ -108,6 +111,8 @@ struct AddonUtils
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElementById(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemIdJson, BeSQLite::DbOpcode opcode);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestForCodeSpec(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestForModel(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToLockModel(IBriefcaseManager::Request& req, DgnDbR dgndb, DgnModelId mid, LockLevel level);
 

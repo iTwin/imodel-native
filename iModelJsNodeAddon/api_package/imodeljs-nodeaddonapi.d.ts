@@ -191,6 +191,35 @@ declare class NodeAddonDgnDb {
   deleteElementSync(elemIdJson: string): IModelStatus;
 
   /**
+   * Get an linkTableRelationship's properties
+   * @param opts Identifies the LinkTableRelationship
+   * @param  callback Invoked when the operation completes. The 'result' argument is the LinkTableRelationship's properties in stringified JSON format.
+    WIP May not be needed
+  getLinkTableRelationship(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
+   */
+
+  /**
+   * Insert a LinkTableRelationship.
+   * @param props The linkTableRelationship's properties, in stringified JSON format.
+   * @return an error or the ID of the new LinkTableRelationship instance (as a hex string)
+   */
+  insertLinkTableRelationshipSync(props: string): ErrorStatusOrResult<DbResult, string>;
+
+  /**
+   * Update a LinkTableRelationship.
+   * @param props The LinkTableRelationship's properties, in stringified JSON format.
+   * @return non-zero error status if the operation failed.
+   */
+  updateLinkTableRelationshipSync(props: string): DbResult;
+
+  /**
+   * Delete a LinkTableRelationship.
+   * @param props The LinkTableRelationship's properties, in stringified JSON format. Only classFullName and id are required.
+   * @return non-zero error status if the operation failed.
+   */
+  deleteLinkTableRelationshipSync(props: string): DbResult;
+
+  /**
    * Insert a new CodeSpec
    * @param name name of the CodeSpec
    * @param specType must be one of CodeScopeSpec::Type
@@ -252,20 +281,36 @@ declare class NodeAddonDgnDb {
   executeQuery(ecsql: string, bindings: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<DbResult>, string>): void;
 
     /**
-    * Add the lock, code, and other resource requests that would be needed in order to carry out the specified operation.
+    * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
     * @param req The request object, which accumulates requests.
-    * @param elemProps The IDs of the elements
+    * @param elemId The ID of an existing element or the {modelid, code} properties that specify a new element.
     * @param opcode The operation that will be performed on the element.
     */  
-    buildBriefcaseManagerResourcesRequestForElement(req: NodeAddonBriefcaseManagerResourcesRequest, elemProps: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForElement(req: NodeAddonBriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
-    * Add the lock, code, and other resource requests that would be needed in order to carry out the specified operation.
+    * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
     * @param req The request object, which accumulates requests.
-    * @param modelProps The IDs of the models
+    * @param modelId The ID of a model
     * @param opcode The operation that will be performed on the model.
     */
-    buildBriefcaseManagerResourcesRequestForModel(req: NodeAddonBriefcaseManagerResourcesRequest, modelProps: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForModel(req: NodeAddonBriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
+
+    /**
+    * Add the resource request that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param codeSpecId The ID of an existing CodeSpec or {} for a new CodeSpec
+    * @param opcode The operation that will be performed on the CodeSpec.
+    */
+    buildBriefcaseManagerResourcesRequestForCodeSpec(req: NodeAddonBriefcaseManagerResourcesRequest, codeSpecId: string, opcode: DbOpcode): RepositoryStatus;
+
+    /**
+    * Add the resource request that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param relKey Identifies a LinkTableRelationship: {classFullName, id}
+    * @param opcode The operation that will be performed on the LinkTableRelationships.
+    */
+    buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: NodeAddonBriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
 
     /** Start bulk update mode. Valid only with the pessimistic concurrency control policy */
     briefcaseManagerStartBulkOperation(): RepositoryStatus;
