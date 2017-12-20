@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestUtil.h"
+#include <Bentley/BeFile.h>
 #include <Bentley/BeDirectoryIterator.h>
 #ifndef VANCOUVER_API
 #include <Bentley/Desktop/FileSystem.h>
@@ -50,6 +51,31 @@ bvector<BeFileName> ScalableMeshGTestUtil::GetFiles(BeFileName dataPath)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ScalableMeshGTestUtil::GetFileCount(BeFileName dataPath)
+    {
+    size_t fileCount = 0;
+    if (BeFileName::DoesPathExist(dataPath))
+        {
+        BeFileName entryName;
+        bool        isDir;
+        for (BeDirectoryIterator dirIter(dataPath); dirIter.GetCurrentEntry(entryName, isDir) == SUCCESS; dirIter.ToNext())
+            {
+            if (!isDir && BeFileName::DoesPathExist(entryName))
+                {
+                auto const& fileType = GetFileType(entryName);
+                if (SMMeshType::TYPE_3DTILES_TILESET == fileType || SMMeshType::TYPE_3DTILES_B3DM == fileType)
+                    {
+                    ++fileCount;
+                    }
+                }
+            }
+        }
+    return fileCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMMeshType ScalableMeshGTestUtil::GetFileType(BeFileName file)
@@ -62,7 +88,11 @@ SMMeshType ScalableMeshGTestUtil::GetFileType(BeFileName file)
         }
     else if (extension == L"json")
         {
-        type = SMMeshType::TYPE_3DTILES;
+        type = SMMeshType::TYPE_3DTILES_TILESET;
+        }
+    else if (extension == L"b3dm")
+        {
+        type = SMMeshType::TYPE_3DTILES_B3DM;
         }
     else
         {
@@ -184,6 +214,27 @@ bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> 
 	return resultList;
 }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Richard.Bois                     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value ScalableMeshGTestUtil::GetGroundTruthJsonFile(BeFileName jsonFile)
+    {
+    Json::Value result;
+
+    BeFile f;
+    if (BeFileStatus::Success != f.Open(jsonFile.c_str(), BeFileAccess::Read, BeFileSharing::None))
+        return Json::Value();
+
+    bvector<byte> fileBuffer;
+    if (BeFileStatus::Success != f.ReadEntireFile(fileBuffer))
+        return Json::Value();
+
+    if (!Json::Reader().parse(reinterpret_cast<char *>(fileBuffer.data()), reinterpret_cast<char *>(fileBuffer.data() + fileBuffer.size()), result))
+        return Json::Value();
+
+    return result;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Mathieu.St-Pierre                       11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

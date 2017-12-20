@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 
 #include <Bentley/BeFileName.h>
+#include <json/json.h>
 
 #ifndef SM_DATA_PATH
 #define SM_DATA_PATH L"SMData"
@@ -53,11 +54,16 @@ namespace ScalableMeshGTestUtil
     enum class SMMeshType
         {
         TYPE_3SM,
-        TYPE_3DTILES,
+        TYPE_3DTILES_TILESET,
+        TYPE_3DTILES_B3DM,
         TYPE_UNKNOWN
         };
     
     bvector<BeFileName> GetFiles(BeFileName dataPath);
+
+    size_t GetFileCount(BeFileName dataPath);
+
+    Json::Value GetGroundTruthJsonFile(BeFileName dataPath);
 
 	bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>> GetListOfValues(BeFileName listingFile);
 

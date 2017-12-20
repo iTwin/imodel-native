@@ -17,6 +17,11 @@
 
 class ScalableMeshEnvironment : public ::testing::Environment
     {
+    private:
+        Json::Value m_groundTruth;
+
+    public:
+
     virtual void SetUp() 
         { 
         // Check that dataset path is valid
@@ -34,6 +39,12 @@ class ScalableMeshEnvironment : public ::testing::Environment
             BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(tempPath.c_str());
             EXPECT_EQ(status == BeFileNameStatus::Success, true);
             }
+
+        // Setup test data ground truths
+        dataPath.AppendToPath(L"ground_truths.json");
+        m_groundTruth = ScalableMeshGTestUtil::GetGroundTruthJsonFile(dataPath);
+
+        ASSERT_FALSE(m_groundTruth.isNull());
         }
     virtual void TearDown() 
         {
@@ -53,6 +64,11 @@ class ScalableMeshEnvironment : public ::testing::Environment
                 assert(!"Error while removing 3dtiles in temp folder");
                 }
             }
+        }
+
+    const Json::Value& GetGroundTruthJsonFile()
+        {
+        return m_groundTruth;
         }
     };
 
@@ -212,7 +228,7 @@ TEST_P(ScalableMeshTestWithParams, HasCoherentMeshFormat)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    EXPECT_EQ((myScalableMesh->IsCesium3DTiles() && ScalableMeshGTestUtil::SMMeshType::TYPE_3DTILES == GetType())
+    EXPECT_EQ((myScalableMesh->IsCesium3DTiles() && ScalableMeshGTestUtil::SMMeshType::TYPE_3DTILES_TILESET == GetType())
         || ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType(), true) << "\n Incoherence found for " << GetFileName().c_str() << std::endl << std::endl;
     
     }
@@ -226,8 +242,15 @@ TEST_P(ScalableMeshTestWithParams, CanGenerate3DTiles)
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     // Skip 3dtiles
-    if ((myScalableMesh->IsCesium3DTiles() && ScalableMeshGTestUtil::SMMeshType::TYPE_3DTILES == GetType()))
+    if ((myScalableMesh->IsCesium3DTiles() && ScalableMeshGTestUtil::SMMeshType::TYPE_3DTILES_TILESET == GetType()))
         return;
+
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+    auto const& smDataInfo = static_cast<ScalableMeshEnvironment*>(sm_env)->GetGroundTruthJsonFile();
+    ASSERT_TRUE(smDataInfo.isMember(datasetName.c_str()));
+    auto const& groundTruthInfo = smDataInfo[datasetName.c_str()];
+
+    ASSERT_TRUE(groundTruthInfo.isMember("Converted3DTilesFileCount"));
 
     auto filename = BeFileName::GetFileNameWithoutExtension(GetFileName());
 
@@ -241,8 +264,219 @@ TEST_P(ScalableMeshTestWithParams, CanGenerate3DTiles)
 
     auto ret = myScalableMesh->Generate3DTiles(tempPath);
 
-    EXPECT_EQ(SUCCESS == ret, true) << "\n Could not convert 3sm to 3dtiles: " << GetFileName().c_str() << std::endl << std::endl;
+    ASSERT_TRUE(SUCCESS == ret);
     
+    EXPECT_EQ(ScalableMeshGTestUtil::GetFileCount(tempPath), groundTruthInfo["Converted3DTilesFileCount"].asUInt64()) << "\n Could not convert 3sm to 3dtiles: " << GetFileName().c_str() << std::endl << std::endl;
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, VerifyMeshInfo)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+    auto const& smDataInfo = static_cast<ScalableMeshEnvironment*>(sm_env)->GetGroundTruthJsonFile();
+    ASSERT_TRUE(smDataInfo.isMember(datasetName.c_str()));
+    auto const& groundTruthInfo = smDataInfo[datasetName.c_str()];
+
+    ASSERT_TRUE(groundTruthInfo.isMember("PointCount"));
+    ASSERT_TRUE(groundTruthInfo.isMember("IsTerrain"));
+    ASSERT_TRUE(groundTruthInfo.isMember("NbResolutions"));
+    ASSERT_TRUE(groundTruthInfo.isMember("Range"));
+    ASSERT_TRUE(groundTruthInfo["Range"].isMember("min"));
+    ASSERT_TRUE(groundTruthInfo["Range"]["min"].isArray());
+    ASSERT_EQ(groundTruthInfo["Range"]["min"].size(), 3);
+    ASSERT_TRUE(groundTruthInfo["Range"].isMember("max"));
+    ASSERT_TRUE(groundTruthInfo["Range"]["max"].isArray());
+    ASSERT_EQ(groundTruthInfo["Range"]["max"].size(), 3);
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    DRange3d range;
+    ASSERT_TRUE(SUCCESS == myScalableMesh->GetRange(range));
+
+    auto const& groundTruthRange = groundTruthInfo["Range"];
+
+    DPoint3d groundTruthRangeMin = DPoint3d::From(groundTruthRange["min"][0].asDouble(), groundTruthRange["min"][1].asDouble(), groundTruthRange["min"][2].asDouble());
+    DPoint3d groundTruthRangeMax = DPoint3d::From(groundTruthRange["max"][0].asDouble(), groundTruthRange["max"][1].asDouble(), groundTruthRange["max"][2].asDouble());
+
+    EXPECT_EQ(myScalableMesh->GetPointCount(), groundTruthInfo["PointCount"].asUInt64());
+    EXPECT_EQ(myScalableMesh->IsTerrain(), groundTruthInfo["IsTerrain"].asBool()); 
+    EXPECT_EQ(myScalableMesh->GetNbResolutions(), groundTruthInfo["NbResolutions"].asUInt64());
+    EXPECT_DOUBLE_EQ(range.low.x, groundTruthRangeMin.x);
+    EXPECT_DOUBLE_EQ(range.low.y, groundTruthRangeMin.y);
+    EXPECT_DOUBLE_EQ(range.low.z, groundTruthRangeMin.z);
+    EXPECT_DOUBLE_EQ(range.high.x, groundTruthRangeMax.x);
+    EXPECT_DOUBLE_EQ(range.high.y, groundTruthRangeMax.y);
+    EXPECT_DOUBLE_EQ(range.high.z, groundTruthRangeMax.z);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetBoundary)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+    auto const& smDataInfo = static_cast<ScalableMeshEnvironment*>(sm_env)->GetGroundTruthJsonFile();
+    ASSERT_TRUE(smDataInfo.isMember(datasetName.c_str()));
+    auto const& groundTruthInfo = smDataInfo[datasetName.c_str()];
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    if (myScalableMesh->IsCesium3DTiles())
+        {
+        ASSERT_FALSE(groundTruthInfo.isMember("Boundary"));
+
+        // Skip, they do not contain the required mesh graph
+        return;
+        }
+    ASSERT_TRUE(groundTruthInfo.isMember("Boundary"));
+
+    auto const& groundTruthBoundary = groundTruthInfo["Boundary"];
+    ASSERT_TRUE(groundTruthBoundary.isArray());
+
+    bvector<DPoint3d> boundary;
+    ASSERT_TRUE(SUCCESS == myScalableMesh->GetBoundary(boundary));
+
+    EXPECT_FALSE(boundary.empty());
+    ASSERT_EQ(boundary.size(), groundTruthBoundary.size() / 3);
+
+    for (int i = 0; i < boundary.size(); i++)
+        {
+        EXPECT_DOUBLE_EQ(boundary[i].x, groundTruthBoundary[3 * i].asDouble());
+        EXPECT_DOUBLE_EQ(boundary[i].y, groundTruthBoundary[3 * i + 1].asDouble());
+        EXPECT_DOUBLE_EQ(boundary[i].z, groundTruthBoundary[3 * i + 2].asDouble());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetBaseGCS)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+    auto const& smDataInfo = static_cast<ScalableMeshEnvironment*>(sm_env)->GetGroundTruthJsonFile();
+    ASSERT_TRUE(smDataInfo.isMember(datasetName.c_str()));
+    auto const& groundTruthInfo = smDataInfo[datasetName.c_str()];
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    auto const& baseGCS = myScalableMesh->GetBaseGCS();
+
+    auto groundTruthGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    StatusInt warningStat;
+    WString warningMessageString;
+
+    groundTruthGCS->InitFromWellKnownText(&warningStat,
+                                          &warningMessageString,
+                                          BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown,
+                                          WString(groundTruthInfo["WellKnownText"].asCString()).c_str());
+
+    EXPECT_EQ(warningStat, SUCCESS);
+    EXPECT_EQ(warningMessageString.size(), 0);
+
+    if (groundTruthGCS->IsValid())
+        {
+        EXPECT_TRUE(baseGCS->IsValid() && baseGCS->IsEquivalent(*groundTruthGCS));
+        }
+    else
+        EXPECT_FALSE(baseGCS.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, VerifyMeshNodeInfo)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+    auto const& smDataInfo = static_cast<ScalableMeshEnvironment*>(sm_env)->GetGroundTruthJsonFile();
+    ASSERT_TRUE(smDataInfo.isMember(datasetName.c_str()));
+    auto const& groundTruthInfo = smDataInfo[datasetName.c_str()];
+
+    ASSERT_TRUE(groundTruthInfo.isMember("RootNode"));
+    auto const& groundTruthRoot = groundTruthInfo["RootNode"];
+
+    ASSERT_TRUE(groundTruthRoot.isMember("IsTextured"));
+    ASSERT_TRUE(groundTruthRoot.isMember("ArePointsFullResolution"));
+    ASSERT_TRUE(groundTruthRoot.isMember("ArePoints3d"));
+    ASSERT_TRUE(groundTruthRoot.isMember("NodeId"));
+    ASSERT_TRUE(groundTruthRoot.isMember("Level"));
+    ASSERT_TRUE(groundTruthRoot.isMember("PointCount"));
+
+    ASSERT_TRUE(groundTruthRoot.isMember("Resolutions"));
+    ASSERT_TRUE(groundTruthRoot["Resolutions"].isArray());
+    ASSERT_EQ(groundTruthRoot["Resolutions"].size(), 2);
+
+    ASSERT_TRUE(groundTruthRoot.isMember("NodeExtent"));
+    ASSERT_TRUE(groundTruthRoot["NodeExtent"].isMember("min"));
+    ASSERT_TRUE(groundTruthRoot["NodeExtent"]["min"].isArray());
+    ASSERT_EQ(groundTruthRoot["NodeExtent"]["min"].size(), 3);
+    ASSERT_TRUE(groundTruthRoot["NodeExtent"].isMember("max"));
+    ASSERT_TRUE(groundTruthRoot["NodeExtent"]["max"].isArray());
+    ASSERT_EQ(groundTruthRoot["NodeExtent"]["max"].size(), 3);
+
+    ASSERT_TRUE(groundTruthRoot.isMember("ContentExtent"));
+    ASSERT_TRUE(groundTruthRoot["ContentExtent"].isMember("min"));
+    ASSERT_TRUE(groundTruthRoot["ContentExtent"]["min"].isArray());
+    ASSERT_EQ(groundTruthRoot["ContentExtent"]["min"].size(), 3);
+    ASSERT_TRUE(groundTruthRoot["ContentExtent"].isMember("max"));
+    ASSERT_TRUE(groundTruthRoot["ContentExtent"]["max"].isArray());
+    ASSERT_EQ(groundTruthRoot["ContentExtent"]["max"].size(), 3);
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    auto rootNode = myScalableMesh->GetRootNode();
+    ASSERT_TRUE(rootNode.IsValid());
+
+    // Geometric and texture resolutions
+    float geoRes, texRes;
+    rootNode->GetResolutions(geoRes, texRes);
+
+    auto const& groundTruthResolutions = groundTruthRoot["Resolutions"];
+    
+    // Node extent
+    DRange3d nodeExtent = rootNode->GetNodeExtent();
+
+    auto const& groundTruthNodeExtent = groundTruthRoot["NodeExtent"];
+
+    DPoint3d groundTruthNodeExtentMin = DPoint3d::From(groundTruthNodeExtent["min"][0].asDouble(), groundTruthNodeExtent["min"][1].asDouble(), groundTruthNodeExtent["min"][2].asDouble());
+    DPoint3d groundTruthNodeExtentMax = DPoint3d::From(groundTruthNodeExtent["max"][0].asDouble(), groundTruthNodeExtent["max"][1].asDouble(), groundTruthNodeExtent["max"][2].asDouble());
+
+    // Node content extent
+    DRange3d nodeContentExtent = rootNode->GetContentExtent();
+
+    auto const& groundTruthNodeContentExtent = groundTruthRoot["ContentExtent"];
+
+    DPoint3d groundTruthNodeContentExtentMin = DPoint3d::From(groundTruthNodeContentExtent["min"][0].asDouble(), groundTruthNodeContentExtent["min"][1].asDouble(), groundTruthNodeContentExtent["min"][2].asDouble());
+    DPoint3d groundTruthNodeContentExtentMax = DPoint3d::From(groundTruthNodeContentExtent["max"][0].asDouble(), groundTruthNodeContentExtent["max"][1].asDouble(), groundTruthNodeContentExtent["max"][2].asDouble());
+
+    // Validation
+    EXPECT_EQ(rootNode->IsTextured(), groundTruthRoot["IsTextured"].asBool());
+    EXPECT_EQ(rootNode->ArePointsFullResolution(), groundTruthRoot["ArePointsFullResolution"].asBool());
+    EXPECT_EQ(rootNode->ArePoints3d(), groundTruthRoot["ArePoints3d"].asBool());
+    EXPECT_EQ(rootNode->GetNodeId(), groundTruthRoot["NodeId"].asUInt64());
+    EXPECT_EQ(rootNode->GetLevel(), groundTruthRoot["Level"].asUInt64());
+    EXPECT_EQ(rootNode->GetPointCount(), groundTruthRoot["PointCount"].asUInt64());
+    EXPECT_FLOAT_EQ(geoRes, groundTruthResolutions[0].asFloat());
+    EXPECT_FLOAT_EQ(texRes, groundTruthResolutions[1].asFloat());
+    EXPECT_DOUBLE_EQ(nodeExtent.low.x, groundTruthNodeExtentMin.x);
+    EXPECT_DOUBLE_EQ(nodeExtent.low.y, groundTruthNodeExtentMin.y);
+    EXPECT_DOUBLE_EQ(nodeExtent.low.z, groundTruthNodeExtentMin.z);
+    EXPECT_DOUBLE_EQ(nodeExtent.high.x, groundTruthNodeExtentMax.x);
+    EXPECT_DOUBLE_EQ(nodeExtent.high.y, groundTruthNodeExtentMax.y);
+    EXPECT_DOUBLE_EQ(nodeExtent.high.z, groundTruthNodeExtentMax.z);
+    EXPECT_DOUBLE_EQ(nodeContentExtent.low.x, groundTruthNodeContentExtentMin.x);
+    EXPECT_DOUBLE_EQ(nodeContentExtent.low.y, groundTruthNodeContentExtentMin.y);
+    EXPECT_DOUBLE_EQ(nodeContentExtent.low.z, groundTruthNodeContentExtentMin.z);
+    EXPECT_DOUBLE_EQ(nodeContentExtent.high.x, groundTruthNodeContentExtentMax.x);
+    EXPECT_DOUBLE_EQ(nodeContentExtent.high.y, groundTruthNodeContentExtentMax.y);
+    EXPECT_DOUBLE_EQ(nodeContentExtent.high.z, groundTruthNodeContentExtentMax.z);
     }
 
 /*---------------------------------------------------------------------------------**//**
