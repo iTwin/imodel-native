@@ -15,11 +15,12 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
+#include <BuildingShared/BuildingSharedApi.h>
 #include <Grids/gridsApi.h>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BUILDING_SHARED
 
 HANDLER_DEFINE_MEMBERS(GridSurfaceCreatesGridCurveHandler)
 
@@ -101,8 +102,8 @@ GridSurfaceCPtr otherSurface
 )
     {
     bvector<Dgn::IBRepEntityPtr> brepsThis, brepsThat;
-    if (SUCCESS == Building::GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThis, thisSurface) &&
-        SUCCESS == Building::GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThat, otherSurface))
+    if (SUCCESS == GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThis, thisSurface) &&
+        SUCCESS == GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThat, otherSurface))
         {
         CurveVectorPtr bodyThis = Dgn::PSolidGeom::PlanarSheetBodyToCurveVector (*(*brepsThis.begin ()));
         if (bodyThis.IsValid())
