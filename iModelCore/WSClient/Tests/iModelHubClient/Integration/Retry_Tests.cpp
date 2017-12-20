@@ -117,6 +117,14 @@ IWSRepositoryClientPtr CreateWSClient(iModelInfoPtr imodel, std::shared_ptr<Mock
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             12/2017
+//---------------------------------------------------------------------------------------
+IAzureBlobStorageClientPtr CreateAzureClient(std::shared_ptr<MockHttpHandler> mockHandler)
+    {
+    return AzureBlobStorageClient::Create(mockHandler);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             09/2016
 //---------------------------------------------------------------------------------------
 TEST_F(RetryTests, QueryChangeSetsFails)
@@ -286,11 +294,12 @@ TEST_F(RetryTests, UploadFileFails)
     briefcase1->GetDgnDb().SaveChanges();
 
     auto imodelConnection = BackDoor::Briefcase::GetiModelConnectionPtr(briefcase1);
-    IWSRepositoryClientPtr oldWSClient = BackDoor::iModelConnection::GetRepositoryClient(imodelConnection);
+    IWSRepositoryClientPtr oldWSClient = imodelConnection->GetRepositoryClient();
+    IAzureBlobStorageClientPtr oldBlobStorageClient = imodelConnection->GetAzureBlobStorageClient();
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(5)
+        ExpectRequests(3)
         .ForRequest(1, [=](Http::RequestCR request)
             {
             // Query changeSet instances
@@ -299,9 +308,19 @@ TEST_F(RetryTests, UploadFileFails)
         ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\", \"relationshipInstances\": [{\"relatedInstance\": {\"schemaName\": \"iModelScope\",\"className\": \"AccessKey\",\"properties\": {\"UploadUrl\": \"uploadUrl\",\"DownloadUrl\": \"downloadUrl\"}}}]}}}");
             }
         ).ForRequest(3, [=](Http::RequestCR request)
+            {
+            // Create changeSet in server
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\", \"relationshipInstances\": [{\"relatedInstance\": {\"schemaName\": \"iModelScope\",\"className\": \"AccessKey\",\"properties\": {\"UploadUrl\": \"uploadUrl\",\"DownloadUrl\": \"downloadUrl\"}}}]}}}");
+            }
+        );
+
+    std::shared_ptr<MockHttpHandler> blobStorageMockHandler = std::make_shared<MockHttpHandler>();
+    blobStorageMockHandler->
+        ExpectRequests(2)
+        .ForRequest(1, [=](Http::RequestCR request)
             {
             // Upload file
             return StubHttpResponse(HttpStatus::ReqestTimeout,
@@ -309,15 +328,13 @@ TEST_F(RetryTests, UploadFileFails)
                 "\"errorMessage\" : \"Request timed out\", "
                 "\"errorDescription\" : \"Request timed out\"}", { { "Content-Type" , "application/json" } });
             }
-        ).ForRequest(4, [=](Http::RequestCR request)
+        )
+        .ForRequest(2, [=](Http::RequestCR request)
             {
-            // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
-            }
-        ).ForRequest(5, [=](Http::RequestCR request)
-            {
+            imodelConnection->SetRepositoryClient(oldWSClient);
+            imodelConnection->SetAzureBlobStorageClient(oldBlobStorageClient);
+
             // Upload file
-            BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
             return StubHttpResponse(HttpStatus::ReqestTimeout,
                 "{\"errorId\": \"\", "
                 "\"errorMessage\" : \"Request timed out\", "
@@ -325,9 +342,11 @@ TEST_F(RetryTests, UploadFileFails)
             }
         );
 
-    // Set other wsclient
+    // Set other wsclient and azureclient
     auto newClient = CreateWSClient(m_imodel, mockHandler);
-    BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, newClient);
+    imodelConnection->SetRepositoryClient(newClient);
+    auto newAzureClient = CreateAzureClient(blobStorageMockHandler);
+    imodelConnection->SetAzureBlobStorageClient(newAzureClient);
 
     // First push should fail
     auto pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
@@ -357,10 +376,11 @@ TEST_F(RetryTests, InitializeiModelFails)
 
     auto imodelConnection = BackDoor::Briefcase::GetiModelConnectionPtr(briefcase1);
     IWSRepositoryClientPtr oldWSClient = BackDoor::iModelConnection::GetRepositoryClient(imodelConnection);
+    IAzureBlobStorageClientPtr oldBlobStorageClient = imodelConnection->GetAzureBlobStorageClient();
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(8)
+        ExpectRequests(6)
         .ForRequest(1, [=](Http::RequestCR request)
             {
             // Query changeSet instances
@@ -369,43 +389,63 @@ TEST_F(RetryTests, InitializeiModelFails)
         ).ForRequest(2, [=](Http::RequestCR request)
             {
             // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\", \"relationshipInstances\": [{\"relatedInstance\": {\"schemaName\": \"iModelScope\",\"className\": \"AccessKey\",\"properties\": {\"UploadUrl\": \"uploadUrl\",\"DownloadUrl\": \"downloadUrl\"}}}]}}}");
+            }
+        ).ForRequest(3, [=](Http::RequestCR request)
+            {
+            // Confirm and send locks/codes
+            return StubHttpResponse(HttpStatus::BadRequest);
+            }
+        ).ForRequest(4, [=](Http::RequestCR request)
+            {
+            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
+            }
+        ).ForRequest(5, [=](Http::RequestCR request)
+            {
+            // Create changeSet in server
+            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\", \"relationshipInstances\": [{\"relatedInstance\": {\"schemaName\": \"iModelScope\",\"className\": \"AccessKey\",\"properties\": {\"UploadUrl\": \"uploadUrl\",\"DownloadUrl\": \"downloadUrl\"}}}]}}}");
+            }
+        ).ForRequest(6, [=](Http::RequestCR request)
+            {
+            // Confirm and send locks/codes
+            imodelConnection->SetRepositoryClient(oldWSClient);
+            imodelConnection->SetAzureBlobStorageClient(oldBlobStorageClient);
+            return StubHttpResponse(HttpStatus::BadRequest);
+            }
+        );
+
+    std::shared_ptr<MockHttpHandler> blobStorageMockHandler = std::make_shared<MockHttpHandler>();
+    blobStorageMockHandler->
+        ExpectRequests(4)
+        .ForRequest(1, [=](Http::RequestCR request)
+            {
+            // Upload file
+            return StubHttpResponse(HttpStatus::OK);
+            }
+        )
+        .ForRequest(2, [=](Http::RequestCR request)
+            {
+            // Upload file
+            return StubHttpResponse(HttpStatus::OK);
             }
         ).ForRequest(3, [=](Http::RequestCR request)
             {
             // Upload file
             return StubHttpResponse(HttpStatus::OK);
             }
-        ).ForRequest(4, [=](Http::RequestCR request)
-            {
-            // Confirm and send locks/codes
-            return StubHttpResponse(HttpStatus::BadRequest);
-            }
-        ).ForRequest(5, [=](Http::RequestCR request)
-            {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
-            }
-        ).ForRequest(6, [=](Http::RequestCR request)
-            {
-            // Create changeSet in server
-            return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\"}}}");
-            }
-        ).ForRequest(7, [=](Http::RequestCR request)
+        )
+        .ForRequest(4, [=](Http::RequestCR request)
             {
             // Upload file
             return StubHttpResponse(HttpStatus::OK);
-            }
-        ).ForRequest(8, [=](Http::RequestCR request)
-            {
-            // Confirm and send locks/codes
-            BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
-            return StubHttpResponse(HttpStatus::BadRequest);
             }
         );
 
     // Set other wsclient
     auto newClient = CreateWSClient(m_imodel, mockHandler);
     BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, newClient);
+    auto newAzureClient = CreateAzureClient(blobStorageMockHandler);
+    imodelConnection->SetAzureBlobStorageClient(newAzureClient);
     
     // First push should fail
     auto pushResult = briefcase1->PullMergeAndPush(nullptr, false)->GetResult();
@@ -435,10 +475,11 @@ TEST_F(RetryTests, DownloadedChangeSetInvalid)
 
     auto imodelConnection = BackDoor::Briefcase::GetiModelConnectionPtr(briefcase1);
     IWSRepositoryClientPtr oldWSClient = BackDoor::iModelConnection::GetRepositoryClient(imodelConnection);
+    IAzureBlobStorageClientPtr oldBlobStorageClient = imodelConnection->GetAzureBlobStorageClient();
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(2)
+        ExpectRequests(1)
         .ForRequest(1, [=](Http::RequestCR request)
             {
             // Query changeSet instances
@@ -460,19 +501,44 @@ TEST_F(RetryTests, DownloadedChangeSetInvalid)
                     "\"PushDate\":\"2016-09-28T05:43:55.2\","
                     "\"ContainingChanges\":0,"
                     "\"IsUploaded\":true"
-                "}}]}");
+                "}, \"relationshipInstances\": [{"
+                        "\"instanceId\": \"\","
+                            "\"schemaName\" : \"iModelScope\","
+                            "\"className\" : \"FileAccessKey\","
+                            "\"direction\" : \"forward\","
+                            "\"properties\" : {},"
+                            "\"relatedInstance\" : {"
+                            "\"instanceId\": \"\","
+                                "\"schemaName\" : \"iModelScope\","
+                                "\"className\" : \"AccessKey\","
+                                "\"properties\" : {"
+                                    "\"UploadUrl\": \"\","
+                                    "\"DownloadUrl\" : \"DownloadUrl\""
+                                "},"
+                                "\"eTag\" : \"GDZV8h4lHbFl9QQEPaMCf4WLZVE=\""
+                        "},"
+                      "\"eTag\": \"X4OhiRIhgh0VXBSbUPbs6D3dZvc=\""
+                    "}]}]}");
             }
-        ).ForRequest(2, [=](Http::RequestCR request)
+        );
+
+    std::shared_ptr<MockHttpHandler> blobStorageMockHandler = std::make_shared<MockHttpHandler>();
+    blobStorageMockHandler->
+        ExpectRequests(1)
+        .ForRequest(1, [=](Http::RequestCR request)
             {
-            // Download changeSet
-            BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, oldWSClient);
+            imodelConnection->SetRepositoryClient(oldWSClient);
+            imodelConnection->SetAzureBlobStorageClient(oldBlobStorageClient);
+            // Upload file
             return StubHttpResponse(HttpStatus::OK, "Test");
             }
         );
 
     // Set other wsclient
     auto newClient = CreateWSClient(m_imodel, mockHandler);
-    BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, newClient);
+    imodelConnection->SetRepositoryClient(newClient);
+    auto newAzureClient = CreateAzureClient(blobStorageMockHandler);
+    imodelConnection->SetAzureBlobStorageClient(newAzureClient);
 
     // First push should fail
     BeTest::SetFailOnAssert(false);
@@ -766,24 +832,45 @@ TEST_F(RetryTests, DownloadSeedFileSingleFailSucceeds)
 
     auto imodelConnection = BackDoor::Briefcase::GetiModelConnectionPtr(briefcase1);
     IWSRepositoryClientPtr oldWSClient = BackDoor::iModelConnection::GetRepositoryClient(imodelConnection);
+    IAzureBlobStorageClientPtr oldBlobStorageClient = imodelConnection->GetAzureBlobStorageClient();
 
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(4)
+        ExpectRequests(1)
         .ForRequest(1, [=](Http::RequestCR request)
             {
-            return StubHttpResponse(HttpStatus::OK, "{\"instances\":[{\"schemaName\": \"iModelScope\", \"className\": \"SeedFile\", \"instanceId\" : \"Id\", \"properties\":{}}]}");
+            return StubHttpResponse(HttpStatus::OK, "{\"instances\":[{\"schemaName\": \"iModelScope\", \"className\": \"SeedFile\", \"instanceId\" : \"Id\", \"properties\":{},"
+                "\"relationshipInstances\": [{"
+                        "\"instanceId\": \"\","
+                            "\"schemaName\" : \"iModelScope\","
+                            "\"className\" : \"FileAccessKey\","
+                            "\"direction\" : \"forward\","
+                            "\"properties\" : {},"
+                            "\"relatedInstance\" : {"
+                            "\"instanceId\": \"\","
+                                "\"schemaName\" : \"iModelScope\","
+                                "\"className\" : \"AccessKey\","
+                                "\"properties\" : {"
+                                    "\"UploadUrl\": \"\","
+                                    "\"DownloadUrl\" : \"DownloadUrl\""
+                                "},"
+                                "\"eTag\" : \"GDZV8h4lHbFl9QQEPaMCf4WLZVE=\""
+                        "},"
+                      "\"eTag\": \"X4OhiRIhgh0VXBSbUPbs6D3dZvc=\""
+                    "}]}]}");
             }
-        ).ForRequest(2, [=](Http::RequestCR request)
+        );
+
+    std::shared_ptr<MockHttpHandler> blobStorageMockHandler = std::make_shared<MockHttpHandler>();
+    blobStorageMockHandler->
+        ExpectRequests(2)
+        .ForRequest(1, [=](Http::RequestCR request)
             {
             // Download seed file
             return StubHttpResponse(HttpStatus::ReqestTimeout);
-            })
-        .ForRequest(3, [=](Http::RequestCR request)
-            {
-            return StubHttpResponse(HttpStatus::OK, "", { { "Server" , "Bentley-WebAPI/2.4, Bentley-WSG/9.99.00.00" } });
             }
-        ).ForRequest(4, [=](Http::RequestCR request)
+        )
+        .ForRequest(2, [=](Http::RequestCR request)
             {
             // Second download succeeds
             return StubHttpResponse(HttpStatus::OK, "Content");
@@ -793,6 +880,8 @@ TEST_F(RetryTests, DownloadSeedFileSingleFailSucceeds)
     // Set other wsclient
     auto newClient = CreateWSClient(m_imodel, mockHandler);
     BackDoor::iModelConnection::SetRepositoryClient(imodelConnection, newClient);
+    auto newAzureClient = CreateAzureClient(blobStorageMockHandler);
+    imodelConnection->SetAzureBlobStorageClient(newAzureClient);
 
     auto path = m_pHost->GetOutputDirectory().AppendToPath(L"SeedFileRetry.bim");
     FileInfoPtr fileInfo = FileInfo::Create(briefcase1->GetDgnDb(), "Replacement description0");

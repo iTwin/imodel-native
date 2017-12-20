@@ -1294,6 +1294,7 @@ TEST_F(iModelManagerTests, FailingCodesResponseOptions)
 
     DgnElementCPtr partition2_1 = CreateAndInsertModeledElement(modelName1, db2);
     ExpectCodesCount(*briefcase2, 1);
+    db2.SaveChanges();
 
     db1.SaveChanges();
     StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();

@@ -409,6 +409,7 @@ bool IsErrorForRetry(Error::Id errorId)
         set.insert(Error::Id::InternalServerError);
         set.insert(Error::Id::WebServicesError);
         set.insert(Error::Id::ConnectionError);
+        set.insert(Error::Id::AzureError);
         }
 
     return set.find(errorId) != set.end();
