@@ -60,7 +60,11 @@
   <Part Name="BuildingSharedBundle">
     <SubPart PartName="BuildingUtils"/>
   </Part>
-  
+
+    <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+    </Part>
+    
   <Part Name="BuildingShared-Tested">
     <SubPart PartName="BuildingSharedBundle"/>
     <SubPart PartName="Gtest-RunAggregator"/>

@@ -32,6 +32,12 @@
 #define BUILDINGSHAREDUTILS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
+#if defined (__GEOMETRYMANIPULATIONSTRATEGIES_BUILD__)
+#define GEOMETRYMANIPULATIONSTRATEGIES_EXPORT EXPORT_ATTRIBUTE
+#else
+#define GEOMETRYMANIPULATIONSTRATEGIES_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------
