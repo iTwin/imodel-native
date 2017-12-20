@@ -11,3 +11,8 @@ RulesDrivenECPresentationManagerRequestCancelationTests.*                       
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+
+PresentationTestingUnitTests.PassingTest
+
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Date: 12/19/2017
+    # Crash

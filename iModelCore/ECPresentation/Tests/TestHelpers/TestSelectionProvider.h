@@ -66,8 +66,11 @@ protected:
         {
         INavNodeKeysContainerCPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
         NavNodeKeySet list;
-        for (NavNodeKeyCPtr key : *curr)
-            list.insert(key);
+        if (curr.IsValid())
+            {
+            for (NavNodeKeyCPtr key : *curr)
+                list.insert(key);
+            }
         for (NavNodeKeyCPtr key : keys)
             list.insert(key);
         if (isSub)

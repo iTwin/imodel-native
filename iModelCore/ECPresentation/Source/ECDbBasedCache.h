@@ -25,10 +25,13 @@ private:
 protected:
     ECPRESENTATION_EXPORT virtual ~IECDbClosedListener();
     virtual int _GetPriority() const {return 0;}
-    virtual void _OnConnectionClosed(BeSQLite::EC::ECDbCR) = 0;
+    virtual void _OnConnectionClosed(ECDbCR) = 0;
+    virtual void _OnConnectionReloaded(ECDbCR) {}
 
 public:
     int GetPriority() const {return _GetPriority();}
+    void NotifyConnectionClosed(ECDbCR db) {_OnConnectionClosed(db);}
+    void NotifyConnectionReloaded(ECDbCR db) {_OnConnectionReloaded(db);}
 };
 
 /*=================================================================================**//**
@@ -46,7 +49,7 @@ public:
     IECDbClosedListener& GetListener() const {return *m_listener;}
     BeSQLite::EC::ECDbCR GetConnection() {return m_db;}
     int GetPriority() const {return m_priority;}
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECDbClosedNotifier> Register(IECDbClosedListener&, BeSQLite::EC::ECDbCR, bool deleteOnClearCache);
+    ECPRESENTATION_EXPORT static void Register(IECDbClosedListener&, BeSQLite::EC::ECDbCR, bool deleteOnClearCache);
     ECPRESENTATION_EXPORT void Unregister();
 };
 
