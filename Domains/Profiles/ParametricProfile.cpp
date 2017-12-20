@@ -3,7 +3,7 @@
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS(ParametricProfileHandler)
 
-ParametricProfilePtr ParametricProfile::Create(Profiles::ProfilesModelCPtr model)
+ParametricProfilePtr ParametricProfile::Create(Profiles::ProfileDefinitionModelCPtr model)
     {
     Dgn::DgnModelId modelId = model.get()->GetModelId();
 

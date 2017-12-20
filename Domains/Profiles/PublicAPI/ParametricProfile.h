@@ -19,7 +19,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(ParametricProfile)
     DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(ParametricProfile)
 
-    PROFILES_DOMAIN_EXPORT static ParametricProfilePtr Create(Profiles::ProfilesModelCPtr model);
+    PROFILES_DOMAIN_EXPORT static ParametricProfilePtr Create(Profiles::ProfileDefinitionModelCPtr model);
     };
 
 //=======================================================================================

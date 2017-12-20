@@ -6,7 +6,7 @@ Profiles::ProfilesPartitionPtr ProfilesTestUtils::CreateProfilesPartition()
     return nullptr;
     }
 
-Profiles::ProfilesModelPtr ProfilesTestUtils::GetProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+Profiles::ProfileDefinitionModelPtr ProfilesTestUtils::GetProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
     {
     if (parentSubject.IsNull())
         parentSubject = db.Elements().GetRootSubject();
@@ -17,7 +17,7 @@ Profiles::ProfilesModelPtr ProfilesTestUtils::GetProfilesModel(Utf8StringCR mode
     if (!partition.IsValid())
         return nullptr;
 
-    return dynamic_cast<Profiles::ProfilesModelP>(partition->GetSubModel().get());
+    return dynamic_cast<Profiles::ProfileDefinitionModelP>(partition->GetSubModel().get());
     }
 
 Utf8String ProfilesTestUtils::BuildDefinitionModelCode(Utf8StringCR modelCodeName)
@@ -25,7 +25,7 @@ Utf8String ProfilesTestUtils::BuildDefinitionModelCode(Utf8StringCR modelCodeNam
     return modelCodeName + ":ProfilesDefinition";
     }
 
-Profiles::ProfilesModelPtr ProfilesTestUtils::CreateProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+Profiles::ProfileDefinitionModelPtr ProfilesTestUtils::CreateProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
     {
     if (parentSubject.IsNull())
         parentSubject = db.Elements().GetRootSubject();
@@ -37,7 +37,7 @@ Profiles::ProfilesModelPtr ProfilesTestUtils::CreateProfilesModel(Utf8StringCR m
     if (!defPartition.IsValid())
         return nullptr;
 
-    Profiles::ProfilesModelPtr model = Profiles::ProfilesModel::Create(*defPartition);
+    Profiles::ProfileDefinitionModelPtr model = Profiles::ProfileDefinitionModel::Create(*defPartition);
 
     return model;
     }

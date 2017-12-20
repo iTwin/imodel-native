@@ -89,10 +89,6 @@ $(o)ParametricProfile$(oext) : $(ProfilesBase)ParametricProfile.cpp \
     ${MultiCompileDepends} \
     $(ProfilesBasePublicAPI)ParametricProfile.h
 
-$(o)PublishedProfile$(oext) : $(ProfilesBase)PublishedProfile.cpp \
-    ${MultiCompileDepends} \
-    $(ProfilesBasePublicAPI)PublishedProfile.h
-
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------

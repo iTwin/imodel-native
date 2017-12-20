@@ -16,9 +16,9 @@
 struct ProfilesTestUtils
     {
     static Profiles::ProfilesPartitionPtr CreateProfilesPartition();
-    static Profiles::ProfilesModelPtr GetProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+    static Profiles::ProfileDefinitionModelPtr GetProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
     static Utf8String BuildDefinitionModelCode(Utf8StringCR modelCodeName);
-    static Profiles::ProfilesModelPtr CreateProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+    static Profiles::ProfileDefinitionModelPtr CreateProfilesModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 
     static Utf8String                          CreateCodeSpecNameFromECClass(ECN::ECClassCP ecClass) { Utf8String codeSpecName = ecClass->GetSchema().GetName() + "-" + ecClass->GetName(); return codeSpecName; }
     static Dgn::DgnCode                        CreateCode(Dgn::DgnModelCR model, Utf8StringCR codeValue) { return Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, model, codeValue); }

@@ -44,9 +44,6 @@
     <ClCompile Include="ParametricProfile.cpp">
       <Filter>Profiles</Filter>
     </ClCompile>
-    <ClCompile Include="PublishedProfile.cpp">
-      <Filter>Profiles</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Profiles.mke">
@@ -68,37 +65,38 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomain.h">
+    <ClInclude Include="PublicAPI\BuiltUpProfile.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainApi.h">
+    <ClInclude Include="PublicAPI\BuiltUpProfileComponent.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainDefinitions.h">
+    <ClInclude Include="PublicAPI\ConstantProfile.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainUtilities.h">
+    <ClInclude Include="PublicAPI\ParametricProfile.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesPartition.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesModel.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\Profile.h">
-      <Filter>Profiles</Filter>
+    <ClInclude Include="PublicAPI\Profile.h">
+      <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\ConstantProfile.h">
-      <Filter>Profiles</Filter>
+    <ClInclude Include="PublicAPI\ProfilesDomain.h">
+      <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\BuiltUpProfile.h">
-      <Filter>Profiles</Filter>
+    <ClInclude Include="PublicAPI\ProfilesDomainApi.h">
+      <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\BuiltUpProfileComponent.h">
-      <Filter>Profiles</Filter>
+    <ClInclude Include="PublicAPI\ProfilesDomainDefinitions.h">
+      <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\ParametricProfile.h">
-      <Filter>Profiles</Filter>
+    <ClInclude Include="PublicAPI\ProfilesDomainUtilities.h">
+      <Filter>PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfilesDomain\PublishedProfile.h">
-      <Filter>Profiles</Filter>
+    <ClInclude Include="PublicAPI\ProfilesModel.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ProfilesPartition.h">
+      <Filter>PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -46,7 +46,7 @@
 //-----------------------------------------------------------------------------------------
 // #define PROFILES_COMMON_CLASS_Profiles                    "Profiles"
 #define PROFILES_ProfilesPartition                        "ProfilesPartition"
-#define PROFILES_ProfilesModel                            "ProfilesModel"
+#define PROFILES_ProfileDefinitionModel                   "ProfileDefinitionModel"
 
 //-----------------------------------------------------------------------------------------
 // ECClass names
@@ -56,7 +56,6 @@
 #define PROFILES_CLASS_BuiltUpProfile "BuiltUpProfile"
 #define PROFILES_CLASS_BuiltUpProfileComponent "BuiltUpProfileComponent"
 #define PROFILES_CLASS_ParametricProfile "ParametricProfile"
-#define PROFILES_CLASS_PublishedProfile "PublishedProfile"
 
 #define BE_ECCLASS_NAME(__val__)   static constexpr Utf8CP ecclass_name_##__val__() {return #__val__;}
 
@@ -78,11 +77,11 @@
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------
 PROFILES_POINTER_TYPEDEFS(ProfilesPartition)
-PROFILES_POINTER_TYPEDEFS(ProfilesModel)
+PROFILES_POINTER_TYPEDEFS(ProfileDefinitionModel)
 PROFILES_POINTER_TYPEDEFS(Profile)
 PROFILES_POINTER_TYPEDEFS(ConstantProfile)
 PROFILES_POINTER_TYPEDEFS(BuiltUpProfile)
 PROFILES_POINTER_TYPEDEFS(BuiltUpProfileComponenet)
 PROFILES_POINTER_TYPEDEFS(ParametricProfile)
-PROFILES_POINTER_TYPEDEFS(PublishedProfile)
+
 

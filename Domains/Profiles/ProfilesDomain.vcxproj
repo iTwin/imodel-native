@@ -28,7 +28,6 @@
     <ClCompile Include="ProfilesDomainUtilities.cpp" />
     <ClCompile Include="ProfilesModel.cpp" />
     <ClCompile Include="ProfilesPartition.cpp" />
-    <ClCompile Include="PublishedProfile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Profiles.mke" />
@@ -44,18 +43,17 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PublicAPI\ProfilesDomain\BuiltUpProfile.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\BuiltUpProfileComponent.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ConstantProfile.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ParametricProfile.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\Profile.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomain.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainApi.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainDefinitions.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesDomainUtilities.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesModel.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\ProfilesPartition.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomain\PublishedProfile.h" />
+    <ClInclude Include="PublicAPI\BuiltUpProfile.h" />
+    <ClInclude Include="PublicAPI\BuiltUpProfileComponent.h" />
+    <ClInclude Include="PublicAPI\ConstantProfile.h" />
+    <ClInclude Include="PublicAPI\ParametricProfile.h" />
+    <ClInclude Include="PublicAPI\Profile.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomain.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomainApi.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomainDefinitions.h" />
+    <ClInclude Include="PublicAPI\ProfilesDomainUtilities.h" />
+    <ClInclude Include="PublicAPI\ProfilesModel.h" />
+    <ClInclude Include="PublicAPI\ProfilesPartition.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}</ProjectGuid>

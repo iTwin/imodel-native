@@ -5,7 +5,6 @@
 #include "ProfilesDomain\BuiltUpProfile.h"
 #include "ProfilesDomain\BuiltUpProfileComponent.h"
 #include "ProfilesDomain\ParametricProfile.h"
-#include "ProfilesDomain\PublishedProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -16,13 +15,12 @@ DOMAIN_DEFINE_MEMBERS(ProfilesDomain)
 //---------------------------------------------------------------------------------------
 ProfilesDomain::ProfilesDomain() : DgnDomain(BENTLEY_PROFILES_SCHEMA_NAME, "Bentley Profiles Domain", 1)
     {
-    RegisterHandler(ProfilesModelHandler::GetHandler());
+    RegisterHandler(ProfileDefinitionModelHandler::GetHandler());
     RegisterHandler(ProfileHandler::GetHandler());
     RegisterHandler(ConstantProfileHandler::GetHandler());
     RegisterHandler(BuiltUpProfileComponentHandler::GetHandler());
     RegisterHandler(BuiltUpProfileHandler::GetHandler());
     RegisterHandler(ParametricProfileHandler::GetHandler());
-    RegisterHandler(PublishedProfileHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

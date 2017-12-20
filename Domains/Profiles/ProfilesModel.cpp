@@ -9,23 +9,23 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(ProfilesModelHandler)
+HANDLER_DEFINE_MEMBERS(ProfileDefinitionModelHandler)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Arturas.Mizaras                    12/2017
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbStatus ProfilesModel::_OnInsertElement(Dgn::DgnElementR element)
+Dgn::DgnDbStatus ProfileDefinitionModel::_OnInsertElement(Dgn::DgnElementR element)
     {
     return T_Super::_OnInsertElement(element);
     }
 
-ProfilesModelPtr ProfilesModel::Create(Dgn::DefinitionPartitionCR partition)
+ProfileDefinitionModelPtr ProfileDefinitionModel::Create(Dgn::DefinitionPartitionCR partition)
     {
     Dgn::DgnDbR db = partition.GetDgnDb();
     Dgn::DgnElementId modeledElementId = partition.GetElementId();
-    Dgn::DgnClassId classId = db.Domains().GetClassId(ProfilesModelHandler::GetHandler());
+    Dgn::DgnClassId classId = db.Domains().GetClassId(ProfileDefinitionModelHandler::GetHandler());
 
-    Dgn::DgnModelPtr model = ProfilesModelHandler::GetHandler().Create(Dgn::DgnModel::CreateParams(db, classId, modeledElementId));
+    Dgn::DgnModelPtr model = ProfileDefinitionModelHandler::GetHandler().Create(Dgn::DgnModel::CreateParams(db, classId, modeledElementId));
     if (!model.IsValid())
         return nullptr;
 
@@ -33,7 +33,7 @@ ProfilesModelPtr ProfilesModel::Create(Dgn::DefinitionPartitionCR partition)
     if (Dgn::DgnDbStatus::Success != model->Insert())
         return nullptr;
 
-    return dynamic_cast<ProfilesModelP>(model.get());
+    return dynamic_cast<ProfileDefinitionModelP>(model.get());
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

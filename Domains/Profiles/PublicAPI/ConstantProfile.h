@@ -21,7 +21,7 @@ protected:
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(ConstantProfile)
     DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(ConstantProfile)
-    PROFILES_DOMAIN_EXPORT static ConstantProfilePtr Create(ProfilesModelCPtr model);
+    PROFILES_DOMAIN_EXPORT static ConstantProfilePtr Create(ProfileDefinitionModelCPtr model);
     };
 
 //=======================================================================================

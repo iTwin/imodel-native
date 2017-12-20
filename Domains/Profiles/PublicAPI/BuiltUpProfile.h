@@ -19,7 +19,7 @@ protected:
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(BuiltUpProfile)
     DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(BuiltUpProfile)
-    PROFILES_DOMAIN_EXPORT static BuiltUpProfilePtr Create(Profiles::ProfilesModelCPtr model);
+    PROFILES_DOMAIN_EXPORT static BuiltUpProfilePtr Create(Profiles::ProfileDefinitionModelCPtr model);
     };
 
 //=======================================================================================

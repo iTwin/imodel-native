@@ -8,7 +8,6 @@
 #include <ProfilesDomain\ConstantProfile.h>
 #include <ProfilesDomain\BuiltUpProfile.h>
 #include <ProfilesDomain\ParametricProfile.h>
-#include <ProfilesDomain\PublishedProfile.h>
 #include <ProfilesDomain\BuiltUpProfileComponent.h>
 #include <ProfilesDomain\ProfilesDomainDefinitions.h>
 #include "ProfilesTestUtils.h"
@@ -44,7 +43,7 @@ TEST_F(ProfilesDomainTestsFixture, CreateModel)
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-    Profiles::ProfilesModelCPtr profilesModel = ProfilesTestUtils::CreateProfilesModel(MODEL_TEST_NAME, *db);
+    Profiles::ProfileDefinitionModelCPtr profilesModel = ProfilesTestUtils::CreateProfilesModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(profilesModel.IsValid());
     }
 
@@ -54,7 +53,7 @@ TEST_F(ProfilesDomainTestsFixture, ConstantProfileTest)
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-    Profiles::ProfilesModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
+    Profiles::ProfileDefinitionModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(profilesModel.IsValid());
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, codeValue);
@@ -79,7 +78,7 @@ TEST_F(ProfilesDomainTestsFixture, BuiltUpProfileTest)
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-    Profiles::ProfilesModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
+    Profiles::ProfileDefinitionModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(profilesModel.IsValid());
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, codeValue);
@@ -104,7 +103,7 @@ TEST_F(ProfilesDomainTestsFixture, ParametricProfileTest)
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-    Profiles::ProfilesModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
+    Profiles::ProfileDefinitionModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(profilesModel.IsValid());
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, codeValue);
@@ -123,13 +122,13 @@ TEST_F(ProfilesDomainTestsFixture, ParametricProfileTest)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-TEST_F(ProfilesDomainTestsFixture, PublishedProfileTest)
+/*TEST_F(ProfilesDomainTestsFixture, PublishedProfileTest)
     {
     Utf8String codeValue = "PUBLISHEDPROFILETEST-1";
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-    Profiles::ProfilesModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
+    Profiles::ProfileDefinitionModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(profilesModel.IsValid());
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, codeValue);
@@ -146,7 +145,7 @@ TEST_F(ProfilesDomainTestsFixture, PublishedProfileTest)
 
     Dgn::DefinitionElementPtr queriedElement = ProfilesTestUtils::QueryByCodeValue<Dgn::DefinitionElement>(*profilesModel, codeValue);
     ASSERT_TRUE(queriedElement.IsValid());
-    }
+    }*/
 
 
 TEST_F(ProfilesDomainTestsFixture, BuiltUpProfileComponentUsesConstantProfileTest)
@@ -155,7 +154,7 @@ TEST_F(ProfilesDomainTestsFixture, BuiltUpProfileComponentUsesConstantProfileTes
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-    Profiles::ProfilesModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
+    Profiles::ProfileDefinitionModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(profilesModel.IsValid());
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, codeValue);
@@ -187,7 +186,7 @@ TEST_F(ProfilesDomainTestsFixture, CardinalPointsTestsPublishedProfile)
     DgnDbPtr db = OpenDgnDb();
     ASSERT_TRUE(db.IsValid());
 
-    Profiles::ProfilesModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
+    Profiles::ProfileDefinitionModelCPtr profilesModel = ProfilesTestUtils::GetProfilesModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(profilesModel.IsValid());
 
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_PROFILES_AUTHORITY, *profilesModel, codeValue);
@@ -197,7 +196,7 @@ TEST_F(ProfilesDomainTestsFixture, CardinalPointsTestsPublishedProfile)
     ECN::ECObjectsStatus objectStatus;
     BentleyStatus bentleyStatus;
 
-    Profiles::PublishedProfilePtr publishedProfile = Profiles::PublishedProfile::Create(profilesModel);
+    Profiles::ConstantProfilePtr publishedProfile = Profiles::ConstantProfile::Create(profilesModel);
     ASSERT_TRUE(publishedProfile.IsValid());
 
     status = publishedProfile->SetCode(code);
