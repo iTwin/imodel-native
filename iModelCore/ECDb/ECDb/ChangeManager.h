@@ -42,27 +42,23 @@ struct ChangeManager final
         ChangeManager(ChangeManager const&) = delete;
         ChangeManager& operator=(ChangeManager const&) = delete;
 
-        DbResult CreateCacheFile(BeFileNameCR cachePath) const;
         DbResult AddMetadataToChangeCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;
 
     public:
         explicit ChangeManager(ECDbCR ecdb) : m_ecdb(ecdb) {}
 
-        BentleyStatus ExtractChangeSummary(ECInstanceKey& summaryKey, ChangeSetArg const&, ECDb::ChangeSummaryExtractOptions const&) const;
-
         //! Expected version of the Change Cache file (which always matches the version of the ECDbChange ECSchema)
         static ProfileVersion const& GetExpectedCacheVersion() { return *s_expectedCacheVersion; }
-        static BeFileName DetermineCachePath(ECDbCR);
-        static BeFileName DetermineCachePath(BeFileNameCR ecdbPath);
+        static BeFileName DetermineDefaultCachePath(Utf8CP ecdbPath);
 
         //! This only checks whether a file with the change summary alias was attached. It could be any file though.
         //! Use IsChangeCacheAttached to find out whether the attached file is a valid change summary cache file
         bool ChangeTableSpaceExists() const { return DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ECChange); }
-        bool IsChangeCacheAttachedAndValid(bool logError = false) const;
+        static bool IsChangeCacheAttachedAndValid(ECDbCR, bool logError = false);
         static bool IsChangeCacheValid(ECDbCR cacheFile, bool logError = false);
 
-        DbResult AttachChangeCacheFile(bool createIfNotExists) const;
-        DbResult CreateChangeCacheFile() const;
+        DbResult AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool createIfNotExists) const;
+        DbResult CreateChangeCacheFile(BeFileNameCR cacheFilePath) const;
 
         ChangeSummaryExtractor const& GetExtractor() const { return m_extractor; }
 

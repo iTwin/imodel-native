@@ -800,10 +800,10 @@
     @page ECDbChange EC Changes
     
     ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called <b>change summaries</b>.
-    ECDb persists them locally in a <b>change cache %ECDb file</b> next to the actual %ECDb file, so that they can be accessed across sessions.
+    ECDb persists them locally in a <b>change cache %ECDb file</b>, so that they can be accessed across sessions.
     
     The <b>change cache %ECDb file</b> can be attached to the primary file using ECDb::AttachChangeCache. Alternatively, you
-    can have it attached when opening the primary %ECDb by specify the respective @ref BentleyApi::BeSQLite::EC::ECDb::OpenParams "open parameter".
+    can have it attached when opening the primary %ECDb by specifying the respective @ref BentleyApi::BeSQLite::EC::ECDb::OpenParams "open parameter".
 
     Once attached the change cache file is visible in ECSQL under the table space @b ecchange.
 

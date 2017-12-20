@@ -58,23 +58,23 @@ struct ChangeSummaryExtractor final
         struct Context final
             {
             private:
-                ChangeManager& m_manager;
+                ChangeManager const& m_manager;
                 ECDb m_changeCacheECDb;
+                BeFileName m_changeCachePathIfMustReattach;
                 ECSqlStatementCache m_changeSummaryStmtCache;
-                bool m_wasChangeSummaryFileAttached = false;
                 bool m_extractCompletedSuccessfully = false;
             public:
-                explicit Context(ChangeManager& manager);
+                explicit Context(ChangeManager const& manager);
                 //Performs clean-up: 
                 //*saves changes to change summary ECDb and closes it
                 //*reattaches the change summary ECDb to the primary ECDb if it was attached before extraction
                 ~Context();
 
-                DbResult OpenChangeSummaryECDb();
+                DbResult OpenChangeSummaryECDb(BeFileNameCR changeCachePath);
                 void ExtractCompletedSuccessfully() { m_extractCompletedSuccessfully = true; }
                 CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const { return m_changeSummaryStmtCache.GetPreparedStatement(m_changeCacheECDb, ecsql); }
                 ECDbCR GetPrimaryECDb() const;
-                MainSchemaManager const& GetSchemaManager() const;
+                MainSchemaManager const& GetPrimaryFileSchemaManager() const;
                 IssueReporter const& Issues() const;
             };
 
@@ -132,7 +132,7 @@ struct ChangeSummaryExtractor final
     public:
         ChangeSummaryExtractor()  {}
 
-        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ChangeManager&, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&) const;
+        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ChangeManager const&, BeFileNameCR changeCachePath, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&) const;
     };
 
 

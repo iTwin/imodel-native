@@ -26,25 +26,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ProfileVersion const* ChangeManager::s_expectedCacheVersion = new ProfileVersion(1, 0, 0, 0);
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle     11/2017
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeManager::ExtractChangeSummary(ECInstanceKey& summaryKey, ChangeSetArg const& changesetInfo, ECDb::ChangeSummaryExtractOptions const& options) const
-    {
-    BeMutexHolder lock(m_ecdb.GetImpl().GetMutex());
-    return m_extractor.Extract(summaryKey, const_cast<ChangeManager&>(*this), changesetInfo, options);
-    }
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     12/2017
 //---------------------------------------------------------------------------------------
-bool ChangeManager::IsChangeCacheAttachedAndValid(bool logError) const
+//static
+bool ChangeManager::IsChangeCacheAttachedAndValid(ECDbCR ecdb, bool logError)
     {
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM " TABLESPACE_ECChange ".meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'"))
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM " TABLESPACE_ECChange ".meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'"))
         {
         if (logError)
-            m_ecdb.GetImpl().Issues().Report("Changes cache file is not attached or another file has been attached with the same table space (" TABLESPACE_ECChange ")");
+            ecdb.GetImpl().Issues().Report("Changes cache file is not attached or another file has been attached with the same table space (" TABLESPACE_ECChange ")");
 
         return false; //if file is not attached or not an ECDb file
         }
@@ -52,7 +43,7 @@ bool ChangeManager::IsChangeCacheAttachedAndValid(bool logError) const
     if (stmt.Step() != BE_SQLITE_ROW)
         {
         if (logError)
-            m_ecdb.GetImpl().Issues().Report("Attached file with table space '" TABLESPACE_ECChange "' is not a Changes cache file.");
+            ecdb.GetImpl().Issues().Report("Attached file with table space '" TABLESPACE_ECChange "' is not a Changes cache file.");
 
         return false;
         }
@@ -65,7 +56,7 @@ bool ChangeManager::IsChangeCacheAttachedAndValid(bool logError) const
         return true;
 
     if (logError)
-        m_ecdb.GetImpl().Issues().Report("Attached file is a Change cache file with a mismatching version. Expected cache file version: %s. Actual version: %d.%d.%d", 
+        ecdb.GetImpl().Issues().Report("Attached file is a Change cache file with a mismatching version. Expected cache file version: %s. Actual version: %d.%d.%d",
                                          s_expectedCacheVersion->ToString().c_str(), versionDigit1, versionDigit2, versionDigit3);
 
     return false;
@@ -111,7 +102,7 @@ bool ChangeManager::IsChangeCacheValid(ECDbCR cacheECDb, bool logError)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-DbResult ChangeManager::AttachChangeCacheFile(bool createIfNotExists) const
+DbResult ChangeManager::AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool createIfNotExists) const
     {
     if (!m_ecdb.IsDbOpen())
         return BE_SQLITE_ERROR;
@@ -122,22 +113,20 @@ DbResult ChangeManager::AttachChangeCacheFile(bool createIfNotExists) const
         return BE_SQLITE_ERROR;
         }
 
-    if (ChangeTableSpaceExists())
-        {
-        if (!IsChangeCacheAttachedAndValid(true))
-            return BE_SQLITE_ERROR;
+    if (DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ECChange))
+        return BE_SQLITE_ERROR;
 
-        return BE_SQLITE_OK;
-        }
+    BeFileName cachePath(cacheFilePath);
+    if (cachePath.empty())
+        cachePath = DetermineDefaultCachePath(m_ecdb.GetDbFileName());
 
-    BeFileName cachePath = DetermineCachePath(m_ecdb);
     const bool cacheAlreadyExisted = cachePath.DoesPathExist();
     if (!cacheAlreadyExisted)
         {
         if (!createIfNotExists)
             return BE_SQLITE_OK;
 
-        DbResult r = CreateCacheFile(cachePath);
+        DbResult r = CreateChangeCacheFile(cachePath);
         if (BE_SQLITE_OK != r)
             return r;
         }
@@ -155,44 +144,21 @@ DbResult ChangeManager::AttachChangeCacheFile(bool createIfNotExists) const
         return r;
         }
 
-    if (cacheAlreadyExisted && !IsChangeCacheAttachedAndValid(true))
+    if (cacheAlreadyExisted && !IsChangeCacheAttachedAndValid(m_ecdb, true))
         return BE_SQLITE_ERROR;
 
     return BE_SQLITE_OK;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle     12/2017
-//---------------------------------------------------------------------------------------
-DbResult ChangeManager::CreateChangeCacheFile() const
-    {
-    BeFileName cachePath = m_ecdb.GetChangeCachePath();
-    if (cachePath.DoesPathExist())
-        {
-        m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists.", cachePath.GetNameUtf8().c_str());
-        return BE_SQLITE_ERROR;
-        }
-
-    return CreateCacheFile(cachePath);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-DbResult ChangeManager::CreateCacheFile(BeFileNameCR cachePath) const
+DbResult ChangeManager::CreateChangeCacheFile(BeFileNameCR cachePath) const
     {
-    BeAssert(!IsChangeCacheAttachedAndValid());
-
     if (cachePath.DoesPathExist())
         {
-        if (BeFileNameStatus::Success != cachePath.BeDeleteFile())
-            {
-            m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists and could not be deleted.", cachePath.GetNameUtf8().c_str());
-            return BE_SQLITE_ERROR;
-            }
-
-        LOG.warningv("A Change cache file '%s' already exists for the new ECDb file. The existing cache file has been deleted.", cachePath.GetNameUtf8().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists and could not be deleted.", cachePath.GetNameUtf8().c_str());
+        return BE_SQLITE_ERROR;
         }
 
     ECDb cacheDb;
@@ -200,7 +166,6 @@ DbResult ChangeManager::CreateCacheFile(BeFileNameCR cachePath) const
     if (BE_SQLITE_OK != r)
         {
         m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': %s", cachePath.GetNameUtf8().c_str(), Db::InterpretDbResult(r));
-        cacheDb.AbandonChanges();
         return r;
         }
 
@@ -217,7 +182,6 @@ DbResult ChangeManager::CreateCacheFile(BeFileNameCR cachePath) const
     if (context->LocateSchema(schemaKey, ECN::SchemaMatchType::LatestWriteCompatible) == nullptr)
         {
         m_ecdb.GetImpl().Issues().Report("Failed to create new Change cache file '%s': Could not locate ECSchema " ECSCHEMA_ECDbChange, cachePath.GetNameUtf8().c_str());
-        cacheDb.AbandonChanges();
         return BE_SQLITE_ERROR;
         }
 
@@ -429,18 +393,7 @@ Nullable<ChangeOpCode> ChangeManager::DetermineOpCodeFromChangedValueState(Chang
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 //static
-BeFileName ChangeManager::DetermineCachePath(ECDbCR ecdb)
-    {
-    BeFileName path(ecdb.GetDbFileName());
-    path.append(FILEEXT_ChangeCache);
-    return path;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Krischan.Eberle     11/2017
-//---------------------------------------------------------------------------------------
-//static
-BeFileName ChangeManager::DetermineCachePath(BeFileNameCR ecdbPath)
+BeFileName ChangeManager::DetermineDefaultCachePath(Utf8CP ecdbPath)
     {
     BeFileName path(ecdbPath);
     path.append(FILEEXT_ChangeCache);

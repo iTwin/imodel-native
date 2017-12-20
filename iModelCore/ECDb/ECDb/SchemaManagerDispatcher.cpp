@@ -27,11 +27,10 @@ TableSpaceSchemaManager const* SchemaManager::Dispatcher::GetManager(Utf8CP tabl
         return nullptr;
         }
 
-    DbTableSpace tableSpace(tableSpaceName);
-    if (tableSpace.IsMain())
+    if (DbTableSpace::IsMain(tableSpaceName))
         return &Main();
 
-    auto it = m_managers.find(tableSpace.GetName());
+    auto it = m_managers.find(tableSpaceName);
     if (it == m_managers.end())
         return nullptr;
 

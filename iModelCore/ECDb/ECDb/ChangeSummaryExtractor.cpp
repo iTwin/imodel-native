@@ -14,10 +14,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, ChangeManager& manager, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const& options) const
+BentleyStatus ChangeSummaryExtractor::Extract(ECInstanceKey& summaryKey, ChangeManager const& manager, BeFileNameCR changeCachePath, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const& options) const
     {
     Context ctx(manager);
-    if (BE_SQLITE_OK != ctx.OpenChangeSummaryECDb())
+    if (BE_SQLITE_OK != ctx.OpenChangeSummaryECDb(changeCachePath))
         return ERROR; //errors already logged in above call
 
     if (InsertSummary(summaryKey, ctx, changeSetInfo) != SUCCESS)
@@ -99,7 +99,7 @@ BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(Context& ctx, ECInstanc
     {
     ECClassCP primaryClass = rowEntry.GetPrimaryClass();
 
-    ClassMap const* classMap = ctx.GetSchemaManager().GetClassMap(*primaryClass);
+    ClassMap const* classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(*primaryClass);
     if (classMap == nullptr)
         {
         ctx.Issues().Report("Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported.",
@@ -504,7 +504,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         }
     ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();
 
-    RelationshipClassEndTableMap const& relClassMap = ctx.GetSchemaManager().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
+    RelationshipClassEndTableMap const& relClassMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
 
     // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
     ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
@@ -753,7 +753,7 @@ ECN::ECClassId ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
 //---------------------------------------------------------------------------------------
-ChangeSummaryExtractor::Context::Context(ChangeManager& manager) : m_manager(manager), m_changeSummaryStmtCache(15) {}
+ChangeSummaryExtractor::Context::Context(ChangeManager const& manager) : m_manager(manager), m_changeSummaryStmtCache(15) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
@@ -767,7 +767,7 @@ ChangeSummaryExtractor::Context::~Context()
         {
         if (BE_SQLITE_OK != m_changeCacheECDb.SaveChanges())
             {
-            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not commit changes to ChangeSummary cache file %s", m_changeCacheECDb.GetDbFileName());
+            Issues().Report("Failed to extract ChangeSummaries from change set: Could not commit changes to ChangeSummary cache file '%s'.", m_changeCacheECDb.GetDbFileName());
             BeAssert(false);
             }
         }
@@ -779,11 +779,12 @@ ChangeSummaryExtractor::Context::~Context()
     m_changeSummaryStmtCache.Empty();
     m_changeCacheECDb.CloseDb();
 
-    if (m_wasChangeSummaryFileAttached)
+    if (!m_changeCachePathIfMustReattach.empty())
         {
-        if (BE_SQLITE_OK != m_manager.AttachChangeCacheFile(false))
+        if (BE_SQLITE_OK != m_manager.AttachChangeCacheFile(m_changeCachePathIfMustReattach, false))
             {
-            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not re-attach ChangeSummary cache file  to %s", GetPrimaryECDb().GetDbFileName());
+            Issues().Report("Failed to extract ChangeSummaries from change set: Could not re-attach ChangeSummary cache file '%s' to '%s'.",
+                            m_changeCachePathIfMustReattach.GetNameUtf8().c_str(), GetPrimaryECDb().GetDbFileName());
             BeAssert(false);
             }
         }
@@ -792,35 +793,52 @@ ChangeSummaryExtractor::Context::~Context()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
 //---------------------------------------------------------------------------------------
-DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb()
+DbResult ChangeSummaryExtractor::Context::OpenChangeSummaryECDb(BeFileNameCR changeCachePath)
     {
-    if (m_manager.ChangeTableSpaceExists())
-        {
-        m_wasChangeSummaryFileAttached = m_manager.IsChangeCacheAttachedAndValid(true);
-        if (!m_wasChangeSummaryFileAttached)
-            return BE_SQLITE_ERROR;
-        }
+    Utf8String alreadyAttachedChangesPath = DbUtilities::GetAttachedFilePath(GetPrimaryECDb(), TABLESPACE_ECChange);
 
-    if (m_wasChangeSummaryFileAttached)
+    BeFileNameCP effectivePath = nullptr;
+    if (alreadyAttachedChangesPath.empty())
         {
+        //cache file is not attached
+        if (changeCachePath.empty())
+            {
+            Issues().Report("Failed to extract ChangeSummaries from change set: Change cache file has not been attached to '%s' and no path to the cache file was specified.", GetPrimaryECDb().GetDbFileName());
+            return BE_SQLITE_ERROR;
+            }
+
+        effectivePath = &changeCachePath;
+        }
+    else
+        {
+        //cache file has already been attached
+        if (!changeCachePath.empty())
+            {
+            Issues().Report("Failed to extract ChangeSummaries from change set: When a change cache file has already been attached, path to cache file must not be specified.");
+            return BE_SQLITE_ERROR;
+            }
+
+        if (!ChangeManager::IsChangeCacheAttachedAndValid(GetPrimaryECDb(), true))
+            {
+            Issues().Report("Failed to extract ChangeSummaries from change set: Change cache file attached to '%s' is no valid change cache file.", GetPrimaryECDb().GetDbFileName());
+            return BE_SQLITE_ERROR;
+            }
+
+        m_changeCachePathIfMustReattach = BeFileName(alreadyAttachedChangesPath);
+        effectivePath = &m_changeCachePathIfMustReattach;
+
         DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ECChange);
         if (BE_SQLITE_OK != r)
             {
-            Issues().Report("Failed to extract ChangeSummaries from changeset: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
+            Issues().Report("Failed to extract ChangeSummaries from change set: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
             return r;
             }
         }
 
+    BeAssert(effectivePath != nullptr && !effectivePath->empty());
     BeAssert(!m_changeCacheECDb.IsDbOpen());
-    BeFileName path = GetPrimaryECDb().GetChangeCachePath();
-    if (!path.DoesPathExist())
-        {
-        Issues().Report("Failed to extract ChangeSummaries from changeset: ChangeSummary cache file  %s not found.", path.GetNameUtf8().c_str());
-        return BE_SQLITE_ERROR_FileNotFound;
-        }
-
     //Must open the cache file with "DoNotAttach" to avoid that a cache to the cache is being created
-    DbResult r = m_changeCacheECDb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::ReadWrite).Set(ECDb::ChangeCacheMode::DoNotAttach));
+    DbResult r = m_changeCacheECDb.OpenBeSQLiteDb(*effectivePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach));
     if (BE_SQLITE_OK != r)
         return r;
 
@@ -843,6 +861,6 @@ ECDbCR ChangeSummaryExtractor::Context::GetPrimaryECDb() const { return m_manage
 //---------------------------------------------------------------------------------------
 // @bsimethod                                            Krischan.Eberle    11/2017
 //---------------------------------------------------------------------------------------
-MainSchemaManager const& ChangeSummaryExtractor::Context::GetSchemaManager() const { return GetPrimaryECDb().Schemas().Main(); }
+MainSchemaManager const& ChangeSummaryExtractor::Context::GetPrimaryFileSchemaManager() const { return GetPrimaryECDb().Schemas().Main(); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

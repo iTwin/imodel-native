@@ -185,7 +185,7 @@ DbResult ECDbTestFixture::CreateECDb(ECDbR ecdb, Utf8CP ecdbFileName)
             return BE_SQLITE_ERROR;
             }
 
-        BeFileName changeCachePath = ECDb::GetChangeCachePath(ecdbFilePath);
+        BeFileName changeCachePath = ECDb::GetDefaultChangeCachePath(ecdbFilePath.GetNameUtf8().c_str());
         if (changeCachePath.DoesPathExist())
             {
             if (BeFileNameStatus::Success != changeCachePath.BeDeleteFile())
@@ -223,9 +223,9 @@ DbResult ECDbTestFixture::CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNam
     BeFileName::BeCopyFile(seedFilePath, clonePath);
 
     //clone Change cache file
-    BeFileName seedChangeCachePath = ECDb::GetChangeCachePath(seedFilePath);
+    BeFileName seedChangeCachePath = ECDb::GetDefaultChangeCachePath(seedFilePath.GetNameUtf8().c_str());
     if (seedChangeCachePath.DoesPathExist())
-        BeFileName::BeCopyFile(seedChangeCachePath, ECDb::GetChangeCachePath(clonePath));
+        BeFileName::BeCopyFile(seedChangeCachePath, ECDb::GetDefaultChangeCachePath(clonePath.GetNameUtf8().c_str()));
 
     return clone.OpenBeSQLiteDb(clonePath, openParams);
     }

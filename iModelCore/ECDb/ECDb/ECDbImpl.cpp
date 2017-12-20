@@ -53,8 +53,8 @@ DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
     if (changeCacheMode != ChangeCacheMode::DoNotAttach)
         {
         PERFLOG_START("ECDb", "Open> Attach Changes cache file");
-        //attach before a potential profile upgrade happens, so that the profile upgrade can update tables in the change summary cache file as well
-        const DbResult r = m_changeManager.AttachChangeCacheFile(changeCacheMode == ChangeCacheMode::AttachAndCreateIfNotExists);
+        const bool createCacheIfNotExists = changeCacheMode == ChangeCacheMode::AttachAndCreateIfNotExists;
+        const DbResult r = m_changeManager.AttachChangeCacheFile(ecdbParams != nullptr ? ecdbParams->GetChangeCachePath() : BeFileName(), createCacheIfNotExists);
         if (BE_SQLITE_OK != r)
             return r;
         PERFLOG_FINISH("ECDb", "Open> Attach Changes cache file");
@@ -68,7 +68,7 @@ DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const
     {
-    DbTableSpace tableSpace(tableSpaceName);
+    DbTableSpace tableSpace(tableSpaceName, dbFileName);
     if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
         return BE_SQLITE_OK; //only need to react to attached ECDb files
 

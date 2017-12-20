@@ -107,24 +107,22 @@ public:
         {
         private:
             ChangeCacheMode m_changeCacheMode = ChangeCacheMode::DoNotAttach;
+            BeFileName m_changeCachePath;
 
         public:
             explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
             OpenParams(OpenMode openMode, ChangeCacheMode changeCacheMode) : Db::OpenParams(openMode, BeSQLite::DefaultTxn::Yes), m_changeCacheMode(changeCacheMode) {}
             virtual ~OpenParams() {}
 
-            //! Sets the ChangeCacheMode in the params
-            //!@note If a profile upgrade has to be performed while opening a file,
-            //!the specified mode is ignored and ChangeCacheMode::AttachAndCreateIfNotExists is used.
-            //! @param[in] mode ChangeCacheMode to set
-            //! @return the params object itself for fluid API calls
-            OpenParams& Set(ChangeCacheMode mode) { m_changeCacheMode = mode; return *this; }
+            OpenParams& SetChangeCacheMode(ChangeCacheMode mode) { m_changeCacheMode = mode; return *this; }
+            OpenParams& SetChangeCachePath(BeFileNameCR changeCachePath) { m_changeCachePath = changeCachePath; return *this; }
 
             //! Gets the ChangeCacheMode
             //!@note If a profile upgrade has to be performed while opening a file,
             //!the specified mode is ignored and ChangeCacheMode::AttachAndCreateIfNotExists is used.
             //! @return ChangeCacheMode
             ChangeCacheMode GetChangeCacheMode() const { return m_changeCacheMode; }
+            BeFileNameCR GetChangeCachePath() const { return m_changeCachePath; }
         };
 
     //=======================================================================================
@@ -316,7 +314,7 @@ public:
     //! @return This ECDb file's ECClass locater
     ECDB_EXPORT ECN::IECClassLocaterR GetClassLocater() const;
 
-    //! @name History
+    //! @name EC Changes
     //! @{
 
     //! Determines whether the Changes cache file is attached to this %ECDb file or not.
@@ -324,58 +322,76 @@ public:
     //! @see @ref ECDbChange
     ECDB_EXPORT bool IsChangeCacheAttached() const;
 
-    //! Attaches the Changes cache file to this %ECDb file (if it isn't attached already).
+    //! Attaches the Changes cache file to this %ECDb file.
     //! If it does not exist, a new one is created and attached.
+    //! If a cache file is already attached, an error is returned
     //! @note Attaching a file means that any open transactions are committed first (see BentleyApi::BeSQLite::Db::AttachDb).
     //! 
     //! Alternatively you can specify a corresponding ECDb::ChangeCacheMode so that the cache
     //! is attached at opening time already.
-    //!
+    //! @param[in] changeCachePath Path to the change cache file. If omitted, the default path will be used.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
     //! @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
     //! @see BentleyApi::BeSQLite::EC::ECDb::ChangeCacheMode
-    ECDB_EXPORT DbResult AttachChangeCache() const;
+    ECDB_EXPORT DbResult AttachChangeCache(BeFileNameCR changeCachePath = BeFileName()) const;
 
-    //! Creates a new Changes cache file for %ECDb file but does not attach it to the primary file
+    //! Creates a new Changes cache file for this %ECDb file but does not attach it.
     //! @remarks This method will return an error, if the cache file already exists.
     //!
     //! This method can also be used if further set-up on the cache file is needed by the client.
     //! For example, higher layer code can create the cache file using this method, then open a separate ECDb connection to 
     //! it and import another schema.
     //! Note though that any of this is ignored by ECDb and must be maintained by the code that added it.
+    //! @param[in] changeCacheFilePath Path for the cache file. You can use ECDb::GetDefaultChangeCachePath
+    //! to get the default path.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
-    ECDB_EXPORT DbResult CreateChangeCache() const;
-
-    //! Gets the file path to the Change cache file for this %ECDb file.
-    //! @return Path to Change cache file
-    //! @see @ref ECDbChange
-    ECDB_EXPORT BeFileName GetChangeCachePath() const;
-
-    //! Gets the file path to the Change cache file for the specified %ECDb path.
-    //! @param[in] ecdbPath Path to %ECDb file for which Change cache path is returned
-    //! @return Path to Changes cache file
-    //! @see @ref ECDbChange
-    ECDB_EXPORT static BeFileName GetChangeCachePath(BeFileNameCR ecdbPath);
+    ECDB_EXPORT DbResult CreateChangeCache(BeFileNameCR changeCacheFilePath) const;
 
     //! Extracts and generates the change summary from the specified change set.
-    //! @remarks The change summary is persisted as as instance of the ECClass @b ECDbChange.ChangeSummary and its related classes
+    //! @remarks The change summary is persisted as an instance of the ECClass @b ECDbChange.ChangeSummary and its related classes
     //! @b ECDbChange.InstanceChange and @b ECDbChange.PropertyValueChange.
     //! The method returns the ECInstanceKey of the generated ChangeSummary which serves as input to any query into the changes
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
     //! @note The change summaries are persisted in a separate cache file. Before extracting you must make sure
-    //! the cache exists. Either call ECDb::AttachChangeCache first or specify the appropriate ECDb::ChangeCacheMode
-    //! when opening the %ECDb file. If the cache does not exist, the method returns ERROR.
+    //! the cache exists and is attached. Either call ECDb::AttachChangeCache first, or specify the appropriate
+    //! ECDb::ChangeCacheMode when opening the %ECDb file. If the cache does not exist or is not attached, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
     //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
     //! @param[in] options Extraction options
     //! @return SUCCESS or ERROR
     //! @see @ref ECDbChange
-    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+    BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const { return ExtractChangeSummary(changeSummaryKey, BeFileName(), changeSetArg, options); }
     
+    //! Extracts and generates the change summary from the specified change set.
+    //! @remarks The change summary is persisted as an instance of the ECClass @b ECDbChange.ChangeSummary and its related classes
+    //! @b ECDbChange.InstanceChange and @b ECDbChange.PropertyValueChange.
+    //! The method returns the ECInstanceKey of the generated ChangeSummary which serves as input to any query into the changes
+    //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
+    //!
+    //! @note The change summaries are persisted in a separate cache file, specified by @p changeCacheFilePath.
+    //! Before extracting you must make sure the cache exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first, 
+    //! or specify the appropriate ECDb::ChangeCacheMode when opening the %ECDb file. If the cache does not exist, the method returns ERROR.
+    //! The change cache file doesn't have to be attached though.
+    //!
+    //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
+    //! @param[in] changeCacheFilePath Path to the Change cache file
+    //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
+    //! @param[in] options Extraction options
+    //! @return SUCCESS or ERROR
+    //! @see @ref ECDbChange
+    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeFileNameCR changeCacheFilePath, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+
+    //! Gets the default file path to the Change cache file for the specified %ECDb path.
+    //! The default file path is: @p ecdbPath + ".ecchanges"
+    //! @param[in] ecdbPath Path to %ECDb file for which Change cache path is returned
+    //! @return Default path to Changes cache file
+    //! @see @ref ECDbChange
+    ECDB_EXPORT static BeFileName GetDefaultChangeCachePath(Utf8CP ecdbPath);
+
     //! @}
 
     //! Deletes orphaned ECInstances left over from operations specified by @p mode.

@@ -173,8 +173,8 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_CustomizeChangeCacheFile.sampleCode
 
     //*** Step 1: Set-up Change Cache File
-    primaryECDb.CreateChangeCache();
-    BeFileName cacheFilePath = primaryECDb.GetChangeCachePath();
+    BeFileName cacheFilePath = ECDb::GetDefaultChangeCachePath(primaryECDb.GetDbFileName());
+    primaryECDb.CreateChangeCache(cacheFilePath);
 
     ECDb cacheFile;
     cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
@@ -215,7 +215,7 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     
     //extract the change summary
     ECInstanceKey changeSummaryKey;
-    primaryECDb.ExtractChangeSummary(changeSummaryKey,ChangeSetArg(changeSet));
+    primaryECDb.ExtractChangeSummary(changeSummaryKey, cacheFilePath, ChangeSetArg(changeSet));
 
     //add additional information and relate it to the new change summary
     cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));

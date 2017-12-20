@@ -27,11 +27,12 @@ struct DbTableSpace final
     private:
         Type m_type = Type::Main;
         Utf8String m_name;
+        Utf8String m_filePath;
 
         static DbTableSpace s_main;
 
     public:
-        explicit DbTableSpace(Utf8CP name);
+        explicit DbTableSpace(Utf8CP name, Utf8CP filePath = nullptr);
 
         bool operator==(DbTableSpace const& rhs) const { return m_type == rhs.m_type && (m_type != Type::Attached || m_name.EqualsIAscii(rhs.m_name)); }
         bool operator!=(DbTableSpace const& rhs) const { return !(*this == rhs); }
@@ -39,6 +40,7 @@ struct DbTableSpace final
         bool IsValid() const { return !m_name.empty(); }
 
         Utf8StringCR GetName() const { return m_name; }
+        Utf8StringCR GetFilePath() const { return m_filePath; }
         bool IsMain() const { return m_type == Type::Main; }
         bool IsTemp() const { return m_type == Type::Temp; }
         bool IsAttached() const { return m_type == Type::Attached; }
@@ -103,6 +105,7 @@ public:
 
     static bool TableSpaceExists(ECDbCR ecdb, Utf8CP tableSpace);
     static BentleyStatus GetTableSpaces(std::vector<Utf8String>& tableSpaces, ECDbCR ecdb, bool onlyAttachedTableSpaces = false);
+    static Utf8String GetAttachedFilePath(ECDbCR, Utf8CP tableSpace);
 
     static bool TableExists(ECDbCR ecdb, Utf8CP tableName, Utf8CP tableSpace = nullptr)
         {

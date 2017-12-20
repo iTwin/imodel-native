@@ -179,35 +179,32 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::IsChangeCacheAttached() const { return m_pimpl->GetChangeManager().IsChangeCacheAttachedAndValid(); }
+bool ECDb::IsChangeCacheAttached() const { return ChangeManager::IsChangeCacheAttachedAndValid(*this); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::AttachChangeCache() const { return m_pimpl->GetChangeManager().AttachChangeCacheFile(true); }
+DbResult ECDb::AttachChangeCache(BeFileNameCR changeCachePath) const { return m_pimpl->GetChangeManager().AttachChangeCacheFile(changeCachePath, true); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::CreateChangeCache() const { return m_pimpl->GetChangeManager().CreateChangeCacheFile(); }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                11/2017
-//---------------+---------------+---------------+---------------+---------------+------
-BeFileName ECDb::GetChangeCachePath() const { return ChangeManager::DetermineCachePath(*this); }
+DbResult ECDb::CreateChangeCache(BeFileNameCR changeCachePath) const { return m_pimpl->GetChangeManager().CreateChangeCacheFile(changeCachePath); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-BeFileName ECDb::GetChangeCachePath(BeFileNameCR ecdbPath) { return ChangeManager::DetermineCachePath(ecdbPath); }
+BeFileName ECDb::GetDefaultChangeCachePath(Utf8CP ecdbPath) { return ChangeManager::DetermineDefaultCachePath(ecdbPath); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options) const
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeFileNameCR changeCacheFilePath, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options) const
     {
-    return m_pimpl->GetChangeManager().ExtractChangeSummary(changeSummaryKey, changeSetInfo, options);
+    BeMutexHolder lock(GetImpl().GetMutex());
+    ChangeManager const& changeManager = m_pimpl->GetChangeManager();
+    return changeManager.GetExtractor().Extract(changeSummaryKey, changeManager, changeCacheFilePath, changeSetInfo, options);
     }
 
 //--------------------------------------------------------------------------------------

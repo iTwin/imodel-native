@@ -22,14 +22,20 @@ DbTableSpace DbTableSpace::s_main(TABLESPACE_Main);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle       11/2017
 //---------------------------------------------------------------------------------------
-DbTableSpace::DbTableSpace(Utf8CP name) : m_name(name)
+DbTableSpace::DbTableSpace(Utf8CP name, Utf8CP filePath) : m_name(name), m_filePath(filePath)
     {
     BeAssert(!IsAny(name) && "Must not pass empty string to DbTableSpace");
 
     if (IsMain(name))
+        {
         m_type = Type::Main;
+        BeAssert(m_filePath.empty());
+        }
     else if (IsTemp())
+        {
         m_type = Type::Temp;
+        BeAssert(m_filePath.empty());
+        }
     else
         m_type = Type::Attached;
     }
@@ -104,6 +110,30 @@ bool DbUtilities::TableSpaceExists(ECDbCR ecdb, Utf8CP tableSpace)
     //cannot use cached statement here as TryPrepare is not available there
     Statement stmt;
     return BE_SQLITE_OK == stmt.TryPrepare(ecdb, Utf8PrintfString("SELECT 1 FROM [%s].sqlite_master", tableSpace).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   12/2017
+//---------------------------------------------------------------------------------------
+//static
+Utf8String DbUtilities::GetAttachedFilePath(ECDbCR ecdb, Utf8CP tableSpace)
+    {
+    BeAssert(!Utf8String::IsNullOrEmpty(tableSpace));
+    if (DbTableSpace::IsMain(tableSpace) || DbTableSpace::IsTemp(tableSpace))
+        return Utf8String();
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("pragma database_list");
+    if (stmt == nullptr)
+        return Utf8String();
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        Utf8CP actualTableSpace = stmt->GetValueText(1);
+        if (BeStringUtilities::StricmpAscii(tableSpace, actualTableSpace) == 0)
+            return Utf8String(stmt->GetValueText(2));
+        }
+
+    return Utf8String();
     }
 
 //---------------------------------------------------------------------------------------

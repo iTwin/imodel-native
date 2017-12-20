@@ -608,13 +608,23 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
         stmt.Finalize();
         };
 
-    auto assertExtraction = [] (ECDbCR ecdb, IChangeSet& changeset, bool expectedSuccess, Utf8CP assertMessage)
+    auto assertExtraction = [] (ECDbCR ecdb, IChangeSet& changeset, BeFileNameCP cachePath, bool expectedSuccess, Utf8CP assertMessage)
         {
         ECInstanceKey summaryKey;
         if (expectedSuccess)
-            EXPECT_EQ(SUCCESS, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
+            {
+            if (cachePath != nullptr)
+                EXPECT_EQ(SUCCESS, ecdb.ExtractChangeSummary(summaryKey, *cachePath, ChangeSetArg(changeset))) << assertMessage;
+            else
+                EXPECT_EQ(SUCCESS, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
+            }
         else
-            EXPECT_EQ(ERROR, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
+            {
+            if (cachePath != nullptr)
+                EXPECT_EQ(ERROR, ecdb.ExtractChangeSummary(summaryKey, *cachePath, ChangeSetArg(changeset))) << assertMessage;
+            else
+                EXPECT_EQ(ERROR, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
+            }
         };
 
     TestChangeTracker tracker(m_ecdb);
@@ -628,31 +638,38 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
-    BeFileName cachePath = m_ecdb.GetChangeCachePath();
+    BeFileName cachePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
 
     assertCache(m_ecdb, false, "Cache does not exist and is not attached");
-    assertExtraction(m_ecdb, revision1, false, "Cache does not exist");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "Cache does not exist");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Cache does not exist");
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
     assertCache(m_ecdb, true, "Cache has been attached");
-    assertExtraction(m_ecdb, revision1, true, "Cache exists and is attached");
+    assertExtraction(m_ecdb, revision1, nullptr, true, "Cache exists and is attached");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Cache exists and is attached (expected to fail because cache path must not be specified if already attached)");
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach)));
     assertCache(m_ecdb, false, "Opened with ChangeCacheMode::DoNotAttach");
-    assertExtraction(m_ecdb, revision1, true, "Cache exists and is not attached");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "Cache exists and is not attached");
+    assertExtraction(m_ecdb, revision1, &cachePath, true, "Cache exists and is not attached");
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
     assertCache(m_ecdb, true, "Opened with ChangeCacheMode::AttachIfExists where cache exists");
-    assertExtraction(m_ecdb, revision1, true, "Cache exists and is attached");
+    assertExtraction(m_ecdb, revision1, nullptr, true, "Cache exists and is attached");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Cache exists and is attached (expected to fail because cache path must not be specified if already attached)");
 
     CloseECDb();
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
     assertCache(m_ecdb, false, "Opened with ChangeCacheMode::AttachIfExists where cache does not exist");
-    assertExtraction(m_ecdb, revision1, false, "Opened with ChangeCacheMode::AttachIfExists where cache does not exist");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "Opened with ChangeCacheMode::AttachIfExists where cache does not exist");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Opened with ChangeCacheMode::AttachIfExists where cache does not exist");
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
     assertCache(m_ecdb, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists where cache does not exist");
-    assertExtraction(m_ecdb, revision1, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists");
+    assertExtraction(m_ecdb, revision1, nullptr, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists (expected to fail because cache path must not be specified if already attached)");
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
     assertCache(m_ecdb, true, "Opened with ChangeSumChangeCacheModemaryCacheMode::AttachAndCreateIfNotExists where cache did exist");
-    assertExtraction(m_ecdb, revision1, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists where cache did exist");
+    assertExtraction(m_ecdb, revision1, nullptr, true, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists where cache did exist");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Opened with ChangeCacheMode::AttachAndCreateIfNotExists where cache did exist (expected to fail because cache path must not be specified if already attached)");
 
     CloseECDb();
 
@@ -661,7 +678,8 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.TryExecuteSql(Utf8PrintfString("ATTACH '%s' AS ecchange", cachePath.GetNameUtf8().c_str()).c_str()));
     Savepoint sp(m_ecdb, "");
     assertCache(m_ecdb, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
-    assertExtraction(m_ecdb, revision1, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Attached change cache with SQL command (expected to not be recognized by ECDb)");
     sp.Cancel();
 
     //open with default open params when cache doesn't exist
@@ -669,7 +687,8 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     assertCache(m_ecdb, false, "Opened with default open params where cache did not exist");
-    assertExtraction(m_ecdb, revision1, false, "Opened with default open params where cache did not exist");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "Opened with default open params where cache did not exist");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Opened with default open params where cache did not exist");
     CloseECDb();
 
     //create non-Change non-ECDb file
@@ -683,10 +702,12 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache()) << "Non-ECDb file with same path exists";
     assertCache(m_ecdb, false, "Attach failed because non-ECDb file with same path exists");
-    assertExtraction(m_ecdb, revision1, false, "non-ECDb file with same path exists");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "non-ECDb file with same path exists");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "non-ECDb file with same path exists");
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach)));
     assertCache(m_ecdb, false, "Open with ChangeCacheMode::DoNotAttach failed because non-ECDb file with same path exists");
-    assertExtraction(m_ecdb, revision1, false, "non-ECDb file with same path exists");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "non-ECDb file with same path exists");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "non-ECDb file with same path exists");
     ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
     ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
     CloseECDb();
@@ -702,11 +723,13 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache()) << "Non-Change ECDb file with same path exists";
     assertCache(m_ecdb, false, "Attach failed because Non-Change ECDb file with same path exists");
-    assertExtraction(m_ecdb, revision1, false, "Non-Change ECDb file with same path exists - not attached");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "Non-Change ECDb file with same path exists - not attached");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Non-Change ECDb file with same path exists - not attached");
 
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach)));
     assertCache(m_ecdb, false, "Open with ChangeCacheMode::DoNotAttach where non-ChangeSumamry ECDb file with same path exists");
-    assertExtraction(m_ecdb, revision1, false, "Non-Change ECDb file with same path exists - not attached");
+    assertExtraction(m_ecdb, revision1, nullptr, false, "Non-Change ECDb file with same path exists - not attached");
+    assertExtraction(m_ecdb, revision1, &cachePath, false, "Non-Change ECDb file with same path exists - not attached");
     ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachIfExists)));
     ASSERT_EQ(BE_SQLITE_ERROR, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::AttachAndCreateIfNotExists)));
     }
@@ -718,7 +741,7 @@ TEST_F(ChangeSummaryTestFixture, CloseClearCacheDestroyWithAttachedCache)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("CloseClearCacheDestroyWithAttachedCache.ecdb"));
     BeFileName ecdbPath(m_ecdb.GetDbFileName());
-    BeFileName cachePath = m_ecdb.GetChangeCachePath();
+    BeFileName cachePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache());
     ASSERT_TRUE(m_ecdb.Schemas().GetClass("ECDbFileInfo", "ExternalFileInfo") != nullptr);
@@ -774,6 +797,54 @@ TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  12/17
 //---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryNonDefaultCachePath.ecdb"));
+
+    BeFileName ecdbPath(m_ecdb.GetDbFileName());
+
+    BeFileName cacheFilePath = ecdbPath.GetDirectoryName();
+    cacheFilePath.AppendToPath(L"mycachefolder");
+    
+    if (!cacheFilePath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(cacheFilePath.GetName()));
+
+    cacheFilePath.AppendToPath(L"ChangeSummaryNonDefaultCachePath.mycachefile");
+    if (cacheFilePath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, cacheFilePath.BeDeleteFile());
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFilePath));
+    ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cacheFilePath));
+    ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache(cacheFilePath)) << "already attached";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachDb("ecchange"));
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache()) << "No cache at default location -> another cache is created";
+    ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
+    ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache()) << "already attached";
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly).SetChangeCacheMode(ECDb::ChangeCacheMode::AttachIfExists).SetChangeCachePath(cacheFilePath)));
+    ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly).SetChangeCacheMode(ECDb::ChangeCacheMode::AttachAndCreateIfNotExists).SetChangeCachePath(cacheFilePath)));
+    ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly).SetChangeCacheMode(ECDb::ChangeCacheMode::DoNotAttach).SetChangeCachePath(cacheFilePath)));
+    ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
+    m_ecdb.CloseDb();
+
+    ASSERT_EQ(BeFileNameStatus::Success, cacheFilePath.BeDeleteFile());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly).SetChangeCacheMode(ECDb::ChangeCacheMode::AttachIfExists).SetChangeCachePath(cacheFilePath)));
+    ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
+
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::Readonly).SetChangeCacheMode(ECDb::ChangeCacheMode::AttachAndCreateIfNotExists).SetChangeCachePath(cacheFilePath)));
+    ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryExtendedProps.ecdb"));
@@ -820,6 +891,89 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryExtendedProps)
         stmt.Reset();
         stmt.ClearBindings();
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  12/17
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryWithCustomMetaData.ecdb"));
+
+    BeFileName cacheFilePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFilePath));
+    ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
+    //add a custom schema to the change file
+    ECDb cacheFile;
+    ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+
+    ASSERT_EQ(SUCCESS, TestHelper(cacheFile).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+         <ECSchema schemaName="ChangeSets" alias="cset" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECSchemaReference name="ECDbChange" version="01.00.00" alias="change"/>
+          <ECEntityClass typeName="ChangeSet" modifier="Sealed">
+              <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryExtractedFromChangeSet" direction="Backward"/>
+              <ECProperty propertyName="ChangeSetHubId" typeName="string" />
+              <ECProperty propertyName="PushDate" typeName="dateTime" />
+              <ECProperty propertyName="CreatedBy" typeName="string" />
+          </ECEntityClass>
+          <ECRelationshipClass typeName="ChangeSummaryExtractedFromChangeSet" modifier="Sealed" strength="referencing">
+                <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+                    <Class class="change:ChangeSummary"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="refers to" polymorphic="false">
+                    <Class class="ChangeSet"/>
+                </Target>
+           </ECRelationshipClass>
+         </ECSchema>
+             )xml")));
+
+    cacheFile.CloseDb();
+    ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
+
+    //do some changes and create a changeset
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ecdbf.ExternalFileInfo(Name) VALUES('MyLogFile')"));
+    ASSERT_TRUE(tracker.HasChanges());
+    TestChangeSet changeset;
+    ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
+    tracker.EndTracking();
+
+    //extract the change summary
+    ECInstanceKey changeSummaryKey;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, cacheFilePath, ChangeSetArg(changeset)));
+    ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
+
+    //now add additional meta data to the change summary
+    ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+    ECSqlStatement insertChangeSetStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindText(2, "ec1efd72621d42a0642bf135bdca409e94a454ed", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindDateTime(3, DateTime(DateTime::Kind::Utc, 2017, 12, 20, 11, 23)));
+    ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindText(4, "john.smith@acme.com", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, insertChangeSetStmt.Step());
+    insertChangeSetStmt.ClearBindings();
+    insertChangeSetStmt.Reset();
+
+    cacheFile.SaveChanges();
+    cacheFile.CloseDb();
+
+    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeCache(cacheFilePath));
+    ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
+    JsonValue csum = GetHelper().ExecuteSelectECSql("SELECT ECInstanceId,ExtendedProperties FROM change.ChangeSummary");
+    ASSERT_EQ(1, csum.m_value.size());
+    ASSERT_STREQ(changeSummaryKey.GetInstanceId().ToHexStr().c_str(), csum.m_value[0][ECJsonUtilities::json_id()].asCString());
+    ASSERT_FALSE(csum.m_value[0].isMember("ExtendedProperties")) << "Not expected to be populated";
+
+    JsonValue cset = GetHelper().ExecuteSelectECSql("SELECT Summary,ChangeSetHubId,PushDate,CreatedBy FROM cset.ChangeSet");
+    ASSERT_EQ(1, cset.m_value.size());
+    ASSERT_STREQ(changeSummaryKey.GetInstanceId().ToHexStr().c_str(), cset.m_value[0]["Summary"][ECJsonUtilities::json_id()].asCString());
+    ASSERT_STREQ("ec1efd72621d42a0642bf135bdca409e94a454ed", cset.m_value[0]["ChangeSetHubId"].asCString());
+    ASSERT_STREQ("2017-12-20T11:23:00", cset.m_value[0]["PushDate"].asCString());
+    ASSERT_STREQ("john.smith@acme.com", cset.m_value[0]["CreatedBy"].asCString());
     }
 
 //---------------------------------------------------------------------------------------
