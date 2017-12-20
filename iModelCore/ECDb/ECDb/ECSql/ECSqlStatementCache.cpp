@@ -101,16 +101,13 @@ CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const
     {
-    if (true)
-        {
-        BeMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
 
-        stmt = FindEntry(ecsql);
-        if (stmt.IsValid())
-            return;
+    stmt = FindEntry(ecsql);
+    if (stmt.IsValid())
+        return;
 
-        AddStatement(stmt, ecdb, ecsql);
-        }
+    AddStatement(stmt, ecdb, ecsql);
 
     if (ECSqlStatus::Success != stmt->Prepare(ecdb, ecsql, token))
         stmt = nullptr;
