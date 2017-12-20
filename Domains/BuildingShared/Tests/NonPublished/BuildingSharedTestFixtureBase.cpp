@@ -47,7 +47,7 @@ void CreatSeedDb (WCharCP seedFileName)
 
     BeSQLite::EC::ECDb::Initialize (temporaryDir, &applicationSchemaDir);
 
-    temporaryDir.AppendToPath (L"BuildingTests");
+    temporaryDir.AppendToPath (L"BuildingSharedTests");
     BeFileName::CreateNewDirectory (temporaryDir);
 
     dgnDbPtr = DgnDbTestUtils::CreateSeedDb (seedFileName);

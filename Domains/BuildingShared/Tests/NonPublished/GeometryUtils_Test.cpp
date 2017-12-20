@@ -7,15 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
 #include <DgnPlatform\DgnPlatformApi.h>
-#include <TestUtils.h>
 #include <BuildingShared/BuildingSharedApi.h>
-#include "ElementSimulator.h"
+#include "BuildingSharedTestFixtureBase.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
-struct GeometryUtilsTests : public BuildingTestFixtureBase
+struct GeometryUtilsTests : public BuildingSharedTestFixtureBase
     {
     public:
         GeometryUtilsTests() {}
@@ -158,7 +157,7 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_BoxUnionTouchesAndIntersects)
     CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*box1Solid, 0);
     ASSERT_TRUE(crossSection.IsValid());
     CurveVectorPtr expectedCV = CurveVector::CreateLinear({ {0,0,0}, {200,0,0}, {200, 200, 0}, {0, 200, 0} }, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
-    ASSERT_TRUE(ElementSimulator::CurveVectorsHaveSamePoints(*crossSection, *expectedCV));
+    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*crossSection, *expectedCV));
     }
 
 //--------------------------------------------------------------------------------------
@@ -171,7 +170,7 @@ TEST_F(GeometryUtilsTests, AddVertex_LinearCurveVector)
     GeometryUtils::AddVertex(*cv, { 100,0,0 });
 
     CurveVectorPtr expectedCV = CurveVector::CreateLinear({ { 0,0,0 }, { 100,0,0 }, { 200,0,0 }, { 200,200,0 } });
-    ASSERT_TRUE(ElementSimulator::CurveVectorsHaveSamePoints(*cv, *expectedCV));
+    ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
 
 //--------------------------------------------------------------------------------------
@@ -184,7 +183,7 @@ TEST_F(GeometryUtilsTests, AddVertex_LinearCurveVector_VertexAlreadyExists)
     GeometryUtils::AddVertex(*cv, { 200,0,0 });
 
     CurveVectorPtr expectedCV = CurveVector::CreateLinear({ { 0,0,0 },{ 200,0,0 },{ 200,200,0 } });
-    ASSERT_TRUE(ElementSimulator::CurveVectorsHaveSamePoints(*cv, *expectedCV));
+    ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
 
 //---------------------------------------------------------------------------------------
