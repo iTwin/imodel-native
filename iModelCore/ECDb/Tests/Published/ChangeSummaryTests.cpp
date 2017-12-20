@@ -910,10 +910,17 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     ASSERT_EQ(SUCCESS, TestHelper(cacheFile).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
          <ECSchema schemaName="ChangeSets" alias="cset" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbChange" version="01.00.00" alias="change"/>
+          <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
           <ECEntityClass typeName="ChangeSet" modifier="Sealed">
               <ECNavigationProperty propertyName="Summary" relationshipName="ChangeSummaryExtractedFromChangeSet" direction="Backward"/>
               <ECProperty propertyName="ChangeSetHubId" typeName="string" />
-              <ECProperty propertyName="PushDate" typeName="dateTime" />
+              <ECProperty propertyName="PushDate" typeName="dateTime" >
+                <ECCustomAttributes>
+                    <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                        <DateTimeKind>Utc</DateTimeKind>
+                    </DateTimeInfo>
+                </ECCustomAttributes>
+              </ECProperty>
               <ECProperty propertyName="CreatedBy" typeName="string" />
           </ECEntityClass>
           <ECRelationshipClass typeName="ChangeSummaryExtractedFromChangeSet" modifier="Sealed" strength="referencing">
@@ -952,7 +959,7 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindText(2, "ec1efd72621d42a0642bf135bdca409e94a454ed", IECSqlBinder::MakeCopy::No));
-    DateTime pushDate(DateTime::Kind::Unspecified, 2017, 12, 20, 11, 23);
+    DateTime pushDate(DateTime::Kind::Utc, 2017, 12, 20, 11, 23);
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindDateTime(3, pushDate));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindText(4, "john.smith@acme.com", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, insertChangeSetStmt.Step());
