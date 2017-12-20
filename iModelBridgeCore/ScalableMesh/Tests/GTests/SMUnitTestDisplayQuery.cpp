@@ -40,8 +40,10 @@ private:
     int m_nbCreatedMesh; 
     int m_nbDestroyedMesh;
     int m_nbCreatedTexture;
-    int m_nbDestroyedTexture;
-    
+    int m_nbDestroyedTexture;    
+    int m_nbDestroyedVideoMesh;
+    int m_nbDestroyedVideoTexture;
+
 public:
 
     int GetNbCreatedMesh()
@@ -63,6 +65,17 @@ public:
         {
         return m_nbDestroyedTexture;
         }    
+ 
+    int GetNbDestroyedVideoMesh()
+        {
+        return m_nbDestroyedVideoMesh;
+        }
+
+    int GetNbDestroyedVideoTexture()
+        {
+        return m_nbDestroyedVideoTexture;
+        }
+
 
     //Inherited from IScalableMeshDisplayCacheManager
     virtual BentleyStatus _CreateCachedMesh(SmCachedDisplayMesh*&   cachedDisplayMesh,
@@ -227,11 +240,13 @@ BentleyStatus ScalableMeshDisplayCacheManager::_DestroyCachedTexture(SmCachedDis
 
 BentleyStatus ScalableMeshDisplayCacheManager::_DeleteFromVideoMemory(SmCachedDisplayMesh* cachedDisplayMesh)
 {
+    m_nbDestroyedVideoMesh++;    
     return SUCCESS;
 }
 
 BentleyStatus ScalableMeshDisplayCacheManager::_DeleteFromVideoMemory(SmCachedDisplayTexture* cachedDisplayTex)
 {
+    m_nbDestroyedVideoTexture++;
     return SUCCESS;
 }
 
@@ -250,6 +265,9 @@ ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
     m_nbDestroyedMesh = 0;
     m_nbCreatedTexture = 0;
     m_nbDestroyedTexture = 0;
+
+    m_nbDestroyedVideoMesh = 0;
+    m_nbDestroyedVideoTexture = 0;
 }
 
 
@@ -459,9 +477,11 @@ void DisplayQueryTester::DoQuery()
         EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture() >= nbReturnedNodes, true);
         }
         
-
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedMesh() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedMesh(), true);
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbCreatedTexture() == ((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedTexture(), true);    
+
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedVideoMesh() == 0, true);
+    EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedVideoTexture() == 0, true);    
     }
 
 /*---------------------------------------------------------------------------------**//**
