@@ -94,6 +94,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewContext : ScanCriteria, NonCopyableClass, Che
     friend struct ViewController;
     friend struct SimplifyGraphic;
 
+    struct AreaPatternTolerance
+    {
+    private:
+        double  m_angleTolerance;
+        double  m_chordTolerance;
+    public:
+        explicit AreaPatternTolerance(double chord=0.0, Angle angle=Angle::FromDegrees(20.0)) : m_angleTolerance(angle.Radians()), m_chordTolerance(chord) { }
+
+        double GetAngleTolerance() const { return m_angleTolerance; }
+        double GetChordTolerance() const { return m_chordTolerance; }
+    };
+
 protected:
     DgnDbP m_dgndb = nullptr;
     bool m_is3dView = true;
@@ -120,6 +132,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
+    virtual AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) {return AreaPatternTolerance();}
     DGNPLATFORM_EXPORT virtual bool _WantLineStyles();
     DGNPLATFORM_EXPORT virtual void _DrawStyledCurveVector(Render::GraphicBuilderR, CurveVectorCR, Render::GeometryParamsR, bool doCook);
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView();
@@ -300,6 +313,7 @@ public:
 
     bool WantAreaPatterns() {return _WantAreaPatterns();}
     void DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params, bool doCook = true) {_DrawAreaPattern(graphic, boundary, params, doCook);}
+    AreaPatternTolerance GetAreaPatternTolerance(CurveVectorCR boundary) {return _GetAreaPatternTolerance(boundary);}
 
 /** @name Draw Geometry Using current Linestyle */
 /** @{ */
@@ -422,6 +436,7 @@ private:
 
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     virtual void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source);
+    bool _WantUndisplayed() override {return true;} //!< Writeable copy of undisplayed element being drawn in dynamics should not be skipped...only want to check this for persistent elements...
     DynamicsContext(DgnViewportR, Render::Task::Priority);
     ~DynamicsContext();
     void VisitWriteableElement(DgnElementCR element, IRedrawOperationP redrawOp);

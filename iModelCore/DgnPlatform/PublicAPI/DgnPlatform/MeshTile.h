@@ -636,10 +636,11 @@ struct TileGeometry : RefCountedBase
         {
         TileDisplayParamsCPtr       m_displayParams;
         bvector<bvector<DPoint3d>>  m_strokes;
+        bool                        m_disjoint;
 
         void Transform(TransformCR transform);
 
-        TileStrokes (TileDisplayParamsCR displayParams, bvector<bvector<DPoint3d>>&& strokes) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)) { }
+        TileStrokes (TileDisplayParamsCR displayParams, bvector<bvector<DPoint3d>>&& strokes, bool disjoint = false) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
         }; 
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;
@@ -664,6 +665,7 @@ protected:
     virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
     virtual TileGeomPartCPtr _GetPart() const { return TileGeomPartCPtr(); }
+    virtual bool _IsPoint() const { return false; }
 
     void SetFacetCount(size_t numFacets);
 public:
@@ -680,6 +682,7 @@ public:
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
+    bool IsPoint() const { return _IsPoint(); }
 
     T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions) { return _GetPolyfaces(facetOptions); }
     T_TilePolyfaces GetPolyfaces(double chordTolerance, NormalMode normalMode);
@@ -1021,7 +1024,7 @@ private:
     BeAtomic<uint32_t>                      m_totalTiles;
     uint32_t                                m_totalModels;
     BeAtomic<uint32_t>                      m_completedModels;
-    ITileCollectionFilterCP                  m_filter;
+    ITileCollectionFilterCP                 m_filter;
 
     struct ElementTileContext
         {

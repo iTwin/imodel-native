@@ -25,6 +25,7 @@ static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size
 
 END_UNNAMED_NAMESPACE
 
+//#define POINT_SUPPORT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -888,7 +889,7 @@ void TileNode::GetTiles(TileNodePList& tiles)
         child->GetTiles(tiles);
     }
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------- -----------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileNodePList TileNode::GetTiles()
@@ -923,7 +924,6 @@ size_t TileGeometry::GetFacetCount(IFacetOptionsR options) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
     {                    
-
     bvector <bvector<bvector<DPoint3d>>> strokesArray;
 
     curve.CollectLinearGeometry (strokesArray, &facetOptions);
@@ -964,6 +964,50 @@ private:
     bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override;
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isDisjointCurvePrimitive(ICurvePrimitiveCR prim)
+    {
+    switch (prim.GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            return true;
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            {
+            DSegment3dCR segment = *prim.GetLineCP();
+            return segment.IsAlmostSinglePoint();
+            }
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            {
+            bvector<DPoint3d> const& points = *prim.GetLineStringCP();
+            return 1 == points.size() || (2 == points.size() && points[0].AlmostEqual(points[1]));
+            }
+        default:
+            return false;
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool _IsPoint() const override
+    {
+#ifdef POINT_SUPPORT
+    CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
+    double              length = 0.0;
+
+    if (!curveVector.IsValid() ||
+        1 != curveVector->size() ||
+        !isDisjointCurvePrimitive(*curveVector->front()))
+        return false;
+#endif
+    return false;
+    }
+
 public:
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, bool curvesAsWire, DgnDbR db)
         {
@@ -1045,7 +1089,6 @@ bool     DoGlyphBoxes (IFacetOptionsR facetOptions)
 +---------------+---------------+---------------+---------------+---------------+------*/
 T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
     {
-
     T_TilePolyfaces             polyfaces;
     IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
 
@@ -1329,6 +1372,9 @@ TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR f
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
     T_TileStrokes       tileStrokes;
 
+    if (!curveVector.IsValid())
+        return tileStrokes;
+    
     if (curveVector.IsValid() && (m_curvesAsWire || !curveVector->IsAnyRegionType()))
         {
         bvector<bvector<DPoint3d>>  strokePoints;
@@ -1336,7 +1382,7 @@ TileGeometry::T_TileStrokes PrimitiveTileGeometry::_GetStrokes (IFacetOptionsR f
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
 
         if (!strokePoints.empty())
-            tileStrokes.push_back (TileGeometry::TileStrokes (GetDisplayParams(), std::move(strokePoints)));
+            tileStrokes.push_back (TileGeometry::TileStrokes (GetDisplayParams(), std::move(strokePoints), (1 == curveVector->size() && isDisjointCurvePrimitive(*curveVector->front()))));
         }
 
     return tileStrokes;
@@ -1390,7 +1436,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
             auto&   polyface = polyfaces[i];
 
             if (polyface->HasFacets())
-                {
+                {                                                                    
                 GeometryParams faceParams;
                 params[i].ToGeometryParams(faceParams, baseParams);
                 faceParams.Resolve(m_db);
@@ -2123,7 +2169,7 @@ void TileGeometryProcessor::AddElementGeometry(TileGeometryR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
     {
-    if (BelowMinRange(geom.GetTileRange()))
+    if (!geom.IsPoint() && BelowMinRange(geom.GetTileRange()))
         return;
 
     if (nullptr != m_leafThresholdExceeded && !(*m_leafThresholdExceeded))
@@ -2133,7 +2179,9 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
         if (intersection.IsNull())
             return;
 
-        m_leafCount += (size_t) ((double) geom.GetFacetCount(*m_targetFacetOptions) * intersection.DiagonalDistance() / geom.GetTileRange().DiagonalDistance());
+        if (!geom.IsPoint())
+            m_leafCount += (size_t) ((double) geom.GetFacetCount(*m_targetFacetOptions) * intersection.DiagonalDistance() / geom.GetTileRange().DiagonalDistance());
+
         *m_leafThresholdExceeded = (m_leafCount > m_leafCountThreshold);
         }
         
@@ -2620,6 +2668,7 @@ private:
         }
 
     StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
+    bool _WantUndisplayed() override {return true;}
 
     static Render::ViewFlags GetDefaultViewFlags()
         {
@@ -2834,7 +2883,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         DRange3dCR  geomRange = geom->GetTileRange();
         double      rangePixels = geomRange.DiagonalDistance() / tolerance;
 
-        if (rangePixels < s_minRangeBoxSize)
+        if (!geom->IsPoint() && rangePixels < s_minRangeBoxSize)
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);

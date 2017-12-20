@@ -203,6 +203,8 @@ public:
     DGNPLATFORM_EXPORT static void ToggleDebugBoundingVolumes();
 
     Transform GetLocationForTileGeneration() const; //!< @private
+
+    template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_mutex); return func(); }
 };
 
 ENUM_IS_FLAGS(Root::DebugOptions);
