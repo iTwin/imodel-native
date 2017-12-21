@@ -103,6 +103,7 @@ struct DynamicSchemaGenerator
     ECN::ECSchemaReadContextPtr m_schemaReadContext;
     ECN::ECSchemaReadContextPtr m_syncReadContext;
     bmap<Utf8String, ECN::ECSchemaPtr> m_flattenedRefs;
+    bmap<Utf8String, ECObjectsV8::ECSchemaPtr> m_v8Schemas;
 
     void CheckECSchemasForModel(DgnV8ModelR, bmap<Utf8String, uint32_t>& syncInfoChecksums);
     BentleyStatus RetrieveV8ECSchemas(DgnV8ModelR v8rootModel);
@@ -127,6 +128,7 @@ struct DynamicSchemaGenerator
     BentleyStatus SupplementV8ECSchemas();
     BentleyStatus ConvertToBisBasedECSchemas();
     BentleyStatus ImportTargetECSchemas();
+    void ValidateSchemas(bvector<BECN::ECSchemaCP>& importedSchemas);
     void AnalyzeECContent(DgnV8ModelR, BisConversionTargetModelInfoCR);
     BentleyStatus Analyze(DgnV8Api::ElementHandle const&, BisConversionTargetModelInfoCR);
     BentleyStatus DoAnalyze(DgnV8Api::ElementHandle const&, BisConversionTargetModelInfoCR);

@@ -1101,7 +1101,11 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 
      if (needsFlattening)
          {
+         bvector<BECN::ECSchemaP> schemasCopy;
          for (BECN::ECSchemaP schema : schemas)
+             schemasCopy.push_back(schema);
+
+         for (BECN::ECSchemaP schema : schemasCopy)
              if (BSISUCCESS != FlattenSchemas(schema))
                 return BSIERROR;
          }
@@ -1929,8 +1933,9 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
 
     for (ECN::ECSchemaP sourceSchema : schemas)
         {
+        Utf8String sourceSchemaName(sourceSchema->GetName().c_str());
         m_schemaReadContext->GetCache().DropSchema(sourceSchema->GetSchemaKey());
-        m_schemaReadContext->AddSchema(*m_flattenedRefs[sourceSchema->GetName()]);
+        m_schemaReadContext->AddSchema(*m_flattenedRefs[sourceSchemaName]);
         }
 
     return BSISUCCESS;
@@ -2350,7 +2355,55 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
 
     m_anyImported = true;
 
+    if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+        {
+        StopWatch timer(true);
+        ValidateSchemas(constSchemas);
+        ConverterLogging::LogPerformance(timer, "Convert Schemas> Validate V8 ECSchemas");
+        }
     return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void DynamicSchemaGenerator::ValidateSchemas(bvector<BECN::ECSchemaCP>& importedSchemas)
+    {
+
+    for (BECN::ECSchemaCP importedSchema : importedSchemas)
+        {
+        bmap<Utf8String, ECObjectsV8::ECSchemaPtr>::const_iterator it = m_v8Schemas.find(importedSchema->GetName());
+        if (it == m_v8Schemas.end())
+            continue;
+
+        SchemaRemapper mapper(m_converter);
+
+        for (auto& v8class : it->second->GetClasses())
+            {
+            ECObjectsV8::ECRelationshipClassCP relClass = v8class->GetRelationshipClassCP();
+            if (nullptr != relClass)
+                continue;
+            BentleyApi::ECN::ECClassCP ecClass = importedSchema->GetClassCP(Utf8String(v8class->GetName().c_str()).c_str());
+            if (nullptr == ecClass)
+                {
+                LOG.warningv("Unable to find entity class %s in imported schema", Utf8String(v8class->GetFullName()).c_str());
+                continue;
+                }
+            for (auto& v8prop : v8class->GetProperties(true))
+                {
+                BentleyApi::ECN::ECPropertyP prop = ecClass->GetPropertyP(v8prop->GetName().c_str());
+                if (nullptr == prop)
+                    {
+                    Utf8String v8PropName(v8prop->GetName().c_str());
+                    if (mapper.ResolvePropertyName(v8PropName, *ecClass))
+                        prop = ecClass->GetPropertyP(v8PropName);
+                    if (nullptr == prop)
+                        LOG.warningv("Schema Validation: Failed to find %s:%s", Utf8String(v8class->GetFullName()).c_str(), v8PropName.c_str());
+                    }
+                }
+            }
+
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2411,6 +2464,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
             schemaKey.m_checkSum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
 
             isDynamicSchema = IsDynamicSchema(schemaName, schemaXml);
+
+            // If we're validating schemas, then we need to retrieve the actual V8 schema
+            if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+                {
+                if (m_v8Schemas.find(schemaName.c_str()) == m_v8Schemas.end())
+                    {
+                    ECObjectsV8::ECSchemaPtr v8Schema = dgnv8EC.LocateSchemaInDgnFile(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact, true);
+                    if (v8Schema.IsValid())
+                        m_v8Schemas[schemaName.c_str()] = v8Schema;
+                    }
+                }
             }
         else
             {
@@ -2438,6 +2502,21 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
                 }
             if (BSIERROR == ProcessReferenceSchemasFromExternal(*externalSchema, v8Model))
                 return BSIERROR;
+            if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+                {
+                if (m_v8Schemas.find(schemaName.c_str()) == m_v8Schemas.end())
+                    {
+                    m_v8Schemas[schemaName.c_str()] = externalSchema;
+                    }
+                ECObjectsV8::ECSchemaReferenceListCR referencedSchemas = externalSchema->GetReferencedSchemas();
+                for (ECObjectsV8::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+                    {
+                    if (m_v8Schemas.find(Utf8String(it->second->GetName().c_str())) == m_v8Schemas.end())
+                        {
+                        m_v8Schemas[Utf8String(it->second->GetName().c_str())] = it->second;
+                        }
+                    }
+                }
             }
 
         if (BSIERROR == ProcessSchemaXml(schemaKey, schemaXml.c_str(), isDynamicSchema, v8Model))
