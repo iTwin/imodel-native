@@ -2700,11 +2700,12 @@ void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, T
         return;
         }
 
-    static  size_t s_minInstancePartSize = 2000;
+    static  size_t  s_minInstancePartSize = 2000;
+    double          scale;
 
     if (geomPart->GetGeometryStream().size() > s_minInstancePartSize &&
         m_processor.IsGeomPartContained(graphic, *geomPart, subToGraphic) && 
-        graphic.GetLocalToWorldTransform().Determinant() > 0.0)  // Mirroring...
+        graphic.GetLocalToWorldTransform().IsRigidScale(scale))
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
