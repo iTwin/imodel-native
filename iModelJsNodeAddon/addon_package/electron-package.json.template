@@ -3,6 +3,7 @@
   "version": "${PACKAGE_VERSION}",
   "description": "The native code addon for Electron apps",
   "license": "UNLICENSED",
+  "main": "NodeAddonLoader.js",
   "repository": {},
   "keywords": [
     "Bentley",
