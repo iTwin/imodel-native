@@ -19,7 +19,7 @@ USING_NAMESPACE_TILETREE_IO
 
 // Vector classifiers are original implementation -- we'll continue to write them until
 // the batched model classifiers are functional and merged into master.
-static bool s_writeVectorClassifier = true;
+static bool s_writeVectorClassifier = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -736,26 +736,34 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     featureTableData.m_json["INSTANCES_LENGTH"] = part->Instances().size();
 
-    bvector<float>          upFloats, rightFloats;
+    bvector<float>          upFloats, rightFloats, scales;
     FeatureAttributesMap    attributesSet;
     DRange3d                positionRange = DRange3d::NullRange();
 
     bool validIdsPresent = false;
     bool invalidIdsPresent = false;
+    bool scaleRequired = false;
     for (auto& instance : part->Instances())
         {
         DPoint3d    translation;
         DVec3d      right, up;
-        RotMatrix   rMatrix;
+        RotMatrix   rMatrix, rigidMatrix;
+        double      scale;
 
         instance.GetTransform().GetTranslation(translation);
         instance.GetTransform().GetMatrix(rMatrix);
+        if (!rMatrix.IsRigidScale(rigidMatrix, scale))
+            {
+            BeAssert (false && "Part instance contains non-rigid scale");
+            continue;
+            }
+
 
         positionRange.Extend(translation);
-        rotationPresent |= !rMatrix.IsIdentity();
+        rotationPresent |= !rigidMatrix.IsIdentity();
 
-        rMatrix.GetColumn(right, 0);
-        rMatrix.GetColumn(up, 1);
+        rigidMatrix.GetColumn(right, 0);
+        rigidMatrix.GetColumn(up, 1);
 
         rightFloats.push_back(right.x);
         rightFloats.push_back(right.y);
@@ -764,6 +772,9 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
         upFloats.push_back(up.x);
         upFloats.push_back(up.y);
         upFloats.push_back(up.z);
+
+        scales.push_back(scale);
+        scaleRequired |= fabs(scale - 1.0) > 1.0E-8;
 
         extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
         attributeIndices.push_back(attributesSet.GetIndex(instance.GetAttributes()));
@@ -842,6 +853,12 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         featureTableData.m_json["NORMAL_RIGHT"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
+
+        if (scaleRequired)
+            {
+            featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
+            featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
+            }
         }
 
     BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), m_context);
