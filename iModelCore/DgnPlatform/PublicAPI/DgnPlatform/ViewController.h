@@ -311,6 +311,7 @@ public:
     //! Change whether a DgnCategory is displayed in the CategorySelector of this view.
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
+    //! @param[in] toggleAllSubcategories if true, override the visibility of each of the category's sub-categories to match.
     DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff, bool toggleAllSubcategories=false);
 
     //! Set the CategorySelector for this view.
