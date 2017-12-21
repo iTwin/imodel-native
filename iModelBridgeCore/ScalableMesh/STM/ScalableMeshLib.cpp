@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
 
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
+#include <CCApi\CCPublic.h>
 
 
 
@@ -207,14 +207,32 @@ CURLcode PerformCurl(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebServiceKey GetBingKey()
     {    
-    Utf8String readBuffer;    
-            
-    Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-    std::wstring buddiUrl;
-    connectClient.GetBuddiUrl(L"ContextServices", buddiUrl);    
+     Utf8String readBuffer;    
+  
+
+
+    WString serverUrl;
+    UINT32 bufLen;
+    CallStatus status = APIERR_SUCCESS;
+    try
+    {
+        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+        wchar_t* buffer;
+        status = CCApi_GetBuddiUrl(api, L"ContextServices", NULL, &bufLen);
+        bufLen++;
+        buffer = (wchar_t*)calloc(1, bufLen * sizeof(wchar_t));
+        status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
+        serverUrl.assign(buffer);
+        CCApi_FreeApi(api);
+    }
+    catch (...)
+    {
+    }
+
 
     Utf8String contextServiceURL;
-    contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());        
+    contextServiceURL.assign(Utf8String(serverUrl.c_str()).c_str());
+
 
     uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
 
