@@ -1065,6 +1065,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
         BeFile outFile;
         outFile.Create(outPath.GetName());
         Utf8String xmlString(schemaXml);
+        xmlString.ReplaceAll("UTF-16", "utf-8");
         outFile.Write(nullptr, xmlString.c_str(), static_cast<uint32_t>(xmlString.size()));
 #endif
 
@@ -1156,53 +1157,49 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 void DynamicSchemaGenerator::SwizzleOpenPlantSupplementals(bvector<BECN::ECSchemaPtr>& tmpSupplementals, BECN::ECSchemaP primarySchema, bvector<BECN::ECSchemaP> supplementalSchemas)
     {
     bool foundSupplemental = false;
-    bvector<BECN::ECSchemaP> units;
-    Utf8PrintfString suppName("%s_Supplemental_Units", primarySchema->GetName().c_str());
+    bvector<BECN::ECSchemaP> baseSupplementals;
+    Utf8PrintfString suppName("%s_Supplemental", primarySchema->GetName().c_str());
+    suppName.ReplaceAll("_3D", "");
     for (BECN::ECSchemaP supp : supplementalSchemas)
         {
         if (supp->GetName().StartsWithIAscii(suppName.c_str()))
-            foundSupplemental = true;
-        else if (supp->GetName().StartsWithIAscii("OpenPlant_Supplemental_Units"))
-            units.push_back(supp);
+            baseSupplementals.push_back(supp);
         }
-    if (!foundSupplemental)
+    for (BECN::ECSchemaP supp : baseSupplementals)
         {
-        for (BECN::ECSchemaP unitSchema : units)
+        BECN::ECSchemaPtr op3d;
+        if (BECN::ECObjectsStatus::Success != supp->CopySchema(op3d))
             {
-            BECN::ECSchemaPtr op3d;
-            if (BECN::ECObjectsStatus::Success != unitSchema->CopySchema(op3d))
-                {
-                Utf8String error;
-                error.Sprintf("Failed to create an %s copy of the units schema '%s'; Unit information will be unavailable. See log file for details.", primarySchema->GetName().c_str(), (unitSchema->GetName()).c_str());
-                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                continue;
-                }
-
-            Utf8String oldName(op3d->GetName().c_str());
-            oldName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
-            op3d->SetName(oldName);
-            BECN::SupplementalSchemaMetaDataPtr metaData;
-            if (!BECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *op3d))
-                {
-                Utf8String error;
-                error.Sprintf("Failed to get supplemental metadata from supplemental units schema '%s'; Unit information will be unavailable. See log file for details.", Utf8String(unitSchema->GetName()).c_str());
-                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                continue;
-                }
-            BECN::IECInstancePtr instance = metaData->CreateCustomAttribute();
-            op3d->RemoveCustomAttribute("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
-            Utf8String newName(metaData->GetPrimarySchemaName());
-            newName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
-            BECN::SupplementalSchemaMetaDataPtr newMetaData = BECN::SupplementalSchemaMetaData::Create(newName.c_str(), metaData->GetPrimarySchemaReadVersion(), metaData->GetPrimarySchemaWriteVersion(),
-                                                                                                       metaData->GetPrimarySchemaMinorVersion(), metaData->GetSupplementalSchemaPrecedence(), metaData->GetSupplementalSchemaPurpose().c_str());
-            if (!ECN::ECSchema::IsSchemaReferenced(*op3d, instance->GetClass().GetSchema()))
-                {
-                BECN::ECClassP nonConstClass = const_cast<BECN::ECClassP>(&instance->GetClass());
-                op3d->AddReferencedSchema(nonConstClass->GetSchemaR());
-                }
-            BECN::SupplementalSchemaMetaData::SetMetadata(*op3d, *newMetaData);
-            tmpSupplementals.push_back(op3d);
+            Utf8String error;
+            error.Sprintf("Failed to create an %s copy of the base supplemental schema '%s'; Supplemental information will be unavailable. See log file for details.", primarySchema->GetName().c_str(), (supp->GetName()).c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
             }
+
+        Utf8String oldName(op3d->GetName().c_str());
+        oldName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
+        op3d->SetName(oldName);
+        BECN::SupplementalSchemaMetaDataPtr metaData;
+        if (!BECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *op3d))
+            {
+            Utf8String error;
+            error.Sprintf("Failed to get supplemental metadata from supplemental schema '%s'; Supplemental information will be unavailable. See log file for details.", Utf8String(supp->GetName()).c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
+            }
+        BECN::IECInstancePtr instance = metaData->CreateCustomAttribute();
+        op3d->RemoveCustomAttribute("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
+        Utf8String newName(metaData->GetPrimarySchemaName());
+        newName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
+        BECN::SupplementalSchemaMetaDataPtr newMetaData = BECN::SupplementalSchemaMetaData::Create(newName.c_str(), metaData->GetPrimarySchemaReadVersion(), metaData->GetPrimarySchemaWriteVersion(),
+                                                                                                    metaData->GetPrimarySchemaMinorVersion(), metaData->GetSupplementalSchemaPrecedence(), metaData->GetSupplementalSchemaPurpose().c_str());
+        if (!ECN::ECSchema::IsSchemaReferenced(*op3d, instance->GetClass().GetSchema()))
+            {
+            BECN::ECClassP nonConstClass = const_cast<BECN::ECClassP>(&instance->GetClass());
+            op3d->AddReferencedSchema(nonConstClass->GetSchemaR());
+            }
+        BECN::SupplementalSchemaMetaData::SetMetadata(*op3d, *newMetaData);
+        tmpSupplementals.push_back(op3d);
         }
     }
 
