@@ -50,9 +50,9 @@ protected:
 protected:
     virtual ~AlignmentPair() {}
     AlignmentPair() {}
-    CIVILBASEGEOMETRY_EXPORT AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    CIVILBASEGEOMETRY_EXPORT AlignmentPair(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment);
     CIVILBASEGEOMETRY_EXPORT virtual AlignmentPairPtr _Clone() const;
-    CIVILBASEGEOMETRY_EXPORT virtual void _UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment);
+    CIVILBASEGEOMETRY_EXPORT virtual void _UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignment);
     CIVILBASEGEOMETRY_EXPORT virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
 
 public:
@@ -62,20 +62,21 @@ public:
 
     //! Allocate an AlignmentPair object.
     //! @remarks The constructor will deep copy both horizontal and vertical alignments in parameter
-    CIVILBASEGEOMETRY_EXPORT static AlignmentPairPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    CIVILBASEGEOMETRY_EXPORT static AlignmentPairPtr Create(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment);
 
-    //! Returns a const-ref to the Horizontal Alignment
-    CIVILBASEGEOMETRY_EXPORT CurveVectorCR GetHorizontalCurveVector() const;
+    //! Returns a const-pointer to the Horizontal Alignment
+    CIVILBASEGEOMETRY_EXPORT CurveVectorCP GetHorizontalCurveVector() const;
     //! Returns a const-pointer to the Vertical Alignment or nullptr
     CIVILBASEGEOMETRY_EXPORT CurveVectorCP GetVerticalCurveVector() const;
     //! Returns a deep-copy of the structure
     CIVILBASEGEOMETRY_EXPORT AlignmentPairPtr Clone() const;
 
     //! Update internal geometry and clear cached objects
-    CIVILBASEGEOMETRY_EXPORT void UpdateCurveVectors(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
-    CIVILBASEGEOMETRY_EXPORT void UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment);
+    CIVILBASEGEOMETRY_EXPORT void UpdateCurveVectors(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment);
+    CIVILBASEGEOMETRY_EXPORT void UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignment);
     CIVILBASEGEOMETRY_EXPORT void UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment);
 
+    bool IsValidHorizontal() const { return m_horizontalCurveVector.IsValid(); }
     bool IsValidVertical() const { return m_verticalCurveVector.IsValid(); }
 
     CIVILBASEGEOMETRY_EXPORT bool HasSpirals() const;
@@ -140,7 +141,7 @@ public:
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr GetPartialVerticalAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
     CIVILBASEGEOMETRY_EXPORT AlignmentPairPtr GetPartialAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
-    CIVILBASEGEOMETRY_EXPORT virtual AlignmentPairPtr GetPartialAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
+    CIVILBASEGEOMETRY_EXPORT AlignmentPairPtr GetPartialAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
     //! Returns a deep copy of the Horizontal, optionally converted in a different unit
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr CloneHorizontalCurveVector(Dgn::StandardUnit unit = Dgn::StandardUnit::MetricMeters) const;

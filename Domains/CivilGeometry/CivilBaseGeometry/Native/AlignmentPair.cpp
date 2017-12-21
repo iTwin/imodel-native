@@ -9,6 +9,7 @@
 #include <CivilBaseGeometry/AlignmentPair.h>
 
 
+#define DEFAULT_FAILURE_DISTANCE_ALONG -1.0 // Distance returned from HorizontalDistanceFromStart when the hz alignment isn't valid
 
 //---------------------------------------------------------------------------------------
 // @debug
@@ -135,26 +136,26 @@ void Dump(CurveVectorCR cv, const char *message)
 * @bsimethod                                    Scott.Devoe                     09/2015
 * constructor
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPair::AlignmentPair(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment)
+AlignmentPair::AlignmentPair(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment)
     { 
-    UpdateCurveVectors(horizontalAlignment, pVerticalAlignment);
+    UpdateCurveVectors(pHorizontalAlignment, pVerticalAlignment);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentPairPtr AlignmentPair::_Clone() const
     {
-    return AlignmentPair::Create(*m_horizontalCurveVector, m_verticalCurveVector.get());
+    return AlignmentPair::Create(m_horizontalCurveVector.get(), m_verticalCurveVector.get());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-void AlignmentPair::_UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment)
+void AlignmentPair::_UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignment)
     {
-    m_horizontalCurveVector = horizontalAlignment.Clone();
+    m_horizontalCurveVector = (pHorizontalAlignment && !pHorizontalAlignment->empty()) ? pHorizontalAlignment->Clone() : nullptr;
     m_hzIndex = nullptr;
 
-    if (CurveVector::BOUNDARY_TYPE_Open != m_horizontalCurveVector->GetBoundaryType())
+    if (m_horizontalCurveVector.IsValid() && CurveVector::BOUNDARY_TYPE_Open != m_horizontalCurveVector->GetBoundaryType())
         {
         REPLACEMENT_LOGW("AlignmentPair UpdateHorizontalCurveVector - Unexpected boundary type. Set to BOUNDARY_TYPE_OPEN");
         m_horizontalCurveVector->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
@@ -178,28 +179,24 @@ void AlignmentPair::_UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairPtr AlignmentPair::Create (CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment)
+AlignmentPairPtr AlignmentPair::Create(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment)
     { 
-    return new AlignmentPair(horizontalAlignment, pVerticalAlignment);
+    return new AlignmentPair(pHorizontalAlignment, pVerticalAlignment);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-CurveVectorCR AlignmentPair::GetHorizontalCurveVector() const
+CurveVectorCP AlignmentPair::GetHorizontalCurveVector() const
     {
-    BeAssert(m_horizontalCurveVector.IsValid());
-    return *m_horizontalCurveVector;
+    return m_horizontalCurveVector.get();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
 CurveVectorCP AlignmentPair::GetVerticalCurveVector() const
     {
-    if (m_verticalCurveVector.IsValid())
-        return m_verticalCurveVector.get();
-
-    return nullptr;
+    return m_verticalCurveVector.get();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
@@ -212,22 +209,22 @@ AlignmentPairPtr AlignmentPair::Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AlignmentPair::UpdateCurveVectors(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment)
+void AlignmentPair::UpdateCurveVectors(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment)
     {
 #if !defined(NDEBUG)
-    if (!horizontalAlignment.empty())
-        TestAlignments(horizontalAlignment, pVerticalAlignment);
+    if (nullptr != pHorizontalAlignment && !pHorizontalAlignment->empty())
+        TestAlignments(*pHorizontalAlignment, pVerticalAlignment);
 #endif
 
-    UpdateHorizontalCurveVector(horizontalAlignment);
+    UpdateHorizontalCurveVector(pHorizontalAlignment);
     UpdateVerticalCurveVector(pVerticalAlignment);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AlignmentPair::UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment)
+void AlignmentPair::UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignment)
     {
-    return _UpdateHorizontalCurveVector(horizontalAlignment);
+    return _UpdateHorizontalCurveVector(pHorizontalAlignment);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
@@ -242,6 +239,9 @@ void AlignmentPair::UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment)
 //---------------------------------------------------------------------------------------
 bool AlignmentPair::HasSpirals() const
     {
+    if (!m_horizontalCurveVector.IsValid())
+        return false;
+
     for (auto const& primitive : *m_horizontalCurveVector)
         {
         if (primitive.IsValid() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral == primitive->GetCurvePrimitiveType())
@@ -256,7 +256,10 @@ bool AlignmentPair::HasSpirals() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPair::LengthXY() const
     {
-    return HorizontalIndexVector()->TotalPathLength();
+    if (HorizontalIndexVector().IsValid())
+        return HorizontalIndexVector()->TotalPathLength();
+
+    return 0.0;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
@@ -295,7 +298,7 @@ double AlignmentPair::GetVerticalElevationAt(double distanceAlongFromStart, bool
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorWithDistanceIndexPtr AlignmentPair::HorizontalIndexVector() const
     {
-    if (!m_hzIndex.IsValid())
+    if (!m_hzIndex.IsValid() && m_horizontalCurveVector.IsValid())
         {
         m_hzIndex = CurveVectorWithDistanceIndex::Create();
         m_hzIndex->SetPath(*m_horizontalCurveVector);
@@ -340,6 +343,8 @@ CurveVectorPtr AlignmentPair::GetScaledCurveVector(CurveVectorCR cv, double scal
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPair::DistanceAlongFromStart(CurveLocationDetailCR location) const
     {
+    BeAssert(m_horizontalCurveVector.IsValid());
+
     const size_t index = m_horizontalCurveVector->CurveLocationDetailIndex(location);
     size_t count = 0;
     double distanceAlongFromStart = 0.0;
@@ -454,9 +459,10 @@ CurveVectorPtr AlignmentPair::GetPartialAlignment(CurveVectorType type, double s
     CurveVectorPtr result = nullptr;
     if (CurveVectorType::Horizontal == type)
         {
-        result = HorizontalIndexVector()->CloneBetweenDistances(startDistanceAlongFromStart, endDistanceAlongFromStart);
+        if (HorizontalIndexVector().IsValid())
+            result = HorizontalIndexVector()->CloneBetweenDistances(startDistanceAlongFromStart, endDistanceAlongFromStart);
         }
-    else
+    else if (VerticalXIndexVector().IsValid())
         {
         DPoint3d start, end;
         m_verticalCurveVector->GetStartEnd(start, end);
@@ -493,6 +499,9 @@ CurveVectorPtr AlignmentPair::GetPartialAlignment(CurveVectorType type, double s
 //---------------------------------------------------------------------------------------
 CurveVectorPtr AlignmentPair::CloneHorizontalCurveVector(Dgn::StandardUnit unit) const
     {
+    if (!m_horizontalCurveVector.IsValid())
+        return nullptr;
+
     switch (unit)
         {
         case Dgn::StandardUnit::MetricMeters:
@@ -545,6 +554,9 @@ CurveVectorPtr AlignmentPair::CloneVerticalCurveVector(Dgn::StandardUnit unit) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPair::ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint, bool extendVertical, ICurvePrimitive::CurvePrimitiveType* pType) const
     {
+    if (!m_horizontalCurveVector.IsValid())
+        return false;
+
     CurveLocationDetail location;
     const DPoint3d atPoint = DPoint3d::From(referencePoint.x, referencePoint.y, 0.0);
 
@@ -566,6 +578,9 @@ bool AlignmentPair::ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePo
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPair::ClosestPointXY(DPoint3dR locationPoint, DPoint3dCR referencePoint) const
     {
+    if (!m_horizontalCurveVector.IsValid())
+        return false;
+
     CurveLocationDetail location;
     const DPoint3d atPoint = DPoint3d::From(referencePoint.x, referencePoint.y, 0.0);
 
@@ -581,6 +596,9 @@ bool AlignmentPair::ClosestPointXY(DPoint3dR locationPoint, DPoint3dCR reference
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPair::ClosestPointAndTangentXY(DPoint3dR locationPoint, DVec3dR tangent, DPoint3dCR referencePoint) 
     {
+    if (!m_horizontalCurveVector.IsValid())
+        return false;
+
     CurveLocationDetail location;
     const DPoint3d atPoint = DPoint3d::From(referencePoint.x, referencePoint.y, 0.0);
 
@@ -602,7 +620,7 @@ bool AlignmentPair::ClosestPointAndTangentXY(DPoint3dR locationPoint, DVec3dR ta
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPair::GetStartEnd(DPoint3dR startPt, DPoint3dR endPt, bool extendVertical) const
     {
-    if (!m_horizontalCurveVector->GetStartEnd(startPt, endPt))
+    if (!m_horizontalCurveVector.IsValid() || !m_horizontalCurveVector->GetStartEnd(startPt, endPt))
         return false;
 
     const double len = LengthXY();
@@ -615,7 +633,7 @@ bool AlignmentPair::GetStartEnd(DPoint3dR startPt, DPoint3dR endPt, bool extendV
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPair::GetStartAndEndDistancesAlong(double& startStation, double& endStation) const
     {
-    if (m_horizontalCurveVector->empty())
+    if (!m_horizontalCurveVector.IsValid() || m_horizontalCurveVector->empty())
         return false;
 
     startStation = 0.0;
@@ -628,6 +646,9 @@ bool AlignmentPair::GetStartAndEndDistancesAlong(double& startStation, double& e
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPair::HorizontalDistanceAlongFromStart(DPoint3dCR referencePoint, double* pOffset) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return DEFAULT_FAILURE_DISTANCE_ALONG;
+
     const PathLocationDetail location = HorizontalIndexVector()->SearchClosestPointBounded(referencePoint, true);
     const double distance = location.DistanceFromPathStart();
 
@@ -652,6 +673,9 @@ double AlignmentPair::HorizontalDistanceAlongFromStart(DPoint3dCR referencePoint
 +---------------+---------------+---------------+---------------+---------------+------*/
 double AlignmentPair::HorizontalDistanceAlongFromEnd(DPoint3dCR referencePoint, double * pOffset) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return DEFAULT_FAILURE_DISTANCE_ALONG;
+
     // Get distance from start and then 'invert' the distance to get the end. Offset should be the same
     const double distance = HorizontalDistanceAlongFromStart(referencePoint, pOffset);
     return LengthXY() - distance;
@@ -662,6 +686,9 @@ double AlignmentPair::HorizontalDistanceAlongFromEnd(DPoint3dCR referencePoint, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICurvePrimitiveCPtr AlignmentPair::GetPrimitiveAtPoint(DPoint3dCR referencePoint) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return nullptr;
+
     const PathLocationDetail location = HorizontalIndexVector()->SearchClosestPointBounded(referencePoint, true);
     const CurveLocationDetail detail = location.GetCurveLocationDetail();
     return detail.curve;
@@ -671,6 +698,9 @@ ICurvePrimitiveCPtr AlignmentPair::GetPrimitiveAtPoint(DPoint3dCR referencePoint
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICurvePrimitiveCPtr AlignmentPair::GetPrimitiveAtStation(double distanceAlongFromStart) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return nullptr;
+
     PathLocationDetail location;
     if (true == HorizontalIndexVector()->SearchByDistanceFromPathStart(distanceAlongFromStart, location))
         {
@@ -685,6 +715,9 @@ ICurvePrimitiveCPtr AlignmentPair::GetPrimitiveAtStation(double distanceAlongFro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ValidatedPathLocationDetail AlignmentPair::GetPathLocationDetailAtStation(double distanceAlongFromStart) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return ValidatedPathLocationDetail();
+
     PathLocationDetail location;
     const bool isValid = HorizontalIndexVector()->SearchByDistanceFromPathStart(distanceAlongFromStart, location);
     return ValidatedPathLocationDetail(location, isValid);
@@ -695,6 +728,9 @@ ValidatedPathLocationDetail AlignmentPair::GetPathLocationDetailAtStation(double
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPair::GetPartialHorizontalAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const
     {
+    if (!m_horizontalCurveVector.IsValid())
+        return nullptr;
+
     const double startDistanceAlongFromStart = HorizontalDistanceAlongFromStart(fromPt, nullptr);
     const double endDistanceAlongFromStart = HorizontalDistanceAlongFromStart(toPt, nullptr);
 
@@ -706,6 +742,9 @@ CurveVectorPtr AlignmentPair::GetPartialHorizontalAlignment(DPoint3dCR fromPt, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr AlignmentPair::GetPartialHorizontalAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const
     {
+    if (!m_horizontalCurveVector.IsValid())
+        return nullptr;
+
     return GetPartialAlignment(CurveVectorType::Horizontal, startDistanceAlongFromStart, endDistanceAlongFromStart);
     }
 
@@ -770,7 +809,7 @@ AlignmentPairPtr AlignmentPair::GetPartialAlignment(double startDistanceAlongFro
         return nullptr;
 
     const CurveVectorCPtr vt = GetPartialVerticalAlignment(startDistanceAlongFromStart, endDistanceAlongFromStart);
-    return AlignmentPair::Create(*hz, vt.get());
+    return AlignmentPair::Create(hz.get(), vt.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -778,6 +817,9 @@ AlignmentPairPtr AlignmentPair::GetPartialAlignment(double startDistanceAlongFro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ValidatedDPoint3d AlignmentPair::GetPointAt(double distanceAlongFromStart) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return ValidatedDPoint3d();
+
     if (distanceAlongFromStart > LengthXY())
         distanceAlongFromStart = distanceAlongFromStart - mgds_fc_epsilon;
 
@@ -792,6 +834,9 @@ ValidatedDPoint3d AlignmentPair::GetPointAt(double distanceAlongFromStart) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ValidatedDPoint3d AlignmentPair::GetPointAtAndOffset(double distanceAlongFromStart, double offset) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return ValidatedDPoint3d();
+
     if (distanceAlongFromStart > LengthXY())
         distanceAlongFromStart = distanceAlongFromStart - mgds_fc_epsilon;
 
@@ -812,6 +857,9 @@ ValidatedDPoint3d AlignmentPair::GetPointAtAndOffset(double distanceAlongFromSta
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AlignmentPair::GetPointAndTangentAt(DPoint3dR hzPoint, DVec3dR hzTangent, double distanceAlongFromStart) const
     {
+    if (!HorizontalIndexVector().IsValid())
+        return false;
+
     if (distanceAlongFromStart > LengthXY())
         distanceAlongFromStart = distanceAlongFromStart - mgds_fc_epsilon;
 
@@ -860,6 +908,9 @@ bvector<DPoint3d> AlignmentPair::GetStrokedAlignment(double maxEdgeLength) const
 
     bvector<DPoint3d> strokes;
 
+    if (!m_horizontalCurveVector.IsValid())
+        return strokes;
+
     if (!VerticalXIndexVector().IsValid())
         {
         m_horizontalCurveVector->AddStrokePoints(strokes, *options);
@@ -879,11 +930,14 @@ BEGIN_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        10/2017
 //---------------------------------------------------------------------------------------
-double computeMinimumRadius(CurveVectorCR hz, bool wantsCCW)
+double computeMinimumRadius(CurveVectorCP pHorizontal, bool wantsCCW)
     {
     double minRadius = CS_SPI_INFINITY;
 
-    for (auto const& primitive : hz)
+    if (nullptr == pHorizontal)
+        return minRadius;
+
+    for (auto const& primitive : *pHorizontal)
         {
         if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != primitive->GetCurvePrimitiveType())
             continue;

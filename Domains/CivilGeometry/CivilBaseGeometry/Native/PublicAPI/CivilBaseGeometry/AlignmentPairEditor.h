@@ -280,10 +280,10 @@ private:
 
 protected:
     AlignmentPairEditor() {}
-    CIVILBASEGEOMETRY_EXPORT AlignmentPairEditor(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    CIVILBASEGEOMETRY_EXPORT AlignmentPairEditor(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment);
     CIVILBASEGEOMETRY_EXPORT virtual AlignmentPairPtr _Clone() const override;
-    CIVILBASEGEOMETRY_EXPORT virtual void _UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment) override;
-    CIVILBASEGEOMETRY_EXPORT virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment) override;     //&&AG WIP deal with cached PVIs
+    CIVILBASEGEOMETRY_EXPORT virtual void _UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignment) override;
+    CIVILBASEGEOMETRY_EXPORT virtual void _UpdateVerticalCurveVector(CurveVectorCP pVerticalAlignment) override;
 
 protected:
     //! Compute the PI by intersecting two rays.
@@ -328,7 +328,7 @@ protected:
     CIVILBASEGEOMETRY_EXPORT virtual bool _ValidatePIs(bvector<AlignmentPI> const& pis) const;
 
 public:
-    CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment);
+    CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr Create(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment);
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr Create(AlignmentPairCR pair);
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairEditorPtr CreateVerticalOnly(CurveVectorCR verticalAlignment);
 

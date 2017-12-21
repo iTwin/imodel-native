@@ -95,7 +95,7 @@ AlignmentPairPtr createLinearPair()
     CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0.0, 0.0, 800.0), DPoint3d::From(100.0, 0.0, 815.0))));
 
-    return AlignmentPair::Create(*hz, vt.get());
+    return AlignmentPair::Create(hz.get(), vt.get());
     }
 //---------------------------------------------------------------------------------------
 // Creates an line alignment with:
@@ -110,7 +110,7 @@ AlignmentPairPtr createLinearPairWithLongerVt()
     CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0,0,1000), DPoint3d::From(115, 0, 1115))));
 
-    return AlignmentPair::Create(*hz, vt.get());
+    return AlignmentPair::Create(hz.get(), vt.get());
     }
 //---------------------------------------------------------------------------------------
 // Creates an line alignment with:
@@ -125,7 +125,7 @@ AlignmentPairPtr createLinearPairWithShorterVt()
     CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0,0,1000), DPoint3d::From(85, 0, 1085))));
 
-    return AlignmentPair::Create(*hz, vt.get());
+    return AlignmentPair::Create(hz.get(), vt.get());
     }
 
 
@@ -136,48 +136,53 @@ void AlignmentPair_Create()
     {
     CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
 
+    // No hz or vt
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_TRUE(pair.IsValid()) << "Pair with no hz/vt is considered valid";
+    EXPECT_TRUE(nullptr == pair->GetHorizontalCurveVector());
+
     //! Empty hz
-    AlignmentPairPtr pair = AlignmentPair::Create(*hz, nullptr);
+    pair = AlignmentPair::Create(hz.get(), nullptr);
     EXPECT_TRUE(pair.IsValid()) << "Pair with empty hz is considered valid";
 
     //! Hz with single line primitive
     hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0))));
-    AlignmentPairPtr pair2 = AlignmentPair::Create(*hz, nullptr);
+    AlignmentPairPtr pair2 = AlignmentPair::Create(hz.get(), nullptr);
     EXPECT_TRUE(pair2.IsValid()) << "Failed to create pair with single hz primitive (no vt)";
 
     //! Empty but valid vt
     CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    AlignmentPairPtr pair3 = AlignmentPair::Create(*hz, vt.get());
+    AlignmentPairPtr pair3 = AlignmentPair::Create(hz.get(), vt.get());
     EXPECT_TRUE(pair3.IsValid());
     EXPECT_FALSE(pair3->IsValidVertical()) << "Pair created with valid empty vt should set vt as null..";
 
     //! vt with single line primitive
     vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0.0, 0.0, 800.0), DPoint3d::From(100.0, 0.0, 750.0))));
-    AlignmentPairPtr pair4 = AlignmentPair::Create(*hz, vt.get());
+    AlignmentPairPtr pair4 = AlignmentPair::Create(hz.get(), vt.get());
     EXPECT_TRUE(pair4.IsValid());
     EXPECT_TRUE(pair4->IsValidVertical());
 
     //! Hz with invalid boundary type
     hz->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Inner);
-    AlignmentPairPtr pair5 = AlignmentPair::Create(*hz, nullptr);
+    AlignmentPairPtr pair5 = AlignmentPair::Create(hz.get(), nullptr);
     EXPECT_TRUE(pair5.IsValid());
-    EXPECT_EQ(CurveVector::BOUNDARY_TYPE_Open, pair5->GetHorizontalCurveVector().GetBoundaryType());
+    EXPECT_EQ(CurveVector::BOUNDARY_TYPE_Open, pair5->GetHorizontalCurveVector()->GetBoundaryType());
 
     hz->SetBoundaryType(CurveVector::BOUNDARY_TYPE_None);
-    AlignmentPairPtr pair6 = AlignmentPair::Create(*hz, nullptr);
+    AlignmentPairPtr pair6 = AlignmentPair::Create(hz.get(), nullptr);
     EXPECT_TRUE(pair6.IsValid());
-    EXPECT_EQ(CurveVector::BOUNDARY_TYPE_Open, pair6->GetHorizontalCurveVector().GetBoundaryType());
+    EXPECT_EQ(CurveVector::BOUNDARY_TYPE_Open, pair6->GetHorizontalCurveVector()->GetBoundaryType());
 
     hz->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
 
     //! Vt with invalid boundary type
     vt->SetBoundaryType(CurveVector::BOUNDARY_TYPE_None);
-    AlignmentPairPtr pair7 = AlignmentPair::Create(*hz, vt.get());
+    AlignmentPairPtr pair7 = AlignmentPair::Create(hz.get(), vt.get());
     EXPECT_TRUE(pair7.IsValid());
     EXPECT_EQ(CurveVector::BOUNDARY_TYPE_Open, pair7->GetVerticalCurveVector()->GetBoundaryType());
 
     vt->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
-    AlignmentPairPtr pair8 = AlignmentPair::Create(*hz, vt.get());
+    AlignmentPairPtr pair8 = AlignmentPair::Create(hz.get(), vt.get());
     EXPECT_TRUE(pair8.IsValid());
     EXPECT_EQ(CurveVector::BOUNDARY_TYPE_Open, pair8->GetVerticalCurveVector()->GetBoundaryType());
 
@@ -201,17 +206,17 @@ void AlignmentPair_GetCurveVectors()
     CurveVectorPtr vt = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0.0, 0.0, 800.0), DPoint3d::From(100.0, 0.0, 815.0))));
 
-    AlignmentPairPtr pair = AlignmentPair::Create(*hz, vt.get());
+    AlignmentPairPtr pair = AlignmentPair::Create(hz.get(), vt.get());
     ASSERT_TRUE(pair.IsValid());
 
-    expectEqualCurves(*hz, pair->GetHorizontalCurveVector());
+    expectEqualCurves(*hz, *pair->GetHorizontalCurveVector());
     expectEqualCurves(*vt, *pair->GetVerticalCurveVector());
 
     // Try to retrieve empty vertical
-    pair = AlignmentPair::Create(*hz, nullptr);
+    pair = AlignmentPair::Create(nullptr, nullptr);
     ASSERT_TRUE(pair.IsValid());
+    EXPECT_TRUE(nullptr == pair->GetHorizontalCurveVector());
     EXPECT_TRUE(nullptr == pair->GetVerticalCurveVector());
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -228,8 +233,12 @@ void AlignmentPair_UpdateCurveVectors()
     vt->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(0.0, 0.0, 15.0), DPoint3d::From(400.0, 0.0, 19.4))));
 
     //! Update hz
-    pair->UpdateHorizontalCurveVector(*hz);
-    expectEqualCurves(*hz, pair->GetHorizontalCurveVector());
+    pair->UpdateHorizontalCurveVector(hz.get());
+    expectEqualCurves(*hz, *pair->GetHorizontalCurveVector());
+
+    pair->UpdateHorizontalCurveVector(nullptr);
+    EXPECT_TRUE(nullptr == pair->GetHorizontalCurveVector());
+
 
     //! Update vt
     pair->UpdateVerticalCurveVector(vt.get());
@@ -245,16 +254,15 @@ void AlignmentPair_UpdateCurveVectors()
 
     //! Update both
     pair = createLinearPair();
-    pair->UpdateCurveVectors(*hz, vt.get());
-    expectEqualCurves(*hz, pair->GetHorizontalCurveVector());
+    pair->UpdateCurveVectors(hz.get(), vt.get());
+    expectEqualCurves(*hz, *pair->GetHorizontalCurveVector());
     expectEqualCurves(*vt, *pair->GetVerticalCurveVector());
 
     //! Update both setting empty hz and null as vt
     pair = createLinearPair();
     hz->clear();
-    pair->UpdateCurveVectors(*hz, nullptr);
-    
-    expectEqualCurves(*hz, pair->GetHorizontalCurveVector());
+    pair->UpdateCurveVectors(hz.get(), nullptr);
+    EXPECT_FALSE(pair->IsValidHorizontal());
     EXPECT_FALSE(pair->IsValidVertical());
     }
 
@@ -264,21 +272,28 @@ void AlignmentPair_UpdateCurveVectors()
 void AlignmentPair_CloneCurveVectors()
     {
     CurveVectorPtr hzCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    AlignmentPairPtr pair = AlignmentPair::Create(*hzCurve, nullptr);
+    AlignmentPairPtr pair = AlignmentPair::Create(hzCurve.get(), nullptr);
     ASSERT_TRUE(pair.IsValid());
 
     // Clone empty hz / no vertical
     CurveVectorPtr hz = pair->CloneHorizontalCurveVector();
-    EXPECT_TRUE(hz.IsValid());
+    EXPECT_FALSE(hz.IsValid());
     CurveVectorPtr vt = pair->CloneVerticalCurveVector();
     EXPECT_FALSE(vt.IsValid());
+
+    // Clone no hz / no vertical
+    pair = AlignmentPair::Create(nullptr, nullptr);
+    ASSERT_TRUE(pair.IsValid());
+    hz = pair->CloneHorizontalCurveVector();
+    EXPECT_FALSE(hz.IsValid());
+
 
     pair = createLinearPair();
 
     // Clone as Meters
     hz = pair->CloneHorizontalCurveVector();
     ASSERT_TRUE(hz.IsValid());
-    expectEqualCurves(pair->GetHorizontalCurveVector(), *hz);
+    expectEqualCurves(*pair->GetHorizontalCurveVector(), *hz);
 
     vt = pair->CloneVerticalCurveVector();
     ASSERT_TRUE(vt.IsValid());
@@ -324,18 +339,24 @@ void AlignmentPair_CloneCurveVectors()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_Clone()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
     AlignmentPairPtr cPair = pair->Clone();
     ASSERT_TRUE(cPair.IsValid());
-    ASSERT_TRUE(!cPair->GetHorizontalCurveVector().empty());
+    ASSERT_TRUE(nullptr == cPair->GetHorizontalCurveVector());
+    ASSERT_TRUE(nullptr == cPair->GetVerticalCurveVector());
+
+    pair = createLinearPair();
+    cPair = pair->Clone();
+    ASSERT_TRUE(cPair.IsValid());
+    ASSERT_TRUE(!cPair->GetHorizontalCurveVector()->empty());
     ASSERT_TRUE(nullptr != cPair->GetVerticalCurveVector());
 
-    expectEqualCurves(pair->GetHorizontalCurveVector(), cPair->GetHorizontalCurveVector());
+    expectEqualCurves(*pair->GetHorizontalCurveVector(), *cPair->GetHorizontalCurveVector());
     expectEqualCurves(*pair->GetVerticalCurveVector(), *cPair->GetVerticalCurveVector());
 
     //! Verify editing the original will not affect the clone copy
-    pair->UpdateHorizontalCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open));
-    ASSERT_FALSE(cPair->GetHorizontalCurveVector().empty());
+    pair->UpdateHorizontalCurveVector(CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open).get());
+    ASSERT_FALSE(cPair->GetHorizontalCurveVector()->empty());
 
     pair->UpdateVerticalCurveVector(nullptr);
     ASSERT_TRUE(nullptr != cPair->GetVerticalCurveVector());
@@ -347,9 +368,13 @@ void AlignmentPair_Clone()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetStartEnd()
     {
-    //! Start/End with hz/vt of same length
-    AlignmentPairPtr pair = createLinearPair();
+    //! Start/End without hz/vt
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
     DPoint3d start, end;
+    EXPECT_FALSE(pair->GetStartEnd(start, end));
+
+    //! Start/End with hz/vt of same length
+    pair = createLinearPair();
 
     EXPECT_TRUE(pair->GetStartEnd(start, end, false));
     EXPECT_EQ_DPOINT3D(DPoint3d::From(0.0, 0.0, 800.0), start);
@@ -403,7 +428,7 @@ void AlignmentPair_GetStartEnd()
     //! Retrieve start/end with empty hz
     //! Should not crash
     CurveVectorPtr empty = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    pair->UpdateHorizontalCurveVector(*empty);
+    pair->UpdateHorizontalCurveVector(empty.get());
 
     DPoint3d dummy;
     EXPECT_FALSE(pair->GetStartEnd(dummy, dummy)) << "GetStartEnd should fail with empty Hz";
@@ -417,12 +442,15 @@ void AlignmentPair_GetStartEnd()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_HasSpirals()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_FALSE(pair->HasSpirals());
+
+    pair = createLinearPair();
     EXPECT_FALSE(pair->HasSpirals());
 
     CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
     ASSERT_TRUE(hzWith3Spirals.IsValid());
-    pair = AlignmentPair::Create(*hzWith3Spirals, nullptr);
+    pair = AlignmentPair::Create(hzWith3Spirals.get(), nullptr);
     ASSERT_TRUE(pair.IsValid());
     EXPECT_TRUE(pair->HasSpirals());
     }
@@ -432,8 +460,11 @@ void AlignmentPair_HasSpirals()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_LengthXY()
     {
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_EQ_DOUBLE(0.0, pair->LengthXY());
+
     //! Make sure different vt lengths do not interfere
-    AlignmentPairPtr pair = createLinearPair();
+    pair = createLinearPair();
     EXPECT_EQ_DOUBLE(100.0, pair->LengthXY());
 
     AlignmentPairPtr pair2 = createLinearPairWithLongerVt();
@@ -445,7 +476,7 @@ void AlignmentPair_LengthXY()
     //! Retrieve length of empty hz
     //! Should not crash
     CurveVectorPtr empty = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    pair->UpdateHorizontalCurveVector(*empty);
+    pair->UpdateHorizontalCurveVector(empty.get());
     EXPECT_EQ_DOUBLE(0.0, pair->LengthXY());
     }
 
@@ -454,7 +485,11 @@ void AlignmentPair_LengthXY()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetVerticalElevationAt()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_EQ_DOUBLE(0.0, pair->GetVerticalElevationAt(0.0));
+    EXPECT_EQ_DOUBLE(0.0, pair->GetVerticalElevationAt(10.0));
+
+    pair = createLinearPair();
 
     //! On the alignment
     EXPECT_EQ_DOUBLE(800.0, pair->GetVerticalElevationAt(0.0));
@@ -480,12 +515,18 @@ void AlignmentPair_GetVerticalElevationAt()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetPointAt()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    ValidatedDPoint3d point = pair->GetPointAt(0.0);
+    EXPECT_FALSE(point.IsValid());
+    point = pair->GetPointAtWithZ(0.0);
+    EXPECT_FALSE(point.IsValid());
+
+    pair = createLinearPair();
     AlignmentPairPtr pairNoVt = createLinearPair();
     pairNoVt->UpdateVerticalCurveVector(nullptr);
 
     //! Get points somewhere on the pair
-    ValidatedDPoint3d point = pair->GetPointAt(0.0);
+    point = pair->GetPointAt(0.0);
     EXPECT_TRUE(point.IsValid());
     EXPECT_EQ_DPOINT3D(DPoint3d::FromZero(), point);
 
@@ -558,7 +599,7 @@ void AlignmentPair_GetPointAt()
     //! GetPointAt when hz is empty.
     //! Should not crash
     CurveVectorPtr empty = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    pair->UpdateHorizontalCurveVector(*empty);
+    pair->UpdateHorizontalCurveVector(empty.get());
 
     ValidatedDPoint3d point15 = pair->GetPointAt(1.0);
     EXPECT_FALSE(point15.IsValid());
@@ -570,14 +611,19 @@ void AlignmentPair_GetPointAt()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetPointAndTangentAt()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    DPoint3d point;
+    DVec3d tangent;
+
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_FALSE(pair->GetPointAndTangentAt(point, tangent, 0.0));
+    EXPECT_FALSE(pair->GetPointAndTangentAtWithZ(point, tangent, 0.0));
+    
+    pair = createLinearPair();
     AlignmentPairPtr pairNoVt = createLinearPair();
     pairNoVt->UpdateVerticalCurveVector(nullptr);
 
     //! Get point on the alignment
     //! at start
-    DPoint3d point; 
-    DVec3d tangent;
     EXPECT_EQ(true, pair->GetPointAndTangentAt(point, tangent, 0.0));
     EXPECT_EQ_DPOINT3D(DPoint3d::FromZero(), point);
     EXPECT_EQ_DPOINT3D(DVec3d::From(1.0, 0, 0), tangent);
@@ -659,7 +705,6 @@ void AlignmentPair_GetPointAndTangentAt()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetPointAtAndOffset()
     {
-    AlignmentPairPtr pair = createLinearPair();
 
     //          ^^ y
     //          ||
@@ -673,7 +718,12 @@ void AlignmentPair_GetPointAtAndOffset()
     // means we're going in opposite y direction.
     //  The offset uses a unit vector rotated CLOCKWISE by 90 degrees
 
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
     ValidatedDPoint3d vPoint = pair->GetPointAtAndOffset(0.0, 5.0);
+    EXPECT_FALSE(vPoint.IsValid());
+
+    pair = createLinearPair();
+    vPoint = pair->GetPointAtAndOffset(0.0, 5.0);
     EXPECT_TRUE(vPoint.IsValid());
     EXPECT_EQ_DPOINT3D(DPoint3d::From(0.0, -5.0, 0.0), vPoint.Value());
 
@@ -695,10 +745,13 @@ void AlignmentPair_GetPointAtAndOffset()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_HorizontalDistanceAlongFrom()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_EQ_DOUBLE(-1.0, pair->HorizontalDistanceAlongFromStart(DPoint3d::FromOne()));
+    EXPECT_EQ_DOUBLE(-1.0, pair->HorizontalDistanceAlongFromEnd(DPoint3d::From(12, 34, 50)));
 
     //! Cannot use EXPECT_EQ_DOUBLE for offsets.
     // Square root is giving bigger errors. Using epsilon seems reasonable
+    pair = createLinearPair();
     double offset;
 
     EXPECT_EQ_DOUBLE(0.0, pair->HorizontalDistanceAlongFromStart(DPoint3d::FromZero(), &offset));
@@ -727,6 +780,12 @@ void AlignmentPair_HorizontalDistanceAlongFrom()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetPrimitiveAtPoint_GetPrimitiveAtStation_GetPathLocationDetailAtStation()
     {
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_FALSE(pair->GetPrimitiveAtPoint(DPoint3d::FromZero()).IsValid());
+    EXPECT_FALSE(pair->GetPrimitiveAtStation(12.0).IsValid());
+    ValidatedPathLocationDetail detail = pair->GetPathLocationDetailAtStation(0.0);
+    EXPECT_FALSE(detail.IsValid());
+
     // 5 different lines each having a length of 100.0
     CurveVectorPtr hzAlignment = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     hzAlignment->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(100.0, 0, 0))));
@@ -735,7 +794,7 @@ void AlignmentPair_GetPrimitiveAtPoint_GetPrimitiveAtStation_GetPathLocationDeta
     hzAlignment->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(300.0, 0, 0), DPoint3d::From(400.0, 0, 0))));
     hzAlignment->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(400.0, 0, 0), DPoint3d::From(500.0, 0, 0))));
 
-    AlignmentPairPtr pair = AlignmentPair::Create(*hzAlignment, nullptr);
+    pair = AlignmentPair::Create(hzAlignment.get(), nullptr);
 
     // Should return first primitive
     // GetPrimitiveAtPoint
@@ -790,7 +849,7 @@ void AlignmentPair_GetPrimitiveAtPoint_GetPrimitiveAtStation_GetPathLocationDeta
     EXPECT_FALSE(primitive.IsValid()) << "Station is out of bounds";
 
     // GetPathLocationDetailAtStation
-    ValidatedPathLocationDetail detail = pair->GetPathLocationDetailAtStation(-1.0);
+    detail = pair->GetPathLocationDetailAtStation(-1.0);
     EXPECT_FALSE(detail.IsValid());
     
     detail = pair->GetPathLocationDetailAtStation(0.0);
@@ -809,13 +868,20 @@ void AlignmentPair_GetPrimitiveAtPoint_GetPrimitiveAtStation_GetPathLocationDeta
 //---------------------------------------------------------------------------------------
 void AlignmentPair_ClosestPoint()
     {
-    // Test with empty hz and null vertical
-    CurveVectorPtr emptyHz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    AlignmentPairPtr emptyPair = AlignmentPair::Create(*emptyHz, nullptr);
-    ASSERT_TRUE(emptyPair.IsValid());
-
     DPoint3d result;
     DVec3d resultTangent;
+
+    // Test with null hz and null vt
+    AlignmentPairPtr nullPair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_FALSE(nullPair->ClosestPoint(result, DPoint3d::FromZero()));
+    EXPECT_FALSE(nullPair->ClosestPointXY(result, DPoint3d::FromOne()));
+    EXPECT_FALSE(nullPair->ClosestPointAndTangentXY(result, resultTangent, DPoint3d::From(12, 24, 36)));
+
+    // Test with empty hz and null vertical
+    CurveVectorPtr emptyHz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    AlignmentPairPtr emptyPair = AlignmentPair::Create(emptyHz.get(), nullptr);
+    ASSERT_TRUE(emptyPair.IsValid());
+
     EXPECT_FALSE(emptyPair->ClosestPoint(result, DPoint3d::FromZero()));
     EXPECT_FALSE(emptyPair->ClosestPointXY(result, DPoint3d::FromZero()));
     EXPECT_FALSE(emptyPair->ClosestPointAndTangentXY(result, resultTangent, DPoint3d::FromZero()));
@@ -896,7 +962,7 @@ void AlignmentPair_ClosestPoint()
     for (size_t i = 1; i < points.size(); ++i)
         hzCurve->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(points[i - 1], points[i])));
 
-    pair = AlignmentPair::Create(*hzCurve, nullptr);
+    pair = AlignmentPair::Create(hzCurve.get(), nullptr);
     ASSERT_TRUE(pair.IsValid());
 
     EXPECT_TRUE(pair->ClosestPoint(result, DPoint3d::From(2, 0, 0)));
@@ -936,7 +1002,16 @@ void AlignmentPair_SelfIntersects()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetPartialAlignment()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
+    CurveVectorPtr partialHz = pair->GetPartialHorizontalAlignment(0.0, 100.0);
+    EXPECT_FALSE(partialHz.IsValid());
+    partialHz = pair->GetPartialHorizontalAlignment(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0));
+    EXPECT_FALSE(partialHz.IsValid());
+
+    AlignmentPairPtr cPair = pair->GetPartialAlignment(0.0, 100.0);
+    EXPECT_FALSE(cPair.IsValid());
+
+    pair = createLinearPair();
 
     DPoint3d aStart, aEnd;
     pair->GetStartEnd(aStart, aEnd);
@@ -944,7 +1019,7 @@ void AlignmentPair_GetPartialAlignment()
     DPoint3d aEndXY = DPoint3d::From(aEnd.x, aEnd.y);
 
     //! Clone hz over full range
-    CurveVectorPtr partialHz = pair->GetPartialHorizontalAlignment(0.0, 100.0);
+    partialHz = pair->GetPartialHorizontalAlignment(0.0, 100.0);
     DPoint3d start, end;
     partialHz->GetStartEnd(start, end);
 
@@ -1009,14 +1084,14 @@ void AlignmentPair_GetPartialAlignment()
 
     
     //! Clone alignment full range
-    AlignmentPairPtr cPair = pair->GetPartialAlignment(0.0, 100.0);
+    cPair = pair->GetPartialAlignment(0.0, 100.0);
     ASSERT_TRUE(cPair.IsValid());
-    expectEqualCurves(pair->GetHorizontalCurveVector(), cPair->GetHorizontalCurveVector());
+    expectEqualCurves(*pair->GetHorizontalCurveVector(), *cPair->GetHorizontalCurveVector());
     expectEqualCurves(*pair->GetVerticalCurveVector(), *cPair->GetVerticalCurveVector());
 
     cPair = pair->GetPartialAlignment(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0));
     ASSERT_TRUE(cPair.IsValid());
-    expectEqualCurves(pair->GetHorizontalCurveVector(), cPair->GetHorizontalCurveVector());
+    expectEqualCurves(*pair->GetHorizontalCurveVector(), *cPair->GetHorizontalCurveVector());
     expectEqualCurves(*pair->GetVerticalCurveVector(), *cPair->GetVerticalCurveVector());
 
     //! Clone partial range
@@ -1056,14 +1131,14 @@ void AlignmentPair_GetPartialAlignment()
 
     CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     hz->push_back(partialPrimitive);
-    pair = AlignmentPair::Create(*hz, nullptr);
+    pair = AlignmentPair::Create(hz.get(), nullptr);
     ASSERT_TRUE(pair.IsValid());
     AlignmentPairPtr result = pair->GetPartialAlignment(2.5, 7.5);
     EXPECT_TRUE(result.IsValid());
 
     partialPrimitive = ICurvePrimitive::CreatePartialCurve(primitive.get(), 0.2, 0.8);
     hz->at(0) = partialPrimitive;
-    pair = AlignmentPair::Create(*hz, nullptr);
+    pair = AlignmentPair::Create(hz.get(), nullptr);
     ASSERT_TRUE(pair.IsValid());
     result = pair->GetPartialAlignment(3.0, 4.0);
     EXPECT_TRUE(result.IsValid());
@@ -1071,7 +1146,7 @@ void AlignmentPair_GetPartialAlignment()
     // Nesting of 2 partials
     ICurvePrimitivePtr partialPartial = ICurvePrimitive::CreatePartialCurve(partialPrimitive.get(), 0.0, 1.0);
     hz->at(0) = partialPartial;
-    pair = AlignmentPair::Create(*hz, nullptr);
+    pair = AlignmentPair::Create(hz.get(), nullptr);
     ASSERT_TRUE(pair.IsValid());
     result = pair->GetPartialAlignment(3.0, 4.0);
     EXPECT_TRUE(result.IsValid());
@@ -1086,8 +1161,12 @@ void AlignmentPair_GetPartialAlignment()
 //---------------------------------------------------------------------------------------
 void AlignmentPair_GetStrokedAlignment()
     {
-    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairPtr pair = AlignmentPair::Create(nullptr, nullptr);
     bvector<DPoint3d> stroked = pair->GetStrokedAlignment();
+    EXPECT_EQ(0, stroked.size());
+
+    pair = createLinearPair();
+    stroked = pair->GetStrokedAlignment();
     ASSERT_NE(0, stroked.size());
 
     EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 800), stroked.front());
@@ -1164,7 +1243,7 @@ void AlignmentPair_ComputeMinimumRadius()
             hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(ellEnd, next)));
         }
 
-    AlignmentPairPtr pair = AlignmentPair::Create(*hz, nullptr);
+    AlignmentPairPtr pair = AlignmentPair::Create(hz.get(), nullptr);
     EXPECT_EQ_DOUBLE(30.0, pair->ComputeLeftMinimumRadius());
     EXPECT_EQ_DOUBLE(20.0, pair->ComputeRightMinimumRadius());
 
@@ -1172,6 +1251,10 @@ void AlignmentPair_ComputeMinimumRadius()
     AlignmentPairPtr pair2 = createLinearPair();
     EXPECT_EQ_DOUBLE(CS_SPI_INFINITY, pair2->ComputeLeftMinimumRadius());
     EXPECT_EQ_DOUBLE(CS_SPI_INFINITY, pair2->ComputeRightMinimumRadius());
+
+    pair = AlignmentPair::Create(nullptr, nullptr);
+    EXPECT_EQ_DOUBLE(CS_SPI_INFINITY, pair->ComputeLeftMinimumRadius());
+    EXPECT_EQ_DOUBLE(CS_SPI_INFINITY, pair->ComputeRightMinimumRadius());
     }
 
 
@@ -1415,11 +1498,11 @@ void AlignmentPairEditor_Create_Clone()
     // Create
     AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(pair->GetHorizontalCurveVector(), pair->GetVerticalCurveVector());
     ASSERT_TRUE(editor.IsValid());
-    expectEqualCurves(pair->GetHorizontalCurveVector(), editor->GetHorizontalCurveVector());
+    expectEqualCurves(*pair->GetHorizontalCurveVector(), *editor->GetHorizontalCurveVector());
 
     editor = AlignmentPairEditor::Create(*pair);
     ASSERT_TRUE(editor.IsValid());
-    expectEqualCurves(pair->GetHorizontalCurveVector(), editor->GetHorizontalCurveVector());
+    expectEqualCurves(*pair->GetHorizontalCurveVector(), *editor->GetHorizontalCurveVector());
 
     editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
     ASSERT_TRUE(editor.IsValid());
@@ -1440,7 +1523,7 @@ void AlignmentPairEditor_Create_Clone()
     AlignmentPairPtr clone = editor->Clone();
     ASSERT_TRUE(clone.IsValid());
     ASSERT_TRUE(nullptr != dynamic_cast<AlignmentPairEditorP>(clone.get()));
-    expectEqualCurves(pair->GetHorizontalCurveVector(), clone->GetHorizontalCurveVector());
+    expectEqualCurves(*pair->GetHorizontalCurveVector(), *clone->GetHorizontalCurveVector());
     ASSERT_TRUE(nullptr != clone->GetVerticalCurveVector());
     expectEqualCurves(*pair->GetVerticalCurveVector(), *clone->GetVerticalCurveVector());
 
@@ -1477,7 +1560,7 @@ void AlignmentPairEditor_GetPIs()
     CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     hz->push_back(ICurvePrimitive::CreateArc(ellipse));
 
-    editor = AlignmentPairEditor::Create(*hz, nullptr);
+    editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
     pis = editor->GetPIs();
     EXPECT_EQ(0, pis.size()) << "Arc is a full ellipse. Should fail";
@@ -1486,7 +1569,7 @@ void AlignmentPairEditor_GetPIs()
     ellipse.sweep = 0.0; // No sweep means an arc length of 0.0;
     hz->at(0) = ICurvePrimitive::CreateArc(ellipse);
 
-    editor = AlignmentPairEditor::Create(*hz, nullptr);
+    editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
     pis = editor->GetPIs();
     EXPECT_EQ(0, pis.size()) << "Arc has null length. Should fail";
@@ -1496,7 +1579,7 @@ void AlignmentPairEditor_GetPIs()
     CurveVectorPtr hzWith3Arcs = loadHorizontalWith3Arcs();
     ASSERT_TRUE(hzWith3Arcs.IsValid());
 
-    editor = AlignmentPairEditor::Create(*hzWith3Arcs, nullptr);
+    editor = AlignmentPairEditor::Create(hzWith3Arcs.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     pis = editor->GetPIs();
@@ -1528,7 +1611,7 @@ void AlignmentPairEditor_GetPIs()
     CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
     ASSERT_TRUE(hzWith3Spirals.IsValid());
 
-    editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    editor = AlignmentPairEditor::Create(hzWith3Spirals.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     pis = editor->GetPIs();
@@ -1571,7 +1654,7 @@ void AlignmentPairEditor_GetPIs()
     EXPECT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, hzStartsAndEndsWithArcs->at(2)->GetCurvePrimitiveType());
     EXPECT_EQ(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc, hzStartsAndEndsWithArcs->at(4)->GetCurvePrimitiveType());
 
-    editor = AlignmentPairEditor::Create(*hzStartsAndEndsWithArcs, nullptr);
+    editor = AlignmentPairEditor::Create(hzStartsAndEndsWithArcs.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     pis = editor->GetPIs();
@@ -1588,10 +1671,10 @@ void AlignmentPairEditor_UpdateCurveVectors()
     {
     CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
 
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
-    editor->UpdateHorizontalCurveVector(*hz);
+    editor->UpdateHorizontalCurveVector(hz.get());
     editor->UpdateVerticalCurveVector(nullptr);
     }
 
@@ -1601,7 +1684,7 @@ void AlignmentPairEditor_UpdateCurveVectors()
 void AlignmentPairEditor_InsertPI()
     {
     CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     // Test with empty curve
@@ -1617,7 +1700,7 @@ void AlignmentPairEditor_InsertPI()
     hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0))));
 
-    editor = AlignmentPairEditor::Create(*hz, nullptr);
+    editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     AlignmentPI newPI;
@@ -1641,7 +1724,7 @@ void AlignmentPairEditor_InsertPI()
     EXPECT_TRUE(result.IsValid());
     EXPECT_EQ(2, result->size());
 
-    AlignmentPairEditorPtr resultEditor = AlignmentPairEditor::Create(*result, nullptr);
+    AlignmentPairEditorPtr resultEditor = AlignmentPairEditor::Create(result.get(), nullptr);
     ASSERT_TRUE(resultEditor.IsValid());
     EXPECT_EQ(3, resultEditor->GetPIs().size());
 
@@ -1663,7 +1746,7 @@ void AlignmentPairEditor_InsertPI()
     ASSERT_TRUE(result.IsValid());
     EXPECT_EQ(3, result->size()); // Line-Arc-Line
     
-    resultEditor = AlignmentPairEditor::Create(*result, nullptr);
+    resultEditor = AlignmentPairEditor::Create(result.get(), nullptr);
     ASSERT_TRUE(resultEditor.IsValid());
     EXPECT_EQ(3, resultEditor->GetPIs().size());
 
@@ -1681,7 +1764,7 @@ void AlignmentPairEditor_InsertPI()
     ASSERT_TRUE(result.IsValid());
     EXPECT_EQ(5, result->size()); // Line-Spiral-Arc-Spiral-Line
 
-    resultEditor = AlignmentPairEditor::Create(*result, nullptr);
+    resultEditor = AlignmentPairEditor::Create(result.get(), nullptr);
     ASSERT_TRUE(resultEditor.IsValid());
     EXPECT_EQ(3, resultEditor->GetPIs().size());
 
@@ -1691,14 +1774,14 @@ void AlignmentPairEditor_InsertPI()
     ASSERT_TRUE(result.IsValid());
     EXPECT_EQ(4, result->size()); // Line-Spiral-Spiral-Line
 
-    resultEditor = AlignmentPairEditor::Create(*result, nullptr);
+    resultEditor = AlignmentPairEditor::Create(result.get(), nullptr);
     ASSERT_TRUE(resultEditor.IsValid());
     EXPECT_EQ(3, resultEditor->GetPIs().size());
 
 
     // Test with curve that starts and ends with an Arc PI
     hz = createHzWithStartEndArcs();
-    editor = AlignmentPairEditor::Create(*hz, nullptr);
+    editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     newPI.InitNoCurve(DPoint3d::From(-10.0, -11.0)); // Before the first arc
@@ -1735,7 +1818,7 @@ void AlignmentPairEditor_DeletePI()
     CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(100, 0, 0))));
 
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     CurveVectorPtr result = editor->DeletePI(0);
@@ -1761,7 +1844,7 @@ void AlignmentPairEditor_DeletePI()
     pi.InitNoCurve(DPoint3d::From(50.0, 5, 0));
     hz = editor->InsertPI(pi);
     ASSERT_TRUE(hz.IsValid());
-    editor->UpdateHorizontalCurveVector(*hz);
+    editor->UpdateHorizontalCurveVector(hz.get());
 
     result = editor->DeletePI(DPoint3d::From(50.0, 5, 0));
     ASSERT_TRUE(result.IsValid());
@@ -1777,7 +1860,7 @@ void AlignmentPairEditor_DeletePI()
     pi.GetArcP()->arc.startPoint = DPoint3d::From(-5.0, -5.0);
     result = editor->MovePI(0, pi);
     ASSERT_TRUE(result.IsValid());
-    editor->UpdateHorizontalCurveVector(*result);
+    editor->UpdateHorizontalCurveVector(result.get());
 
     result = editor->DeletePI(0);
     ASSERT_TRUE(result.IsValid());
@@ -1792,7 +1875,7 @@ void AlignmentPairEditor_MovePI()
     CurveVectorPtr hz = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     hz->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(200, 0, 0))));
 
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hz, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     CurveVectorPtr result = editor->MovePI(2, DPoint3d::FromOne());
@@ -1827,7 +1910,7 @@ void AlignmentPairEditor_MovePI()
     pi.InitNoCurve(DPoint3d::From(50.0, 5, 0));
     hz = editor->InsertPI(pi);
     ASSERT_TRUE(hz.IsValid());
-    editor->UpdateHorizontalCurveVector(*hz);
+    editor->UpdateHorizontalCurveVector(hz.get());
 
     result = editor->MovePI(1, DPoint3d::From(55.0, 25, 0));
     EXPECT_TRUE(result.IsValid());
@@ -1845,7 +1928,7 @@ void AlignmentPairEditor_MovePI()
 
     // Test with curve that starts and ends with an Arc PI
     hz = createHzWithStartEndArcs();
-    editor = AlignmentPairEditor::Create(*hz, nullptr);
+    editor = AlignmentPairEditor::Create(hz.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     result = editor->MovePI(0, DPoint3d::From(5.01, -10));
@@ -1875,7 +1958,7 @@ void AlignmentPairEditor_MovePC_MovePT()
 
     CurveVectorPtr hz = editor->InsertPI(pi);
     ASSERT_TRUE(hz.IsValid());
-    editor->UpdateHorizontalCurveVector(*hz);
+    editor->UpdateHorizontalCurveVector(hz.get());
 
     CurveVectorPtr result = editor->MovePC(1, DPoint3d::From(40, 40, 0), &pi);
     ASSERT_TRUE(result.IsValid());
@@ -1919,7 +2002,7 @@ void AlignmentPairEditor_MovePC_MovePT()
     pi.InitSCS(DPoint3d::From(50, 50, 0), 20, 5, 5);
     hz = editor->InsertPI(pi);
     ASSERT_TRUE(hz.IsValid());
-    editor->UpdateHorizontalCurveVector(*hz);
+    editor->UpdateHorizontalCurveVector(hz.get());
 
     result = editor->MovePC(1, DPoint3d::From(40, 40, 0));
     ASSERT_TRUE(result.IsValid());
@@ -1928,7 +2011,7 @@ void AlignmentPairEditor_MovePC_MovePT()
     pi.InitNoCurve(DPoint3d::From(40, 40));
     hz = editor->MovePI(1, pi);
     ASSERT_TRUE(hz.IsValid());
-    editor->UpdateHorizontalCurveVector(*hz);
+    editor->UpdateHorizontalCurveVector(hz.get());
 
     result = editor->MovePC(1, DPoint3d::From(40, 40, 0));
     EXPECT_FALSE(result.IsValid()) << "Wrong PI type for MovePC/MovePT";
@@ -1945,7 +2028,7 @@ void AlignmentPairEditor_MoveBS_MoveES()
     CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
     ASSERT_TRUE(hzWith3Spirals.IsValid());
 
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hzWith3Spirals.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     bvector<AlignmentPI> pis = editor->GetPIs();
@@ -2011,7 +2094,7 @@ void AlignmentPairEditor_UpdateRadius()
     CurveVectorPtr hzWith3Arcs = loadHorizontalWith3Arcs();
     ASSERT_TRUE(hzWith3Arcs.IsValid());
 
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Arcs, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hzWith3Arcs.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     bvector<AlignmentPI> pis = editor->GetPIs();
@@ -2041,7 +2124,7 @@ void AlignmentPairEditor_UpdateRadius()
     CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
     ASSERT_TRUE(hzWith3Spirals.IsValid());
 
-    editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    editor = AlignmentPairEditor::Create(hzWith3Spirals.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     pis = editor->GetPIs();
@@ -2061,7 +2144,7 @@ void AlignmentPairEditor_UpdateRadius()
     pi.InitNoCurve(pis[1].GetPILocation());
     result = editor->MovePI(1, pi);
     ASSERT_TRUE(result.IsValid());
-    editor->UpdateHorizontalCurveVector(*result);
+    editor->UpdateHorizontalCurveVector(result.get());
 
     result = editor->UpdateRadius(1, 5.0);
     EXPECT_FALSE(result.IsValid()) << "invalid type for UpdateRadius";
@@ -2075,7 +2158,7 @@ void AlignmentPairEditor_UpdateSpiralLengths()
     CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
     ASSERT_TRUE(hzWith3Spirals.IsValid());
 
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hzWith3Spirals.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     CurveVectorPtr result = editor->UpdateSpiralLengths(0, 12.3456);
@@ -2105,7 +2188,7 @@ void AlignmentPairEditor_UpdateSpiralLengths()
     pi.InitSS(pSCS->overallPI, pSCS->spiral1.length);
     result = editor->MovePI(1, pi);
     ASSERT_TRUE(result.IsValid());
-    editor->UpdateHorizontalCurveVector(*result);
+    editor->UpdateHorizontalCurveVector(result.get());
 
     result = editor->UpdateSpiralLengths(1, 12.0);
     EXPECT_TRUE(result.IsValid());
@@ -2115,7 +2198,7 @@ void AlignmentPairEditor_UpdateSpiralLengths()
     pi.InitNoCurve(pi.GetPILocation());
     result = editor->MovePI(1, pi);
     ASSERT_TRUE(result.IsValid());
-    editor->UpdateHorizontalCurveVector(*result);
+    editor->UpdateHorizontalCurveVector(result.get());
 
     result = editor->UpdateSpiralLengths(1, 12.0);
     EXPECT_FALSE(result.IsValid()) << "Invalid type for UpdateSpiralLengths";
@@ -2129,7 +2212,7 @@ void AlignmentPairEditor_RemoveSpirals_AddSpirals()
     CurveVectorPtr hzWith3Spirals = loadHorizontalWith3Spirals();
     ASSERT_TRUE(hzWith3Spirals.IsValid());
 
-    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(*hzWith3Spirals, nullptr);
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::Create(hzWith3Spirals.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     CurveVectorPtr result = editor->RemoveSpirals(0);
@@ -2153,7 +2236,7 @@ void AlignmentPairEditor_RemoveSpirals_AddSpirals()
     CurveVectorPtr hzWith3Arcs = loadHorizontalWith3Arcs();
     ASSERT_TRUE(hzWith3Arcs.IsValid());
 
-    editor = AlignmentPairEditor::Create(*hzWith3Arcs, nullptr);
+    editor = AlignmentPairEditor::Create(hzWith3Arcs.get(), nullptr);
     ASSERT_TRUE(editor.IsValid());
 
     result = editor->RemoveSpirals(1);

@@ -455,8 +455,8 @@ double AlignmentPVI::Slope(DPoint3dCR p0, DPoint3dCR p1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairEditor::AlignmentPairEditor (CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment) :
-    T_Super (horizontalAlignment, verticalAlignment)
+AlignmentPairEditor::AlignmentPairEditor(CurveVectorCP pHorizontalAlignment, CurveVectorCP verticalAlignment) :
+T_Super(pHorizontalAlignment, verticalAlignment)
     {
     }
 //---------------------------------------------------------------------------------------
@@ -469,9 +469,9 @@ AlignmentPairPtr AlignmentPairEditor::_Clone() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-void AlignmentPairEditor::_UpdateHorizontalCurveVector(CurveVectorCR horizontalAlignment)
+void AlignmentPairEditor::_UpdateHorizontalCurveVector(CurveVectorCP pHorizontalAlignment)
     {
-    T_Super::_UpdateHorizontalCurveVector(horizontalAlignment);
+    T_Super::_UpdateHorizontalCurveVector(pHorizontalAlignment);
     m_cachedPIs.clear();
     }
 //---------------------------------------------------------------------------------------
@@ -597,12 +597,14 @@ bool AlignmentPairEditor::LoadSpiralData(AlignmentPI::Spiral& spiral, ICurvePrim
 //---------------------------------------------------------------------------------------
 bool AlignmentPairEditor::GetLinePI(AlignmentPIR pi, size_t index) const
     {
-    CurveVectorCR hz = GetHorizontalCurveVector();
+    CurveVectorCP pHorizontal = GetHorizontalCurveVector();
+    if (nullptr == pHorizontal)
+        return false;
 
-    if (index + 1 < hz.size() && hz[index + 1]->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
+    if (index + 1 < pHorizontal->size() && pHorizontal->at(index + 1)->GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line)
         {
         DPoint3d dummy, end;
-        hz[index]->GetStartEnd(dummy, end);
+        pHorizontal->at(index)->GetStartEnd(dummy, end);
         end.z = 0.0;
 
         pi.InitInvalid(AlignmentPI::TYPE_NoCurve);
@@ -617,30 +619,34 @@ bool AlignmentPairEditor::GetLinePI(AlignmentPIR pi, size_t index) const
 //---------------------------------------------------------------------------------------
 bool AlignmentPairEditor::GetArcPI(AlignmentPIR pi, size_t primitiveIdx) const
     {
+    CurveVectorCP pHorizontal = GetHorizontalCurveVector();
+    if (nullptr == pHorizontal)
+        return false;
+
     pi.InitInvalid(AlignmentPI::TYPE_Arc);
     AlignmentPI::ArcInfoP pArc = pi.GetArcP();
 
-    return LoadArcData(pArc->arc, *GetHorizontalCurveVector()[primitiveIdx]);
+    return LoadArcData(pArc->arc, *pHorizontal->at(primitiveIdx));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
 bool AlignmentPairEditor::GetSCSPI(AlignmentPIR pi, size_t primitiveIdx) const
     {
-    CurveVectorCR hz = GetHorizontalCurveVector();
-    if (primitiveIdx + 2 >= hz.size())
+    CurveVectorCP pHorizontal = GetHorizontalCurveVector();
+    if (nullptr == pHorizontal || primitiveIdx + 2 >= pHorizontal->size())
         return false;
 
     pi.InitInvalid(AlignmentPI::TYPE_SCS);
     AlignmentPI::SCSInfoP pSCS = pi.GetSCSP();
 
-    if (!LoadSpiralData(pSCS->spiral1, *hz[primitiveIdx]))
+    if (!LoadSpiralData(pSCS->spiral1, *pHorizontal->at(primitiveIdx)))
         return false;
 
-    if (!LoadArcData(pSCS->arc, *hz[primitiveIdx + 1]))
+    if (!LoadArcData(pSCS->arc, *pHorizontal->at(primitiveIdx + 1)))
         return false;
 
-    if (!LoadSpiralData(pSCS->spiral2, *hz[primitiveIdx + 2]))
+    if (!LoadSpiralData(pSCS->spiral2, *pHorizontal->at(primitiveIdx + 2)))
         return false;
 
     pSCS->overallPI = ComputePIFromPointsAndVectors(pSCS->spiral1.startPoint, pSCS->spiral1.startVector, pSCS->spiral2.endPoint, pSCS->spiral2.endVector);
@@ -651,17 +657,17 @@ bool AlignmentPairEditor::GetSCSPI(AlignmentPIR pi, size_t primitiveIdx) const
 //---------------------------------------------------------------------------------------
 bool AlignmentPairEditor::GetSSPI(AlignmentPIR pi, size_t primitiveIdx) const
     {
-    CurveVectorCR hz = GetHorizontalCurveVector();
-    if (primitiveIdx + 1 >= hz.size())
+    CurveVectorCP pHorizontal = GetHorizontalCurveVector();
+    if (nullptr == pHorizontal || primitiveIdx + 1 >= pHorizontal->size())
         return false;
 
     pi.InitInvalid(AlignmentPI::TYPE_SS);
     AlignmentPI::SSInfoP pSS = pi.GetSSP();
 
-    if (!LoadSpiralData(pSS->spiral1, *hz[primitiveIdx]))
+    if (!LoadSpiralData(pSS->spiral1, *pHorizontal->at(primitiveIdx)))
         return false;
 
-    if (!LoadSpiralData(pSS->spiral2, *hz[primitiveIdx + 1]))
+    if (!LoadSpiralData(pSS->spiral2, *pHorizontal->at(primitiveIdx + 1)))
         return false;
 
     pSS->overallPI = ComputePIFromPointsAndVectors(pSS->spiral1.startPoint, pSS->spiral1.startVector, pSS->spiral2.endPoint, pSS->spiral2.endVector);
@@ -672,23 +678,23 @@ bool AlignmentPairEditor::GetSSPI(AlignmentPIR pi, size_t primitiveIdx) const
 //---------------------------------------------------------------------------------------
 bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
     {
-    CurveVectorCR hz = GetHorizontalCurveVector();
-    if (hz.empty())
+    CurveVectorCP pHorizontal = GetHorizontalCurveVector();
+    if (nullptr == pHorizontal || pHorizontal->empty())
         return bvector<AlignmentPI>();
 
     if (!m_cachedPIs.empty())
         return m_cachedPIs;
 
     DPoint3d hzStart, hzEnd;
-    hz.GetStartEnd(hzStart, hzEnd);
+    pHorizontal->GetStartEnd(hzStart, hzEnd);
     hzStart.z = hzEnd.z = 0.0;
 
     bool isError = false;
     bvector<AlignmentPI> pis;
 
-    for (size_t i = 0; i < hz.size(); ++i)
+    for (size_t i = 0; i < pHorizontal->size(); ++i)
         {
-        switch (hz[i]->GetCurvePrimitiveType())
+        switch (pHorizontal->at(i)->GetCurvePrimitiveType())
             {
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
                 {
@@ -717,16 +723,16 @@ bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
                 }
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
                 {
-                if (i + 1 >= hz.size())
+                if (i + 1 >= pHorizontal->size())
                     {
                     isError = true;
                     break;
                     }
 
-                ICurvePrimitive::CurvePrimitiveType nextType = hz[i + 1]->GetCurvePrimitiveType();
+                ICurvePrimitive::CurvePrimitiveType nextType = pHorizontal->at(i + 1)->GetCurvePrimitiveType();
                 if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == nextType)
                     {
-                    if (i + 2 >= hz.size() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral != hz[i + 2]->GetCurvePrimitiveType())
+                    if (i + 2 >= pHorizontal->size() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral != pHorizontal->at(i + 2)->GetCurvePrimitiveType())
                         {
                         isError = true;
                         break;
@@ -772,9 +778,9 @@ bvector<AlignmentPI> AlignmentPairEditor::GetPIs() const
 
 
     // Add the end PI unless we end with a spiral or arc
-    ICurvePrimitive::CurvePrimitiveType pType = hz.back()->GetCurvePrimitiveType();
+    ICurvePrimitive::CurvePrimitiveType pType = pHorizontal->back()->GetCurvePrimitiveType();
     DPoint3d primStart, primEnd;
-    hz.back()->GetStartEnd(primStart, primEnd);
+    pHorizontal->back()->GetStartEnd(primStart, primEnd);
 
     if (!primEnd.AlmostEqualXY(hzEnd) || (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != pType && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral != pType))
         {
@@ -1286,14 +1292,14 @@ bool AlignmentPairEditor::_ValidatePIs(bvector<AlignmentPI> const& pis) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairEditorPtr AlignmentPairEditor::Create(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment)
+AlignmentPairEditorPtr AlignmentPairEditor::Create(CurveVectorCP pHorizontalAlignment, CurveVectorCP pVerticalAlignment)
     {
-    return new AlignmentPairEditor(horizontalAlignment, pVerticalAlignment);
+    return new AlignmentPairEditor(pHorizontalAlignment, pVerticalAlignment);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPairEditorPtr AlignmentPairEditor::Create (AlignmentPairCR pair)
+AlignmentPairEditorPtr AlignmentPairEditor::Create(AlignmentPairCR pair)
     {
     return AlignmentPairEditor::Create(pair.GetHorizontalCurveVector(), pair.GetVerticalCurveVector());
     }
@@ -1410,7 +1416,7 @@ AlignmentPairEditorPtr AlignmentPairEditor::CreateVerticalOnly(CurveVectorCR ver
     CurveVectorPtr hzCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     hzCurve->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(vtLength, 0, 0))));
 
-    return new AlignmentPairEditor(*hzCurve, &verticalAlignment);
+    return new AlignmentPairEditor(hzCurve.get(), &verticalAlignment);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        12/2017
