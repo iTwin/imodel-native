@@ -27,6 +27,17 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct IEditManipulator : RefCountedBase
 {
 public:
+    //! Control selection modes.
+    enum class SelectionMode
+        {
+        New         = 0,
+        Add         = 1,
+        Subtract    = 2,
+        Inverse     = 3,
+        Clear       = 4,
+        All         = 5,
+        };
+
     //! Called to have manipulator populate it's internal set of controls.
     //! @return true if controls were created.
     virtual bool _DoCreateControls() = 0;
