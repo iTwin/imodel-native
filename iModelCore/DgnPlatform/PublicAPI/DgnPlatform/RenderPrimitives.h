@@ -590,6 +590,7 @@ public:
     DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor, bool requireNormals);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();
 
