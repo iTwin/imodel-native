@@ -292,8 +292,12 @@ StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalable
         }
     else
         {
-        BeAssert(false); // Empty sourceNode which is not the root node
-        return ERROR;
+        // Create new (empty) node so that children nodes can effectively be created/added as well
+        if (SUCCESS != CreateAndAddNewNode(sourceNode, parentDestNode, destNode))
+            return ERROR;
+
+        if (SUCCESS != SetNodeMeshData(sourceNode, nullptr, destNode))
+            return ERROR;
         }
 
     return SUCCESS;
@@ -340,7 +344,10 @@ StatusInt SM3SMPublisher::CreateAndAddNewNode(IScalableMeshNodePtr sourceNode, I
     {
     StatusInt status = SUCCESS;
     auto extent = sourceNode->GetNodeExtent();
+    {
+    std::lock_guard<std::mutex> lock(m_newNodeMtx);
     newDestNode = m_params->GetDestination()->AddNode(parentDestNode, extent, status);
+    }
     if (SUCCESS != status || newDestNode == nullptr)
         return ERROR;
 
@@ -355,8 +362,8 @@ SM3SMPublisher::SMNodeEditPromisePtr SM3SMPublisher::AddWorkItem(IScalableMeshNo
     SMNodeEditPromisePtr newNodePromise = std::make_shared<SMNodeEditPromise>(SMNodeEditPromise());
     newNodePromise->second = newNodePromise->first.get_future().share();
 
-    // Skip nodes that are entirely clipped
-    if (IsNodeClippedOut(source))
+    // Skip empty leaf nodes and nodes that are entirely clipped
+    if ((source->ArePointsFullResolution() && source->GetPointCount() == 0) || IsNodeClippedOut(source))
         {
         // Don't need to clone data for this node, it can be ignored so just update progress information
         ++m_numPublishedNodes;
