@@ -812,7 +812,6 @@
     @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
     @see BentleyApi::BeSQLite::EC::ECDb::ChangeCacheMode
     @see BentleyApi::BeSQLite::EC::ECDb::IsChangeCacheAttached
-    @see BentleyApi::BeSQLite::EC::ECDb::GetChangeCachePath
     @see BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary
 
     ### Querying into the change summaries
