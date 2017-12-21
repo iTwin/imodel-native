@@ -219,6 +219,8 @@ protected:
 
     ViewDefinitionPtr CloneState() {StoreState(); return m_definition->MakeCopy<ViewDefinition>();}
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
+    void ChangeSubCategoryDisplay(DgnSubCategoryId, bool onOff);
+    void ToggleAllSubCategories(DgnCategoryId, bool onOff);
 
 public:
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
@@ -240,7 +242,7 @@ public:
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     DgnCategoryIdSet const& GetViewedCategories() const {return m_definition->GetCategorySelector().GetCategories();}
-    DGNPLATFORM_EXPORT void SetViewedCategories(DgnCategoryIdSet const&);
+    DGNPLATFORM_EXPORT void SetViewedCategories(DgnCategoryIdSet const&, bool enableAllSubCategories=false);
 
     //! Get the axis-aliged extent of all of the possible elements visible in this view. For physical views, this is the "project extents".
     AxisAlignedBox3d GetViewedExtents(DgnViewportCR vp) const {return _GetViewedExtents(vp);}
@@ -309,7 +311,7 @@ public:
     //! Change whether a DgnCategory is displayed in the CategorySelector of this view.
     //! @param[in] categoryId the DgnCategoryId to change.
     //! @param[in] onOff if true, the category is displayed in this view.
-    DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff);
+    DGNPLATFORM_EXPORT void ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff, bool toggleAllSubcategories=false);
 
     //! Set the CategorySelector for this view.
     void SetCategorySelector(CategorySelectorR selector) { m_definition->SetCategorySelector(selector); SetFeatureOverridesDirty(); }
