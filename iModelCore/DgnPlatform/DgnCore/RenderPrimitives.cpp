@@ -1152,6 +1152,27 @@ void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilder::AddPointString(bvector<DPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
+    {
+    // Assume no duplicate points in point strings (or, too few to matter).
+    // Why? Because drawGridDots() potentially sends us tens of thousands of points (up to 83000 on my large monitor in top view), and wants to do so every frame.
+    // The resultant map lookups/inserts/rebalancing kill performance in non-optimized builds.
+    // NB: rangeCenter and startDistance unused...
+    MeshPolyline polyline(startDistance, rangeCenter);
+    for (auto const& point : points)
+        {
+        QPoint3d qpoint(point, m_mesh->Verts().GetParams());
+        auto index = static_cast<uint32_t>(m_mesh->Verts().size());
+        m_mesh->AddVertex(qpoint, nullptr, nullptr, fillColor, feature);
+        polyline.GetIndices().push_back(index);
+        }
+
+    m_mesh->AddPolyline(polyline);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::AddPolyline(MeshPolylineCR polyline) 
@@ -1883,7 +1904,12 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 MeshBuilderR builder = builderMap[key];
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
-                    builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                    {
+                    if (tileStrokes.m_disjoint)
+                        builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                    else
+                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), false, fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                    }
                 }
             }
         }
