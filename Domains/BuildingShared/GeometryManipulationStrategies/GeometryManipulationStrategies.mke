@@ -25,6 +25,10 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)GeometryManipulationStrategyBase$(oext) : $(_MakeFilePath)GeometryManipulationStrategyBase.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryManipulationStrategyBase.h
 
+$(o)GeometryManipulationStrategy$(oext) : $(_MakeFilePath)GeometryManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryManipulationStrategy.h
+
+$(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

@@ -7,12 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryManipulationStrategyBase)
+
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define GMS_V_SET_PROPERTY_TYPE(value_type) \
     virtual void _SetProperty(Utf8CP key, value_type const& value) {}
 #define GMS_V_TRYGET_PROPERTY_TYPE(value_type) \
-    virtual bool _TryGetProperty(Utf8CP key, value_type& value) { return false; }
+    virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) { return BentleyStatus::ERROR; }
 #define GMS_V_SET_TRYGET_PROPERTY_TYPE(value_type) \
     GMS_V_SET_PROPERTY_TYPE(value_type) \
     GMS_V_TRYGET_PROPERTY_TYPE(value_type)
@@ -34,14 +36,37 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 struct GeometryManipulationStrategyBase : RefCountedBase
     {
-    protected:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategyBase();
+    enum DynamicKeyPointType
+        {
+        Inserted = 0,
+        Updated
+        };
 
+    private:
+        GeometryManipulationStrategyBase() {}
+
+        friend struct GeometryManipulationStrategy;
+        friend struct GeometryPlacementStrategy;
+
+    protected:
         GMS_PROPERTY_TYPE(int)
         GMS_PROPERTY_TYPE(double)
         GMS_PROPERTY_TYPE(Dgn::DgnElementId)
         GMS_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_PROPERTY_TYPE(Utf8String)
+
+        virtual bvector<DPoint3d> const& _GetKeyPoints() const = 0;
+
+        virtual bool _IsDynamicKeyPointSet() const = 0;
+        virtual void _SetDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index, DynamicKeyPointType type) = 0;
+        virtual void _ResetDynamicKeyPoint() = 0;
+
+    public:
+        bvector<DPoint3d> const& GetKeyPoints() const;
+
+        bool IsDynamicKeyPointSet() const;
+        void SetDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index, DynamicKeyPointType type);
+        void ResetDynamicKeyPoint();
     };
 
 END_BUILDING_SHARED_NAMESPACE
