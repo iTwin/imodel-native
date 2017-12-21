@@ -176,7 +176,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         DbResult bimStat;
         Dgn::DgnDb::OpenParams params(openMode);
-        params.Set(changeCacheMode);
+        params.SetChangeCacheMode(changeCacheMode);
         Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
         if (BE_SQLITE_OK == bimStat)
             {
@@ -620,7 +620,7 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 Utf8String ChangeCommand::_GetUsage() const
     {
     return " .change tracking [on|off]      Enable / pause change tracking. Pausing does not create a revision.\r\n"
-           "         attachcache            attaches (and creates if necessary) the change cache file.\r\n"
+           "         attachcache [cache path] attaches (and creates if necessary) the change cache file.\r\n"
            "         extractsummary         creates a revision and extracts a change summary from it.\r\n";
     }
 
@@ -668,17 +668,29 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         if (session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            BimConsole::WriteLine("Change cache file has already been attached.");
+            BimConsole::WriteErrorLine("Change cache file has already been attached.");
+            return;
+            }
+
+        if (args.size() == 2)
+            {
+            if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache(BeFileName(args[1])))
+                {
+                BimConsole::WriteErrorLine("Failed to attach Change cache file %s.", args[1].c_str());
+                return;
+                }
+
+            BimConsole::WriteLine("Attached Change cache file %s.", args[1].c_str());
             return;
             }
 
         if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache())
             {
-            BimConsole::WriteErrorLine("Failed to attach change cache.");
+            BimConsole::WriteErrorLine("Failed to attach Change cache file.");
             return;
             }
 
-        BimConsole::WriteLine("Attached change summary cache.");
+        BimConsole::WriteLine("Attached Change cache file.");
         return;
         }
 
@@ -686,7 +698,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         if (!session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            BimConsole::WriteErrorLine("Failed to extract change summary. Change summary file is not attached. Make sure to attach it first.");
+            BimConsole::WriteErrorLine("Failed to extract change summary. No Change cache file is attached. Make sure to attach it first or specify a path to the Change cache file.");
             return;
             }
 

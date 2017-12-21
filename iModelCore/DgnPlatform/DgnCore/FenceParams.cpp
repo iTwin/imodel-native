@@ -497,6 +497,33 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
     if (nullptr == m_viewport || nPoints < 2)
         return ERROR;
 
+#if !defined (NOT_NOW_DEGENERATE_FENCE_SHAPE)
+    // NEEDSWORK: Ask Earlin if this can be supported or stick with work-around of adding some width...
+    if (2 == nPoints) // Degenerate fence shape is used for crossing line selection...
+        {
+        double      pixelSize = m_viewport->GetPixelSizeAtPoint(points, DgnCoordSystem::View);
+        DVec3d      xVec, yVec, zVec;
+        DPoint3d    shapePts[5];
+
+        m_viewport->WorldToView(shapePts, points, 2);
+        shapePts[0].z = shapePts[1].z = 0.0;
+
+        xVec.DifferenceOf(shapePts[1], shapePts[0]);
+        zVec.Init(0.0, 0.0, 1.0);
+        yVec.CrossProduct(xVec, zVec);
+        yVec.Normalize();
+
+        shapePts[3].SumOf(shapePts[0], yVec, -pixelSize);
+        shapePts[2].SumOf(shapePts[1], yVec, -pixelSize);
+        shapePts[0].SumOf(shapePts[0], yVec, pixelSize);
+        shapePts[1].SumOf(shapePts[1], yVec, pixelSize);
+        shapePts[4] = shapePts[0];
+        m_viewport->ViewToWorld(shapePts, shapePts, 5);
+
+        return StoreClippingPoints(shapePts, 5, outside);
+        }
+#endif
+
     DMap4dCP worldToNPC = m_viewport->GetWorldToNpcMap();
     bvector<DPoint2d> backPlaneUV;
     DRange3d uvRange = DRange3d::NullRange();
@@ -509,8 +536,11 @@ StatusInt FenceParams::StoreClippingPoints(DPoint3dCP points, size_t nPoints, bo
         uvRange.Extend(uvw.x, uvw.y, 0.0);
         }
 
+#if defined (NOT_NOW_DEGENERATE_FENCE_SHAPE)
+    // NEEDSWORK: Ask Earlin if this can be supported or stick with work-around of adding some width...
     if (2 == nPoints) // Degenerate fence shape is used for crossing line selection...
         backPlaneUV.push_back(backPlaneUV.front());
+#endif
 
     m_clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromShape(&backPlaneUV.front(), backPlaneUV.size(), outside, nullptr, nullptr, nullptr).get());
     m_clip->MultiplyPlanesTimesMatrix(worldToNPC->M0);
