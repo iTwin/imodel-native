@@ -17,6 +17,7 @@
       <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
       <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
       <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
+      <ProductDirectory Name="BuildingSharedIncludes" Path="BuildingShared" />
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="GridsGTestDirectories">

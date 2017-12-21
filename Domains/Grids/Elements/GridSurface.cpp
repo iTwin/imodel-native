@@ -11,11 +11,12 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
+#include <BuildingShared/BuildingSharedApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING
+USING_NAMESPACE_BUILDING_SHARED
 
 #define ELLIPSE_FROM_SINGLE_POINT_RADIUS 0.1 // 10cm
 

@@ -160,6 +160,40 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchArcGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    double height = GetEndElevation() - GetStartElevation();
+
+    if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    DEllipse3d arc;
+    if (BentleyStatus::SUCCESS != GetBaseArc(arc)) 
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    ICurvePrimitivePtr arcPrimitive = ICurvePrimitive::CreateArc(arc);
+    CurveVectorPtr newBase = CurveVector::Create(arcPrimitive);
+
+    Transform translation = Transform::From(0.0, 0.0, GetStartElevation());
+
+    DVec3d up = DVec3d::From(0, 0, height);
+    DgnExtrusionDetail detail = DgnExtrusionDetail(newBase->Clone(translation), up, false);
+    ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
+
+    SetGeometry(geometry);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void                            SketchArcGridSurface::SetBaseArc
 (
 DEllipse3d arc
@@ -207,4 +241,35 @@ DEllipse3dR arc
     return BentleyStatus::SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCircumferentialGridSurface::PlanCircumferentialGridSurface
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    if (params.m_classId.IsValid ()) // elements created via handler have no classid.
+        {
+        SetRadius(params.m_radius);
+        SetStartAngle(params.m_startAngle);
+        SetEndAngle(params.m_endAngle);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCircumferentialGridSurfacePtr             PlanCircumferentialGridSurface::Create
+(
+CreateParams const& params
+)
+    {
+    PlanCircumferentialGridSurfacePtr gridSurface = new PlanCircumferentialGridSurface (params);
+
+    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
+        return nullptr;
+
+    return gridSurface;
+    }
 END_GRIDS_NAMESPACE

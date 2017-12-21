@@ -16,12 +16,6 @@ dirToSearch = $(GridElementsPublicApi)
 dirToSearch = $(GridsPublicApi)
 %include cincapnd.mki
 
-dirToSearch = $(ConstraintModelPublicApi)
-%include cincapnd.mki
-
-dirToSearch = $(BuildingUtilsPublicApi)
-%include cincapnd.mki
-
 nameToDefine = __GRIDHANDLERS_BUILD__
 %include cdefapnd.mki
 

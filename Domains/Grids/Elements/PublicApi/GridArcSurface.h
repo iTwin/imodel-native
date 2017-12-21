@@ -94,6 +94,85 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGridArcSurface : GridArcSurface, IPlanGridSur
 //=======================================================================================
 //! plan grid planar surface element
 //=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PlanCircumferentialGridSurface : PlanGridArcSurface
+    {
+    DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_PlanCircumferentialGridSurface, PlanGridArcSurface);
+    DEFINE_T_SUPER(PlanGridArcSurface);
+    public:
+        struct CreateParams : T_Super::CreateParams
+            {
+            DEFINE_T_SUPER(PlanCircumferentialGridSurface::T_Super::CreateParams);
+            double m_radius;
+            double m_startAngle;
+            double m_endAngle;
+
+            //! Creates create parameters for orthogonal grid
+            //! @param[in] model              model for the PlanCartesianGridSurface
+            CreateParams(Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double radius, double startAngle, double endAngle, double staElevation, double endElevation) :
+                T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), gridAxis.GetElementId(), staElevation, endElevation)
+                {
+                m_radius = radius;
+                m_startAngle = startAngle;
+                m_endAngle = endAngle;
+                }
+
+            //! Constructor from base params. Chiefly for internal use.
+            //! @param[in]      params   The base element parameters
+            //! @return 
+            explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
+                : T_Super(params)
+                {
+                m_radius = 0.0;
+                m_startAngle = 0.0;
+                m_endAngle = 0.0;
+                }
+            };
+
+    private:
+        BE_PROP_NAME(Radius)
+        BE_PROP_NAME(StartAngle)
+        BE_PROP_NAME(EndAngle)
+
+
+    protected:
+        explicit GRIDELEMENTS_EXPORT PlanCircumferentialGridSurface(CreateParams const& params);
+        friend struct PlanCircumferentialGridSurfaceHandler;
+
+    public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(PlanCircumferentialGridSurface, GRIDELEMENTS_EXPORT)
+
+        //! Creates a PlanCircumferentialGridSurface surface
+        //! @param[in]  params           params to create PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT static  PlanCircumferentialGridSurfacePtr Create(CreateParams const& params);
+
+        //! Gets radius for this PlanCircumferentialGridSurface
+        //! @return radius of this PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT double      GetRadius() const { return GetPropertyValueDouble(prop_Radius()); }
+
+        //! Sets radius for this PlanCircumferentialGridSurface
+        //! @param[in]  radius   new angle for this PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT void        SetRadius(double radius) { SetPropertyValue(prop_Radius(), radius); };
+
+        //! Gets StartAngle of this PlanCircumferentialGridSurface
+        //! @return StartAngle of this PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT double      GetStartAngle() const { return GetPropertyValueDouble(prop_StartAngle()); }
+
+        //! Sets StartAngle of this PlanCircumferentialGridSurface
+        //! @param[in]  staAngle   new StartAngle for this PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT void        SetStartAngle(double staAngle) { SetPropertyValue(prop_StartAngle(), staAngle); };
+
+        //! Gets EndAngle of this PlanCircumferentialGridSurface
+        //! @return EndAngle of this PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT double      GetEndAngle() const { return GetPropertyValueDouble(prop_EndAngle()); }
+
+        //! Sets EndAngle of this PlanCircumferentialGridSurface
+        //! @param[in]  endAngle   new EndAngle for this PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT void        SetEndAngle(double endAngle) { SetPropertyValue(prop_EndAngle(), endAngle); };
+    };
+
+//=======================================================================================
+//! plan grid planar surface element
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SketchArcGridSurface : PlanGridArcSurface
     {
     DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_SketchArcGridSurface, PlanGridArcSurface);
@@ -131,6 +210,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchArcGridSurface : PlanGridArcSurface
         explicit GRIDELEMENTS_EXPORT SketchArcGridSurface (CreateParams const& params);
         friend struct SketchArcGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchArcGridSurface, GRIDELEMENTS_EXPORT)
 

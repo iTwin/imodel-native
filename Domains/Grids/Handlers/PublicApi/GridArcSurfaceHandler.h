@@ -23,4 +23,9 @@ struct SketchArcGridSurfaceHandler : GridArcSurfaceHandler
     ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SketchArcGridSurface, SketchArcGridSurface, SketchArcGridSurfaceHandler, GridArcSurfaceHandler, GRIDHANDLERS_EXPORT)
     };
 
+struct PlanCircumferentialGridSurfaceHandler : GridArcSurfaceHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_PlanCircumferentialGridSurface, PlanCircumferentialGridSurface, PlanCircumferentialGridSurfaceHandler, GridArcSurfaceHandler, GRIDHANDLERS_EXPORT)
+    };
+
 END_GRIDS_NAMESPACE

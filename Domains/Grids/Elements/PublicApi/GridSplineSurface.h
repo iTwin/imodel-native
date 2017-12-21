@@ -127,6 +127,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchSplineGridSurface : PlanGridSplineSurface
         explicit GRIDELEMENTS_EXPORT SketchSplineGridSurface (CreateParams const& params);
         friend struct SketchSplineGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchSplineGridSurface, GRIDELEMENTS_EXPORT)
 

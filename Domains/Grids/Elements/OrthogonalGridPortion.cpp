@@ -12,13 +12,14 @@
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
 //#include <DimensionHandler.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
+#include <BuildingShared/BuildingSharedApi.h>
 #include <BeSQLite/BeSQLite.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
+USING_NAMESPACE_BUILDING_SHARED
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid)
 

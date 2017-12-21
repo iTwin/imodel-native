@@ -10,13 +10,14 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
+#include <BuildingShared/BuildingSharedApi.h>
 //#include <DimensionHandler.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
+USING_NAMESPACE_BUILDING_SHARED
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (Grid)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid)
