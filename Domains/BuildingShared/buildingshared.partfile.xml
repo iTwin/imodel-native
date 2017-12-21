@@ -62,6 +62,7 @@
   </Part>
 
     <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke">
+        <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
     </Part>
     

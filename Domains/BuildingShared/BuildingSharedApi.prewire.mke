@@ -20,3 +20,6 @@ $(BuildContext)PublicAPI/BuildingShared/Units : $(_MakeFilePath)Units/PublicAPI
 
 $(BuildContext)PublicAPI/BuildingShared/Utils : $(_MakeFilePath)Utils/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/GeometryManipulationStrategies : $(_MakeFilePath)GeometryManipulationStrategies/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)

@@ -5,8 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <BuildingShared/BuildingSharedApi.h>
-#include "PublicApi/GeometryManipulationStrategyBase.h"
+#include "PublicApi/GeometryManipulationStrategiesApi.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING_SHARED

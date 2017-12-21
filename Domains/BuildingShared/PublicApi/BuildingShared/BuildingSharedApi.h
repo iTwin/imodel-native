@@ -10,3 +10,4 @@
 #include "BuildingSharedMacros.h"
 #include <BuildingShared/Units/UnitsApi.h>
 #include <BuildingShared/Utils/UtilsApi.h>
+#include <BuildingShared/GeometryManipulationStrategies/GeometryManipulationStrategiesApi.h>
