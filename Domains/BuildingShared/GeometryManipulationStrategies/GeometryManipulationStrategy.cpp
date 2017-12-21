@@ -54,7 +54,12 @@ void GeometryManipulationStrategy::ReplaceKeyPoint
     size_t index
 )
     {
-    BeAssert(m_keyPoints.size() > index);
+    if (m_keyPoints.size() <= index)
+        {
+        BeAssert(false);
+        return;
+        }
+
     m_keyPoints[index] = newKeyPoint;
     }
 
@@ -74,7 +79,12 @@ void GeometryManipulationStrategy::RemoveKeyPoint
     size_t index
 )
     {
-    BeAssert(m_keyPoints.size() > index);
+    if (m_keyPoints.size() <= index)
+        {
+        BeAssert(false);
+        return;
+        }
+
     m_keyPoints.erase(&m_keyPoints[index]);
     }
 
@@ -88,23 +98,32 @@ void GeometryManipulationStrategy::_SetDynamicKeyPoint
     GeometryManipulationStrategyBase::DynamicKeyPointType type
 )
     {
-    BeAssert(m_keyPoints.size() >= index);
-    m_dynamicKeyPointSet = true;
-
     m_keyPointsWithDynamicKeyPoint = m_keyPoints;
-    if (DynamicKeyPointType::Inserted == type)
+    if (DynamicKeyPointType::Insert == type)
         {
         if (m_keyPointsWithDynamicKeyPoint.size() == index)
             {
             m_keyPointsWithDynamicKeyPoint.push_back(newDynamicKeyPoint);
             }
-        else
+        else if (m_keyPointsWithDynamicKeyPoint.size() > index)
             {
             m_keyPointsWithDynamicKeyPoint.insert(&m_keyPointsWithDynamicKeyPoint[index], newDynamicKeyPoint);
             }
+        else
+            {
+            BeAssert(false);
+            return;
+            }
         }
-    else if (DynamicKeyPointType::Updated == type)
+    else if (DynamicKeyPointType::Update == type && m_keyPointsWithDynamicKeyPoint.size() > index)
         m_keyPointsWithDynamicKeyPoint[index] = newDynamicKeyPoint;
+    else
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_dynamicKeyPointSet = true;
     }
 
 //--------------------------------------------------------------------------------------

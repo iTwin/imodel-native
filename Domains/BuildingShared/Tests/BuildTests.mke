@@ -6,7 +6,6 @@
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)Building/ConceptBuilding/privmki/ConceptBuilding.mki
 
 %ifndef TestDir
     %error must define TestDir

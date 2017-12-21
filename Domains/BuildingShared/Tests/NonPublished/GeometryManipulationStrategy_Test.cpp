@@ -1,0 +1,193 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: Tests/NonPublished/GeometryManipulationStrategy_Test.cpp $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <Bentley\BeTest.h>
+#include <DgnPlatform\DgnPlatformApi.h>
+#include <BuildingShared/BuildingSharedApi.h>
+#include "BuildingSharedTestFixtureBase.h"
+
+BEGIN_BUILDING_SHARED_NAMESPACE
+
+struct GeometryManipulationStrategyTests : public BuildingSharedTestFixtureBase
+    {
+    struct SUT : public GeometryManipulationStrategy
+        {};
+    };
+
+END_BUILDING_SHARED_NAMESPACE
+USING_NAMESPACE_BUILDING_SHARED
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, SetDynamicKeyPoint_Insert_Appended)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
+    sut->SetDynamicKeyPoint({1,2,3}, 0, GeometryManipulationStrategyBase::DynamicKeyPointType::Insert);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, SetDynamicKeyPoint_Insert)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,2,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    
+    sut->SetDynamicKeyPoint({4,5,6}, 0, GeometryManipulationStrategyBase::DynamicKeyPointType::Insert);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({4,5,6}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({1,2,3}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, SetDynamicKeyPoint_Update)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,1,1});
+    sut->AppendKeyPoint({2,2,2});
+    sut->AppendKeyPoint({3,3,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+
+    sut->SetDynamicKeyPoint({4,4,4}, 1, GeometryManipulationStrategyBase::DynamicKeyPointType::Update);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({4,4,4}));
+    ASSERT_TRUE(sut->GetKeyPoints()[2].AlmostEqual({3,3,3}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, ResetDynamicKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,1,1});
+    sut->AppendKeyPoint({2,2,2});
+    sut->AppendKeyPoint({3,3,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+    sut->SetDynamicKeyPoint({4,4,4}, 1, GeometryManipulationStrategyBase::DynamicKeyPointType::Update);
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet());
+    sut->ResetDynamicKeyPoint();
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({2,2,2}));
+    ASSERT_TRUE(sut->GetKeyPoints()[2].AlmostEqual({3,3,3}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, AppendKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
+    sut->AppendKeyPoint({1,2,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,2,3}));
+
+    sut->AppendKeyPoint({4,5,6});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,2,3}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({4,5,6}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, InsertKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,1,1});
+    sut->AppendKeyPoint({2,2,2});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+
+    sut->InsertKeyPoint({3,3,3}, 1);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({3,3,3}));
+    ASSERT_TRUE(sut->GetKeyPoints()[2].AlmostEqual({2,2,2}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, InsertKeyPoint_Append)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,1,1});
+    sut->AppendKeyPoint({2,2,2});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+
+    sut->InsertKeyPoint({3,3,3}, 2);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({2,2,2}));
+    ASSERT_TRUE(sut->GetKeyPoints()[2].AlmostEqual({3,3,3}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, ReplaceKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,1,1});
+    sut->AppendKeyPoint({2,2,2});
+    sut->AppendKeyPoint({3,3,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+
+    sut->ReplaceKeyPoint({4,4,4}, 1);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({4,4,4}));
+    ASSERT_TRUE(sut->GetKeyPoints()[2].AlmostEqual({3,3,3}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, PopKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,1,1});
+    sut->AppendKeyPoint({2,2,2});
+    sut->AppendKeyPoint({3,3,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+
+    sut->PopKeyPoint();
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({2,2,2}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, RemoveKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+    sut->AppendKeyPoint({1,1,1});
+    sut->AppendKeyPoint({2,2,2});
+    sut->AppendKeyPoint({3,3,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 3);
+
+    sut->RemoveKeyPoint(1);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({3,3,3}));
+    }

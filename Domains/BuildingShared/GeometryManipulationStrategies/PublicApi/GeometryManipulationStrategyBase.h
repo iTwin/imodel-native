@@ -38,8 +38,8 @@ struct GeometryManipulationStrategyBase : RefCountedBase
     {
     enum DynamicKeyPointType
         {
-        Inserted = 0,
-        Updated
+        Insert = 0,
+        Update
         };
 
     private:
@@ -62,11 +62,11 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         virtual void _ResetDynamicKeyPoint() = 0;
 
     public:
-        bvector<DPoint3d> const& GetKeyPoints() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> const& GetKeyPoints() const;
 
-        bool IsDynamicKeyPointSet() const;
-        void SetDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index, DynamicKeyPointType type);
-        void ResetDynamicKeyPoint();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsDynamicKeyPointSet() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index, DynamicKeyPointType type);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ResetDynamicKeyPoint();
     };
 
 END_BUILDING_SHARED_NAMESPACE

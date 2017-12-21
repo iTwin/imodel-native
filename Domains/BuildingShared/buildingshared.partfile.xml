@@ -59,11 +59,16 @@
 
   <Part Name="BuildingSharedBundle">
     <SubPart PartName="BuildingUtils"/>
+    <SubPart PartName="GeometryManipulationStrategies"/>
   </Part>
 
     <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke">
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
     
   <Part Name="BuildingShared-Tested">
