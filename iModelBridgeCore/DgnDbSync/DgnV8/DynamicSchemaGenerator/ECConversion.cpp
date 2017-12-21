@@ -2386,8 +2386,13 @@ void DynamicSchemaGenerator::ValidateSchemas(bvector<BECN::ECSchemaCP>& imported
             BentleyApi::ECN::ECClassCP ecClass = importedSchema->GetClassCP(Utf8String(v8class->GetName().c_str()).c_str());
             if (nullptr == ecClass)
                 {
-                LOG.warningv("Unable to find entity class %s in imported schema", Utf8String(v8class->GetFullName()).c_str());
-                continue;
+                Utf8PrintfString aspectName("%s%s", Utf8String(v8class->GetName().c_str()).c_str(), BIS_CLASS_ElementAspect);
+                ecClass = importedSchema->GetClassCP(aspectName.c_str());
+                if (nullptr == ecClass)
+                    {
+                    LOG.warningv("Unable to find entity class %s in imported schema", Utf8String(v8class->GetFullName()).c_str());
+                    continue;
+                    }
                 }
             for (auto& v8prop : v8class->GetProperties(true))
                 {
