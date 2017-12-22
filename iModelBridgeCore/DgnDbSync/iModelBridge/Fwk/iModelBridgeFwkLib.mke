@@ -36,6 +36,8 @@ $(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(Regist
 
 $(o)cpl_spawn$(oext): $(RegistryDir)cpl_spawn.cpp $(RegistryDir)cpl_spawn.h ${MultiCompileDepends}
 
+$(o)Decrypt$(oext): $(baseDir)Decrypt.cpp $(baseDir)Decrypt.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -61,6 +63,10 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+
+%if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+LINKER_LIBRARIES  + Crypt32.lib
+%endif
 
 %include $(sharedMki)linkLibrary.mki
 

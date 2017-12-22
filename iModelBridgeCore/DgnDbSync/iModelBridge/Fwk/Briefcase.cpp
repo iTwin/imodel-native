@@ -11,6 +11,7 @@
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include "Decrypt.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_TASKS
@@ -70,7 +71,23 @@ SERVER:\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\
     --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
+    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted. \n\
     ");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            getNeedsPasswordDecryptionFromEnv()
+    {
+    CharCP envValue = getenv("BAS_ShouldDataProtectBridgeCredentials");
+    if (NULL == envValue)
+        return false;
+
+    if (0 == BeStringUtilities::Stricmp("1", envValue))
+        return true;
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,6 +95,7 @@ SERVER:\n\
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
+    bool needsDecryption = getNeedsPasswordDecryptionFromEnv();
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--server", 8))
@@ -142,11 +160,28 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-credentials-isEncrypted"))
+            {
+            needsDecryption = true;
+            continue;
+            }
+
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized server argument\n", argv[iArg]);
         return BSIERROR;
         }
 
+    if (needsDecryption)
+        {
+        Utf8String userName;
+        CryptoHelper::DecryptString(userName, m_credentials.GetUsername());
+
+        Utf8String password;
+        CryptoHelper::DecryptString(password, m_credentials.GetPassword());
+        
+        m_credentials.SetUsername(userName);
+        m_credentials.SetPassword(password);
+        }
     return BSISUCCESS;
     }
 
