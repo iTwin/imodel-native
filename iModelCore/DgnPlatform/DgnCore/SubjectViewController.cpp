@@ -28,7 +28,8 @@ template<typename T> static void applyToTileTree(DgnViewportR vp, DgnModelId con
     {
     auto target = vp.GetRenderTarget();
     auto system = nullptr != target ? &target->GetSystem() : nullptr;
-    BeAssert(nullptr != system);
+    if (nullptr == system) // typically, because the viewport is being destroyed...
+        return;
 
     auto model = vp.GetViewController().GetDgnDb().Models().Get<SpatialModel>(modelId);
     auto tree = model.IsValid() ? model->GetTileTree(system) : nullptr;
