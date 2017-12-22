@@ -1047,7 +1047,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, FirstPropertyNodeChildre
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
     
-    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value(10000000000), false);
+    TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value((uint64_t)10000000000), false);
     propertyGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*propertyGroupingNode, false);
     NavNodeExtendedData propertyGroupingNodeExtendedData(*propertyGroupingNode);
