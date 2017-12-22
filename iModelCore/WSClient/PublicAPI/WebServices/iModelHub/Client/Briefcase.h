@@ -52,6 +52,8 @@ private:
                                                int delay = 0);
 
     RevisionStatus AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets, ICancellationTokenPtr cancellationToken = nullptr) const;
+    RevisionStatus MergeChangeSets(ChangeSets::iterator begin, ChangeSets::iterator end, RevisionManagerR changeSetManager, ICancellationTokenPtr cancellationToken) const;
+    RevisionStatus ReverseChangeSets(ChangeSets::reverse_iterator rbegin, ChangeSets::reverse_iterator rend, RevisionManagerR changeSetManager, ICancellationTokenPtr cancellationToken) const;
 
     void CheckCreatingChangeSet(ICancellationTokenPtr cancellationToken = nullptr) const;
     void WaitForChangeSetEvent(ICancellationTokenPtr cancellationToken = nullptr) const;

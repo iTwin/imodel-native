@@ -86,18 +86,6 @@ enum CodeState : uint8_t
     };
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2017
-//---------------------------------------------------------------------------------------
-void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector)
-    {
-    pointersVector.clear();
-    for (auto changeSetPtr : changeSets)
-        {
-        pointersVector.push_back(changeSetPtr.get());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
 CodeLockSetTaskPtr QueryCodesLocksById(Briefcase& briefcase, bool byBriefcaseId, DgnCodeSet& codes, LockableIdSet& ids)

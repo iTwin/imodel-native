@@ -323,23 +323,30 @@ BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfo
 BriefcasePtr IntegrationTestsBase::InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount)
     {
     BriefcasePtr briefcase = AcquireBriefcase(client, imodel);
+    CreateAndPushNewChangeSets (*briefcase, changeSetCount);
+    return briefcase;
+    }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis            06/2016
+//---------------------------------------------------------------------------------------
+void IntegrationTestsBase::CreateAndPushNewChangeSets(BriefcaseR briefcase, uint32_t changeSetCount)
+    {
     Utf8String modelName;
     BeSQLite::BeGuid guid;
     guid.Create();
     modelName.Sprintf("AddChangeSetsModel%s", guid.ToString());
-    DgnDbR db = briefcase->GetDgnDb();
+    DgnDbR db = briefcase.GetDgnDb();
     DgnModelPtr model = CreateModel(modelName.c_str(), db);
     for (uint32_t i = 0; i < changeSetCount; ++i)
         {
         CreateElement(*model, false);
         BeSQLite::DbResult saveResult = db.SaveChanges();
         EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, saveResult);
-        auto result = briefcase->PullMergeAndPush()->GetResult();
+        auto result = briefcase.PullMergeAndPush()->GetResult();
         EXPECT_SUCCESS(result);
         }
     db.BriefcaseManager().Relinquish();
-    return briefcase;
     }
 
 //---------------------------------------------------------------------------------------
@@ -443,4 +450,16 @@ DgnCodeInfo IntegrationTestsBase::CreateCodeUsed(DgnCodeCR code, Utf8StringCR ch
 DgnCode IntegrationTestsBase::MakeModelCode(Utf8CP name, DgnDbR db)
     {
     return PhysicalPartition::CreateCode(*db.Elements().GetRootSubject(), name);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2017
+//---------------------------------------------------------------------------------------
+void IntegrationTestsBase::ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector)
+    {
+    pointersVector.clear();
+    for (auto changeSetPtr : changeSets)
+        {
+        pointersVector.push_back(changeSetPtr.get());
+        }
     }

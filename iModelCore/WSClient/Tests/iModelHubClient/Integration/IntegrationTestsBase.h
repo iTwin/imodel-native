@@ -36,6 +36,7 @@ protected:
     Request::ProgressCallback CreateProgressCallback();
     void CheckProgressNotified();
     void CheckNoProgress();
+    static void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector);
 public:
     virtual void SetUp() override;
     virtual void TearDown() override;
@@ -52,6 +53,7 @@ public:
     void DeleteiModel(Utf8StringCR projectId, ClientCR client, iModelInfoCR imodel);
     BriefcasePtr AcquireBriefcase(ClientCR client, iModelInfoCR imodelInfo, bool pull = false, bool forceDomainUpgrade = false);
     BriefcasePtr InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount);
+    void CreateAndPushNewChangeSets(BriefcaseR briefcase, uint32_t changeSetCount);
     BeSQLite::BeGuid ReplaceSeedFile(iModelConnectionPtr imodelConnection, DgnDbR db);
     Utf8String PushPendingChanges(Briefcase& briefcase, bool relinquishLocksCodes = false);
 

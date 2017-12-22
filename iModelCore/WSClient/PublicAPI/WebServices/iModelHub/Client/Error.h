@@ -107,6 +107,7 @@ public:
         MergeError = 500,
         ChangeSetManagerError,
         MergeSchemaChangesOnOpen,
+        ReverseOrReinstateSchemaChangesOnOpen,
 
         AzureError,
         DgnDbError
