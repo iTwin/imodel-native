@@ -58,10 +58,10 @@ public:
 
     BEHTTP_EXPORT static bool IsNetworkActive();
 
-    // Use percent escape for URLs
-    BEHTTP_EXPORT static Utf8String EscapeString(Utf8StringCR inStr);
-    // Unsecape percent encoding
-    BEHTTP_EXPORT static Utf8String UnescapeString (Utf8StringCR inStr);
+    // DEPRECATED, use BeUri::EscapeString()! Use percent escape for URLs
+    static Utf8String EscapeString(Utf8StringCR str) { return BeUri::EscapeString(str); } 
+    // DEPRECATED, use BeUri::UnescapeString()! Unsecape percent encoding
+    static Utf8String UnescapeString (Utf8StringCR str) { return BeUri::UnescapeString(str); }
 
     //! Handle date formats specified in RFC 822 (updated by RFC 1123), RFC 850 (obsoleted by RFC 1036) and ANSI C's asctime() format.
     BEHTTP_EXPORT static BentleyStatus HttpDateToUnixMillis(uint64_t& unixMilliseconds, Utf8CP dateStr);

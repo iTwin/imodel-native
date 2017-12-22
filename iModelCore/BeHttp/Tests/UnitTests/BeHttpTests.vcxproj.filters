@@ -28,6 +28,9 @@
     <ClCompile Include="Published\HttpErrorTests.cpp" />
     <ClCompile Include="Published\HttpResponseTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
+    <ClCompile Include="Published\HttpProxyTests.cpp" />
+    <ClCompile Include="Published\HttpRequestTests.cpp" />
+    <ClCompile Include="Published\BeUriTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\BaseMockHttpHandlerTest.h" />

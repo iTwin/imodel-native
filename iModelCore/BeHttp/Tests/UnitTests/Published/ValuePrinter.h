@@ -25,6 +25,8 @@ USING_NAMESPACE_BENTLEY_HTTP
 #define BEHTTP_ENABLE_DUPLICATING_SYMBOLS
 #endif
 
+// #define BEHTTP_ENABLE_DUPLICATING_SYMBOLS
+
 #ifdef BEHTTP_ENABLE_DUPLICATING_SYMBOLS
 // Http
 std::ostream& operator << (std::ostream &o, CredentialsCR creds);

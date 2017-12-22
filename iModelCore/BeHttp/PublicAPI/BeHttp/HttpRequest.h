@@ -12,6 +12,7 @@
 #include <functional>
 
 #include <BeHttp/Http.h>
+#include <BeHttp/BeUri.h>
 #include <BeHttp/CompressionOptions.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/CancellationToken.h>
@@ -21,7 +22,6 @@
 #include <folly/futures/Future.h>
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
-
 
 //=======================================================================================
 // @bsiclass                                                    Vincas.Razma      07/16
@@ -62,9 +62,7 @@ private:
     CompressionOptions m_compressionOptions;
 
 public:
-    BEHTTP_EXPORT Utf8String EscapeUnsafeSymbolsInUrl(Utf8StringCR url);
-
-    BEHTTP_EXPORT Request(Utf8StringCR url, Utf8StringCR method = "GET", IHttpHandlerPtr customHandler = nullptr);
+    BEHTTP_EXPORT Request(Utf8String url, Utf8String method = "GET", IHttpHandlerPtr customHandler = nullptr);
 
     HttpRequestHeadersR  GetHeaders(){return m_requestHeaders;}
     HttpRequestHeadersCR GetHeaders() const {return m_requestHeaders;}
@@ -80,7 +78,7 @@ public:
     bool GetValidateCertificate() const {return m_validateCertificate;}
 
     // Set proxy for request. Pass empty string to not use proxy
-    void SetProxy(Utf8StringCR proxyUrl) {m_proxyUrl = EscapeUnsafeSymbolsInUrl(proxyUrl);}
+    void SetProxy(Utf8String proxyUrl) {m_proxyUrl = proxyUrl; BeUri::EscapeUnsafeCharactersInUrl(m_proxyUrl); }
     Utf8StringCR GetProxy() const {return m_proxyUrl;}
 
     // Set credentials for an authenticating proxy

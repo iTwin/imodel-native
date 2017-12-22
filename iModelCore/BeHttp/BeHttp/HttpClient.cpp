@@ -87,28 +87,6 @@ bool HttpClient::IsNetworkActive()
     return s_tasksInProgressCount > 0;
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Pavan.Emani     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HttpClient::EscapeString(Utf8StringCR inStr)
-    {
-    Utf8P escapedStr = curl_escape(inStr.c_str(), (int) inStr.length());
-    Utf8String outStr = escapedStr;
-    curl_free(escapedStr);
-    return outStr;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Jonathan Que     02/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String HttpClient::UnescapeString(Utf8StringCR inStr)
-    {
-    Utf8P unescapedStr = curl_unescape(inStr.c_str(), (int) inStr.length());
-    Utf8String outStr = unescapedStr;
-    curl_free(unescapedStr);
-    return outStr;
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------

@@ -47,9 +47,9 @@ public:
     //! Create empty proxy
     HttpProxy() = default;
     //! Create proxy with URL
-    HttpProxy(Utf8StringCR proxyUrl) : m_proxyUrl(proxyUrl) {}
+    HttpProxy(Utf8String proxyUrl) : HttpProxy(proxyUrl, Credentials()) {}
     //! Create proxy with URL and credentials
-    HttpProxy(Utf8StringCR proxyUrl, CredentialsCR credentials) : m_proxyUrl(proxyUrl), m_credentials(credentials) {}
+    BEHTTP_EXPORT HttpProxy(Utf8String proxyUrl, Credentials credentials);
 
     //! Check if proxy is configured
     BEHTTP_EXPORT bool IsValid() const;
@@ -61,8 +61,8 @@ public:
     void SetCredentials(CredentialsCR credentials) { m_credentials = credentials; }
 
     Utf8StringCR GetProxyUrl() const { return m_proxyUrl; }
-    void SetProxyUrl(Utf8StringCR proxyUrl) { m_proxyUrl = proxyUrl; }
-    BEHTTP_EXPORT void SetProxyServer(Utf8StringCR server, int port);
+    BEHTTP_EXPORT void SetProxyUrl(Utf8String proxyUrl);
+    BEHTTP_EXPORT void SetProxyServer(Utf8StringCR hostname, int port);
 
     //! Resolve proxies for given URL. Will use available information in proxy configuration - proxy URL or PAC script.
     //! @param[in] requestUrl HTTP request URL to get proxy for.
@@ -71,7 +71,7 @@ public:
     BEHTTP_EXPORT BentleyStatus GetProxiesForUrl(Utf8StringCR requestUrl, bvector<HttpProxy>& proxiesOut) const;
 
     //! Set Proxy Access Configuration script URL to use for proxy URLs
-    BEHTTP_EXPORT void SetPacUrl(Utf8StringCR pacUrl);
+    BEHTTP_EXPORT void SetPacUrl(Utf8String pacUrl);
 
     //! Get current system proxy configuration. Can be used with SetDefaultProxy() to set it for process.
     BEHTTP_EXPORT static HttpProxy GetSystemProxy();

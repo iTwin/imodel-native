@@ -25,6 +25,7 @@
 
 #include "../../../BeHttp/Backdoor.h"
 #include "../../UnitTests/Published/FSTest.h"
+#include "../../UnitTests/Published/WebTestsHelper.h"
 #include "../Scripts/ScriptRunner.h"
 #include "AsyncTestCheckpoint.h"
 
@@ -56,7 +57,7 @@ struct HttpRequestTests : ::testing::Test
         {
         Reset();
         // Enable full logging with LOG_TRACE if needed
-        //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, NativeLogging::LOG_TRACE);
+        //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
         }
     void TearDown()
         {
@@ -285,7 +286,7 @@ TEST_F(HttpRequestTests, Perform_RequestCouldNotConnect_SetsEffectiveUrlToReques
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EncodesUnsafeCharactersAndExecutesSuccessfully)
+TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EscapesUnsafeCharactersAndExecutesSuccessfully)
     {
     //2014. Folowing urls with special symbols tested on browsers (# and % not tested )
     //  query: http://httpbin.org/ip?<>"{}|\^~[]`
@@ -304,23 +305,22 @@ TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EncodesUnsafeCharactersAn
     //CURL:
     //  Removes everything after #, does not encode anything. Some have special meaning - [], {} for using multiple urls in command line
 
-    Request request(R"(http://httpbin.org/ip?<>"#{}|\^[]`)");
+    Request request(TEST_URL_UNSAFE_CHARS);
 
     Response response = request.Perform().get();
 
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
-    EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", response.GetEffectiveUrl().c_str());
+    EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_ESCAPED, response.GetEffectiveUrl().c_str());
     }
-
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEncodedCharactersInUrl)
+TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEscapedCharactersInUrl)
     {
-    Request request(R"(http://httpbin.org/ip?<>"#{}|\^[]`)");
-
-    EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", request.GetUrl().c_str());
+    Request request(TEST_URL_UNSAFE_CHARS);
+    EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_ESCAPED, request.GetUrl().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -329,7 +329,6 @@ TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEncodedCharactersIn
 TEST_F(HttpRequestTests, GetUrl_TextAsUrlPassed_ReturnsSameText)
     {
     Request request("test url");
-
     EXPECT_STREQ("test url", request.GetUrl().c_str());
     }
 

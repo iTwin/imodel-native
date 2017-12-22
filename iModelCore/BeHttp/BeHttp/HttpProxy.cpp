@@ -43,6 +43,16 @@ BeMutex HttpProxy::s_defaultProxyMutex;
 HttpProxy HttpProxy::s_defaultProxy;
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpProxy::HttpProxy(Utf8String proxyUrl, Credentials credentials) :
+    m_proxyUrl(proxyUrl),
+    m_credentials(credentials) 
+    {
+    BeUri::EscapeUnsafeCharactersInUrl(m_proxyUrl);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Travis.Cobbs           09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpProxy HttpProxy::GetDefaultProxy()
@@ -102,7 +112,7 @@ Utf8String HttpProxy::ToString() const
         str += "URL:" + m_proxyUrl + " ";
 
     if (m_credentials.IsValid())
-        str += "With user:'" + m_credentials.GetUsername();
+        str += "With user:" + m_credentials.GetUsername();
 
     if (str.empty())
         str = "EMPTY";
@@ -129,7 +139,7 @@ BentleyStatus HttpProxy::GetProxiesForUrl(Utf8StringCR requestUrl, bvector<HttpP
             if (nullptr != body)
                 m_pacScript = body->AsString();
             m_pacResponseTask = nullptr;
-            LOG.infov("HttpProxy: PAC file '%s' downloaded and loaded", pacResponse.GetEffectiveUrl().c_str());
+            LOG.infov("HttpProxy: PAC file '%s' downloaded and loaded", pacResponse.GetEffectiveUrl().c_str()); // TODO: this is shown for each HttpProxy copy
             }
         else
             {
@@ -496,23 +506,37 @@ static Utf8String GetProxyServerWin32(bvector<Utf8String> const& hosts, Utf8CP p
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Travis.Cobbs           09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpProxy::SetPacUrl(Utf8StringCR pacUrl)
+void HttpProxy::SetPacUrl(Utf8String pacUrl)
     {
-    if (pacUrl != m_pacUrl)
-        {
-        m_pacScript.clear();
-        m_pacUrl = pacUrl;
-        m_pacResponseTask = nullptr;
-        DownloadPacScriptIfNeeded();
-        }
+    if (pacUrl == m_pacUrl)
+        return;
+        
+    m_pacScript.clear();
+    m_pacUrl = pacUrl;
+    m_pacResponseTask = nullptr;
+    DownloadPacScriptIfNeeded();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Travis.Cobbs           09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpProxy::SetProxyServer(Utf8StringCR server, int port)
+void HttpProxy::SetProxyServer(Utf8StringCR hostname, int port)
     {
-    SetProxyUrl(Utf8PrintfString("http://%s:%d", server.c_str(), port));
+    if (hostname.empty())
+        {
+        SetProxyUrl("");
+        return;
+        }
+    SetProxyUrl(Utf8PrintfString("http://%s:%d", hostname.c_str(), port));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpProxy::SetProxyUrl(Utf8String proxyUrl)
+    {
+    m_proxyUrl = proxyUrl;
+    BeUri::EscapeUnsafeCharactersInUrl(m_proxyUrl);
     }
 
 /*--------------------------------------------------------------------------------------+

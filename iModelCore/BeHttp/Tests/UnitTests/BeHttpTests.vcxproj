@@ -24,6 +24,7 @@
     <ClCompile Include="Published\AuthenticationChallengeValueTests.cpp" />
     <ClCompile Include="Published\AuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Published\BeUriTests.cpp" />
     <ClCompile Include="Published\FSTest.cpp" />
     <ClCompile Include="Published\HttpBody\HttpBinaryBodyTests.cpp" />
     <ClCompile Include="Published\HttpBody\HttpCompressedBodyTests.cpp" />
@@ -34,6 +35,8 @@
     <ClCompile Include="Published\HttpClientTests.cpp" />
     <ClCompile Include="Published\HttpErrorTests.cpp" />
     <ClCompile Include="Published\HttpHeadersTests.cpp" />
+    <ClCompile Include="Published\HttpProxyTests.cpp" />
+    <ClCompile Include="Published\HttpRequestTests.cpp" />
     <ClCompile Include="Published\HttpResponseTests.cpp" />
     <ClCompile Include="Published\MockHttpHandler.cpp" />
     <ClCompile Include="Published\ProxyHttpHandlerTests.cpp" />
