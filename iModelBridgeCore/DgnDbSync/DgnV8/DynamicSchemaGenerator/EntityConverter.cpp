@@ -659,7 +659,14 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
                 context.ReportIssue(Converter::IssueSeverity::Warning, "BISIfication required changing relationship strength of ECRelationshipClass '%s' from '%s' to '%s'.",
                                     inputClass.GetFullName(), oldStrengthStr, newStrengthStr);
 
-                inputClass.SetStrength(newStrength);
+                if (ECObjectsStatus::Success != inputClass.SetStrength(newStrength))
+                    {
+                    if (inputClass.HasBaseClasses())
+                        {
+                        inputClass.RemoveBaseClasses();
+                        inputClass.SetStrength(newStrength);
+                        }
+                    }
                 }
 
             if (inputClass.GetStrengthDirection() != baseClass->GetStrengthDirection())
