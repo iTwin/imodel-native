@@ -3662,6 +3662,13 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     DRange3d    rootRange;
     WriteModelMetadataTree (rootRange, modelRoot, rootTile, maxDepth);
 
+    // The modelRanges come from initial tile ranges which may be slopply - particularly
+    // when coming from reality models.   Reset them here to the actual published ranges
+    // which are generally more accurate (improves classifier fit (Berkeley Campus)).
+    if (!rootRange.IsNull())
+        m_modelRanges[rootTile.GetModel().GetModelId()] = ModelRange(rootRange, false);
+
+
     val[JSON_Root] = std::move(modelRoot);
 
     if (rootTile.GetModel().IsSpatialModel())
