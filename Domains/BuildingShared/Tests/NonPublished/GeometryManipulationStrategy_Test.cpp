@@ -29,7 +29,7 @@ TEST_F(GeometryManipulationStrategyTests, SetDynamicKeyPoint_Insert_Appended)
     GeometryManipulationStrategyPtr sut = new SUT();
 
     ASSERT_EQ(sut->GetKeyPoints().size(), 0);
-    sut->SetDynamicKeyPoint({1,2,3}, 0, GeometryManipulationStrategyBase::DynamicKeyPointType::Insert);
+    sut->InsertDynamicKeyPoint({1,2,3}, 0);
     ASSERT_EQ(sut->GetKeyPoints().size(), 1);
     ASSERT_TRUE(sut->IsDynamicKeyPointSet());
     }
@@ -43,7 +43,7 @@ TEST_F(GeometryManipulationStrategyTests, SetDynamicKeyPoint_Insert)
     sut->AppendKeyPoint({1,2,3});
     ASSERT_EQ(sut->GetKeyPoints().size(), 1);
     
-    sut->SetDynamicKeyPoint({4,5,6}, 0, GeometryManipulationStrategyBase::DynamicKeyPointType::Insert);
+    sut->InsertDynamicKeyPoint({4,5,6}, 0);
     ASSERT_EQ(sut->GetKeyPoints().size(), 2);
     ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({4,5,6}));
     ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({1,2,3}));
@@ -60,7 +60,7 @@ TEST_F(GeometryManipulationStrategyTests, SetDynamicKeyPoint_Update)
     sut->AppendKeyPoint({3,3,3});
     ASSERT_EQ(sut->GetKeyPoints().size(), 3);
 
-    sut->SetDynamicKeyPoint({4,4,4}, 1, GeometryManipulationStrategyBase::DynamicKeyPointType::Update);
+    sut->UpdateDynamicKeyPoint({4,4,4}, 1);
     ASSERT_EQ(sut->GetKeyPoints().size(), 3);
     ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
     ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({4,4,4}));
@@ -79,7 +79,7 @@ TEST_F(GeometryManipulationStrategyTests, ResetDynamicKeyPoint)
     ASSERT_EQ(sut->GetKeyPoints().size(), 3);
 
     ASSERT_FALSE(sut->IsDynamicKeyPointSet());
-    sut->SetDynamicKeyPoint({4,4,4}, 1, GeometryManipulationStrategyBase::DynamicKeyPointType::Update);
+    sut->UpdateDynamicKeyPoint({4,4,4}, 1);
     ASSERT_TRUE(sut->IsDynamicKeyPointSet());
     sut->ResetDynamicKeyPoint();
     ASSERT_FALSE(sut->IsDynamicKeyPointSet());
@@ -114,7 +114,7 @@ TEST_F(GeometryManipulationStrategyTests, AppendKeyPoint_ResetsInsertDynamicKeyP
     GeometryManipulationStrategyPtr sut = new SUT();
 
     sut->AppendKeyPoint({1,1,1});
-    sut->SetDynamicKeyPoint({2,2,2}, 1, GeometryManipulationStrategyBase::DynamicKeyPointType::Insert);
+    sut->InsertDynamicKeyPoint({2,2,2}, 1);
     ASSERT_EQ(sut->GetKeyPoints().size(), 2);
     ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
     ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({2,2,2}));
@@ -132,7 +132,7 @@ TEST_F(GeometryManipulationStrategyTests, AppendKeyPoint_ResetsUpdateDynamicKeyP
     GeometryManipulationStrategyPtr sut = new SUT();
 
     sut->AppendKeyPoint({1,1,1});
-    sut->SetDynamicKeyPoint({2,2,2}, 0, GeometryManipulationStrategyBase::DynamicKeyPointType::Update);
+    sut->UpdateDynamicKeyPoint({2,2,2}, 0);
     ASSERT_EQ(sut->GetKeyPoints().size(), 1);
     ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({2,2,2}));
     sut->AppendKeyPoint({3,3,3});

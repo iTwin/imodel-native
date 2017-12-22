@@ -43,14 +43,36 @@ bool GeometryManipulationStrategyBase::IsDynamicKeyPointSet() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void GeometryManipulationStrategyBase::SetDynamicKeyPoint
+void GeometryManipulationStrategyBase::AppendDynamicKeyPoint
 (
-    DPoint3dCR newDynamicKeyPoint, 
-    size_t index, 
-    DynamicKeyPointType type
+    DPoint3dCR newDynamicKeyPoint
 )
     {
-    _SetDynamicKeyPoint(newDynamicKeyPoint, index, type);
+    _AppendDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::InsertDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint,
+    size_t index
+)
+    {
+    _InsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::UpdateDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint,
+    size_t index
+)
+    {
+    _UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
     }
 
 //--------------------------------------------------------------------------------------
