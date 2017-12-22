@@ -14,17 +14,17 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
+struct CurvePrimitiveManipulationStrategy : public CurveVectorManipulationStrategy
     {
-    DEFINE_T_SUPER(GeometryManipulationStrategy)
+    DEFINE_T_SUPER(CurveVectorManipulationStrategy)
 
     protected:
         CurvePrimitiveManipulationStrategy() : T_Super() {}
 
-        virtual ICurvePrimitivePtr _Finish() const = 0;
-
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const override;
+        virtual ICurvePrimitivePtr _FinishPrimitive() const = 0;
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr Finish() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -46,7 +46,7 @@ TEST_F(LineManipulationStrategyTests, Finish_CreatesLine)
 
     sut->AppendKeyPoint({1,1,1});
     sut->AppendKeyPoint({2,2,2});
-    ICurvePrimitivePtr linePrimitive = sut->Finish();
+    ICurvePrimitivePtr linePrimitive = sut->FinishPrimitive();
     ASSERT_TRUE(linePrimitive.IsValid());
     DSegment3d segment;
     ASSERT_TRUE(linePrimitive->TryGetLine(segment));

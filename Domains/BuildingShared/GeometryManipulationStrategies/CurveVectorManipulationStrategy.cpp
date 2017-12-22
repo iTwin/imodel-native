@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/CurvePrimitiveManipulationStrategy.cpp $
+|     $Source: GeometryManipulationStrategies/CurveVectorManipulationStrategy.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,15 +12,16 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-CurveVectorPtr CurvePrimitiveManipulationStrategy::_Finish() const
+CurveVectorPtr CurveVectorManipulationStrategy::_Finish() const
     {
-    return CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, _FinishPrimitive());
+    BeAssert(false && "Not implemented.");
+    return nullptr;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-ICurvePrimitivePtr CurvePrimitiveManipulationStrategy::FinishPrimitive() const
+CurveVectorPtr CurveVectorManipulationStrategy::Finish() const
     {
-    return _FinishPrimitive();
+    return _Finish();
     }

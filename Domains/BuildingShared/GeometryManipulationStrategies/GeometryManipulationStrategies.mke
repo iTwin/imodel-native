@@ -27,6 +27,8 @@ $(o)GeometryManipulationStrategyBase$(oext) : $(_MakeFilePath)GeometryManipulati
 
 $(o)GeometryManipulationStrategy$(oext) : $(_MakeFilePath)GeometryManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryManipulationStrategy.h
 
+$(o)CurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)CurveVectorManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurveVectorManipulationStrategy.h
+
 $(o)CurvePrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)CurvePrimitiveManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitiveManipulationStrategy.h
 
 $(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
