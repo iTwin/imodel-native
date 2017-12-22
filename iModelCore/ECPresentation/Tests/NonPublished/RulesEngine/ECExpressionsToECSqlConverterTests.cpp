@@ -166,7 +166,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Backwar
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase)
+TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Forward)
     {
     Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Forward\", \"TestSchema2:RelatedClassName\", \"SomePropertyName\")");
     ASSERT_STREQ("("
@@ -174,6 +174,22 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase)
         "FROM [TestSchema1].[RelationshipName] relationship, [TestSchema2].[RelatedClassName] related "
         "WHERE [relationship].[SourceECClassId] = [this].[ECClassId] AND [relationship].[SourceECInstanceId] = [this].[ECInstanceId] "
         "AND [relationship].[TargetECClassId] = [related].[ECClassId] AND [relationship].[TargetECInstanceId] = [related].[ECInstanceId] "
+        "LIMIT 1"
+        ")", 
+        ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Backward)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("this.GetRelatedValue(\"TestSchema1:RelationshipName\", \"Backward\", \"TestSchema2:RelatedClassName\", \"SomePropertyName\")");
+    ASSERT_STREQ("("
+        "SELECT [related].[SomePropertyName] "
+        "FROM [TestSchema1].[RelationshipName] relationship, [TestSchema2].[RelatedClassName] related "
+        "WHERE [relationship].[TargetECClassId] = [this].[ECClassId] AND [relationship].[TargetECInstanceId] = [this].[ECInstanceId] "
+        "AND [relationship].[SourceECClassId] = [related].[ECClassId] AND [relationship].[SourceECInstanceId] = [related].[ECInstanceId] "
         "LIMIT 1"
         ")", 
         ecsql.c_str());

@@ -224,7 +224,8 @@ public:
     void SetNodeUncheckedHandler(Handler_OnNodeUnchecked handler) {m_nodeUncheckedHandler = handler;}
     void SetNodeExpandedHandler(Handler_OnNodeExpanded handler) {m_nodeExpandedHandler = handler;}
     void SetNodeCollapsedHandler(Handler_OnNodeCollapsed handler) {m_nodeCollapsedHandler = handler;}
-    
+    void SetAllNodesCollapsedHandler(Handler_OnAllNodesCollapsed handler) {m_allNodesCollapsedHandler = handler;}
+
     void SetContentClassesHandler(Handler_GetContentClasses handler) {m_contentClassesHandler = handler;}
     void SetContentDescriptorHandler(Handler_GetContentDescriptor handler) {m_contentDescriptorHandler = handler;}
     void SetContentHandler(Handler_GetContent handler) {m_contentHandler = handler;}

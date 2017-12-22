@@ -42,7 +42,6 @@
     <ClCompile Include="NonPublished\RulesEngine\ECSchemaHelperTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ExpectedQueriesTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\JsonMessageUpdateRecordsHandlerTests.cpp" />
-    <ClCompile Include="NonPublished\RulesEngine\JsonNavNodeTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\LocalizationTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\MultiSpecificationNodesProviderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests.cpp" />
@@ -56,6 +55,7 @@
     <ClCompile Include="NonPublished\RulesEngine\NavigationQueryTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\NavNodesCacheTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\NavNodesDataSourceTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavNodeTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\NodesProviderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\PresentationManagerImplTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp" />

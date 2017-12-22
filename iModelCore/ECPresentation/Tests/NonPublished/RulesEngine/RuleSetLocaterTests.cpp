@@ -251,6 +251,7 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_NoDirectories)
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create();
     auto rulesets = locater->LocateRuleSets();
     ASSERT_TRUE(rulesets.empty());
+    ASSERT_TRUE(locater->GetRuleSetIds().empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,6 +269,7 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_NonExistingDirectory)
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
     auto rulesets = locater->LocateRuleSets();
     ASSERT_TRUE(rulesets.empty());
+    ASSERT_TRUE(locater->GetRuleSetIds().empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,6 +289,7 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_EmptyDirectory)
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
     auto rulesets = locater->LocateRuleSets();
     ASSERT_TRUE(rulesets.empty());
+    ASSERT_TRUE(locater->GetRuleSetIds().empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,6 +321,7 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsRuleSets)
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(2, rulesets.size());
+    ASSERT_EQ(2, locater->GetRuleSetIds().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -354,6 +358,7 @@ TEST (DirectoryRuleSetLocater, LocateRuleSets_FindsRuleSetsInSubdirectories)
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(list.c_str());
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(2, rulesets.size());
+    ASSERT_EQ(2, locater->GetRuleSetIds().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -480,6 +485,7 @@ TEST(FileRuleSetLocater, LocateRuleSets_NonExistingFile)
     RuleSetLocaterPtr locater = FileRuleSetLocater::Create(path);
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_TRUE(rulesets.empty());
+    ASSERT_TRUE(locater->GetRuleSetIds().empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,6 +503,7 @@ TEST(FileRuleSetLocater, LocateRuleSets_FindsRuleset)
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(1, rulesets.size());
     ASSERT_STREQ("Items", rulesets[0]->GetRuleSetId().c_str());
+    ASSERT_STREQ("Items", locater->GetRuleSetIds()[0].c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,7 +718,8 @@ TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_ConnectionWithoutEmbeddedFile
 
     // validate no rulesets are located if connection doesn't have embedded rulesets.
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
-    ASSERT_EQ(0, rulesets.size());
+    ASSERT_TRUE(rulesets.empty());
+    ASSERT_TRUE(locater->GetRuleSetIds().empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -732,6 +740,29 @@ TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_FindsRuleSet)
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(1, rulesets.size());
     EXPECT_EQ("LocateRuleSets_FindsRuleSet", rulesets[0]->GetRuleSetId());
+    ASSERT_EQ(1, locater->GetRuleSetIds().size());
+    EXPECT_STREQ("LocateRuleSets_FindsRuleSet", locater->GetRuleSetIds()[0].c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_FindsSpecificRuleSetInCache)
+    {
+    // create rulesets
+    PresentationRuleSetPtr ruleset1 = PresentationRuleSet::CreateInstance("LocateRuleSets_FindsRuleSet1", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("LocateRuleSets_FindsRuleSet2", 1, 0, false, "", "", "", false);
+    // embed rulesets
+    m_embedder->Embed(*ruleset1);
+    m_embedder->Embed(*ruleset2);
+    // create ruleset locater
+    RuleSetLocaterPtr locater = EmbeddedRuleSetLocater::Create(*m_connection);
+    // validate 2 ruleset was found in opened connection
+    ASSERT_EQ(2, locater->GetRuleSetIds().size());
+    // find specific ruleset
+    bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets(ruleset1->GetRuleSetId().c_str());
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_STREQ(ruleset1->GetRuleSetId().c_str(), rulesets[0]->GetRuleSetId().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

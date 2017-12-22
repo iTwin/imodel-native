@@ -504,6 +504,24 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Vaiksnoras               12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsAllNodesCollapsedCallbackOnECPresentationThread)
+    {    
+    BeAtomic<bool> wasCalled(false);
+    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
+    m_impl->SetAllNodesCollapsedHandler([&](IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+        {
+        wasCalled.store(true);
+        VERIFY_THREAD_NE(mainThreadId);
+        });
+
+    // request and verify
+    m_manager->NotifyAllNodesCollapsed(s_project->GetECDb(), 1).wait();
+    EXPECT_TRUE(wasCalled.load());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsSaveValueChangeOnMainThread)
