@@ -626,6 +626,7 @@ void ComplexPresentationQuery<TBase>::SelectString(Utf8StringR output, Utf8CP se
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::SelectAll()
     {
+    TBase::InvalidateQueryString();
     m_isSelectAll = true;
     return *this;
     }
@@ -636,6 +637,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::SelectAll()
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::SelectContract(Contract const& contract, Utf8CP prefix)
     {
+    TBase::InvalidateQueryString();
     m_selectContract = &contract;
     m_selectPrefix = prefix;
     TBase::GetResultParametersR().OnContractSelected(contract);
@@ -734,6 +736,7 @@ Utf8String ComplexPresentationQuery<TBase>::CreateSelectClause() const
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(ECClassCR fromClass, bool polymorphic, Utf8CP alias, bool append)
     {
+    TBase::InvalidateQueryString();
     if (!append)
         m_from.clear();
     m_from.push_back(FromClause(fromClass, alias, polymorphic));
@@ -746,6 +749,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(ECClassCR
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(TBase& nestedQuery, Utf8CP alias)
     {
+    TBase::InvalidateQueryString();
     nestedQuery.SetIsOuterQuery(false);
 
     m_nestedQuery = &nestedQuery;
@@ -762,6 +766,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::From(TBase& ne
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP whereClause, BoundQueryValuesListCR bindings, bool append)
     {
+    TBase::InvalidateQueryString();
     if (!m_whereClause.empty() && append)
         {
         m_whereClauseBindings.insert(m_whereClauseBindings.end(), bindings.begin(), bindings.end());
@@ -783,6 +788,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP w
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClass const& relatedClass, bool isOuter, bool append)
     {
+    TBase::InvalidateQueryString();
     RelatedClassPath path;
     path.push_back(relatedClass);
     return Join(path, isOuter, append);
@@ -794,6 +800,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedCl
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClassPath const& path, bool isOuter, bool append)
     {
+    TBase::InvalidateQueryString();
     if (!append)
         m_joins.clear();
 
@@ -812,7 +819,12 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedCl
 // @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause) {m_orderByClause = orderByClause; return *this;}
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause)
+    {
+    TBase::InvalidateQueryString();
+    m_orderByClause = orderByClause; 
+    return *this;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                06/2015
@@ -820,6 +832,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::OrderBy(Utf8CP
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::GroupByContract(Contract const& contract)
     {
+    TBase::InvalidateQueryString();
     m_groupingContract = &contract;
     return *this;
     }
@@ -855,7 +868,12 @@ Utf8String ComplexPresentationQuery<TBase>::CreateGroupByClause() const
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause) {m_havingClause = havingClause; return *this;}
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP havingClause) 
+    {
+    TBase::InvalidateQueryString();
+    m_havingClause = havingClause; 
+    return *this;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                05/2015
@@ -863,6 +881,7 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Having(Utf8CP 
 template<typename TBase>
 ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Limit(uint64_t limit, uint64_t offset)
     {
+    TBase::InvalidateQueryString();
     DELETE_AND_CLEAR(m_limit);
     m_limit = new BoundQueryECValue(ECValue(limit));
     DELETE_AND_CLEAR(m_offset);
@@ -1511,6 +1530,23 @@ BoundQueryValuesList ComplexPresentationQuery<TBase>::_GetBoundValues() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TBase>
+void ComplexPresentationQuery<TBase>::SetBoundValues(BoundQueryValuesListCR bindings)
+    {
+    if (m_whereClauseBindings.size() != bindings.size())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    for (BoundQueryValue const* value : m_whereClauseBindings)
+        DELETE_AND_CLEAR(value);
+    m_whereClauseBindings = bindings;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
@@ -1588,6 +1624,7 @@ void UnionPresentationQuery<TBase>::Init()
 template<typename TBase>
 UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause)
     {
+    TBase::InvalidateQueryString();
     m_orderByClause = orderByClause;
     return *this;
     }
@@ -1598,6 +1635,7 @@ UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::OrderBy(Utf8CP ord
 template<typename TBase>
 UnionPresentationQuery<TBase>& UnionPresentationQuery<TBase>::Limit(uint64_t limit, uint64_t offset)
     {
+    TBase::InvalidateQueryString();
     DELETE_AND_CLEAR(m_limit);
     m_limit = new BoundQueryECValue(ECValue(limit));
     DELETE_AND_CLEAR(m_offset);
@@ -1753,6 +1791,7 @@ void ExceptPresentationQuery<TBase>::Init()
 template<typename TBase>
 ExceptPresentationQuery<TBase>& ExceptPresentationQuery<TBase>::OrderBy(Utf8CP orderByClause)
     {
+    TBase::InvalidateQueryString();
     m_orderByClause = orderByClause;
     return *this;
     }
@@ -1763,6 +1802,7 @@ ExceptPresentationQuery<TBase>& ExceptPresentationQuery<TBase>::OrderBy(Utf8CP o
 template<typename TBase>
 ExceptPresentationQuery<TBase>& ExceptPresentationQuery<TBase>::Limit(uint64_t limit, uint64_t offset)
     {
+    TBase::InvalidateQueryString();
     DELETE_AND_CLEAR(m_limit);
     m_limit = new BoundQueryECValue(ECValue(limit));
     DELETE_AND_CLEAR(m_offset);
