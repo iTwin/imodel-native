@@ -87,7 +87,6 @@
     -dGTEST_NAME=CivilBaseGeometryTests
     -dGTEST_SHOW_PROGRESS" Scope="Private" OnlyPlatforms="x64">
       <SubProduct ProductName="CivilBaseGeometry-Gtest" />
-      <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
   </Part>
 
   <!--This part runs the test on x64 and produces a code coverage report -->
