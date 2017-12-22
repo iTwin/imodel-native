@@ -109,6 +109,41 @@ TEST_F(GeometryManipulationStrategyTests, AppendKeyPoint)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, AppendKeyPoint_ResetsInsertDynamicKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+
+    sut->AppendKeyPoint({1,1,1});
+    sut->SetDynamicKeyPoint({2,2,2}, 1, GeometryManipulationStrategyBase::DynamicKeyPointType::Insert);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({2,2,2}));
+    sut->AppendKeyPoint({3,3,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({3,3,3}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryManipulationStrategyTests, AppendKeyPoint_ResetsUpdateDynamicKeyPoint)
+    {
+    GeometryManipulationStrategyPtr sut = new SUT();
+
+    sut->AppendKeyPoint({1,1,1});
+    sut->SetDynamicKeyPoint({2,2,2}, 0, GeometryManipulationStrategyBase::DynamicKeyPointType::Update);
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({2,2,2}));
+    sut->AppendKeyPoint({3,3,3});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({1,1,1}));
+    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({3,3,3}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
 TEST_F(GeometryManipulationStrategyTests, InsertKeyPoint)
     {
     GeometryManipulationStrategyPtr sut = new SUT();

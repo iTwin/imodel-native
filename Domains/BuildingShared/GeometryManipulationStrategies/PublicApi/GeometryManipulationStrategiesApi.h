@@ -12,4 +12,6 @@
 
 #include "GeometryManipulationStrategyBase.h"
 #include "GeometryManipulationStrategy.h"
+#include "CurvePrimitiveManipulationStrategy.h"
+#include "LineManipulationStrategy.h"
 #include "GeometryPlacementStrategy.h"

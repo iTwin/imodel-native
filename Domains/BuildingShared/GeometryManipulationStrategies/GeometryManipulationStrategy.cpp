@@ -20,12 +20,24 @@ GeometryManipulationStrategy::GeometryManipulationStrategy()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::_AppendKeyPoint
+(
+    DPoint3dCR newKeyPoint
+)
+    {
+    ResetDynamicKeyPoint();
+    m_keyPoints.push_back(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
 void GeometryManipulationStrategy::AppendKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
     {
-    m_keyPoints.push_back(newKeyPoint);
+    _AppendKeyPoint(newKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -37,10 +49,14 @@ void GeometryManipulationStrategy::InsertKeyPoint
     size_t index
 )
     {
-    if (m_keyPoints.size() > index)
-        m_keyPoints.insert(&m_keyPoints[index], newKeyPoint);
-    else if (m_keyPoints.size() == index)
-        AppendKeyPoint(newKeyPoint);
+    if (m_keyPoints.size() >= index)
+        {
+        ResetDynamicKeyPoint();
+        if (m_keyPoints.size() > index)
+            m_keyPoints.insert(&m_keyPoints[index], newKeyPoint);
+        else
+            AppendKeyPoint(newKeyPoint);
+        }
     else
         BeAssert(false);
     }
@@ -60,6 +76,7 @@ void GeometryManipulationStrategy::ReplaceKeyPoint
         return;
         }
 
+    ResetDynamicKeyPoint();
     m_keyPoints[index] = newKeyPoint;
     }
 
@@ -68,6 +85,7 @@ void GeometryManipulationStrategy::ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryManipulationStrategy::PopKeyPoint()
     {
+    ResetDynamicKeyPoint();
     m_keyPoints.pop_back();
     }
 
@@ -85,6 +103,7 @@ void GeometryManipulationStrategy::RemoveKeyPoint
         return;
         }
 
+    ResetDynamicKeyPoint();
     m_keyPoints.erase(&m_keyPoints[index]);
     }
 

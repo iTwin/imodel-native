@@ -27,6 +27,10 @@ $(o)GeometryManipulationStrategyBase$(oext) : $(_MakeFilePath)GeometryManipulati
 
 $(o)GeometryManipulationStrategy$(oext) : $(_MakeFilePath)GeometryManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryManipulationStrategy.h
 
+$(o)CurvePrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)CurvePrimitiveManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitiveManipulationStrategy.h
+
+$(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
+
 $(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
 
 
@@ -45,5 +49,6 @@ DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
 %include $(sharedMki)linkLibrary.mki
