@@ -204,11 +204,19 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryBase : RefCountedBase
 {
+private:
+    mutable Utf8String m_queryString;
 protected:
     virtual BoundQueryValuesList _GetBoundValues() const {return BoundQueryValuesList();}
     virtual Utf8String _ToString() const = 0;
 public:
-    Utf8String ToString() const {return _ToString();}
+    Utf8StringCR ToString() const 
+        {
+        if (Utf8String::IsNullOrEmpty(m_queryString.c_str()))
+            m_queryString = _ToString();
+        return m_queryString;
+        }
+    void InvalidateQueryString() const {m_queryString.clear();}
     BoundQueryValuesList GetBoundValues() const {return _GetBoundValues();}
 };
 
@@ -380,6 +388,7 @@ public:
     ECPRESENTATION_EXPORT Utf8String GetClause(PresentationQueryClauses clause) const;
     TBase const* GetNestedQuery() const {return m_nestedQuery.get();}
     Utf8CP GetSelectPrefix() const {return m_selectPrefix.c_str();}
+    ECPRESENTATION_EXPORT void SetBoundValues(BoundQueryValuesListCR bindings);
 
     ECPRESENTATION_EXPORT ThisType& SelectAll();
     ECPRESENTATION_EXPORT ThisType& SelectContract(Contract const& contract, Utf8CP prefix = nullptr);
