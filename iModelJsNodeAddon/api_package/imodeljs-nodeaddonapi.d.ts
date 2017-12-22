@@ -328,7 +328,51 @@ declare class NodeAddonDgnDb {
      * @return non-zero if the policy could not be set
      */
     setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: NodeAddonBriefcaseManagerConflictResolutionPolicy): RepositoryStatus;
+}
 
+/* The NodeAddonECDb class that is projected by the iModelJs node addon. */
+declare class NodeAddonECDb {
+    constructor();
+     /**
+     * Create a new ECDb.
+     * @param dbname The full path to the ECDb in the local file system
+     * @return non-zero error status if operation failed.
+     */
+    createDb(dbname : string): DbResult;
+
+     /** Open a existing ECDb.
+     * @param dbname The full path to the ECDb in the local file system
+     * @param mode The open mode
+     * @return non-zero error status if operation failed.
+     */
+    openDb(dbname : string, mode:OpenMode): DbResult;
+
+     /** Check to see if connection to ECDb is open or not.
+     * @return true if connection is open otherwise false.
+     */
+    isOpen(): boolean;
+    
+     /** Check to see if connection to ECDb is open or not.
+     * @return true if connection is open otherwise false.
+     */
+    closeDb(): void;
+
+     /** Save changes to ecdb
+     * @param changesetName The name of the operation that generated these changes. If transaction tracking is enabled.
+     * @return non-zero error status if operation failed.
+     */
+    saveChanges(changesetName?:string): DbResult;
+
+     /** Abandon changes
+     * @return non-zero error status if operation failed.
+     */
+    abandonChanges(): DbResult;
+
+     /** Import ECSchema into ECDb
+     * @param schemaPathName Path to ECSchema file on disk. All reference schema should also be present on same path. 
+     * @return non-zero error status if operation failed.
+     */
+    importSchema(schemaPathName:string): DbResult;    
 }
 
 /* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */
@@ -341,7 +385,7 @@ declare class NodeAddonECSqlStatement {
      * @param ecSql The statement to prepare
      * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
-    prepare(db: NodeAddonDgnDb, ecSql: string): StatusCodeWithMessage<DbResult>;
+    prepare(db: NodeAddonDgnDb | NodeAddonECDb, ecSql: string): StatusCodeWithMessage<DbResult>;
 
     /** Reset the statement to just before the first row.
      * @return non-zero error status in case of failure.
@@ -373,26 +417,6 @@ declare class NodeAddonECSqlStatement {
      * @return The current row in JSON stringified format.
      */
     getRow(): string;
-
-}
-
-declare class NodeAddonECDb {
-    constructor();
-
-    createDb(): void;
-    openDb(): void;
-    IsDbOpen(): void;
-    closeDb(): void;
-    saveChanges(): void;
-    abandonChanges(): void;
-    importSchema(): void;
-    insertInstance(): void;
-    readInstance(): void;
-    updateInstance(): void;
-    deleteInstance(): void;
-    containsInstance(): void;
-    executeQuery(): void;
-    executeStatement(): void;
 
 }
 

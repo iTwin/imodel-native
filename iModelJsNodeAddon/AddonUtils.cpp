@@ -614,8 +614,8 @@ JsECDbPtr AddonUtils::CreateECDb(DbResult &dbres, BeFileNameCR pathname)
 
     JsECDbPtr ecdb = new JsECDb();
 
-    DbResult result = ecdb->CreateNewDb(pathname);
-    if (result != BE_SQLITE_OK)
+    dbres = ecdb->CreateNewDb(pathname);
+    if (dbres != BE_SQLITE_OK)
         return nullptr;
 
     ecdb->AddIssueListener(s_listener);
