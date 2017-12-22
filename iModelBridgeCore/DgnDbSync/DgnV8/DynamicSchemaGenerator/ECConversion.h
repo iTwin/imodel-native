@@ -99,6 +99,7 @@ struct DynamicSchemaGenerator
     bool m_ecConversionFailed = false;
     bool m_ecConversionFailedDueToLockingError = false;
     bool m_anyImported = false;
+    bool m_hasECContent = false;
     Converter& m_converter;
     ECN::ECSchemaReadContextPtr m_schemaReadContext;
     ECN::ECSchemaReadContextPtr m_syncReadContext;

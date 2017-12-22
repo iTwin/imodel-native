@@ -2068,6 +2068,28 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandl
     return BentleyApi::SUCCESS;
     }
 
+static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
+    "BaseElementSchema",
+    "BentleyDesignLinksPersistence",
+    "BentleyDesignLinksPresetnation",
+    "BentleyDrawingLinksPersistence",
+    "DetailSymbolExtender",
+    "DgnComponentSchema",
+    "DgnContentRelationshipSchema",
+    "DgnCustomAttributes",
+    "DgnElementSchema",
+    "DgnFileSchema",
+    "DgnindexQueryschema",
+    "DgnLevelSchema",
+    "DgnModelSchema",
+    "DgnPointCloudSchema",
+    "DgnTextStyleObjSchema",
+    "DgnVisualizationObjSchema",
+    "ExtendedElementSchema",
+    "MstnPropertyFormatter",
+    "Ustn_ElementParams",
+    "DTMElement_TemplateExtender_Schema"
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
@@ -2082,11 +2104,16 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         auto& ecClass = ecClassInfo.first;
         bool isPrimary = ecClassInfo.second;
         
+        Utf8String v8SchemaName(ecClass.m_schemaName.c_str());
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        if (found != s_dgnV8DeliveredSchemas.end())
+            continue;
+
         // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
         if (isPrimary && ecClass.m_schemaName.Equals(Converter::GetV8TagSetDefinitionSchemaName()))
             isPrimary = false;
         
-        ECClassName v8ClassName(Utf8String(ecClass.m_schemaName.c_str()).c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
+        ECClassName v8ClassName(v8SchemaName.c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
         ECN::SchemaKey conversionKey(Utf8String(v8ClassName.GetSchemaName()).append("_DgnDbSync").c_str(), 1, 0);
         ECN::ECSchemaPtr conversionSchema = m_syncReadContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
         bool namedGroupOwnsMembers = false;
@@ -2100,6 +2127,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
             return BSIERROR;
+        m_hasECContent = true;
         }
 
     return BentleyApi::SUCCESS;
@@ -2919,6 +2947,12 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
         }
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Analyze V8 EC content");
+
+    if (!m_hasECContent)
+        {
+        scope.SetSucceeded();
+        return;
+        }
 
     SetStepName(Converter::ProgressMessage::STEP_IMPORT_SCHEMAS());
 
