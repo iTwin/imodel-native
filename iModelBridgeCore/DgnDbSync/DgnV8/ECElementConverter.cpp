@@ -113,12 +113,12 @@ Utf8String ElementConverter::ToInstanceLabel(ECObjectsV8::IECInstance const& v8I
     }
 
 //****************************************************************************************
-// ElementConverter::SchemaRemapper
+// SchemaRemapper
 //****************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
-bool ElementConverter::SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::ECSchemaCR ecSchema) const
+bool SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::ECSchemaCR ecSchema) const
     {
     BisConversionRule conversionRule;
     bool hasSecondary;
@@ -140,7 +140,7 @@ bool ElementConverter::SchemaRemapper::_ResolveClassName(Utf8StringR serializedC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const
+bool SchemaRemapper::_ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const
     {
     if (!m_convSchema.IsValid())
         {

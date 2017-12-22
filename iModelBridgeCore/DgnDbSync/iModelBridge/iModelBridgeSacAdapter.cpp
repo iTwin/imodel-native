@@ -887,7 +887,7 @@ void iModelBridgeSacAdapter::PrintCommandLineUsage(iModelBridge& bridge, int arg
     {
     fwprintf(stderr,
 L"Usage: %ls -i|--input= -o|--output= [OPTIONS...]\n"
-L"--input=                    (required)  A directory or wildcard specfication for the tile files. May appear multiple times.\n"
+L"--input=                    (required)  Input root filename.\n"
 L"--output=                   (required)  Output directory\n"
 L"OPTIONS:\n"
 L"--input-gcs=gcsspec         (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS. gcsspec must be in JSON format.\n"

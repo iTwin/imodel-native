@@ -94,7 +94,7 @@ void RasterTests::ValidateModelViews(DgnDbR db, Utf8StringCR  name, uint32_t nbC
         else
             viewName.Sprintf("2D Metric Design Model Views - View %d", viewNo + 1);
 
-        ViewDefinitionCPtr  viewPtr = ViewDefinition::Get(db, ViewDefinition::QueryViewId(db.GetDictionaryModel(), viewName));
+        ViewDefinitionCPtr  viewPtr = ViewDefinition::Get(db, ViewDefinition::QueryViewId(*GetJobDefinitionModel(db), viewName));
         if (viewPtr == nullptr || !viewPtr->IsSpatialView())
             continue; // This view was not converted
 

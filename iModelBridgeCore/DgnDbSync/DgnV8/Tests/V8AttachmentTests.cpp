@@ -37,7 +37,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(9, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         }
 
     V8FileEditor v8editor;
@@ -61,7 +61,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
         DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
@@ -78,7 +78,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(9, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
         DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
@@ -98,7 +98,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(9, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size()) << "The converter does NOT delete the attached model.";
+        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size()) << "The converter does NOT delete the attached model.";
         }
     }
 
@@ -337,10 +337,10 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
     countModels(*db, 0, 4);
 
     // Should have 1 of each of these elements:
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
 
     BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
     idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();

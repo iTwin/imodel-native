@@ -94,8 +94,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             continue;
             }
 
-        // If the relationship class inherits from one of the two biscore base relationship classes, then it is a link table relationship, and can use the API
-        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements) || relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
+        // If the relationship class inherits from one ElementRefersToElements base relationship class, then it is a link table relationship, and can use the API
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
             {
             BeSQLite::EC::ECInstanceKey relKey;
             if (BE_SQLITE_OK != GetDgnDb().InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceInstanceKey.GetInstanceId(), targetInstanceKey.GetInstanceId()))
@@ -122,7 +122,16 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
 
         ECN::ECClassCP targetClass = GetDgnDb().Schemas().GetClass(targetInstanceKey.GetClassId());
         // Otherwise, the converter should have created a navigation property on the target class, so we need to set the target instance's ECValue
-        ECN::ECPropertyP prop = targetClass->GetPropertyP(relClass->GetName().c_str());
+        ECN::ECPropertyP prop = nullptr;
+        
+        // If the class is an ElementOwnsMultiAspects base, then need to use the NavigationProperty 'Element' that is defined on the base MultiAspect class.
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
+            {
+            prop = targetClass->GetPropertyP("Element");
+            }
+        else
+            prop = targetClass->GetPropertyP(relClass->GetName().c_str());
+
         if (nullptr == prop)
             {
             Utf8String errorMsg;
@@ -167,9 +176,9 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
         ECN::ECValue val;
         val.SetNavigationInfo((BeInt64Id) targetInstanceKey.GetInstanceId().GetValue(), relClass->GetRelationshipClassCP());
 
-        DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
         if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
             {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
             DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, targetInstanceKey.GetInstanceId());
             if (nullptr == aspect)
                 {
@@ -209,6 +218,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             }
         else
             {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
             if (DgnDbStatus::Success != element->SetPropertyValue(navProp->GetName().c_str(), val))
                 {
                 Utf8String errorMsg;
@@ -833,7 +843,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
 	// FindSpatialV8Models has already forced children of a spatial root to be spatial
 
-    SubjectCR parentRefsSubject = _GetSpatialParentSubject();
+    SubjectCPtr parentRefsSubject = &_GetSpatialParentSubject();
 
     bool hasPushedReferencesSubject = false;
     for (DgnV8Api::DgnAttachment* attachment : *thisModelRef.GetDgnAttachmentsP())
@@ -846,7 +856,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 
         if (!hasPushedReferencesSubject)
             {
-            SubjectCPtr myRefsSubject = GetOrCreateModelSubject(parentRefsSubject, v8mm.GetDgnModel().GetName(), ModelSubjectType::References);
+            SubjectCPtr myRefsSubject = GetOrCreateModelSubject(*parentRefsSubject, v8mm.GetDgnModel().GetName(), ModelSubjectType::References);
             if (!myRefsSubject.IsValid())
                 {
                 BeAssert(false);
@@ -874,7 +884,7 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
         }
 
     if (hasPushedReferencesSubject)
-        SetSpatialParentSubject(parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
+        SetSpatialParentSubject(*parentRefsSubject); // <<<<<<<<<<<< Pop spatial parent subject
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1110,13 +1120,17 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     ConverterLogging::LogPerformance(timer, "Convert NamedGroups in dictionary (%" PRIu32 " element(s))", convertedElementCount);
 
     AddTasks(1);
+    bmap<Utf8String, Utf8String> indexDdlList;
     SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_RELATIONSHIPS());
+    DropElementRefersToElementsIndices(indexDdlList);
     ConvertNamedGroupsRelationships();
     ConverterLogging::LogPerformance(timer, "Convert Elements> NamedGroups");
 
     timer.Start();
     ConvertECRelationships();
     ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships (total)");
+    RecreateElementRefersToElementsIndices(indexDdlList);
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1246,7 +1260,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                     }
 
                 GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
-                if (group.IsValid() && !ElementGroupsMembers::HasMember(*group, *child))
+                if (group.IsValid()/* && !ElementGroupsMembers::HasMember(*group, *child)*/)
                     {
                     if (DgnDbStatus::Success != ElementGroupsMembers::Insert(*group, *child, 0))
                         {
@@ -1359,17 +1373,13 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle   10/2014
-//---------------------------------------------------------------------------------------
-BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
+// As all v8 relationships end up in the same table (bis_ElementRefersToElements)
+// it gets a lot of indexes. These hurt performance a lot, so we drop the indexes before the bulk insert
+// and re-add them later.
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyApi::BentleyStatus RootModelConverter::DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList)
     {
-    if (m_skipECContent)
-        return BentleyApi::SUCCESS;
-
-    //As all v8 relationships end up in the same table (bis_ElementRefersToElements)
-    //it gets a lot of indexes. These hurt performance a lot, so we drop the indexes before the bulk insert
-    //and re-add them later.
-    bmap<Utf8String, Utf8String> indexDdlList;
     if (!IsUpdating())
         {
         StopWatch timer(true);
@@ -1394,23 +1404,14 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
 
         ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships: Dropped indices for bulk insertion into BisCore:ElementRefersToElements class hierarchy.");
         }
+    return BentleyApi::SUCCESS;
+    }
 
-    for (auto& modelMapping : m_v8ModelMappings)
-        {
-        ConvertECRelationshipsInModel(modelMapping.GetV8Model());
-        if (WasAborted())
-            return BentleyApi::ERROR;
-        }
-
-    //analyze named groups in dictionary models
-    for (DgnV8FileP v8File : m_v8Files)
-        {
-        DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
-        ConvertECRelationshipsInModel(dictionaryModel);
-        if (WasAborted())
-            return BentleyApi::ERROR;
-        }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList)
+    {
     //recreate indexes that were previously dropped
     if (!IsUpdating())
         {
@@ -1444,6 +1445,32 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
             }
 
         ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships: Recreated indices for BisCore:ElementRefersToElements class hierarchy.");
+        }
+    return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   10/2014
+//---------------------------------------------------------------------------------------
+BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
+    {
+    if (m_skipECContent)
+        return BentleyApi::SUCCESS;
+
+    for (auto& modelMapping : m_v8ModelMappings)
+        {
+        ConvertECRelationshipsInModel(modelMapping.GetV8Model());
+        if (WasAborted())
+            return BentleyApi::ERROR;
+        }
+
+    //analyze named groups in dictionary models
+    for (DgnV8FileP v8File : m_v8Files)
+        {
+        DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
+        ConvertECRelationshipsInModel(dictionaryModel);
+        if (WasAborted())
+            return BentleyApi::ERROR;
         }
 
     return BentleyApi::SUCCESS;

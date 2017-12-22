@@ -392,13 +392,7 @@ struct ViewFactory
         DVec3d m_extents;
         RotMatrix m_rot;
         Transform m_trans;
-        ViewDefinitionParams(Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d) : m_name(n), m_modelMapping(m), m_viewInfo(vi)
-            {
-            auto& db = m_modelMapping.GetDgnModel().GetDgnDb();
-            DefinitionModelR dictionary = db.GetDictionaryModel();
-            m_dstyle = !is3d ? (DisplayStyleP) new DisplayStyle2d(dictionary, m_name.c_str()) : new DisplayStyle3d(dictionary, m_name.c_str());
-            m_categories = new CategorySelector(dictionary, m_name.c_str());
-            }
+        ViewDefinitionParams(Converter* c, Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d);
 
         void Apply(ViewDefinitionR) const;
         DgnModel& GetDgnModel() const {return m_modelMapping.GetDgnModel();}
@@ -972,6 +966,7 @@ protected:
     ElementAspectConverter* m_elementAspectConverter;
     bvector<IFinishConversion*> m_finishers;
     bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
+    DgnModelId          m_jobDefinitionModelId;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1127,6 +1122,7 @@ public:
 
     void ValidateJob();
 
+    DefinitionModelPtr GetJobDefinitionModel();
     //! @}
 
     //! @name DgnDb properties
@@ -2428,6 +2424,8 @@ protected:
 
     //! @name  ECRelationships
     //! @{
+    BentleyStatus DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList);
+    BentleyStatus RecreateElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList);
     void ConvertNamedGroupsAndECRelationships();
     BentleyStatus ConvertECRelationships();
     BentleyStatus ConvertNamedGroupsRelationships();
@@ -3042,6 +3040,28 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+struct SchemaRemapper : ECN::IECSchemaRemapper
+    {
+    private:
+        typedef bmap<Utf8String, Utf8String> T_propertyNameMappings;
+        typedef bmap<Utf8String, T_propertyNameMappings> T_ClassPropertiesMap;
+        Converter& m_converter;
+        mutable ECN::ECSchemaPtr m_convSchema;
+        bool m_remapAsAspect;
+        mutable T_ClassPropertiesMap m_renamedClassProperties;
+
+        virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
+        virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
+
+    public:
+        explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false) {}
+        ~SchemaRemapper() {}
+        void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 struct ElementConverter
     {
     private:
@@ -3051,28 +3071,6 @@ struct ElementConverter
 
     protected:
         ECN::IECInstancePtr Transform(ECObjectsV8::IECInstance const& v8Instance, ECN::ECClassCR dgnDbClass, bool transformAsAspect = false) const;
-        //---------------------------------------------------------------------------------------
-        // @bsiclass                                   Carole.MacDonald            01/2016
-        //---------------+---------------+---------------+---------------+---------------+-------
-        struct SchemaRemapper : ECN::IECSchemaRemapper
-            {
-            private:
-                typedef bmap<Utf8String, Utf8String> T_propertyNameMappings;
-                typedef bmap<Utf8String, T_propertyNameMappings> T_ClassPropertiesMap;
-                Converter& m_converter;
-                mutable ECN::ECSchemaPtr m_convSchema;
-                bool m_remapAsAspect;
-                mutable T_ClassPropertiesMap m_renamedClassProperties;
-
-                virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
-                virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
-
-            public:
-                explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false) {}
-                ~SchemaRemapper() {}
-                void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
-            };
-
         struct UnitResolver : ECN::ECInstanceReadContext::IUnitResolver
             {
             private:
