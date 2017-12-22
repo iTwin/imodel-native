@@ -2522,5 +2522,31 @@ bool GeometryUtils::IsSameGeometry
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              09/2017
+//--------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus GeometryUtils::ProjectVectorOnPlane(DVec3dR projected, DVec3d vector, DPlane3d plane)
+    {
+    // Make sure vector has the same magnitude
+    double magnitude = vector.Magnitude();
+
+    // Find projection vector to plane's normal.
+    // Given two vectors u and v, u's projection on v is ((u*v)/|v|^2)*v
+    if (plane.normal.IsZero())
+        return BentleyStatus::ERROR;
+    
+    DVec3d toNormal = DVec3d::FromCrossProduct(vector, plane.normal);
+    toNormal.Scale(1 / ((std::pow(plane.normal.Magnitude(), 2))));
+    toNormal = DVec3d::FromCrossProduct(toNormal, plane.normal);
+
+    // projected vector will be equal to u - proj
+    projected = vector;
+    projected.Subtract(toNormal);
+
+    projected.ScaleToLength(magnitude);
+
+    return BentleyStatus::SUCCESS;
+    }
+
 END_BUILDING_SHARED_NAMESPACE
 

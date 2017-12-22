@@ -38,6 +38,14 @@
 #define GEOMETRYMANIPULATIONSTRATEGIES_EXPORT IMPORT_ATTRIBUTE
 #endif
 
+
+// Properties
+#define BUILDINGSHARED_PROP_StartPoint                                   "StartPoint"
+#define BUILDINGSHARED_PROP_EndPoint                                     "EndPoint"
+#define BUILDINGSHARED_PROP_Point                                        "Point"
+#define BUILDINGSHARED_PROP_Length                                       "Length"
+#define BUILDINGSHARED_PROP_Angle                                        "Angle"
+
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------

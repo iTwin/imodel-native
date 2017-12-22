@@ -362,6 +362,13 @@ public:
 
     //! Checks if given ICurvePrimitives have the same geometry (within tolerance).
     BUILDINGSHAREDUTILS_EXPORT static bool IsSameGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallMetricDistance());
-    };
+    
+    //! Finds Vector's projection on a 3d plane
+    //! @param[out] projected   projected vector
+    //! @param[in]  vector      vector to project
+    //! @param[in]  plane       plane to project vector on
+    //! @return                 BentleyStatus::SUCCES if no error has occured
+    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus ProjectVectorOnPlane(DVec3dR projected, DVec3d vector, DPlane3d plane);
+};
 
 END_BUILDING_SHARED_NAMESPACE
