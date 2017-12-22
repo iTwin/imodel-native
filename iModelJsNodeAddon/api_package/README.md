@@ -98,25 +98,36 @@ Continuing this example, suppose your imodeljs git repository is here:
 On Windows you would install your local build of the addon like this:
 
 ```
+REM First, you must install the platform-specific addon into the generated addon aggregator package. This is a new requirement.
+
+set ImodelJsRoot=<The parent directory of imodeljs-core>
+
 cd %OutRoot%Winx64\packages\imodeljs-nodeaddon
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
-cd \imjs\imodeljs-core\source\backend
+
+REM You must re-run the above install command whenever you rebuild the MakePackages part, as that will re-create the %OutRoot%Winx64\packages\imodeljs-nodeaddon directory.
+
+REM Next, install the addon aggregator and api packages in imodeljs. Note that you do not install the platform-specific addon in this step. It comes along with the aggregator package.
+
+cd %ImodelJsRoot%imodeljs-core\source\backend
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
-cd \imjs\imodeljs-core\source\test
+cd %ImodelJsRoot%imodeljs-core\source\test
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon
-cd \imjs\imodeljs-core
+cd %ImodelJsRoot%imodeljs-core
+
 ```
 
 On Linux:
 
 ```
+export ImodelJsRoot=<The parent directory of imodeljs-core>
 cd $OutRoot/Winx64/packages/imodeljs-nodeaddon
 npm install --no-save  $OutRoot/Winx64/packages/imodeljs-n_8_9-win32-x64
-cd /imjs/imodeljs-core/source/backend
+cd $ImodelJsRoot/imodeljs-core/source/backend
 npm install --no-save  $OutRoot/Winx64/packages/imodeljs-nodeaddonapi $OutRoot/Winx64/packages/imodeljs-nodeaddon
-cd /imjs/imodeljs-core/source/test
+cd $ImodelJsRoot/imodeljs-core/source/test
 npm install --no-save  $OutRoot/Winx64/packages/imodeljs-nodeaddonapi $OutRoot/Winx64/packages/imodeljs-nodeaddon
-cd /imjs/imodeljs-core
+cd $ImodelJsRoot/imodeljs-core
 ```
 
 To test other platforms or other versions, use the names of the generated packages that are displayed by the MakePackages part.
