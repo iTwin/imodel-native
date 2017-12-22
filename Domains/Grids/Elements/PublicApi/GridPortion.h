@@ -151,7 +151,9 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGrid : Grid
 {
     DEFINE_T_SUPER (Grid);
 private:
-
+    
+    BE_PROP_NAME (DefaultStartElevation)
+    BE_PROP_NAME (DefaultEndElevation)
 protected:
     //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
@@ -162,6 +164,22 @@ public:
     //! gets the perpendicularity plane of this Grid
     //! @return             perpendicularity plane of this Grid
     GRIDELEMENTS_EXPORT DPlane3d    GetPlane() const;
+
+    //! Gets Default start elevation of this PlanGrid
+    //! @return DefaultStartElevation of this PlanGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartElevation() const { return GetPropertyValueDouble(prop_DefaultStartElevation()); }
+
+    //! Sets Default start elevation of this PlanGrid
+    //! @param[in]  staElevation   new DefaultStartElevation for this PlanGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartElevation(double staElevation) { SetPropertyValue(prop_DefaultStartElevation(), staElevation); };
+    
+    //! Gets Default end elevation of this PlanGrid
+    //! @return DefaultEndElevation of this PlanGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndElevation() const { return GetPropertyValueDouble(prop_DefaultEndElevation()); }
+
+    //! Sets Default end elevation of this PlanGrid
+    //! @param[in]  endElevation   new DefaultEndElevation for this PlanGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndElevation(double endElevation) { SetPropertyValue(prop_DefaultEndElevation(), endElevation); };
     };
 
 //=======================================================================================

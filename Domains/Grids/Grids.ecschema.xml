@@ -110,7 +110,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="Elevation" displayLabel="Length" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="Elevation" displayLabel="Elevation" typeName="double" kindOfQuantity="Length"/>
       <ECProperty propertyName="Surface2d" displayLabel="Surface2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
 
@@ -142,6 +142,8 @@
 
     <ECEntityClass typeName="PlanGrid" modifier="Abstract" description="a plangrid is a grid whose surfaces are extruded in a common direction">
       <BaseClass>Grid</BaseClass>
+      <ECProperty propertyName="DefaultStartElevation" displayLabel="DefaultStartElevation" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultEndElevation" displayLabel="DefaultEndElevation" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="OrthogonalGrid" description="And OrthogonalGrid has all of its' surfaces orthogonal in either X or Y direction">
