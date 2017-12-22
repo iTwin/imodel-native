@@ -1097,6 +1097,11 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              needsFlattening = true;
              break;
              }
+         else if (schema->GetName().StartsWithI("ECXA_"))
+             {
+             needsFlattening = true;
+             break;
+             }
          }
 
      if (needsFlattening)
