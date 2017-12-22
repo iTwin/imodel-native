@@ -72,16 +72,6 @@ struct DirFormat
     double          baseDir;
     };
 
-enum class SelectionMode
-    {
-    New         = 0,
-    Add         = 1,
-    Subtract    = 2,
-    Inverse     = 3,
-    Clear       = 4,
-    All         = 5,
-    };
-
 enum class UnitBase
     {
     None    = 0,

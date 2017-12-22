@@ -123,20 +123,51 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
+void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff, bool andSubCategories)
     {
     GetViewDefinitionR().GetCategorySelector().ChangeCategoryDisplay(categoryId, onOff);
+    if (andSubCategories)
+        ToggleAllSubCategories(categoryId, onOff);
+
     SetFeatureOverridesDirty();
     _OnCategoryChange(onOff);
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::ToggleAllSubCategories(DgnCategoryId catId, bool onOff)
+    {
+    auto cat = DgnCategory::Get(GetDgnDb(), catId);
+    if (cat.IsValid())
+        for (ElementIteratorEntry entry : cat->MakeSubCategoryIterator())
+            ChangeSubCategoryDisplay(entry.GetId<DgnSubCategoryId>(), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::ChangeSubCategoryDisplay(DgnSubCategoryId id, bool enable)
+    {
+    // Preserve existing overrides (currently, there will be none, but Revit may produce some later...)
+    auto ovr = GetViewDefinitionR().GetDisplayStyle().GetSubCategoryOverride(id);
+    ovr.SetInvisible(!enable);
+    OverrideSubCategory(id, ovr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::SetViewedCategories(DgnCategoryIdSet const& categories)
+void ViewController::SetViewedCategories(DgnCategoryIdSet const& categories, bool enableAllSubCategories)
     {
     GetViewDefinitionR().GetCategorySelector().SetCategories(categories);
     SetFeatureOverridesDirty();
+    if (enableAllSubCategories)
+        {
+        for (auto catId : categories)
+            ToggleAllSubCategories(catId, true);
+        }
+
     _OnCategoryChange(false); // boolean indicates a single category was enabled; false means a category was disabled or multiple changes were made
     }
 
