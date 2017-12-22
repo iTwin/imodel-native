@@ -6,10 +6,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Grids/GridsApi.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
+#include <BuildingShared/BuildingSharedApi.h>
+
+USING_NAMESPACE_BUILDING_SHARED
 
 BEGIN_GRIDS_NAMESPACE
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// LinePointsPlacementStrategy
+/////////////////////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
@@ -40,8 +45,11 @@ BentleyStatus LinePointsPlacementStrategy::_SetPropertyValuePoint3d(Utf8CP prope
         {
         if (m_points.size() > 1)
             m_points[1] = value;
-        else
+        else if (m_points.size() > 0)
             m_points.push_back(value);
+        else
+            return BentleyStatus::ERROR;
+
         return BentleyStatus::SUCCESS;
         }
 
@@ -81,17 +89,21 @@ BentleyStatus LinePointsPlacementStrategy::_AddPoint(DPoint3d point)
     return T_Super::_AddPoint(point);
     }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// LinePointLengthAnglePlacementStrategy
+/////////////////////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-ICurvePrimitivePtr LinePointLengthPlacementStrategy::_GetCurvePrimitive()
+ICurvePrimitivePtr LinePointLengthAnglePlacementStrategy::_GetCurvePrimitive()
     {
-    if (m_points.size() < 1 || !m_useLength || !m_useAngle)
+    if (m_points.size() < 1 || GeometryUtils::AlmostEqual(0, m_length))
         return nullptr;
 
-    DVec3d lineVec = DVec3d::FromXYAngleAndMagnitude(m_angle, m_length);
-    if (BentleyStatus::ERROR == GeometryUtils::ProjectVectorOnPlane(lineVec, m_workingPlane))
-        return nullptr;
+    DVec3d lineVec = DVec3d::From(0, m_length, 0);
+    ValidatedDVec3d validatedVec = DVec3d::FromRotateVectorAroundVector(lineVec, m_workingPlane.normal, Angle::FromRadians(m_angle));
+    if (validatedVec.IsValid())
+        lineVec = validatedVec.Value();
 
     DPoint3d endPoint = m_points[0];
     endPoint.Add(lineVec);
@@ -102,7 +114,7 @@ ICurvePrimitivePtr LinePointLengthPlacementStrategy::_GetCurvePrimitive()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-BentleyStatus LinePointLengthPlacementStrategy::_SetPropertyValuePoint3d(Utf8CP propertyName, const DPoint3d & value)
+BentleyStatus LinePointLengthAnglePlacementStrategy::_SetPropertyValuePoint3d(Utf8CP propertyName, const DPoint3d & value)
     {
     if (0 == std::strcmp(GRIDS_PROP_Point, propertyName))
         {
@@ -120,7 +132,7 @@ BentleyStatus LinePointLengthPlacementStrategy::_SetPropertyValuePoint3d(Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-BentleyStatus LinePointLengthPlacementStrategy::_GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const
+BentleyStatus LinePointLengthAnglePlacementStrategy::_GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const
     {
     if (0 == std::strcmp(GRIDS_PROP_Point, propertyName)
         && m_points.size() > 0)
@@ -135,21 +147,17 @@ BentleyStatus LinePointLengthPlacementStrategy::_GetPropertyValuePoint3d(Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-BentleyStatus LinePointLengthPlacementStrategy::_SetPropertyValueDouble(Utf8CP propertyName, const double & value)
+BentleyStatus LinePointLengthAnglePlacementStrategy::_SetPropertyValueDouble(Utf8CP propertyName, const double & value)
     {
     if (0 == std::strcmp(GRIDS_PROP_Length, propertyName))
         {
         m_length = value;
-        m_useLength = true;
-
         return BentleyStatus::SUCCESS;
         }
 
     if (0 == std::strcmp(GRIDS_PROP_Angle, propertyName))
         {
         m_angle = value;
-        m_useAngle = true;
-
         return BentleyStatus::SUCCESS;
         }
 
@@ -159,17 +167,15 @@ BentleyStatus LinePointLengthPlacementStrategy::_SetPropertyValueDouble(Utf8CP p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-BentleyStatus LinePointLengthPlacementStrategy::_GetPropertyValueDouble(Utf8CP propertyName, double & value) const
+BentleyStatus LinePointLengthAnglePlacementStrategy::_GetPropertyValueDouble(Utf8CP propertyName, double & value) const
     {
-    if (0 == std::strcmp(GRIDS_PROP_Length, propertyName)
-        && m_useLength)
+    if (0 == std::strcmp(GRIDS_PROP_Length, propertyName))
         {
         value = m_length;
         return BentleyStatus::SUCCESS;
         }
 
-    if (0 == std::strcmp(GRIDS_PROP_Angle, propertyName)
-        && m_useAngle)
+    if (0 == std::strcmp(GRIDS_PROP_Angle, propertyName))
         {
         value = m_angle;
         return BentleyStatus::SUCCESS;
@@ -181,12 +187,20 @@ BentleyStatus LinePointLengthPlacementStrategy::_GetPropertyValueDouble(Utf8CP p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  12/17
 //---------------------------------------------------------------------------------------
-BentleyStatus LinePointLengthPlacementStrategy::_AddPoint(DPoint3d point)
+BentleyStatus LinePointLengthAnglePlacementStrategy::_AddPoint(DPoint3d point)
     {
     if (m_points.size() >= 1)
         return BentleyStatus::ERROR; // Only 1 point can be in the point pool
 
     return T_Super::_AddPoint(point);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  12/17
+//---------------------------------------------------------------------------------------
+LinePointLengthAnglePlacementStrategyPtr LinePointLengthAnglePlacementStrategy::Create(DPlane3d const & plane)
+    {
+    return new LinePointLengthAnglePlacementStrategy(plane);
     }
 
 END_GRIDS_NAMESPACE

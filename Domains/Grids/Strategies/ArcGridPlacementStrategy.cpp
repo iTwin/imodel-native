@@ -7,8 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "Grids\GridsApi.h"
+#include <BuildingShared/BuildingSharedApi.h>
 
-USING_NAMESPACE_BUILDING
+USING_NAMESPACE_BUILDING_SHARED
 USING_NAMESPACE_BENTLEY_DGN
 
 BEGIN_GRIDS_NAMESPACE

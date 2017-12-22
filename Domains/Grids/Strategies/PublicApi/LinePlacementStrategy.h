@@ -16,6 +16,8 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : CurvePlacementStrat
     {
     DEFINE_T_SUPER(CurvePlacementStrategy);
 
+    DPoint3d m_startPoint, m_endPoint;
+    bool m_startPointInUse, m_endPointInUse;
     protected:
         LinePointsPlacementStrategy() = default;
 
@@ -25,6 +27,13 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : CurvePlacementStrat
         virtual BentleyStatus _GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const override;
 
         virtual BentleyStatus _AddPoint(DPoint3d point) override;
+        virtual void _Reset() override;
+        
+        // Should not by used by line tools
+        virtual void _SetDynamicPoint(DPoint3d point) override {};
+        virtual void _UnsetDynamicPoint() override {};
+        virtual void _AcceptDynamicPoint() override {};
+        virtual bool _IsInDynamics() const { return false; }
 
     public:
         static GRIDSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
@@ -36,7 +45,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : CurvePlacementStrat
         GRIDSTRATEGIES_EXPORT BentleyStatus GetEndPoint(DPoint3d & endPoint) const { return _GetPropertyValuePoint3d(GRIDS_PROP_EndPoint, endPoint); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthPlacementStrategy : CurvePlacementStrategy
+struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : CurvePlacementStrategy
     {
     DEFINE_T_SUPER(CurvePlacementStrategy);
 
@@ -45,11 +54,8 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthPlacementStrategy : CurvePlacement
         double m_angle;
         DPlane3d m_workingPlane;
 
-        bool m_useLength = false;
-        bool m_useAngle = false;
-
     protected:
-        LinePointLengthPlacementStrategy(DPlane3d const & workingPlane) : m_workingPlane(workingPlane) {}
+        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : m_workingPlane(workingPlane) {}
 
         virtual ICurvePrimitivePtr _GetCurvePrimitive() override;
 
@@ -64,7 +70,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthPlacementStrategy : CurvePlacement
 
         virtual BentleyStatus _AddPoint(DPoint3d point) override;
     public:
-        static GRIDSTRATEGIES_EXPORT LinePointLengthPlacementStrategyPtr Create();
+        static GRIDSTRATEGIES_EXPORT LinePointLengthAnglePlacementStrategyPtr Create(DPlane3d const& plane);
 
         GRIDSTRATEGIES_EXPORT BentleyStatus SetPoint(DPoint3d const & point) { return _SetPropertyValuePoint3d(GRIDS_PROP_Point, point); }
         GRIDSTRATEGIES_EXPORT BentleyStatus GetPoint(DPoint3d & point) const { return _GetPropertyValuePoint3d(GRIDS_PROP_Point, point); }

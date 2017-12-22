@@ -15,8 +15,9 @@
 #include <sstream>
 #include <DgnClientFx/DgnClientApp.h>
 #include "GridsTestFixtureBase.h"
+#include <BuildingShared/BuildingSharedApi.h>
 
-USING_NAMESPACE_BUILDING
+USING_NAMESPACE_BUILDING_SHARED
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX

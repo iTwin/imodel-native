@@ -40,12 +40,17 @@ struct EXPORT_VTABLE_ATTRIBUTE ICurvePlacementStrategy
         virtual BentleyStatus _GetPropertyValuePoint3d   (Utf8CP propertyName, DPoint3d          & value) const = 0;
         virtual BentleyStatus _GetPropertyValueElementId (Utf8CP propertyName, Dgn::DgnElementId & value) const = 0;
 
+        virtual void _Reset() = 0;
+
         virtual ICurvePrimitivePtr  _GetCurvePrimitive() = 0;
+        virtual ICurvePrimitivePtr  _Finish() = 0;
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE CurvePlacementStrategy : public ICurvePlacementStrategy, RefCountedBase
     {
     bvector<DPoint3d> m_points;
+    DPoint3d m_dynamicPoint;
+    bool m_useDynamicPoint = false;
 
     protected:
         // TODO move to base strategy
@@ -74,7 +79,14 @@ struct EXPORT_VTABLE_ATTRIBUTE CurvePlacementStrategy : public ICurvePlacementSt
         virtual BentleyStatus _GetPropertyValuePoint3d   (Utf8CP propertyName, DPoint3d          & value) const override {return BentleyStatus::ERROR;}
         virtual BentleyStatus _GetPropertyValueElementId (Utf8CP propertyName, Dgn::DgnElementId & value) const override {return BentleyStatus::ERROR;}
 
-        virtual BentleyStatus _AddPoint(DPoint3d point) { m_points.push_back(point); return BentleyStatus::SUCCESS; }
+        virtual BentleyStatus _AddPoint(DPoint3d point)         { m_points.push_back(point); return BentleyStatus::SUCCESS; }
+        virtual void          _SetDynamicPoint(DPoint3d point)  { m_dynamicPoint = point; m_useDynamicPoint = true; }
+        virtual void          _UnsetDynamicPoint()              { m_useDynamicPoint = false; }
+        virtual void          _AcceptDynamicPoint()             { m_points.push_back(m_dynamic_point); UnsetDynamicPoint(); }
+        virtual bool          _IsInDynamics() const             { return m_useDynamicPoint; }
+
+        virtual void                _Reset() override   { m_points = {}; UnsetDynamicPoint(); }
+        virtual ICurvePrimitivePtr  _Finish()           { ICurvePrimitivePtr finalCurve = GetCurvePrimitive(); Reset(); return finalCurve; }
     public:
         // TODO move to base strategy
         //! Sets a boolean property with given value. If given property is not found or is not a boolean value, returns BentleyStatus::ERROR
@@ -215,7 +227,29 @@ struct EXPORT_VTABLE_ATTRIBUTE CurvePlacementStrategy : public ICurvePlacementSt
         GRIDSTRATEGIES_EXPORT ICurvePrimitivePtr GetCurvePrimitive() { return _GetCurvePrimitive(); }
     
         //! Adds point to point pool
+        //! @param[in] point    point to add
+        //! @return BentleyStatus::SUCCESS if no error has occured when adding a point
         GRIDSTRATEGIES_EXPORT BentleyStatus AddPoint(DPoint3d point) { return _AddPoint(point); }
+
+        //! Sets dynamic point for the tool
+        //! @param[in]  point   point to set as dynamic point
+        GRIDSTRATEGIES_EXPORT void SetDynamicPoint(DPoint3d) { _SetDynamicPoint(); }
+
+        //! Discards current dynamic point
+        GRIDSTRATEGIES_EXPORT void UnsetDynamicPoint() { _UnsetDynamicPoint(); }
+
+        //! Accepts current dynamic point to the point pool
+        GRIDSTRATEGIES_EXPORT void AcceptDynamicPoint() { _AcceptDynamicPoint(); }
+
+        //! Checks if current dynamic point is in use
+        GRIDSTRATEGIES_EXPORT bool IsInDynamics() const { return _IsInDynamics(); }
+
+        //! Resets strategy to initial state
+        GRIDSTRATEGIES_EXPORT void Reset() { _Reset(); };
+
+        //! Resets strategy to initial state and returns curve created in the last state
+        //! @return curve created in the last state
+        GRIDSTRATEGIES_EXPORT ICurvePrimitivePtr Finish() { return _Finish(); }
 };
 
 END_GRIDS_NAMESPACE
