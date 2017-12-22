@@ -1763,6 +1763,7 @@ struct FeatureIndex
 
     constexpr bool IsUniform() const { return Type::Uniform == m_type; }
     constexpr bool IsEmpty() const { return Type::Empty == m_type; }
+    constexpr bool IsNonUniform() const { return Type::NonUniform == m_type; }
 
     void Reset() { *this = FeatureIndex(); }
 };
