@@ -12,7 +12,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-ICurvePrimitivePtr LineManipulationStrategy::_Finish() const
+ICurvePrimitivePtr LineManipulationStrategy::_FinishPrimitive() const
     {
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     if (keyPoints.size() < 2)
