@@ -19,7 +19,7 @@ USING_NAMESPACE_TILETREE_IO
 
 // Vector classifiers are original implementation -- we'll continue to write them until
 // the batched model classifiers are functional and merged into master.
-static bool s_writeVectorClassifier = false;
+static bool s_writeVectorClassifier = true;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
