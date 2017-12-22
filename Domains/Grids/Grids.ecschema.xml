@@ -180,6 +180,8 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECProperty propertyName="DefaultElevationIncrement" displayLabel="DefaultElevationIncrement" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultSurface2d" displayLabel="DefaultSurface2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="FreeGrid" description="An FreeGrid contains surfaces that do not need to follow any rules">

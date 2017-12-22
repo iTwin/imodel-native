@@ -218,6 +218,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
                 {}
             };
 
+    private:
+
+        BE_PROP_NAME(DefaultElevationIncrement)
+        BE_PROP_NAME(DefaultSurface2d)
     protected:
 
         static  BentleyStatus           ValidateSurfaces (bvector<CurveVectorPtr> const& surfaces);
@@ -242,5 +246,20 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
 
         GRIDELEMENTS_EXPORT static ElevationGridPtr Create (CreateParams const& params);
 
+        //! Gets Default elevation increment of this ElevationGrid
+        //! @return DefaultElevationIncrement of this ElevationGrid
+        GRIDELEMENTS_EXPORT double      GetDefaultElevationIncrement() const { return GetPropertyValueDouble(prop_DefaultElevationIncrement()); }
+
+        //! Sets Default elevation increment of this ElevationGrid
+        //! @param[in]  elevationInc   new DefaultElevationIncrement for this ElevationGrid
+        GRIDELEMENTS_EXPORT void        SetDefaultElevationIncrement(double elevationInc) { SetPropertyValue(prop_DefaultElevationIncrement(), elevationInc); };
+
+        //! Gets default Surface2d of this ElevationGrid
+        //! @return surface of this ElevationGrid, as curvevector on zero Z plane
+        GRIDELEMENTS_EXPORT CurveVectorPtr      GetDefaultSurface2d() const;
+
+        //! Sets default Surface2d of this ElevationGrid
+        //! @param[in]   surface        curvevector in local coordinates, on zero Z plane
+        GRIDELEMENTS_EXPORT void                SetDefaultSurface2d(CurveVectorPtr surface);
     };
 END_GRIDS_NAMESPACE

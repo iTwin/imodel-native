@@ -403,7 +403,54 @@ bool createDimensions
     return thisGrid;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            ElevationGrid::SetDefaultSurface2d
+(
+CurveVectorPtr surface
+)
+    {
+    if (!surface.IsValid())
+        return;
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    surface->IsPlanar (localToWorld, worldToLocal, range);
+    DPlane3d surfacePlane;
+    bsiTransform_getOriginAndVectors (&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
 
+    if (!DoubleOps::AlmostEqualFraction (surfacePlane.origin.z, 0.0) ||
+        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 1.0)) //must be a zero Z plane
+        return;
+
+    IGeometryPtr geometryPtr = IGeometry::Create (surface);
+
+    ECN::ECValue surface2dValue;
+    surface2dValue.SetIGeometry (*geometryPtr);
+
+    SetPropertyValue (prop_DefaultSurface2d(), surface2dValue);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr                   ElevationGrid::GetDefaultSurface2d
+(
+) const
+    {
+    ECN::ECValue surface2dValue;
+
+    GetPropertyValue (surface2dValue, prop_DefaultSurface2d ());
+
+    IGeometryPtr geometryPtr = surface2dValue.GetIGeometry ();
+    if (!geometryPtr.IsValid ())
+        return nullptr;
+
+    CurveVectorPtr surface = geometryPtr->GetAsCurveVector ();
+
+    return surface;
+    }
 
 END_GRIDS_NAMESPACE
 
