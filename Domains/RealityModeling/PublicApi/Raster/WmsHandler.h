@@ -99,6 +99,8 @@ protected:
     //! Create a new WmsModel object to be stored in the DgnDb.
     WmsModel(CreateParams const& params, WmsMap const& prop);
 
+    // Do not permit TilePublisher to copy the server data to published tiles...
+    bool _AllowPublishing() const override { return false; }
 public:
     RASTER_EXPORT WmsMap const& GetMap() const;    
 

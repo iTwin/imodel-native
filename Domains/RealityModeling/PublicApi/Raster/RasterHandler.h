@@ -105,11 +105,6 @@ protected:
 
     virtual bool _IsParallelToGround() const {return false;}
 
-#if defined(WIP_TILETREE_PUBLISH)
-    virtual Dgn::TileTree::RootCPtr _GetPublishingTileTree (Dgn::Render::SystemP renderSys) const override;
-    virtual Dgn::ClipVectorPtr _GetPublishingClip () const override;
-#endif
-
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);
