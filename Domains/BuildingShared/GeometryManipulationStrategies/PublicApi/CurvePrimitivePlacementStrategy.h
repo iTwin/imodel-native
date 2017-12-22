@@ -46,13 +46,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ICurvePrimitivePlacementStrategy
         virtual ICurvePrimitivePtr  _Finish() = 0;
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE CurvePrimitivePlacementStrategy : public ICurvePrimitivePlacementStrategy, RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE CurvePrimitivePlacementStrategy : public GeometryPlacementStrategy, ICurvePrimitivePlacementStrategy
     {
-    bvector<DPoint3d> m_points;
-    DPoint3d m_dynamicPoint;
-    bool m_useDynamicPoint = false;
+    DEFINE_T_SUPER(GeometryPlacementStrategy);
 
     protected:
+        CurvePrimitivePlacementStrategy(CurvePrimitiveManipulationStrategyP manipulationStrategy) :
+            GeometryPlacementStrategy(manipulationStrategy) {}
+
         // TODO move to base strategy
         virtual BentleyStatus _SetPropertyValueBoolean   (Utf8CP propertyName, const bool              & value) override {return BentleyStatus::ERROR;}
         virtual BentleyStatus _SetPropertyValueInteger   (Utf8CP propertyName, const int               & value) override {return BentleyStatus::ERROR;}
@@ -79,14 +80,8 @@ struct EXPORT_VTABLE_ATTRIBUTE CurvePrimitivePlacementStrategy : public ICurvePr
         virtual BentleyStatus _GetPropertyValuePoint3d   (Utf8CP propertyName, DPoint3d          & value) const override {return BentleyStatus::ERROR;}
         virtual BentleyStatus _GetPropertyValueElementId (Utf8CP propertyName, Dgn::DgnElementId & value) const override {return BentleyStatus::ERROR;}
 
-        virtual BentleyStatus _AddPoint(DPoint3d point)         { m_points.push_back(point); return BentleyStatus::SUCCESS; }
-        virtual void          _SetDynamicPoint(DPoint3d point)  { m_dynamicPoint = point; m_useDynamicPoint = true; }
-        virtual void          _UnsetDynamicPoint()              { m_useDynamicPoint = false; }
-        virtual void          _AcceptDynamicPoint()             { m_points.push_back(m_dynamicPoint); UnsetDynamicPoint(); }
-        virtual bool          _IsInDynamics() const             { return m_useDynamicPoint; }
-
-        virtual void                _Reset() override   { m_points = {}; UnsetDynamicPoint(); }
-        virtual ICurvePrimitivePtr  _Finish()           { ICurvePrimitivePtr finalCurve = GetCurvePrimitive(); Reset(); return finalCurve; }
+        virtual void                _Reset() override { dynamic_cast<CurvePrimitiveManipulationStrategyP>(m_manipulationStrategy.get())->Finish(); } // Need reset on manip strategy
+        virtual ICurvePrimitivePtr  _Finish() { return dynamic_cast<CurvePrimitiveManipulationStrategyP>(m_manipulationStrategy.get())->Finish();  }
     public:
         // TODO move to base strategy
         //! Sets a boolean property with given value. If given property is not found or is not a boolean value, returns BentleyStatus::ERROR
@@ -229,20 +224,20 @@ struct EXPORT_VTABLE_ATTRIBUTE CurvePrimitivePlacementStrategy : public ICurvePr
         //! Adds point to point pool
         //! @param[in] point    point to add
         //! @return BentleyStatus::SUCCESS if no error has occured when adding a point
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus AddPoint(DPoint3d point) { return _AddPoint(point); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AppendKeyPoint(DPoint3d point) { m_manipulationStrategy->AppendKeyPoint(point); }
 
         //! Sets dynamic point for the tool
         //! @param[in]  point   point to set as dynamic point
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetDynamicPoint(DPoint3d point) { _SetDynamicPoint(point); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void InsertKeyPoint(DPoint3d point, size_t index) { m_manipulationStrategy->InsertKeyPoint(point, index); }
 
         //! Discards current dynamic point
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void UnsetDynamicPoint() { _UnsetDynamicPoint(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ReplaceKeyPoint (DPoint3dCR newKeyPoint, size_t index) { m_manipulationStrategy->ReplaceKeyPoint(newKeyPoint, index); }
 
         //! Accepts current dynamic point to the point pool
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AcceptDynamicPoint() { _AcceptDynamicPoint(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint() { m_manipulationStrategy->PopKeyPoint(); }
 
         //! Checks if current dynamic point is in use
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsInDynamics() const { return _IsInDynamics(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RemoveKeyPoint(size_t index) const { m_manipulationStrategy->RemoveKeyPoint(index); }
 
         //! Resets strategy to initial state
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void Reset() { _Reset(); };

@@ -18,10 +18,9 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
     {
     DEFINE_T_SUPER(GeometryManipulationStrategyBase)
 
-    private:
+    protected:
         GeometryManipulationStrategyPtr m_manipulationStrategy;
 
-    protected:
         GeometryPlacementStrategy(GeometryManipulationStrategyP manipulationStrategy);
 
         virtual bvector<DPoint3d> const& _GetKeyPoints() const override;

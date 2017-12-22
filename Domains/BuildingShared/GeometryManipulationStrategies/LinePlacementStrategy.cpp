@@ -17,10 +17,12 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //---------------------------------------------------------------------------------------
 ICurvePrimitivePtr LinePointsPlacementStrategy::_GetCurvePrimitive()
     {
-    if (m_points.size() < 2)
-        return nullptr;
+    /*if (m_points.size() < 2)
+        return nullptr;*/
 
-    return ICurvePrimitive::CreateLine(m_points[0], m_points[1]);
+    //return ICurvePrimitive::CreateLine(m_points[0], m_points[1]);
+
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -28,7 +30,7 @@ ICurvePrimitivePtr LinePointsPlacementStrategy::_GetCurvePrimitive()
 //---------------------------------------------------------------------------------------
 BentleyStatus LinePointsPlacementStrategy::_SetPropertyValuePoint3d(Utf8CP propertyName, const DPoint3d & value)
     {
-    if (0 == std::strcmp(BUILDINGSHARED_PROP_StartPoint, propertyName))
+    /*if (0 == std::strcmp(BUILDINGSHARED_PROP_StartPoint, propertyName))
         {
         if (m_points.size() > 0)
             m_points[0] = value;
@@ -48,7 +50,7 @@ BentleyStatus LinePointsPlacementStrategy::_SetPropertyValuePoint3d(Utf8CP prope
             return BentleyStatus::ERROR;
 
         return BentleyStatus::SUCCESS;
-        }
+        }*/
 
     return BentleyStatus::ERROR;
     }
@@ -58,7 +60,7 @@ BentleyStatus LinePointsPlacementStrategy::_SetPropertyValuePoint3d(Utf8CP prope
 //---------------------------------------------------------------------------------------
 BentleyStatus LinePointsPlacementStrategy::_GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const
     {
-    if (0 == std::strcmp(BUILDINGSHARED_PROP_StartPoint, propertyName)
+    /*if (0 == std::strcmp(BUILDINGSHARED_PROP_StartPoint, propertyName)
         && m_points.size() > 0)
         {
         value = m_points[0];
@@ -70,20 +72,9 @@ BentleyStatus LinePointsPlacementStrategy::_GetPropertyValuePoint3d(Utf8CP prope
         {
         value = m_points[1];
         return BentleyStatus::SUCCESS;
-        }
+        }*/
 
     return BentleyStatus::ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  12/17
-//---------------------------------------------------------------------------------------
-BentleyStatus LinePointsPlacementStrategy::_AddPoint(DPoint3d point)
-    {
-    if (m_points.size() >= 2)
-        return BentleyStatus::ERROR; // Only 2 points can be in the point pool
-
-    return T_Super::_AddPoint(point);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +85,7 @@ BentleyStatus LinePointsPlacementStrategy::_AddPoint(DPoint3d point)
 //---------------------------------------------------------------------------------------
 ICurvePrimitivePtr LinePointLengthAnglePlacementStrategy::_GetCurvePrimitive()
     {
-    if (m_points.size() < 1 || GeometryUtils::AlmostEqual(0, m_length))
+    /*if (m_points.size() < 1 || GeometryUtils::AlmostEqual(0, m_length))
         return nullptr;
 
     DVec3d lineVec = DVec3d::From(0, m_length, 0);
@@ -105,7 +96,8 @@ ICurvePrimitivePtr LinePointLengthAnglePlacementStrategy::_GetCurvePrimitive()
     DPoint3d endPoint = m_points[0];
     endPoint.Add(lineVec);
 
-    return ICurvePrimitive::CreateLine(m_points[0], endPoint);
+    return ICurvePrimitive::CreateLine(m_points[0], endPoint);*/
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -113,7 +105,7 @@ ICurvePrimitivePtr LinePointLengthAnglePlacementStrategy::_GetCurvePrimitive()
 //---------------------------------------------------------------------------------------
 BentleyStatus LinePointLengthAnglePlacementStrategy::_SetPropertyValuePoint3d(Utf8CP propertyName, const DPoint3d & value)
     {
-    if (0 == std::strcmp(BUILDINGSHARED_PROP_Point, propertyName))
+   /* if (0 == std::strcmp(BUILDINGSHARED_PROP_Point, propertyName))
         {
         if (m_points.size() > 0)
             m_points[0] = value;
@@ -121,7 +113,7 @@ BentleyStatus LinePointLengthAnglePlacementStrategy::_SetPropertyValuePoint3d(Ut
             m_points.push_back(value);
 
         return BentleyStatus::SUCCESS;
-        }
+        }*/
 
     return BentleyStatus::ERROR;
     }
@@ -131,13 +123,13 @@ BentleyStatus LinePointLengthAnglePlacementStrategy::_SetPropertyValuePoint3d(Ut
 //---------------------------------------------------------------------------------------
 BentleyStatus LinePointLengthAnglePlacementStrategy::_GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const
     {
-    if (0 == std::strcmp(BUILDINGSHARED_PROP_Point, propertyName)
+    /*if (0 == std::strcmp(BUILDINGSHARED_PROP_Point, propertyName)
         && m_points.size() > 0)
         {
         value = m_points[0];
         return BentleyStatus::SUCCESS;
         }
-
+*/
     return BentleyStatus::ERROR;
     }
 
@@ -179,17 +171,6 @@ BentleyStatus LinePointLengthAnglePlacementStrategy::_GetPropertyValueDouble(Utf
         }
 
     return BentleyStatus::ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  12/17
-//---------------------------------------------------------------------------------------
-BentleyStatus LinePointLengthAnglePlacementStrategy::_AddPoint(DPoint3d point)
-    {
-    if (m_points.size() >= 1)
-        return BentleyStatus::ERROR; // Only 1 point can be in the point pool
-
-    return T_Super::_AddPoint(point);
     }
 
 //---------------------------------------------------------------------------------------

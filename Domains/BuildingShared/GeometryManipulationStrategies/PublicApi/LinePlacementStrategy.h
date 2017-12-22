@@ -19,21 +19,14 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : CurvePrimitivePlace
     DPoint3d m_startPoint, m_endPoint;
     bool m_startPointInUse, m_endPointInUse;
     protected:
-        LinePointsPlacementStrategy() = default;
+        LinePointsPlacementStrategy() : T_Super(nullptr) {}; // TODO
 
         virtual ICurvePrimitivePtr _GetCurvePrimitive() override;
         
         virtual BentleyStatus _SetPropertyValuePoint3d(Utf8CP propertyName, const DPoint3d & value) override;
         virtual BentleyStatus _GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const override;
 
-        virtual BentleyStatus _AddPoint(DPoint3d point) override;
         virtual void _Reset() override {};
-        
-        // Should not by used by line tools
-        virtual void _SetDynamicPoint(DPoint3d point) override {};
-        virtual void _UnsetDynamicPoint() override {};
-        virtual void _AcceptDynamicPoint() override {};
-        virtual bool _IsInDynamics() const { return false; }
 
     public:
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
@@ -55,7 +48,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : CurvePrim
         DPlane3d m_workingPlane;
 
     protected:
-        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : m_workingPlane(workingPlane) {}
+        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : T_Super(nullptr), m_workingPlane(workingPlane) {} // TODO
 
         virtual ICurvePrimitivePtr _GetCurvePrimitive() override;
 
@@ -67,8 +60,6 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : CurvePrim
 
         virtual void _SetWorkingPlane(DPlane3d const & plane) { m_workingPlane = plane; }
         virtual DPlane3d _GetWorkingPlane() const { return m_workingPlane; }
-
-        virtual BentleyStatus _AddPoint(DPoint3d point) override;
     public:
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointLengthAnglePlacementStrategyPtr Create(DPlane3d const& plane);
 
