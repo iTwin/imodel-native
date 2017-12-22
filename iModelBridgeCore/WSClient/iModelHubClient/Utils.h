@@ -203,7 +203,7 @@ void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCo
 bool GetCodeSequenceFromServerJson(RapidJsonValueCR serverJson, CodeSequence& codeSequence);
 rapidjson::Document ToRapidJson(JsonValueCR source);
 
-RevisionStatus ValidateChangeSets(ChangeSets const& changeSets, DgnDbR db);
+bool ContainsSchemaChanges(ChangeSets const& changeSets, DgnDbR db);
 void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector);
 
 //=======================================================================================

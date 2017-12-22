@@ -709,6 +709,42 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   Andrius.Zonys                      12/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus Briefcase::MergeChangeSets(ChangeSets::iterator begin, ChangeSets::iterator end, RevisionManagerR changeSetManager, ICancellationTokenPtr cancellationToken) const
+    {
+    RevisionStatus status = RevisionStatus::Success;
+    for (ChangeSets::iterator changeSetIterator = begin; changeSetIterator != end; changeSetIterator++)
+        {
+        status = changeSetManager.MergeRevision(**changeSetIterator);
+        if (RevisionStatus::Success != status)
+            return status;
+
+        if (nullptr != cancellationToken && cancellationToken->IsCanceled())
+            return RevisionStatus::MergeError;
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Andrius.Zonys                      12/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus Briefcase::ReverseChangeSets(ChangeSets::reverse_iterator rbegin, ChangeSets::reverse_iterator rend, RevisionManagerR changeSetManager, ICancellationTokenPtr cancellationToken) const
+    {
+    RevisionStatus status = RevisionStatus::Success;
+    for (ChangeSets::reverse_iterator changeSetIterator = rbegin; changeSetIterator != rend; changeSetIterator++)
+        {
+        status = changeSetManager.ReverseRevision(**changeSetIterator);
+        if (RevisionStatus::Success != status)
+            return status;
+
+        if (nullptr != cancellationToken && cancellationToken->IsCanceled())
+            return RevisionStatus::MergeError;
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
 RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets, ICancellationTokenPtr cancellationToken) const
@@ -730,63 +766,38 @@ RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets, IC
     if (changeSets.size() <= 0)
         return RevisionStatus::Success;
 
-    Utf8String parentChangeSetId = GetLastChangeSetPulled();
-
-    RevisionStatus mergeStatus = RevisionStatus::Success;
-    if (Utf8String::IsNullOrEmpty(parentChangeSetId.c_str()) ||
-        changeSets.at(0)->GetParentId() == parentChangeSetId)
+    RevisionManagerR changeSetManager = m_db->Revisions();
+    Utf8String firstChangeSetParentId = changeSets.at(0)->GetParentId();
+    
+    if (ContainsSchemaChanges (changeSets, *m_db))
         {
-        auto changeSetIterator = changeSets.begin();
-        //reinstation step
-        while (changeSetIterator != changeSets.end() && m_db->Revisions().HasReversedRevisions() && 
-                  (cancellationToken == nullptr || !cancellationToken->IsCanceled()))
-            {
-            mergeStatus = m_db->Revisions().ReinstateRevision(**changeSetIterator);
-            changeSetIterator++;
+        Utf8String parentChangeSetId = changeSetManager.GetParentRevisionId();
+        if (Utf8String::IsNullOrEmpty(parentChangeSetId.c_str()) || parentChangeSetId == firstChangeSetParentId)
+            return RevisionStatus::MergeSchemaChangesOnOpen;
+        else
+            return RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen; 
+        } 
 
-            if (mergeStatus != RevisionStatus::Success)
-                return mergeStatus;
-            }
+    // Step 2. Reverse
+    if (firstChangeSetParentId != GetLastChangeSetPulled())
+        {
+        return ReverseChangeSets(changeSets.rbegin(), changeSets.rend(), changeSetManager, cancellationToken);
+        }
 
-        if (changeSetIterator != changeSets.begin())
-            changeSets.erase(changeSets.begin(), changeSetIterator--);
+    // Step 3. Reinstate
+    RevisionStatus mergeStatus = RevisionStatus::Success;
+    auto changeSetIterator = changeSets.begin();
 
-        //merge step
-        mergeStatus = ValidateChangeSets(changeSets, *m_db);
+    while (changeSetIterator != changeSets.end() && m_db->Revisions().HasReversedRevisions() 
+        && (cancellationToken == nullptr || !cancellationToken->IsCanceled()))
+        {
+        mergeStatus = m_db->Revisions().ReinstateRevision(**changeSetIterator);
         if (mergeStatus != RevisionStatus::Success)
             return mergeStatus;
 
-        for (auto changeSet : changeSets)
-            {
-            mergeStatus = m_db->Revisions().MergeRevision(*changeSet);
-
-            if (mergeStatus != RevisionStatus::Success)
-                break;
-
-            if (cancellationToken != nullptr && cancellationToken->IsCanceled())
-                {
-                mergeStatus = RevisionStatus::MergeError;
-                }
-            }
-        }
-    else
-        {
-        //reverse step
-        std::reverse(changeSets.begin(), changeSets.end());
-
-        for (auto changeSet : changeSets)
-            {
-            mergeStatus = m_db->Revisions().ReverseRevision(*changeSet);
-            if (mergeStatus != RevisionStatus::Success)
-                break;
-
-            if (cancellationToken != nullptr && cancellationToken->IsCanceled())
-                {
-                mergeStatus = RevisionStatus::MergeError;
-                }
-
-            }
+        changeSetIterator++;
         }
 
-    return mergeStatus;
+    // Step 1 and 4. Merge after reinstation
+    return MergeChangeSets(changeSetIterator, changeSets.end(), changeSetManager, cancellationToken);
     }

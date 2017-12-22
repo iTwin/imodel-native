@@ -373,17 +373,17 @@ void AddCodeInfoToList(DgnCodeInfoSet& codeInfos, DgnCodeCR dgnCode, DgnCodeStat
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas           06/2017
 //---------------------------------------------------------------------------------------
-RevisionStatus ValidateChangeSets(ChangeSets const& changeSets, DgnDbR db)
+bool ContainsSchemaChanges(ChangeSets const& changeSets, DgnDbR db)
     {
     if (!changeSets.empty())
         {
         for (auto changeSet : changeSets)
             {
             if (changeSet->ContainsSchemaChanges(db))
-                return RevisionStatus::MergeSchemaChangesOnOpen;
+                return true;
             }
         }
-    return RevisionStatus::Success;
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -409,7 +409,6 @@ bool IsErrorForRetry(Error::Id errorId)
         set.insert(Error::Id::InternalServerError);
         set.insert(Error::Id::WebServicesError);
         set.insert(Error::Id::ConnectionError);
-        set.insert(Error::Id::AzureError);
         }
 
     return set.find(errorId) != set.end();

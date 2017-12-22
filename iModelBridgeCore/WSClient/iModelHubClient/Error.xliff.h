@@ -27,7 +27,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_UserServerError)                   // =="Internal server error has occured. More than one user found."==
 
     //iModel errors
-    L10N_STRING(MESSAGE_SeedFileNotFound)                // =="Could not find uninitialized seed file."==
+    L10N_STRING(MESSAGE_SeedFileNotFound)                  // =="Could not find uninitialized seed file."==
     L10N_STRING(MESSAGE_iModelIsNotInitialized)            // =="iModel is not initialized."==
 
     //Initialization errors
@@ -51,6 +51,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_MergeError)                        // =="ChangeSet merge error has occured."==
     L10N_STRING(MESSAGE_ChangeSetManagerError)             // =="ChangeSet manager error has occured."==
     L10N_STRING(MESSAGE_MergeSchemaChangesOnOpen)          // =="Briefcase needs to be reopened in order to merge changes from the server."==
+    L10N_STRING(MESSAGE_ReverseOrReinstateSchemaChangesOnOpen) // =="Briefcase needs to be reopened in order to reverse or reinstate changes."==
     L10N_STRING(MESSAGE_ChangeSetDoesNotExist)             // =="ChangeSet could not be found."==
 
     //Code template errors

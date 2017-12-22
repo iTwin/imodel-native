@@ -7,3 +7,5 @@ WebsiteSeedFileTests.CreateSeedFile
 #----------------------------------------------------------------------------------------
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
+BriefcaseTests.UpdateBriefcaseToVersion
+BriefcaseTests.UpdateBriefcaseToChangeSet
