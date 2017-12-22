@@ -84,7 +84,7 @@ Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
 +--------------------------------------------------------------------------------------*/
 Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion) const
     {
-    return GetWebApiUrl(webApiVersion) + "Repositories/" + HttpClient::EscapeString(repositoryId);
+    return GetWebApiUrl(webApiVersion) + "Repositories/" + BeUri::EscapeString(repositoryId);
     }
 
 /*--------------------------------------------------------------------------------------+
