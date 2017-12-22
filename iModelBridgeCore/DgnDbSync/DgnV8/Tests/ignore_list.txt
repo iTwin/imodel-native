@@ -31,3 +31,7 @@ RasterTests.RasterReprojected
 #----------------------------------------------------------------------------------------
 ECSchemaTests.RemapSerializedInstance
 ECSchemaTests.RemapReservedPropertyNames
+
+#-----
+ECConversionTests.UpdateWithNewElementAndNoPreviousECData
+ECConversionTests.UpdateExistingWithNewInstance

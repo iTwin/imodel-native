@@ -2843,6 +2843,12 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             continue;
             }
 
+        // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
+        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(Utf8String(v8SchemaInfo.GetSchemaName())))
+            {
+            m_needReimportSchemas = true;
+            continue;
+            }
         Bentley::Utf8String schemaXml;
         uint32_t checksum = -1;
         if (v8SchemaInfo.IsStoredSchema())
