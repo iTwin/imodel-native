@@ -164,7 +164,9 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="DefaultStartAngle" displayLabel="DefaultStartAngle" typeName="double" kindOfQuantity="Angle" description="Origin of the surface"/>
+      <ECProperty propertyName="DefaultAngleIncrement" displayLabel="DefaultAngleIncrement" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="DefaultRadiusIncrement" displayLabel="DefaultRadiusIncrement" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="DefaultStartAngle" displayLabel="DefaultStartAngle" typeName="double" kindOfQuantity="Angle"/>
       <ECProperty propertyName="DefaultEndAngle" displayLabel="DefaultEndAngle" typeName="double" kindOfQuantity="Angle"/>
       <ECProperty propertyName="DefaultStartExtent" displayLabel="DefaultStartExtent" typeName="double" kindOfQuantity="Length"/>
       <ECProperty propertyName="DefaultEndExtent" displayLabel="DefaultEndExtent" typeName="double" kindOfQuantity="Length"/>
@@ -268,6 +270,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
+      <ECProperty propertyName="Spline2d" displayLabel="Spline2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
   
 </ECSchema>
