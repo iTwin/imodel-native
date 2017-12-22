@@ -89,6 +89,8 @@ That will print the location of the generated packages. For example:
 
 That message identifies the (generated) npm packages that contain the addon, as well as the API package. This example is from a Windows build. The messages from a Linux or MacOS build will be similar, but will show names that are specific to those platforms. Note MakePackages produces several packages from the same source. In the case of a Windows build, there is one addon package for use in a node app and another for an electron app. The API package is the same for both.
 
+NB: The version number in package_version.txt must be the old version number. Change package_version.txt *after* testing.
+
 Continuing this example, suppose your imodeljs git repository is here:
 
 ```
@@ -98,22 +100,36 @@ Continuing this example, suppose your imodeljs git repository is here:
 On Windows you would install your local build of the addon like this:
 
 ```
-REM First, you must install the platform-specific addon into the generated addon aggregator package. This is a new requirement.
+if .%ImodelJsRoot% == . goto :missingvar
 
-set ImodelJsRoot=<The parent directory of imodeljs-core>
-
+REM These installs point the aggregator packages to the local builds of the platform-specific addon packages.
+REM Note: The names of the platform-specific addon packages are platform-, cpu-, and node/electron version-specific.
 cd %OutRoot%Winx64\packages\imodeljs-nodeaddon
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
+cd %OutRoot%Winx64\packages\imodeljs-electronaddon
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
 
-REM You must re-run the above install command whenever you rebuild the MakePackages part, as that will re-create the %OutRoot%Winx64\packages\imodeljs-nodeaddon directory.
+REM Note: You must re-run the above install command whenever you rebuild the MakePackages part, as that will re-create 
+REM         the %OutRoot%Winx64\packages\imodeljs-nodeaddon and %OutRoot%Winx64\packages\imodeljs-electronaddon directories.
 
-REM Next, install the addon aggregator and api packages in imodeljs. Note that you do not install the platform-specific addon in this step. It comes along with the aggregator package.
+REM Next, install the addon aggregator and api packages in imodeljs. 
+REM Note that you must install these packages in each package that depends on them.
+REM Note that you do not install the platform-specific addons in this step. They are nested in the aggregator packages.
 
 cd %ImodelJsRoot%imodeljs-core\source\backend
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon %OutRoot%Winx64\packages\imodeljs-electronaddon
 cd %ImodelJsRoot%imodeljs-core\source\test
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-nodeaddon
+cd %ImodelJsRoot%imodeljs-core\source\testbed
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-nodeaddonapi %OutRoot%Winx64\packages\imodeljs-electronaddon
 cd %ImodelJsRoot%imodeljs-core
+
+goto :xit
+
+:missingvar
+echo Define ImodelJsRoot to point to the parent directory that contains imodeljs-core. For example: set ImodelJsRoot=d:\imjs\
+
+:xit
 
 ```
 
@@ -121,13 +137,18 @@ On Linux:
 
 ```
 export ImodelJsRoot=<The parent directory of imodeljs-core>
-cd $OutRoot/Winx64/packages/imodeljs-nodeaddon
-npm install --no-save  $OutRoot/Winx64/packages/imodeljs-n_8_9-win32-x64
+cd $OutRoot/LinuxX64/packages/imodeljs-nodeaddon
+npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64
+cd $OutRoot/LinuxX64/packages/imodeljs-electronaddon
+npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-electronaddonapi $OutRoot/LinuxX64/packages/imodeljs-e_1_6_11-linux-x64
 cd $ImodelJsRoot/imodeljs-core/source/backend
-npm install --no-save  $OutRoot/Winx64/packages/imodeljs-nodeaddonapi $OutRoot/Winx64/packages/imodeljs-nodeaddon
+npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon $OutRoot/LinuxX64/packages/imodeljs-electronaddon
 cd $ImodelJsRoot/imodeljs-core/source/test
-npm install --no-save  $OutRoot/Winx64/packages/imodeljs-nodeaddonapi $OutRoot/Winx64/packages/imodeljs-nodeaddon
+npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon
+cd $ImodelJsRoot/imodeljs-core/source/testbed
+npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-electronaddon
 cd $ImodelJsRoot/imodeljs-core
+
 ```
 
 To test other platforms or other versions, use the names of the generated packages that are displayed by the MakePackages part.
