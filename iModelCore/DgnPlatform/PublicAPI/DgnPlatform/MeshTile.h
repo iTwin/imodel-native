@@ -1085,7 +1085,10 @@ struct IGenerateMeshTiles
 struct IGetTileTreeForPublishing
 {
     // ###TODO: remove this interface when TileGenerator::GenerateTilesFromTileTree can process everything.
-};  // IGetTileTreeForPublishing
+
+    // Override this to disallow publishing.
+    virtual bool _AllowPublishing() const { return true; }
+};
 
 //=======================================================================================                                                                                                                                              bb
 // Describes a published ready-to-use 3D tileset associated with a SpatialModel.

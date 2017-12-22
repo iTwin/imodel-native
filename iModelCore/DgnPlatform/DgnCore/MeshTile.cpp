@@ -1626,7 +1626,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     if (nullptr != getTileTree)
         {
         // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
-        return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
+        if (!getTileTree->_AllowPublishing())
+            return TileGeneratorStatus::NoGeometry;
+        else
+            return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
         }
     else if (nullptr != generateMeshTiles)
         {
