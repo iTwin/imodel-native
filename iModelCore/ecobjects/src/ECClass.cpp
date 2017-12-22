@@ -1790,10 +1790,12 @@ ECObjectsStatus ECClass::_RemoveBaseClass (ECClassCR baseClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECClass::RemoveBaseClasses()
     {
+    bvector<ECClassP> classes;
     for (ECBaseClassesList::iterator iter = m_baseClasses.begin(); iter != m_baseClasses.end(); iter++)
-        (*iter)->RemoveDerivedClass (*this);
+        classes.push_back(*iter);
 
-    m_baseClasses.clear ();
+    for (auto& baseClass : classes)
+        RemoveBaseClass(*baseClass);
     }
 
 /*---------------------------------------------------------------------------------**//**

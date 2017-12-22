@@ -1434,7 +1434,6 @@ private:
     void            AddDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClass(ECClassCR derivedClass) const;
     void            RemoveDerivedClasses();
-    void            RemoveBaseClasses();
     static void     SetErrorHandling(bool doAssert);
     ECObjectsStatus CopyPropertyForSupplementation(ECPropertyP& destProperty, ECPropertyCP sourceProperty, bool copyCustomAttributes);
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty = true, bool copyReferences = false);
@@ -1637,6 +1636,9 @@ public:
 
     //! Removes a base class.
     ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);
+
+    //! Removes all base classes
+    ECOBJECTS_EXPORT void RemoveBaseClasses();
 
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool Is(ECClassCP targetClass) const;
