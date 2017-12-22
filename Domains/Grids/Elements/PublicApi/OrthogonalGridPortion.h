@@ -107,10 +107,12 @@ public:     //public - non-exported
         };
 private:
 
-    BE_PROP_NAME (DefaultStartExtentX)
-    BE_PROP_NAME (DefaultEndExtentX)
-    BE_PROP_NAME (DefaultStartExtentY)
-    BE_PROP_NAME (DefaultEndExtentY)
+    BE_PROP_NAME(DefaultCoordinateIncrementX)
+    BE_PROP_NAME(DefaultCoordinateIncrementY)
+    BE_PROP_NAME(DefaultStartExtentX)
+    BE_PROP_NAME(DefaultEndExtentX)
+    BE_PROP_NAME(DefaultStartExtentY)
+    BE_PROP_NAME(DefaultEndExtentY)
 
     //! Creates horizontal and vertical orthogonal grid surfaces and inserts them
     //! @param[in] params               parameters for creating the grid portion
@@ -159,6 +161,22 @@ public:
     //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
     //! @return                     Dgn::RepositoryStatus::Success if no error has occured when rotating the grid
     GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta, bool updateDimensions = false);
+
+    //! Gets Default X coordinate increment of this OrthogonalGrid
+    //! @return DefaultCoordinateIncrementX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultCoordinateIncrementX() const { return GetPropertyValueDouble(prop_DefaultCoordinateIncrementX()); }
+
+    //! Sets Default X coordinate increment of this OrthogonalGrid
+    //! @param[in]  coordIncX   new DefaultCoordinateIncrementX for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultCoordinateIncrementX(double coordIncX) { SetPropertyValue(prop_DefaultCoordinateIncrementX(), coordIncX); };
+
+    //! Gets Default Y coordinate increment of this OrthogonalGrid
+    //! @return DefaultCoordinateIncrementY of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultCoordinateIncrementY() const { return GetPropertyValueDouble(prop_DefaultCoordinateIncrementY()); }
+
+    //! Sets Default Y coordinate increment of this OrthogonalGrid
+    //! @param[in]  coordIncY   new DefaultCoordinateIncrementY for this OrthogonalGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultCoordinateIncrementY(double coordIncY) { SetPropertyValue(prop_DefaultCoordinateIncrementY(), coordIncY); };
 
     //! Gets Default X start extent of this OrthogonalGrid
     //! @return DefaultStartExtentX of this OrthogonalGrid

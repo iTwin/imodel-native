@@ -151,7 +151,9 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="DefaultStartExtentX" displayLabel="DefaultStartExtentX" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
+      <ECProperty propertyName="DefaultCoordinateIncrementX" displayLabel="DefaultCoordinateIncrementX" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultCoordinateIncrementY" displayLabel="DefaultCoordinateIncrementY" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultStartExtentX" displayLabel="DefaultStartExtentX" typeName="double" kindOfQuantity="Length"/>
       <ECProperty propertyName="DefaultEndExtentX" displayLabel="DefaultEndExtentX" typeName="double" kindOfQuantity="Length"/>
       <ECProperty propertyName="DefaultStartExtentY" displayLabel="DefaultStartExtentY" typeName="double" kindOfQuantity="Length"/>
       <ECProperty propertyName="DefaultEndExtentY" displayLabel="DefaultEndExtentY" typeName="double" kindOfQuantity="Length"/>
