@@ -118,14 +118,6 @@
 #define GRIDS_AUTHORITY_SurfaceSet                      GRIDS_CODESPEC_CODE(GRIDS_CLASS_SurfaceSet)
 #define GRIDS_AUTHORITY_Grid                     GRIDS_CODESPEC_CODE(GRIDS_CLASS_Grid)
 
-// Properties
-#define GRIDS_PROP_StartPoint                                   "StartPoint"
-#define GRIDS_PROP_EndPoint                                     "EndPoint"
-#define GRIDS_PROP_Point                                        "Point"
-#define GRIDS_PROP_Length                                       "Length"
-#define GRIDS_PROP_Angle                                        "Angle"
-
-
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------

@@ -10,5 +10,3 @@
 #include "SketchGridPlacementStrategy.h"
 #include "ArcGridPlacementStrategy.h"
 #include "LineGridPlacementStrategy.h"
-#include "CurvePlacementStrategy.h"
-#include "LinePlacementStrategy.h"

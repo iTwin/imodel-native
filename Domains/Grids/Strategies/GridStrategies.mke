@@ -36,10 +36,6 @@ $(o)ArcGridPlacementStrategy$(oext)        : $(_MakeFilePath)ArcGridPlacementStr
                                           $(_MakeFilePath)PublicApi/ArcGridPlacementStrategy.h \
                                           ${MultiCompileDepends}
 
-$(o)LinePlacementStrategy$(oext)        : $(_MakeFilePath)LinePlacementStrategy.cpp \
-                                          $(_MakeFilePath)PublicApi/LinePlacementStrategy.h \
-                                          ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 
