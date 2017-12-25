@@ -197,6 +197,14 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     if (strcmp("CNC", name) == 0) return FormatSpecialCodes::SignatureCNC;      // :0:
     if (strcmp("CCN", name) == 0) return FormatSpecialCodes::SignatureCCN;      // ::0
     if (strcmp("NCNC", name) == 0) return FormatSpecialCodes::SignatureNCNC;    // 0:0:
+    if (strcmp("NCN", name) == 0) return FormatSpecialCodes::SignatureNCN;      // 0:0
+    if (strcmp("CN", name) == 0) return FormatSpecialCodes::SignatureCN;        // :0
+    if (strcmp("NC", name) == 0) return FormatSpecialCodes::SignatureNC;        // 0:
+    if (strcmp("MCNCN", name) == 0) return FormatSpecialCodes::SignatureMCNCN;    // :0:0
+    if (strcmp("MCNC", name) == 0) return FormatSpecialCodes::SignatureMCNCN;    // :0:0
+    if (strcmp("MCCN", name) == 0) return FormatSpecialCodes::SignatureMCCN;      // ::0
+    if (strcmp("MCN", name) == 0) return FormatSpecialCodes::SignatureMCN;        // :0
+
     return FormatSpecialCodes::SignatureInvalid;
     }
 
@@ -1817,18 +1825,32 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::QT_InvalidTopMidUnits: return "Top and Middle units are not comparable";
         case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
         case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
+        case FormatProblemCode::QT_InvalidSyntax: return "Invalid syntax of KOQ"; 
         case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
+        case FormatProblemCode::NFS_Undefined: return "Numeric Format is not defined";
         case FormatProblemCode::NFS_InvalidSpecName: return "Invalid Numeric Format name";
         case FormatProblemCode::NFS_DuplicateSpecName: return "Duplicate Numeric Format name";
+        case FormatProblemCode::NFS_DuplicateSpecNameOrAlias: return "Duplicate Numeric Format name or alias";
+        case FormatProblemCode::NFS_InvalidJsonObject: return "Invalid Numeric Format JSON-descriptor";
         case FormatProblemCode::DIV_UnknownDivider: return "Unknown Divider";
         case FormatProblemCode::NA_InvalidSign: return "Invalid or duplicate sign in numeric definition";         // Numeric Accumulator problems
         case FormatProblemCode::NA_InvalidPoint: return "Invalid or duplicate decimal point in numeric definition";
         case FormatProblemCode::NA_InvalidExponent: return "Invalid or duplicate exponent in numeric definition";
         case FormatProblemCode::NA_InvalidSyntax: return "Invalid symtax of numeric expression";
+        case FormatProblemCode::PS_InvalidColonizedExpression: return "Invalid expression";
+        case FormatProblemCode::PS_MissingFUS: return "Cannot parse expression without FUS";
+        case FormatProblemCode::PS_MissingCompositeSpec: return "Cannot parse expression without Composite Format Spec";
+        case FormatProblemCode::PS_MismatchingFUS: return "FUS does not match expression";
         case FormatProblemCode::NoProblems:
         default: return "No problems";
         }
     }
+
+
+
+
+
+
 /*
 
 FUS_InvalidSyntax = 20151,

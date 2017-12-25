@@ -253,7 +253,11 @@ enum class FormatProblemCode
     NA_InvalidSign = 25101,             // Numeric Accumulator problems
     NA_InvalidPoint = 25102,
     NA_InvalidExponent = 25103,
-    NA_InvalidSyntax = 25104
+    NA_InvalidSyntax = 25104,
+    PS_InvalidColonizedExpression = 26101,
+    PS_MissingFUS = 2602,
+    PS_MissingCompositeSpec = 2603,
+    PS_MismatchingFUS = 2604
     };
 
 enum class FormatProblemLevel  // these levels should be used for assigning the Problem code
@@ -338,13 +342,20 @@ enum class FormatSpecialCodes
     SignatureNUNFU = 7,
     SignatureNUNUNU= 8,
     SignatureNUNUNFU = 9,
-    SignatureNCNCN = 10,
-    SignatureNCCN = 11,
-    SignatureNCC  = 12,
-    SignatureCNCN = 13,
-    SignatureCNC = 14,
-    SignatureCCN = 15,
-    SignatureNCNC = 16,
+    SignatureNCNCN = 20,
+    SignatureNCCN  = 21,
+    SignatureNCC   = 22,
+    SignatureCNCN  = 23,
+    SignatureCNC   = 24,
+    SignatureCCN   = 25,
+    SignatureNCNC  = 26,
+    SignatureNCN   = 27,
+    SignatureNC    = 28,
+    SignatureCN    = 29,
+    SignatureMCNCN = 31,
+    SignatureMCNC  = 32,
+    SignatureMCCN  = 33,
+    SignatureMCN = 34,
     SignatureInvalid = 100
     };
 

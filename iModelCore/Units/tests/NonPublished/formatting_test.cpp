@@ -468,28 +468,37 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::TestGrabber("-23.45E-03_MM");
     FormattingTestFixture::TestGrabber("--A23.45E-03_MM");
 
-    FormattingTestFixture::TestSegments("--A23.45E-03_MM", 0, "MM");
-    FormattingTestFixture::TestSegments(u8"135°11'30-1/4\" ", 0, "ARC_DEG");
+    FormattingTestFixture::TestSegments("--A23.45E-03_MM", 0, "MM", "WNU");
+    FormattingTestFixture::TestSegments(u8"135°11'30-1/4\" ", 0, "ARC_DEG", "NUNUNFU");
     //01234567890123
-    FormattingTestFixture::TestSegments("  -22 FT 3 1/2 IN", 0, "FT");
-    FormattingTestFixture::TestSegments("  -22FT 3 1/2IN", 0, "FT");
-    FormattingTestFixture::TestSegments("-22' 3 1/2\"", 0, "FT");
+    FormattingTestFixture::TestSegments("  -22 FT 3 1/2 IN", 0, "FT","NUNFU");
+    FormattingTestFixture::TestSegments("  -22FT 3 1/2IN", 0, "FT","NUNFU");
+    FormattingTestFixture::TestSegments("-22' 3 1/2\"", 0, "FT", "NUNFU");
 
-    FormattingTestFixture::TestSegments("12:6:5", 0, "FT");
-    FormattingTestFixture::TestSegments("12:6:5", 0, "FT");
-    FormattingTestFixture::TestSegments("12::5", 0, "FT");
-    FormattingTestFixture::TestSegments("12::", 0, "FT");
-    FormattingTestFixture::TestSegments("12 : 6 : 5", 0, "FT");
-    FormattingTestFixture::TestSegments("12 ::", 0, "FT");
-    FormattingTestFixture::TestSegments("12 : :", 0, "FT");
-    FormattingTestFixture::TestSegments(": 12 :", 0, "FT");
-    FormattingTestFixture::TestSegments(":12:5", 0, "FT");
-    FormattingTestFixture::TestSegments(":12 : 5", 0, "FT");
-    FormattingTestFixture::TestSegments("::12", 0, "FT");
-    FormattingTestFixture::TestSegments("5'-8\"", 0, "FT");
+    FormattingTestFixture::TestSegments("12:6:5", 0, "FT", "NCNCN");
+    FormattingTestFixture::TestSegments("12::5", 0, "FT","NCCN");
+    FormattingTestFixture::TestSegments("12::", 0, "FT", "NCC");
+    FormattingTestFixture::TestSegments("12 : 6 : 5", 0, "FT", "NCNCN");
+    FormattingTestFixture::TestSegments("12 ::", 0, "FT", "NCC");
+    FormattingTestFixture::TestSegments("12 : :", 0, "FT", "NCC");
+    FormattingTestFixture::TestSegments(": 12 :", 0, "FT", "CNC");
+    FormattingTestFixture::TestSegments(":12:5", 0, "FT", "CNCN");
+    FormattingTestFixture::TestSegments(":12 : 5", 0, "FT", "CNCN");
+    FormattingTestFixture::TestSegments("::12", 0, "FT", "CCN");
+    FormattingTestFixture::TestSegments("-::12", 0, "FT", "-CCN");
+
+    FormattingTestFixture::TestSegments("3:5", 0, "FT", "NCN");
+    FormattingTestFixture::TestSegments("3:", 0, "FT", "NC");
+    FormattingTestFixture::TestSegments(":5", 0, "FT", "CN");
+    FormattingTestFixture::TestSegments("-3:5", 0, "FT", "NCN");
+    FormattingTestFixture::TestSegments("-3:", 0, "FT", "NC");
+    FormattingTestFixture::TestSegments("-:5", 0, "FT", "-CN");
+    FormattingTestFixture::TestSegments("5'-8\"", 0, "FT", "NUNU");
+
     FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "FT");
     FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "M");
     FormattingTestFixture::ParseToQuantity("5'-8\"", 0, "IN");
+
     /* LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
     LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'.')).c_str());

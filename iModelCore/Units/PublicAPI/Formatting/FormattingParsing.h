@@ -178,8 +178,11 @@ struct FormatParsingSegment
         bool IsNumber() { return (m_type == ParsingSegmentType::Integer) || (m_type == ParsingSegmentType::Real); }
         bool IsColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), ":") == 0; }
         bool IsDoubleColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), "::") == 0;}
-        bool IsTripleColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), ":::") == 0;
-            }
+        bool IsTripleColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), ":::") == 0; }
+        
+        bool IsMinusColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), "-:") == 0; }
+        bool IsMinusDoubleColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), "-::") == 0; }
+        bool IsMinusTripleColon() { return (m_type == ParsingSegmentType::NotNumber) && BeStringUtilities::StricmpAscii(m_name.c_str(), "-:::") == 0; }
         UNITS_EXPORT Utf8PrintfString ToText(int n);
     };
 
@@ -190,21 +193,27 @@ struct FormatParsingSet
         size_t m_start;         // start index to the input string
         bvector<FormatParsingSegment> m_segs;
         BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
+        //FormatProblemCode m_probCode;
+        FormatProblemDetail m_problem;
 
         UNITS_EXPORT void Init(Utf8CP input, size_t start, BEU::UnitCP unit);
         //! Process's "colonized" expression using a Composite FUS
         //! Returns error codes when FUS does not match the expression.
         //! The input expression signature code mus be provided by the caller
-        UNITS_EXPORT BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatProblemCode* probCode = nullptr, FormatUnitSetCP fusP = nullptr);
+        UNITS_EXPORT BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatUnitSetCP fusP = nullptr);
 
     public:
         UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
         UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
         void AddSegment(FormatParsingSegmentCR seg) { m_segs.push_back(seg); }
+        FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
+        Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
         bvector<FormatParsingSegment> GetSegments() { return m_segs; }
-        UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
+        size_t GetSegmentNumber() { return m_segs.size(); }
+        UNITS_EXPORT Utf8String GetSignature(bool distinct = true);// , int*colonCount = nullptr);
         UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatUnitSetCP fusP = nullptr);
-
+        UNITS_EXPORT bool ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP);
+        bool HasProblem() const { return m_problem.IsProblem(); }
         //UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr);
     };
 

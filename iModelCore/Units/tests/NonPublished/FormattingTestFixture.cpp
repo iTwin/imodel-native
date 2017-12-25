@@ -702,18 +702,26 @@ Utf8CP FormattingTestFixture::TestGrabber(Utf8CP input, size_t start)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unitName)
+void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced)
     {
-    LOG.infov("=========== TestSegments |%s| from %d", input, start);
     FormatParsingSet fps = FormatParsingSet(input, start, unitName);
-    bvector<FormatParsingSegment> segs = fps.GetSegments();
-    int n = 0;
-    for (FormatParsingSegmentP s = segs.begin(); s != segs.end(); s++)
+    if (nullptr == expectReduced)
         {
-        LOG.info(s->ToText(n++).c_str());
+        LOG.infov("=========== TestSegments |%s| from %d", input, start);
+
+        bvector<FormatParsingSegment> segs = fps.GetSegments();
+        int n = 0;
+        for (FormatParsingSegmentP s = segs.begin(); s != segs.end(); s++)
+            {
+            LOG.info(s->ToText(n++).c_str());
+            }
+        LOG.infov("Signature: %s reduced %s", fps.GetSignature(true).c_str(), fps.GetSignature(false).c_str());
+        LOG.info("=========== TestSegments End =============");
         }
-    LOG.infov("Signature: %s reduced %s", fps.GetSignature(true).c_str(), fps.GetSignature(false).c_str());
-    LOG.info("=========== TestSegments End =============");
+    else
+        {
+        EXPECT_STREQ (expectReduced, fps.GetSignature(false).c_str());
+        }
     }
 
 //----------------------------------------------------------------------------------------

@@ -472,7 +472,7 @@ private:
 
     UNITS_EXPORT int Validate() const;
     bool IsConsistent();
-    UNITS_EXPORT size_t UnitCount() const;
+    
     size_t GetSize() const { return m_proxys.size(); }
 
 public:
@@ -500,6 +500,7 @@ public:
             m_proxys[i].Copy(other.GetProxy(i));
             }
         }
+    UNITS_EXPORT size_t UnitCount() const;
     int GetResetCount() const { return m_resetCount; }
     bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
     UnitProxyCP GetProxy(size_t indx) const { return (indx < m_proxys.size()) ? &m_proxys[indx] : nullptr; }
@@ -558,7 +559,7 @@ protected:
     size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
     size_t UnitRatio(size_t uppIndx, size_t lowIndx);
     void ResetType() { m_type = CompositeSpecType::Undefined; }
-    
+    BEU::UnitCP GetUnit(size_t indx) const { return m_unitProx.GetUnit(indx); }
     bool SetInputUnit(BEU::UnitCP inputUnit) {return m_unitProx.SetUnit(indxInput, inputUnit); }
     void SetUnitRatios();
     bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit=nullptr, Utf8CP MinorUnit = nullptr, Utf8CP SubUnit = nullptr);
@@ -585,13 +586,18 @@ public:
     UNITS_EXPORT Utf8String GetMiddleLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMiddle, substitute); }
     UNITS_EXPORT Utf8String GetMinorLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMinor, substitute); }
     UNITS_EXPORT Utf8String GetSubLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxSub, substitute); }
+    BEU::UnitCP GetMajorUnit() const { return m_unitProx.GetUnit(indxMajor); }
+    BEU::UnitCP GetMiddleUnit() const { return m_unitProx.GetUnit(indxMiddle); }
+    BEU::UnitCP GetMinorUnit() const { return m_unitProx.GetUnit(indxMinor); }
+    BEU::UnitCP GetSubUnit() const { return m_unitProx.GetUnit(indxSub); }
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
     bool IsProblem() const { return m_problem.IsProblem(); }
     bool NoProblem() const { return m_problem.NoProblem(); }
     size_t GetMajorToMiddleRatio() { return m_ratio[indxMajor]; }
     size_t GetMiddleToMinorRatio() { return m_ratio[indxMiddle]; }
     size_t GetMinorToSubRatio() { return m_ratio[indxMinor]; }
-    UNITS_EXPORT Utf8CP GetProblemDescription() const;
+    UNITS_EXPORT size_t GetUnitCount() const { return m_unitProx.UnitCount(); }
+    UNITS_EXPORT Utf8CP GetProblemDescription() const { return m_problem.GetProblemDescription().c_str(); }
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
     UNITS_EXPORT Utf8String FormatValue(double dval, NumericFormatSpecP fmtP, Utf8CP uomName = nullptr);
     CompositeSpecType GetType() const { return m_type; }
@@ -645,7 +651,11 @@ private:
         NumericFormatSpec  m_numericSpec;
         CompositeValueSpec m_compositeSpec;
         FormatSpecType     m_specType;
-        FormatProblemDetail m_problem;      
+        FormatProblemDetail m_problem;  
+
+        /*BEU::UnitCP GetCompositeUnit(size_t indx) const 
+            { return HasComposite()? m_compositeSpec.GetUnit(indx); }*/
+
 public:
         UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
         UNITS_EXPORT void Clone(NamedFormatSpecCR other);
@@ -673,6 +683,7 @@ public:
 
         FormatSpecType  GetSpecType(){return m_specType;}
         bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
+        size_t GetCompositeUnitCount() const { return HasComposite() ? m_compositeSpec.GetUnitCount() : 0; }
         NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
         CompositeValueSpecCP GetCompositeSpec() const { return  (HasComposite() ? &m_compositeSpec : nullptr); }
         bool IsProblem() const { return m_problem.IsProblem(); }
@@ -681,7 +692,10 @@ public:
         PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
         UNITS_EXPORT Json::Value ToJson(bool verbose) const;
         UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
-      
+        BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_compositeSpec.GetMajorUnit() : nullptr; }
+        BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_compositeSpec.GetMiddleUnit() : nullptr; }
+        BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_compositeSpec.GetMinorUnit() : nullptr; }
+        BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
     };
 
 //=======================================================================================
@@ -759,6 +773,12 @@ struct FormatUnitSet
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);
         bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
+        bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
+        size_t GetCompositeUnitCount() const { return HasComposite() ? m_formatSpec->GetCompositeUnitCount() : 0; }
+        BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMajorUnit() : nullptr; }
+        BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMiddleUnit() : nullptr; }
+        BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMinorUnit() : nullptr; }
+        BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
     };
 
 
