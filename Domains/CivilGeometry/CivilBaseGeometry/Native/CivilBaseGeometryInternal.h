@@ -12,6 +12,7 @@
 #include <Bentley/Bentley.h>
 #include <Geom/GeomApi.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_CIVILGEOMETRY
 
 #if 0 //&&AG not sure whether we should be logging errors or not at this level
@@ -34,6 +35,7 @@ USING_NAMESPACE_BENTLEY_CIVILGEOMETRY
         #define ROADRAILALIGNMENT_LOGE(...)           ROADRAILALIGNMENT_LOG.errorv (__VA_ARGS__);
     #endif
 #endif
+
 
 #endif // __CIVILBASEGEOMETRYINTERNAL_H__
 

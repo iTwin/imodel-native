@@ -39,11 +39,14 @@
     <ClCompile Include="..\..\StationRange.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Native\GeometryDebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Native\GeometryHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\CivilBaseGeometryInternal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\AlignmentPair.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
@@ -53,16 +56,25 @@
     <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\AlignmentPairIntersection.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\CivilBaseGeometry.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\CivilBaseGeometryApi.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\RoadAlignmentPairEditor.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\StationRange.h">
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\GeometryDebug.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\GeometryHelper.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\StationRange.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\CivilBaseGeometry.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\CivilBaseGeometryInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\CivilBaseGeometryApi.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
