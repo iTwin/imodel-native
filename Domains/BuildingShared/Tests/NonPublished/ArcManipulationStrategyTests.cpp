@@ -121,7 +121,93 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_4KeyPoints_CreatesEllipticA
     ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
     ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
     ASSERT_DOUBLE_EQ(arc.vector90.Magnitude(), 1);
-    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(45));
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-45)); // should be negative sweep, because the arc is CCW
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcManipulationStrategyTests, FinishPrimitive_CreatesArcMoreThanHalfSweep)
+    {
+    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AppendKeyPoint({2,0,0});
+    sut->AppendKeyPoint({0,0,0});
+    sut->AppendKeyPoint({4,-1,0});
+    sut->AppendDynamicKeyPoint({4,-4,0});
+    sut->AppendDynamicKeyPoint({0,-4,0});
+    sut->AppendDynamicKeyPoint({-4,-4,0});
+    sut->AppendDynamicKeyPoint({-4,0,0});
+    sut->AppendDynamicKeyPoint({-4,4,0});
+    sut->AppendKeyPoint({0,4,0});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4);
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
+    ASSERT_DOUBLE_EQ(arc.vector90.Magnitude(), 1);
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(270));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcManipulationStrategyTests, FinishPrimitive_SweepDirectionChangedOnLastAppend)
+    {
+    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AppendKeyPoint({2,0,0});
+    sut->AppendKeyPoint({0,0,0});
+    sut->AppendKeyPoint({4,-1,0});
+    sut->AppendDynamicKeyPoint({4,-4,0});
+    sut->AppendDynamicKeyPoint({0,-4,0});
+    sut->AppendKeyPoint({0,4,0});
+
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4);
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
+    ASSERT_DOUBLE_EQ(arc.vector90.Magnitude(), 1);
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-90));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcManipulationStrategyTests, FinishPrimitive_DoFullSweepPlusSomeMoreSweepInSameDirection_SweepDirectionDoesNotChange)
+    {
+    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AppendKeyPoint({2,0,0});
+    sut->AppendKeyPoint({0,0,0});
+    sut->AppendKeyPoint({4,-1,0});
+    sut->AppendDynamicKeyPoint({4,-4,0});
+    sut->AppendDynamicKeyPoint({0,-4,0});
+    sut->AppendDynamicKeyPoint({-4,-4,0});
+    sut->AppendDynamicKeyPoint({-4,0,0});
+    sut->AppendDynamicKeyPoint({-4,4,0});
+    sut->AppendDynamicKeyPoint({0,4,0});
+    sut->AppendDynamicKeyPoint({4,4,0});
+    sut->AppendDynamicKeyPoint({4,2,0});
+    sut->AppendDynamicKeyPoint({4,-4,0});
+    sut->AppendKeyPoint({0,-4,0});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4);
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
+    ASSERT_DOUBLE_EQ(arc.vector90.Magnitude(), 1);
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(90));
     }
 
 //--------------------------------------------------------------------------------------

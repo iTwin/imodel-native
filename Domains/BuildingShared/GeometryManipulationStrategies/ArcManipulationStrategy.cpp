@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
+#define SWEEP_BREAK Angle::PiOver2()
+
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
@@ -18,27 +20,20 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
     if (keyPoints.size() < 2)
         return nullptr;
 
-    DPoint3d start = keyPoints[m_startIndex];
-    DPoint3d center = keyPoints[m_centerIndex];
+    DPoint3d start = GetStart();
+    DPoint3d center = GetCenter();
     if (keyPoints.size() == 2)
         return ICurvePrimitive::CreateArc(DEllipse3d::FromCenterRadiusXY(center, center.Distance(start)));
 
-    DSegment3d startCenter = DSegment3d::From(start, center);
-    DVec3d vec0 = DVec3d::FromStartEnd(center, start);
-    DPoint3d closestPoint;
-    double closestParam;
-    startCenter.ProjectPoint(closestPoint, closestParam, keyPoints[m_middleIndex]);
-    DVec3d vec90 = DVec3d::FromStartEnd(closestPoint, keyPoints[m_middleIndex]);
+    DVec3d vec0 = GetVec0();
+    DVec3d vec90 = GetVec90();
     if (keyPoints.size() == 3)
         return ICurvePrimitive::CreateArc(
             DEllipse3d::FromVectors(center, vec0, vec90, 0, Angle::TwoPi()));
 
-    DPoint3d end = keyPoints[m_endIndex];
-    DVec3d vecEnd = DVec3d::FromStartEnd(center, end);
-    double sweep = vec0.AngleTo(vecEnd);
     if (keyPoints.size() == 4)
         return ICurvePrimitive::CreateArc(
-            DEllipse3d::FromVectors(center, vec0, vec90, 0, sweep));
+            DEllipse3d::FromVectors(center, vec0, vec90, 0, m_sweep));
 
     return nullptr;
     }
@@ -54,5 +49,160 @@ void ArcManipulationStrategy::_AppendKeyPoint
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     if ((IsDynamicKeyPointSet() && keyPoints.size() <= 4) ||
         (!IsDynamicKeyPointSet() && keyPoints.size() < 4))
+        {
+        if (keyPoints.size() >= 3)
+            UpdateSweep(newKeyPoint);
         T_Super::_AppendKeyPoint(newKeyPoint);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d ArcManipulationStrategy::GetStart() const
+    {
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    BeAssert(keyPoints.size() >= 1);
+    return keyPoints[s_startIndex];
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d ArcManipulationStrategy::GetCenter() const
+    {
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    BeAssert(keyPoints.size() >= 2);
+    return keyPoints[s_centerIndex];
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DVec3d ArcManipulationStrategy::GetVec0() const
+    {
+    DPoint3d start = GetStart();
+    DPoint3d center = GetCenter();
+
+    return DVec3d::FromStartEnd(center, start);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DVec3d ArcManipulationStrategy::GetVec90() const
+    {
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    BeAssert(keyPoints.size() >= 3);
+
+    DPoint3d start = GetStart();
+    DPoint3d center = GetCenter();
+
+    DSegment3d startCenter = DSegment3d::From(start, center);
+    DPoint3d closestPoint;
+    double closestParam;
+    startCenter.ProjectPoint(closestPoint, closestParam, keyPoints[s_middleIndex]);
+    return DVec3d::FromStartEnd(closestPoint, keyPoints[s_middleIndex]);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+DVec3d ArcManipulationStrategy::GetEndVec() const
+    {
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    BeAssert(keyPoints.size() >= 4);
+
+    DPoint3d center = keyPoints[s_centerIndex];
+    DPoint3d end = keyPoints[s_endIndex];
+    return DVec3d::FromStartEnd(center, end);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+double ArcManipulationStrategy::CalculateSweep
+(
+    DPoint3dCR endPoint
+) const
+    {
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    BeAssert(keyPoints.size() >= 3);
+    
+    DVec3d vec0 = GetVec0();
+    DPoint3d center = GetCenter();
+    DVec3d endVec = DVec3d::FromStartEnd(center, endPoint);
+    DVec3d orientation;
+    return vec0.SignedAngleTo(endVec, orientation);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::UpdateSweep
+(
+    DPoint3dCR endPoint
+)
+    {
+    double sweep = CalculateSweep(endPoint);
+    if (DoubleOps::AlmostEqual(m_sweep, 0) || DidSweepDirectionChange(sweep))
+        {
+        m_sweep = sweep;
+        }
+    else
+        {
+        if (m_sweep > 0)
+            m_sweep = sweep < 0 ? Angle::TwoPi() + sweep : sweep;
+        else if (m_sweep < 0)
+            m_sweep = sweep > 0 ? -Angle::TwoPi() + sweep : sweep;
+        else
+            m_sweep = sweep;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcManipulationStrategy::DidSweepDirectionChange
+(
+    double newSweep
+) const
+    {
+    if (m_sweep > 0)
+        {
+        if (newSweep > 0)
+            return false;
+        else
+            {
+            double tmpSweep = Angle::TwoPi() + newSweep;
+            return fabs(tmpSweep - m_sweep) > SWEEP_BREAK;
+            }
+        }
+    else if (m_sweep < 0)
+        {
+        if (newSweep < 0)
+            return false;
+        else
+            {
+            double tmpSweep = -Angle::TwoPi() + newSweep;
+            return fabs(tmpSweep - m_sweep) > SWEEP_BREAK;
+            }
+        }
+
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::_AppendDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
+    {
+    bvector<DPoint3d> const& currentKeyPoints = GetKeyPoints();
+    if (currentKeyPoints.size() >= 3)
+        UpdateSweep(newDynamicKeyPoint);
+
+    T_Super::_AppendDynamicKeyPoint(newDynamicKeyPoint);
     }
