@@ -9,10 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Header Files\PublicAPI">
       <UniqueIdentifier>{4092deb6-dfc6-4b6f-93b8-0e38c176d18e}</UniqueIdentifier>
     </Filter>
@@ -21,44 +17,32 @@
     <Text Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\AlignmentPair.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\AlignmentPairEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\AlignmentPairIntersection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\CivilBaseGeometryInternal.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\RoadAlignmentPairEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\StationRange.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Native\GeometryDebug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Native\GeometryHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Native\AlignmentPair.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Native\AlignmentPairEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Native\AlignmentPairIntersection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Native\CivilBaseGeometryInternal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Native\RoadAlignmentPairEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Native\StationRange.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\AlignmentPair.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\AlignmentPairEditor.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\AlignmentPairIntersection.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\PublicAPI\CivilBaseGeometry\RoadAlignmentPairEditor.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\GeometryDebug.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
@@ -75,6 +59,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\CivilBaseGeometryApi.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPair.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPairEditor.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPairIntersection.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\RoadAlignmentPairEditor.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
