@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/ArcManipulationStrategy.cpp $
+|     $Source: GeometryManipulationStrategies/EllipseManipulationStrategy.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
+ICurvePrimitivePtr EllipseManipulationStrategy::_FinishPrimitive() const
     {
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     if (keyPoints.size() < 2)
@@ -41,7 +41,7 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcManipulationStrategy::_AppendKeyPoint
+void EllipseManipulationStrategy::_AppendKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
@@ -59,7 +59,7 @@ void ArcManipulationStrategy::_AppendKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DPoint3d ArcManipulationStrategy::GetStart() const
+DPoint3d EllipseManipulationStrategy::GetStart() const
     {
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     BeAssert(keyPoints.size() >= 1);
@@ -69,7 +69,7 @@ DPoint3d ArcManipulationStrategy::GetStart() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DPoint3d ArcManipulationStrategy::GetCenter() const
+DPoint3d EllipseManipulationStrategy::GetCenter() const
     {
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     BeAssert(keyPoints.size() >= 2);
@@ -79,7 +79,7 @@ DPoint3d ArcManipulationStrategy::GetCenter() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DVec3d ArcManipulationStrategy::GetVec0() const
+DVec3d EllipseManipulationStrategy::GetVec0() const
     {
     DPoint3d start = GetStart();
     DPoint3d center = GetCenter();
@@ -90,7 +90,7 @@ DVec3d ArcManipulationStrategy::GetVec0() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DVec3d ArcManipulationStrategy::GetVec90() const
+DVec3d EllipseManipulationStrategy::GetVec90() const
     {
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     BeAssert(keyPoints.size() >= 3);
@@ -108,7 +108,7 @@ DVec3d ArcManipulationStrategy::GetVec90() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DVec3d ArcManipulationStrategy::GetEndVec() const
+DVec3d EllipseManipulationStrategy::GetEndVec() const
     {
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     BeAssert(keyPoints.size() >= 4);
@@ -121,7 +121,7 @@ DVec3d ArcManipulationStrategy::GetEndVec() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-double ArcManipulationStrategy::CalculateSweep
+double EllipseManipulationStrategy::CalculateSweep
 (
     DPoint3dCR endPoint
 ) const
@@ -139,7 +139,7 @@ double ArcManipulationStrategy::CalculateSweep
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcManipulationStrategy::UpdateSweep
+void EllipseManipulationStrategy::UpdateSweep
 (
     DPoint3dCR endPoint
 )
@@ -163,7 +163,7 @@ void ArcManipulationStrategy::UpdateSweep
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bool ArcManipulationStrategy::DidSweepDirectionChange
+bool EllipseManipulationStrategy::DidSweepDirectionChange
 (
     double newSweep
 ) const
@@ -195,7 +195,7 @@ bool ArcManipulationStrategy::DidSweepDirectionChange
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcManipulationStrategy::_AppendDynamicKeyPoint
+void EllipseManipulationStrategy::_AppendDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint
 )

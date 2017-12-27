@@ -1,20 +1,20 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/PublicApi/ArcManipulationStrategy.h $
+|     $Source: GeometryManipulationStrategies/PublicApi/EllipseManipulationStrategy.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseManipulationStrategy)
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct ArcManipulationStrategy : public CurvePrimitiveManipulationStrategy
+struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
     {
     DEFINE_T_SUPER(CurvePrimitiveManipulationStrategy)
 
@@ -26,7 +26,7 @@ struct ArcManipulationStrategy : public CurvePrimitiveManipulationStrategy
 
         double m_sweep;
 
-        ArcManipulationStrategy() : T_Super(), m_sweep(0) {}
+        EllipseManipulationStrategy() : T_Super(), m_sweep(0) {}
 
         bool DidSweepDirectionChange(double newSweep) const;
         void UpdateSweep(DPoint3dCR endPoint);
@@ -45,7 +45,7 @@ struct ArcManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
     public:
-        static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }
+        static EllipseManipulationStrategyPtr Create() { return new EllipseManipulationStrategy(); }
     };
 
 END_BUILDING_SHARED_NAMESPACE

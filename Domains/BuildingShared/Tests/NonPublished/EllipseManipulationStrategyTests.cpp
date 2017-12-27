@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ArcManipulationStrategyTests.cpp $
+|  $Source: Tests/NonPublished/EllipseManipulationStrategyTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,7 +12,7 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-struct ArcManipulationStrategyTests : public BuildingSharedTestFixtureBase
+struct EllipseManipulationStrategyTests : public BuildingSharedTestFixtureBase
     {};
 
 END_BUILDING_SHARED_NAMESPACE
@@ -21,9 +21,9 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, AppendKeyPoint_AccepsAMaximumOf4KeyPoints)
+TEST_F(EllipseManipulationStrategyTests, AppendKeyPoint_AccepsAMaximumOf4KeyPoints)
     {
-    GeometryManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    GeometryManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_EQ(sut->GetKeyPoints().size(), 0);
@@ -42,9 +42,9 @@ TEST_F(ArcManipulationStrategyTests, AppendKeyPoint_AccepsAMaximumOf4KeyPoints)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_RequiresAtLeast2KeyPoints)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_RequiresAtLeast2KeyPoints)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_EQ(sut->GetKeyPoints().size(), 0);
@@ -60,9 +60,9 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_RequiresAtLeast2KeyPoints)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_2KeyPoints_CreatesFullCircularArc)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_2KeyPoints_CreatesFullCircularArc)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     double radius = 2;
@@ -82,9 +82,9 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_2KeyPoints_CreatesFullCircu
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_3KeyPoints_CreatesFullEllipticArc)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_3KeyPoints_CreatesFullEllipticArc)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     sut->AppendKeyPoint({2,0,0});
@@ -104,9 +104,9 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_3KeyPoints_CreatesFullEllip
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_4KeyPoints_CreatesEllipticArc)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_4KeyPoints_CreatesEllipticArc)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     sut->AppendKeyPoint({2,0,0});
@@ -127,9 +127,9 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_4KeyPoints_CreatesEllipticA
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_CreatesArcMoreThanHalfSweep)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_CreatesArcMoreThanHalfSweep)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     sut->AppendKeyPoint({2,0,0});
@@ -155,9 +155,9 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_CreatesArcMoreThanHalfSweep
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_SweepDirectionChangedOnLastAppend)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_SweepDirectionChangedOnLastAppend)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     sut->AppendKeyPoint({2,0,0});
@@ -181,9 +181,9 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_SweepDirectionChangedOnLast
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_DoFullSweepPlusSomeMoreSweepInSameDirection_SweepDirectionDoesNotChange)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_DoFullSweepPlusSomeMoreSweepInSameDirection_SweepDirectionDoesNotChange)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     sut->AppendKeyPoint({2,0,0});
@@ -213,9 +213,9 @@ TEST_F(ArcManipulationStrategyTests, FinishPrimitive_DoFullSweepPlusSomeMoreSwee
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcManipulationStrategyTests, FinishPrimitive_CreatesEllipse)
+TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_CreatesEllipse)
     {
-    CurvePrimitiveManipulationStrategyPtr sut = ArcManipulationStrategy::Create();
+    CurvePrimitiveManipulationStrategyPtr sut = EllipseManipulationStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
     sut->AppendKeyPoint({-2,0,0});

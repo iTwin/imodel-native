@@ -33,7 +33,7 @@ $(o)CurvePrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)CurvePrimitiveMa
 
 $(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
 
-$(o)ArcManipulationStrategy$(oext) : $(_MakeFilePath)ArcManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcManipulationStrategy.h
+$(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EllipseManipulationStrategy.h
 
 $(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
 
