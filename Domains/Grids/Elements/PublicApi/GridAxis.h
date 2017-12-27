@@ -29,7 +29,8 @@ protected:
 
     static CreateParams CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
-    BE_PROP_NAME (Grid)
+    BE_PROP_NAME(Grid)
+    BE_PROP_NAME(Name)
 
     Dgn::DgnDbStatus Validate () const;
 
@@ -44,6 +45,9 @@ protected:
     //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
+
+    virtual void _SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); SetUserLabel(name); };
+
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
 
@@ -72,6 +76,14 @@ public:
     //! Gets grid's that contains this axis id
     //! @return element id of the grid
     Dgn::DgnElementId GetGridId () const { return GetPropertyValueId<Dgn::DgnElementId> (prop_Grid ()); };
+
+    //! Gets name of this gridAxis
+    //! @return name of this gridAxis
+    GRIDELEMENTS_EXPORT Utf8String  GetName() const { return GetPropertyValueString(prop_Name()); }
+
+    //! Sets name of this gridAxis
+    //! @param[in]  name    new name for this gridAxis
+    GRIDELEMENTS_EXPORT void        SetName(Utf8CP name) { _SetName(name); };
 
     //---------------------------------------------------------------------------------------
     // Queries
