@@ -13,9 +13,29 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct GridAxisHandler : Dgn::dgn_ElementHandler::Definition
+struct OrthogonalAxisXHandler : Dgn::dgn_ElementHandler::Definition
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridAxis, GridAxis, GridAxisHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_OrthogonalAxisX, OrthogonalAxisX, OrthogonalAxisXHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
+    };
+
+struct OrthogonalAxisYHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_OrthogonalAxisY, OrthogonalAxisY, OrthogonalAxisYHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
+    };
+
+struct CircularAxisHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_CircularAxis, CircularAxis, CircularAxisHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
+    };
+
+struct RadialAxisHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_RadialAxis, RadialAxis, RadialAxisHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
+    };
+
+struct GeneralGridAxisHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GeneralGridAxis, GeneralGridAxis, GeneralGridAxisHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
     };
 
 struct GridSplineSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
