@@ -396,7 +396,7 @@ bool createDimensions
 
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
 
-    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
+    GeneralGridAxisPtr horizontalAxis = GeneralGridAxis::CreateAndInsert(defModel, *thisGrid);
     
     if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *horizontalAxis, createDimensions))
         BeAssert (!"error inserting gridSurfaces into elevation grid.. shouldn't get here..");

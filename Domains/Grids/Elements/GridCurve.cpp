@@ -87,30 +87,6 @@ Dgn::DgnDbStatus GridCurve::_OnUpdate(Dgn::DgnElementCR original)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GridCurvePtr                 GridCurve::Create 
-(
-Dgn::DgnModelCR model,
-ICurvePrimitivePtr  curve
-)
-    {
-    return new GridCurve (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), curve);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridCurvePtr                 GridCurve::Create 
-(
-Dgn::DgnModelCR model,
-CurveVectorPtr  curve
-)
-    {
-    return new GridCurve (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), curve);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 void            GridCurve::_CopyFrom(Dgn::DgnElementCR source)
     {
     T_Super::_CopyFrom(source);

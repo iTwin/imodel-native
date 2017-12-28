@@ -52,8 +52,8 @@ StandardCreateParams const& params
 
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb().GetDictionaryModel ();
 
-    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
-    GridAxisPtr verticalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
+    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::CreateAndInsert (defModel, *thisGrid);
+    OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::CreateAndInsert(defModel, *thisGrid);
 
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel ();
     

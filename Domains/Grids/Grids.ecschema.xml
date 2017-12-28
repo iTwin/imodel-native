@@ -58,11 +58,8 @@
       </Target>
     </ECRelationshipClass>
   
-    <ECEntityClass typeName="GridAxis">
+    <ECEntityClass typeName="GridAxis" modifier="Abstract">
       <BaseClass>bis:DefinitionElement</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
       <ECProperty propertyName="Name" displayLabel="Name" typeName="string"/>
       <ECNavigationProperty propertyName="Grid" relationshipName="GridHasAxes" direction="Backward" description="Grid this axis belong to" />
     </ECEntityClass>
@@ -102,10 +99,17 @@
       </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECEntityClass typeName="GridCurve">
+    <ECEntityClass typeName="GridCurve" modifier="Abstract">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
     </ECEntityClass>
-  
+
+
+    <ECEntityClass typeName="GeneralGridCurve">
+      <BaseClass>GridCurve</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
   
     <ECEntityClass typeName="GridLine">
       <BaseClass>GridCurve</BaseClass>

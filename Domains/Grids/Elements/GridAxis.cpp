@@ -38,42 +38,6 @@ DgnClassId classId
     return createParams;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridAxisPtr                 GridAxis::CreateAndInsert
-(
-Dgn::DgnModelCR model,
-GridCR grid
-)
-    {
-    GridAxisPtr thisAxis = GridAxis::Create (model, grid);
-
-    BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
-
-    if (!thisAxis->Insert ().IsValid ())
-        return nullptr;
-
-    return thisAxis;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridAxisPtr                 GridAxis::Create
-(
-Dgn::DgnModelCR model,
-GridCR grid
-)
-    {
-    GridAxisPtr thisAxis = new GridAxis (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
-
-    thisAxis->SetGridId (grid.GetElementId ());
-
-    return thisAxis;
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------

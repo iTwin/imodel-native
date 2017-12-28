@@ -52,21 +52,6 @@ public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
 
     //---------------------------------------------------------------------------------------
-    // Creation
-    //---------------------------------------------------------------------------------------
-    //! Creates an empty grid axis
-    //! @param[in]  model   model for the axis
-    //! @param[in]  grid    grid this axis belongs to
-    //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static GridAxisPtr Create (Dgn::DgnModelCR model, GridCR grid);
-
-    //! Creates and inserts an empty grid axis
-    //! @param[in]  model   model for the axis
-    //! @param[in]  grid    grid this axis belongs to
-    //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static GridAxisPtr CreateAndInsert (Dgn::DgnModelCR model, GridCR grid);
-
-    //---------------------------------------------------------------------------------------
     // Getters and setters
     //---------------------------------------------------------------------------------------
     //! Sets gridAxis grid Id value

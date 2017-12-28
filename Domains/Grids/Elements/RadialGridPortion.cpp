@@ -120,8 +120,8 @@ RadialGridPtr RadialGrid::CreateAndInsert (CreateParams params)
 
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
 
-    GridAxisPtr planeAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
-    GridAxisPtr arcAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
+    RadialAxisPtr planeAxis = RadialAxis::CreateAndInsert (defModel, *thisGrid);
+    CircularAxisPtr arcAxis = CircularAxis::CreateAndInsert (defModel, *thisGrid);
 
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
 
