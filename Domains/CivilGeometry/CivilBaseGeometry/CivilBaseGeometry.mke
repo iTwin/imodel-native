@@ -44,6 +44,10 @@ $(o)AlignmentPair$(oext) :          $(appSrc)AlignmentPair.cpp $(appPublicApi)Al
 
 $(o)AlignmentPairEditor$(oext) :    $(appSrc)AlignmentPairEditor.cpp $(appPublicApi)AlignmentPairEditor.h ${MultiCompileDepends}
 
+$(o)GeometryDebug$(oext) :          $(appSrc)GeometryDebug.cpp $(appPublicApi)GeometryDebug.h ${MultiCompileDepends} 
+
+$(o)GeometryHelper$(oext) :         $(appSrc)GeometryHelper.cpp $(appPublicApi)GeometryHelper.h ${MultiCompileDepends} 
+
 %include MultiCppCompileGo.mki
 #------------------------------------------------
 # END Compile
@@ -66,6 +70,7 @@ DLM_CREATE_LIB_CONTEXT_LINK     = 1
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
 
 
 %include $(sharedMki)LinkLibrary.mki

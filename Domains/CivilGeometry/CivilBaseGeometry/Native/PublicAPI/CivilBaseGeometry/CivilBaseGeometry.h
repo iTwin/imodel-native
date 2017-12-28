@@ -11,6 +11,8 @@
 #include <Bentley/Bentley.h>
 #include <Geom/GeomApi.h>
 #include <DgnPlatform/DgnPlatform.r.h> // Only required for Dgn::StandardUnit
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 // This Dll is not expected to contain any other dependencies other than GeomLibs and the BentleyApi
 

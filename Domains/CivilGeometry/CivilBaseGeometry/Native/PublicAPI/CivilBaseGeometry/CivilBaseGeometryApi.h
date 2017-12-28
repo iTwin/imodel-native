@@ -13,3 +13,5 @@
 #include "StationRange.h"
 #include "AlignmentPair.h"
 #include "AlignmentPairEditor.h"
+#include "GeometryDebug.h"
+#include "GeometryHelper.h"
