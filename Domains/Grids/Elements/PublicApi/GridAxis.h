@@ -20,7 +20,6 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridAxis : Dgn::DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridAxis, Dgn::DefinitionElement);
     DEFINE_T_SUPER(Dgn::DefinitionElement);
 
     struct CreateParams : T_Super::CreateParams

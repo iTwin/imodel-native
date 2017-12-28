@@ -11,7 +11,12 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridAxis)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridAxis)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalAxisX)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalAxisY)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(CircularAxis)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(RadialAxis)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(GeneralGridAxis)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  10/2017
@@ -106,7 +111,7 @@ OrthogonalGridCR grid
 
     BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
     
-    if (!thisAxis->InsertT<OrthogonalAxisX>().IsValid ())
+    if (!thisAxis->Insert().IsValid ())
         return nullptr;
 
     return thisAxis;
@@ -152,7 +157,7 @@ OrthogonalGridCR grid
 
     BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
 
-    if (!thisAxis->InsertT<OrthogonalAxisY>().IsValid())
+    if (!thisAxis->Insert().IsValid())
         return nullptr;
 
     return thisAxis;
@@ -198,7 +203,7 @@ RadialGridCR grid
 
     BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
 
-    if (!thisAxis->InsertT<CircularAxis>().IsValid())
+    if (!thisAxis->Insert().IsValid())
         return nullptr;
 
     return thisAxis;
@@ -244,7 +249,7 @@ RadialGridCR grid
 
     BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
 
-    if (!thisAxis->InsertT<RadialAxis>().IsValid())
+    if (!thisAxis->Insert().IsValid())
         return nullptr;
 
     return thisAxis;
@@ -290,7 +295,7 @@ GridCR grid
 
     BuildingLocks_LockElementForOperation (*thisAxis, BeSQLite::DbOpcode::Insert, "Inserting grid axis");
 
-    if (!thisAxis->InsertT<GeneralGridAxis>().IsValid())
+    if (!thisAxis->Insert().IsValid())
         return nullptr;
 
     return thisAxis;
