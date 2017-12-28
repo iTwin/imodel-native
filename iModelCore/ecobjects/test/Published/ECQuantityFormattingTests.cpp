@@ -44,10 +44,12 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
         LOG.errorv("FUS-problem: %s", fus.GetProblemDescription().c_str());
         return;
         }
+    BEF::FormatUnitSet fus0 = BEF::FormatUnitSet("real4u", fusUnit);
     BEU::Quantity qty = ECQuantityFormatting::CreateQuantity(input, 0, fus);
     Utf8String qtyT = fus.FormatQuantity(qty, spacer);
-    LOG.errorv("Input:%s Quantity %s", input, qtyT.c_str());
-    return;
+    Utf8String qtyT0 = fus0.FormatQuantity(qty, spacer);
+
+    LOG.errorv("Input: |%s| Quantity %s  (Equivalent: %s)", input, qtyT.c_str(), qtyT0.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,6 +74,13 @@ TEST(ECQuantityFormattingTests, Preliminary)
     ShowQuantifiedValue("3 1/3'", "realu", "IN");
     ShowQuantifiedValue("3 1/3'", "realu", "M");
     ShowQuantifiedValue("3 1/3'", "realu", "MM");
+    ShowQuantifiedValue("5:6", "fi8", "MM");
+    ShowQuantifiedValue("5:6", "fi8", "IN");
+    ShowQuantifiedValue("5:", "fi8", "MM");
+    ShowQuantifiedValue("5:", "fi8", "IN");
+    ShowQuantifiedValue(":6", "fi8", "MM");
+    ShowQuantifiedValue(":6", "fi8", "IN");
+    ShowQuantifiedValue("135:23:11", "dms8", "ARC_DEG");
     LOG.error("================  End of Quantity Formatting Log  ===========================");
     TearDownL10N();
     }
