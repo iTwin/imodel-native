@@ -53,8 +53,11 @@ struct GeometryManipulationStrategyBase : RefCountedBase
 
         virtual bool _IsDynamicKeyPointSet() const = 0;
         virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
+        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) = 0;
         virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) = 0;
+        virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) = 0;
         virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) = 0;
+        virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) = 0;
         virtual void _ResetDynamicKeyPoint() = 0;
 
     public:
