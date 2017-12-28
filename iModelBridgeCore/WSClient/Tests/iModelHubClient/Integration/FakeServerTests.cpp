@@ -34,6 +34,7 @@ class FakeServerFixture : public IntegrationTestsBase
             }
         virtual void SetUp()
             {
+				//
             /*IntegrationTestsBase::SetUp();
             auto proxy   = ProxyHttpHandler::GetFiddlerProxyIfReachable();
             m_client     = SetUpClient(IntegrationTestSettings::Instance().GetValidAdminCredentials(), proxy);
