@@ -21,8 +21,9 @@ USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalGrid)
 
+static const double PLACEMENT_TOLERANCE = 1.0E-9;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -240,6 +241,30 @@ Dgn::RepositoryStatus OrthogonalGrid::RotateToAngleXY(double theta, bool updateD
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            OrthogonalGrid::_OnUpdated
+(
+Dgn::DgnElementCR original
+) const
+    {
+    Dgn::DgnDbR db = GetDgnDb();
+    //only if the placement has changed, we want to fix the gridsurfaces.
+    if (!GetPlacement().GetTransform().IsEqual(original.ToGeometrySource3d()->GetPlacement().GetTransform(), PLACEMENT_TOLERANCE, PLACEMENT_TOLERANCE))
+        {
+        for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
+            {
+            GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
+            if (RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "update GridSurface"))
+                BeAssert(!"failed to acquire lock for element update");
+            surface->Update();
+            }
+        }
+
+    T_Super::_OnUpdated(original);
     }
 
 END_GRIDS_NAMESPACE

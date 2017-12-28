@@ -128,6 +128,8 @@ protected:
     explicit GRIDELEMENTS_EXPORT OrthogonalGrid (T_Super::CreateParams const& params);
     friend struct OrthogonalGridHandler;
 
+    GRIDELEMENTS_EXPORT virtual void _OnUpdated(Dgn::DgnElementCR original) const override;
+
     //! Calculates translation for grid planed needed for grid to be orthogonal
     //! @param[in] elementIndex     index of the grid plane
     //! @param[in] interval         distance between grid planes
