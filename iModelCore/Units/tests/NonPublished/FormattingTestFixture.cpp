@@ -727,11 +727,13 @@ void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unit
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName)
+void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP formatName)
     {
     LOG.infov("=========== Parsing To Quantity |%s| from %d", input, start);
+    FormatUnitSet fus = FormatUnitSet(formatName, unitName);
+    FormatProblemCode probCode;
     FormatParsingSet fps = FormatParsingSet(input, start, unitName);
-    BEU::Quantity qty = fps.GetQuantity();
+    BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
     if(qty.IsNullQuantity())
         LOG.info("Parsing failed");
     else

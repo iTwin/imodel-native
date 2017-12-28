@@ -76,7 +76,7 @@ struct FormattingTestFixture
         static void TestScanTriplets(Utf8CP str);
         static Utf8CP TestGrabber(Utf8CP input, size_t start= 0);
         static void TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced=nullptr);
-        static void ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr);
+        static void ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr, Utf8CP formatName = nullptr);
         static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer = nullptr);
         static void NamedSpecToJson(Utf8CP stdName);
         static void FormattingTraitsTest();

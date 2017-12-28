@@ -25,6 +25,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(NumberGrabber)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSegment)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSet)
 
+
 struct CursorScanPoint
     {
     private:
@@ -172,7 +173,7 @@ struct FormatParsingSegment
         double GetAbsReal() { return fabs(m_dval); }
         double GetSign() { return (m_dval < 0) ? -1.0 : 1.0; }
         int GetInteger() { return m_ival; }
-        BEU::UnitCP GetUnit() { return m_unit; }
+        UNITS_EXPORT BEU::UnitCP GetUnit(Formatting::FormatUnitSetCP fusP = nullptr);
         size_t GetNextindex() { return m_start + m_byteCount; }
         void SetBoundary(size_t s, size_t l) { m_start = s; m_byteCount = l; }
         bool IsNumber() { return (m_type == ParsingSegmentType::Integer) || (m_type == ParsingSegmentType::Real); }
@@ -209,6 +210,7 @@ struct FormatParsingSet
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
         bvector<FormatParsingSegment> GetSegments() { return m_segs; }
+        UNITS_EXPORT BEU::UnitCP GetUnit(FormatUnitSetCP fusP = nullptr);
         size_t GetSegmentNumber() { return m_segs.size(); }
         UNITS_EXPORT Utf8String GetSignature(bool distinct = true);// , int*colonCount = nullptr);
         UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatUnitSetCP fusP = nullptr);
