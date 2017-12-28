@@ -132,8 +132,8 @@ double EllipseManipulationStrategy::CalculateSweep
     DVec3d vec0 = GetVec0();
     DPoint3d center = GetCenter();
     DVec3d endVec = DVec3d::FromStartEnd(center, endPoint);
-    DVec3d orientation;
-    return vec0.SignedAngleTo(endVec, orientation);
+    DVec3d direction = DVec3d::FromCrossProduct(vec0, GetVec90());
+    return vec0.SignedAngleTo(endVec, direction);
     }
 
 //--------------------------------------------------------------------------------------

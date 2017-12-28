@@ -121,7 +121,7 @@ TEST_F(EllipseManipulationStrategyTests, FinishPrimitive_4KeyPoints_CreatesEllip
     ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
     ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
     ASSERT_DOUBLE_EQ(arc.vector90.Magnitude(), 1);
-    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(-45)); // should be negative sweep, because the arc is CCW
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(45));
     }
 
 //--------------------------------------------------------------------------------------
