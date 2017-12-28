@@ -16,6 +16,8 @@
 BEGIN_GRIDS_NAMESPACE
 
 #define GRIDLINE_LENGTH_COEFF 0.1
+static const double PLACEMENT_TOLERANCE = 1.0E-9;
+
 
 //=======================================================================================
 //! Physical building element
@@ -82,7 +84,14 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 
+    GRIDELEMENTS_EXPORT virtual void _OnUpdated(Dgn::DgnElementCR original) const override;
+
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+
+    GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const = 0;
+
+    GRIDELEMENTS_EXPORT virtual bool    _NeedsUpdateSurfacesOnPlacementChange() const { return true; }
+
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (Grid, GRIDELEMENTS_EXPORT)
 
@@ -158,6 +167,8 @@ protected:
     //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
     explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params) : T_Super (params) {};
+
+    GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const override {};
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid, GRIDELEMENTS_EXPORT)
 
@@ -224,12 +235,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         BE_PROP_NAME(DefaultSurface2d)
     protected:
 
+        GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const {};
+
         static  BentleyStatus           ValidateSurfaces (bvector<CurveVectorPtr> const& surfaces);
 
                 BentleyStatus           CreateElevationGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisCR gridAxis, bool createDimensions);
         //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
         //! @param[in]          params  params for creation
         explicit GRIDELEMENTS_EXPORT ElevationGrid (T_Super::CreateParams const& params) : T_Super (params) {};
+
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid, GRIDELEMENTS_EXPORT)
         friend struct ElevationGridHandler;

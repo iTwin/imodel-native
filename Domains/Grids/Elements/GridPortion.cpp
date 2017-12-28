@@ -291,6 +291,33 @@ Dgn::DgnModelCR targetModel
     return SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            Grid::_OnUpdated
+(
+Dgn::DgnElementCR original
+) const
+    {
+    Dgn::DgnDbR db = GetDgnDb();
+    //only if the placement has changed, we want to fix the gridsurfaces.
+    if (_NeedsUpdateSurfacesOnPlacementChange() &&
+        !GetPlacement().GetTransform().IsEqual(original.ToGeometrySource3d()->GetPlacement().GetTransform(), PLACEMENT_TOLERANCE, PLACEMENT_TOLERANCE))
+        {
+        for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
+            {
+            GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
+            _OnUpdatingSurface(*surface);
+            if (RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "update GridSurface"))
+                BeAssert(!"failed to acquire lock for element update");
+            surface->Update();
+            }
+        }
+
+    T_Super::_OnUpdated(original);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
