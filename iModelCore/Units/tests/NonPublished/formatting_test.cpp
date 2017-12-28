@@ -458,7 +458,7 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("5:6", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity("5:", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity(":6", 0, "IN", "fi8");
-    FormattingTestFixture::ParseToQuantity("135:23:11", 0, "ACR_DEG", "dms8");
+    FormattingTestFixture::ParseToQuantity("135:23:11", 0, "ARC_DEG", "dms8");
 
     //FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
     FormattingTestFixture::TestScanPointVector(u8"ЯA型号   sautéςερ135°11'30-1/4\"");
