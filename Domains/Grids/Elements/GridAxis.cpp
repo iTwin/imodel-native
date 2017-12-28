@@ -24,20 +24,6 @@ CreateParams const& params
 
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridAxis::CreateParams           GridAxis::CreateParamsFromModel
-(
-Dgn::DgnModelCR model,
-DgnClassId classId
-)
-    {
-    CreateParams createParams (model.GetDgnDb (), model.GetModelId (), classId);
-
-    return createParams;
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
@@ -135,7 +121,7 @@ Dgn::DgnModelCR model,
 OrthogonalGridCR grid
 )
     {
-    OrthogonalAxisXPtr thisAxis = new OrthogonalAxisX (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    OrthogonalAxisXPtr thisAxis = new OrthogonalAxisX (CreateParams(model, grid));
 
     thisAxis->SetGridId (grid.GetElementId ());
 
@@ -181,7 +167,7 @@ Dgn::DgnModelCR model,
 OrthogonalGridCR grid
 )
     {
-    OrthogonalAxisYPtr thisAxis = new OrthogonalAxisY (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    OrthogonalAxisYPtr thisAxis = new OrthogonalAxisY (CreateParams(model, grid));
 
     thisAxis->SetGridId (grid.GetElementId ());
 
@@ -227,7 +213,7 @@ Dgn::DgnModelCR model,
 RadialGridCR grid
 )
     {
-    CircularAxisPtr thisAxis = new CircularAxis (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    CircularAxisPtr thisAxis = new CircularAxis (CreateParams(model, grid));
 
     thisAxis->SetGridId (grid.GetElementId ());
 
@@ -273,7 +259,7 @@ Dgn::DgnModelCR model,
 RadialGridCR grid
 )
     {
-    RadialAxisPtr thisAxis = new RadialAxis (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    RadialAxisPtr thisAxis = new RadialAxis (CreateParams(model, grid));
 
     thisAxis->SetGridId (grid.GetElementId ());
 
@@ -319,7 +305,7 @@ Dgn::DgnModelCR model,
 GridCR grid
 )
     {
-    GeneralGridAxisPtr thisAxis = new GeneralGridAxis (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    GeneralGridAxisPtr thisAxis = new GeneralGridAxis (CreateParams(model, grid));
 
     thisAxis->SetGridId (grid.GetElementId ());
 

@@ -23,11 +23,28 @@ struct EXPORT_VTABLE_ATTRIBUTE GridAxis : Dgn::DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridAxis, Dgn::DefinitionElement);
     DEFINE_T_SUPER(Dgn::DefinitionElement);
 
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(GridAxis::T_Super::CreateParams);
+        Dgn::DgnElementId m_gridId;
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams(Dgn::DgnModelCR model, Dgn::DgnClassId classId, Dgn::DgnElementId gridId) :
+            T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), classId), m_gridId(gridId)
+            {}
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit CreateParams(Dgn::DgnElement::CreateParams const& params)
+            : T_Super(params), m_gridId(Dgn::DgnElementId())
+            {}
+        };
+
 protected:
     explicit GRIDELEMENTS_EXPORT GridAxis (CreateParams const& params);
     friend struct GridAxisHandler;
-
-    static CreateParams CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
     BE_PROP_NAME(Grid)
     BE_PROP_NAME(Name)
@@ -86,6 +103,26 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
     DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_OrthogonalAxisX, GridAxis);
     DEFINE_T_SUPER(GridAxis);
 
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(OrthogonalAxisX::T_Super::CreateParams);
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams(Dgn::DgnModelCR model, OrthogonalGridCR grid) :
+            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+            {
+            }
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
+            : T_Super(params)
+            {
+            }
+        };
+
     private:
 
     protected:
@@ -118,6 +155,24 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
 struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
     {
     DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_OrthogonalAxisY, GridAxis);
+
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(OrthogonalAxisY::T_Super::CreateParams);
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams(Dgn::DgnModelCR model, OrthogonalGridCR grid) :
+            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+            {}
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
+            : T_Super(params)
+            {}
+        };
 
     private:
 
@@ -152,6 +207,24 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
     {
     DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_CircularAxis, GridAxis);
 
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(CircularAxis::T_Super::CreateParams);
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams(Dgn::DgnModelCR model, RadialGridCR grid) :
+            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+            {}
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
+            : T_Super(params)
+            {}
+        };
+
     private:
 
     protected:
@@ -185,6 +258,24 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
     {
     DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_RadialAxis, GridAxis);
 
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(RadialAxis::T_Super::CreateParams);
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams(Dgn::DgnModelCR model, RadialGridCR grid) :
+            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+            {}
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
+            : T_Super(params)
+            {}
+        };
+
     private:
 
     protected:
@@ -217,6 +308,24 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
 struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
     {
     DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_GeneralGridAxis, GridAxis);
+
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(GeneralGridAxis::T_Super::CreateParams);
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model              model for the PlanCartesianGridSurface
+        CreateParams(Dgn::DgnModelCR model, GridCR grid) :
+            T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), grid.GetElementId())
+            {}
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
+            : T_Super(params)
+            {}
+        };
 
     private:
 
