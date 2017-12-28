@@ -78,7 +78,7 @@ private:
 
 public:
     // Constructor
-    ImportXData (DwgImporter::Options const& options, SampleOptions const& sample) : T_Super(options), m_sampleOptions(sample), m_dumpCount(0) { }
+    ImportXData (DwgImporter::Options& options, SampleOptions const& sample) : T_Super(options), m_sampleOptions(sample), m_dumpCount(0) { }
     // override _BeginImport when we may optionally dump Xrecord's in dictionaries
     virtual void    _BeginImport () override;
     // Override _ImportEntity to convert both entity and its xdata

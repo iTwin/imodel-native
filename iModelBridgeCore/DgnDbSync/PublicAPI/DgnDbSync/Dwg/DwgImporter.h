@@ -101,9 +101,10 @@ public:
     void            SetModelInstanceId (DwgDbObjectIdCR id) { m_dwgModelInstanceId=id; }
     DgnModelP       GetModel () { return m_model; }
     void            SetModel (DgnModelP model) { m_model=model; }
-    DwgSyncInfo::DwgModelMapping GetMapping () const { return m_mapping; }
+    DwgSyncInfo::DwgModelMapping const& GetMapping () const { return m_mapping; }
     void            SetMapping (DwgSyncInfo::DwgModelMapping const& m) { m_mapping=m; }
-    Transform       GetTransform () const { return  m_mapping.GetTransform(); }
+    TransformCR     GetTransform () const { return m_mapping.GetTransform(); }
+    void            SetTransform (TransformCR t) { return m_mapping.SetTransform(t); }
     DwgSyncInfo::DwgModelSyncInfoId GetModelSyncInfoId () const { return m_mapping.GetDwgModelSyncInfoId(); }
 };  // ResolvedModelMapping
 typedef bmultiset<ResolvedModelMapping>     T_DwgModelMapping;
@@ -529,13 +530,16 @@ public:
         };  // DwgXRefHolder
     typedef bvector<DwgXRefHolder>    T_LoadedXRefFiles;
 
-    //! Aa xRef-DgnModel mapping per instance for paperspace
+    //! An xRef-DgnModel mapping per instance for paperspace
     struct DwgXRefInPaperspace
         {
         DwgDbObjectId       m_xrefInsertId;
         DwgDbObjectId       m_paperspaceId;
         DgnModelId          m_dgnModelId;
         explicit DwgXRefInPaperspace (DwgDbObjectId xrefId, DwgDbObjectId layoutId, DgnModelId modelId) : m_xrefInsertId(xrefId), m_paperspaceId(layoutId), m_dgnModelId(modelId) {}
+        DwgDbObjectIdCR GetXrefInsertId () const { return m_xrefInsertId; }
+        DwgDbObjectIdCR GetPaperSpaceId () const { return m_paperspaceId; }
+        DgnModelId GetPaperSpaceModelId () const { return m_dgnModelId; }
         };
     typedef bvector<DwgXRefInPaperspace>    T_DwgXRefsInPaperspaces;
     typedef bpair<DgnViewId,DwgDbObjectId>  T_PaperspaceView;
@@ -672,6 +676,33 @@ public:
         };  // ConstantAttrdefs
     typedef bvector<ConstantBlockAttrdefs>              T_ConstantBlockAttrdefList;
 
+    //! Information about the root model transformation.
+    struct RootTransformInfo
+        {
+    private:
+        Transform   m_rootTransform;        // the effective root model transform
+        Transform   m_jobTransform;         // the spatial model transform initiated from iModelBridge
+        Transform   m_changeTransform;      // the delta transform from old to new root model
+        bool        m_changed;              // tells us if the root transform has been changed from last import
+    public:
+        RootTransformInfo () : m_changed(false) { m_rootTransform.InitIdentity(); m_changeTransform.InitIdentity(); m_jobTransform.InitIdentity(); }
+        //! @return True the root transform has been changed from last import when updating; false otherwise;
+        bool    HasChanged() const { return m_changed; }
+        void    SetHasChanged(bool changed) { m_changed = changed; }
+        //! @return The current root model transform: compounded with the spatial transform from iModelBridge for modelspace, and inverted for paperspaces.
+        TransformCR GetRootTransform () const { return m_rootTransform; }
+        TransformR  GetRootTransformR () { return m_rootTransform; }
+        void    SetRootTransform (TransformCR t) { m_rootTransform = t; }
+        //! @return The delta transform that changes the root transform from old to new - valid only if HasChanged returns true.
+        TransformCR GetChangeTransformFromOldToNew () const { return m_changeTransform; }
+        TransformCR GetChangeTransformFromNewToOld () const { return m_changeTransform.ValidatedInverse().Value(); }
+        //! @param t The delta transform that changes the root transform from old to new.
+        void    SetChangeTransformFromOldToNew (TransformCR t) { m_changeTransform = t; }
+        //! @return The spatial model transform initiated for current import job from iModelBridge.
+        TransformCR GetJobTransform () const { return m_jobTransform; }
+        void    SetJobTransform (TransformCR t) { m_jobTransform = t; }
+        };  // RootTransformInfo
+
     //! The status of attempting to create a new ImportJob
     enum class ImportJobCreateStatus
         {
@@ -740,7 +771,7 @@ public:
     //! A problem in the conversion process
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
         L10N_STRING(CannotCreateChangesFile)     // =="Cannot create changes file"==
-        L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will used for display."==
+        L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will be used for display."==
         L10N_STRING(CannotOpenModelspace)        // =="Cannot open modelspace for file [%s]"==
         L10N_STRING(CannotUseStableIds)          // =="Cannot use DgnElementIds for this kind of file"==
         L10N_STRING(CantCreateModel)             // =="Cannot create model [%s]"==
@@ -881,7 +912,7 @@ protected:
     ResolvedImportJob           m_importJob;
     SubjectCPtr                 m_spatialParentSubject;
     BeFileName                  m_rootFileName;
-    Transform                   m_rootTransform;
+    RootTransformInfo           m_rootTransformInfo;
     DwgDbObjectId               m_modelspaceId;
     DwgDbObjectId               m_currentspaceId;
     T_DwgModelMapping           m_dwgModelMap;
@@ -889,7 +920,7 @@ protected:
     bool                        m_isProcessingDwgModelMap;
     StandardUnit                m_modelspaceUnits;
     bool                        m_wasAborted;
-    Options                     m_options;
+    Options&                    m_options;
     GeometryOptions             m_currentGeometryOptions;
     DwgSyncInfo                 m_syncInfo;
     T_DwgChangeDetectorPtr      m_changeDetector;
@@ -946,6 +977,8 @@ private:
     void                    CheckSameRootModelAndUnits ();
     void                    ComputeDefaultImportJobName (Utf8StringCR rootModelName);
     Utf8String              GetImportJobNamePrefix () const { return ""; }
+    ResolvedModelMapping    FindRootModelFromImportJob ();
+    bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
 
     static void             RegisterProtocalExtensions ();
 
@@ -958,6 +991,7 @@ protected:
     BeFileNameCR                        GetRootDwgFileName () const { return m_rootFileName; }
     DGNDBSYNC_EXPORT  virtual void      _SetChangeDetector (bool updating);
     virtual IDwgChangeDetector&         _GetChangeDetector () { return *m_changeDetector; }
+    virtual bool                        _HaveChangeDetector () { return nullptr != m_changeDetector; }
     DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
 
     //! @name The ImportJob
@@ -988,11 +1022,13 @@ protected:
     // Modelspace and xRef blocks as Physical Models, layout blocks as sheet models
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportDwgModels ();
     DGNDBSYNC_EXPORT virtual void       _SetModelUnits (GeometricModel::Formatter& displayInfo, DwgDbBlockTableRecordCR block);
-    // get or create a new DgnModel from a model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
+    //! Get a DgnModel from the syncInfo for updating, or create a new DgnModel for importing, from a DWG model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
     ResolvedModelMapping                GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
-    ResolvedModelMapping                GetOrCreateRootModel ();
+    //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
+    ResolvedModelMapping                GetOrCreateRootModel (bool updating);
+    ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
     ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
-    //! find DgnModel from DWG model cache
+    //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
     ResolvedModelMapping                FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
     Utf8String                          RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
     DGNDBSYNC_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, Utf8CP suffix = nullptr);
@@ -1095,7 +1131,8 @@ protected:
     DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
 
 public:
-    DGNDBSYNC_EXPORT DwgImporter (Options const& options);
+    //! An app must hold and pass in the reference of a DwgImporter::Options, which may be changed after a DwgImporter is created.
+    DGNDBSYNC_EXPORT DwgImporter (Options& options);
     DGNDBSYNC_EXPORT ~DwgImporter ();
 
     DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr, DwgSyncInfo::ImportJob::Type = DwgSyncInfo::ImportJob::Type::RootModels);
@@ -1111,7 +1148,13 @@ public:
     DGNDBSYNC_EXPORT void               SetFallbackFontPathForShape (BeFileNameCR filename);
     bool                                GetFallbackFontPathForText (BeFileNameR outName, DgnFontType type) const;
     DGNDBSYNC_EXPORT void               SetFallbackFontPathForText (BeFileNameCR inName, DgnFontType fontType);
-    TransformCR                         GetRootTransform () const { return m_rootTransform; }
+    //! @return The root transform information.
+    DGNDBSYNC_EXPORT RootTransformInfo const& GetRootTransformInfo () const { return m_rootTransformInfo; }
+    //! @return True, if the root transform has been changed from previous import; false, otherwise.
+    //! @note This happens when iModelBridge changes its spatial transformation for the same import job.
+    DGNDBSYNC_EXPORT bool               HasRootTransformChanged () const { return m_rootTransformInfo.HasChanged(); }
+    //! @return Current root transform.
+    TransformCR                         GetRootTransform () const { return m_rootTransformInfo.GetRootTransform(); }
     DGNDBSYNC_EXPORT double             GetScaleToMeters () const;
     DwgDbObjectId                       GetCurrentViewportId () { return m_currentGeometryOptions.GetViewportId(); }
     DwgDbObjectIdCR                     GetCurrentSpaceId () const { return m_currentspaceId; }

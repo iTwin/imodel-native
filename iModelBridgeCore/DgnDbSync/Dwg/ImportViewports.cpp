@@ -101,7 +101,7 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
 
         m_height = viewportEntity.GetViewHeight ();
         m_width = m_height * aspectRatio;
-       }
+        }
 
     this->TransformDataToBim ();
     }
@@ -125,11 +125,11 @@ bool            ViewportFactory::ComposeLayoutTransform (TransformR trans, DwgDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ViewportFactory::TransformDataToBim ()
     {
-    m_transform.Multiply (m_center);
+    m_transform.MultiplyMatrixOnly (m_center);
     m_center.z = 0.0;
 
     m_transform.Multiply (m_target);
-    m_transform.Multiply (m_viewDirection);
+    m_transform.MultiplyMatrixOnly (m_viewDirection);
 
     double      toMeters = 1.0;
     m_transform.IsRigidScale (toMeters);
@@ -709,7 +709,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
 
     // get the modelspace model:
     DgnModelP   rootModel = nullptr;
-    ResolvedModelMapping    modelMap = importer.FindModel (importer.GetModelSpaceId(), importer.GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    ResolvedModelMapping    modelMap = importer.GetRootModel ();
     if (!modelMap.IsValid() || (rootModel = modelMap.GetModel()) == nullptr)
         {
         BeAssert(false && L"failed retrieving modelspace model!");
@@ -859,7 +859,7 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecord
         return BSIERROR;
         }
     DgnModelP   rootModel = nullptr;
-    ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, m_rootTransform, DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    ResolvedModelMapping    modelMap = this->FindModel (this->GetModelSpaceId(), this->GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelSpace);
     if (!modelMap.IsValid() || (rootModel = modelMap.GetModel()) == nullptr)
         {
         BeAssert(false && L"root model has not been imported yet!");
