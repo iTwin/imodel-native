@@ -1823,7 +1823,7 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
         EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, statement.Prepare(*dgnProj, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
         while (statement.Step() == BE_SQLITE_ROW)
             {
-            printf("\n ViewName : %s \n", statement.GetValueText(0));
+            //printf("\n ViewName : %s \n", statement.GetValueText(0));
             BentleyApi::BeSQLite::Statement stmt;
             BentleyApi::Utf8String sql;
             sql.Sprintf("SELECT * FROM %s", statement.GetValueText(0));
