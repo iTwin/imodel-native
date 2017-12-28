@@ -67,6 +67,41 @@
       <ECNavigationProperty propertyName="Grid" relationshipName="GridHasAxes" direction="Backward" description="Grid this axis belong to" />
     </ECEntityClass>
   
+    <ECEntityClass typeName="OrthogonalAxisX">
+      <BaseClass>GridAxis</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="OrthogonalAxisY">
+      <BaseClass>GridAxis</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+      
+    <ECEntityClass typeName="CircularAxis">
+      <BaseClass>GridAxis</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="RadialAxis">
+      <BaseClass>GridAxis</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="GeneralGridAxis">
+      <BaseClass>GridAxis</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+  
     <ECEntityClass typeName="GridCurve">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
     </ECEntityClass>

@@ -232,4 +232,39 @@ ICurvePrimitivePtr                  GridCurve::GetCurve
     return curve;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+GeneralGridCurve::GeneralGridCurve
+(
+CreateParams const& params
+) : T_Super(params) 
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+GeneralGridCurve::GeneralGridCurve
+(
+CreateParams const& params,
+ICurvePrimitivePtr  curve
+) : T_Super(params, curve) 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+GeneralGridCurvePtr                 GeneralGridCurve::Create 
+(
+Dgn::DgnModelCR model,
+ICurvePrimitivePtr  curve
+)
+    {
+    return new GeneralGridCurve (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), curve);
+    }
+
 END_GRIDS_NAMESPACE
