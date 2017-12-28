@@ -64,6 +64,12 @@ protected:
 
     virtual void _SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); SetUserLabel(name); };
 
+    virtual bool _IsOrthogonalAxisX() const { return false; }
+    virtual bool _IsOrthogonalAxisY() const { return false; }
+    virtual bool _IsCircularAxis() const { return false; }
+    virtual bool _IsRadialAxis() const { return false; }
+    virtual bool _IsGeneralGridAxis() const { return false; }
+
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridAxis, GRIDELEMENTS_EXPORT)
 
@@ -85,6 +91,26 @@ public:
     //! Sets name of this gridAxis
     //! @param[in]  name    new name for this gridAxis
     GRIDELEMENTS_EXPORT void        SetName(Utf8CP name) { _SetName(name); };
+
+    //! returns true if this is orthogonalAxisX
+    //! @return true if this is orthogonalAxisX
+    GRIDELEMENTS_EXPORT bool        IsOrthogonalAxisX() const { return _IsOrthogonalAxisX(); }
+
+    //! returns true if this is OrthogonalAxisY
+    //! @return true if this is OrthogonalAxisY
+    GRIDELEMENTS_EXPORT bool        IsOrthogonalAxisY() const { return _IsOrthogonalAxisY(); }
+
+    //! returns true if this is CircularAxis
+    //! @return true if this is CircularAxis
+    GRIDELEMENTS_EXPORT bool        IsCircularAxis() const { return _IsCircularAxis(); }
+
+    //! returns true if this is RadialAxis
+    //! @return true if this is RadialAxis
+    GRIDELEMENTS_EXPORT bool        IsRadialAxis() const { return _IsRadialAxis(); }
+
+    //! returns true if this is GeneralGridAxis
+    //! @return true if this is GeneralGridAxis
+    GRIDELEMENTS_EXPORT bool        IsGeneralGridAxis() const { return _IsGeneralGridAxis(); }
 
     //---------------------------------------------------------------------------------------
     // Queries
@@ -130,6 +156,7 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
 
         explicit GRIDELEMENTS_EXPORT OrthogonalAxisX(CreateParams const& params);
 
+        virtual bool _IsOrthogonalAxisX() const { return true; }
     public:
 
         //---------------------------------------------------------------------------------------
@@ -181,6 +208,7 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
 
         explicit GRIDELEMENTS_EXPORT OrthogonalAxisY(CreateParams const& params);
 
+        virtual bool _IsOrthogonalAxisY() const { return true; }
     public:
 
         //---------------------------------------------------------------------------------------
@@ -232,6 +260,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
 
         explicit GRIDELEMENTS_EXPORT CircularAxis(CreateParams const& params);
 
+        virtual bool _IsCircularAxis() const { return true; }
     public:
 
         //---------------------------------------------------------------------------------------
@@ -283,6 +312,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
 
         explicit GRIDELEMENTS_EXPORT RadialAxis(CreateParams const& params);
 
+        virtual bool _IsRadialAxis() const { return true; }
+
     public:
 
         //---------------------------------------------------------------------------------------
@@ -333,6 +364,8 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         friend struct GeneralGridAxisHandler;
 
         explicit GRIDELEMENTS_EXPORT GeneralGridAxis(CreateParams const& params);
+
+        virtual bool _IsGeneralGridAxis() const { return true; }
 
     public:
 
