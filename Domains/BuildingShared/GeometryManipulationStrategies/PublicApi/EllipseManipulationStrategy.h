@@ -21,7 +21,7 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
     private:
         static const size_t s_startIndex = 0;
         static const size_t s_centerIndex = 1;
-        static const size_t s_middleIndex = 2;
+        static const size_t s_vec90EndIndex = 2;
         static const size_t s_endIndex = 3;
 
         double m_sweep;

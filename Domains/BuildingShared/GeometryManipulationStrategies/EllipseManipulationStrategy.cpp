@@ -101,8 +101,8 @@ DVec3d EllipseManipulationStrategy::GetVec90() const
     DSegment3d startCenter = DSegment3d::From(start, center);
     DPoint3d closestPoint;
     double closestParam;
-    startCenter.ProjectPoint(closestPoint, closestParam, keyPoints[s_middleIndex]);
-    return DVec3d::FromStartEnd(closestPoint, keyPoints[s_middleIndex]);
+    startCenter.ProjectPoint(closestPoint, closestParam, keyPoints[s_vec90EndIndex]);
+    return DVec3d::FromStartEnd(closestPoint, keyPoints[s_vec90EndIndex]);
     }
 
 //--------------------------------------------------------------------------------------

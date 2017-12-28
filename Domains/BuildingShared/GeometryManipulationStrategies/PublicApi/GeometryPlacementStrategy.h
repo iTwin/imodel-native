@@ -28,8 +28,11 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
 
         virtual bool _IsDynamicKeyPointSet() const override;
         virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
         virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
         virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
         virtual void _ResetDynamicKeyPoint() override;
 
     public:
