@@ -1626,7 +1626,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     if (nullptr != getTileTree)
         {
         // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
-        return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
+        if (!getTileTree->_AllowPublishing())
+            return TileGeneratorStatus::NoGeometry;
+        else
+            return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
         }
     else if (nullptr != generateMeshTiles)
         {
@@ -2725,6 +2728,13 @@ void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, T
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(DgnElementId elementId, bool allowLoad)
     {
+#ifdef DEBUG_ELEMENT_FILTER
+    static  DgnElementId s_debugId = DgnElementId((uint64_t) 197);
+
+    if (s_debugId.IsValid() && s_debugId != elementId)
+        return SUCCESS;
+#endif
+
     GeometrySourceCP pSrc = m_cache.GetCachedGeometrySource(elementId);
     if (nullptr != pSrc)
         return VisitGeometry(*pSrc);

@@ -819,7 +819,7 @@ DirectPublisher::Status   DirectPublisher::PublishViewModels (DRange3dR range)
         auto                        getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(GetDgnDb().Models().GetModel(modelId).get());
         ModelSpatialClassifiers     classifiers;
 
-        if (nullptr != getTileTree && 
+        if (nullptr != getTileTree && getTileTree->_AllowPublishing() &&
             SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers))
             {
             for (auto& classifier : classifiers)
