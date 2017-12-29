@@ -22,22 +22,28 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GeometryManipulationStrategyPtr m_manipulationStrategy;
 
     protected:
-        GeometryPlacementStrategy(GeometryManipulationStrategyP manipulationStrategy);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategy(GeometryManipulationStrategyP manipulationStrategy);
 
-        virtual bvector<DPoint3d> const& _GetKeyPoints() const override;
+        GeometryManipulationStrategyR GetManipulationStrategyR() { return *m_manipulationStrategy; }
+        GeometryManipulationStrategyCR GetManipulationStrategy() const { return *m_manipulationStrategy; }
 
-        virtual bool _IsDynamicKeyPointSet() const override;
-        virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
-        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
-        virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
-        virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
-        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
-        virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
-        virtual void _ResetDynamicKeyPoint() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> const& _GetKeyPoints() const override;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsDynamicKeyPointSet() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ResetDynamicKeyPoint() override;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint();
 
     public:
-        void AddKeyPoint(DPoint3dCR newKeyPoint);
-        void PopKeyPoint();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
     };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -25,12 +25,23 @@ GeometryPlacementStrategy::GeometryPlacementStrategy
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::AddKeyPoint
+void GeometryPlacementStrategy::_AddKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
     {
     m_manipulationStrategy->AppendKeyPoint(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryPlacementStrategy::AddKeyPoint
+(
+    DPoint3dCR newKeyPoint
+)
+    {
+    _AddKeyPoint(newKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -44,9 +55,17 @@ bvector<DPoint3d> const& GeometryPlacementStrategy::_GetKeyPoints() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::PopKeyPoint()
+void GeometryPlacementStrategy::_PopKeyPoint()
     {
     m_manipulationStrategy->PopKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryPlacementStrategy::PopKeyPoint()
+    {
+    _PopKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------

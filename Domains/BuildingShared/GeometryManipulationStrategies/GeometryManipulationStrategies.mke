@@ -37,6 +37,12 @@ $(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStra
 
 $(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
 
+$(o)CurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)CurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurveVectorPlacementStrategy.h
+
+$(o)CurvePrimitivePlacementStrategy$(oext) : $(_MakeFilePath)CurvePrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitivePlacementStrategy.h
+
+$(o)ArcStartCenterPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartCenterPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartCenterPlacementStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

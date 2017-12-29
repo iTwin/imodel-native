@@ -17,3 +17,6 @@
 #include "LineManipulationStrategy.h"
 #include "EllipseManipulationStrategy.h"
 #include "GeometryPlacementStrategy.h"
+#include "CurveVectorPlacementStrategy.h"
+#include "CurvePrimitivePlacementStrategy.h"
+#include "ArcStartCenterPlacementStrategy.h"

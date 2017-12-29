@@ -26,6 +26,7 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategy();
 
+        bvector<DPoint3d> const& GetAcceptedKeyPoints() const { return m_keyPoints; }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> const& _GetKeyPoints() const override;
 
         virtual bool _IsDynamicKeyPointSet() const override { return m_dynamicKeyPointSet; }
