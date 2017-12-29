@@ -235,7 +235,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         BE_PROP_NAME(DefaultSurface2d)
     protected:
 
-        GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const {};
+        GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const override {};
 
         static  BentleyStatus           ValidateSurfaces (bvector<CurveVectorPtr> const& surfaces);
 
