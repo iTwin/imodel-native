@@ -14,14 +14,12 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct ArcCenterStartPlacementStrategy : public CurvePrimitivePlacementStrategy
+struct ArcCenterStartPlacementStrategy : public ArcPlacementStrategy
     {
-    DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
+    DEFINE_T_SUPER(ArcPlacementStrategy)
 
     private:
         ArcCenterStartPlacementStrategy() : T_Super(EllipseManipulationStrategy::Create().get()) {}
-
-        DPoint3d CalculateVec90KeyPoint(DPoint3dCR endPoint) const;
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;

@@ -41,6 +41,8 @@ $(o)CurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)CurveVectorPlacementSt
 
 $(o)CurvePrimitivePlacementStrategy$(oext) : $(_MakeFilePath)CurvePrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitivePlacementStrategy.h
 
+$(o)ArcPlacementStrategy$(oext) : $(_MakeFilePath)ArcPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcPlacementStrategy.h
+
 $(o)ArcStartCenterPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartCenterPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartCenterPlacementStrategy.h
 
 $(o)ArcCenterStartPlacementStrategy$(oext) : $(_MakeFilePath)ArcCenterStartPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcCenterStartPlacementStrategy.h

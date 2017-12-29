@@ -19,5 +19,6 @@
 #include "GeometryPlacementStrategy.h"
 #include "CurveVectorPlacementStrategy.h"
 #include "CurvePrimitivePlacementStrategy.h"
+#include "ArcPlacementStrategy.h"
 #include "ArcStartCenterPlacementStrategy.h"
 #include "ArcCenterStartPlacementStrategy.h"
