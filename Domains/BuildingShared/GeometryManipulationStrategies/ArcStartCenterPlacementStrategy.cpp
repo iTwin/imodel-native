@@ -65,7 +65,7 @@ void ArcStartCenterPlacementStrategy::_AddKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcStartCenterPlacementStrategy::_AppendDynamicKeyPoint
+void ArcStartCenterPlacementStrategy::_AddDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint
 )

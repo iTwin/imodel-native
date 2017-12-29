@@ -146,10 +146,10 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
 
     sut->AddKeyPoint({2,0,0});
     sut->AddKeyPoint({0,0,0});
-    sut->AppendDynamicKeyPoint({4,-4,0});
-    sut->AppendDynamicKeyPoint({0,-4,0});
-    sut->AppendDynamicKeyPoint({-4,-4,0});
-    sut->AppendDynamicKeyPoint({-4,0,0});
+    sut->AddDynamicKeyPoint({4,-4,0});
+    sut->AddDynamicKeyPoint({0,-4,0});
+    sut->AddDynamicKeyPoint({-4,-4,0});
+    sut->AddDynamicKeyPoint({-4,0,0});
     sut->AddKeyPoint({-4,4,0});
     ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
     ASSERT_TRUE(arcPrimitive.IsValid());

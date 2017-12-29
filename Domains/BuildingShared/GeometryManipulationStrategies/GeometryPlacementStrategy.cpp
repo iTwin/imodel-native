@@ -79,7 +79,7 @@ bool GeometryPlacementStrategy::_IsDynamicKeyPointSet() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::_AppendDynamicKeyPoint
+void GeometryPlacementStrategy::_AddDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint
 )
@@ -90,7 +90,7 @@ void GeometryPlacementStrategy::_AppendDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::_AppendDynamicKeyPoints
+void GeometryPlacementStrategy::_AddDynamicKeyPoints
 (
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
@@ -101,49 +101,23 @@ void GeometryPlacementStrategy::_AppendDynamicKeyPoints
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::_InsertDynamicKeyPoint
+void GeometryPlacementStrategy::AddDynamicKeyPoint
 (
-    DPoint3dCR newDynamicKeyPoint,
-    size_t index
+    DPoint3dCR newDynamicKeyPoint
 )
     {
-    m_manipulationStrategy->InsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    _AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::_InsertDynamicKeyPoints
+void GeometryPlacementStrategy::AddDynamicKeyPoints
 (
-    bvector<DPoint3d> const& newDynamicKeyPoints,
-    size_t index
+    bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    m_manipulationStrategy->InsertDynamicKeyPoints(newDynamicKeyPoints, index);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::_UpdateDynamicKeyPoint
-(
-    DPoint3dCR newDynamicKeyPoint,
-    size_t index
-)
-    {
-    m_manipulationStrategy->UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-void GeometryPlacementStrategy::_UpdateDynamicKeyPoints
-(
-    bvector<DPoint3d> const& newDynamicKeyPoints,
-    size_t index
-)
-    {
-    m_manipulationStrategy->UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
+    _AddDynamicKeyPoints(newDynamicKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------

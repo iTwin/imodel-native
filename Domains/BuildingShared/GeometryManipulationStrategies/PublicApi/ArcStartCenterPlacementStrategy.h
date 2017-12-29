@@ -27,7 +27,7 @@ struct ArcStartCenterPlacementStrategy : public CurvePrimitivePlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
 
     public:
         static ArcStartCenterPlacementStrategyPtr Create() { return new ArcStartCenterPlacementStrategy(); }

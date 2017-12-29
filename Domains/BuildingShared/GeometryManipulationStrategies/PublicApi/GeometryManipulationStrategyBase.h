@@ -52,24 +52,12 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         virtual bvector<DPoint3d> const& _GetKeyPoints() const = 0;
 
         virtual bool _IsDynamicKeyPointSet() const = 0;
-        virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
-        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) = 0;
-        virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) = 0;
-        virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) = 0;
-        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) = 0;
-        virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) = 0;
         virtual void _ResetDynamicKeyPoint() = 0;
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> const& GetKeyPoints() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsDynamicKeyPointSet() const;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ResetDynamicKeyPoint();
     };
 
