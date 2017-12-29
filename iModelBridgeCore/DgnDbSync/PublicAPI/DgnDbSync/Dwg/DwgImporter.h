@@ -695,7 +695,7 @@ public:
         void    SetRootTransform (TransformCR t) { m_rootTransform = t; }
         //! @return The delta transform that changes the root transform from old to new - valid only if HasChanged returns true.
         TransformCR GetChangeTransformFromOldToNew () const { return m_changeTransform; }
-        TransformCR GetChangeTransformFromNewToOld () const { return m_changeTransform.ValidatedInverse().Value(); }
+        Transform   GetChangeTransformFromNewToOld () const { return m_changeTransform.ValidatedInverse().Value(); }
         //! @param t The delta transform that changes the root transform from old to new.
         void    SetChangeTransformFromOldToNew (TransformCR t) { m_changeTransform = t; }
         //! @return The spatial model transform initiated for current import job from iModelBridge.
