@@ -73,5 +73,8 @@
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\RoadAlignmentPairEditor.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\ProfilingMacros.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

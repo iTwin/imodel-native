@@ -103,6 +103,7 @@
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\CivilBaseGeometryApi.h" />
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\GeometryDebug.h" />
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\GeometryHelper.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\ProfilingMacros.h" />
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\StationRange.h" />
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPair.h" />
     <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPairEditor.h" />

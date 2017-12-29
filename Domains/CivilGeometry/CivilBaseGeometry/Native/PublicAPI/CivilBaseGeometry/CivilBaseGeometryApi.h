@@ -15,3 +15,4 @@
 #include "AlignmentPairEditor.h"
 #include "GeometryDebug.h"
 #include "GeometryHelper.h"
+#include "ProfilingMacros.h"
