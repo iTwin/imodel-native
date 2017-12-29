@@ -24,6 +24,10 @@ struct ArcStartMidEndPlacementStrategyTests : public BuildingSharedTestFixtureBa
     {
     };
 
+struct ArcStartEndMidPlacementStrategyTests : public BuildingSharedTestFixtureBase
+    {
+    };
+
 END_BUILDING_SHARED_NAMESPACE
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -311,6 +315,84 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
     ASSERT_TRUE(arcPrimitive->TryGetArc(actualArc));
     DVec3d actualNormal = DVec3d::FromCrossProduct(actualArc.vector0, actualArc.vector90);
     
+    ASSERT_TRUE(actualArc.center.AlmostEqual(expectedArc.center));
+    ASSERT_DOUBLE_EQ(actualArc.vector0.Magnitude(), actualArc.vector90.Magnitude()) << "Not circular arc";
+    ASSERT_DOUBLE_EQ(actualArc.vector0.Magnitude(), expectedArc.vector0.Magnitude());
+    ASSERT_DOUBLE_EQ(actualArc.sweep, expectedArc.sweep);
+    ASSERT_DOUBLE_EQ(actualArc.start, expectedArc.start);
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    }
+
+#pragma endregion
+
+#pragma region Arc_StartEndMid_PlacementStrategy
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartEndMidPlacementStrategyTests, KeyPointManipulation)
+    {
+    ArcPlacementStrategyPtr sut = ArcStartEndMidPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0) << "Initial state";
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "Initial state";
+    sut->AddDynamicKeyPoint({2,0,0});
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
+
+    sut->AddKeyPoint({2,0,0});
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point, 0 dynamic key points";
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1) << "[AddKeyPoint] Has 1 key point, 0 dynamic key points";
+    sut->AddDynamicKeyPoint({0,-3,0});
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 2 generated point, 1 dynamic key point";
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4) << "[AddDynamicKeyPoint] Has 1 key point, 2 generated point, 1 dynamic key point";
+
+    sut->AddKeyPoint({0,3,0});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4) << "[AddKeyPoint] Has 2 key points, 2 generated point";
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points, 2 generated point";
+    sut->AddDynamicKeyPoint({0,3,0});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4) << "[AddDynamicKeyPoint] Has 2 key point, 1 generated point, 1 dynamic key points";
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key point, 1 generated point, 1 dynamic key points";
+
+    sut->AddKeyPoint({0,-3,0});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4) << "[AddKeyPoint] Has 3 key point, 1 generated point, 0 dynamic key points";
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key point, 1 generated point, 0 dynamic key points";
+
+    sut->PopKeyPoint();
+    ASSERT_EQ(sut->GetKeyPoints().size(), 4) << "[PopKeyPoint] Has 2 key point, 2 generated point";
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key point, 2 generated point";
+    sut->PopKeyPoint();
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1) << "[PopKeyPoint] Has 1 key point, 0 dynamic key points";
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point, 0 dynamic key points";
+    sut->PopKeyPoint();
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0) << "[PopKeyPoint] Has 0 key points";
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartEndMidPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
+    {
+    ArcPlacementStrategyPtr sut = ArcStartEndMidPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";
+    sut->AddKeyPoint({2,0,0});
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 1 key point";
+    sut->AddKeyPoint({0,3,0});
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 2 key points";
+    sut->AddKeyPoint({0,-3,0});
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid()) << "Is not valid with 3 key points";
+
+    DEllipse3d expectedArc = DEllipse3d::FromPointsOnArc({2,0,0}, {0,-3,0}, {0,3,0});
+    DVec3d expectedNormal = DVec3d::FromCrossProduct(expectedArc.vector0, expectedArc.vector90);
+    DEllipse3d actualArc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(actualArc));
+    DVec3d actualNormal = DVec3d::FromCrossProduct(actualArc.vector0, actualArc.vector90);
+
     ASSERT_TRUE(actualArc.center.AlmostEqual(expectedArc.center));
     ASSERT_DOUBLE_EQ(actualArc.vector0.Magnitude(), actualArc.vector90.Magnitude()) << "Not circular arc";
     ASSERT_DOUBLE_EQ(actualArc.vector0.Magnitude(), expectedArc.vector0.Magnitude());

@@ -23,3 +23,4 @@
 #include "ArcStartCenterPlacementStrategy.h"
 #include "ArcCenterStartPlacementStrategy.h"
 #include "ArcStartMidEndPlacementStrategy.h"
+#include "ArcStartEndMidPlacementStrategy.h"
