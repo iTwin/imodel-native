@@ -43,8 +43,8 @@ public:
         //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
         //! @param[in] createDimensions             true to create dimensions between planes
         //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
-        CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, Utf8CP name, Dgn::DgnClassId classId) :
-            T_Super (DgnElement::CreateParams (model->GetDgnDb (), model->GetModelId (), classId, Dgn::DgnCode (model->GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid), modeledElementId, name)))
+        CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, Dgn::DgnClassId classId) :
+            T_Super (DgnElement::CreateParams (model.GetDgnDb (), model.GetModelId (), classId, Dgn::DgnCode (model.GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid), modeledElementId, name)))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
@@ -159,6 +159,43 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE PlanGrid : Grid
 {
     DEFINE_T_SUPER (Grid);
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(PlanGrid::T_Super::CreateParams);
+
+        double      m_defaultStartElevation;
+        double      m_defaultEndElevation;
+
+        //! Creates create parameters for orthogonal grid
+        //! @param[in] model                        model to create the grid in
+        //! @param[in] horizontalCount              horizontal lines count
+        //! @param[in] verticalCount                vertical lines count
+        //! @param[in] horizontalInterval           distance between horizontal lines
+        //! @param[in] verticalInterval             distance between vertical lines
+        //! @param[in] length                       length of grid lines
+        //! @param[in] height                       height of grid lines
+        //! @param[in] horizontalExtendTranslation  translation of horizontal lines to be extended
+        //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
+        //! @param[in] createDimensions             true to create dimensions between planes
+        //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
+        CreateParams(Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, Dgn::DgnClassId classId, double defaultStaElevation, double defaultEndElevation) :
+            T_Super(model, modeledElementId, name, classId)
+            {
+            m_defaultStartElevation = defaultStaElevation;
+            m_defaultEndElevation = defaultEndElevation;
+            }
+
+        //! Constructor from base params. Chiefly for internal use.
+        //! @param[in]      params   The base element parameters
+        //! @return 
+        explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
+            : T_Super(params)
+            {
+            //initialize with zeros, this is not supposed to be a valid element.
+            m_defaultStartElevation = m_defaultEndElevation = 0.0;
+            }
+        };
+
 private:
     
     BE_PROP_NAME (DefaultStartElevation)
@@ -166,7 +203,7 @@ private:
 protected:
     //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
-    explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params) : T_Super (params) {};
+    explicit GRIDELEMENTS_EXPORT PlanGrid (CreateParams const& params);
 
     GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const override {};
 public:
@@ -217,8 +254,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
             //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
             //! @param[in] createDimensions             true to create dimensions between planes
             //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
-            CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, Utf8CP name) :
-                T_Super (model, modeledElementId, name, QueryClassId (model->GetDgnDb ()))
+            CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name) :
+                T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()))
                 {}
 
             //! Constructor from base params. Chiefly for internal use.

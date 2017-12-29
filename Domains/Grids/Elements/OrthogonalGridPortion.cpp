@@ -29,40 +29,125 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalGrid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalGrid::OrthogonalGrid
 (
-T_Super::CreateParams const& params
+CreateParams const& params
 ) : T_Super(params)
     {
-
+    SetDefaultCoordinateIncrementX(params.m_defaultCoordinateIncrementX);
+    SetDefaultCoordinateIncrementY(params.m_defaultCoordinateIncrementY);
+    SetDefaultStartExtentX(params.m_defaultStartExtentX);
+    SetDefaultEndExtentX(params.m_defaultEndExtentX);
+    SetDefaultStartExtentY(params.m_defaultStartExtentY);
+    SetDefaultEndExtentY(params.m_defaultEndExtentY);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  10/2017
+* @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrthogonalGridPtr        OrthogonalGrid::CreateAndInsert
+OrthogonalGridPtr        OrthogonalGrid::Create
 (
-StandardCreateParams const& params
+CreateParams const& params
 )
     {
     OrthogonalGridPtr thisGrid = new OrthogonalGrid (params);
+    
+    return thisGrid;
+    }
 
-    BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OrthogonalGridPtr        OrthogonalGrid::CreateAndInsert
+(
+CreateParams const& params
+)
+    {
+    OrthogonalGridPtr thisGrid = OrthogonalGrid::Create(params);
 
-    if (!thisGrid->Insert ().IsValid())
+    BuildingLocks_LockElementForOperation(*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting orthogonal grid");
+
+    if (!thisGrid->Insert().IsValid())
         return nullptr;
 
-    Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb().GetDictionaryModel ();
+    Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb().GetDictionaryModel();
 
-    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::CreateAndInsert (defModel, *thisGrid);
+    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::CreateAndInsert(defModel, *thisGrid);
     OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::CreateAndInsert(defModel, *thisGrid);
 
-    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel ();
-    
-    if (subModel.IsValid ())
-        {
-        if (BentleyStatus::ERROR == CreateAndInsertSurfaces(params, subModel.get(), *horizontalAxis, *verticalAxis))
-            return nullptr;
-        }
+    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
+
     return thisGrid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OrthogonalGridPtr        OrthogonalGrid::CreateAndInsertWithSurfaces
+(
+CreateParams const& params,
+int xSurfaceCount,
+int ySurfaceCount
+)
+    {
+    OrthogonalGridPtr thisGrid = OrthogonalGrid::CreateAndInsert(params);
+
+    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
+
+    PlanCartesianGridSurface::CreateParams paramsX(*subModel, *thisGrid->GetXAxis(), 0.0, params.m_defaultStartExtentX, params.m_defaultEndExtentX, params.m_defaultStartElevation, params.m_defaultEndElevation);
+    PlanCartesianGridSurface::CreateParams paramsY(*subModel, *thisGrid->GetYAxis(), 0.0, params.m_defaultStartExtentY, params.m_defaultEndExtentY, params.m_defaultStartElevation, params.m_defaultEndElevation);
+
+    for (int i = 0; i < xSurfaceCount; i++)
+        {
+        PlanCartesianGridSurface::CreateAndInsert(paramsX);
+        paramsX.m_coordinate += params.m_defaultCoordinateIncrementX;
+        }
+
+    for (int i = 0; i < ySurfaceCount; i++)
+        {
+        PlanCartesianGridSurface::CreateAndInsert(paramsY);
+        paramsY.m_coordinate += params.m_defaultCoordinateIncrementX;
+        }
+
+    return thisGrid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OrthogonalAxisXCPtr        OrthogonalGrid::GetXAxis
+(
+) const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_OrthogonalAxisX), "WHERE Grid=?");
+    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
+        {
+        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        }
+
+    if (iterator == iterator.end())
+        return nullptr;
+
+    return GetDgnDb().Elements().Get<OrthogonalAxisX>((*iterator.begin()).GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+OrthogonalAxisYCPtr        OrthogonalGrid::GetYAxis
+(
+) const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_OrthogonalAxisY), "WHERE Grid=?");
+    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
+        {
+        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        }
+
+    if (iterator == iterator.end())
+        return nullptr;
+
+    return GetDgnDb().Elements().Get<OrthogonalAxisY>((*iterator.begin()).GetElementId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -113,87 +198,6 @@ double distance
                                  direction,
                                  distance);
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  11/17
-//---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGrid::CreateSurfaces(bvector<GridSurfacePtr> & allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisCR gridAxis, bool isHorizontal)
-    {
-    for (int i = 0; i < count; ++i)
-        {
-        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(length + 2 * extendTranslation.Magnitude(), height);
-        extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
-        extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
-
-        if (extendHeight)
-            extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
-
-        GridPlanarSurfacePtr baseGridPlane = GridPlanarSurface::Create(*model, gridAxis, extDetail);
-        if (!baseGridPlane.IsValid())
-            return BentleyStatus::ERROR;
-
-        baseGridPlane->Translate(FindOrthogonalFormTranslation(i, interval, rotAngle, isHorizontal));
-        allSurfaces.push_back(baseGridPlane);
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  11/17
-//---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGrid::CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR horizontalGridAxis, GridAxisCR verticalGridAxis)
-    {
-    // Adjust grid height
-    double height = params.m_height;
-    if (params.m_extendHeight)
-        height += 2 * BUILDING_TOLERANCE;
-
-    bvector<GridSurfacePtr> surfaces;
-
-    BentleyStatus status = BentleyStatus::SUCCESS;
-
-    // Create horizontal elements
-    if (BentleyStatus::SUCCESS != CreateSurfaces(surfaces,
-                                                 model,
-                                                 params.m_horizontalCount,
-                                                 params.m_horizontalInterval,
-                                                 0,
-                                                 params.m_length,
-                                                 height,
-                                                 params.m_extendHeight,
-                                                 params.m_horizontalExtendTranslation,
-                                                 horizontalGridAxis,
-                                                 true))
-        return status;
-
-    // Create vertical elements
-    if (BentleyStatus::SUCCESS != CreateSurfaces(surfaces,
-                                                 model,
-                                                 params.m_verticalCount,
-                                                 params.m_verticalInterval,
-                                                 msGeomConst_pi / 2,
-                                                 params.m_length,
-                                                 height,
-                                                 params.m_extendHeight,
-                                                 params.m_verticalExtendTranslation,
-                                                 verticalGridAxis,
-                                                 false))
-        return status;
-
-    // insert elements
-    for (GridSurfacePtr gridSurface : surfaces)
-        {
-        Dgn::RepositoryStatus lockStatus = BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
-        if (Dgn::RepositoryStatus::Success != lockStatus)
-            return BentleyStatus::ERROR;
-
-        if (gridSurface->Insert().IsNull())
-            return BentleyStatus::ERROR;
-        }
-
-    return status;
     }
 
 //---------------------------------------------------------------------------------------

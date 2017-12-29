@@ -25,10 +25,9 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS (RadialGrid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RadialGrid::RadialGrid
 (
-T_Super::CreateParams const& params
+CreateParams const& params
 ) : T_Super(params) 
     {
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -36,10 +35,10 @@ T_Super::CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 RadialGridPtr        RadialGrid::Create
 (
-Dgn::SpatialLocationModelCR model
+CreateParams const& params
 )
     {
-    return new RadialGrid (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
+    return new RadialGrid (params);
     }
 
 //---------------------------------------------------------------------------------------
@@ -109,7 +108,7 @@ BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     10/17
 //---------------------------------------------------------------------------------------
-RadialGridPtr RadialGrid::CreateAndInsert (CreateParams params)
+RadialGridPtr RadialGrid::CreateAndInsert (CreateParams const& params)
     {
     RadialGridPtr thisGrid = new RadialGrid (params);
 

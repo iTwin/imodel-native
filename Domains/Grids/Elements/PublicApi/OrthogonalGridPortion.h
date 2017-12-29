@@ -29,82 +29,48 @@ public:     //public - non-exported
         {
         DEFINE_T_SUPER (OrthogonalGrid::T_Super::CreateParams);
 
-        Dgn::SpatialLocationModelCP m_model;    //TODO: remove, instead use modelId of base CreateParams
-        bool    m_createDimensions;
+        double      m_defaultCoordinateIncrementX;
+        double      m_defaultCoordinateIncrementY;
+        double      m_defaultStartExtentX;
+        double      m_defaultEndExtentX;
+        double      m_defaultStartExtentY;
+        double      m_defaultEndExtentY;
 
         //! Creates create parameters for orthogonal grid
         //! @param[in] model                        model to create the grid in
-        //! @param[in] horizontalCount              horizontal lines count
-        //! @param[in] verticalCount                vertical lines count
-        //! @param[in] horizontalInterval           distance between horizontal lines
-        //! @param[in] verticalInterval             distance between vertical lines
-        //! @param[in] length                       length of grid lines
-        //! @param[in] height                       height of grid lines
-        //! @param[in] horizontalExtendTranslation  translation of horizontal lines to be extended
-        //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
-        //! @param[in] createDimensions             true to create dimensions between planes
-        //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
-        CreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, bool createDimensions, Utf8CP name) :
-            T_Super (model, modeledElementId, name, QueryClassId (model->GetDgnDb ())),
-            m_model (model),
-            m_createDimensions (createDimensions)
-            {}
+        //! @param[in] modeledElementId             element id of the modeled element
+        //! @param[in] name                         name for this grid
+        //! @param[in] defaultCoordIncX             default coordinate increment in X axis
+        //! @param[in] defaultCoordIncY             default coordinate increment in Y axis
+        //! @param[in] defaultStaExtX               default start extent in X axis
+        //! @param[in] defaultEndExtX               default end extent in X axis
+        //! @param[in] defaultStaExtY               default start extent in Y axis
+        //! @param[in] defaultEndExtY               default end extent in Y axis
+        //! @param[in] defaultStaElevation          default start(bottom) elevation for the surfaces
+        //! @param[in] defaultEndElevation          default end(top) elevation for the surfaces
+        CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, double defaultCoordIncX, double defaultCoordIncY, double defaultStaExtX, double defaultEndExtX, double defaultStaExtY, double defaultEndExtY, double defaultStaElevation, double defaultEndElevation) :
+            T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()), defaultStaElevation, defaultEndElevation)
+            {
+            m_defaultCoordinateIncrementX = defaultCoordIncX;
+            m_defaultCoordinateIncrementY = defaultCoordIncY;
+            m_defaultStartExtentX = defaultStaExtX;
+            m_defaultEndExtentX = defaultEndExtX;
+            m_defaultStartExtentY = defaultStaExtY;
+            m_defaultEndExtentY = defaultEndExtY;
+            }
 
         //! Constructor from base params. Chiefly for internal use.
         //! @param[in]      params   The base element parameters
         //! @return 
         explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
             : T_Super (params)
-            {}
+            {
+            //initialize with zeros, this is not supposed to be a valid element.
+            m_defaultCoordinateIncrementX = m_defaultCoordinateIncrementY = m_defaultStartExtentX =
+                m_defaultEndExtentX = m_defaultStartExtentY = m_defaultEndExtentY = 0.0;
+            }
         };
 
-    struct StandardCreateParams : CreateParams
-        {
-        DEFINE_T_SUPER (OrthogonalGrid::CreateParams);
-
-        int m_horizontalCount;
-        int m_verticalCount;
-        double m_horizontalInterval;
-        double m_verticalInterval;
-        double m_length;
-        double m_height;
-        DVec3d m_horizontalExtendTranslation;
-        DVec3d m_verticalExtendTranslation;
-        bool m_extendHeight;        //TODO: Remove, needs to be handled by the tools
-
-                                    //! Creates create parameters for orthogonal grid
-                                    //! @param[in] model                        model to create the grid in
-                                    //! @param[in] horizontalCount              horizontal lines count
-                                    //! @param[in] verticalCount                vertical lines count
-                                    //! @param[in] horizontalInterval           distance between horizontal lines
-                                    //! @param[in] verticalInterval             distance between vertical lines
-                                    //! @param[in] length                       length of grid lines
-                                    //! @param[in] height                       height of grid lines
-                                    //! @param[in] horizontalExtendTranslation  translation of horizontal lines to be extended
-                                    //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
-                                    //! @param[in] createDimensions             true to create dimensions between planes
-                                    //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
-        StandardCreateParams (Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int horizontalCount, int verticalCount, double horizontalInterval, double verticalInterval,
-                      double length, double height, DVec3d horizontalExtendTranslation, DVec3d verticalExtendTranslation, bool createDimensions, bool extendHeight, Utf8CP name) :
-            T_Super (model, modeledElementId, createDimensions, name),
-            m_horizontalCount (horizontalCount),
-            m_verticalCount (verticalCount),
-            m_horizontalInterval (horizontalInterval),
-            m_verticalInterval (verticalInterval),
-            m_length (length),
-            m_height (height),
-            m_horizontalExtendTranslation (horizontalExtendTranslation),
-            m_verticalExtendTranslation (verticalExtendTranslation),
-            m_extendHeight (extendHeight)
-            {}
-
-        //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
-        explicit GRIDELEMENTS_EXPORT StandardCreateParams (Dgn::DgnElement::CreateParams const& params)
-            : T_Super (params)
-            {}
-        };
 private:
 
     BE_PROP_NAME(DefaultCoordinateIncrementX)
@@ -114,18 +80,9 @@ private:
     BE_PROP_NAME(DefaultStartExtentY)
     BE_PROP_NAME(DefaultEndExtentY)
 
-    //! Creates horizontal and vertical orthogonal grid surfaces and inserts them
-    //! @param[in] params               parameters for creating the grid portion
-    //! @param[in] model                model to create grid surfaces in
-    //! @param[in] horizontalGridAxis   axis for horizontal elements
-    //! @param[in] verticalGridAxis     axis for vertical elements
-    //! @return                         BentleyStatus::SUCCESS if no error has occured when creating and inserting elements
-    static BentleyStatus CreateAndInsertSurfaces(StandardCreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR horizontalGridAxis, GridAxisCR verticalGridAxis);
-
-    static BentleyStatus CreateSurfaces(bvector<GridSurfacePtr>& allSurfaces, Dgn::SpatialLocationModelCPtr model, int count, double interval, double rotAngle, double length, double height, bool extendHeight, DVec3d extendTranslation, GridAxisCR gridAxis, bool isHorizontal);
 
 protected:
-    explicit GRIDELEMENTS_EXPORT OrthogonalGrid (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT OrthogonalGrid (CreateParams const& params);
     friend struct OrthogonalGridHandler;
 
     //! Calculates translation for grid planed needed for grid to be orthogonal
@@ -149,9 +106,21 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates orthogonal grid
-    //! @param[in]  params          grid parameters containing information about the grid. For more info look up CreateParams
+    //! @param[in]  params          orthogonalgrid parameters containing information about the grid. For more info look up CreateParams
     //! @return                     grid with gridsurfaces in submodel
-    GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsert (StandardCreateParams const& params);
+    GRIDELEMENTS_EXPORT static OrthogonalGridPtr Create(CreateParams const& params);
+
+    //! Creates orthogonal grid and inserts in database
+    //! @param[in]  params          orthogonalgrid parameters containing information about the grid. For more info look up CreateParams
+    //! @return                     grid with gridsurfaces in submodel
+    GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsert (CreateParams const& params);
+
+    //! Creates orthogonal grid with a specified number of surfaces in axes, with default parameters
+    //! @param[in]  params          orthogonalgrid parameters containing information about the grid. For more info look up CreateParams
+    //! @param[in]  xSurfaceCount   count of surfaces to create on X axis
+    //! @param[in]  ySurfaceCount   count of surfaces to create on Y axis
+    //! @return                     grid with gridsurfaces in submodel
+    GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsertWithSurfaces(CreateParams const& params, int xSurfaceCount, int ySurfaceCount);
 
     //---------------------------------------------------------------------------------------
     // Geometry modification
@@ -161,6 +130,20 @@ public:
     //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
     //! @return                     Dgn::RepositoryStatus::Success if no error has occured when rotating the grid
     GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta, bool updateDimensions = false);
+
+
+
+
+    //---------------------------------------------------------------------------------------
+    // getters/setters
+    //---------------------------------------------------------------------------------------
+    //! Gets X axis
+    //! @return DefaultCoordinateIncrementX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT OrthogonalAxisXCPtr      GetXAxis() const;
+
+    //! Gets Y axis
+    //! @return DefaultCoordinateIncrementX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT OrthogonalAxisYCPtr      GetYAxis() const;
 
     //! Gets Default X coordinate increment of this OrthogonalGrid
     //! @return DefaultCoordinateIncrementX of this OrthogonalGrid

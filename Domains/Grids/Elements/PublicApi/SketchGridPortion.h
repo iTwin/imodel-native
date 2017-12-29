@@ -35,7 +35,7 @@ public:
     //! Creates an empty sketch grid
     //! @param[in]  model   model for the radialgridportion
     //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::SpatialLocationModelCR model, Utf8CP name);
+    GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::SpatialLocationModelCR model, Utf8CP name, double defaultStartElevation, double defaultEndElevation);
     };
 
 END_GRIDS_NAMESPACE

@@ -54,6 +54,18 @@ DgnClassId classId
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     12/17
+//---------------------------------------------------------------------------------------
+PlanGrid::PlanGrid
+(
+CreateParams const& params
+) : T_Super(params)
+    {
+    SetDefaultStartElevation(params.m_defaultStartElevation);
+    SetDefaultEndElevation(params.m_defaultEndElevation);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     09/17
 //---------------------------------------------------------------------------------------
 DPlane3d PlanGrid::GetPlane 

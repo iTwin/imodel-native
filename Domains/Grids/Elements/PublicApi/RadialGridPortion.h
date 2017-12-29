@@ -29,7 +29,6 @@ public:
         {
         DEFINE_T_SUPER(RadialGrid::T_Super::CreateParams);
 
-        Dgn::SpatialLocationModelCP m_model;    //TODO: Remove, needs to be handled by the tools
         int m_planeCount;
         int m_circularCount;
         double m_planeIterationAngle;
@@ -47,10 +46,9 @@ public:
         //! @param[in] length               length of grid planes
         //! @param[in] height               height of grid surfaces
         //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
-        CreateParams(Dgn::SpatialLocationModelCP model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
-                               double circularInterval, double length, double height, Utf8CP name, bool extendHeight = false) :
-            T_Super (model, modeledElementId, name, QueryClassId (model->GetDgnDb ())),
-            m_model(model),
+        CreateParams(Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
+                               double circularInterval, double length, double height, Utf8CP name, double defaultstaElevation, double defaultendElevation, bool extendHeight = false) :
+            T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()), defaultstaElevation, defaultendElevation),
             m_planeCount(planeCount),
             m_circularCount(circularCount),
             m_planeIterationAngle(planeIterationAngle),
@@ -78,7 +76,7 @@ private:
     BE_PROP_NAME(DefaultEndRadius)
 
 protected:
-    explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT RadialGrid (CreateParams const& params);
 
 
     static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR planeAxis, GridAxisCR arcAxis);
@@ -94,12 +92,12 @@ public:
     //! Creates an empty radial grid
     //! @param[in]  model   model for the radialgridportion
     //! @return             Radial grid
-    GRIDELEMENTS_EXPORT static RadialGridPtr Create (Dgn::SpatialLocationModelCR model);
+    GRIDELEMENTS_EXPORT static RadialGridPtr Create (CreateParams const& params);
 
     //! Creates an empty radial grid
     //! @param[in]  params  create params for this grid portion. See CreateParams
     //! @return             Radial grid
-    GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsert (CreateParams params);
+    GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsert (CreateParams const& params);
 
     //! Gets default angle increment of this RadialGrid
     //! @return DefaultAngleIncrement of this RadialGrid

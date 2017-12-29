@@ -194,6 +194,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
         //! @param[in]  params           params to create PlanCartesianGridSurface
         GRIDELEMENTS_EXPORT static  PlanCartesianGridSurfacePtr Create (CreateParams const& params);
 
+        //! Creates and inserts a PlanCartesianGridSurface surface
+        //! @param[in]  params           params to create PlanCartesianGridSurface
+        GRIDELEMENTS_EXPORT static  PlanCartesianGridSurfacePtr CreateAndInsert(CreateParams const& params);
+
         //! Gets coordinate along axis of this PlanCartesianGridSurface
         //! @return Coordinate of this PlanCartesianGridSurface
         GRIDELEMENTS_EXPORT double      GetCoordinate () const { return GetPropertyValueDouble (prop_Coordinate ()); }

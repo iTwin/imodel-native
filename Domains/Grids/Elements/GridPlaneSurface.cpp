@@ -4,12 +4,15 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
+#include <BuildingShared/BuildingSharedApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BUILDING_SHARED
 
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridPlanarSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanCartesianGridSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS (SketchLineGridSurface)
 
@@ -340,6 +343,23 @@ CreateParams const& params
     return gridSurface;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCartesianGridSurfacePtr             PlanCartesianGridSurface::CreateAndInsert
+(
+CreateParams const& params
+)
+    {
+    PlanCartesianGridSurfacePtr gridSurface = PlanCartesianGridSurface::Create(params);
+
+    BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting PlanCartesianGridSurface");
+
+    if (!gridSurface->Insert().IsValid())
+        return nullptr;
+
+    return gridSurface;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
