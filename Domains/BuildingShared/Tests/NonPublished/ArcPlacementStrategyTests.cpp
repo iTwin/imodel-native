@@ -16,6 +16,10 @@ struct ArcStartCenterPlacementStrategyTests : public BuildingSharedTestFixtureBa
     {
     };
 
+struct ArcCenterStartPlacementStrategyTests : public BuildingSharedTestFixtureBase
+    {
+    };
+
 END_BUILDING_SHARED_NAMESPACE
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -160,4 +164,70 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
     ASSERT_TRUE(arc.vector0.AlmostEqual(DVec3d::From(2, 0, 0)));
     ASSERT_TRUE(arc.vector90.AlmostEqual(DVec3d::From(0, -2, 0)));
     ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(225));
+    }
+
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_1KeyPoint_ResultIsInvalid)
+    {
+    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, IsDynamicKeyPointSet_FirstKeyPointAdded)
+    {
+    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, 1KP1DKP_KeyPointIsCenter)
+    {
+    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddDynamicKeyPoint({2,0,0});
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), arc.vector90.Magnitude());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, 1KP1DKP_KeyPointIsCenter_AfterDynamicReset)
+    {
+    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AddKeyPoint({0,0,0});
+    sut->ResetDynamicKeyPoint();
+    sut->AddDynamicKeyPoint({2,0,0});
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), arc.vector90.Magnitude());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
     }

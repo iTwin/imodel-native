@@ -43,6 +43,8 @@ $(o)CurvePrimitivePlacementStrategy$(oext) : $(_MakeFilePath)CurvePrimitivePlace
 
 $(o)ArcStartCenterPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartCenterPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartCenterPlacementStrategy.h
 
+$(o)ArcCenterStartPlacementStrategy$(oext) : $(_MakeFilePath)ArcCenterStartPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcCenterStartPlacementStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
