@@ -206,10 +206,10 @@ struct ECSqlCommand final : public Command
 
         static int ComputeColumnSize(BeSQLite::EC::ECSqlColumnInfo const&);
         static Utf8String ValueToString(BeSQLite::EC::IECSqlValue const&);
-        static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&);
+        static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&, ECN::PrimitiveType);
+        static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&, ECN::ECEnumerationCR);
         static Utf8String ArrayToString(BeSQLite::EC::IECSqlValue const& arrayValue);
         static Utf8String StructToString(BeSQLite::EC::IECSqlValue const& structValue);
-        static Utf8String PrimitiveToString(BeSQLite::EC::IECSqlValue const&, ECN::PrimitiveType);
 
     public:
         ECSqlCommand() : Command() {}
