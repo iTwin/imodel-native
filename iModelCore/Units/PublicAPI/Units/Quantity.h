@@ -50,9 +50,10 @@ public:
     UnitCP GetUnit () const { return m_unit; }
     Utf8CP GetUnitName() const { return (nullptr == m_unit)? nullptr : m_unit->GetName(); }
     Utf8CP GetUnitLabel() const { return (nullptr == m_unit)? nullptr : m_unit->GetLabel(); }
+    PhenomenonCP GetPhenomenon () const { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
     UNITS_EXPORT Quantity ConvertTo(UnitCP unit) const;
-
-
+    UNITS_EXPORT Utf8String ToDebugText() const;
+    UNITS_EXPORT bool IsClose(QuantityCR rhs, double tolerance) const;
     //UNITS_EXPORT QuantityCP ConvertTo(Utf8CP unitName) const;
 
     // Tolerance is factor used to scale the machine epsilon in order to determine

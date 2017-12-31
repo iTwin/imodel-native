@@ -455,10 +455,17 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("0' 0\"", 0, "FT");
     FormattingTestFixture::ParseToQuantity("0' 0\"", 0, "FT");
 
+    LOG.info("\n============= Equivalence of quantity test =================");
     FormattingTestFixture::ParseToQuantity("5:6", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity("5:", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity(":6", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity("135:23:11", 0, "ARC_DEG", "dms8");
+
+    FormattingTestFixture::VerifyQuantity("135:23:11", "ARC_DEG", "dms8", 135.386389, "ARC_DEG");
+    FormattingTestFixture::VerifyQuantity("5:6", "IN", "fi8", 1.6764, "M");
+    FormattingTestFixture::VerifyQuantity("5:6", "IN", "fi8", 5.5, "FT");
+    FormattingTestFixture::VerifyQuantity("5:", "IN", "fi8", 152.4, "CM");
+
 
     //FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
     FormattingTestFixture::TestScanPointVector(u8"ЯA型号   sautéςερ135°11'30-1/4\"");
@@ -466,7 +473,7 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::TestScanPointVector("1+512.15m");
     FormattingTestFixture::TestScanTriplets("1+512.15m");
     FormattingTestFixture::TestScanTriplets("-23.45E-03_MM");
-    LOG.info("============= End of scan test =================");
+    LOG.info("============= Equivalence of quantity test (end) \n=================");
 
     FormattingTestFixture::TestGrabber("23.451e03_MM");
     Utf8CP tail = FormattingTestFixture::TestGrabber("1+512.15m");

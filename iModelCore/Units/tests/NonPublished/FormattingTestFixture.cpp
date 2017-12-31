@@ -1204,6 +1204,32 @@ void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int pr
 
     }
 
+void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)
+    {
+    FormatUnitSet fus = FormatUnitSet(formatName, unitName);
+    FormatProblemCode probCode;
+    FormatParsingSet fps = FormatParsingSet(input, 0, unitName);
+    BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
+    if (FormatProblemCode::NoProblems != probCode)
+        {
+        LOG.infov("Parsing problem: Input |%s| - ", Utils::SubstituteEmptyOrNull(input, "<empty>"), fps.GetProblemDescription().c_str());
+        }
+    else
+        {
+        BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnitCI(qtyUnitName);
+        BEU::Quantity temp = BEU::Quantity(magnitude, *unit);
+        bool eq = qty.IsClose(temp, 0.0001);
+        EXPECT_TRUE(eq);
+        if (!eq)
+            {
+            Utf8PrintfString txt("Quantity (%s} not equal {%s}", qty.ToDebugText(), temp.ToDebugText());
+            LOG.infov("Verification problem: Input |%s| - %s", Utils::SubstituteEmptyOrNull(input, "<empty>"), txt.c_str());
+            }
+        }
+    }
+
+
+
 END_BENTLEY_FORMATTEST_NAMESPACE
 
 //FormattingTestFixture::

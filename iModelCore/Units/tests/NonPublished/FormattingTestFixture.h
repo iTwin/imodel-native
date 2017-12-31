@@ -91,7 +91,7 @@ struct FormattingTestFixture
         static void StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint = false);
         static void StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result);
         static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);
-
+        static void VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName);
         //static void LoadUnitSynonymsTest();
     };
 

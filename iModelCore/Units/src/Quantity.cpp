@@ -180,6 +180,19 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
     return ae; //almost_equal(temp, rhs.m_magnitude, m_tolerance);
     }
 
+bool Quantity::IsClose(QuantityCR rhs, double tolerance) const
+    {
+    if (IsNullQuantity() || rhs.IsNullQuantity() || GetPhenomenon() != rhs.GetPhenomenon())
+        {
+        return false;
+        }
+    double temp;
+    if (SUCCESS != ConvertTo(rhs.m_unit, temp))
+        return false;
+    return fabs(rhs.m_magnitude - temp) < tolerance;
+    }
+
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -284,4 +297,13 @@ bool Quantity::IsNullQuantity() const
     { 
     bool stat = (0.0 == m_magnitude && nullptr == m_unit);
     return stat; // (0.0 == m_magnitude && nullptr == m_unit);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                             David.Fox-Rabinovitz     12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Quantity::ToDebugText() const
+    {
+    Utf8PrintfString txt("%f %s", m_magnitude, m_unit->GetName());
+    return(txt);
     }
