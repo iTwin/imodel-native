@@ -1222,7 +1222,7 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
         EXPECT_TRUE(eq);
         if (!eq)
             {
-            Utf8PrintfString txt("Quantity (%s} not equal {%s}", qty.ToDebugText(), temp.ToDebugText());
+            Utf8PrintfString txt("Quantity (%s} not equal {%s}", qty.ToDebugText().c_str(), temp.ToDebugText().c_str());
             LOG.infov("Verification problem: Input |%s| - %s", Utils::SubstituteEmptyOrNull(input, "<empty>"), txt.c_str());
             }
         }
