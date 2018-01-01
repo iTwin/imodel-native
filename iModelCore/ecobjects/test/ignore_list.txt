@@ -13,3 +13,12 @@ NavigationPropertyValueTests.InstanceWithNavProp_Long
 
 SchemaLocalizationTests.SupplementingLocalizationSupplementalEC3
 
+
+LiteralExpressionTests.MiscSymbols
+
+    # TFS#800309
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 01/01/2018
+    # c:\build\src\mds06t\ecobjects\test\Published\ECExpressionTests.cpp(423): error:       Expected: now.GetYear ()
+    # Which is: 2017
+    # To be equal to: result.GetECValue ()->GetDateTime ().GetYear ()
+    # Which is: 2018
