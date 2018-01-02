@@ -304,7 +304,7 @@ struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb>
             InstanceMethod("isOpen", &NodeAddonECDb::IsOpenSync)
         });
 
-        target.Set("NodeAddonECDb", t);
+        exports.Set("NodeAddonECDb", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();             // ??? what is this?
@@ -365,7 +365,7 @@ struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBri
         }
 
     //  Create projections
-    static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
+    static void Init(Napi::Env& env, Napi::Object exports)
         {
         // ***
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
@@ -377,7 +377,7 @@ struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBri
           InstanceMethod("toJSON", &NodeAddonBriefcaseManagerResourcesRequest::ToJSON),
         });
 
-        target.Set("NodeAddonBriefcaseManagerResourcesRequest", t);
+        exports.Set("NodeAddonBriefcaseManagerResourcesRequest", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();             // ??? what is this?
@@ -1199,7 +1199,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
 
     //  Create projections
-    static void Init(Napi::Env& env, Napi::Object target)
+    static void Init(Napi::Env& env, Napi::Object exports)
         {
         // ***
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
@@ -1249,7 +1249,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         });
 
-        target.Set("NodeAddonDgnDb", t);
+        exports.Set("NodeAddonDgnDb", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();             // ??? what is this?
@@ -1286,7 +1286,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         }
 
     //  Create projections
-    static void Init(Napi::Env& env, Napi::Object target)
+    static void Init(Napi::Env& env, Napi::Object exports)
         {
         // ***
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
@@ -1302,7 +1302,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
           InstanceMethod("getRow", &NodeAddonECSqlStatement::GetRow),
         });
 
-        target.Set("NodeAddonECSqlStatement", t);
+        exports.Set("NodeAddonECSqlStatement", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();             // ??? what is this?
@@ -1426,7 +1426,7 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         }
 
     //  Create projections
-    static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
+    static void Init(Napi::Env& env, Napi::Object exports)
         {
         // ***
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
@@ -1436,7 +1436,7 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
           InstanceMethod("handleRequest", &NodeAddonECPresentationManager::HandleRequest)
         });
 
-        target.Set("NodeAddonECPresentationManager", t);
+        exports.Set("NodeAddonECPresentationManager", t);
 
         s_constructor = Napi::Persistent(t);
         s_constructor.SuppressDestruct();             // ??? what is this?
@@ -1523,10 +1523,10 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
 
     AddonUtils::Initialize(addondir, throwJsExceptionOnAssert);
     NodeAddonDgnDb::Init(env, exports);
-    NodeAddonECDb::Init(env, exports, module);
+    NodeAddonECDb::Init(env, exports);
     NodeAddonECSqlStatement::Init(env, exports);
-    NodeAddonBriefcaseManagerResourcesRequest::Init(env, exports, module);
-    NodeAddonECPresentationManager::Init(env, exports, module);
+    NodeAddonBriefcaseManagerResourcesRequest::Init(env, exports);
+    NodeAddonECPresentationManager::Init(env, exports);
 
     exports.DefineProperties(
         {
