@@ -16,7 +16,7 @@ SrcPointCloud                 = $(_MakeFilePath)
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-PointCloudPublicApiSrc        = $(SrcPointCloud)../PublicAPI/PointCloud/
+PointCloudPublicApiSrc        = $(SrcPointCloud)../PublicApi/PointCloud/
 
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
