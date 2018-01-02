@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/iModelJsUtilitiesTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../Environment/PublicAPI/TestEnvironment.h"
@@ -17,15 +17,21 @@ static size_t s_jsExternalSize = 0;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-static Js::Value JsCallback (Js::CallbackInfoCR info)
+static Napi::Value JsCallback (Napi::CallbackInfo const& info)
     {
-    BeAssert (&info.GetRuntime() == s_jsRuntime);
-    BeAssert (info.GetThis() == s_jsRuntime->GetGlobal());
+    BeAssert (&info.Env() == &s_jsRuntime->Env());
+    BeAssert (info.This() == s_jsRuntime->Env().Global());
     BeAssert (!info.IsConstructCall());
-    BeAssert (info.GetArgumentCount() == 0);
+    BeAssert (info.Length() == 0);
 
-    return info.GetRuntime().EvaluateScript ("1 + 1").value;
+    Js::RuntimeR runtime = Js::Runtime::GetRuntime(info.Env());
+    return runtime.EvaluateScript ("1 + 1").value;
     }
+
+static void NopFinalizer(void*)
+{
+
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
@@ -41,152 +47,117 @@ TEST_F (iModelJsTestFixture, JavaScriptUtilities)
     {
         Js::Runtime runtime;
         s_jsRuntime = &runtime;
+        Napi::Env& env = runtime.Env();
 
         {
-            Js::Scope scope (runtime);
-            BeAssert (&scope.GetRuntime() == &runtime);
-
-            BeAssert (runtime.GetGlobal() == runtime.GetGlobal());
+            Napi::HandleScope scope (env);
+            BeAssert (&scope.Env() == &runtime.Env());
 
             auto result = runtime.EvaluateScript ("1 + 1");
             BeAssert (result.status == Js::EvaluateStatus::Success);
-            BeAssert (result.value.AsNumber().GetValue() == 2.0);
+            BeAssert (result.value.As<Napi::Number>().DoubleValue() == 2.0);
 
-            auto u = scope.CreateUndefined();
+            auto u = env.Undefined();
             BeAssert (u.IsUndefined());
 
-            auto n = scope.CreateNull();
+            auto n = env.Null();
             BeAssert (n.IsNull());
 
-            auto o = scope.CreateObject();
+            auto o = Napi::Object::New(env);
             BeAssert (o.IsObject());
 
-            auto a = scope.CreateArray();
+            auto a = Napi::Array::New(env);
             BeAssert (a.IsArray());
 
-            auto ab = scope.CreateArrayBuffer (this, sizeof (this));
+            auto ab = Napi::ArrayBuffer::New(env, this, sizeof (this));
             BeAssert (ab.IsArrayBuffer());
-            BeAssert (ab.GetValue() == this);
-            BeAssert (ab.GetLength() == sizeof (this));
+            BeAssert (ab.Data() == this);
+            BeAssert (ab.ByteLength() == sizeof (this));
 
-            auto b = scope.CreateBoolean (true);
+            auto b = Napi::Boolean::New(env, true);
             BeAssert (b.IsBoolean());
-            BeAssert (b.GetValue() == true);
+            BeAssert (b.Value() == true);
 
-            auto n2 = scope.CreateNumber (2.0);
+            auto n2 = Napi::Number::New(env, 2.0);
             BeAssert (n2.IsNumber());
-            BeAssert (n2.GetValue() == 2.0);
+            BeAssert (n2.DoubleValue() == 2.0);
 
-            auto s = scope.CreateString ("hello");
+            auto s = Napi::String::New(env, "hello");
             BeAssert (s.IsString());
-            BeAssert (s.GetValue() == "hello");
+            BeAssert (s.Utf8Value() == "hello");
 
             auto s2 = s;
-            BeAssert (s2.GetValue() == s.GetValue());
+            BeAssert (s2.Utf8Value() == s.Utf8Value());
 
-            auto c = scope.CreateCallback (&JsCallback);
+            auto c = Napi::Function::New(env, &JsCallback);
             BeAssert (c.IsFunction());
-            BeAssert (c (runtime.GetGlobal()).AsNumber().GetValue() == 2.0);
+            BeAssert (c ({env.Global()}).As<Napi::Number>().DoubleValue() == 2.0);
 
-            auto e = scope.CreateExternal (this);
-            BeAssert (e.IsExternal() && e.IsObject());
-            BeAssert (e.GetValue() == this);
+            void* pThis = this;
+            auto e = Napi::External<void*>::New(env, &pThis);
+            // TBD: BeAssert (e.IsExternal() && e.IsObject());
+            BeAssert(e.Data() == &pThis);
 
-            auto p = scope.CreatePointer (this);
-            BeAssert (p.IsPointer());
-            BeAssert (p.GetValue() == this);
-
-            auto c2 = scope.CreateCallback ([](Js::CallbackInfoCR info) -> Js::Value
+            auto c2 = Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
                 {
-                BeAssert (info.GetArgumentCount() == 11);
+                BeAssert (info.Length() == 11);
     
-                info.GetArgument (0).AsUndefined();
-                info.GetArgument (1).AsNull();
-                info.GetArgument (2).AsObject();
-                info.GetArgument (3).AsArray();
-                BeAssert (info.GetArgument (4).AsArrayBuffer().GetValue() == s_jsExternal && info.GetArgument (4).AsArrayBuffer().GetLength() == s_jsExternalSize);
-                BeAssert (info.GetArgument (5).AsBoolean().GetValue() == true);
-                BeAssert (info.GetArgument (6).AsNumber().GetValue() == 2.0);
-                BeAssert (info.GetArgument (7).AsString().GetValue() == "hello");
-                BeAssert (info.GetArgument (8).AsCallback() (info.GetRuntime().GetGlobal()).AsNumber().GetValue() == 2.0);
-                BeAssert (info.GetArgument (9).AsExternal().GetValue() == s_jsExternal);
-                BeAssert (info.GetArgument (10).AsPointer().GetValue() == s_jsExternal);
+                BeAssert(info[0].IsUndefined());
+                BeAssert(info[1].IsNull());
+                BeAssert(info[2].IsObject());
+                BeAssert(info[3].IsArray());
+                BeAssert(info[4].As<Napi::ArrayBuffer>().Data() == s_jsExternal);
+                BeAssert(info[4].As<Napi::ArrayBuffer>().ByteLength() == s_jsExternalSize);
+                BeAssert(info[5].As<Napi::Boolean>().Value() == true);
+                BeAssert(info[6].As<Napi::Number>().DoubleValue() == 2.0);
+                BeAssert(info[7].As<Napi::String>().Utf8Value() == "hello");
+                BeAssert(info[8].As<Napi::Function>() ({info.Env().Global()}).As<Napi::Number>().DoubleValue() == 2.0);
+                // *** TBD: BeAssert(info[9].As<Napi::External>().Data() == s_jsExternal);
 
-                return info.GetScope().CreateUndefined();
+                return info.Env().Undefined();
                 });
                 
-            c2 (runtime.GetGlobal(), u, n, o, a, ab, b, n2, s, c, e, p);
+            c2 ({env.Global(), u, n, o, a, ab, b, n2, s, c, e});
 
-            BeAssert (a.GetLength() == 0);
-            BeAssert (a.Set (0, n2));
-            BeAssert (a.GetLength() == 1);
-            BeAssert (a.Get (0).AsNumber().GetValue() == 2.0);
+            BeAssert (a.Length() == 0);
+            a[(uint32_t)0] = n2;
+            BeAssert (a.Length() == 1);
+            BeAssert (a.Get((uint32_t)0).As<Napi::Number>().DoubleValue() == 2.0);
 
-            BeAssert (o.Set ("n2", n2));
-            BeAssert (o.Has ("n2") && o.HasOwn ("n2"));
-            BeAssert (o.Get ("n2").AsNumber().GetValue() == 2.0);
+            o["n2"] = n2;
+            BeAssert (o.Has("n2") && o.HasOwnProperty("n2"));
+            BeAssert (o.Get("n2").As<Napi::Number>().DoubleValue() == 2.0);
 
-            auto objectWithPrototype = scope.CreateObject();
-            auto prototypeForObject = scope.CreateObject();
+/* WIP prototype in NAPI?
+            auto objectWithPrototype = Napi::Object::New(env);
+            auto prototypeForObject = Napi::Object::New(env);
             BeAssert (objectWithPrototype.SetPrototype (prototypeForObject));
             BeAssert (objectWithPrototype.GetPrototype() == prototypeForObject);
+            */
         }
 
         {
-            Js::Reference u (runtime);
-            Js::Reference n (runtime);
-            Js::Reference o (runtime);
-            Js::Reference a (runtime);
-            Js::Reference ab (runtime);
-            Js::Reference b (runtime);
-            Js::Reference n2 (runtime);
-            Js::Reference s (runtime);
-            Js::Reference c (runtime);
-            Js::Reference e (runtime);
-            Js::Reference p (runtime);
+            Napi::HandleScope scope (env);
+            auto u = Napi::Reference<Napi::Value>::New(env.Undefined());
+            auto n = Napi::Reference<Napi::Value>::New(env.Null());
+            auto o = Napi::ObjectReference::New(Napi::Object::New(env));
+            auto a = Napi::ObjectReference::New(Napi::Array::New(env));
+            auto ab = Napi::ObjectReference::New(Napi::ArrayBuffer::New(env, this, sizeof (this)));
+            auto b = Napi::Reference<Napi::Value>::New(Napi::Boolean::New(env, true));
+            auto n2 = Napi::Reference<Napi::Value>::New(Napi::Number::New(env, 2.0));
+            auto s = Napi::Reference<Napi::Value>::New(Napi::String::New(env, "hello"));
+            auto c = Napi::Reference<Napi::Function>::New(Napi::Function::New(env, &JsCallback));
+            void* pThis = this;
+            auto e = Napi::Reference<Napi::External<void*>>::New(Napi::External<void*>::New(env, &pThis));
 
-            {
-                Js::Scope scope (runtime);
-
-                u.Assign (scope.CreateUndefined());
-                n.Assign (scope.CreateNull());
-                o.Assign (scope.CreateObject());
-                a.Assign (scope.CreateArray());
-                ab.Assign (scope.CreateArrayBuffer (this, sizeof (this)));
-                b.Assign (scope.CreateBoolean (true));
-                n2.Assign (scope.CreateNumber (2.0));
-                s.Assign (scope.CreateString ("hello"));
-                c.Assign (scope.CreateCallback (&JsCallback));
-                e.Assign (scope.CreateExternal (this));
-                p.Assign (scope.CreatePointer (this));
-
-                u.Get().AsUndefined();
-                n.Get().AsNull();
-                o.Get().AsObject();
-                a.Get().AsArray();
-
-                BeAssert (ab.Get().AsArrayBuffer().GetValue() == this && ab.Get().AsArrayBuffer().GetLength() == sizeof (this));
-                BeAssert (b.Get().AsBoolean().GetValue() == true);
-                BeAssert (n2.Get().AsNumber().GetValue() == 2.0);
-                BeAssert (s.Get().AsString().GetValue() == "hello");
-                BeAssert (c.Get().AsCallback() (runtime.GetGlobal()).AsNumber().GetValue() == 2.0);
-                BeAssert (e.Get().AsExternal().GetValue() == this);
-                BeAssert (p.Get().AsPointer().GetValue() == this);
+            BeAssert (ab.Value().As<Napi::ArrayBuffer>().Data() == this && ab.Value().As<Napi::ArrayBuffer>().ByteLength() == sizeof (this));
+            BeAssert ( b.Value().As<Napi::Boolean>().Value() == true);
+            BeAssert (n2.Value().As<Napi::Number>().DoubleValue() == 2.0);
+            BeAssert ( s.Value().As<Napi::String>().Utf8Value() == "hello");
+            BeAssert ( c.Value().As<Napi::Function>() ({env.Global()}).As<Napi::Number>().DoubleValue() == 2.0);
+            BeAssert ( e.Value().As<Napi::External<void*>>().Data() == &pThis);
             }
-
-            Js::Scope scope (runtime);
-            u.Get().AsUndefined();
-            n.Get().AsNull();
-            o.Get().AsObject();
-            a.Get().AsArray();
-            BeAssert (ab.Get().AsArrayBuffer().GetValue() == this && ab.Get().AsArrayBuffer().GetLength() == sizeof (this));
-            BeAssert (b.Get().AsBoolean().GetValue() == true);
-            BeAssert (n2.Get().AsNumber().GetValue() == 2.0);
-            BeAssert (s.Get().AsString().GetValue() == "hello");
-            BeAssert (c.Get().AsCallback() (runtime.GetGlobal()).AsNumber().GetValue() == 2.0);
-            BeAssert (e.Get().AsExternal().GetValue() == this);
-            BeAssert (p.Get().AsPointer().GetValue() == this);
         }
     }
 
-    }
+    

@@ -2,7 +2,7 @@
 #
 #     $Source: iModelJs.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -53,7 +53,7 @@ $(o)ServicesTierEnvironment$(oext) : $(baseDir)ServicesTierEnvironment.cpp ${Mul
 
 $(o)ServicesTierExtension$(oext) : $(baseDir)ServicesTierExtension.cpp ${MultiCompileDepends}
 
-$(o)ServicesTierUtilities$(oext) : $(baseDir)ServicesTierUtilities.cpp ${MultiCompileDepends}
+# $(o)ServicesTierUtilities$(oext) : $(baseDir)ServicesTierUtilities.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -75,6 +75,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
 
 LINKER_LIBRARIES + $(ContextLibPrefix)libuv$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)node-addon-api$(libext)
 
 %if $(TARGET_PLATFORM) == "Windows"
     LINKER_LIBRARIES + $(ContextLibPrefix)v8$(stlibext) $(ContextLibPrefix)v8_libbase$(stlibext) $(ContextLibPrefix)v8_libplatform$(stlibext)

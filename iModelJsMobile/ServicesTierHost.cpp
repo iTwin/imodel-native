@@ -2,7 +2,7 @@
 |
 |     $Source: ServicesTierHost.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
@@ -184,9 +184,9 @@ void Host::HandleReady()
     EmptyExtensionsQueue();
     OnReady();
 
-    auto& runtime = GetJsRuntime();
-    Js::Scope scope (runtime);
-    m_notifyReady.Get().AsFunction() (runtime.GetGlobal());
+    auto& env = Env();
+    Napi::HandleScope scope (env);
+    m_notifyReady.Value().As<Napi::Function>().Call(env.Global(), {});
     }
 
 //---------------------------------------------------------------------------------------
@@ -213,13 +213,13 @@ void Host::HandleIdle()
         HandleReady();
 
     auto& runtime = GetJsRuntime();
-    Js::Scope scope (runtime);
+    Napi::HandleScope scope (runtime.Env());
 
     runtime.NotifyIdle();
     OnIdle();
 
     if (!m_notifyIdle.IsEmpty())
-        m_notifyIdle.Get().AsFunction() (runtime.GetGlobal());
+        m_notifyIdle.Value().As<Napi::Function>() ({Env().Global()});
     }
 
 //---------------------------------------------------------------------------------------
@@ -273,69 +273,73 @@ void Host::TerminateEnvironment()
 void Host::SetupJsRuntime()
     {
     auto& runtime = GetJsRuntime();
-    Js::Scope scope (runtime);
+	auto& env = Env();
+    Napi::HandleScope scope (env);
 
     auto initScriptEvaluation = runtime.EvaluateScript (InitScript());
     BeAssert (initScriptEvaluation.status == Js::EvaluateStatus::Success);
 
-    auto initParams = scope.CreateObject();
+    auto initParams = Napi::Object::New(env);
 
-    initParams.Set ("deliverExtension", scope.CreateCallback ([this](Js::CallbackInfoCR info) -> Js::Value
+    initParams.Set ("deliverExtension", Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
         {
-        auto& scope = info.GetScope();
+        auto env = info.Env();
 
-        if (info.GetArgumentCount() == 0)
-            return scope.CreateUndefined();
+        if (info.Length() == 0)
+            return env.Undefined();
 
-        auto identifierArgument = info.GetArgument (0);
+        auto identifierArgument = info[0];
         if (!identifierArgument.IsString())
-            return scope.CreateUndefined();
+            return env.Undefined();
 
-        return m_environment->DeliverExtension (scope, identifierArgument.AsString().GetValue());
+        return m_environment->DeliverExtension (env, identifierArgument.As<Napi::String>().Utf8Value().c_str());
         }));
 
-    initParams.Set ("evaluateScript", scope.CreateCallback ([](Js::CallbackInfoCR info) -> Js::Value
+    initParams.Set ("evaluateScript", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
         {
+        auto env = info.Env();
+        auto& runtime = Js::Runtime::GetRuntime(env);
+
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
 
         auto script = JS_CALLBACK_GET_STRING (0);
         auto identifier = JS_CALLBACK_GET_STRING (1);
 
-        auto identifierS = identifier.GetValue();
+        auto identifierS = identifier.Utf8Value();
 
-        auto result = info.GetRuntime().EvaluateScript (script.GetValue().c_str(), (identifierS == "") ? nullptr : identifierS.c_str());
+        auto result = runtime.EvaluateScript (script.Utf8Value().c_str(), (identifierS == "") ? nullptr : identifierS.c_str());
         if (result.status == Js::EvaluateStatus::ParseError)
-            info.GetRuntime().ThrowException (JS_CALLBACK_STRING ("Parse Error"));
+            Napi::Error::New(env, "Parse Error").ThrowAsJavaScriptException();
         else if (result.status == Js::EvaluateStatus::RuntimeError)
-            info.GetRuntime().ThrowException (JS_CALLBACK_STRING (result.message.c_str()));
+            Napi::Error::New(env, result.message.c_str()).ThrowAsJavaScriptException();
         else if (result.status == Js::EvaluateStatus::Success)
             return result.value;
         
         return JS_CALLBACK_UNDEFINED;
         }));
 
-    initParams.Set ("createStringFromUtf8Buffer", scope.CreateCallback ([](Js::CallbackInfoCR info) -> Js::Value
+    initParams.Set ("createStringFromUtf8Buffer", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
         auto buffer = JS_CALLBACK_GET_ARRAY_BUFFER (0);
         
-        Utf8String string (static_cast<CharP>(buffer.GetValue()), buffer.GetLength());
+        Utf8String string (static_cast<CharP>(buffer.Data()), buffer.ByteLength());
 
         return JS_CALLBACK_STRING (string.c_str());
         }));
 
-    initParams.Set ("require", SupplyJsRequireHandler (scope, initParams));
+    initParams.Set ("require", SupplyJsRequireHandler (env, initParams));
 
-    auto info = scope.CreateObject();
-    SupplyJsInfoValues (scope, info);
+    auto info = Napi::Object::New(env);
+    SupplyJsInfoValues (env, info);
     initParams.Set ("info", info);
 
-    initScriptEvaluation.value.AsFunction() (runtime.GetGlobal(), initParams);
+    initScriptEvaluation.value.As<Napi::Function>() ({env.Global(), initParams});
 
-    m_notifyIdle.Assign (runtime, initParams.Get ("notifyIdle"));
-    m_notifyShutdown.Assign (runtime, initParams.Get ("notifyShutdown"));
-    m_notifyReady.Assign (runtime, initParams.Get ("notifyReady"));
+    m_notifyIdle.Reset(initParams.Get("notifyIdle").As<Napi::Function>());
+    m_notifyShutdown.Reset(initParams.Get("notifyShutdown").As<Napi::Function>());
+    m_notifyReady.Reset(initParams.Get("notifyReady").As<Napi::Function>());
     }
 
 //---------------------------------------------------------------------------------------
@@ -343,37 +347,37 @@ void Host::SetupJsRuntime()
 //---------------------------------------------------------------------------------------
 void Host::TeardownJsRuntime()
     {
-    auto& runtime = GetJsRuntime();
-    Js::Scope scope (runtime);
+    auto& env = Env();
+    Napi::HandleScope scope (env);
 
-    m_notifyShutdown.Get().AsFunction() (runtime.GetGlobal());
+    m_notifyShutdown.Value().As<Napi::Function>() ({env.Global()});
     
-    m_notifyIdle.Clear();
-    m_notifyShutdown.Clear();
-    m_notifyReady.Clear();
+    m_notifyIdle.Reset();
+    m_notifyShutdown.Reset();
+    m_notifyReady.Reset();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-Js::Function Host::SupplyJsRequireHandler (Js::ScopeR scope, Js::ObjectCR initParams)
+Napi::Function Host::SupplyJsRequireHandler (Napi::Env& env, Napi::Object initParams)
     {
-    return scope.CreateCallback ([](Js::CallbackInfoCR info) { return JS_CALLBACK_UNDEFINED; });
+    return Napi::Function::New(env, [](Napi::CallbackInfo const& info) { return JS_CALLBACK_UNDEFINED; });
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-void Host::SupplyJsInfoValues (Js::ScopeR scope, Js::ObjectR info)
+void Host::SupplyJsInfoValues (Napi::Env& env, Napi::Object info)
     {
 #ifdef BENTLEYCONFIG_OS_WINDOWS
-    info.Set ("isWindows", scope.CreateBoolean (true));
+    info.Set ("isWindows", Napi::Boolean::New(env, true));
 #else
-    info.Set ("isWindows", scope.CreateBoolean (false));
+    info.Set ("isWindows", Napi::Boolean::New(env, false));
 #endif
 
-    info.Set ("argv", scope.CreateString (GetSystemArgv().c_str()));
-    info.Set ("cwd", scope.CreateString (GetSystemCwd().c_str()));
+    info.Set ("argv", Napi::String::New(env, GetSystemArgv().c_str()));
+    info.Set ("cwd", Napi::String::New(env, GetSystemCwd().c_str()));
     }
 
 //---------------------------------------------------------------------------------------

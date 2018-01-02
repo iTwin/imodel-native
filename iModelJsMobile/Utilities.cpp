@@ -2,7 +2,7 @@
 |
 |     $Source: Utilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
@@ -32,24 +32,6 @@ void Runtime::RegisterCallbackHandler (CallbackHandler_T& handler) const
 //---------------------------------------------------------------------------------------
 void Runtime::OnCreate()
     {
-    Scope scope (*this);
-
-    m_promiseConstructor.Assign (*this, GetGlobal().Get ("Promise"));
-    m_errorConstructor.Assign   (*this, GetGlobal().Get ("Error"));
-
-    auto harvesterEvaluation = EvaluateScript (u8R"(
-        (function() {
-            let f = function (resolve, reject) {
-                f.__bentley_imodeljs_lastResolve = resolve;
-                f.__bentley_imodeljs_lastReject = reject;
-            };
-            
-            return f;
-        })();
-    )");
-    
-    BeAssert (harvesterEvaluation.status == EvaluateStatus::Success);
-    m_promiseHarvester.Assign (*this, harvesterEvaluation.value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -59,77 +41,32 @@ void Runtime::OnDestroy()
     {
     for (auto handler : m_callbackHandlers)
         delete handler;
-
-    m_promiseConstructor.Clear();
-    m_errorConstructor.Clear();
-    m_promiseHarvester.Clear();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-Object Runtime::CreatePromise (PromiseR destination) const
+Runtime::EvaluateResult Runtime::EvaluateScript (Utf8CP script, Utf8CP identifier)
     {
-    auto constructor = m_promiseConstructor.Get().AsFunction();
-    auto harvester = m_promiseHarvester.Get().AsNoTypeCheck<Object>();
-    
-    auto instance = constructor.Construct (harvester);
+    EvaluateResult result;
 
-    BeAssert (harvester.HasOwn ("__bentley_imodeljs_lastResolve") && harvester.HasOwn ("__bentley_imodeljs_lastReject"));
-    destination.m_resolveFunction.Assign (*this, harvester.Get ("__bentley_imodeljs_lastResolve", true));
-    destination.m_rejectFunction.Assign  (*this, harvester.Get ("__bentley_imodeljs_lastReject", true));
-
-    return instance;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Object Scope::CreateError (ValueCR value)
-    {
-    return m_runtime.GetErrorConstructor().Get().AsFunction().Construct (value);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Object Promise::Initialize (ScopeR scope)
-    {
-    if (IsInitialized())
+    napi_value resvalue;
+    auto nstatus = napi_run_script(Env(), Napi::String::New(Env(), script), &resvalue);
+    if (napi_ok == nstatus)
         {
-        BeAssert (false);
-        return scope.CreateObject();
+        result.status = EvaluateStatus::Success;
+        result.value = Napi::Value(Env(), resvalue);
         }
-    
-    return scope.GetRuntime().CreatePromise (*this);
-    }
+    else 
+        {
+        napi_extended_error_info const* info;
+        napi_get_last_error_info(Env(), &info);
+        result.status = EvaluateStatus::RuntimeError;
+        result.message = info->error_message;
+        result.value = Env().Undefined();
+        }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void Promise::Resolve (ValueCR value)
-    {
-    BeAssert (!m_resolveFunction.IsEmpty());
-
-    m_resolveFunction.Get().AsFunction() (m_resolveFunction.GetRuntime()->GetGlobal(), value);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void Promise::Reject (ValueCR reason)
-    {
-    BeAssert (!m_rejectFunction.IsEmpty());
-
-    m_rejectFunction.Get().AsFunction() (m_rejectFunction.GetRuntime()->GetGlobal(), reason);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-RuntimeCP Promise::GetRuntime() const
-    {
-    return m_resolveFunction.GetRuntime();
+    return result;
     }
 
 END_BENTLEY_IMODELJS_JS_NAMESPACE
@@ -172,8 +109,6 @@ static v8::Platform* getV8Platform()
 
 BEGIN_BENTLEY_IMODELJS_JS_NAMESPACE
 
-static_assert (sizeof (Value) == sizeof (v8::Local<v8::Value>) && alignof (Value) == alignof (v8::Local<v8::Value>), "Js::Value does not match v8::Local<v8::Value>");
-
 DEFINE_POINTER_SUFFIX_TYPEDEFS (V8InspectorDebugger)
 
 //=======================================================================================
@@ -191,30 +126,19 @@ private:
     v8::Isolate* m_isolate;
     v8::Locker* m_locker;
     v8::Persistent<v8::Context> m_context;
+    Napi::Env* m_initEnv {};
 
 public:
     static v8::Isolate* GetIsolate (RuntimeCR runtime) { return runtime.m_impl->m_isolate; }
     static v8::Local<v8::Context> GetContext (RuntimeCR runtime) { return v8::Local<v8::Context>::New (GetIsolate (runtime), runtime.m_impl->m_context); }
     static void DispatchFunctionCallback (v8::FunctionCallbackInfo<v8::Value> const& info);
-    static RuntimeR GetRuntime (v8::Isolate* isolate);
-    static v8::FunctionCallbackInfo<v8::Value> const& GetInfo (CallbackInfoCR info);
+    static RuntimeR GetRuntime (v8::Isolate*);
+    static RuntimeR GetRuntime (Napi::Env const&);
+
+    Napi::Env& Env() {return *m_initEnv;}
 
     RuntimeInternal (RuntimeR runtime);
     ~RuntimeInternal();
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Steve.Wilson   7/17
-//=======================================================================================
-struct ScopeInternal
-    {
-private:
-    v8::HandleScope m_v8Scope;
-
-public:
-    static v8::Local<v8::Value> ToHandle (ValueCR value);
-
-    ScopeInternal (ScopeR scope);
     };
 
 //=======================================================================================
@@ -390,10 +314,6 @@ public:
     void NotifyIdle() override;
     };
 
-END_BENTLEY_IMODELJS_JS_NAMESPACE
-
-BEGIN_BENTLEY_IMODELJS_JS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
@@ -442,6 +362,11 @@ Runtime::~Runtime()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/17
+//---------------------------------------------------------------------------------------
+Napi::Env& Runtime::Env() {return m_impl->Env();}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
 void Runtime::StartDebugger (uint16_t port)
@@ -464,6 +389,7 @@ void Runtime::NotifyIdle()
     isolate->RunMicrotasks();
     }
 
+#ifdef OLD_WAY
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
@@ -512,24 +438,29 @@ Runtime::EvaluateResult Runtime::EvaluateScript (Utf8CP script, Utf8CP identifie
 
     return result;
     }
+#endif
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Object Runtime::GetGlobal() const
-    {
-    return *RuntimeInternal::GetContext (*this)->Global();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void Runtime::ThrowException (ValueCR value)
-    {
-    auto isolate = RuntimeInternal::GetIsolate (*this);
-    auto error = m_errorConstructor.Get().AsFunction().Construct (value);
-    isolate->ThrowException (error.IsEmpty() ? v8::Local<v8::Value>::Cast (v8::Null (isolate)) : ScopeInternal::ToHandle (error));
-    }
+// Keep this consistent with node_api.cc from GitHub
+struct napi_env__ {
+  explicit napi_env__(v8::Isolate* _isolate): isolate(_isolate),
+      has_instance_available(true), last_error() {}
+  ~napi_env__() {
+    last_exception.Reset();
+    has_instance.Reset();
+    wrap_template.Reset();
+    function_data_template.Reset();
+    accessor_data_template.Reset();
+  }
+  v8::Isolate* isolate;
+  v8::Persistent<v8::Value> last_exception;
+  v8::Persistent<v8::Value> has_instance;
+  v8::Persistent<v8::ObjectTemplate> wrap_template;
+  v8::Persistent<v8::ObjectTemplate> function_data_template;
+  v8::Persistent<v8::ObjectTemplate> accessor_data_template;
+  bool has_instance_available;
+  napi_extended_error_info last_error;
+  int open_handle_scopes = 0;
+};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
@@ -552,7 +483,28 @@ RuntimeInternal::RuntimeInternal (RuntimeR runtime)
     m_context.Reset (m_isolate, context);
 
     context->Enter();
+
+    // Set up the napi_env that is the wrapper for the isolate in the napi layer
+    auto v8env = new napi_env__(m_isolate);
+    m_initEnv = new Napi::Env((napi_env)v8env);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/17
+//---------------------------------------------------------------------------------------
+Runtime& RuntimeInternal::GetRuntime(Napi::Env const& env)
+{
+    napi_env__* v8env = *(napi_env__**)&env;
+    return *(Runtime*)v8env->isolate->GetData(IsolateDataSlot);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/17
+//---------------------------------------------------------------------------------------
+Runtime& Runtime::GetRuntime(Napi::Env const& env)
+{
+    return RuntimeInternal::GetRuntime(env);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
@@ -582,818 +534,6 @@ RuntimeR RuntimeInternal::GetRuntime (v8::Isolate* isolate)
     return *reinterpret_cast<RuntimeP>(isolate->GetData (IsolateDataSlot));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-v8::FunctionCallbackInfo<v8::Value> const& RuntimeInternal::GetInfo (CallbackInfoCR info)
-    {
-    return *reinterpret_cast<v8::FunctionCallbackInfo<v8::Value> const*>(info.m_data);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void RuntimeInternal::DispatchFunctionCallback (v8::FunctionCallbackInfo<v8::Value> const& info)
-    {
-    auto& runtime = GetRuntime (info.GetIsolate());
-    auto handler = reinterpret_cast<CallbackHandler_T*>(v8::Local<v8::External>::Cast (info.Data())->Value());
-    
-    CallbackInfo handlerInfo (runtime, (void*)&info);
-    auto result = (*handler) (handlerInfo);
-
-    info.GetReturnValue().Set (ScopeInternal::ToHandle (result));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Reference::Reference (RuntimeCR runtime, ValueCR value)
-    : m_runtime (&runtime),
-      m_data    (nullptr)
-    {
-    PerformAssign (value);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void Reference::Assign (ValueCR value)
-    {
-    BeAssert (m_runtime != nullptr);
-
-    PerformAssign (value);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void Reference::Assign (RuntimeCR runtime, ValueCR value)
-    {
-    BeAssert (m_runtime == nullptr);
-
-    m_runtime = &runtime;
-    PerformAssign (value);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void Reference::PerformAssign (ValueCR value)
-    {
-    BeAssert (!value.IsEmpty());
-
-    if (m_data != nullptr)
-        {
-        BeAssert (false);
-        return;
-        }
-
-    auto handle = new v8::Persistent<v8::Value> (RuntimeInternal::GetIsolate (*m_runtime), ScopeInternal::ToHandle (value));
-    m_data = handle;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Value Reference::Get() const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = reinterpret_cast<v8::Persistent<v8::Value>*>(m_data);
-    return *v8::Local<v8::Value>::New (RuntimeInternal::GetIsolate (*m_runtime), *handle);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void Reference::Clear()
-    {
-    if (m_data != nullptr)
-        {
-        auto handle = reinterpret_cast<v8::Persistent<v8::Value>*>(m_data);
-        handle->Reset();
-        delete handle;
-
-        m_data = nullptr;
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Reference::~Reference()
-    {
-    Clear();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Scope::Scope (RuntimeCR runtime, bool create)
-    : m_runtime (runtime)
-    {
-    m_impl = create ? (new ScopeInternal (*this)) : nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Scope::Scope (RuntimeCR runtime)
-    : Scope (runtime, true)
-    {
-    ;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Scope::~Scope()
-    {
-    if (m_impl != nullptr)
-        delete m_impl;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Undefined Scope::CreateUndefined()
-    {
-    return *v8::Undefined (RuntimeInternal::GetIsolate (m_runtime));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Null Scope::CreateNull()
-    {
-    return *v8::Null (RuntimeInternal::GetIsolate (m_runtime));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Boolean Scope::CreateBoolean (bool value)
-    {
-    return *v8::Boolean::New (RuntimeInternal::GetIsolate (m_runtime), value);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Number Scope::CreateNumber (double value)
-    {
-    return *v8::Number::New (RuntimeInternal::GetIsolate (m_runtime), value);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-String Scope::CreateString (Utf8CP value)
-    {
-    auto handle = v8::String::NewFromUtf8 (RuntimeInternal::GetIsolate (m_runtime), value, v8::NewStringType::kNormal);
-    if (!handle.IsEmpty())
-        return *handle.ToLocalChecked();
-
-    return *v8::Local<v8::String>();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Object Scope::CreateObject()
-    {
-    return *v8::Object::New (RuntimeInternal::GetIsolate (m_runtime));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Array Scope::CreateArray()
-    {
-    return *v8::Array::New (RuntimeInternal::GetIsolate (m_runtime));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-ArrayBuffer Scope::CreateArrayBuffer (void* data, size_t length)
-    {
-    return *v8::ArrayBuffer::New (RuntimeInternal::GetIsolate (m_runtime), data, length);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-ArrayBuffer Scope::CreateArrayBuffer (size_t length)
-    {
-    return *v8::ArrayBuffer::New (RuntimeInternal::GetIsolate (m_runtime), length);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Callback Scope::CreateCallback (CallbackHandler_T const& handler)
-    {
-    auto handlerCopy = new CallbackHandler_T (handler);
-    m_runtime.RegisterCallbackHandler (*handlerCopy);
-
-    auto handle = v8::Function::New (RuntimeInternal::GetContext (m_runtime),
-                                     &RuntimeInternal::DispatchFunctionCallback,
-                                     v8::External::New (RuntimeInternal::GetIsolate (m_runtime), handlerCopy));
-
-    if (!handle.IsEmpty())
-        return *handle.ToLocalChecked();
-    else
-        return *v8::Local<v8::Function>();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-External Scope::CreateExternal (void* data)
-    {
-    auto isolate = RuntimeInternal::GetIsolate (m_runtime);
-
-    auto tmpl = v8::ObjectTemplate::New (isolate);
-    tmpl->SetInternalFieldCount (1);
-
-    auto handle = tmpl->NewInstance (RuntimeInternal::GetContext (m_runtime));
-    if (!handle.IsEmpty())
-        {
-        auto local = handle.ToLocalChecked();
-        local->SetInternalField (0, v8::External::New (isolate, data));
-
-        return *local;
-        }
-    else
-        {
-        return *v8::Local<v8::Object>();
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Pointer Scope::CreatePointer (void* data)
-    {
-    return *v8::External::New (RuntimeInternal::GetIsolate (m_runtime), data);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-ScopeInternal::ScopeInternal (ScopeR scope)
-    : m_v8Scope (RuntimeInternal::GetIsolate (scope.m_runtime))
-    {
-    ;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-v8::Local<v8::Value> ScopeInternal::ToHandle (ValueCR value)
-    {
-    v8::Local<v8::Value> v8Value;
-    memcpy (&v8Value, &value, sizeof (value));
-
-    return v8Value;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::operator== (ValueCR b) const
-    {
-    return ScopeInternal::ToHandle (*this) == ScopeInternal::ToHandle (b);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Undefined Value::AsUndefined() const
-    {
-    BeAssert (!IsEmpty() && IsUndefined());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Null Value::AsNull() const
-    {
-    BeAssert (!IsEmpty() && IsNull());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Boolean Value::AsBoolean() const
-    {
-    BeAssert (!IsEmpty() && IsBoolean());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Number Value::AsNumber() const
-    {
-    BeAssert (!IsEmpty() && IsNumber());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-String Value::AsString() const
-    {
-    BeAssert (!IsEmpty() && IsString());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Object Value::AsObject() const
-    {
-    BeAssert (!IsEmpty() && IsObject());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Array Value::AsArray() const
-    {
-    BeAssert (!IsEmpty() && IsArray());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-ArrayBuffer Value::AsArrayBuffer() const
-    {
-    BeAssert (!IsEmpty() && IsArrayBuffer());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Function Value::AsFunction() const
-    {
-    BeAssert (!IsEmpty() && IsFunction());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Callback Value::AsCallback() const
-    {
-    BeAssert (!IsEmpty() && IsFunction());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-External Value::AsExternal() const
-    {
-    BeAssert (!IsEmpty() && IsExternal());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Pointer Value::AsPointer() const
-    {
-    BeAssert (!IsEmpty() && IsPointer());
-
-    return m_data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsUndefined() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsUndefined();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsNull() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsNull();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsBoolean() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsBoolean();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsNumber() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsNumber();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsString() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsString();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsObject() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsObject();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsArray() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsArray();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsArrayBuffer() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsArrayBuffer();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsFunction() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsFunction();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsExternal() const
-    {
-    auto handle = ScopeInternal::ToHandle (*this);
-
-    return handle->IsObject() && v8::Local<v8::Object>::Cast (handle)->InternalFieldCount() != 0;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Value::IsPointer() const
-    {
-    return ScopeInternal::ToHandle (*this)->IsExternal();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Boolean::GetValue() const
-    {
-    BeAssert (!IsEmpty());
-
-    return v8::Local<v8::Boolean>::Cast (ScopeInternal::ToHandle (*this))->Value();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-double Number::GetValue() const
-    {
-    BeAssert (!IsEmpty());
-
-    return v8::Local<v8::Number>::Cast (ScopeInternal::ToHandle (*this))->Value();
-    }
-    
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Utf8String String::GetValue() const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::String>::Cast (ScopeInternal::ToHandle (*this));
-    v8::String::Utf8Value value (handle);
-
-    return *value;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void* External::GetValue() const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Object>::Cast (ScopeInternal::ToHandle (*this));
-
-    return v8::Local<v8::External>::Cast (handle->GetInternalField (0))->Value();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void* Pointer::GetValue() const
-    {
-    BeAssert (!IsEmpty());
-
-    return v8::Local<v8::External>::Cast (ScopeInternal::ToHandle (*this))->Value();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-size_t ArrayBuffer::GetLength() const
-    {
-    BeAssert (!IsEmpty());
-
-    return v8::Local<v8::ArrayBuffer>::Cast (ScopeInternal::ToHandle (*this))->GetContents().ByteLength();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-void* ArrayBuffer::GetValue() const
-    {
-    BeAssert (!IsEmpty());
-
-    return v8::Local<v8::ArrayBuffer>::Cast (ScopeInternal::ToHandle (*this))->GetContents().Data();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Value Object::Get (Utf8CP key, bool clear) const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Object>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-    auto isolate = context->GetIsolate();
-
-    auto keyHandle = v8::String::NewFromUtf8 (isolate, key, v8::NewStringType::kNormal);
-    if (!keyHandle.IsEmpty())
-        {
-        auto keyHandleLocal = keyHandle.ToLocalChecked();
-
-        auto valueHandle = handle->Get (context, keyHandleLocal);
-        if (!valueHandle.IsEmpty())
-            {
-            if (clear)
-                {
-                auto cleared = handle->Set (context, keyHandleLocal, v8::Null (isolate));
-                BeAssert (!cleared.IsNothing() && cleared.ToChecked());
-                }
-
-            return *valueHandle.ToLocalChecked();
-            }
-        }
-
-    return *v8::Local<v8::Value>();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Object::Has (Utf8CP key) const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Object>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-    auto isolate = context->GetIsolate();
-
-    auto keyHandle = v8::String::NewFromUtf8 (isolate, key, v8::NewStringType::kNormal);
-    if (!keyHandle.IsEmpty())
-        {
-        auto has = handle->Has (context, keyHandle.ToLocalChecked());
-
-        return has.IsNothing() ? false : has.ToChecked();
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Object::HasOwn (Utf8CP key) const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Object>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-    auto isolate = context->GetIsolate();
-
-    auto keyHandle = v8::String::NewFromUtf8 (isolate, key, v8::NewStringType::kNormal);
-    if (!keyHandle.IsEmpty())
-        {
-        auto has = handle->HasOwnProperty (context, keyHandle.ToLocalChecked());
-
-        return has.IsNothing() ? false : has.ToChecked();
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Object Object::GetAsObject (Utf8CP key) const
-    {
-    return Get (key).AsObject();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Object::Set (Utf8CP key, ValueCR value)
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Object>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-    auto isolate = context->GetIsolate();
-
-    auto keyHandle = v8::String::NewFromUtf8 (isolate, key, v8::NewStringType::kNormal);
-    if (!keyHandle.IsEmpty())
-        {
-        auto set = handle->Set (context, keyHandle.ToLocalChecked(), ScopeInternal::ToHandle (value));
-
-        return set.IsNothing() ? false : true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Object::SetPrototype (ValueCR value)
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Object>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-
-    auto set = handle->SetPrototype (context, ScopeInternal::ToHandle (value));
-
-    return set.IsNothing() ? false : true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Value Object::GetPrototype() const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Object>::Cast (ScopeInternal::ToHandle (*this));
-
-    return *handle->GetPrototype();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-uint32_t Array::GetLength() const
-    {
-    BeAssert (!IsEmpty());
-
-    return v8::Local<v8::Array>::Cast (ScopeInternal::ToHandle (*this))->Length();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Value Array::Get (uint32_t key) const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Array>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-    
-    auto valueHandle = handle->Get (context, key);
-    if (!valueHandle.IsEmpty())
-        return *valueHandle.ToLocalChecked();
-
-    return *v8::Local<v8::Value>();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool Array::Set (uint32_t key, ValueCR value)
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Array>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-
-    auto set = handle->Set (context, key, ScopeInternal::ToHandle (value));
-
-    return set.IsNothing() ? false : true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Value Function::CallInternal (uint32_t argc, ValueP argv, ObjectCP scope, bool construct) const
-    {
-    BeAssert (!IsEmpty());
-
-    auto handle = v8::Local<v8::Function>::Cast (ScopeInternal::ToHandle (*this));
-    auto context = handle->CreationContext();
-
-    if (construct)
-        {
-        auto instanceHandle = handle->NewInstance (context, argc, reinterpret_cast<v8::Local<v8::Value>*>(argv));
-        if (!instanceHandle.IsEmpty())
-            return *instanceHandle.ToLocalChecked();
-        }
-    else
-        {
-        BeAssert (scope != nullptr);
-        return *handle->Call (ScopeInternal::ToHandle (*scope), argc, reinterpret_cast<v8::Local<v8::Value>*>(argv));
-        }
-
-    return *v8::Local<v8::Value>();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-CallbackInfo::CallbackInfo (RuntimeR runtime, void* data)
-    : m_runtime (runtime),
-      m_data    (data),
-      m_scope   (runtime, false)
-    {
-    ;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-uint32_t CallbackInfo::GetArgumentCount() const
-    {
-    return RuntimeInternal::GetInfo (*this).Length();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Object CallbackInfo::GetThis() const
-    {
-    return *RuntimeInternal::GetInfo (*this).This();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-bool CallbackInfo::IsConstructCall() const
-    {
-    return RuntimeInternal::GetInfo (*this).IsConstructCall();
-    }
-    
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
-//---------------------------------------------------------------------------------------
-Value CallbackInfo::GetArgument (uint32_t index) const
-    {
-    return Value (*RuntimeInternal::GetInfo (*this) [index]);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
@@ -1409,7 +549,7 @@ V8InspectorDebugger::V8InspectorDebugger (RuntimeR runtime, uint16_t port)
     m_server.clear_access_channels (websocketpp::log::alevel::all);
     m_server.clear_error_channels (websocketpp::log::elevel::all);
 
-    Js::Scope scope (GetRuntime());
+    Napi::HandleScope scope (GetRuntime().Env());
     m_inspector = v8_inspector::V8Inspector::create (RuntimeInternal::GetIsolate (GetRuntime()), &m_client);
     m_session = GetInspector().connect (1, &m_channel, v8_inspector::StringView());
     GetInspector().contextCreated (v8_inspector::V8ContextInfo (RuntimeInternal::GetContext (GetRuntime()), 1, createV8StringView (GetRuntime().GetName())));

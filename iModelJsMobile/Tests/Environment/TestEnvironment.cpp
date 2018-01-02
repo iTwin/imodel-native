@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Environment/TestEnvironment.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/TestEnvironment.h"
@@ -100,7 +100,7 @@ void iModelJsTestFixture::RunSystemMessageLoop()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-void iModelJsTestFixture::InstallTestingUtilities (Js::RuntimeR runtime, Js::ScopeR scope)
+void iModelJsTestFixture::InstallTestingUtilities (Js::RuntimeR runtime)
     {
     auto& config = ServicesTier::Host::GetConfig();
     if (config.enableJsDebugger && config.waitForJsDebugger)
@@ -123,11 +123,11 @@ void iModelJsTestFixture::InstallTestingUtilities (Js::RuntimeR runtime, Js::Sco
         )");
 
         BeAssert (evaluateResult.status == Js::EvaluateStatus::Success);
-        runtime.GetGlobal().Set ("BeAssert", evaluateResult.value);
+        env.Global().Set ("BeAssert", evaluateResult.value);
         }
     else
         {
-        runtime.GetGlobal().Set ("BeAssert", scope.CreateCallback ([](Js::CallbackInfoCR info) -> Js::Value
+        env.Global().Set ("BeAssert", scope.CreateCallback ([](Napi::CallbackInfo info) -> Napi::Value
             {
             JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
@@ -136,7 +136,7 @@ void iModelJsTestFixture::InstallTestingUtilities (Js::RuntimeR runtime, Js::Sco
             if (!condition.GetValue())
                 {
                 ++s_failedJsAssertCount;
-                info.GetRuntime().ThrowException (JS_CALLBACK_NULL);
+                info.Env().ThrowException (JS_CALLBACK_NULL);
                 }
 
             return JS_CALLBACK_UNDEFINED;

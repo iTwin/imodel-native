@@ -2,7 +2,7 @@
 |
 |     $Source: ServicesTierEnvironment.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
@@ -14,7 +14,9 @@ BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 //---------------------------------------------------------------------------------------
 void Environment::InstallCoreExtensions()
     {
+#ifdef WIP_UTILITIES
     Extension::Install ([]() { return new Utilities; });
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -59,13 +61,13 @@ void Environment::Install (ExtensionPtr extension)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-Js::Value Environment::DeliverExtension (Js::ScopeR scope, Utf8StringCR identifier)
+Napi::Value Environment::DeliverExtension (Napi::Env& env, Utf8StringCR identifier)
     {
     auto it = m_extensions.find (identifier);
     if (it == m_extensions.end())
-        return scope.CreateUndefined();
+        return env.Undefined();
 
-    return it->second->ExportJsModule (scope);
+    return it->second->ExportJsModule (env);
     }
 
 //---------------------------------------------------------------------------------------

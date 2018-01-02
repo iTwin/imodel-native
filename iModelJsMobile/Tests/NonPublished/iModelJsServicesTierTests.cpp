@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/iModelJsServicesTierTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../Environment/PublicAPI/TestEnvironment.h"
@@ -44,7 +44,7 @@ private:
     double m_value;
 
     Utf8CP SupplyName() const override { return m_name; }
-    Js::Value ExportJsModule (Js::ScopeR scope) override { return scope.CreateNumber (m_value); }
+    Napi::Value ExportJsModule (Js::RuntimeR runtime) override { return Napi::Number::New(runtime.Env(), m_value); }
     TrivialExtension (Utf8CP name, double value) : m_name (name), m_value (value) { ; }
 
 public:
@@ -67,7 +67,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void Utilities (Js::RuntimeR runtime, Js::ScopeR scope)
+    static void Utilities (Js::RuntimeR runtime)
         {
         OnTestStarted();
 
@@ -88,7 +88,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void ExtensionLoading (Js::RuntimeR runtime, Js::ScopeR scope)
+    static void ExtensionLoading (Js::RuntimeR runtime)
         {
         OnTestStarted();
 
@@ -113,7 +113,7 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void PerformTests (Js::RuntimeR runtime, Js::ScopeR scope)
+    static void PerformTests (Js::RuntimeR runtime)
         {
         Utilities (runtime, scope);
         ExtensionLoading (runtime, scope);
@@ -129,7 +129,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void BasicTcp (Js::RuntimeR runtime, Js::ScopeR scope)
+    static void BasicTcp (Js::RuntimeR runtime)
         {
         OnTestStarted();
 
@@ -191,7 +191,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void BasicWebSockets (Js::RuntimeR runtime, Js::ScopeR scope)
+    static void BasicWebSockets (Js::RuntimeR runtime)
         {
         OnTestStarted();
 
@@ -281,7 +281,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void BasicFileSystem (Js::RuntimeR runtime, Js::ScopeR scope)
+    static void BasicFileSystem (Js::RuntimeR runtime)
         {
         OnTestStarted();
 
@@ -319,11 +319,11 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void PerformTests (Js::RuntimeR runtime, Js::ScopeR scope)
+    static void PerformTests (Js::RuntimeR runtime)
         {
-        BasicTcp (runtime, scope);
-        BasicWebSockets (runtime, scope);
-        BasicFileSystem (runtime, scope);
+        BasicTcp (runtime);
+        BasicWebSockets (runtime);
+        BasicFileSystem (runtime);
         }
     };
 
@@ -371,15 +371,15 @@ static void AfterAllTests()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-static void Setup (Js::RuntimeR runtime, Js::ScopeR scope)
+static void Setup (Js::RuntimeR runtime)
     {
-    iModelJsTestFixture::InstallTestingUtilities (runtime, scope);
+    iModelJsTestFixture::InstallTestingUtilities (runtime);
 
-    runtime.GetGlobal().Set ("__iModelJsServicesTierTests_OnTestFinished", scope.CreateCallback ([](Js::CallbackInfoCR info) -> Js::Value
+    runtime.Env().Global().Set ("__iModelJsServicesTierTests_OnTestFinished", scope.CreateCallback ([](Napi::CallbackInfo info) -> Napi::Value
         {
         OnTestFinished();
 
-        return JS_CALLBACK_UNDEFINED;
+        return runtime.Env().Undefined();
         }));
     }
 
@@ -395,11 +395,11 @@ static void PerformTests()
     ServicesTier::Host::GetInstance().PostToEventLoop ([]()
         {
         auto& runtime = ServicesTier::Host::GetInstance().GetJsRuntime();
-        Js::Scope scope (runtime);
+        Napi::HandleScope scope (runtime.Env());
 
-        Setup (runtime, scope);
-        Core::PerformTests (runtime, scope);
-        ServicesTierUtilities::PerformTests (runtime, scope);
+        Setup (runtime);
+        Core::PerformTests (runtime);
+        ServicesTierUtilities::PerformTests (runtime;
         s_wait = false;
         });
 

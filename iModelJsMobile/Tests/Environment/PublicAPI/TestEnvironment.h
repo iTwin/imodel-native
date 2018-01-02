@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Environment/PublicAPI/TestEnvironment.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,7 +31,7 @@ private:
 public:
     static void ResetFailedJsAssertCount();
     static size_t GetFailedJsAssertCount();
-    static void InstallTestingUtilities (Js::RuntimeR runtime, Js::ScopeR scope);
+    static void InstallTestingUtilities (Napi::Env env, Napi::HandleScope scope);
 
     iModelJsTestFixture();
     ~iModelJsTestFixture() override;

@@ -2,7 +2,7 @@
 |
 |     $Source: ServicesTierUtilities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
@@ -35,7 +35,7 @@ private:
     struct sockaddr_in6 m_addr6;
 
 public:
-    UvNetAddressDescriptor (Js::StringCR address, Js::NumberCR port, Js::NumberCR protocol, int& status);
+    UvNetAddressDescriptor (Napi::String address, Napi::Number port, Napi::Number protocol, int& status);
 
     IP GetProtocol() const { return m_protocol; }
     const sockaddr* GetPointer() const;
@@ -74,7 +74,7 @@ private:
 
 public:
     UvBuffer (char* base, unsigned int length);
-    UvBuffer (Js::ArrayBufferCR buffer);
+    UvBuffer (Napi::ArrayBuffer buffer);
 
     uv_buf_t const* GetPointer() const { return &m_buffer; }
     };
@@ -185,7 +185,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS (websocketpp_ServerEndpoint)
 struct Promise
     {
 public:
-    static Js::Object CreateAndReject (Js::ScopeR scope, Js::ValueCR result);
+    static Napi::Object CreateAndReject (Napi::Env& env, Napi::Value result);
     };
 
 //=======================================================================================
@@ -306,7 +306,7 @@ protected:
 
 public:
     UtilitiesCR GetOwner() const { return m_owner; }
-    Js::Object CreateStatus (Js::ScopeR scope, int uvResult) const;
+    Napi::Object CreateStatus (Napi::Env& env, int uvResult) const;
     };
 
 //=======================================================================================
@@ -315,13 +315,15 @@ public:
 struct ObjectBase : public Base
     {
 private:
-    Js::Reference m_object;
+    Napi::ObjectReference m_object;
 
 protected:
     ObjectBase (UtilitiesCR owner) : Base (owner) { ; }
 
-    Js::ReferenceR GetObject() { return m_object; }
-    Js::ReferenceCR GetObject() const { return m_object; }
+    // Note when getting the value of a Reference it is usually correct to do so
+    // within a HandleScope so that the value handle gets cleaned up efficiently.
+    Napi::Object GetObject() const { return m_object.Value(); }
+    void SetObject(Napi::Object obj) { m_object.Reset(obj);}
 
 public:
     virtual ~ObjectBase() { ; }
@@ -333,7 +335,7 @@ public:
 struct uv_Status
     {
 public:
-    static Js::Object Create (Js::ScopeR scope, int uvResult, Js::ValueCR prototype);
+    static Napi::Object Create (Napi::Env& env, int uvResult, Napi::Value prototype);
     };
 
 //=======================================================================================
@@ -362,9 +364,9 @@ struct uv_io_Stream : public uv_Handle
     friend struct Utilities;
 
 private:
-    Js::Reference m_allocator;
-    Js::Reference m_readCallback;
-    std::map<void*, Js::ReferenceP> m_buffers;
+    Napi::ObjectReference m_allocator;
+    Napi::ObjectReference m_readCallback;
+    std::map<void*, Napi::ObjectReference> m_buffers;
 
     static void AllocHandler (uv_handle_t* handle, size_t suggestedSize, uv_buf_t* buf);
     static void ReadHandler (uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
@@ -378,13 +380,13 @@ public:
     virtual UvIoStreamCR GetUvIoStream() const = 0;
     virtual UvIoStreamR GetUvIoStream() = 0;
 
-    Js::ReferenceCR GetAllocator() const { return m_allocator; }
-    Js::ReferenceCR GetReadCallback() const { return m_readCallback; }
+    Napi::Object GetAllocator() const { return m_allocator.Value(); }
+    Napi::Object GetReadCallback() const { return m_readCallback.Value(); }
 
-    void SetHandlers (Js::ObjectCR allocator, Js::FunctionCR readCallback);
+    void SetHandlers (Napi::Object allocator, Napi::Function readCallback);
 
-    void StoreBuffer (Js::ArrayBufferCR buffer);
-    Js::ArrayBuffer GetBuffer (void* identifier);
+    void StoreBuffer (Napi::ArrayBuffer buffer);
+    Napi::ArrayBuffer GetBuffer (void* identifier);
     void ReleaseBuffer (void* identifier);
     };
 
@@ -397,14 +399,14 @@ struct uv_io_shutdown_Promise : public Base
 
 private:
     UvIoStreamShutdownRequest m_request;
-    Js::Promise m_promise;
+    Napi::Promise::Deferred m_promise;
 
     static void Handler (uv_shutdown_t* req, int status);
 
-    uv_io_shutdown_Promise (UtilitiesCR owner, Js::ScopeR scope, UvIoStreamShutdownRequest&& request);
+    uv_io_shutdown_Promise (UtilitiesCR owner, UvIoStreamShutdownRequest&& request);
 
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, UvIoStreamShutdownRequest&& request);
+    static Napi::Object Create (UtilitiesCR owner, UvIoStreamShutdownRequest&& request);
     };
 
 //=======================================================================================
@@ -416,14 +418,14 @@ struct uv_io_Stream_write_Promise : public Base
 
 private:
     UvIoStreamWriteRequest m_request;
-    Js::Promise m_promise;
+    Napi::Promise::Deferred m_promise;
 
-    uv_io_Stream_write_Promise (UtilitiesCR owner, Js::ScopeR scope, UvIoStreamWriteRequest&& request);
+    uv_io_Stream_write_Promise (UtilitiesCR owner, UvIoStreamWriteRequest&& request);
 
     static void Handler (uv_write_t* req, int status);
 
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, UvIoStreamWriteRequest&& request);
+    static Napi::Object Create (UtilitiesCR owner, UvIoStreamWriteRequest&& request);
     };
 
 //=======================================================================================
@@ -436,14 +438,14 @@ struct uv_tcp_connect_Promise : public Base
 private:
     UvTcpHandle m_handle;
     UvTcpConnectRequest m_request;
-    Js::Promise m_promise;
+    Napi::Promise::Deferred m_promise;
 
     static void Handler (uv_connect_t* req, int status);
 
     uv_tcp_connect_Promise (UtilitiesCR owner, UvTcpHandle&& handle, UvTcpConnectRequest&& request);
 
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, UvTcpHandle&& handle, UvTcpConnectRequest&& request);
+    static Napi::Object Create (UtilitiesCR owner, UvTcpHandle&& handle, UvTcpConnectRequest&& request);
 
     UvTcpHandleCR GetUvTcpHandle() const { return m_handle; }
     UvTcpHandleR GetUvTcpHandle() { return m_handle; }
@@ -455,7 +457,7 @@ public:
 struct uv_tcp_ConnectResult
     {
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, int uvResult, Js::ValueCR connection);
+    static Napi::Object Create (UtilitiesCR owner, int uvResult, Napi::Value connection);
     };
 
 //=======================================================================================
@@ -464,7 +466,7 @@ public:
 struct uv_tcp_BindResult
     {
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, int uvResult, Js::ValueCR server);
+    static Napi::Object Create (UtilitiesCR owner, int uvResult, Napi::Value server);
     };
 
 //=======================================================================================
@@ -476,10 +478,10 @@ private:
     UvTcpHandle m_handle;
 
 protected:
-    uv_tcp_Handle (UtilitiesCR owner, Js::ScopeR scope, UvTcpHandle&& handle);
+    uv_tcp_Handle (UtilitiesCR owner, UvTcpHandle&& handle);
 
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, UvTcpHandle&& handle);
+    static Napi::Object Create (UtilitiesCR owner, UvTcpHandle&& handle);
 
     UvHandleCR GetUvHandle() const override { return m_handle; }
     UvHandleR GetUvHandle() override { return m_handle; }
@@ -497,17 +499,17 @@ struct uv_tcp_Server : public uv_tcp_Handle
     friend struct Utilities;
 
 private:
-    Js::Reference m_listenCallback;
+    Napi::ObjectReference m_listenCallback;
 
     static void ListenHandler (uv_stream_t* server, int status);
 
-    uv_tcp_Server (UtilitiesCR owner, Js::ScopeR scope, UvTcpHandle&& handle) : uv_tcp_Handle (owner, scope, std::move (handle)) { ; }
+    uv_tcp_Server (UtilitiesCR owner, UvTcpHandle&& handle) : uv_tcp_Handle (owner, std::move (handle)) { ; }
 
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, UvTcpHandle&& handle);
+    static Napi::Object Create (UtilitiesCR owner, UvTcpHandle&& handle);
 
-    Js::ReferenceCR GetListenCallback() const { return m_listenCallback; }
-    void SetListenCallback (Js::FunctionCR value);
+    Napi::Object GetListenCallback() const { return m_listenCallback.Value(); }
+    void SetListenCallback (Napi::Function value);
     };
 
 //=======================================================================================
@@ -521,10 +523,10 @@ public:
 private:
     websocketpp_server_t m_server;
 
-    websocketpp_ServerEndpoint (UtilitiesCR owner, Js::ScopeR scope);
+    websocketpp_ServerEndpoint (UtilitiesCR owner, Napi::HandleScope scope);
 
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope);
+    static Napi::Object Create (UtilitiesCR owner, Napi::HandleScope scope);
 
     websocketpp_server_t const& GetServer() const { return m_server; }
     websocketpp_server_t& GetServer() { return m_server; }
@@ -574,10 +576,10 @@ private:
     Relay m_relay;
     std::ostream m_output;
 
-    websocketpp_ClientConnection (UtilitiesCR owner, Js::ScopeR scope, websocketpp_connection_ptr_t const& connection);
+    websocketpp_ClientConnection (UtilitiesCR owner, websocketpp_connection_ptr_t const& connection);
 
 public:
-    static Js::Object Create (UtilitiesCR owner, Js::ScopeR scope, websocketpp_connection_ptr_t const& connection);
+    static Napi::Object Create (UtilitiesCR owner, websocketpp_connection_ptr_t const& connection);
 
     websocketpp_connection_t const& GetConnection() const { return *m_connection; }
     websocketpp_connection_t& GetConnection() { return *m_connection; }

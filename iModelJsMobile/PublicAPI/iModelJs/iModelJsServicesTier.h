@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelJs/iModelJsServicesTier.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,12 +53,13 @@ private:
 
 protected:
     IMODELJS_EXPORT virtual Utf8CP SupplyName() const = 0;
-    IMODELJS_EXPORT virtual Js::Value ExportJsModule (Js::ScopeR scope) = 0;
+    IMODELJS_EXPORT virtual Napi::Value ExportJsModule (Napi::Env& env) = 0;
 
 public:
     IMODELJS_EXPORT static void Install (InstallCallback_T const& callback);
 
     IMODELJS_EXPORT Js::RuntimeR GetRuntime() const { return *m_runtime; }
+    IMODELJS_EXPORT Napi::Env& Env() const { return GetRuntime().Env(); }
     };
 
 //=======================================================================================
@@ -79,7 +80,7 @@ private:
 
     void Install (ExtensionPtr extension);
     void Shutdown();
-    Js::Value DeliverExtension (Js::ScopeR scope, Utf8StringCR identifier);
+    Napi::Value DeliverExtension (Napi::Env& env, Utf8StringCR identifier);
 
     static void InstallCoreExtensions();
 
@@ -123,9 +124,9 @@ private:
     bool m_stopped;
     uv_idle_t m_idler;
     EnvironmentP m_environment;
-    Js::Reference m_notifyIdle;
-    Js::Reference m_notifyShutdown;
-    Js::Reference m_notifyReady;
+    Napi::ObjectReference m_notifyIdle;
+    Napi::ObjectReference m_notifyShutdown;
+    Napi::ObjectReference m_notifyReady;
 
     static void IdleHandler (uv_idle_t* handle);
     static void EventLoopCallbackAsyncHandler (uv_async_t* handle);
@@ -157,8 +158,8 @@ protected:
 
     IMODELJS_EXPORT virtual uv_loop_t* SupplyEventLoop() = 0;
     IMODELJS_EXPORT virtual Js::RuntimeR SupplyJsRuntime() = 0;
-    IMODELJS_EXPORT virtual Js::Function SupplyJsRequireHandler (Js::ScopeR scope, Js::ObjectCR initParams);
-    IMODELJS_EXPORT virtual void SupplyJsInfoValues (Js::ScopeR scope, Js::ObjectR info);
+    IMODELJS_EXPORT virtual Napi::Function SupplyJsRequireHandler (Napi::Env& env, Napi::Object initParams);
+    IMODELJS_EXPORT virtual void SupplyJsInfoValues (Napi::Env& env, Napi::Object info);
 
     IMODELJS_EXPORT virtual void OnReady() { ; }
     IMODELJS_EXPORT virtual void OnIdle() { ; }
@@ -174,6 +175,7 @@ public:
 
     IMODELJS_EXPORT uv_loop_t* GetEventLoop() const;
     IMODELJS_EXPORT Js::RuntimeR GetJsRuntime() const;
+    Napi::Env& Env() {return GetJsRuntime().Env();}
 
     IMODELJS_EXPORT bool IsReady() const;
     IMODELJS_EXPORT bool IsStopped() const;
@@ -198,8 +200,8 @@ private:
 protected:
     IMODELJS_EXPORT uv_loop_t* SupplyEventLoop() override;
     IMODELJS_EXPORT Js::RuntimeR SupplyJsRuntime() override;
-    IMODELJS_EXPORT Js::Function SupplyJsRequireHandler (Js::ScopeR scope, Js::ObjectCR initParams) override;
-    IMODELJS_EXPORT void SupplyJsInfoValues (Js::ScopeR scope, Js::ObjectR info) override;
+    IMODELJS_EXPORT Napi::Function SupplyJsRequireHandler (Napi::Env& env, Napi::Object initParams) override;
+    IMODELJS_EXPORT void SupplyJsInfoValues (Napi::Env& env, Napi::Object info) override;
 
 public:
     IMODELJS_EXPORT UvHost();
@@ -226,16 +228,16 @@ public:
     //=======================================================================================
     struct JsPrototypes
         {
-        Js::Reference uv_Handle;
-        Js::Reference uv_Status;
-        Js::Reference uv_io_Stream;
-        Js::Reference uv_tcp_BindResult;
-        Js::Reference uv_tcp_ConnectResult;
-        Js::Reference uv_tcp_Handle;
-        Js::Reference uv_tcp_Server;
-        Js::Reference websocketpp_Base;
-        Js::Reference websocketpp_ClientConnection;
-        Js::Reference websocketpp_ServerEndpoint;
+        Napi::ObjectReference uv_Handle;
+        Napi::ObjectReference uv_Status;
+        Napi::ObjectReference uv_io_Stream;
+        Napi::ObjectReference uv_tcp_BindResult;
+        Napi::ObjectReference uv_tcp_ConnectResult;
+        Napi::ObjectReference uv_tcp_Handle;
+        Napi::ObjectReference uv_tcp_Server;
+        Napi::ObjectReference websocketpp_Base;
+        Napi::ObjectReference websocketpp_ClientConnection;
+        Napi::ObjectReference websocketpp_ServerEndpoint;
         };
 
 private:
@@ -243,36 +245,36 @@ private:
 
     static Utf8CP InitScript();
 
-    Js::Function EvaluateInitScript (Js::ScopeR scope);
-    Js::Object CreateInitParams (Js::ScopeR scope);
-    void FindPrototypes (Js::ObjectCR exports);
+    Napi::Function EvaluateInitScript (Napi::Env& env);
+    Napi::Object CreateInitParams (Napi::Env& env);
+    void FindPrototypes (Napi::Object exports);
 
-    Js::Callback uv_Handle_close (Js::ScopeR scope);
-    Js::Callback uv_io_shutdown (Js::ScopeR scope);
-    Js::Callback uv_io_Stream_isReadable (Js::ScopeR scope);
-    Js::Callback uv_io_Stream_isWritable (Js::ScopeR scope);
-    Js::Callback uv_io_Stream_read (Js::ScopeR scope);
-    Js::Callback uv_io_Stream_write (Js::ScopeR scope);
-    Js::Callback uv_tcp_bind (Js::ScopeR scope);
-    Js::Callback uv_tcp_connect (Js::ScopeR scope);
-    Js::Callback uv_tcp_Handle_setNoDelay (Js::ScopeR scope);
-    Js::Callback uv_tcp_Handle_setKeepAlive (Js::ScopeR scope);
-    Js::Callback uv_tcp_Server_setSimultaneousAccepts (Js::ScopeR scope);
-    Js::Callback uv_tcp_Server_listen (Js::ScopeR scope);
-    Js::Callback uv_tcp_Server_accept (Js::ScopeR scope);
-    Js::Callback websocketpp_Base_Dispose (Js::ScopeR scope);
-    Js::Callback websocketpp_ClientConnection_process (Js::ScopeR scope);
-    Js::Callback websocketpp_ClientConnection_send (Js::ScopeR scope);
-    Js::Callback websocketpp_ServerEndpoint_constructor (Js::ScopeR scope);
-    Js::Callback websocketpp_ServerEndpoint_createConnection (Js::ScopeR scope);
-    Js::Callback uv_fs_open (Js::ScopeR scope);
-    Js::Callback uv_fs_stat (Js::ScopeR scope);
-    Js::Callback uv_fs_read (Js::ScopeR scope);
-    Js::Callback uv_fs_close (Js::ScopeR scope);
+    Napi::Function uv_Handle_close (Napi::Env& env);
+    Napi::Function uv_io_shutdown (Napi::Env& env);
+    Napi::Function uv_io_Stream_isReadable (Napi::Env& env);
+    Napi::Function uv_io_Stream_isWritable (Napi::Env& env);
+    Napi::Function uv_io_Stream_read (Napi::Env& env);
+    Napi::Function uv_io_Stream_write (Napi::Env& env);
+    Napi::Function uv_tcp_bind (Napi::Env& env);
+    Napi::Function uv_tcp_connect (Napi::Env& env);
+    Napi::Function uv_tcp_Handle_setNoDelay (Napi::Env& env);
+    Napi::Function uv_tcp_Handle_setKeepAlive (Napi::Env& env);
+    Napi::Function uv_tcp_Server_setSimultaneousAccepts (Napi::Env& env);
+    Napi::Function uv_tcp_Server_listen (Napi::Env& env);
+    Napi::Function uv_tcp_Server_accept (Napi::Env& env);
+    Napi::Function websocketpp_Base_Dispose (Napi::Env& env);
+    Napi::Function websocketpp_ClientConnection_process (Napi::Env& env);
+    Napi::Function websocketpp_ClientConnection_send (Napi::Env& env);
+    Napi::Function websocketpp_ServerEndpoint_constructor (Napi::Env& env);
+    Napi::Function websocketpp_ServerEndpoint_createConnection (Napi::Env& env);
+    Napi::Function uv_fs_open (Napi::Env& env);
+    Napi::Function uv_fs_stat (Napi::Env& env);
+    Napi::Function uv_fs_read (Napi::Env& env);
+    Napi::Function uv_fs_close (Napi::Env& env);
 
 protected:
     IMODELJS_EXPORT Utf8CP SupplyName() const override { return "@bentley/imodeljs-services-tier-utilities"; }
-    IMODELJS_EXPORT Js::Value ExportJsModule (Js::ScopeR scope) override;
+    IMODELJS_EXPORT Napi::Value ExportJsModule (Napi::Env& env) override;
 
 public:
     IMODELJS_EXPORT JsPrototypesCR GetPrototypes() const { return m_prototypes; }

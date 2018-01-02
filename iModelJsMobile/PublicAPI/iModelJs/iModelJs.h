@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelJs/iModelJs.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,6 +27,8 @@
 
 #define IMODELJS_REF_COUNTED_PTR(_sname_) \
     BEGIN_BENTLEY_IMODELJS_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_IMODELJS_NAMESPACE
+
+#include <node-addon-api/napi.h>
 
 #include <iModelJs/iModelJsUtilities.h>
 

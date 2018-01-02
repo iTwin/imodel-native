@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelJs/iModelJsApp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -94,7 +94,7 @@ struct Delegate
     };
 
 //=======================================================================================
-//! An iModel.js runtime environment.
+//! An iModel.js environment.
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
 struct Environment
@@ -247,7 +247,7 @@ struct UwpWebViewEnvironment : public WebViewEnvironment
 typedef ILibuvEnvironment<Environment> EmbeddedEnvironmentSuper_T;
 
 //=======================================================================================
-//! An environment delivered by an embedded instance of a JavaScript runtime.
+//! An environment delivered by an embedded instance of a JavaScript env.
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
 struct EmbeddedEnvironment : public EmbeddedEnvironmentSuper_T

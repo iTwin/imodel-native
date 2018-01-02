@@ -2,7 +2,7 @@
 |
 |     $Source: ServicesTierUvHost.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
@@ -50,25 +50,27 @@ Js::RuntimeR UvHost::SupplyJsRuntime()
     return *m_jsRuntime;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-Js::Function UvHost::SupplyJsRequireHandler (Js::ScopeR scope, Js::ObjectCR initParams)
+Napi::Function UvHost::SupplyJsRequireHandler (Napi::Env& env, Napi::Object initParams)
     {
     auto& runtime = GetJsRuntime();
 
     auto requireScriptEvaluation = runtime.EvaluateScript (RequireScript());
     BeAssert (requireScriptEvaluation.status == Js::EvaluateStatus::Success);
-
-    return requireScriptEvaluation.value.AsFunction() (runtime.GetGlobal(), initParams).AsFunction();
+            
+    Napi::Function func(Env(), requireScriptEvaluation.value);
+    return func({Env().Global(), initParams}).As<Napi::Function>();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-void UvHost::SupplyJsInfoValues (Js::ScopeR scope, Js::ObjectR info)
+void UvHost::SupplyJsInfoValues (Napi::Env& env, Napi::Object info)
     {
-    Host::SupplyJsInfoValues (scope, info);
+    Host::SupplyJsInfoValues (env, info);
     }
 
 //---------------------------------------------------------------------------------------
@@ -87,7 +89,7 @@ void UvHost::EventLoopThreadMain()
     {
     auto& config = GetConfig();
 
-    m_jsRuntime = new Js::Runtime ("iModel.js Services Tier", config.enableJsDebugger, config.jsDebuggerPort);
+    m_jsRuntime = new Js::Runtime("iModel.js Services Tier", config.enableJsDebugger, config.jsDebuggerPort);
 
     NotifyStarting();
     uv_run (GetEventLoop(), UV_RUN_DEFAULT);
