@@ -2,7 +2,7 @@
 |
 |  $Source: tests/NonPublished/formatting_test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -454,6 +454,8 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("0' 3\"", 0, "FT");
     FormattingTestFixture::ParseToQuantity("0' 0\"", 0, "FT");
     FormattingTestFixture::ParseToQuantity("0' 0\"", 0, "FT");
+    FormattingTestFixture::ParseToQuantity("3 HR 13 MIN 7 S", 0, "MIN");
+    FormattingTestFixture::ParseToQuantity("3 HR 13 MIN 7 S", 0, "S");
 
     LOG.info("\n============= Equivalence of quantity test =================");
     FormattingTestFixture::ParseToQuantity("5:6", 0, "IN", "fi8");
@@ -465,7 +467,9 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::VerifyQuantity("5:6", "IN", "fi8", 1.6764, "M");
     FormattingTestFixture::VerifyQuantity("5:6", "IN", "fi8", 5.5, "FT");
     FormattingTestFixture::VerifyQuantity("5:", "IN", "fi8", 152.4, "CM");
-
+    FormattingTestFixture::VerifyQuantity("3:13:7", "S", "hms", 11587.0, "S");
+    FormattingTestFixture::VerifyQuantity("3:13:7", "S", "hms", 193.116667, "MIN");
+    
 
     //FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
     FormattingTestFixture::TestScanPointVector(u8"ЯA型号   sautéςερ135°11'30-1/4\"");

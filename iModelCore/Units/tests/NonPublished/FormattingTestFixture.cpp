@@ -2,7 +2,7 @@
 |
 |  $Source: tests/NonPublished/FormattingTestFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1227,7 +1227,6 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
             }
         }
     }
-
 
 
 END_BENTLEY_FORMATTEST_NAMESPACE

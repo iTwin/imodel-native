@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/FormattingIO.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -256,6 +256,8 @@ size_t StdFormatSet::CustomInit()
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi8\", \"SpecName\" : \"AmerFI8\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MiddleUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":16, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"fi16\", \"SpecName\" : \"AmerFI16\", \"SpecType\" : \"composite\"}");
     AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"yrd(s)\", \"unitName\" : \"YRD\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"FT\"}, \"MinorUnit\" : {\"unitLabel\":\"\"\", \"unitName\" : \"IN\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"yfi8\", \"SpecName\" : \"AmerYFI8\", \"SpecType\" : \"composite\"}");
+    AddCustomFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"hour(s)\", \"unitName\" : \"HR\"}, \"MiddleUnit\" : {\"unitLabel\":\"min\", \"unitName\" : \"MIN\"}, \"MinorUnit\" : {\"unitLabel\":\"sec\", \"unitName\" : \"S\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"hms\", \"SpecName\" : \"HMS\", \"SpecType\" : \"composite\"}");
+
     size_t s = m_customSet.size();
     return s;
     }
