@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/CurvePrimitivePlacementStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,7 +81,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CurvePrimitivePlacementStrategy : public Geometry
         virtual BentleyStatus _GetPropertyValueElementId (Utf8CP propertyName, Dgn::DgnElementId & value) const override {return BentleyStatus::ERROR;}
 
         virtual void                _Reset() override { dynamic_cast<CurvePrimitiveManipulationStrategyP>(m_manipulationStrategy.get())->Finish(); } // Need reset on manip strategy
-        virtual ICurvePrimitivePtr  _Finish() { return dynamic_cast<CurvePrimitiveManipulationStrategyP>(m_manipulationStrategy.get())->Finish();  }
+        virtual ICurvePrimitivePtr  _Finish() { return dynamic_cast<CurvePrimitiveManipulationStrategyP>(m_manipulationStrategy.get())->FinishPrimitive();  }
     public:
         // TODO move to base strategy
         //! Sets a boolean property with given value. If given property is not found or is not a boolean value, returns BentleyStatus::ERROR
