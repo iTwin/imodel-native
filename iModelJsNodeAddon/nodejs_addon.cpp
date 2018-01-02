@@ -2,7 +2,7 @@
 |
 |     $Source: nodejs_addon.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <functional>
@@ -167,7 +167,7 @@ struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb>
         ECDbWorkerBase(NodeAddonECDb* adb, Napi::Function cb) 
             : Napi::AsyncWorker(adb->Value(), cb), m_addonDb(adb), m_status((STATUSTYPE)0) {}
 
-        ECDbR GetECDb() { return *m_addonDb->GetECDb(); }
+        ECDbR GetECDb() { return m_addonDb->GetECDb(); }
 
         void OnOK() override
             {
