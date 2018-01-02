@@ -70,10 +70,12 @@ public:
 
 private:
 
-    BE_PROP_NAME (DefaultStartAngle)
-    BE_PROP_NAME (DefaultEndAngle)
-    BE_PROP_NAME (DefaultStartRadius)
-    BE_PROP_NAME (DefaultEndRadius)
+    BE_PROP_NAME(DefaultAngleIncrement)
+    BE_PROP_NAME(DefaultRadiusIncrement)
+    BE_PROP_NAME(DefaultStartAngle)
+    BE_PROP_NAME(DefaultEndAngle)
+    BE_PROP_NAME(DefaultStartRadius)
+    BE_PROP_NAME(DefaultEndRadius)
 
 protected:
     explicit GRIDELEMENTS_EXPORT RadialGrid (T_Super::CreateParams const& params);
@@ -98,6 +100,22 @@ public:
     //! @param[in]  params  create params for this grid portion. See CreateParams
     //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsert (CreateParams params);
+
+    //! Gets default angle increment of this RadialGrid
+    //! @return DefaultAngleIncrement of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultAngleIncrement() const { return GetPropertyValueDouble(prop_DefaultAngleIncrement()); }
+
+    //! Sets default angle increment of this RadialGrid
+    //! @param[in]  angleInc   new DefaultAngleIncrement for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultAngleIncrement(double angleInc) { SetPropertyValue(prop_DefaultAngleIncrement(), angleInc); };
+
+    //! Gets default radius increment of this RadialGrid
+    //! @return DefaultRadiusIncrement of this RadialGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultRadiusIncrement() const { return GetPropertyValueDouble(prop_DefaultRadiusIncrement()); }
+
+    //! Sets default radius increment of this RadialGrid
+    //! @param[in]  radiusInc   new DefaultRadiusIncrement for this RadialGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultRadiusIncrement(double radiusInc) { SetPropertyValue(prop_DefaultRadiusIncrement(), radiusInc); };
 
     //! Gets default start angle of this RadialGrid
     //! @return DefaultStartAngle of this RadialGrid

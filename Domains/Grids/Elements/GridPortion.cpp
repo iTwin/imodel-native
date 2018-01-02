@@ -291,6 +291,33 @@ Dgn::DgnModelCR targetModel
     return SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            Grid::_OnUpdated
+(
+Dgn::DgnElementCR original
+) const
+    {
+    Dgn::DgnDbR db = GetDgnDb();
+    //only if the placement has changed, we want to fix the gridsurfaces.
+    if (_NeedsUpdateSurfacesOnPlacementChange() &&
+        !GetPlacement().GetTransform().IsEqual(original.ToGeometrySource3d()->GetPlacement().GetTransform(), PLACEMENT_TOLERANCE, PLACEMENT_TOLERANCE))
+        {
+        for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
+            {
+            GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
+            _OnUpdatingSurface(*surface);
+            if (RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "update GridSurface"))
+                BeAssert(!"failed to acquire lock for element update");
+            surface->Update();
+            }
+        }
+
+    T_Super::_OnUpdated(original);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -396,14 +423,61 @@ bool createDimensions
 
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
 
-    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
+    GeneralGridAxisPtr horizontalAxis = GeneralGridAxis::CreateAndInsert(defModel, *thisGrid);
     
     if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *horizontalAxis, createDimensions))
         BeAssert (!"error inserting gridSurfaces into elevation grid.. shouldn't get here..");
     return thisGrid;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            ElevationGrid::SetDefaultSurface2d
+(
+CurveVectorPtr surface
+)
+    {
+    if (!surface.IsValid())
+        return;
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    surface->IsPlanar (localToWorld, worldToLocal, range);
+    DPlane3d surfacePlane;
+    bsiTransform_getOriginAndVectors (&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
 
+    if (!DoubleOps::AlmostEqualFraction (surfacePlane.origin.z, 0.0) ||
+        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 1.0)) //must be a zero Z plane
+        return;
+
+    IGeometryPtr geometryPtr = IGeometry::Create (surface);
+
+    ECN::ECValue surface2dValue;
+    surface2dValue.SetIGeometry (*geometryPtr);
+
+    SetPropertyValue (prop_DefaultSurface2d(), surface2dValue);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr                   ElevationGrid::GetDefaultSurface2d
+(
+) const
+    {
+    ECN::ECValue surface2dValue;
+
+    GetPropertyValue (surface2dValue, prop_DefaultSurface2d ());
+
+    IGeometryPtr geometryPtr = surface2dValue.GetIGeometry ();
+    if (!geometryPtr.IsValid ())
+        return nullptr;
+
+    CurveVectorPtr surface = geometryPtr->GetAsCurveVector ();
+
+    return surface;
+    }
 
 END_GRIDS_NAMESPACE
 

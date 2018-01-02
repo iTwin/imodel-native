@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Domain/PublicApi/GridsMacros.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,9 +80,14 @@
 #define GRIDS_CLASS_RadialGrid                           "RadialGrid"
 #define GRIDS_CLASS_SketchGrid                           "SketchGrid"
 
-#define GRIDS_CLASS_IntersectionCurve                           "IntersectionCurve"
 #define GRIDS_CLASS_GridCurve                                   "GridCurve"
+#define GRIDS_CLASS_GeneralGridCurve                            "GeneralGridCurve"
 #define GRIDS_CLASS_GridAxis                                    "GridAxis"
+#define GRIDS_CLASS_OrthogonalAxisX                             "OrthogonalAxisX"
+#define GRIDS_CLASS_OrthogonalAxisY                             "OrthogonalAxisY"
+#define GRIDS_CLASS_CircularAxis                                "CircularAxis"
+#define GRIDS_CLASS_RadialAxis                                  "RadialAxis"
+#define GRIDS_CLASS_GeneralGridAxis                             "GeneralGridAxis"
 #define GRIDS_CLASS_GridLine                                    "GridLine"
 #define GRIDS_CLASS_GridSpline                                  "GridSpline"
 #define GRIDS_CLASS_GridArc                                     "GridArc"

@@ -21,7 +21,7 @@ USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(OrthogonalGrid)
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,8 +52,8 @@ StandardCreateParams const& params
 
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb().GetDictionaryModel ();
 
-    GridAxisPtr horizontalAxis = GridAxis::CreateAndInsert (defModel, *thisGrid);
-    GridAxisPtr verticalAxis = GridAxis::CreateAndInsert(defModel, *thisGrid);
+    OrthogonalAxisXPtr horizontalAxis = OrthogonalAxisX::CreateAndInsert (defModel, *thisGrid);
+    OrthogonalAxisYPtr verticalAxis = OrthogonalAxisY::CreateAndInsert(defModel, *thisGrid);
 
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel ();
     
@@ -241,5 +241,6 @@ Dgn::RepositoryStatus OrthogonalGrid::RotateToAngleXY(double theta, bool updateD
 
     return status;
     }
+
 
 END_GRIDS_NAMESPACE

@@ -2229,7 +2229,7 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     ASSERT_EQ(0, sketchGrid->MakeAxesIterator().BuildIdList<DgnElementId>().size()) << "new sketch grid should contain no elements";
 
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
-    Grids::GridAxisPtr gridAxis = GridAxis::CreateAndInsert(defModel, *sketchGrid);
+    Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *sketchGrid);
 
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
 
@@ -2388,7 +2388,7 @@ TEST_F (GridsTestFixture, InsertHandlerCreatedElements)
 
     {
     // create new definition model
-    GridAxisHandler& handler = GridAxisHandler::GetHandler ();
+    GeneralGridAxisHandler& handler = GeneralGridAxisHandler::GetHandler ();
     DgnClassId classId = db.Domains ().GetClassId (handler);
     DgnElement::CreateParams params (db, m_model->GetModelId (), classId);
 
@@ -2409,7 +2409,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
 
     SketchGridPtr grid = SketchGrid::Create (*m_model, "SketchGrid-1");
     grid->Insert ();
-    GridAxisPtr axis1 = GridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
+    GeneralGridAxisPtr axis1 = GeneralGridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
 
     /////////////////////////////////////////////////////////////
     // Check if invalid grid plane surfaces can't be added to sketch grid
@@ -2899,7 +2899,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     db.SaveChanges();
 
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
-    Grids::GridAxisPtr gridAxis = GridAxis::CreateAndInsert(defModel, *sketchGrid);
+    Grids::GridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *sketchGrid);
 
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create sketch grid axis";
     db.SaveChanges();
@@ -3155,7 +3155,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     // Use Create method to create grid axis
     /////////////////////////////////////////////////////////////
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
-    Grids::GridAxisPtr gridAxis0 = GridAxis::Create(defModel, *grid);
+    Grids::GridAxisPtr gridAxis0 = GeneralGridAxis::Create(defModel, *grid);
 
     ASSERT_TRUE(gridAxis0.IsValid()) << "Failed to create grid axis";
     ASSERT_FALSE(gridAxis0->GetElementId().IsValid()) << "Grid axis should not have been inserted yet";
@@ -3170,7 +3170,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     /////////////////////////////////////////////////////////////
     // Use CreateAndInsert method to create grid axis
     /////////////////////////////////////////////////////////////
-    Grids::GridAxisPtr gridAxis1 = GridAxis::CreateAndInsert(defModel, *grid);
+    Grids::GridAxisPtr gridAxis1 = GeneralGridAxis::CreateAndInsert(defModel, *grid);
     ASSERT_TRUE(gridAxis1.IsValid()) << "Failed to create and insert grid axis";
     ASSERT_TRUE(gridAxis1->GetElementId().IsValid()) << "Inserted grid axis' id should be valid";
 
@@ -3226,7 +3226,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
 
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
-    Grids::GridAxisPtr gridAxis = GridAxis::CreateAndInsert(defModel, *grid);
+    Grids::GeneralGridAxisPtr gridAxis = GeneralGridAxis::CreateAndInsert(defModel, *grid);
     ASSERT_TRUE(gridAxis.IsValid()) << "Failed to create and insert grid axis";
 
     DgnExtrusionDetail planeExtDetail = GeometryUtils::CreatePlaneExtrusionDetail({ 0, 0, 0 }, { 10, 0, 0 }, 20);

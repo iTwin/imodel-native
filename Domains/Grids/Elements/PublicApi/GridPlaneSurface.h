@@ -96,7 +96,7 @@ public:
         DEFINE_T_SUPER (GridPlanarSurface::CreateParams);
 
         //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
+        //! @param[in] model              model for the PlanGridPlanarSurface
         CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId, Dgn::DgnElementId gridAxisId, double staElevation, double endElevation) :
             T_Super (model, classId, gridAxisId), IPlanGridSurface::CreateParams(staElevation, endElevation)
             {}
@@ -171,6 +171,21 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
     protected:
         explicit GRIDELEMENTS_EXPORT PlanCartesianGridSurface (CreateParams const& params);
         friend struct PlanCartesianGridSurfaceHandler;
+
+
+        GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
+
+        //! Called when an element is about to be inserted into the DgnDb.
+        //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+
+        //! Called when this element is about to be replace its original element in the DgnDb.
+        //! @param [in] original the original state of this element.
+        //! Subclasses may override this method to control whether their instances are updated.
+        //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
 
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanCartesianGridSurface, GRIDELEMENTS_EXPORT)
@@ -324,9 +339,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
         explicit GRIDELEMENTS_EXPORT ElevationGridSurface (CreateParams const& params);
         friend struct ElevationGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
+
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _SetPlacement (Dgn::Placement3dCR placement) override;
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
-        
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface, GRIDELEMENTS_EXPORT)
         //---------------------------------------------------------------------------------------
@@ -395,8 +413,10 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchLineGridSurface : PlanGridPlanarSurface
         explicit GRIDELEMENTS_EXPORT SketchLineGridSurface (CreateParams const& params);
         friend struct SketchLineGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
 
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
 
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchLineGridSurface, GRIDELEMENTS_EXPORT)

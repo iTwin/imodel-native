@@ -38,5 +38,4 @@ Utf8CP          name
     return new SketchGrid(Grid::CreateParams(&model, model.GetModeledElementId (), name, QueryClassId(model.GetDgnDb())));
     }
 
-
 END_GRIDS_NAMESPACE

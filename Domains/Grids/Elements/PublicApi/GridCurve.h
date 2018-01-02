@@ -49,21 +49,6 @@ protected:
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridCurve, GRIDELEMENTS_EXPORT)
-
-    //---------------------------------------------------------------------------------------
-    // Creation
-    //---------------------------------------------------------------------------------------
-    //! Creates a gridcurve
-    //! @param[in]  model   model for the gridcurve
-    //! @param[in]  curve   curve geometry
-    //! @return             GridCurve
-    GRIDELEMENTS_EXPORT static GridCurvePtr Create(Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
-
-    //! Creates a gridcurve
-    //! @param[in]  model   model for the gridcurve
-    //! @param[in]  curve   curve geometry
-    //! @return             GridCurve
-    GRIDELEMENTS_EXPORT static GridCurvePtr Create(Dgn::DgnModelCR model, CurveVectorPtr curve);
     
     //---------------------------------------------------------------------------------------
     // Getters and setters
@@ -87,5 +72,31 @@ public:
     //! @param[in]  curve   model for the gridcurve
     GRIDELEMENTS_EXPORT void    SetCurve (ICurvePrimitivePtr curve);    
 };
+
+
+//=======================================================================================
+//! Physical building element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE GeneralGridCurve : GridCurve
+    {
+    DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_GeneralGridCurve, GridCurve);
+
+    protected:
+        explicit GRIDELEMENTS_EXPORT GeneralGridCurve(CreateParams const& params);
+        explicit GRIDELEMENTS_EXPORT GeneralGridCurve(CreateParams const& params, ICurvePrimitivePtr curve);
+        friend struct GeneralGridCurveHandler;
+
+    public:
+        DECLARE_GRIDS_ELEMENT_BASE_METHODS(GeneralGridCurve, GRIDELEMENTS_EXPORT)
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a grid line
+        //! @param[in]  model   model for the GeneralGridCurve
+        //! @param[in]  curve   curve geometry
+        //! @return             Grid line
+        GRIDELEMENTS_EXPORT static GeneralGridCurvePtr Create(Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
+    };
 
 END_GRIDS_NAMESPACE

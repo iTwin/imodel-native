@@ -16,6 +16,8 @@
 BEGIN_GRIDS_NAMESPACE
 
 #define GRIDLINE_LENGTH_COEFF 0.1
+static const double PLACEMENT_TOLERANCE = 1.0E-9;
+
 
 //=======================================================================================
 //! Physical building element
@@ -82,7 +84,14 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 
+    GRIDELEMENTS_EXPORT virtual void _OnUpdated(Dgn::DgnElementCR original) const override;
+
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
+
+    GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const = 0;
+
+    GRIDELEMENTS_EXPORT virtual bool    _NeedsUpdateSurfacesOnPlacementChange() const { return true; }
+
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (Grid, GRIDELEMENTS_EXPORT)
 
@@ -151,17 +160,37 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGrid : Grid
 {
     DEFINE_T_SUPER (Grid);
 private:
-
+    
+    BE_PROP_NAME (DefaultStartElevation)
+    BE_PROP_NAME (DefaultEndElevation)
 protected:
     //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
     //! @param[in]          params  params for creation
     explicit GRIDELEMENTS_EXPORT PlanGrid (T_Super::CreateParams const& params) : T_Super (params) {};
+
+    GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const override {};
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid, GRIDELEMENTS_EXPORT)
 
     //! gets the perpendicularity plane of this Grid
     //! @return             perpendicularity plane of this Grid
     GRIDELEMENTS_EXPORT DPlane3d    GetPlane() const;
+
+    //! Gets Default start elevation of this PlanGrid
+    //! @return DefaultStartElevation of this PlanGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultStartElevation() const { return GetPropertyValueDouble(prop_DefaultStartElevation()); }
+
+    //! Sets Default start elevation of this PlanGrid
+    //! @param[in]  staElevation   new DefaultStartElevation for this PlanGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultStartElevation(double staElevation) { SetPropertyValue(prop_DefaultStartElevation(), staElevation); };
+    
+    //! Gets Default end elevation of this PlanGrid
+    //! @return DefaultEndElevation of this PlanGrid
+    GRIDELEMENTS_EXPORT double      GetDefaultEndElevation() const { return GetPropertyValueDouble(prop_DefaultEndElevation()); }
+
+    //! Sets Default end elevation of this PlanGrid
+    //! @param[in]  endElevation   new DefaultEndElevation for this PlanGrid
+    GRIDELEMENTS_EXPORT void        SetDefaultEndElevation(double endElevation) { SetPropertyValue(prop_DefaultEndElevation(), endElevation); };
     };
 
 //=======================================================================================
@@ -200,7 +229,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
                 {}
             };
 
+    private:
+
+        BE_PROP_NAME(DefaultElevationIncrement)
+        BE_PROP_NAME(DefaultSurface2d)
     protected:
+
+        GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const override {};
 
         static  BentleyStatus           ValidateSurfaces (bvector<CurveVectorPtr> const& surfaces);
 
@@ -208,6 +243,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
         //! @param[in]          params  params for creation
         explicit GRIDELEMENTS_EXPORT ElevationGrid (T_Super::CreateParams const& params) : T_Super (params) {};
+
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid, GRIDELEMENTS_EXPORT)
         friend struct ElevationGridHandler;
@@ -224,5 +260,20 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
 
         GRIDELEMENTS_EXPORT static ElevationGridPtr Create (CreateParams const& params);
 
+        //! Gets Default elevation increment of this ElevationGrid
+        //! @return DefaultElevationIncrement of this ElevationGrid
+        GRIDELEMENTS_EXPORT double      GetDefaultElevationIncrement() const { return GetPropertyValueDouble(prop_DefaultElevationIncrement()); }
+
+        //! Sets Default elevation increment of this ElevationGrid
+        //! @param[in]  elevationInc   new DefaultElevationIncrement for this ElevationGrid
+        GRIDELEMENTS_EXPORT void        SetDefaultElevationIncrement(double elevationInc) { SetPropertyValue(prop_DefaultElevationIncrement(), elevationInc); };
+
+        //! Gets default Surface2d of this ElevationGrid
+        //! @return surface of this ElevationGrid, as curvevector on zero Z plane
+        GRIDELEMENTS_EXPORT CurveVectorPtr      GetDefaultSurface2d() const;
+
+        //! Sets default Surface2d of this ElevationGrid
+        //! @param[in]   surface        curvevector in local coordinates, on zero Z plane
+        GRIDELEMENTS_EXPORT void                SetDefaultSurface2d(CurveVectorPtr surface);
     };
 END_GRIDS_NAMESPACE

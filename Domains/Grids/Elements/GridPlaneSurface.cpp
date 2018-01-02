@@ -340,6 +340,102 @@ CreateParams const& params
     return gridSurface;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanCartesianGridSurface::RecomputeGeometryStream
+(
+)
+    {
+    GridAxisCPtr gridAxis = GetDgnDb().Elements().Get<GridAxis>(GetAxisId());
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+
+    double staElev = GetStartElevation();
+    double endElev = GetEndElevation();
+    double height = endElev - staElev;
+
+    double staExt = GetStartExtent();
+    double endExt = GetEndExtent();
+    double length = endExt - staExt;
+
+    double coordinate = GetCoordinate();
+    bool isYAxis = gridAxis->IsOrthogonalAxisY();
+
+    if (!isYAxis && !gridAxis->IsOrthogonalAxisX()) //should be either on X or Y axis
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    if (DoubleOps::AlmostEqualFraction(length, 0.0))    //should have a length
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+
+    //first, create the surface in local coordinates..
+    DPoint3d startPt = DPoint3d::From(staExt, 0.0, staElev);
+    DPoint3d endPt = DPoint3d::From(endExt, 0.0, staElev);
+
+    //start from the grid transform
+    Placement3dCR currGridPlacement = grid->GetPlacement();
+    Placement3d thisPlacement(currGridPlacement);
+
+    //rotate to the right direction
+    if (isYAxis)
+        {
+        Transform rotation = Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, msGeomConst_piOver2);
+        thisPlacement.TryApplyTransform(rotation);
+        //also negate the sta/end params
+        startPt.Negate();
+        endPt.Negate();
+        }
+
+    //translate by coordinate
+    Transform coordTrans = Transform::From(coordinate, 0.0, 0.0);
+    thisPlacement.TryApplyTransform(coordTrans);
+
+    //finally, set the geometry
+    SetPlacement(thisPlacement);
+
+    ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(startPt, endPt));
+    DgnExtrusionDetail detail = DgnExtrusionDetail(CurveVector::Create(line), DVec3d::From(0, 0, height), false);
+    ISolidPrimitivePtr geometryInLocalCoords = ISolidPrimitive::CreateDgnExtrusion(detail);
+
+    if (BentleyStatus::SUCCESS != SetGeometry(geometryInLocalCoords))
+        Dgn::DgnDbStatus::WriteError;
+
+    return Dgn::DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanCartesianGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnUpdate(original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanCartesianGridSurface::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnInsert();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -436,11 +532,11 @@ Placement3dCR placement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus                ElevationGridSurface::_OnUpdate
+Dgn::DgnDbStatus                ElevationGridSurface::RecomputeGeometryStream
 (
-Dgn::DgnElementCR original
 )
     {
+
     CurveVectorPtr shape = GetSurface2d();
 
     Transform translation = Transform::From(0.0, 0.0, GetElevation());
@@ -462,14 +558,46 @@ Dgn::DgnElementCR original
     Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
 
-    if (builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
-        {
-        if (SUCCESS != builder->Finish(*geomElem))
-            return Dgn::DgnDbStatus::WriteError;
-        }
+    if (!builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
+        return Dgn::DgnDbStatus::WriteError;
+
+    if (SUCCESS != builder->Finish(*geomElem))
+        return Dgn::DgnDbStatus::WriteError;
+
+    return Dgn::DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                ElevationGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
 
     return T_Super::_OnUpdate(original);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                ElevationGridSurface::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnInsert();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -553,15 +681,10 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus                SketchLineGridSurface::_OnUpdate
+Dgn::DgnDbStatus                SketchLineGridSurface::RecomputeGeometryStream
 (
-Dgn::DgnElementCR original
 )
     {
-    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
-    if (Dgn::DgnDbStatus::Success != status)
-        return status;
-
     double height = GetEndElevation() - GetStartElevation();
 
     if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
@@ -587,9 +710,37 @@ Dgn::DgnElementCR original
     ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
 
     SetGeometry(geometry);
-    return status;
+    return Dgn::DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchLineGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnUpdate(original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchLineGridSurface::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnInsert();
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
