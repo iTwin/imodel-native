@@ -2,7 +2,7 @@
 |
 |     $Source: tools/SchemaRoundtrip/SchemaRoundtrip.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
@@ -60,12 +60,7 @@ struct RoundtripOptions
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Prasanna.Prakash                       01/2016
 //---------------------------------------------------------------------------------------
-static void GetOutputFile
-(
-    BeFileName         &outputFile,
-    ECSchemaR          schema,
-    RoundtripOptions   options
-)
+static void GetOutputFile(BeFileName &outputFile, ECSchemaR schema, RoundtripOptions options)
     {
     WString schemaName;
 
@@ -137,13 +132,8 @@ static int WriteLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, Rou
 static int RoundtripSchema(RoundtripOptions& options, BeFileName& inputFile, ECSchemaReadContextR context)
     {
     s_logger->infov(L"Reading schema '%ls'", inputFile.GetName());
-    ECSchemaPtr schema;
 
-    Utf8String fullName(inputFile.GetFileNameAndExtension());
-    SchemaKey key;
-    SchemaKey::ParseSchemaFullName(key, fullName.c_str());
-    schema = context.LocateSchema(key, SchemaMatchType::Exact);
-
+    ECSchemaPtr schema = ECSchema::LocateSchema(inputFile.c_str(), context);
     if (!schema.IsValid())
         {
         s_logger->errorv(L"Failed to read schema '%ls'", inputFile.GetName());
@@ -156,10 +146,7 @@ static int RoundtripSchema(RoundtripOptions& options, BeFileName& inputFile, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static int RoundtripSchema
-(
-    RoundtripOptions options
-)
+static int RoundtripSchema(RoundtripOptions options)
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true, true);
     context->SetPreserveElementOrder(true);
