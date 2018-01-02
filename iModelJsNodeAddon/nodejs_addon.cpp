@@ -824,7 +824,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_INTEGER(2, scopeReq);
 
         if ((uint32_t)CodeScopeSpec::Type::Model != specType && (uint32_t)CodeScopeSpec::Type::ParentElement != specType &&
-            (uint32_t)CodeScopeSpec::Type::RelatedElement != specType && (uint32_t)CodeScopeSpec::Type::ParentElement != specType)
+            (uint32_t)CodeScopeSpec::Type::RelatedElement != specType && (uint32_t)CodeScopeSpec::Type::Repository != specType)
             {
             Napi::TypeError::New(Env(), "Argument 1 must be a CodeScopeSpec.Type").ThrowAsJavaScriptException();
             }
