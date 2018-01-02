@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/MSBsplineCurve.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -97,7 +97,7 @@ public:
             bvector<double> const *knots,
             int order,
             bool closed,
-            bool inputPolesAlreadyWeighted
+            bool inputPolesAlreadyWeighted = true
             );
 
     //! <summary>Allocate smart pointer target with directly supplied poles, weights, and knots.</summary>

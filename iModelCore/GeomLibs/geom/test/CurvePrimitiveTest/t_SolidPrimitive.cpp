@@ -2771,7 +2771,6 @@ TEST(SolidPrimitive,Silhouette)
 
 static void facetAndSave (ISolidPrimitivePtr solid)
     {
-    Check::Shift (5,0,0);
     IFacetOptionsPtr options = IFacetOptions::Create ();
     options->SetAngleTolerance (0.23);
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
@@ -2787,24 +2786,24 @@ static void facetAndSave (ISolidPrimitivePtr solid)
 TEST(SolidPrimitive,Seams)
     {
     Check::QuietFailureScope scoper;
+    bvector<CurveVectorPtr> paths;
+    SampleGeometryCreator::AddMultiPrimitiveXYOpenPaths (paths, true, true);
+    for (auto &path : paths)
+        {
+        // each path is in the xy plane.
 
-    auto arc1 = CurveVector::CreateDisk (DEllipse3d::From (4,0,0,  1,0,0,  0,1, 0, 0.0, Angle::TwoPi ()));
-    auto ls1 = CurveVector::CreateLinear (
-        bvector<DPoint3d>{
-            DPoint3d::From (4,0,0),
-            DPoint3d::From (5,0,0),
-            DPoint3d::From (5,1,0),
-            DPoint3d::From (4,1,0)
-            });
-    // auto arc2 = arc1->Clone ();
-    
-    auto rotationalSweepDataA = DgnRotationalSweepDetail (arc1, DPoint3d::From (0,0,0), DVec3d::From (0,1,0), Angle::TwoPi (), false);
-    facetAndSave (ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepDataA));
+        SaveAndRestoreCheckTransform shifter (15,0,0);
+        // extrude in z direction ..
+        facetAndSave (ISolidPrimitive::CreateDgnExtrusion (
+            DgnExtrusionDetail::DgnExtrusionDetail (path, DVec3d::From (0,0,3), false)));
+        Check::Shift (0,15,0);
 
-    auto rotationalSweepDataB = DgnRotationalSweepDetail (ls1, DPoint3d::From (0,0,0), DVec3d::From (0,1,0), Angle::TwoPi (), false);
-    facetAndSave (ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepDataB));
-
-
-
+        // rotate about a line in the x directionabove the y top of the range.
+        DRange3d range;
+        path->GetRange (range);
+        DPoint3d axisOrigin = range.LocalToGlobal (0, 2.0, 0);
+        auto rotationalSweepData = DgnRotationalSweepDetail (path, axisOrigin, DVec3d::From (1,0,0), 0.4 * Angle::Pi (), false);
+        facetAndSave (ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepData));
+        }
     Check::ClearGeometry ("SolidPrimitive.Seams");
     }

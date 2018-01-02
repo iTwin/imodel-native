@@ -2,7 +2,7 @@
 |
 |     $Source: geom/test/src/SampleGeometryCreator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -781,7 +781,7 @@ static void AddSpirals (bvector<IGeometryPtr> &pathGeometry)
 
     }
 
-static void AddMultiPrimitiveXYOpenPaths (bvector<CurveVectorPtr> &pathVectors)
+static void AddMultiPrimitiveXYOpenPaths (bvector<CurveVectorPtr> &pathVectors, bool withTangencies = false, bool withBsplines = true)
     {
     bvector<DPoint3d> stringPoints
         {
@@ -791,13 +791,44 @@ static void AddMultiPrimitiveXYOpenPaths (bvector<CurveVectorPtr> &pathVectors)
         }; 
 
     auto cv0 = CurveVector::CreateLinear (stringPoints);
-    auto cv1 = cv0->Clone ();
     pathVectors.push_back (cv0);
+
+    auto cv1 = cv0->Clone ();
     DPoint3d pointA, pointB;
     cv0->GetStartEnd (pointA, pointB);
     DEllipse3d arc = DEllipse3d::FromPointsOnArc (pointB, pointB + DVec3d::From (1,0,0), pointB + DVec3d::From(2,1,0));
     cv1->push_back (ICurvePrimitive::CreateArc (arc));
     pathVectors.push_back (cv1);
+
+    if (withTangencies)
+        {
+        DVec3d tangentA, tangentB;
+        auto cv2 = cv0->Clone ();
+        cv2->GetStartEnd (pointA, pointB, tangentA, tangentB);
+        auto arc2 = DEllipse3d::FromStartTangentNormalRadiusSweep (pointB, tangentB, DVec3d::From (0,0,1), 2.0, Angle::PiOver2 ());
+        cv2->push_back (ICurvePrimitive::CreateArc (arc2));
+
+        auto cv3 = cv2->Clone ();
+        cv2->GetStartEnd (pointA, pointB, tangentA, tangentB);
+        auto pointC = pointB + tangentB;
+        bvector<DPoint3d> poles {
+            DPoint3d::FromInterpolateAndPerpendicularXY (pointB, 0, pointC, 0),
+            DPoint3d::FromInterpolateAndPerpendicularXY (pointB, 1, pointC, 0),
+            DPoint3d::FromInterpolateAndPerpendicularXY (pointB, 1, pointC, 1),
+            DPoint3d::FromInterpolateAndPerpendicularXY (pointB, 2, pointC, 1),
+            DPoint3d::FromInterpolateAndPerpendicularXY (pointB, 3, pointC, 0),
+            DPoint3d::FromInterpolateAndPerpendicularXY (pointB, 4, pointC, 0),
+            };
+
+        auto bcurve = ICurvePrimitive::CreateBsplineCurve(MSBsplineCurve::CreateFromPolesAndOrder (poles, nullptr, nullptr, 4, false));
+        cv2->push_back (bcurve);
+
+        cv2->GetStartEnd (pointA, pointB, tangentA, tangentB);
+        pointC = pointB + tangentB;
+        cv2->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointB, pointC)));
+
+        pathVectors.push_back (cv2);
+        }
     }
 
 static CurveVectorPtr CircleInRectangle ()

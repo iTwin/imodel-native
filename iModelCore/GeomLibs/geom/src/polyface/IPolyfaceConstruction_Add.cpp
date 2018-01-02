@@ -2,14 +2,12 @@
 |
 |     $Source: geom/src/polyface/IPolyfaceConstruction_Add.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-// This makes all primitive-to-primitive breaks visible ... probably should be in options . ..
-static bool s_forceDoublePointsVisible = true;
 // Problem: point-to-point equality tests ... options:
 // 1) (old) use bitwise equality. But the stroking code did NOT enforce this.
 // 2) enforce equality in the stroke code
@@ -211,11 +209,12 @@ size_t index,
 bool isRightEdge,
 bvector<size_t>   &indexA,
 bvector<DVec3d>   &tangentA,
+bvector<ICurvePrimitiveP> *curveA,
 bvector<size_t>   &indexB,
 bvector<DVec3d>   &tangentB,
+bvector<ICurvePrimitiveP> *curveB,
 size_t numQuad,      // Can index to here inclusive
-bool alwaysSmooth,
-bool forceDoublePointsVisible = false
+bool alwaysSmooth
 )
     {
     size_t neighborIndex;
@@ -243,9 +242,19 @@ bool forceDoublePointsVisible = false
         }
     assert (neighborIndex < tangentA.size () && neighborIndex < tangentB.size ());
     assert (index < tangentA.size () && index < tangentB.size ());
-    if (forceDoublePointsVisible
-        && (indexA[index] == indexA[neighborIndex] || indexB[index] == indexB[neighborIndex]))
-        return true;
+    if (curveA != nullptr && curveB != nullptr)
+        {
+        if (index < curveA->size () && neighborIndex < curveA->size ())
+            {
+            if (curveA->at(index) != curveA->at(neighborIndex))
+                return true;
+            }
+        if (index < curveB->size () && neighborIndex < curveB->size ())
+            {
+            if (curveB->at(index) != curveB->at(neighborIndex))
+                return true;
+            }
+        }
     // If points only appear once internally, the tangent at index applies on both sides and it is smooth.
     if (indexA[index] != indexA[neighborIndex] && indexB[index] != indexB[neighborIndex])
         return false;
@@ -310,15 +319,16 @@ static void AddSmoothRuledQuads (IPolyfaceConstructionR builder,
     bvector<size_t>   &indexA,
     bvector<DVec3d>   &tangentA,
     bvector<DPoint2d> &uvA,
+    bvector<ICurvePrimitiveP> *curveA,
     bool visibleB,
     double fractionB,
     bvector<DPoint3d> &pointB,
     bvector<size_t>   &indexB,
     bvector<DVec3d>   &tangentB,
     bvector<DPoint2d> &uvB,
+    bvector<ICurvePrimitiveP> *curveB,
     double              nominalLength = 0.0,
-    bool alwaysSmooth = false,
-    bool forceDoublePointsVisible = false
+    bool alwaysSmooth = false
     )
     {
     if (indexA.empty() || indexB.empty())
@@ -337,10 +347,8 @@ static void AddSmoothRuledQuads (IPolyfaceConstructionR builder,
         size_t i1 = i0 + 1;
         if (!isDegenerateQuad (indexA, indexB, i0))
             {
-            bool leftVisible = IsVisibleRuleEdge (i0, false, indexA, tangentA, indexB, tangentB, numQuad, alwaysSmooth,
-                forceDoublePointsVisible);
-            bool rightVisible = IsVisibleRuleEdge (i1, true,  indexA, tangentA, indexB, tangentB, numQuad, alwaysSmooth,
-                forceDoublePointsVisible);
+            bool leftVisible = IsVisibleRuleEdge (i0, false, indexA, tangentA, curveA, indexB, tangentB, curveB, numQuad, alwaysSmooth);
+            bool rightVisible = IsVisibleRuleEdge (i1, true,  indexA, tangentA, curveA, indexB, tangentB, curveB, numQuad, alwaysSmooth);
             builder.AddPointIndexQuad (
                         indexA[i0], visibleA,
                         indexA[i1], rightVisible,
@@ -437,15 +445,16 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
     bvector<size_t>   &indexA,
     bvector<DVec3d>   &tangentA,
     bvector<DPoint2d> &paramA,
+    bvector<ICurvePrimitiveP> *curveA,  // OPTIONAL curve pointer
     bvector<DPoint3d> &pointB,
     bvector<size_t>   &indexB,
     bvector<DVec3d>   &tangentB,
     bvector<DPoint2d> &paramB,
+    bvector<ICurvePrimitiveP> *curveB,  // OPTIONAL curve pointer
     double              nominalLength,
     double            maxEdgeLength,
     double            angleRadians,
-    bool alwaysSmooth = false,
-    bool forceDoublePointsVisible = false
+    bool alwaysSmooth = false
     )
     {
     if (maxEdgeLength > 0.0 || angleRadians > 0)
@@ -489,8 +498,10 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
                     builder.FindOrAddPoints (pointD, pointD.size (), 0, indexD);
                     // assign indices.
                     }
-                AddSmoothRuledQuads (builder, i == 1, fractionC,  pointC, indexC, tangentC, paramC, i == numEdge, fractionD, pointD, indexD, tangentD, paramD, nominalLength,
-                    alwaysSmooth, forceDoublePointsVisible);
+                AddSmoothRuledQuads (builder,
+                    i == 1, fractionC,  pointC, indexC, tangentC, paramC, curveA,
+                    i == numEdge, fractionD, pointD, indexD, tangentD, paramD, curveB,
+                    nominalLength, alwaysSmooth);
                 pointC.swap (pointD);
                 indexC.swap (indexD);
                 tangentC.swap (tangentD);
@@ -500,8 +511,10 @@ static void AddSmoothRuledQuads1 (IPolyfaceConstructionR builder,
             }
         }
     // fall out if no splitting along the sweep ..
-    AddSmoothRuledQuads (builder, true, 0.0, pointA, indexA, tangentA, paramA, true, 1.0, pointB, indexB, tangentB, paramB, nominalLength,
-        alwaysSmooth, forceDoublePointsVisible);
+    AddSmoothRuledQuads (builder, 
+        true, 0.0, pointA, indexA, tangentA, paramA, curveA,
+        true, 1.0, pointB, indexB, tangentB, paramB, curveA, nominalLength,
+        alwaysSmooth);
     }
 
 
@@ -591,41 +604,35 @@ static void EvaluateBlockedBezier(
 +--------------------------------------------------------------------------------------*/
 struct StrokeGrid
 {
-    bvector<bvector<DPoint3d> > m_pointGrid;
-    bvector<bvector<DVec3d>   > m_tangentGrid;
+    bvector<DPoint3dDoubleUVCurveArrays> m_grid;
     bvector<bvector<size_t>   > m_pointIndexGrid;
     IPolyfaceConstructionR m_builder;
 StrokeGrid (IPolyfaceConstructionR builder, size_t numContours)
     : m_builder (builder)
     {
-    m_pointGrid.reserve         (numContours);
-    m_tangentGrid.reserve       (numContours);
-    m_pointIndexGrid.reserve    (numContours);
-    for (size_t i = 0; i < numContours; i++)
-        {
-        m_pointGrid.push_back (bvector<DPoint3d> ());
-        m_tangentGrid.push_back (bvector<DVec3d> ());
-        m_pointIndexGrid.push_back (bvector<size_t> ());
-        }
+    m_grid.resize (numContours);
+    m_pointIndexGrid.resize (numContours);
     }
 
 
-void AppendPointAndTangent (size_t contourIndex, DPoint3dCR xyz, DVec3dCR tangent)
+void AppendPointAndTangent (ICurvePrimitiveP curve, size_t contourIndex, DPoint3dCR xyz, DVec3dCR tangent)
     {
-    if (contourIndex < m_pointGrid.size ())
+    if (contourIndex < m_grid.size ())
         {
-        m_pointGrid[contourIndex].push_back (xyz);
-        m_tangentGrid[contourIndex].push_back (tangent);
+        m_grid[contourIndex].m_xyz.push_back (xyz);
+        m_grid[contourIndex].m_vectorU.push_back (tangent);
+        m_grid[contourIndex].m_curve.push_back (curve);
         m_pointIndexGrid[contourIndex].push_back (m_builder.FindOrAddPoint (xyz));
         }
     }
 
 /*--------------------------------------------------------------------------------**//**
+* Append numEdge edges within segment to contourIndex
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-void AppendStrokes(size_t contourIndex, DSegment3dCR segment, size_t numEdge)
+void AppendSegmentStrokesToContour(ICurvePrimitiveP curve, size_t contourIndex, DSegment3dCR segment, size_t numEdge)
     {
-    if (contourIndex < m_pointGrid.size ())
+    if (contourIndex < m_grid.size ())
         {
         DPoint3d xyzi;
         DVec3d tangenti;
@@ -633,20 +640,23 @@ void AppendStrokes(size_t contourIndex, DSegment3dCR segment, size_t numEdge)
             {
             double f = (double) i / (double)numEdge;
             segment.FractionParameterToTangent (xyzi, tangenti, f);
-            AppendPointAndTangent (contourIndex, xyzi, tangenti);
+            AppendPointAndTangent (curve, contourIndex, xyzi, tangenti);
             }
         }
     }
 
-
+// given string of xyzB "up the grid"
+// (optionally) make the front of each contour match xyzB
+// copy the back of each contour to xyzB.
+// (to enforce bitwise equality at closure?  maybe not used)
 void ApplyStartEnd (bvector<DPoint3d> &xyzB, bool enforceStart)
     {
-    assert (xyzB.size () == m_pointGrid.size ());
+    assert (xyzB.size () == m_grid.size ());
     if (enforceStart)
-        for (size_t i = 0; i < m_pointGrid.size (); i++)
-            m_pointGrid[i].front () = xyzB[i];
-    for (size_t i = 0; i < m_pointGrid.size (); i++)
-        xyzB[i] = m_pointGrid[i].back ();
+        for (size_t i = 0; i < m_grid.size (); i++)
+            m_grid[i].m_xyz.front () = xyzB[i];
+    for (size_t i = 0; i < m_grid.size (); i++)
+        xyzB[i] = m_grid[i].m_xyz.back ();
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -662,10 +672,10 @@ void AnnounceGridToBuilder (bool applyTolerances)
         maxEdgeLength = m_builder.GetFacetOptionsR ().GetMaxEdgeLength ();
         angleTol = m_builder.GetFacetOptionsR ().GetAngleTolerance ();
         }
-    for (size_t i = 0; i < m_pointGrid.size (); i++)
-        maxLength = DoubleOps::Max (maxLength, PolylineOps::Length (m_pointGrid[i]));
-    size_t numI = m_pointGrid[0].size ();
-    size_t numJ = m_pointGrid.size ();
+    for (size_t i = 0; i < m_grid.size (); i++)
+        maxLength = DoubleOps::Max (maxLength, PolylineOps::Length (m_grid[i].m_xyz));
+    size_t numI = m_grid[0].m_xyz.size ();
+    size_t numJ = m_grid.size ();
     bvector<double> xDist, yDist;
     xDist.push_back (0.0);
     yDist.push_back (0.0);
@@ -673,14 +683,14 @@ void AnnounceGridToBuilder (bool applyTolerances)
     for (size_t i = 1; i < numI; i++)
         {
         for (size_t j = 0; j < numJ; j++)
-            s += m_pointGrid[j][i-1].Distance (m_pointGrid[j][i]);
+            s += m_grid[j].m_xyz[i-1].Distance (m_grid[j].m_xyz[i]);
         xDist.push_back (s);    // Sum of x sizes in this stack of quads
         }
     s = 0.0;
     for (size_t j = 1; j < numJ; j++)
         {
         for (size_t i = 0; i < numI; i++)
-            s += m_pointGrid[j-1][i].Distance (m_pointGrid[j][i]);
+            s += m_grid[j-1].m_xyz[i].Distance (m_grid[j].m_xyz[i]);
         yDist.push_back (s);    // Sum of x sizes in this stack of quads
         }
     double ax, ay;
@@ -698,13 +708,12 @@ void AnnounceGridToBuilder (bool applyTolerances)
         for (size_t i = 0; i < numI; i++)
             uvB.push_back (DPoint2d::From (xDist[i], yDist[iB]));
         AddSmoothRuledQuads1 (m_builder,
-            m_pointGrid[iA], m_pointIndexGrid[iA], m_tangentGrid[iA], uvA,
-            m_pointGrid[iB], m_pointIndexGrid[iB], m_tangentGrid[iB], uvB,
+            m_grid[iA].m_xyz, m_pointIndexGrid[iA], m_grid[iA].m_vectorU, uvA, &m_grid[iA].m_curve,
+            m_grid[iB].m_xyz, m_pointIndexGrid[iB], m_grid[iB].m_vectorU, uvB, &m_grid[iB].m_curve,
             maxLength,
             maxEdgeLength,
             angleTol,
-            false,
-            s_forceDoublePointsVisible
+            false
             );
         uvA.swap (uvB);
         }
@@ -718,12 +727,13 @@ void AnnounceGridToBuilder (bool applyTolerances)
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
+* append point coordinates from a contour to dest (removing duplicates)
 +--------------------------------------------------------------------------------------*/
-void AppendStrokes(size_t contourIndex, bvector<DPoint3d> *dest)
+void GetStrokesFromContour(size_t contourIndex, bvector<DPoint3d> *dest)
     {
-    if (contourIndex < m_pointGrid.size () && dest != NULL)
+    if (contourIndex < m_grid.size () && dest != NULL)
         {
-        bvector<DPoint3d> const & source = m_pointGrid.at (contourIndex);
+        bvector<DPoint3d> const & source = m_grid[contourIndex].m_xyz;
         size_t n = source.size ();
         if (n < 1)
             return;
@@ -748,13 +758,17 @@ void AddBezierEvaluationsAndIndices(
 StrokeGrid &strokeGrid,
 size_t contourIndex,
 BCurveSegment &segment,
+ICurvePrimitiveP parentCurve,
 size_t numParam
 )
     {
-    size_t numA = m_pointGrid[contourIndex].size ();
-    bsiBezierDPoint4d_appendEvaluations (&m_pointGrid[contourIndex], &m_tangentGrid[contourIndex], NULL, segment.GetPoleP (), (int)segment.GetOrder (), numParam);
-    for (size_t i = numA; i < m_pointGrid[contourIndex].size (); i++)
-        m_pointIndexGrid[contourIndex].push_back (m_builder.FindOrAddPoint (m_pointGrid[contourIndex][i]));
+    size_t numA = m_grid[contourIndex].m_xyz.size ();
+    bsiBezierDPoint4d_appendEvaluations (&m_grid[contourIndex].m_xyz, &m_grid[contourIndex].m_vectorU, NULL, segment.GetPoleP (), (int)segment.GetOrder (), numParam);
+    for (size_t i = numA; i < m_grid[contourIndex].m_xyz.size (); i++)
+        {
+        m_pointIndexGrid[contourIndex].push_back (m_builder.FindOrAddPoint (m_grid[contourIndex].m_xyz[i]));
+        m_grid[contourIndex].m_curve.push_back (parentCurve);
+        }
     }
 
 };
@@ -783,9 +797,10 @@ size_t numEdge
             {
             DPoint3d xyz;
             DVec3d  tangent;
-            contours[contourIndex]->at(readIndex)->FractionToPoint (
+            auto curve = contours[contourIndex]->at(readIndex).get ();
+            curve->FractionToPoint (
                     pointIndex * df, xyz, tangent);
-            strokeGrid.AppendPointAndTangent (contourIndex, xyz, tangent);
+            strokeGrid.AppendPointAndTangent (curve, contourIndex, xyz, tangent);
             }
         }
     }
@@ -852,8 +867,9 @@ size_t readIndex
         // Stroke this segment from each contour
         for (size_t contourIndex = 0; contourIndex < numContour; contourIndex++)
             {
-            TryGetSegmentInLineString (*contours[contourIndex]->at(readIndex), segment, segmentIndex);
-            strokeGrid.AppendStrokes (contourIndex, segment, maxStrokes);
+            ICurvePrimitiveP curve = contours[contourIndex]->at(readIndex).get ();
+            TryGetSegmentInLineString (*curve, segment, segmentIndex);
+            strokeGrid.AppendSegmentStrokesToContour (curve, contourIndex, segment, maxStrokes);
             }
         }
     return true;
@@ -884,6 +900,7 @@ static bool AddRuledBetweenCorrespondingBsplineCurves
     // Setup up curve pointers and bezier reades for each contour ..
     bvector<BCurveSegment>segments;
     bvector<MSBsplineCurveCP>curves;
+    bvector<ICurvePrimitiveP> primitives;
     segments.reserve (numContour);
     curves.reserve (numContour);
     size_t numOK = 0;
@@ -895,6 +912,7 @@ static bool AddRuledBetweenCorrespondingBsplineCurves
         if (readIndex < contour->size ())
             {
             curves.push_back (contour->at (readIndex)->GetProxyBsplineCurveCP());
+            primitives.push_back (contour->at(readIndex).get ());
             if (curves.back () != NULL)
                 numOK++;
             }
@@ -932,7 +950,7 @@ static bool AddRuledBetweenCorrespondingBsplineCurves
         // Stroke each bezier (to exactly the right number of points !!!!)
         for (size_t contourIndex = 0; contourIndex < numContour; contourIndex++)
             {
-            strokeGrid.AddBezierEvaluationsAndIndices (strokeGrid, contourIndex, segments[contourIndex], maxCount);
+            strokeGrid.AddBezierEvaluationsAndIndices (strokeGrid, contourIndex, segments[contourIndex], primitives[contourIndex], maxCount);
             }
         }
                          
@@ -968,18 +986,6 @@ bvector<DVec3d> &tangent
         }
     return true;
     }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-static bool IsSmoothClosure(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangentA, DVec3dCR tangentB, bool forceDoublePointsVisible)
-    {
-    if (forceDoublePointsVisible)
-        return false;
-    return pointA.AlmostEqual (pointB) && tangentA.IsParallelTo (tangentB);
-    }
-
 
 
 
@@ -2381,8 +2387,8 @@ bool reverse
         }
     //strokeGrid.ApplyStartEnd (startPoints, enforceStart);     // TODO: enforce closure ?????
     strokeGrid.AnnounceGridToBuilder (true);
-    strokeGrid.AppendStrokes (0, &m_basePolygon);
-    strokeGrid.AppendStrokes (contours.size () - 1, &m_topPolygon);
+    strokeGrid.GetStrokesFromContour (0, &m_basePolygon);
+    strokeGrid.GetStrokesFromContour (contours.size () - 1, &m_topPolygon);
 
     if (reverse)
        m_builder.ToggleIndexOrderAndNormalReversal ();
@@ -2691,7 +2697,10 @@ void IPolyfaceConstruction::AddRuled (DEllipse3dR ellipse0, DEllipse3dR ellipse1
             EndFace_internal ();    
             }
         }
-    AddSmoothRuledQuads1 (*this, point[0], pointIndex[0], capTangent[0], paramA, point[1], pointIndex[1], capTangent[1], paramB, nominalLength, maxEdgeLength, angleTol, true, false);
+    AddSmoothRuledQuads1 (*this,
+        point[0], pointIndex[0], capTangent[0], paramA, nullptr,
+        point[1], pointIndex[1], capTangent[1], paramB, nullptr,
+        nominalLength, maxEdgeLength, angleTol, true);
     EndFace_internal ();
     }
 
@@ -3064,7 +3073,9 @@ bool capped
     bool visible0 = false;
     bool visible1 = false;
     size_t lastIndex = n - 1;
-    bool smoothClosed = IsSmoothClosure (pointA[0], pointA[lastIndex], tangentA->at(0), tangentA->at(lastIndex), s_forceDoublePointsVisible);
+    bool visible01 = pointA[0].AlmostEqual (pointA[lastIndex])
+        && !IsVisibleJoint (pointA[0], pointA[lastIndex],
+            tangentA->at(0), tangentA->at(lastIndex), nullptr, nullptr);
 
     if (dir == 1)
         ToggleIndexOrderAndNormalReversal ();
@@ -3099,7 +3110,7 @@ bool capped
         if (i > 0 && i < n - 1)
             visible1 = IsVisibleJoint (pointA[i], pointA[i+1], tangentA->at(i), tangentA->at(i+1), nullptr, nullptr);
         else
-            visible1 = !smoothClosed;
+            visible1 = visible01;
 
         if (needParams)
             {
