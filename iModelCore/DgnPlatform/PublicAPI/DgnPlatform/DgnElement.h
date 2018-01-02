@@ -1102,9 +1102,6 @@ protected:
     {
         uint32_t m_persistent:1;
         uint32_t m_preassignedId:1;
-        uint32_t m_inSelectionSet:1;
-        uint32_t m_hilited:1;
-        uint32_t m_undisplayed:1;
         uint32_t m_propState:2; // See PropState
         Flags() {memset(this, 0, sizeof(*this));}
     };
@@ -2129,8 +2126,6 @@ protected:
     DGNPLATFORM_EXPORT virtual BentleyStatus _StrokeHit(DecorateContextR, HitDetailCR) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
-    virtual bool _IsHilited() const {if (nullptr == ToElement()) return false; else return ToElement()->m_flags.m_hilited;} //!< Get the current Hilited state of this element
-    DGNPLATFORM_EXPORT virtual void _SetHilited(bool hilited) const; //!< Change the current Hilited state of this element
 
     friend struct GeometricElement;
 public:
@@ -2150,11 +2145,7 @@ public:
     AxisAlignedBox3d CalculateRange3d() const {return _CalculateRange3d();}
     DGNPLATFORM_EXPORT Transform GetPlacementTransform() const;
 
-    bool IsHilited() const {return _IsHilited();} //!< @private
-    bool IsInSelectionSet() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_inSelectionSet;} //!< @private
-    bool IsUndisplayed() const {if (nullptr == ToElement()) return false; return ToElement()->m_flags.m_undisplayed;} //!< @private
-    void SetHilited(bool hilited) const {_SetHilited(hilited);} //!< @private
-    DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
+    DGNPLATFORM_EXPORT bool IsUndisplayed() const; //!< @private
     DGNPLATFORM_EXPORT void SetUndisplayed(bool yesNo) const; //!< @private
 
     Render::GraphicPtr Stroke(ViewContextR context, double pixelSize) const {return _Stroke(context, pixelSize);}
@@ -2162,6 +2153,11 @@ public:
     DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR context, double pixelSize) const;
 
     SnapStatus OnSnap(SnapContextR context) const {return _OnSnap(context);}
+
+    DGNVIEW_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
+    DGNVIEW_EXPORT bool IsInSelectionSet() const; //!< @private
+    DGNVIEW_EXPORT void SetHilited(bool yesNo) const; //!< @private
+    DGNVIEW_EXPORT bool IsHilited() const; //!< @private
 };
 
 //=======================================================================================
@@ -3455,9 +3451,7 @@ private:
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
     BeSQLite::SnappyFromMemory m_snappyFrom;
     BeSQLite::SnappyToBlob m_snappyTo;
-    DgnElementIdSet m_selectionSet;
     DgnElementIdSet m_undisplayedSet;
-    DgnElementIdSet m_hilitedSet;
     mutable BeMutex m_mutex;
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
@@ -3621,13 +3615,9 @@ public:
     //! @note This method is merely a shortcut to #GetElement and then #Delete
     DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
 
-    DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
-    DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
-
-    DgnElementIdSet const& GetUndisplayedSet() const {return m_undisplayedSet;}
-    void SetUndisplayed(DgnElementR, bool isUndisplayed);
-    DgnElementIdSet const& GetHilitedSet() const {return m_hilitedSet;}
-    void SetHilited(DgnElementR, bool hilited);
+    DgnElementIdSet const& GetUndisplayedSet() const {return m_undisplayedSet;} //!< @private
+    bool IsUndisplayed(DgnElementId) const;
+    void SetUndisplayed(DgnElementId, bool isUndisplayed); //!< @private
 
     //! Set the maximum number of elements to be held by the "Most Recentley Used" element cache for this DgnDb. 
     //! @param newMax The maximum number of elements to be held in the element MRU cache. After this many elements are in memory,

@@ -264,11 +264,6 @@ static void TransformToJson(JsonValueR outValue, TransformCR trans)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
-static double GetDouble(JsonValueCR inValue, double defaultValue) {return inValue.isNull() ? defaultValue : inValue.asDouble();}
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
 static void DPoint3dVectorToJson(JsonValueR outValue, bvector<DPoint3d> const& points)

@@ -268,7 +268,9 @@ void BimConsole::RunCommand(Utf8StringCR cmd)
     StopWatch executionTimer(true);
     command->Run(m_session, args);
     executionTimer.Stop();
-    WriteLine("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds());
+    WriteLine();
+    WriteLine("[Executed in %.4f s]", executionTimer.GetElapsedSeconds());
+    WriteLine();
 
     //Add command to history
     AddToHistory(cmd);

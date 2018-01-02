@@ -10,6 +10,7 @@
 #include <DgnPlatform/TileIO.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
+#include <numeric>
 #if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
@@ -311,7 +312,6 @@ protected:
 
     void _AddPolyface(PolyfaceQueryCR, bool) override;
     void _AddPolyfaceR(PolyfaceHeaderR, bool) override;
-    void _AddTile(TextureCR tx, TileCorners const& corners) override;
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP) override;
     bool _WantStrokeLineStyle(LineStyleSymbCR, IFacetOptionsPtr&) override;
     bool _WantPreBakedBody(IBRepEntityCR) override;
@@ -403,7 +403,8 @@ protected:
     Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
     void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
-
+    bool _WantUndisplayed() override { return true; }
+    AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
 
 public:
@@ -522,15 +523,6 @@ void TileBuilder::_AddPolyfaceR(PolyfaceHeaderR geom, bool filled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileBuilder::_AddTile(TextureCR tx, TileCorners const& corners)
-    {
-    auto dp = DisplayParams::CreateForTile(GetGraphicParams(), GetGeometryParams(), tx);
-    AddTile(corners, *dp);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void TileBuilder::_AddSubGraphic(GraphicR mainGraphic, TransformCR subToGraphic, GraphicParamsCR params, ClipVectorCP clip)
     {
     //
@@ -544,6 +536,18 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
     CreateParams params = GetCreateParams().SubGraphic(Transform::FromProduct(GetLocalToWorldTransform(), tf));
     TileBuilderPtr subGf = new TileBuilder(m_context, GetElementId(), m_rangeDiagonalSquared, params);
     subGf->ActivateGraphicParams(GetGraphicParams(), GetGeometryParams());
+
+    if (nullptr != clip)
+        {
+        ClipVectorPtr tClip = clip->Clone(&GetLocalToWorldTransform());
+
+        Transform tileTransform;
+        tileTransform.InverseOf(m_context.GetRoot().GetLocationForTileGeneration());
+        tClip->TransformInPlace(tileTransform);
+
+        subGf->SetCurrentClip(tClip.get());
+        }
+
     return subGf.get();
     }
 
@@ -815,6 +819,10 @@ bool Loader::IsCacheable() const
     // Tile cache is really annoying when debugging tile generation code...
     return false;
 #else
+    // Host can specify no caching.
+    if (!T_HOST.GetTileAdmin()._WantCachedTiles(m_tile->GetRoot().GetDgnDb()))
+        return false;
+
     // Don't cache tiles refined for zoom...
     auto const& tile = GetElementTile();
     if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
@@ -1014,6 +1022,7 @@ BentleyStatus Loader::_LoadTile()
     for (auto const& mesh : geometry.Meshes())
         mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
 
+    GraphicPtr batch;
     if (!graphics.empty())
         {
         GraphicPtr graphic;
@@ -1023,36 +1032,47 @@ BentleyStatus Loader::_LoadTile()
                 break;
             case 1:
                 graphic = *graphics.begin();
+                BeAssert(graphic.IsValid());
                 break;
             default:
+                BeAssert(std::accumulate(graphics.begin(), graphics.end(), true, [](bool cur, GraphicPtr const& gf) { return cur && gf.IsValid(); }));
                 graphic = system->_CreateGraphicList(std::move(graphics), root.GetDgnDb());
+                BeAssert(graphic.IsValid());
                 break;
             }
 
         if (graphic.IsValid())
             {
             geometry.Meshes().m_features.SetModelId(root.GetModelId());
-            tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
+            batch = system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features));
+            BeAssert(batch.IsValid());
+            tile.SetGraphic(*batch);
             }
         }
 
-    if (!tile._IsPartial())
+    return tile.GetElementRoot().UnderMutex([&]()
         {
-        tile.ClearBackupGraphic();
-        tile.SetIsReady();
-        return SUCCESS;
-        }
-    else
-        {
-        // Mark partial tile as canceled so it becomes 'not loaded' again and we can resume tile generation from where we left off...
-        BeAssert(nullptr != m_loads);
-        m_loads->SetCanceled();
+        if (batch.IsValid())
+            tile.SetGraphic(*batch);
 
-        // Also notify host that a new tile has become available, though it's only partial - otherwise it won't know to recreate the scene...
-        T_HOST._OnNewTileReady(root.GetDgnDb());
+        if (!tile._IsPartial())
+            {
+            tile.ClearBackupGraphic();
+            // tile.SetIsReady();
+            return SUCCESS;
+            }
+        else
+            {
+            // Mark partial tile as canceled so it becomes 'not loaded' again and we can resume tile generation from where we left off...
+            BeAssert(nullptr != m_loads);
+            m_loads->SetCanceled();
 
-        return ERROR;
-        }
+            // Also notify host that a new tile has become available, though it's only partial - otherwise it won't know to recreate the scene...
+            T_HOST.GetTileAdmin()._OnNewTileReady(root.GetDgnDb());
+
+            return ERROR;
+            }
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1565,16 +1585,13 @@ Utf8String Tile::_GetTileCacheKey() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
-    if (IsReady() || _IsPartial())
+    GetElementRoot().UnderMutex([&]()
         {
-        BeAssert(_HasGraphics());
-        if (_HasGraphics())
+        if (m_graphic.IsValid())
             args.m_graphics.Add(*m_graphic);
-        }
-    else if (m_backupGraphic.IsValid())
-        {
-        args.m_graphics.Add(*m_backupGraphic);
-        }
+        else if (m_backupGraphic.IsValid())
+            args.m_graphics.Add(*m_backupGraphic);
+        });
 
     auto debugGraphic = GetDebugGraphics(GetElementRoot().GetDebugOptions());
     if (debugGraphic.IsValid())
@@ -1623,25 +1640,28 @@ void Tile::InitTolerance()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_Invalidate()
     {
-    m_backupGraphic = m_graphic;
-    m_graphic = nullptr;
-    m_debugGraphics.Reset();
-    m_generator.reset();
+    GetElementRoot().UnderMutex([&]()
+        {
+        m_backupGraphic = m_graphic;
+        m_graphic = nullptr;
+        m_debugGraphics.Reset();
+        m_generator.reset();
 
-    m_contentRange = ElementAlignedBox3d();
+        m_contentRange = ElementAlignedBox3d();
 
-    m_isLeaf = false;
-    m_hasZoomFactor = false;
-    m_zoomFactor = 1.0;
+        m_isLeaf = false;
+        m_hasZoomFactor = false;
+        m_zoomFactor = 1.0;
 
-    InitTolerance();
+        InitTolerance();
 
-    if (nullptr != GetParent())
-        return;
+        if (nullptr != GetParent())
+            return;
 
-    // Root tile...
-    GeometricModelPtr model = GetElementRoot().GetModel();
-    m_displayable = isElementCountLessThan(s_minElementsPerTile, *model->GetRangeIndex());
+        // Root tile...
+        GeometricModelPtr model = GetElementRoot().GetModel();
+        m_displayable = isElementCountLessThan(s_minElementsPerTile, *model->GetRangeIndex());
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**

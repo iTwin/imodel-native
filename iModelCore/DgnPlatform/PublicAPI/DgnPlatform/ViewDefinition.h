@@ -64,6 +64,7 @@ protected:
     JsonValueCR GetStyles() const {return m_jsonProperties[json_styles()];}
     JsonValueR GetStylesR() {return m_jsonProperties[json_styles()];}
 
+    void ChangeSubCategoryDisplay(DgnSubCategoryId, bool onOff);
 public:
     BE_JSON_NAME(styles);
     BE_JSON_NAME(viewflags);

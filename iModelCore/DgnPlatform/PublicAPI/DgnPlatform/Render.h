@@ -1387,7 +1387,7 @@ struct GraphicBuilder : RefCountedBase
         GraphicType     m_type;
 
     public:
-        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type) { }
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, GraphicType type);
         DGNPLATFORM_EXPORT CreateParams(DgnViewportR vp, TransformCR tf, GraphicType type);
 
         //! Create params for a graphic in world coordinates, not necessarily associated with any viewport.
@@ -1439,6 +1439,7 @@ struct GraphicBuilder : RefCountedBase
 
 protected:
     CreateParams    m_createParams;
+    ClipVectorPtr   m_currClip;
 
     GraphicBuilder(CreateParams const& params) : m_createParams(params) { }
 
@@ -1467,8 +1468,6 @@ protected:
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
-    virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
-    virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) = 0;
     virtual GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const = 0;
@@ -1492,6 +1491,8 @@ public:
 
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
 
+    void SetCurrentClip(ClipVectorP clip) { m_currClip = clip; }
+    ClipVectorCP GetCurrentClip() const {return m_currClip.get();}
     CreateParams const& GetCreateParams() const {return m_createParams;}
     DgnDbR GetDgnDb() const {return m_createParams.GetDgnDb();}
     TransformCR GetLocalToWorldTransform() const {return m_createParams.GetPlacement();}
@@ -1614,9 +1615,6 @@ public:
     //! @param[in] zDepth Z depth value.
     //! @param[in] asThickenedLine whether the tri-strip represents a thickened line.
     void AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine asThickenedLine, double zDepth) {_AddTriStrip2d(numPoints, points, asThickenedLine, zDepth);}
-
-    //! @private
-    void AddTile(TextureCR tile, TileCorners const& corners) {_AddTile(tile, corners);}
 
     //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
@@ -2213,7 +2211,8 @@ enum class FillFlags : uint8_t
     None        = 0,                    //<! No fill, e.g. for any non-planar geometry.
     ByView      = 1 << 0,               //<! Use element fill color, when fill enabled by view
     Always      = 1 << 1,               //<! Use element fill color, even when fill is disabled by view
-    Blanking    = (1 << 2) | Always,    //<! Use element fill color, always rendered behind non-blanking geometry of the same element.
+    Behind      = 1 << 2,               //!< Always rendered behind other geometry belonging to the same element. e.g., text background.
+    Blanking    = Behind | Always,    //<! Use element fill color, always rendered behind other geometry belonging to the same element.
     Background  = 1 << 3,               //<! Use background color specified by view
 };
 
@@ -2943,7 +2942,7 @@ struct GraphicBranch
     ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
 
-    void Add(Graphic& graphic) {m_entries.push_back(&graphic);}
+    void Add(Graphic& graphic) {m_entries.push_back(&graphic);BeAssert(m_entries.back().IsValid());}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
     void SetViewFlagsOverrides(ViewFlagsOverridesCR ovr) { m_viewFlagsOverrides = ovr; }
     ViewFlags GetViewFlags(ViewFlagsCR base) const { ViewFlags flags = base; m_viewFlagsOverrides.Apply(flags); return flags; }

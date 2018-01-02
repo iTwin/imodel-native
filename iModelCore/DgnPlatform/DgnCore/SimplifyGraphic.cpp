@@ -1670,52 +1670,6 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
     // NEEDSWORK...Draw box...
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  2/2016
-//----------------------------------------------------------------------------------------
-void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
-    {
-#ifdef NOTNOW_MAY_NOT_BE_NEEDED
-    QPoint3d        points[4];
-    QPoint2d        params[4];
-    int32_t         indices[6] = {0, 1, 2, 1, 3, 2};
-    TriMeshArgs     triMesh;
-    
-    triMesh.m_numIndices = 6;
-    triMesh.m_vertIndex = indices;
-    triMesh.m_numPoints = 4;
-    triMesh.m_points = points;
-    triMesh.m_normals = nullptr;
-    triMesh.m_textureUV = params;
-    triMesh.m_texture = const_cast<Render::TextureP> (&tile);
-    triMesh.m_flags = 0;
-
-    for (size_t i=0; i<4; i++)
-        {
-        points[i].x = corners.m_pts[i].x;
-        points[i].y = corners.m_pts[i].y;
-        points[i].z = corners.m_pts[i].z;
-        }
-    
-    params[0].x = params[2].x = 0.0;
-    params[1].x = params[3].x = 1.0;
-    params[0].y = params[1].y = 0.0;
-    params[2].y = params[3].y = 1.0;
-
-    _AddTriMesh(triMesh);
-#endif
-    }
- 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
-    {
-    m_processor._OnNewGeometry();
-
-    ClipAndProcessTriMesh(args);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

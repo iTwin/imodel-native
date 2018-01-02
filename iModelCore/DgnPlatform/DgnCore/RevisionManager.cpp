@@ -868,9 +868,7 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
 
         BeAssert(modelId.IsValid());
         lockRequest.InsertLock(LockableId(modelId), LockLevel::Shared);
-        // TFS#788401: We don't want to extract locks for inserted elements, as once it is pushed to the server
-        if (entry.GetDbOpcode() != DbOpcode::Insert)
-            lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
     // Any models or CodeSpecs directly changed?
@@ -885,12 +883,8 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         if (!entry.IsPrimaryTable())
             continue;
 
-        // TFS#788401: We don't want to extract locks for inserted models, as once it is pushed to the server
-        if (primaryClass->Is(modelClass) && entry.GetDbOpcode() != DbOpcode::Insert)
+        if (primaryClass->Is(modelClass))
             lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
-        // If a model is inserted, we don't want to have any locks related to it (same as inserted elements)
-        else if (primaryClass->Is(modelClass) && entry.GetDbOpcode() == DbOpcode::Insert)
-            lockRequest.Remove(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())));
         else if (primaryClass->Is(codeSpecClass))
             lockRequest.InsertCodeSpecsLock(dgndb);
         }
@@ -1407,9 +1401,23 @@ void RevisionManager::AbandonCreateRevision()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    02/2017
+// @bsimethod                                Ramanujam.Raman                    12/2017
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
+    {
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        {
+        BeAssert(false && "Cannot reverse a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.");
+        return RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen;
+        }
+
+    return DoReverseRevision(revision);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoReverseRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
@@ -1440,9 +1448,23 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    02/2017
+// @bsimethod                                Ramanujam.Raman                    12/2017
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::ReinstateRevision(DgnRevisionCR revision)
+    {
+    if (revision.ContainsSchemaChanges(m_dgndb))
+        {
+        BeAssert(false && "Cannot reverse a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.");
+        return RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen;
+        }
+
+    return DoReinstateRevision(revision);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    02/2017
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DoReinstateRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
     BeAssert(!IsCreatingRevision());

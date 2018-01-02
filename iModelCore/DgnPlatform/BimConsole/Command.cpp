@@ -94,9 +94,9 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
 //---------------------------------------------------------------------------------------
 Utf8String OpenCommand::_GetUsage() const
     {
-    return " .open [readonly|readwrite] [attachchangesummarycache] <iModel/ECDb/BeSQLite file>\r\n"
+    return " .open [readonly|readwrite] [attachchanges] <iModel/ECDb/BeSQLite file>\r\n"
         COMMAND_USAGE_IDENT "Opens iModel, ECDb, or BeSQLite file. Default open mode: read-only.\r\n"
-        COMMAND_USAGE_IDENT "if attachchangesummarycache is specified, the ChangeSummary cache is attached (and created if necessary).\r\n";
+        COMMAND_USAGE_IDENT "if attachchanges is specified, the EC changes cache file is attached (and created if necessary).\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     //default mode: read-only
     Db::OpenMode openMode = Db::OpenMode::Readonly;
-    ECDb::ChangeSummaryCacheMode changeSummaryCacheMode = ECDb::ChangeSummaryCacheMode::DoNotAttach;
+    ECDb::ChangeCacheMode changeCacheMode = ECDb::ChangeCacheMode::DoNotAttach;
     bool openAsECDb = false;
 
     const size_t switchCount = argCount - 1;
@@ -135,8 +135,8 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                 openMode = Db::OpenMode::ReadWrite;
             else if (arg.EqualsI("asecdb"))
                 openAsECDb = true;
-            else if (arg.EqualsI("attachchangesummarycache"))
-                changeSummaryCacheMode = ECDb::ChangeSummaryCacheMode::AttachAndCreateIfNotExists;
+            else if (arg.EqualsI("attachchanges"))
+                changeCacheMode = ECDb::ChangeCacheMode::AttachAndCreateIfNotExists;
             }
         }
 
@@ -150,7 +150,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         }
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
-    Utf8CP attachChangeSummaryMessage = changeSummaryCacheMode == ECDb::ChangeSummaryCacheMode::DoNotAttach ? "" : " and attached ChangeSummary cache file";
+    Utf8CP attachChangeMessage = changeCacheMode == ECDb::ChangeCacheMode::DoNotAttach ? "" : " and attached EC changes cache file";
     //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or BIM file, we close it
     //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
@@ -176,12 +176,12 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         DbResult bimStat;
         Dgn::DgnDb::OpenParams params(openMode);
-        params.Set(changeSummaryCacheMode);
+        params.SetChangeCacheMode(changeCacheMode);
         Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
         if (BE_SQLITE_OK == bimStat)
             {
             session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-            BimConsole::WriteLine("Opened BIM file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeSummaryMessage);
+            BimConsole::WriteLine("Opened BIM file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
             return;
             }
 
@@ -194,13 +194,13 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         sqliteFile->GetHandleR().CloseDb();
 
         std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode, changeSummaryCacheMode)))
+        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode, changeCacheMode)))
             {
             session.SetFile(std::move(ecdbFile));
             if (isBimFile)
                 BimConsole::WriteLine("Opened BIM file as ECDb file '%s' in %s mode. This can damage the file as BIM validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
             else
-                BimConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeSummaryMessage);
+                BimConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
             return;
             }
 
@@ -620,7 +620,7 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 Utf8String ChangeCommand::_GetUsage() const
     {
     return " .change tracking [on|off]      Enable / pause change tracking. Pausing does not create a revision.\r\n"
-           "         attachcache            attaches (and creates if necessary) the change summary cache file.\r\n"
+           "         attachcache [cache path] attaches (and creates if necessary) the change cache file.\r\n"
            "         extractsummary         creates a revision and extracts a change summary from it.\r\n";
     }
 
@@ -666,27 +666,39 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (args[0].EqualsIAscii("attachcache"))
         {
-        if (session.GetFileR().GetECDbHandle()->IsChangeSummaryCacheAttached())
+        if (session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            BimConsole::WriteLine("Change summary cache file has already been attached.");
+            BimConsole::WriteErrorLine("Change cache file has already been attached.");
             return;
             }
 
-        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeSummaryCache())
+        if (args.size() == 2)
             {
-            BimConsole::WriteErrorLine("Failed to attach change summary cache.");
+            if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache(BeFileName(args[1])))
+                {
+                BimConsole::WriteErrorLine("Failed to attach Change cache file %s.", args[1].c_str());
+                return;
+                }
+
+            BimConsole::WriteLine("Attached Change cache file %s.", args[1].c_str());
             return;
             }
 
-        BimConsole::WriteLine("Attached change summary cache.");
+        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache())
+            {
+            BimConsole::WriteErrorLine("Failed to attach Change cache file.");
+            return;
+            }
+
+        BimConsole::WriteLine("Attached Change cache file.");
         return;
         }
 
     if (args[0].EqualsIAscii("extractsummary"))
         {
-        if (!session.GetFileR().GetECDbHandle()->IsChangeSummaryCacheAttached())
+        if (!session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            BimConsole::WriteErrorLine("Failed to extract change summary. Change summary file is not attached. Make sure to attach it first.");
+            BimConsole::WriteErrorLine("Failed to extract change summary. No Change cache file is attached. Make sure to attach it first or specify a path to the Change cache file.");
             return;
             }
 
@@ -711,7 +723,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             }
 
         ECInstanceKey changeSummaryKey;
-        if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, changeset) != SUCCESS)
+        if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)) != SUCCESS)
             {
             BimConsole::WriteErrorLine("Failed to extract change summary.");
             return;

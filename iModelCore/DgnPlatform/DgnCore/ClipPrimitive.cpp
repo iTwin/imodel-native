@@ -165,7 +165,7 @@ ClipPlane ClipPlanesPrimitive::FromJsonPlane(JsonValueCR val)
     {
     ClipPlane clipPlane;
     JsonUtils::DVec3dFromJson(clipPlane.m_normal, val["normal"]);
-    clipPlane.m_distance = JsonUtils::GetDouble(val["dist"], 0.0);
+    clipPlane.m_distance = val["dist"].asDouble();
     clipPlane.SetFlags(val.isMember("invisible"), val.isMember("interior"));
     return clipPlane;
     }

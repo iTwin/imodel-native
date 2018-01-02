@@ -178,7 +178,7 @@ private:
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
-    BeSQLite::DbResult MergeSchemaRevisions(BeSQLite::Db::OpenParams const& params);
+    BeSQLite::DbResult ProcessSchemaRevisions(BeSQLite::Db::OpenParams const& params);
 
 protected:
     friend struct Txns;
@@ -293,6 +293,9 @@ public:
     DGNPLATFORM_EXPORT TxnManagerR Txns();                 //!< The TxnManager for this DgnDb.
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The RevisionManager for this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
+
+    //! @private
+    DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
 
     //! Imports EC Schemas into the DgnDb
     //! @param[in] schemas Schemas to be imported. 

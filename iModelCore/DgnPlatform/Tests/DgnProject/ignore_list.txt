@@ -625,3 +625,11 @@ ECInstancesCompatibility.ReadInstances
 
 # Fails in Release
 MeshBuilderTest.RoundTripMeshBuilders
+DgpLiteralExpressionTests.DgnMiscSymbols
+
+    # TFS#800308
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 01/01/2018
+    # c:\build\src\mds06t\DgnPlatform\Tests\DgnProject\NonPublished\ECExpressionTests.cpp(394): error:       Expected: now.GetYear ()
+    # Which is: 2017
+    # To be equal to: result.GetECValue ()->GetDateTime ().GetYear ()
+    # Which is: 2018

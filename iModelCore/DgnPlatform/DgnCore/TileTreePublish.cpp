@@ -233,6 +233,7 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
         // The range and tolerance were s set when the output tile was constructed - but the input node may have not been loaded then, so reset them here. (3SM)
         context.m_outputTile->SetDgnRange(context.m_inputTile->GetRange());
         context.m_outputTile->SetTolerance(calculateTolerance(*context.m_inputTile));
+        context.m_outputTile->ExtractCustomMetadataFrom(*context.m_inputTile);
 
         if (SUCCESS != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
             return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));

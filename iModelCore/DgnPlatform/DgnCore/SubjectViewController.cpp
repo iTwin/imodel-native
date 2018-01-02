@@ -28,7 +28,8 @@ template<typename T> static void applyToTileTree(DgnViewportR vp, DgnModelId con
     {
     auto target = vp.GetRenderTarget();
     auto system = nullptr != target ? &target->GetSystem() : nullptr;
-    BeAssert(nullptr != system);
+    if (nullptr == system) // typically, because the viewport is being destroyed...
+        return;
 
     auto model = vp.GetViewController().GetDgnDb().Models().Get<SpatialModel>(modelId);
     auto tree = model.IsValid() ? model->GetTileTree(system) : nullptr;
@@ -89,14 +90,43 @@ SubjectViewController::~SubjectViewController()
     //
     }
 
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     12/17
+//-------------------------------------------------------------------------------------------
+void SubjectViewController::ResetDynamicTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds)
+    {
+    Transform displayTransform = m_transformCache.find(subjectId) != m_transformCache.end() ? m_transformCache[subjectId] : Transform::FromIdentity();
+    BeAssert(nullptr != m_vp);
+    for (auto const& modelId : modelIds)
+        applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(&displayTransform); });
+    
+    m_vp->InvalidateScene();
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     12/17 
+ //-------------------------------------------------------------------------------------------
+void SubjectViewController::ApplyDynamicTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds, TransformCP incrementalTransform)
+    {
+    Transform displayTransform = m_transformCache.find(subjectId) != m_transformCache.end() ? m_transformCache[subjectId] : Transform::FromIdentity();
+    displayTransform = Transform::FromProduct(displayTransform, *incrementalTransform);
+    BeAssert(nullptr != m_vp);
+    for (auto const& modelId : modelIds)
+        applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(&displayTransform); });
+    
+    m_vp->InvalidateScene();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SubjectViewController::SetTransform(DgnModelIdSet const& modelIds, TransformCP transform)
+void SubjectViewController::SetTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds, TransformCP transform)
     {
     BeAssert(nullptr != m_vp);
     for (auto const& modelId : modelIds)
         applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(transform); });
+    
+    m_transformCache[subjectId] = transform != nullptr ? *transform : Transform::FromIdentity();
 
     m_vp->InvalidateScene();
     }

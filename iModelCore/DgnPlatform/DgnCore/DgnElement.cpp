@@ -1530,7 +1530,7 @@ void DgnElement::_FromJson(JsonValueR props)
         m_modelId.FromJson(props[json_model()]);
 
     if (props.isMember(json_code()))
-        m_code.FromJson2(props[json_code()]);
+        m_code = DgnCode::FromJson2(props[json_code()]);
 
     if (props.isMember(json_federationGuid()))
         m_federationGuid.FromString(props[json_federationGuid()].asString().c_str());
@@ -1557,7 +1557,7 @@ DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     {
     m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(val[DgnElement::json_classFullName()], db.GetClassLocater());
     m_modelId.FromJson(val[DgnElement::json_model()]);
-    m_code.FromJson(val[DgnElement::json_code()]);
+    m_code = DgnCode::FromJson2(val[DgnElement::json_code()]);
     m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
     m_userLabel = val[DgnElement::json_userLabel()].asString();
 
@@ -1656,91 +1656,54 @@ Transform GeometrySource::GetPlacementTransform() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometrySource::IsUndisplayed() const
+    {
+    DgnElementCP el = _ToElement();
+    return nullptr != el && el->GetDgnDb().Elements().IsUndisplayed(el->GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometrySource::SetUndisplayed(bool yesNo) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
     if (nullptr != el)
-        el->GetDgnDb().Elements().SetUndisplayed(*el, yesNo);
+        el->GetDgnDb().Elements().SetUndisplayed(el->GetElementId(), yesNo);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElements::IsUndisplayed(DgnElementId id) const
+    {
+    DgnDb::VerifyClientThread();
+
+    return m_undisplayedSet.find(id) != m_undisplayedSet.end();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SetUndisplayed(DgnElementR el, bool isUndisplayed)
+void DgnElements::SetUndisplayed(DgnElementId id, bool isUndisplayed)
     {
     DgnDb::VerifyClientThread();
-    auto elemId = el.GetElementId();
-    if (!elemId.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
 
-    if (el.m_flags.m_undisplayed != isUndisplayed)
-        {
-        el.m_flags.m_undisplayed = isUndisplayed;
-        if (isUndisplayed)
-            m_undisplayedSet.insert(elemId);
-        else
-            m_undisplayedSet.erase(elemId);
-
-        T_HOST._OnUndisplayedSetChanged(GetDgnDb());
-        }
-
-    BeAssert(isUndisplayed == (m_undisplayedSet.end() != m_undisplayedSet.find(elemId)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::_SetHilited(bool hilited) const
-    {
-    DgnElementP el = const_cast<DgnElementP>(_ToElement());
-    if (nullptr != el)
-        el->GetDgnDb().Elements().SetHilited(*el, hilited);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SetHilited(DgnElementR el, bool hilited)
-    {
-    DgnDb::VerifyClientThread();
-    auto elemId = el.GetElementId();
-    if (!elemId.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if (el.m_flags.m_hilited != hilited)
-        {
-        el.m_flags.m_hilited = hilited;
-        if (hilited)
-            m_hilitedSet.insert(elemId);
-        else
-            m_hilitedSet.erase(elemId);
-
-        T_HOST._OnHilitedSetChanged(GetDgnDb());
-        }
-
-    BeAssert(hilited == (m_hilitedSet.end() != m_hilitedSet.find(elemId)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometrySource::SetInSelectionSet(bool yesNo) const
-    {
-    DgnElementP el = const_cast<DgnElementP>(_ToElement());
-
-    if (nullptr == el)
+    // std::map has a stupid defect disallowing erase() using const_iterator so we potentially must do the lookup twice...
+    bool wasUndisplayed = IsUndisplayed(id);
+    if (wasUndisplayed == isUndisplayed)
         return;
 
-    el->m_flags.m_inSelectionSet = yesNo; 
-    SetHilited(yesNo);
+    if (isUndisplayed)
+        m_undisplayedSet.insert(id);
+    else
+        m_undisplayedSet.erase(id);
+
+    T_HOST._OnUndisplayedSetChanged(GetDgnDb());
+
+    BeAssert(isUndisplayed == IsUndisplayed(id));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4130,8 +4093,8 @@ void GeometricElement::_OnInserted(DgnElementP copiedFrom) const
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  GeometricElement::_OnDeleted() const { T_Super::_OnDeleted(); }
-void  GeometricElement2d::_OnDeleted() const { SetHilited(false); T_Super::_OnDeleted(); }
-void  GeometricElement3d::_OnDeleted() const { SetHilited(false); T_Super::_OnDeleted(); }
+void  GeometricElement2d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
+void  GeometricElement3d::_OnDeleted() const { SetUndisplayed(false); T_Super::_OnDeleted(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16

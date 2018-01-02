@@ -114,8 +114,6 @@ BentleyStatus MapTile::Loader::_LoadTile()
     MapTileR tile = static_cast<MapTileR>(*m_tile);
     MapRootR mapRoot = tile.GetMapRoot();
 
-    auto graphic = GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams::Scene(mapRoot.GetDgnDb()));
-
     // some tile servers (for example Bing) start returning PNG tiles at a certain zoom level, even if you request Jpeg.
     ImageSource::Format format = mapRoot.m_format;
     if (0 == m_contentType.CompareTo("image/png"))
@@ -129,10 +127,9 @@ BentleyStatus MapTile::Loader::_LoadTile()
     auto texture = GetRenderSystem()->_CreateTexture(source, Image::BottomUp::No, textureParams);
     m_tileBytes = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
-    graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
-    graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
+    GraphicParams gfParams = GraphicParams::FromSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
+    tile.m_graphic = GetRenderSystem()->_CreateTile(*texture, tile.m_corners, mapRoot.GetDgnDb(), gfParams);
 
-    tile.m_graphic = graphic->Finish();
     BeAssert(tile.m_graphic.IsValid());
 
     tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.

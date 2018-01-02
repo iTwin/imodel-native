@@ -452,6 +452,16 @@ public:
             virtual void _OnResponse(IBriefcaseManager::Response const& response, Utf8CP operation) { }
             };
 
+        //! Supplies functionality related to tiles
+        struct TileAdmin : IHostObject
+        {
+            //! Return true to enable caching of generated tiles on disk.
+            virtual bool _WantCachedTiles(DgnDbR) const { return true; }
+
+            //! Respond when a new tile is generated.
+            virtual void _OnNewTileReady(DgnDbR) { }
+        };
+
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -469,6 +479,7 @@ public:
         FormatterAdmin*         m_formatterAdmin;
         ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
+        TileAdmin*              m_tileAdmin;
         Utf8String              m_productName;
         DevelopmentPhase        m_developmentPhase;
         T_RegisteredDomains     m_registeredDomains;
@@ -512,6 +523,9 @@ public:
         //! Supply the RepositoryAdmin
         DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
 
+        //! Supply the TileAdmin
+        DGNPLATFORM_EXPORT virtual TileAdmin& _SupplyTileAdmin();
+
         //! Supply the SessionSettingsAdmin.
         DGNPLATFORM_EXPORT virtual SessionSettingsAdmin& _SupplySessionSettingsAdmin();
 
@@ -527,8 +541,6 @@ public:
         virtual Http::HttpClient::Options* _SupplyHttpClientOptions() {return nullptr;}
   
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
-        virtual void _OnHilitedSetChanged(DgnDbR) {}
-        virtual void _OnNewTileReady(DgnDbR) {}
 
         Host()
             {
@@ -546,6 +558,7 @@ public:
             m_formatterAdmin = nullptr;
             m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
+            m_tileAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -563,6 +576,7 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
+        TileAdmin&              GetTileAdmin()             {return *m_tileAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
         DevelopmentPhase        GetDevelopmentPhase()      {return m_developmentPhase;}
 

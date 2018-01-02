@@ -137,8 +137,6 @@ protected:
     void _AddBody(IBRepEntityCR) { }
     void _AddTextString(TextStringCR text) { }
     void _AddTextString2d(TextStringCR text, double zDepth) { }
-    void _AddTile(TextureCR tile, TileCorners const& corners) { }
-    void _AddTriMesh(TriMeshArgs const& args) { }
     void _AddDgnOle(DgnOleDraw*) { }
     void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR, ClipVectorCP clip) { }
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const { return nullptr; }

@@ -352,6 +352,8 @@ protected:
     bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views, bool testUsed) const;
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
+    void ExtractModelCustomPublishMetadata(DgnModelCR model, Utf8StringR name, Json::Value& metadata) const;
+
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
     TILEPUBLISHER_EXPORT virtual void _AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs);
@@ -458,7 +460,7 @@ private:
 
     void WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR pointCloud);
     void WriteTileMeshes (std::FILE* outputFile, PublishableTileGeometryR geometry);
-    void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
+    void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes, Utf8StringCR batchTableStr);
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData const& tileData);
     void WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry, ModelSpatialClassifierCR classifier, DRange3dCR classifiedRange);

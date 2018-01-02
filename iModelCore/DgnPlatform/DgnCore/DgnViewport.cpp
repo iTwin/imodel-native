@@ -1221,3 +1221,26 @@ DMap4d Frustum::ToDMap4d() const
     bsiDMap4d_initFromVectorFrustum(&map, &org, &xVec, &yVec, &zVec, GetFraction());
     return map;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+IViewportAnimator::RemoveMe DecorationAnimator::_Animate(DgnViewportR vp)
+    {
+    vp.InvalidateDecorations();
+    BeDuration total(m_stop - m_start);
+    BeDuration elapsed(BeTimePoint::Now() - m_start);
+    double ratio = std::min(elapsed.ToSeconds() / total.ToSeconds(), 1.0);
+    auto removeMe = _AnimateDecorations(vp, ratio);
+    return (RemoveMe::Yes == removeMe || ratio == 1.0) ? RemoveMe::Yes : RemoveMe::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorationAnimator::_OnInterrupted(DgnViewportR vp)
+    {
+    vp.InvalidateDecorations();
+    _AnimateDecorations(vp, 1.0);
+    }
+

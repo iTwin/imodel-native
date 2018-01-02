@@ -144,7 +144,7 @@ public:
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
     bool IsTextured() const { BeAssert(m_resolved); return m_textureMapping.IsValid(); }
-    bool HasBlankingFill() const { return FillFlags::None != (GetFillFlags() & FillFlags::Blanking); }
+    bool HasBlankingFill() const { return FillFlags::Blanking == (GetFillFlags() & FillFlags::Blanking); }
     bool NeverRegionOutline() const { return HasBlankingFill() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
     bool HasRegionOutline() const;
 
@@ -163,8 +163,6 @@ public:
         dp->Resolve(db, sys);
         return dp;
         }
-    DGNPLATFORM_EXPORT static DisplayParamsCPtr CreateForTile(GraphicParamsCR gf, GeometryParamsCP geom, TextureCR texture);
-
     static DisplayParamsCPtr CreateForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
         {
         return new DisplayParams(Type::Linear, gf, geom, false);
@@ -592,6 +590,7 @@ public:
     DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor, bool requireNormals);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();
 
@@ -670,6 +669,8 @@ private:
     bool                    m_isCurved;
     bool                    m_hasTexture;
 protected:
+    ClipVectorPtr           m_clip;
+
     Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db);
 
     virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR) = 0;
@@ -701,9 +702,10 @@ public:
     PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR);
     bool DoDecimate() const { return _DoDecimate(); }
     bool DoVertexCluster() const { return _DoVertexCluster(); }
-    StrokesList GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) { return _GetStrokes(facetOptions, context); }
+    StrokesList GetStrokes (IFacetOptionsR facetOptions, ViewContextR context);
     GeomPartCPtr GetPart() const { return _GetPart(); }
     void SetInCache(bool inCache) { _SetInCache(inCache); }
+    void SetClipVector(ClipVectorCP clip) { m_clip = nullptr != clip ? ClipVector::CreateCopy(*clip) : nullptr; }
 
     //! Create a Geometry for an IGeometry
     static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsCR params, bool isCurved, DgnDbR db, bool disjoint);
@@ -814,8 +816,8 @@ private:
     bool                        m_checkGlyphBoxes = false;
     DRange3d                    m_tileRange;
 
-    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, bool disjoint);
-    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, DRange3dCR range, bool disjoint);
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, DRange3dCR range, bool disjoint);
 
     MeshBuilderMap ToMeshBuilderMap(GeometryOptionsCR, double tolerance, FeatureTableP, ViewContextR) const;
 public:
@@ -825,7 +827,7 @@ public:
     void AddGeometry(GeometryR geom) { m_geometries.push_back(geom); }
     void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
 
-    DGNPLATFORM_EXPORT bool Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform, bool disjoint);
+    DGNPLATFORM_EXPORT bool Add(CurveVectorR curves, bool filled, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
     DGNPLATFORM_EXPORT bool Add(ISolidPrimitiveR primitive, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool Add(RefCountedMSBsplineSurface& surface, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform);
@@ -1011,7 +1013,6 @@ protected:
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR) override;
     DGNPLATFORM_EXPORT void _AddTriStrip(int numPoints, DPoint3dCP points, AsThickenedLine usageFlags) override;
     DGNPLATFORM_EXPORT void _AddTriStrip2d(int numPoints, DPoint2dCP points, AsThickenedLine usageFlags, double zDepth) override;
-    DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const& args) override { } // WIP.
     DGNPLATFORM_EXPORT void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
     DGNPLATFORM_EXPORT void _AddCurveVector(CurveVectorCR curves, bool isFilled) override;
     DGNPLATFORM_EXPORT void _AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth) override;
@@ -1035,7 +1036,6 @@ protected:
     virtual void _Reset() { } //!< Invoked by ReInitialize() to reset any state before this builder is reused.
 
     void Add(PolyfaceHeaderR mesh, bool filled) { m_accum.Add(mesh, filled, GetMeshDisplayParams(filled), GetLocalToWorldTransform()); }
-    void AddTile(TileCorners const& corners, DisplayParamsCR params);
     void AddCurveVector(CurveVectorR curves, bool isFilled, bool isDisjoint);
     void SetCheckGlyphBoxes(bool check) { m_accum.SetCheckGlyphBoxes(check); }
     void SetElementId(DgnElementId id) { m_accum.SetElementId(id); }
@@ -1068,13 +1068,10 @@ struct PrimitiveBuilder : GeometryListBuilder
 protected:
     bvector<GraphicPtr> m_primitives;
 
-    DGNPLATFORM_EXPORT void _AddTile(Render::TextureCR tile, TileCorners const& corners) override;
     DGNPLATFORM_EXPORT void _AddSubGraphic(Render::Graphic&, TransformCR, Render::GraphicParamsCR, ClipVectorCP clip) override;
     DGNPLATFORM_EXPORT Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP clip) const override;
     DGNPLATFORM_EXPORT Render::GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
     void _Reset() override { m_primitives.clear(); }
-
-    void AddTriMesh(TriMeshArgsCR args);
 
     DGNPLATFORM_EXPORT double ComputeTolerance(GeometryAccumulatorR) const;
 public:

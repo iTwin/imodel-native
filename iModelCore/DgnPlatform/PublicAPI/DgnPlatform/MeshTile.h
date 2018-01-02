@@ -636,10 +636,11 @@ struct TileGeometry : RefCountedBase
         {
         TileDisplayParamsCPtr       m_displayParams;
         bvector<bvector<DPoint3d>>  m_strokes;
+        bool                        m_disjoint;
 
         void Transform(TransformCR transform);
 
-        TileStrokes (TileDisplayParamsCR displayParams, bvector<bvector<DPoint3d>>&& strokes) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)) { }
+        TileStrokes (TileDisplayParamsCR displayParams, bvector<bvector<DPoint3d>>&& strokes, bool disjoint = false) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
         }; 
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;
@@ -664,6 +665,7 @@ protected:
     virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
     virtual TileGeomPartCPtr _GetPart() const { return TileGeomPartCPtr(); }
+    virtual bool _IsPoint() const { return false; }
 
     void SetFacetCount(size_t numFacets);
 public:
@@ -680,6 +682,7 @@ public:
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
+    bool IsPoint() const { return _IsPoint(); }
 
     T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions) { return _GetPolyfaces(facetOptions); }
     T_TilePolyfaces GetPolyfaces(double chordTolerance, NormalMode normalMode);
@@ -841,6 +844,7 @@ protected:
     DgnModelCPtr            m_model;
     FeatureAttributesMap    m_attributes;
     bool                    m_isEmpty;
+    std::pair<Utf8String, Json::Value> m_tileCustomMetadata;
 
     TileNode(DgnModelCR model, TransformCR transformFromDgn) : TileNode(model, DRange3d::NullRange(), transformFromDgn, 0, 0, nullptr) { }
     TileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
@@ -896,7 +900,18 @@ public:
     PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, bool doInstancing=true, ITileGenerationFilterCP filter = nullptr) const
         { return _GeneratePublishableGeometry(dgndb, normalMode, doSurfacesOnly, doInstancing,  filter); }
     DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount = 3);
-};
+
+    void GetTileCustomMetadata(Utf8StringR name, Json::Value& metadata) const
+        {
+        name = m_tileCustomMetadata.first;
+        metadata = m_tileCustomMetadata.second;
+        }
+
+    void ExtractCustomMetadataFrom(TileTree::TileCR inputTile)
+        {
+        inputTile.GetCustomMetadata(m_tileCustomMetadata.first, m_tileCustomMetadata.second);
+        }
+    };
 
 //=======================================================================================
 //! A TileNode generated from a set of elements.
@@ -1009,7 +1024,7 @@ private:
     BeAtomic<uint32_t>                      m_totalTiles;
     uint32_t                                m_totalModels;
     BeAtomic<uint32_t>                      m_completedModels;
-    ITileCollectionFilterCP                  m_filter;
+    ITileCollectionFilterCP                 m_filter;
 
     struct ElementTileContext
         {
@@ -1070,7 +1085,10 @@ struct IGenerateMeshTiles
 struct IGetTileTreeForPublishing
 {
     // ###TODO: remove this interface when TileGenerator::GenerateTilesFromTileTree can process everything.
-};  // IGetTileTreeForPublishing
+
+    // Override this to disallow publishing.
+    virtual bool _AllowPublishing() const { return true; }
+};
 
 //=======================================================================================                                                                                                                                              bb
 // Describes a published ready-to-use 3D tileset associated with a SpatialModel.
