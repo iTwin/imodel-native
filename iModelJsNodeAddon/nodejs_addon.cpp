@@ -2,7 +2,7 @@
 |
 |     $Source: nodejs_addon.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <functional>
@@ -613,7 +613,7 @@ public:
         return Napi::New(env, s_constructor)->HasInstance(obj);
         }
 
-    static void Init(Napi::Env env, Napi::Object exports, Napi::Object module)
+    static void Init(Napi::Env env, Napi::Object exports)
         {
         Napi::HandleScope scope(env);
 
@@ -1355,7 +1355,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 		}
 
     //  Create projections
-    static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
+    static void Init(Napi::Env& env, Napi::Object target)
         {
         // ***
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
@@ -1427,7 +1427,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         }
 
     //  Create projections
-    static void Init(Napi::Env& env, Napi::Object target, Napi::Object module)
+    static void Init(Napi::Env& env, Napi::Object target)
         {
         // ***
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
@@ -1536,22 +1536,25 @@ static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void registerModule(Napi::Env env, Napi::Object exports, Napi::Object module)
+static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
+// static void registerModule(Napi::Env env, Napi::Object exports)
     {
     Napi::HandleScope scope(env);
 
-    auto filename = module.Get("filename").As<Napi::String>();
+    auto filename = env.Global().Get("module").ToObject().Get("filename").As<Napi::String>();
     BeFileName addondir = BeFileName(filename.Utf8Value().c_str(), true).GetDirectoryName();
 
     AddonUtils::Initialize(addondir, throwJsExceptionOnAssert);
-    NodeAddonDgnDb::Init(env, exports, module);
+    NodeAddonDgnDb::Init(env, exports);
     // NodeAddonECDb::Init(env, exports, module);
-    NodeAddonECSqlStatement::Init(env, exports, module);
+    NodeAddonECSqlStatement::Init(env, exports);
 
     exports.DefineProperties(
         {
         DEFINE_CONSTANT_STRING_INTEGER(version, PACKAGE_VERSION)
         });
+
+    return exports;
     }
 
 Napi::FunctionReference NodeAddonECSqlStatement::s_constructor;
