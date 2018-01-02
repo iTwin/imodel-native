@@ -29,6 +29,7 @@
 #include "../WebServices/Connect/MockLocalState.h"
 #include "../WebServices/Connect/MockImsClient.h"
 #include "../WebServices/Connect/MockConnectionClientInterface.h"
+#include "../WebServices/Connect/MockConnectSignInManagerListener.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
@@ -54,6 +55,7 @@ TEST_F(MockTests, Ctor_Default_Builds)
     MockConnectTokenProvider();
     MockLocalState();
     MockImsClient();
+    MockConnectSignInManagerListener();
     MockConnectionClientInterface();
     }
 
