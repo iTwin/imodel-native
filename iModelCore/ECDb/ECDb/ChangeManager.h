@@ -2,12 +2,11 @@
 |
 |     $Source: ECDb/ChangeManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //_BENTLEY_INTERNAL_ONLY_
-#include "ChangeSummaryExtractor.h"
 #include "ECDbSqlFunctions.h"
 #include "DbUtilities.h"
 #include "SqlNames.h"
@@ -33,7 +32,6 @@ struct ChangeManager final
     {
     private:
         ECDbCR m_ecdb;
-        ChangeSummaryExtractor m_extractor;
         mutable std::unique_ptr<ChangedValueSqlFunction> m_changedValueSqlFunction;
         //static non-POD must not be deleted (Bentley guideline)
         static ProfileVersion const* s_expectedCacheVersion;
@@ -58,9 +56,7 @@ struct ChangeManager final
         static bool IsChangeCacheValid(ECDbCR cacheFile, bool logError = false);
 
         DbResult AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool createIfNotExists) const;
-        DbResult CreateChangeCacheFile(BeFileNameCR cacheFilePath) const;
-
-        ChangeSummaryExtractor const& GetExtractor() const { return m_extractor; }
+        DbResult CreateChangeCacheFile(ECDbR, BeFileNameCR cacheFilePath) const;
 
         void RegisterSqlFunctions() const;
         void UnregisterSqlFunction() const;

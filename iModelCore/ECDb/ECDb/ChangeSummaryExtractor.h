@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeSummaryExtractor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,22 +58,29 @@ struct ChangeSummaryExtractor final
         struct Context final
             {
             private:
-                ChangeManager const& m_manager;
-                ECDb m_changeCacheECDb;
-                BeFileName m_changeCachePathIfMustReattach;
+                ECDbCR m_primaryECDb;
+                ECDb* m_userChangeCacheECDb = nullptr;
+                ECDb m_ownedChangeCacheECDb;
                 ECSqlStatementCache m_changeSummaryStmtCache;
+                Utf8String m_attachedChangeCachePath;
                 bool m_extractCompletedSuccessfully = false;
+
             public:
-                explicit Context(ChangeManager const& manager);
+                Context(ECDbCR primaryFile, ECDbR changeCacheFile) : m_primaryECDb(primaryFile), m_userChangeCacheECDb(&changeCacheFile), m_changeSummaryStmtCache(15) {}
+                Context(ECDbCR primaryFile) : m_primaryECDb(primaryFile), m_changeSummaryStmtCache(15) {}
                 //Performs clean-up: 
-                //*saves changes to change summary ECDb and closes it
+                //*saves changes to change summary ECDb
                 //*reattaches the change summary ECDb to the primary ECDb if it was attached before extraction
                 ~Context();
 
-                DbResult OpenChangeSummaryECDb(BeFileNameCR changeCachePath);
+                DbResult Initialize();
                 void ExtractCompletedSuccessfully() { m_extractCompletedSuccessfully = true; }
-                CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const { return m_changeSummaryStmtCache.GetPreparedStatement(m_changeCacheECDb, ecsql); }
-                ECDbCR GetPrimaryECDb() const;
+                CachedECSqlStatementPtr GetChangeSummaryStatement(Utf8CP ecsql) const 
+                    { 
+                    ECDbCR changeCache = m_userChangeCacheECDb != nullptr ? *m_userChangeCacheECDb : m_ownedChangeCacheECDb;
+                    return m_changeSummaryStmtCache.GetPreparedStatement(changeCache, ecsql);
+                    }
+                ECDbCR GetPrimaryECDb() const { return m_primaryECDb; }
                 MainSchemaManager const& GetPrimaryFileSchemaManager() const;
                 IssueReporter const& Issues() const;
             };
@@ -81,58 +88,57 @@ struct ChangeSummaryExtractor final
         struct FkRelChangeExtractor final
             {
             private:
-                ChangeSummaryExtractor const& m_extractor;
+                FkRelChangeExtractor() = delete;
+                ~FkRelChangeExtractor() = delete;
 
             public:
-                explicit FkRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
-                BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, ChangeIterator::TableClassMap::EndTableRelationshipMap const&) const;
+                static BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, ChangeIterator::TableClassMap::EndTableRelationshipMap const&);
             };
 
         struct LinkTableRelChangeExtractor final
             {
             private:
-                ChangeSummaryExtractor const& m_extractor;
+                LinkTableRelChangeExtractor() = delete;
+                ~LinkTableRelChangeExtractor() = delete;
 
-                BentleyStatus GetRelEndInstanceKeys(Context&, ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd) const;
-                ECN::ECClassId GetRelEndClassId(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd, ECInstanceId endInstanceId) const;
+                static BentleyStatus GetRelEndInstanceKeys(Context&, ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd);
+                static ECN::ECClassId GetRelEndClassId(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&, ECInstanceId relInstanceId, ECN::ECRelationshipEnd, ECInstanceId endInstanceId);
 
             public:
-                explicit LinkTableRelChangeExtractor(ChangeSummaryExtractor const& extractor) : m_extractor(extractor) {}
-                BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&) const;
+                static BentleyStatus Extract(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&, RelationshipClassLinkTableMap const&);
             };
 
-        //not copyable
-        ChangeSummaryExtractor(ChangeSummaryExtractor const&) = delete;
-        ChangeSummaryExtractor& operator=(ChangeSummaryExtractor const&) = delete;
+        ChangeSummaryExtractor() = delete;
+        ~ChangeSummaryExtractor() = delete;
 
-        BentleyStatus Extract(Context&, ECInstanceId summaryId, BeSQLite::IChangeSet&, ExtractMode) const;
-        BentleyStatus ExtractInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
-        BentleyStatus ExtractRelInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&) const;
+        static BentleyStatus Extract(ECInstanceKey& changeSummaryKey, Context&, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&);
+        static BentleyStatus Extract(Context&, ECInstanceId summaryId, BeSQLite::IChangeSet&, ExtractMode);
+        static BentleyStatus ExtractInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&);
+        static BentleyStatus ExtractRelInstance(Context&, ECInstanceId summaryId, ChangeIterator::RowEntry const&);
 
-        BentleyStatus RecordInstance(Context&, InstanceChange const&, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties) const;
-        BentleyStatus RecordRelInstance(Context&, InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey) const;
-        BentleyStatus RecordValue(bool& neededToRecord, Context&, InstanceChange const&, ChangeIterator::ColumnEntry const& columnEntry) const;
+        static BentleyStatus RecordInstance(Context&, InstanceChange const&, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties);
+        static BentleyStatus RecordRelInstance(Context&, InstanceChange const& instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
+        static BentleyStatus RecordValue(bool& neededToRecord, Context&, InstanceChange const&, ChangeIterator::ColumnEntry const& columnEntry);
 
-        InstanceChange QueryInstanceChange(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
-        ECInstanceId FindChangeId(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
-        bool ContainsChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) const { return FindChangeId(ctx, summaryId, keyOfChangedInstance).IsValid(); }
+        static InstanceChange QueryInstanceChange(Context&, ECInstanceId summaryId, ECInstanceKey const&);
+        static ECInstanceId FindChangeId(Context&, ECInstanceId summaryId, ECInstanceKey const&);
+        static bool ContainsChange(Context& ctx, ECInstanceId summaryId, ECInstanceKey const& keyOfChangedInstance) { return FindChangeId(ctx, summaryId, keyOfChangedInstance).IsValid(); }
 
 
-        BentleyStatus InsertSummary(ECInstanceKey& summaryKey, Context&, ChangeSetArg const&) const;
-        DbResult InsertOrUpdate(Context&, InstanceChange const&) const;
-        DbResult Delete(Context&, ECInstanceId summaryId, ECInstanceKey const&) const;
+        static BentleyStatus InsertSummary(ECInstanceKey& summaryKey, Context&, ChangeSetArg const&);
+        static DbResult InsertOrUpdate(Context&, InstanceChange const&);
+        static DbResult Delete(Context&, ECInstanceId summaryId, ECInstanceKey const&);
 
-        DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue) const;
-        DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId) const;
-        DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId) const;
+        static DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, DbValue const& oldValue, DbValue const& newValue);
+        static DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECN::ECClassId oldId, ECN::ECClassId newId);
+        static DbResult InsertPropertyValueChange(Context&, ECInstanceId summaryId, ECInstanceKey const&, Utf8CP accessString, ECInstanceId oldId, ECInstanceId newId);
 
         static ECSqlStatus BindDbValue(ECSqlStatement&, int, DbValue const&);
-         static bool RawIndirectToBool(int indirect) { return indirect != 0; }
+        static bool RawIndirectToBool(int indirect) { return indirect != 0; }
         
     public:
-        ChangeSummaryExtractor()  {}
-
-        BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ChangeManager const&, BeFileNameCR changeCachePath, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&) const;
+        static BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ECDbR changeCacheECDb, ECDbCR primaryECDb, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&);
+        static BentleyStatus Extract(ECInstanceKey& changeSummaryKey, ECDbCR primaryECDb, ChangeSetArg const& changeSetInfo, ECDb::ChangeSummaryExtractOptions const&);
     };
 
 

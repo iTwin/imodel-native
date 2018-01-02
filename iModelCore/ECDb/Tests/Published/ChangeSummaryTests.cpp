@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ChangeSummaryTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -813,7 +813,10 @@ TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath)
     if (cacheFilePath.DoesPathExist())
         ASSERT_EQ(BeFileNameStatus::Success, cacheFilePath.BeDeleteFile());
 
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFilePath));
+    ECDb cacheFile;
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFile, cacheFilePath));
+    cacheFile.CloseDb();
+
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cacheFilePath));
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
@@ -901,12 +904,10 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ChangeSummaryWithCustomMetaData.ecdb"));
 
     BeFileName cacheFilePath = ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName());
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFilePath));
+    ECDb cacheFile;
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.CreateChangeCache(cacheFile, cacheFilePath));
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
     //add a custom schema to the change file
-    ECDb cacheFile;
-    ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-
     ASSERT_EQ(SUCCESS, TestHelper(cacheFile).ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
          <ECSchema schemaName="ChangeSets" alias="cset" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbChange" version="01.00.00" alias="change"/>
@@ -948,13 +949,13 @@ TEST_F(ChangeSummaryTestFixture, ChangeSummaryWithCustomMetaData)
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     tracker.EndTracking();
 
-    //extract the change summary
+    //extract the change summary (with a separately opened cache file so that we can add more information to the extracted change summary)
+    ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ECInstanceKey changeSummaryKey;
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, cacheFilePath, ChangeSetArg(changeset)));
+    ASSERT_EQ(SUCCESS, ECDb::ExtractChangeSummary(changeSummaryKey, cacheFile, m_ecdb, ChangeSetArg(changeset)));
     ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
 
     //now add additional meta data to the change summary
-    ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     ECSqlStatement insertChangeSetStmt;
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId()));

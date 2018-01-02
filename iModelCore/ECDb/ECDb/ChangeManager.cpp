@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -126,7 +126,8 @@ DbResult ChangeManager::AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool c
         if (!createIfNotExists)
             return BE_SQLITE_OK;
 
-        DbResult r = CreateChangeCacheFile(cachePath);
+        ECDb changeCache;
+        DbResult r = CreateChangeCacheFile(changeCache, cachePath);
         if (BE_SQLITE_OK != r)
             return r;
         }
@@ -153,7 +154,7 @@ DbResult ChangeManager::AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
-DbResult ChangeManager::CreateChangeCacheFile(BeFileNameCR cachePath) const
+DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cachePath) const
     {
     if (cachePath.DoesPathExist())
         {
@@ -161,7 +162,7 @@ DbResult ChangeManager::CreateChangeCacheFile(BeFileNameCR cachePath) const
         return BE_SQLITE_ERROR;
         }
 
-    ECDb cacheDb;
+    BeAssert(!cacheDb.IsDbOpen());
     DbResult r = cacheDb.CreateNewDb(cachePath);
     if (BE_SQLITE_OK != r)
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDb.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -340,14 +340,14 @@ public:
     //! @remarks This method will return an error, if the cache file already exists.
     //!
     //! This method can also be used if further set-up on the cache file is needed by the client.
-    //! For example, higher layer code can create the cache file using this method, then open a separate ECDb connection to 
-    //! it and import another schema.
+    //! For example, higher layer code can create the cache file using this method and import another schema.
     //! Note though that any of this is ignored by ECDb and must be maintained by the code that added it.
+    //! @param[out] changeCacheFile Created cache file which remains open
     //! @param[in] changeCacheFilePath Path for the cache file. You can use ECDb::GetDefaultChangeCachePath
     //! to get the default path.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
-    ECDB_EXPORT DbResult CreateChangeCache(BeFileNameCR changeCacheFilePath) const;
+    ECDB_EXPORT DbResult CreateChangeCache(ECDb& changeCacheFile, BeFileNameCR changeCacheFilePath) const;
 
     //! Extracts and generates the change summary from the specified change set.
     //! @remarks The change summary is persisted as an instance of the ECClass @b ECDbChange.ChangeSummary and its related classes
@@ -364,7 +364,7 @@ public:
     //! @param[in] options Extraction options
     //! @return SUCCESS or ERROR
     //! @see @ref ECDbChange
-    BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const { return ExtractChangeSummary(changeSummaryKey, BeFileName(), changeSetArg, options); }
+    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
     
     //! Extracts and generates the change summary from the specified change set.
     //! @remarks The change summary is persisted as an instance of the ECClass @b ECDbChange.ChangeSummary and its related classes
@@ -372,18 +372,19 @@ public:
     //! The method returns the ECInstanceKey of the generated ChangeSummary which serves as input to any query into the changes
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
-    //! @note The change summaries are persisted in a separate cache file, specified by @p changeCacheFilePath.
+    //! @note The change summaries are persisted in a separate cache file, specified by @p changeCacheFile.
     //! Before extracting you must make sure the cache exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first, 
     //! or specify the appropriate ECDb::ChangeCacheMode when opening the %ECDb file. If the cache does not exist, the method returns ERROR.
     //! The change cache file doesn't have to be attached though.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
-    //! @param[in] changeCacheFilePath Path to the Change cache file
+    //! @param[in] changeCacheFile Open read-write connection to the Changes cache file
+    //! @param[in] primaryFile Open connection to the primary ECDb file to which the changes refer (can be read-only)
     //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
     //! @param[in] options Extraction options
     //! @return SUCCESS or ERROR
     //! @see @ref ECDbChange
-    ECDB_EXPORT BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeFileNameCR changeCacheFilePath, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions()) const;
+    ECDB_EXPORT static BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ECDb& changeCacheFile, ECDb const& primaryFile, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions());
 
     //! Gets the default file path to the Change cache file for the specified %ECDb path.
     //! The default file path is: @p ecdbPath + ".ecchanges"

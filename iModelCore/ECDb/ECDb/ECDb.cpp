@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDb.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -189,7 +189,7 @@ DbResult ECDb::AttachChangeCache(BeFileNameCR changeCachePath) const { return m_
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::CreateChangeCache(BeFileNameCR changeCachePath) const { return m_pimpl->GetChangeManager().CreateChangeCacheFile(changeCachePath); }
+DbResult ECDb::CreateChangeCache(ECDbR changeCache, BeFileNameCR changeCachePath) const { return m_pimpl->GetChangeManager().CreateChangeCacheFile(changeCache, changeCachePath); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
@@ -200,11 +200,20 @@ BeFileName ECDb::GetDefaultChangeCachePath(Utf8CP ecdbPath) { return ChangeManag
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, BeFileNameCR changeCacheFilePath, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options) const
+//static
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ECDbR changeCacheFile, ECDbCR primaryFile, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options)
+    {
+    BeMutexHolder lock(primaryFile.GetImpl().GetMutex());
+    return ChangeSummaryExtractor::Extract(changeSummaryKey, changeCacheFile, primaryFile, changeSetInfo, options);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                11/2017
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ChangeSetArg const& changeSetInfo, ChangeSummaryExtractOptions const& options) const
     {
     BeMutexHolder lock(GetImpl().GetMutex());
-    ChangeManager const& changeManager = m_pimpl->GetChangeManager();
-    return changeManager.GetExtractor().Extract(changeSummaryKey, changeManager, changeCacheFilePath, changeSetInfo, options);
+    return ChangeSummaryExtractor::Extract(changeSummaryKey, *this, changeSetInfo, options);
     }
 
 //--------------------------------------------------------------------------------------

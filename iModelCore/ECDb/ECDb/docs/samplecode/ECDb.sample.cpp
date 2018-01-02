@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDb.sample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ Overview_ECDb_Include.sampleCode
@@ -174,10 +174,8 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
 
     //*** Step 1: Set-up Change Cache File
     BeFileName cacheFilePath = ECDb::GetDefaultChangeCachePath(primaryECDb.GetDbFileName());
-    primaryECDb.CreateChangeCache(cacheFilePath);
-
     ECDb cacheFile;
-    cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    primaryECDb.CreateChangeCache(cacheFile, cacheFilePath);
 
     //Read a custom schema (the method ReadSchema is just a place holder function to keep the example simple) 
     bvector<ECN::ECSchemaCP> customSchemas = ReadSchema(
@@ -212,14 +210,14 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     DateTime pushDate;
     Utf8String createdBy;
     BeSQLite::IChangeSet& changeSet = GetChangeSetInfoFromHub(pushDate, createdBy, changeSetHubId);
-    
-    //extract the change summary
-    ECInstanceKey changeSummaryKey;
-    primaryECDb.ExtractChangeSummary(changeSummaryKey, cacheFilePath, ChangeSetArg(changeSet));
 
-    //add additional information and relate it to the new change summary
     cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
 
+    //extract the change summary
+    ECInstanceKey changeSummaryKey;
+    ECDb::ExtractChangeSummary(changeSummaryKey, cacheFile, primaryECDb, ChangeSetArg(changeSet));
+
+    //add additional information and relate it to the new change summary
     ECSqlStatement insertChangeSetStmt;
     insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)");
     insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId());
