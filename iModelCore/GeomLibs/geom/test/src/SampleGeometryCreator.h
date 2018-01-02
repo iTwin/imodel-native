@@ -789,26 +789,27 @@ static void AddMultiPrimitiveXYOpenPaths (bvector<CurveVectorPtr> &pathVectors, 
         DPoint3d::From (1,0,0),
         DPoint3d::From (2,2,0)
         }; 
-
-    auto cv0 = CurveVector::CreateLinear (stringPoints);
+    auto linestring = ICurvePrimitive::CreateLineString (stringPoints);
+    auto cv0 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, linestring);
     pathVectors.push_back (cv0);
 
-    auto cv1 = cv0->Clone ();
     DPoint3d pointA, pointB;
     cv0->GetStartEnd (pointA, pointB);
-    DEllipse3d arc = DEllipse3d::FromPointsOnArc (pointB, pointB + DVec3d::From (1,0,0), pointB + DVec3d::From(2,1,0));
-    cv1->push_back (ICurvePrimitive::CreateArc (arc));
+    auto arc = ICurvePrimitive::CreateArc (DEllipse3d::FromPointsOnArc (pointB, pointB + DVec3d::From (1,0,0), pointB + DVec3d::From(2,1,0)));
+
+    auto cv1 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, 
+        {linestring->Clone (), arc->Clone ()}
+        );
     pathVectors.push_back (cv1);
 
     if (withTangencies)
         {
         DVec3d tangentA, tangentB;
-        auto cv2 = cv0->Clone ();
-        cv2->GetStartEnd (pointA, pointB, tangentA, tangentB);
+        auto cv2 = cv1->Clone ();
+        cv1->GetStartEnd (pointA, pointB, tangentA, tangentB);
         auto arc2 = DEllipse3d::FromStartTangentNormalRadiusSweep (pointB, tangentB, DVec3d::From (0,0,1), 2.0, Angle::PiOver2 ());
         cv2->push_back (ICurvePrimitive::CreateArc (arc2));
 
-        auto cv3 = cv2->Clone ();
         cv2->GetStartEnd (pointA, pointB, tangentA, tangentB);
         auto pointC = pointB + tangentB;
         bvector<DPoint3d> poles {

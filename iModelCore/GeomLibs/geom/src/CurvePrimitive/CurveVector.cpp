@@ -488,6 +488,16 @@ CurveVectorPtr    CurveVector::Create (CurveVector::BoundaryType boundaryType)
     return new CurveVector (boundaryType);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz 01/18
++--------------------------------------------------------------------------------------*/
+CurveVectorPtr CurveVector::Create (BoundaryType boundaryType, bvector<ICurvePrimitivePtr> primitives)
+    {
+    auto result = Create (boundaryType);
+    for (auto &p : primitives)
+        result->push_back (p);
+    return result;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2012
