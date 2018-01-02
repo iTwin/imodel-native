@@ -2,10 +2,10 @@
 |
 |     $Source: StructuralDomainUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "StructuralDomain/StructuralDomainUtilities.h"
+#include "PublicAPI\StructuralDomainUtilities.h"
 
 BE_JSON_NAME(StructuralDomain)
 
@@ -57,10 +57,8 @@ DomainHandlerRegisterHelper::DomainHandlerRegisterHelper() : m_registrationStatu
     {
     bool bStart(true);
 
-    bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralCommonDomain::GetDomain());
     bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralPhysicalDomain::GetDomain());
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -69,7 +67,6 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
     {
     return DomainHandlerRegisterHelper::Get().GetRegistrationStatus();
     }
-
 
  //---------------------------------------------------------------------------------------
  // @bsimethod                                   Bentley.Systems

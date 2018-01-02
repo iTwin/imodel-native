@@ -21,71 +21,63 @@
   <ItemGroup>
     <None Include="structural.mke" />
     <None Include="Structural.prewire.mke" />
-    <None Include="StructuralCommon\StructuralCommon.prewire.mki" />
-    <None Include="StructuralPhysical\StructuralPhysical.prewire.mki" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="StructuralCommon\StructuralCommon.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
     <Xml Include="StructuralDomains.Partfile.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="StructuralPhysical\StructuralPhysical.ecschema.xml">
-      <SubType>Designer</SubType>
-    </Xml>
+    <Xml Include="StructuralPhysical.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="StructuralCommon\StructuralCommonDomain.cpp" />
-    <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp" />
+    <ClCompile Include="Beam.cpp" />
+    <ClCompile Include="Brace.cpp" />
+    <ClCompile Include="Column.cpp" />
+    <ClCompile Include="ConcreteMaterialProperties.cpp" />
+    <ClCompile Include="CurveMember.cpp" />
+    <ClCompile Include="FoundationMember.cpp" />
+    <ClCompile Include="MaterialProperties.cpp" />
+    <ClCompile Include="Pile.cpp" />
+    <ClCompile Include="PileCap.cpp" />
+    <ClCompile Include="Slab.cpp" />
+    <ClCompile Include="SpreadFooting.cpp" />
+    <ClCompile Include="SteelMaterialProperties.cpp" />
+    <ClCompile Include="StripFooting.cpp" />
+    <ClCompile Include="StructuralAddition.cpp" />
     <ClCompile Include="StructuralDomainUtilities.cpp" />
-    <ClCompile Include="StructuralMaterial\ConcreteMaterialProperties.cpp" />
-    <ClCompile Include="StructuralMaterial\MaterialProperties.cpp" />
-    <ClCompile Include="StructuralMaterial\SteelMaterialProperties.cpp" />
-    <ClCompile Include="StructuralPhysical\Beam.cpp" />
-    <ClCompile Include="StructuralPhysical\Brace.cpp" />
-    <ClCompile Include="StructuralPhysical\Column.cpp" />
-    <ClCompile Include="StructuralPhysical\CurveMember.cpp" />
-    <ClCompile Include="StructuralPhysical\FoundationMember.cpp" />
-    <ClCompile Include="StructuralPhysical\Slab.cpp" />
-    <ClCompile Include="StructuralPhysical\SpreadFooting.cpp" />
-    <ClCompile Include="StructuralPhysical\StripFooting.cpp" />
-    <ClCompile Include="StructuralPhysical\StructuralAddition.cpp" />
-    <ClCompile Include="StructuralPhysical\StructuralElement.cpp" />
-    <ClCompile Include="StructuralPhysical\StructuralMember.cpp" />
-    <ClCompile Include="StructuralPhysical\StructuralPhysicalDomain.cpp" />
-    <ClCompile Include="StructuralPhysical\StructuralSubtraction.cpp" />
-    <ClCompile Include="StructuralPhysical\SurfaceMember.cpp" />
-    <ClCompile Include="StructuralPhysical\Wall.cpp" />
+    <ClCompile Include="StructuralElement.cpp" />
+    <ClCompile Include="StructuralMember.cpp" />
+    <ClCompile Include="StructuralPhysicalDomain.cpp" />
+    <ClCompile Include="StructuralPhysicalModel.cpp" />
+    <ClCompile Include="StructuralSubtraction.cpp" />
+    <ClCompile Include="SurfaceMember.cpp" />
+    <ClCompile Include="Wall.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PublicAPI\StructuralDomain\StructuralDomainUtilities.h" />
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h" />
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDefinitions.h" />
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h" />
-    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralPhysicalModel.h" />
-    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\ConcreteMaterialProperties.h" />
-    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\MaterialProperties.h" />
-    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\SteelMaterialProperties.h" />
-    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDefinitions.h" />
-    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialApi.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Beam.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Brace.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Column.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\CurveMember.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\FoundationMember.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Slab.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\SpreadFooting.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StripFooting.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralAddition.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralElement.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralMember.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalApi.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDefinitions.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDomain.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralSubtraction.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\SurfaceMember.h" />
-    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Wall.h" />
+    <ClInclude Include="PublicAPI\Beam.h" />
+    <ClInclude Include="PublicAPI\Brace.h" />
+    <ClInclude Include="PublicAPI\Column.h" />
+    <ClInclude Include="PublicAPI\ConcreteMaterialProperties.h" />
+    <ClInclude Include="PublicAPI\CurveMember.h" />
+    <ClInclude Include="PublicAPI\FoundationMember.h" />
+    <ClInclude Include="PublicAPI\MaterialProperties.h" />
+    <ClInclude Include="PublicAPI\Pile.h" />
+    <ClInclude Include="PublicAPI\PileCap.h" />
+    <ClInclude Include="PublicAPI\Slab.h" />
+    <ClInclude Include="PublicAPI\SpreadFooting.h" />
+    <ClInclude Include="PublicAPI\SteelMaterialProperties.h" />
+    <ClInclude Include="PublicAPI\StripFooting.h" />
+    <ClInclude Include="PublicAPI\StructuralAddition.h" />
+    <ClInclude Include="PublicAPI\StructuralDomainApi.h" />
+    <ClInclude Include="PublicAPI\StructuralDomainUtilities.h" />
+    <ClInclude Include="PublicAPI\StructuralElement.h" />
+    <ClInclude Include="PublicAPI\StructuralMember.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalApi.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalDefinitions.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalDomain.h" />
+    <ClInclude Include="PublicAPI\StructuralPhysicalModel.h" />
+    <ClInclude Include="PublicAPI\StructuralSubtraction.h" />
+    <ClInclude Include="PublicAPI\SurfaceMember.h" />
+    <ClInclude Include="PublicAPI\Wall.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7317B658-8A6E-4A68-857A-2DFA99B98479}</ProjectGuid>

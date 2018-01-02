@@ -2,12 +2,13 @@
 |
 |     $Source: PublicAPI/StructuralDomainUtilities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include <StructuralDomain/StructuralDomainApi.h>
+#define _StructuralDomainUtilities_included_
+//#include "PublicAPI\StructuralCommonDefinitions.h"
+#include "StructuralDomainApi.h"
 #include <Json/Json.h>
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE

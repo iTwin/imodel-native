@@ -2,7 +2,7 @@
 #
 #     $Source: structural.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -10,8 +10,8 @@
 CompileOptionsMki   = $(SrcRoot)DgnDomains/Structural/StructuralCompileOptions.mki
 %include $(CompileOptionsMki)
 
-StructPhysical          = $(_MakeFilePath)StructuralPhysical/
-StructPhysicalPublicAPI = $(StructPhysical)PublicAPI/
+StructBaseical          = $(_MakeFilePath)StructuralPhysical/
+StructBaseicalPublicAPI = $(StructBaseical)PublicAPI/
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -44,17 +44,6 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 StructBase              = $(_MakeFilePath)
 StructBasePublicAPI     = $(StructBase)PublicAPI/
 
-StructCommon            = $(_MakeFilePath)StructuralCommon/
-StructCommonPublicAPI   = $(_MakeFilePath)PublicAPI/StructuralCommon/
-
-StructPhys              = $(_MakeFilePath)StructuralPhysical/
-StructPhysPublicAPI     = $(_MakeFilePath)PublicAPI/StructuralPhysical/
-
-StructProfiles          = $(_MakeFilePath)StructuralProfiles/
-StructProfilesPublicAPI = $(_MakeFilePath)PublicAPI/StructuralProfiles/
-
-StructMaterial          = $(_MakeFilePath)StructuralMaterial/
-StructMaterialPublicAPI = $(_MakeFilePath)PublicAPI/StructuralMaterial/
 #--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------
@@ -66,174 +55,174 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     ${MultiCompileDepends} \
     $(StructBasePublicAPI)StructuralDomainApi.h \
     $(StructBasePublicAPI)StructuralDomainUtilities.h \
-    $(StructCommonPublicAPI)StructuralCommonApi.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDomain.h \
-    $(StructCommonPublicAPI)StructuralPhysicalModel.h \
-    $(StructPhysPublicAPI)StructuralPhysicalApi.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDomain.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)SurfaceMember.h \
-    $(StructPhysPublicAPI)StructuralAddition.h \
-    $(StructPhysPublicAPI)StructuralSubtraction.h \
-    $(StructPhysPublicAPI)Slab.h \
-    $(StructPhysPublicAPI)Wall.h \
-    $(StructPhysPublicAPI)CurveMember.h \
-    $(StructPhysPublicAPI)Beam.h \
-    $(StructPhysPublicAPI)Brace.h \
-    $(StructPhysPublicAPI)Column.h \
-    $(StructPhysPublicAPI)FoundationMember.h \
-    $(StructPhysPublicAPI)SpreadFooting.h \
-    $(StructPhysPublicAPI)StripFooting.h \
-    $(StructMaterialPublicAPI)MaterialProperties.h \
-    $(StructMaterialPublicAPI)ConcreteMaterialProperties.h \
-    $(StructMaterialPublicAPI)SteelMaterialProperties.h
+    $(StructBasePublicAPI)StructuralPhysicalModel.h \
+    $(StructBasePublicAPI)StructuralPhysicalApi.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructBasePublicAPI)StructuralPhysicalDomain.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)SurfaceMember.h \
+    $(StructBasePublicAPI)StructuralAddition.h \
+    $(StructBasePublicAPI)StructuralSubtraction.h \
+    $(StructBasePublicAPI)Slab.h \
+    $(StructBasePublicAPI)Wall.h \
+    $(StructBasePublicAPI)CurveMember.h \
+    $(StructBasePublicAPI)Beam.h \
+    $(StructBasePublicAPI)Brace.h \
+    $(StructBasePublicAPI)Column.h \
+    $(StructBasePublicAPI)FoundationMember.h \
+    $(StructBasePublicAPI)SpreadFooting.h \
+    $(StructBasePublicAPI)PileCap.h \
+    $(StructBasePublicAPI)Pile.h \
+    $(StructBasePublicAPI)StripFooting.h \
+    $(StructBasePublicAPI)MaterialProperties.h \
+    $(StructBasePublicAPI)ConcreteMaterialProperties.h \
+    $(StructBasePublicAPI)SteelMaterialProperties.h
 
-# Structural Common
-$(o)StructuralCommonDomain$(oext) : $(StructCommon)StructuralCommonDomain.cpp \
+$(o)StructuralPhysicalModel$(oext) : $(StructBase)StructuralPhysicalModel.cpp \
     ${MultiCompileDepends} \
-    $(StructCommonPublicAPI)StructuralCommonDomain.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
-
-$(o)StructuralPhysicalModel$(oext) : $(StructCommon)StructuralPhysicalModel.cpp \
-    ${MultiCompileDepends} \
-    $(StructCommonPublicAPI)StructuralPhysicalModel.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)StructuralPhysicalModel.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
 # Structural Physical
-$(o)StructuralPhysicalDomain$(oext) : $(StructPhys)StructuralPhysicalDomain.cpp \
+$(o)StructuralPhysicalDomain$(oext) : $(StructBase)StructuralPhysicalDomain.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)StructuralPhysicalDomain.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)StructuralPhysicalDomain.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)StructuralElement$(oext) : $(StructPhys)StructuralElement.cpp \
+$(o)StructuralElement$(oext) : $(StructBase)StructuralElement.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)StructuralMember$(oext) : $(StructPhys)StructuralMember.cpp \
+$(o)StructuralMember$(oext) : $(StructBase)StructuralMember.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)StructuralAddition$(oext) : $(StructPhys)StructuralAddition.cpp \
+$(o)StructuralAddition$(oext) : $(StructBase)StructuralAddition.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)StructuralAddition.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)StructuralAddition.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)StructuralSubtraction$(oext) : $(StructPhys)StructuralSubtraction.cpp \
+$(o)StructuralSubtraction$(oext) : $(StructBase)StructuralSubtraction.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)StructuralSubtraction.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)StructuralSubtraction.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)SurfaceMember$(oext) : $(StructPhys)SurfaceMember.cpp \
+$(o)SurfaceMember$(oext) : $(StructBase)SurfaceMember.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)SurfaceMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)SurfaceMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
 
-$(o)Slab$(oext) : $(StructPhys)Slab.cpp \
+$(o)Slab$(oext) : $(StructBase)Slab.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)Slab.h \
-    $(StructPhysPublicAPI)SurfaceMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)Slab.h \
+    $(StructBasePublicAPI)SurfaceMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
 
-$(o)Wall$(oext) : $(StructPhys)Wall.cpp \
+$(o)Wall$(oext) : $(StructBase)Wall.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)Wall.h \
-    $(StructPhysPublicAPI)SurfaceMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)Wall.h \
+    $(StructBasePublicAPI)SurfaceMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
 
-$(o)CurveMember$(oext) : $(StructPhys)CurveMember.cpp \
+$(o)CurveMember$(oext) : $(StructBase)CurveMember.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)CurveMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)CurveMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)Beam$(oext) : $(StructPhys)Beam.cpp \
+$(o)Beam$(oext) : $(StructBase)Beam.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)Beam.h \
-    $(StructPhysPublicAPI)CurveMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)Beam.h \
+    $(StructBasePublicAPI)CurveMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)Column$(oext) : $(StructPhys)Column.cpp \
+$(o)Column$(oext) : $(StructBase)Column.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)Column.h \
-    $(StructPhysPublicAPI)CurveMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)Column.h \
+    $(StructBasePublicAPI)CurveMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)Brace$(oext) : $(StructPhys)Brace.cpp \
+$(o)Brace$(oext) : $(StructBase)Brace.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)Brace.h \
-    $(StructPhysPublicAPI)CurveMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)Brace.h \
+    $(StructBasePublicAPI)CurveMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
 
-$(o)FoundationMember$(oext) : $(StructPhys)FoundationMember.cpp \
+$(o)FoundationMember$(oext) : $(StructBase)FoundationMember.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)FoundationMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)FoundationMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
+    
+$(o)StripFooting$(oext) : $(StructBase)StripFooting.cpp \
+    ${MultiCompileDepends} \
+    $(StructBasePublicAPI)StripFooting.h \
+    $(StructBasePublicAPI)FoundationMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)StripFooting$(oext) : $(StructPhys)StripFooting.cpp \
+$(o)SpreadFooting$(oext) : $(StructBase)SpreadFooting.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)StripFooting.h \
-    $(StructPhysPublicAPI)FoundationMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)SpreadFooting.h \
+    $(StructBasePublicAPI)FoundationMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)SpreadFooting$(oext) : $(StructPhys)SpreadFooting.cpp \
+$(o)PileCap$(oext) : $(StructBase)PileCap.cpp \
     ${MultiCompileDepends} \
-    $(StructPhysPublicAPI)SpreadFooting.h \
-    $(StructPhysPublicAPI)FoundationMember.h \
-    $(StructPhysPublicAPI)StructuralMember.h \
-    $(StructPhysPublicAPI)StructuralElement.h \
-    $(StructPhysPublicAPI)StructuralPhysicalDefinitions.h \
-    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+    $(StructBasePublicAPI)PileCap.h \
+    $(StructBasePublicAPI)FoundationMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)MaterialProperties$(oext) : $(StructMaterial)MaterialProperties.cpp \
+$(o)Pile$(oext) : $(StructBase)Pile.cpp \
     ${MultiCompileDepends} \
-    $(StructMaterialPublicAPI)MaterialProperties.h 
+    $(StructBasePublicAPI)Pile.h \
+    $(StructBasePublicAPI)FoundationMember.h \
+    $(StructBasePublicAPI)StructuralMember.h \
+    $(StructBasePublicAPI)StructuralElement.h \
+    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)ConcreteMaterialProperties$(oext) : $(StructMaterial)ConcreteMaterialProperties.cpp \
-    ${MultiCompileDepends} \
-    $(StructMaterialPublicAPI)ConcreteMaterialProperties.h \
-    $(StructMaterialPublicAPI)MaterialProperties.h 
 
-$(o)SteelMaterialProperties$(oext) : $(StructMaterial)SteelMaterialProperties.cpp \
+$(o)MaterialProperties$(oext) : $(StructBase)MaterialProperties.cpp \
     ${MultiCompileDepends} \
-    $(StructMaterialPublicAPI)SteelMaterialProperties.h \
-    $(StructMaterialPublicAPI)MaterialProperties.h
+    $(StructBasePublicAPI)MaterialProperties.h 
+
+$(o)ConcreteMaterialProperties$(oext) : $(StructBase)ConcreteMaterialProperties.cpp \
+    ${MultiCompileDepends} \
+    $(StructBasePublicAPI)ConcreteMaterialProperties.h \
+    $(StructBasePublicAPI)MaterialProperties.h 
+
+$(o)SteelMaterialProperties$(oext) : $(StructBase)SteelMaterialProperties.cpp \
+    ${MultiCompileDepends} \
+    $(StructBasePublicAPI)SteelMaterialProperties.h \
+    $(StructBasePublicAPI)MaterialProperties.h
 
 %include MultiCppCompileGo.mki
 

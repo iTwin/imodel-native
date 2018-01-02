@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/StructuralDomainTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
@@ -34,9 +34,6 @@ TEST_F(StructuralDomainTestFixture, EnsureDomainsAreRegistered)
 
     // //This should create a DGN db with building domain.
     Structural::StructuralDomainUtilities::RegisterDomainHandlers();
-
-    DgnDomainCP structuralCommon = db->Domains().FindDomain(Structural::StructuralCommonDomain::GetDomain().GetDomainName());
-    ASSERT_TRUE(NULL != structuralCommon);
 
     DgnDomainCP structuralPhysical = db->Domains().FindDomain(Structural::StructuralPhysicalDomain::GetDomain().GetDomainName());
     ASSERT_TRUE(NULL != structuralPhysical);
@@ -674,4 +671,54 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberOwnsStructuralAdditionTest)
 
     status = padd1->SetParentId(pstructMember1->GetElementId(), pstructMember1->GetElementClassId());
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+    }
+
+#define PILECAP_CODE_VALUE       "PILECAP-001"
+TEST_F(StructuralDomainTestFixture, PileCapTest)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    Dgn::DgnDbStatus status;
+
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, PILECAP_CODE_VALUE);
+    PileCapPtr pileCap = PileCap::Create(physicalModel);
+    status = pileCap->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    pileCap->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, PILECAP_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+#define PILE_CODE_VALUE       "PILE-001"
+TEST_F(StructuralDomainTestFixture, PileTest)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    Dgn::DgnDbStatus status;
+
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, PILE_CODE_VALUE);
+    PilePtr pile = Pile::Create(physicalModel);
+    status = pile->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    pile->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, PILE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
     }

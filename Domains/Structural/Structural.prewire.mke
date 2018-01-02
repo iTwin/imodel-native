@@ -2,16 +2,12 @@
 #
 #     $Source: Structural.prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
 always:
     @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\=$(_MakeFilePath)PublicAPI\*.h"
-    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\StructuralCommon\=$(_MakeFilePath)PublicAPI\StructuralCommon\*.h"
-    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\StructuralMaterial\=$(_MakeFilePath)PublicAPI\StructuralMaterial\*.h"
-    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\StructuralPhysical\=$(_MakeFilePath)PublicAPI\StructuralPhysical\*.h"
-    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralCommon.ecschema.xml=$(_MakeFilePath)StructuralCommon\StructuralCommon.ecschema.xml"
-    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralPhysical.ecschema.xml=$(_MakeFilePath)StructuralPhysical\StructuralPhysical.ecschema.xml"
+    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralPhysical.ecschema.xml=$(_MakeFilePath)StructuralPhysical.ecschema.xml"
 
