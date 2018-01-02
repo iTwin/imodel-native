@@ -2,7 +2,7 @@
 |
 |     $Source: AddonUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AddonUtils.h"
@@ -62,6 +62,8 @@ private:
         sqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
         return BeSQLite::L10N::SqlangFiles(sqlang);
         }
+
+    RepositoryAdmin& _SupplyRepositoryAdmin() override {return AddonUtils::GetRepositoryAdmin();}
 
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
         {
@@ -124,6 +126,17 @@ void AddonUtils::InitLogging()
     NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, configPathname.GetName());
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
 #endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  05/17
+//---------------------------------------------------------------------------------------
+NativeLogging::ILogger& AddonUtils::GetLogger()
+    {
+    static NativeLogging::ILogger* s_logger;
+    if (nullptr == s_logger)
+        s_logger = NativeLogging::LoggingManager::GetLogger("imodeljs-addon"); // This is thread-safe. The assignment is atomic, and GetLogger will always return the same value for a given key anyway.
+    return *s_logger;
     }
 
 //---------------------------------------------------------------------------------------
@@ -601,8 +614,8 @@ JsECDbPtr AddonUtils::CreateECDb(DbResult &dbres, BeFileNameCR pathname)
 
     JsECDbPtr ecdb = new JsECDb();
 
-    DbResult result = ecdb->CreateNewDb(pathname);
-    if (result != BE_SQLITE_OK)
+    dbres = ecdb->CreateNewDb(pathname);
+    if (dbres != BE_SQLITE_OK)
         return nullptr;
 
     ecdb->AddIssueListener(s_listener);

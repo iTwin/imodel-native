@@ -1,8 +1,9 @@
 /*---------------------------------------------------------------------------------------------
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
-import { IModelStatus, StatusCodeWithMessage } from "@bentley/bentleyjs-core/lib/BentleyError";
-import { DbResult } from "@bentley/bentleyjs-core/lib/BeSQLite";
+import { IModelStatus, StatusCodeWithMessage, RepositoryStatus } from "@bentley/bentleyjs-core/lib/BentleyError";
+import { BentleyStatus } from "@bentley/bentleyjs-core/lib/Bentley";
+import { DbResult, DbOpcode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
@@ -34,6 +35,44 @@ interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
 
     /** Result of the operation. This property is defined if the operation completed successfully */
     result?: ResultType;
+}
+
+/**
+ * A request to send on to iModelHub.
+ */
+declare class NodeAddonBriefcaseManagerResourcesRequest {
+
+    /**
+     * Forget the requests.
+     */
+    reset(): void;
+
+    /** Contains no requests? */
+    isEmpty(): boolean;
+
+    /** Get the request in JSON format */
+    toJSON(): string;
+}
+
+/** How to handle a conflict */
+export const enum NodeAddonBriefcaseManagerConflictResolution {
+    /** Reject the incoming change */
+    Reject = 0,
+    /** Accept the incoming change */
+    Take = 1,
+}
+
+/** The options for how conflicts are to be handled during change-merging in an OptimisticConcurrencyControlPolicy.
+ * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
+ * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
+ */
+export interface NodeAddonBriefcaseManagerConflictResolutionPolicy {
+    /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
+    updateVsUpdate: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+    /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
+    updateVsDelete: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+    /** What to do with the incoming change in the case where an entity was deleted locally and would be updated by the incoming change. */
+    deleteVsUpdate: /*NodeAddonBriefcaseManagerConflictResolution*/number;
 }
 
 /**
@@ -154,6 +193,44 @@ declare class NodeAddonDgnDb {
   deleteElementSync(elemIdJson: string): IModelStatus;
 
   /**
+   * Get an linkTableRelationship's properties
+   * @param opts Identifies the LinkTableRelationship
+   * @param  callback Invoked when the operation completes. The 'result' argument is the LinkTableRelationship's properties in stringified JSON format.
+    WIP May not be needed
+  getLinkTableRelationship(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
+   */
+
+  /**
+   * Insert a LinkTableRelationship.
+   * @param props The linkTableRelationship's properties, in stringified JSON format.
+   * @return an error or the ID of the new LinkTableRelationship instance (as a hex string)
+   */
+  insertLinkTableRelationshipSync(props: string): ErrorStatusOrResult<DbResult, string>;
+
+  /**
+   * Update a LinkTableRelationship.
+   * @param props The LinkTableRelationship's properties, in stringified JSON format.
+   * @return non-zero error status if the operation failed.
+   */
+  updateLinkTableRelationshipSync(props: string): DbResult;
+
+  /**
+   * Delete a LinkTableRelationship.
+   * @param props The LinkTableRelationship's properties, in stringified JSON format. Only classFullName and id are required.
+   * @return non-zero error status if the operation failed.
+   */
+  deleteLinkTableRelationshipSync(props: string): DbResult;
+
+  /**
+   * Insert a new CodeSpec
+   * @param name name of the CodeSpec
+   * @param specType must be one of CodeScopeSpec::Type
+   * @param scopeReq must be one of CodeScopeSpec::ScopeRequirement
+   * @return an error or the ID of the new CodeSpec (as a hex string)
+   */
+  insertCodeSpecSync(name: string, specType: number, scopeReq: number): ErrorStatusOrResult<IModelStatus, string>;
+
+  /**
    * Insert a model.
    * @param modelProps The model's properties, in stringified JSON format.
    * @return non-zero error status if the operation failed.
@@ -205,12 +282,107 @@ declare class NodeAddonDgnDb {
    */
   executeQuery(ecsql: string, bindings: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<DbResult>, string>): void;
 
+    /**
+    * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param elemId The ID of an existing element or the {modelid, code} properties that specify a new element.
+    * @param opcode The operation that will be performed on the element.
+    */  
+    buildBriefcaseManagerResourcesRequestForElement(req: NodeAddonBriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
+
+    /**
+    * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param modelId The ID of a model
+    * @param opcode The operation that will be performed on the model.
+    */
+    buildBriefcaseManagerResourcesRequestForModel(req: NodeAddonBriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
+
+    /**
+    * Add the resource request that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param codeSpecId The ID of an existing CodeSpec or {} for a new CodeSpec
+    * @param opcode The operation that will be performed on the CodeSpec.
+    */
+    buildBriefcaseManagerResourcesRequestForCodeSpec(req: NodeAddonBriefcaseManagerResourcesRequest, codeSpecId: string, opcode: DbOpcode): RepositoryStatus;
+
+    /**
+    * Add the resource request that would be needed in order to carry out the specified operation.
+    * @param req The request object, which accumulates requests.
+    * @param relKey Identifies a LinkTableRelationship: {classFullName, id}
+    * @param opcode The operation that will be performed on the LinkTableRelationships.
+    */
+    buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: NodeAddonBriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
+
+    /** Start bulk update mode. Valid only with the pessimistic concurrency control policy */
+    briefcaseManagerStartBulkOperation(): RepositoryStatus;
+
+    /** End bulk update mode. This will wait for locks and codes. Valid only with the pessimistic concurrency control policy */
+    briefcaseManagerEndBulkOperation(): RepositoryStatus;
+
+    /**
+     *  The the pessimistic concurrency control policy.
+     */
+    setBriefcaseManagerPessimisticConcurrencyControlPolicy(): RepositoryStatus;
+
+    /** Set the optimistic concurrency control policy.
+     * @param policy The policy to used
+     * @return non-zero if the policy could not be set
+     */
+    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: NodeAddonBriefcaseManagerConflictResolutionPolicy): RepositoryStatus;
+    
   /**
    * Execute a test known to exist using the id recognized by the addon's test execution handler
    * @param id The id of the test you wish to execute
    * @param params A JSON string that should all of the data/parameters the test needs to function correctly
    */
   executeTestById(id: number, params: string): any;
+
+}
+
+/* The NodeAddonECDb class that is projected by the iModelJs node addon. */
+declare class NodeAddonECDb {
+    constructor();
+     /**
+     * Create a new ECDb.
+     * @param dbname The full path to the ECDb in the local file system
+     * @return non-zero error status if operation failed.
+     */
+    createDb(dbname : string): DbResult;
+
+     /** Open a existing ECDb.
+     * @param dbname The full path to the ECDb in the local file system
+     * @param mode The open mode
+     * @return non-zero error status if operation failed.
+     */
+    openDb(dbname : string, mode:OpenMode): DbResult;
+
+     /** Check to see if connection to ECDb is open or not.
+     * @return true if connection is open otherwise false.
+     */
+    isOpen(): boolean;
+    
+     /** Check to see if connection to ECDb is open or not.
+     * @return true if connection is open otherwise false.
+     */
+    closeDb(): void;
+
+     /** Save changes to ecdb
+     * @param changesetName The name of the operation that generated these changes. If transaction tracking is enabled.
+     * @return non-zero error status if operation failed.
+     */
+    saveChanges(changesetName?:string): DbResult;
+
+     /** Abandon changes
+     * @return non-zero error status if operation failed.
+     */
+    abandonChanges(): DbResult;
+
+     /** Import ECSchema into ECDb
+     * @param schemaPathName Path to ECSchema file on disk. All reference schema should also be present on same path. 
+     * @return non-zero error status if operation failed.
+     */
+    importSchema(schemaPathName:string): DbResult;    
 }
 
 /* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */
@@ -223,7 +395,7 @@ declare class NodeAddonECSqlStatement {
      * @param ecSql The statement to prepare
      * @return Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
-    prepare(db: NodeAddonDgnDb, ecSql: string): StatusCodeWithMessage<DbResult>;
+    prepare(db: NodeAddonDgnDb | NodeAddonECDb, ecSql: string): StatusCodeWithMessage<DbResult>;
 
     /** Reset the statement to just before the first row.
      * @return non-zero error status in case of failure.
@@ -258,21 +430,14 @@ declare class NodeAddonECSqlStatement {
 
 }
 
-declare class NodeAddonECDb {
+/* The NodeAddonECPresentationManager class that is projected by the iModelJs node addon. */
+declare class NodeAddonECPresentationManager {
     constructor();
-    createDb(): void;
-    openDb(): void;
-    IsDbOpen(): void;
-    closeDb(): void;
-    saveChanges(): void;
-    abandonChanges(): void;
-    importSchema(): void;
-    insertInstance(): void;
-    readInstance(): void;
-    updateInstance(): void;
-    deleteInstance(): void;
-    containsInstance(): void;
-    executeQuery(): void;
-    executeStatement(): void;
-
+    /**
+     * Handles an ECPresentation manager request
+     * @param db The db to run the request on
+     * @param options Serialized JSON object that contains parameters for the request
+     * @return Serialized JSON response
+     */
+    handleRequest(db: NodeAddonDgnDb, options: string): string;
 }

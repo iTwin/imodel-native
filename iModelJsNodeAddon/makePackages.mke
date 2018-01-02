@@ -36,13 +36,18 @@ baseDir = $(_MakeFilePath)
     %return
 %endif
 
-%ifdef IMODEL_JS_NODE_ADDON_PUBLISH
-    PUBLISH=publish
+#----------------------------------------------------------------------------------------
+# Allow opt-in local testing via IMODEL_JS_NODE_ADDON_PUBLISH
+# Never want to do anything in firebug
+# PRG wants to do everything
+#----------------------------------------------------------------------------------------
+%if defined (IMODEL_JS_NODE_ADDON_PUBLISH) || defined (SUBNET_PRG)
+    ACTION=publish
 %else
-    PUBLISH=print
+    ACTION=print
 %endif
 
 always:
     |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(PUBLISH) $(IMODEL_JS_NODE_ADDON_TAG)
+    python $(_MakeFilePath)makePackages.py $(ProductDir)iModelJsNodeAddon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)

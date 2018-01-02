@@ -2,7 +2,7 @@
 |
 |     $Source: AddonUtils.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -71,6 +71,14 @@ struct AddonUtils
         static BentleyStatus BindValues(BeSQLite::EC::ECSqlStatement &stmt, JsonValueCR bindings);
     };
 
+    /** How to handle a conflict */
+    enum class BriefcaseManagerConflictResolution {
+    /** Reject the incoming change */
+    Reject = 0,
+    /** Accept the incoming change */
+    Take = 1,
+    };
+    
     typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
@@ -82,6 +90,10 @@ struct AddonUtils
     static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value &props);
     static DgnDbStatus UpdateElement(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static DbResult InsertLinkTableRelationship(JsonValueR results, DgnDbR db, Json::Value& props);
+    static DbResult UpdateLinkTableRelationship(DgnDbR db, Json::Value& props);
+    static DbResult DeleteLinkTableRelationship(DgnDbR db, Json::Value& props);
+    static DgnDbStatus InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq);
     static DgnDbStatus InsertModel(JsonValueR results, DgnDbR db, Json::Value &props);
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);
@@ -101,6 +113,22 @@ struct AddonUtils
     static Utf8String GetLastEcdbIssue();
     static BeSQLite::DbResult GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath);
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
+    static DgnPlatformLib::Host::RepositoryAdmin& GetRepositoryAdmin();
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElementById(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemIdJson, BeSQLite::DbOpcode opcode);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestForElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestForCodeSpec(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestForModel(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op);
+    static RepositoryStatus BuildBriefcaseManagerResourcesRequestToLockModel(IBriefcaseManager::Request& req, DgnDbR dgndb, DgnModelId mid, LockLevel level);
+
+    static RepositoryStatus SetBriefcaseManagerOptimisticConcurrencyControlPolicy(DgnDbR dgndb, BriefcaseManagerConflictResolution uu, BriefcaseManagerConflictResolution ud, BriefcaseManagerConflictResolution du);
+    static RepositoryStatus SetBriefcaseManagerPessimisticConcurrencyControlPolicy(DgnDbR dgndb);
+    static RepositoryStatus BriefcaseManagerStartBulkOperation(DgnDbR dgndb);
+    static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
+
+    static NativeLogging::ILogger& GetLogger();
+    
 };
 
 END_BENTLEY_DGN_NAMESPACE

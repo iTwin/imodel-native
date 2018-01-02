@@ -18,15 +18,15 @@ import subprocess
 
 # publish a package
 def publishPackage(packagedir, doPublish, tag):
+
+    if not doPublish:
+        print packagedir;
+        return;
+
     pubcmd = 'npm publish ' + packagedir;
 
     if tag != None:
         pubcmd = pubcmd + ' --tag ' + tag;
-
-    print pubcmd;
-
-    if not doPublish:
-        return;
 
     if 0 != os.system(pubcmd):
         exit(1);
@@ -182,6 +182,36 @@ def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, packageVersio
     
     return outputpackagedir;
 
+# Generate imodeljs-electronaddon
+# @param outdirParent The path to the output package's parent directory
+# @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
+# @param packageVersion The semantic version number for the generated package
+# @return the full path to the generated package directory
+def generate_imodeljs_electronaddon(outputpackagedir, parentSourceDir, packageVersion):
+
+    outputpackagedir = os.path.join(outdirParent, 'imodeljs-electronaddon')
+
+    addonSourceDir = os.path.join(parentSourceDir, 'addon_package');
+
+    os.makedirs(outputpackagedir);
+
+    declFileName = 'NodeAddonLoader.d.ts'
+    packageTemplateFileName = 'electron-package.json.template'
+
+    # Copy some files into place without modifying them.
+    filesToCopy = [declFileName, 'NodeAddonLoader.js', 'README.md']
+
+    for fileToCopy in filesToCopy:
+        shutil.copyfile(os.path.join(addonSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
+
+    # Generate the package.json file
+    dstpackagefile = os.path.join(outputpackagedir, 'package.json')
+    shutil.copyfile(os.path.join(addonSourceDir, packageTemplateFileName), dstpackagefile);
+
+    setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, DECL_FILE_NAME = declFileName)
+    
+    return outputpackagedir;
+
 #
 #   main
 #
@@ -197,9 +227,9 @@ if __name__ == '__main__':
     packageVersionFileName = sys.argv[5]
     sourceDir = sys.argv[6]
     doPublish = (sys.argv[7].lower() == 'publish');
-    tag = None
-    if len(sys.argv) > 8:
-        tag = sys.argv[8];
+
+    # TBD: Pass a tag in or read it from a special file? How to prevent stale tags values?
+    tag = None;
 
     if outdirParent.endswith ('/') or outdirParent.endswith ('\\'):
         outdirParent = outdirParent[0:len(outdirParent)-1]
@@ -233,8 +263,12 @@ if __name__ == '__main__':
         
         publishPackage(generate_addon_for_platform(outdirParent, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);
 
-    # Generate the other packages that describe or re-deliver the platform-specific addon packages
-    publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
-    publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    # Generate the other packages that describe or re-deliver the platform-specific addon packages.
+    # Note that we do this only in a Windows build (and for the win32 platform). That is the "master" build.
+    # Builds for all other platforms only publish their platform-specific addon packages.
+    if nodeOS == 'win32':
+        publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
+        publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+        publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
 
     exit(0)
