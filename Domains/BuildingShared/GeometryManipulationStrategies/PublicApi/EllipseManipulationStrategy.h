@@ -28,8 +28,7 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         double m_sweep;
 
         bool DidSweepDirectionChange(double newSweep) const;
-        void UpdateSweep(DPoint3dCR endPoint);
-        double CalculateSweep(DPoint3dCR endPoint) const;
+        double CalculateSweep(DPoint3dCR start, DPoint3dCR center, DPoint3dCR end) const;
         DVec3d CalculateVec90(DPoint3dCR start, DPoint3dCR center, DPoint3dCR vec90Point) const;
 
         DPoint3d GetStart() const;
@@ -39,6 +38,9 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         DVec3d GetEndVec() const;
 
     protected:
+        void UpdateSweep(DPoint3dCR start, DPoint3dCR center, DPoint3dCR end);
+        double GetSweep() const { return m_sweep; }
+
         EllipseManipulationStrategy() : T_Super(), m_sweep(0), m_orientation(DVec3d::From(0, 0, 0)) {}
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
@@ -46,6 +48,8 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _OnKeyPointsChanged() override;
 
     public:
         static EllipseManipulationStrategyPtr Create() { return new EllipseManipulationStrategy(); }

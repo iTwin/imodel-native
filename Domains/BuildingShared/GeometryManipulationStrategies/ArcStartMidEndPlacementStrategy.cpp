@@ -17,7 +17,7 @@ void ArcStartMidEndPlacementStrategy::_AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    ResetDynamicKeyPoint();
+    BeAssert(!_IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
 
     if (!strategy.IsStartSet())
@@ -44,7 +44,7 @@ void ArcStartMidEndPlacementStrategy::_AddKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void ArcStartMidEndPlacementStrategy::_PopKeyPoint()
     {
-    ResetDynamicKeyPoint();
+    BeAssert(!_IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
 
     if (strategy.IsEndSet())
@@ -74,7 +74,7 @@ void ArcStartMidEndPlacementStrategy::_AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    ResetDynamicKeyPoint();
+    BeAssert(!_IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
 
     if (strategy.IsEndSet())

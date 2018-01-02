@@ -41,7 +41,33 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
         return ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd()));
 
     if (IsCenterSet() && IsStartSet() && IsEndSet())
-        return ICurvePrimitive::CreateArc(DEllipse3d::FromArcCenterStartEnd(GetCenter(), GetStart(), GetEnd()));
+        {
+        DEllipse3d tmpArc = DEllipse3d::FromArcCenterStartEnd(GetCenter(), GetStart(), GetEnd());
+        if (DoubleOps::AlmostEqual(GetSweep(), tmpArc.sweep))
+            return ICurvePrimitive::CreateArc(tmpArc);
+        else
+            {
+            tmpArc.ComplementSweep();
+            return ICurvePrimitive::CreateArc(tmpArc);
+            }
+        }
 
     return nullptr;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcManipulationStrategy::_OnKeyPointsChanged()
+    {
+    if (!IsStartSet() || !IsEndSet())
+        return;
+
+    if (IsCenterSet())
+        UpdateSweep(GetStart(), GetCenter(), GetEnd());
+    else if(IsMidSet())
+        {
+        DEllipse3d tmpArc = DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd());
+        UpdateSweep(GetStart(), tmpArc.center, GetEnd());
+        }
     }

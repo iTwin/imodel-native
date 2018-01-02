@@ -193,9 +193,10 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
     DEllipse3d arc;
     ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
 
-    ASSERT_TRUE(arc.vector0.AlmostEqual(DVec3d::From(2, 0, 0)));
-    ASSERT_TRUE(arc.vector90.AlmostEqual(DVec3d::From(0, -2, 0)));
-    ASSERT_DOUBLE_EQ(arc.sweep, Angle::DegreesToRadians(225));
+    ASSERT_TRUE(arc.IsCircular());
+    ASSERT_TRUE(arc.FractionToPoint(0).AlmostEqual({2,0,0}));
+    ASSERT_TRUE(arc.FractionToPoint(1).AlmostEqual({-sqrt(2), sqrt(2), 0}));
+    ASSERT_DOUBLE_EQ(fabs(arc.sweep), Angle::DegreesToRadians(225));
     }
 
 #pragma endregion

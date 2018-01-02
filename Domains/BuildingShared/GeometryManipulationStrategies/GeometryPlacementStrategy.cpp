@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/GeometryPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -41,6 +41,7 @@ void GeometryPlacementStrategy::AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
+    m_manipulationStrategy->_ResetDynamicKeyPoint();
     _AddKeyPoint(newKeyPoint);
     }
 
@@ -65,6 +66,7 @@ void GeometryPlacementStrategy::_PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::PopKeyPoint()
     {
+    m_manipulationStrategy->_ResetDynamicKeyPoint();
     _PopKeyPoint();
     }
 
@@ -106,6 +108,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
+    m_manipulationStrategy->_ResetDynamicKeyPoint();
     _AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
@@ -117,6 +120,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
+    m_manipulationStrategy->_ResetDynamicKeyPoint();
     _AddDynamicKeyPoints(newDynamicKeyPoints);
     }
 

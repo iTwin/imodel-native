@@ -18,6 +18,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
     {
     DEFINE_T_SUPER(GeometryManipulationStrategyBase)
 
+    friend struct GeometryPlacementStrategy;
+
     private:
         bvector<DPoint3d> m_keyPoints;
         bvector<DPoint3d> m_keyPointsWithDynamicKeyPoint;
@@ -39,6 +41,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ResetDynamicKeyPoint() override;
+
+        virtual void _OnKeyPointsChanged() {};
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR);
 

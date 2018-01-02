@@ -36,6 +36,8 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
+        virtual void _OnKeyPointsChanged() override;
+
     public:
         static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }
 

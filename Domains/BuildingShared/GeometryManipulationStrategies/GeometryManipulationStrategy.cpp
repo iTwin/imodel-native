@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/GeometryManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -25,7 +25,6 @@ void GeometryManipulationStrategy::_AppendKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    ResetDynamicKeyPoint();
     m_keyPoints.push_back(newKeyPoint);
     }
 
@@ -37,7 +36,9 @@ void GeometryManipulationStrategy::AppendKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
+    _ResetDynamicKeyPoint();
     _AppendKeyPoint(newKeyPoint);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -51,14 +52,16 @@ void GeometryManipulationStrategy::InsertKeyPoint
     {
     if (m_keyPoints.size() >= index)
         {
-        ResetDynamicKeyPoint();
+        _ResetDynamicKeyPoint();
         if (m_keyPoints.size() > index)
             m_keyPoints.insert(&m_keyPoints[index], newKeyPoint);
         else
-            AppendKeyPoint(newKeyPoint);
+            _AppendKeyPoint(newKeyPoint);
         }
     else
         BeAssert(false);
+
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -76,8 +79,9 @@ void GeometryManipulationStrategy::ReplaceKeyPoint
         return;
         }
 
-    ResetDynamicKeyPoint();
+    _ResetDynamicKeyPoint();
     m_keyPoints[index] = newKeyPoint;
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -85,8 +89,9 @@ void GeometryManipulationStrategy::ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryManipulationStrategy::PopKeyPoint()
     {
-    ResetDynamicKeyPoint();
+    _ResetDynamicKeyPoint();
     m_keyPoints.pop_back();
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -103,8 +108,9 @@ void GeometryManipulationStrategy::RemoveKeyPoint
         return;
         }
 
-    ResetDynamicKeyPoint();
+    _ResetDynamicKeyPoint();
     m_keyPoints.erase(&m_keyPoints[index]);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -319,7 +325,9 @@ void GeometryManipulationStrategy::AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
+    _ResetDynamicKeyPoint();
     _AppendDynamicKeyPoint(newDynamicKeyPoint);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -330,7 +338,9 @@ void GeometryManipulationStrategy::AppendDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
+    _ResetDynamicKeyPoint();
     _AppendDynamicKeyPoints(newDynamicKeyPoints);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -342,7 +352,9 @@ void GeometryManipulationStrategy::InsertDynamicKeyPoint
     size_t index
 )
     {
+    _ResetDynamicKeyPoint();
     _InsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -354,7 +366,9 @@ void GeometryManipulationStrategy::InsertDynamicKeyPoints
     size_t index
 )
     {
+    _ResetDynamicKeyPoint();
     _InsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -366,7 +380,9 @@ void GeometryManipulationStrategy::UpdateDynamicKeyPoint
     size_t index
 )
     {
+    _ResetDynamicKeyPoint();
     _UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -378,7 +394,9 @@ void GeometryManipulationStrategy::UpdateDynamicKeyPoints
     size_t index
 )
     {
+    _ResetDynamicKeyPoint();
     _UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -390,7 +408,9 @@ void GeometryManipulationStrategy::UpsertDynamicKeyPoint
     size_t index
 )
     {
+    _ResetDynamicKeyPoint();
     _UpsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    _OnKeyPointsChanged();
     }
 
 //--------------------------------------------------------------------------------------
@@ -402,5 +422,7 @@ void GeometryManipulationStrategy::UpsertDynamicKeyPoints
     size_t index
 )
     {
+    _ResetDynamicKeyPoint();
     _UpsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    _OnKeyPointsChanged();
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/EllipseManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -58,9 +58,6 @@ void EllipseManipulationStrategy::_AppendKeyPoint
         }
 
     T_Super::_AppendKeyPoint(newKeyPoint);
-
-    if (GetAcceptedKeyPoints().size() == 4)
-        UpdateSweep(GetAcceptedKeyPoints().back());
     }
 
 //--------------------------------------------------------------------------------------
@@ -146,15 +143,13 @@ DVec3d EllipseManipulationStrategy::GetEndVec() const
 //---------------+---------------+---------------+---------------+---------------+------
 double EllipseManipulationStrategy::CalculateSweep
 (
-    DPoint3dCR endPoint
+    DPoint3dCR start,
+    DPoint3dCR center,
+    DPoint3dCR end
 ) const
     {
-    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
-    BeAssert(keyPoints.size() >= 3);
-    
-    DVec3d vec0 = GetVec0();
-    DPoint3d center = GetCenter();
-    DVec3d endVec = DVec3d::FromStartEnd(center, endPoint);
+    DVec3d vec0 = DVec3d::FromStartEnd(center, start);
+    DVec3d endVec = DVec3d::FromStartEnd(center, end);
     BeAssert(!DoubleOps::AlmostEqual(m_orientation.Magnitude(), 0));
     return vec0.SignedAngleTo(endVec, m_orientation);
     }
@@ -164,15 +159,20 @@ double EllipseManipulationStrategy::CalculateSweep
 //---------------+---------------+---------------+---------------+---------------+------
 void EllipseManipulationStrategy::UpdateSweep
 (
-    DPoint3dCR endPoint
+    DPoint3dCR start,
+    DPoint3dCR center,
+    DPoint3dCR end
 )
     {
     if (m_orientation.IsZero())
         {
-        m_orientation = DVec3d::FromCrossProduct(GetVec0(), GetVec90());
+        m_orientation = DVec3d::FromCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, end));
         }
 
-    double sweep = CalculateSweep(endPoint);
+    if (DoubleOps::AlmostEqual(m_orientation.Magnitude(), 0))
+        return;
+
+    double sweep = CalculateSweep(start, center, end);
     if (DoubleOps::AlmostEqual(m_sweep, 0) || DidSweepDirectionChange(sweep))
         {
         m_sweep = sweep;
@@ -240,9 +240,6 @@ void EllipseManipulationStrategy::_AppendDynamicKeyPoint
         }
 
     T_Super::_AppendDynamicKeyPoint(newDynamicKeyPoint);
-
-    if (GetKeyPoints().size() == 4)
-        UpdateSweep(GetKeyPoints().back());
     }
 
 //--------------------------------------------------------------------------------------
@@ -294,7 +291,15 @@ void EllipseManipulationStrategy::_AppendDynamicKeyPoints
         }
 
     T_Super::_AppendDynamicKeyPoints(newDynamicKeyPoints);
+    }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void EllipseManipulationStrategy::_OnKeyPointsChanged()
+    {
     if (GetKeyPoints().size() == 4)
-        UpdateSweep(GetKeyPoints().back());
+        {
+        UpdateSweep(GetStart(), GetCenter(), GetKeyPoints()[s_endIndex]);
+        }
     }
