@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/ChildNodeRuleTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -289,4 +289,29 @@ TEST_F(ChildNodeRuleTests, ComputesCorrectHashes)
     EXPECT_STREQ(rule1.GetHash().c_str(), rule2.GetHash().c_str());
     // Hashes differ for rules with different nested objects
     EXPECT_STRNE(rule1.GetHash().c_str(), rule3.GetHash().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras               01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChildNodeRuleTests, CopyConstructorWorksCorrectly)
+    {
+    ChildNodeRule rule1("condition", 1000, true, RuleTargetTree::TargetTree_Both);
+    rule1.AddSubCondition(*new SubCondition("subCondition"));
+    rule1.AddSpecification(*new AllInstanceNodesSpecification());
+    rule1.AddCustomizationRule(*new RenameNodeRule());
+
+    ChildNodeRule rule2(rule1);
+
+    // Validate subconditions
+    EXPECT_EQ(rule1.GetSubConditions().size(), rule2.GetSubConditions().size());
+    EXPECT_NE(rule1.GetSubConditions()[0], rule2.GetSubConditions()[0]);
+
+    // Validate specifications
+    EXPECT_EQ(rule1.GetSpecifications().size(), rule2.GetSpecifications().size());
+    EXPECT_NE(rule1.GetSpecifications()[0], rule2.GetSpecifications()[0]);
+
+    // Validate CustomizationRules
+    EXPECT_EQ(rule1.GetCustomizationRules().size(), rule2.GetCustomizationRules().size());
+    EXPECT_NE(rule1.GetCustomizationRules()[0], rule2.GetCustomizationRules()[0]);
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/ChildNodeRule.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -170,6 +170,7 @@ ChildNodeRule::ChildNodeRule(ChildNodeRuleCR other)
     {
     CommonTools::CopyRules(m_subConditions, other.m_subConditions);
     CommonTools::CloneRules(m_specifications, other.m_specifications);
+    CommonTools::CloneRules(m_customizationRules, other.m_customizationRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,6 +180,7 @@ ChildNodeRule::~ChildNodeRule ()
     {
     CommonTools::FreePresentationRules (m_subConditions);
     CommonTools::FreePresentationRules (m_specifications);
+    CommonTools::FreePresentationRules (m_customizationRules);
     }
 
 /*---------------------------------------------------------------------------------**//**

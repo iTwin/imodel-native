@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/LabelOverride.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -39,6 +39,9 @@ struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public CustomizationRule
 
         //! Computes rule hash.
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
+        //! Clones rule.
+        ECPRESENTATION_EXPORT virtual CustomizationRule* _Clone() const override {return new LabelOverride(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/CustomizationRules.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,6 +36,9 @@ struct EXPORT_VTABLE_ATTRIBUTE CustomizationRule : public PresentationRule {
 protected:
     virtual void _Accept(CustomizationRuleVisitor& visitor) const {}
 
+    //! Clones this specification.
+    virtual CustomizationRule* _Clone() const = 0;
+
 public:
     //! Constructor. It is used to initialize the rule with default settings.
     CustomizationRule() {}
@@ -43,6 +46,9 @@ public:
     CustomizationRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled) : PresentationRule(condition, priority, onlyIfNotHandled) {}
 
     void Accept(CustomizationRuleVisitor& visitor) const { _Accept(visitor); }
+
+    //! Clones this specification.
+    CustomizationRule* Clone() const {return _Clone();}
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

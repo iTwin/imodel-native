@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ImageIdOverride.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,6 +38,9 @@ struct ImageIdOverride : public CustomizationRule
 
         //! Computes rule hash.
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
+        //! Clones rule.
+        ECPRESENTATION_EXPORT virtual CustomizationRule* _Clone() const override {return new ImageIdOverride(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.
