@@ -2577,8 +2577,8 @@ TEST(CurveVector, VariableNumberOfArgs)
 		Angle::DegreesToRadians(240));
 	auto cpArc3 = ICurvePrimitive::CreateArc(arc3);
 
-	CurveVectorPtr curveVector0 = CurveVector::CreateAndPopulate(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, cpArc1, cpArc2, cpArc3);
-	CurveVectorPtr curveVector2 = CurveVector::CreateAndPopulate(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, cpArc1);
+	CurveVectorPtr curveVector0 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, {cpArc1, cpArc2, cpArc3});
+	CurveVectorPtr curveVector2 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, cpArc1);
 
 	// re-extract them
 	bvector<ICurvePrimitivePtr> primitives;
