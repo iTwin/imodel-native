@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/EllipseManipulationStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,8 +27,6 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         DVec3d m_orientation;
         double m_sweep;
 
-        EllipseManipulationStrategy() : T_Super(), m_sweep(0), m_orientation(DVec3d::From(0,0,0)) {}
-
         bool DidSweepDirectionChange(double newSweep) const;
         void UpdateSweep(DPoint3dCR endPoint);
         double CalculateSweep(DPoint3dCR endPoint) const;
@@ -41,6 +39,8 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         DVec3d GetEndVec() const;
 
     protected:
+        EllipseManipulationStrategy() : T_Super(), m_sweep(0), m_orientation(DVec3d::From(0, 0, 0)) {}
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;

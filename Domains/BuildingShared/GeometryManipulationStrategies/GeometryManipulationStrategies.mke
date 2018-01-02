@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: GeometryManipulationStrategies/GeometryManipulationStrategies.mke $
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 AppName = GeometryManipulationStrategies
 CCompPDBName = $(AppName)
@@ -34,6 +34,8 @@ $(o)CurvePrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)CurvePrimitiveMa
 $(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
 
 $(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EllipseManipulationStrategy.h
+
+$(o)ArcManipulationStrategy$(oext) : $(_MakeFilePath)ArcManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcManipulationStrategy.h
 
 $(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
 

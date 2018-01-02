@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryManipulationStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategy();
-
+        
+        bvector<DPoint3d>& GetKeyPointsR() { return m_keyPoints; }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> const& _GetKeyPoints() const override;
 
         virtual bool _IsDynamicKeyPointSet() const override { return m_dynamicKeyPointSet; }

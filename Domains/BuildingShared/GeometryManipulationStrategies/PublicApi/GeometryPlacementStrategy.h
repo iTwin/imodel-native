@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryPlacementStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,6 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategy(GeometryManipulationStrategyP manipulationStrategy);
 
         GeometryManipulationStrategyR GetManipulationStrategyR() { return *m_manipulationStrategy; }
-        GeometryManipulationStrategyCR GetManipulationStrategy() const { return *m_manipulationStrategy; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> const& _GetKeyPoints() const override;
 
@@ -38,6 +37,8 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint();
 
     public:
+        GeometryManipulationStrategyCR GetManipulationStrategy() const { return *m_manipulationStrategy; }
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
 

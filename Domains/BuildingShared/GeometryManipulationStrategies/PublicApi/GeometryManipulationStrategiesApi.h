@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryManipulationStrategiesApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,7 @@
 #include "CurvePrimitiveManipulationStrategy.h"
 #include "LineManipulationStrategy.h"
 #include "EllipseManipulationStrategy.h"
+#include "ArcManipulationStrategy.h"
 #include "GeometryPlacementStrategy.h"
 #include "CurveVectorPlacementStrategy.h"
 #include "CurvePrimitivePlacementStrategy.h"
