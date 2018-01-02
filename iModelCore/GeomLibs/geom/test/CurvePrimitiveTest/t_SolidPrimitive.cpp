@@ -2781,18 +2781,23 @@ static void facetAndSave (ISolidPrimitivePtr solid)
 
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  11/17
+* @bsimethod                                                     Earlin.Lutz  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SolidPrimitive,Seams)
     {
     Check::QuietFailureScope scoper;
     bvector<CurveVectorPtr> paths;
     SampleGeometryCreator::AddMultiPrimitiveXYOpenPaths (paths, true, true);
+    // We expect ...
+    // * The paths include linestring, line, arc, bspline
+    // * Joints are "tangent" to exercise curve-curve transition marking.
+    // * Curves ar in the xy plane -- so z is good direction for sweep
     for (auto &path : paths)
         {
         // each path is in the xy plane.
-
         SaveAndRestoreCheckTransform shifter (15,0,0);
+        Check::SaveTransformed (*path);
+        Check::Shift (0,15,0);
         // extrude in z direction ..
         facetAndSave (ISolidPrimitive::CreateDgnExtrusion (
             DgnExtrusionDetail::DgnExtrusionDetail (path, DVec3d::From (0,0,3), false)));
@@ -2804,6 +2809,23 @@ TEST(SolidPrimitive,Seams)
         DPoint3d axisOrigin = range.LocalToGlobal (0, 2.0, 0);
         auto rotationalSweepData = DgnRotationalSweepDetail (path, axisOrigin, DVec3d::From (1,0,0), 0.4 * Angle::Pi (), false);
         facetAndSave (ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepData));
+
+
+        Check::Shift (0,15,0);
+        auto shiftZ = Transform::From (0,0,3);
+        auto scale = Transform::FromMatrixAndFixedPoint (RotMatrix::FromScaleFactors (1.1, 2, 1), range.low);
+        auto path0 = path->Clone ();
+        auto path1 = path->Clone ();
+        auto path2 = path->Clone ();
+        path1->TransformInPlace (shiftZ);
+        path2->TransformInPlace (scale);
+        path2->TransformInPlace (shiftZ);
+        path2->TransformInPlace (shiftZ);
+        auto path3 = path2->Clone (shiftZ);
+        bvector<CurveVectorPtr> contours {path0, path1, path2, path3};
+        DgnRuledSweepDetail ruledDetail (contours, false);
+        ISolidPrimitivePtr ruled = ISolidPrimitive::CreateDgnRuledSweep (ruledDetail);
+        facetAndSave (ruled);
         }
     Check::ClearGeometry ("SolidPrimitive.Seams");
     }

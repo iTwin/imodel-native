@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveVector.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -488,6 +488,16 @@ CurveVectorPtr    CurveVector::Create (CurveVector::BoundaryType boundaryType)
     return new CurveVector (boundaryType);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz 01/18
++--------------------------------------------------------------------------------------*/
+CurveVectorPtr CurveVector::Create (BoundaryType boundaryType, bvector<ICurvePrimitivePtr> primitives)
+    {
+    auto result = Create (boundaryType);
+    for (auto &p : primitives)
+        result->push_back (p);
+    return result;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2012
