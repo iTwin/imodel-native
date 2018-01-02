@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ArcPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -36,4 +36,12 @@ DPoint3d ArcPlacementStrategy::CalculateVec90KeyPoint
     DPoint3d vec90Point = center;
     vec90Point.Add(vec90);
     return vec90Point;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcManipulationStrategyR ArcPlacementStrategy::GetArcManipulationStrategyR()
+    {
+    return dynamic_cast<ArcManipulationStrategyR>(GetManipulationStrategyR());
     }

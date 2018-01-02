@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/ArcStartCenterPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -17,19 +17,25 @@ void ArcStartCenterPlacementStrategy::_AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    bvector<DPoint3d> const& keyPoints = _GetKeyPoints();
-    if (keyPoints.size() < 2)
-        GetManipulationStrategyR().AppendKeyPoint(newKeyPoint);
-    else
-        {
-        DPoint3d vec90point;
-        if (keyPoints.size() >= 3)
-            vec90point = keyPoints[2];
-        else
-            vec90point = CalculateVec90KeyPoint(newKeyPoint);
+    ResetDynamicKeyPoint();
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
 
-        GetManipulationStrategyR().AppendKeyPoint(vec90point);
-        GetManipulationStrategyR().AppendKeyPoint(newKeyPoint);
+    if (!strategy.IsStartSet())
+        {
+        strategy.SetStart(newKeyPoint);
+        return;
+        }
+
+    if (!strategy.IsCenterSet())
+        {
+        strategy.SetCenter(newKeyPoint);
+        return;
+        }
+
+    if (!strategy.IsEndSet())
+        {
+        strategy.SetEnd(newKeyPoint);
+        return;
         }
     }
 
@@ -41,22 +47,27 @@ void ArcStartCenterPlacementStrategy::_AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    bvector<DPoint3d> const& keyPoints = _GetKeyPoints();
-    if ((!IsDynamicKeyPointSet() && keyPoints.size() < 2) ||
-        (IsDynamicKeyPointSet() && keyPoints.size() <= 2))
-        {
-        GetManipulationStrategyR().AppendDynamicKeyPoint(newDynamicKeyPoint);
-        }
-    else
-        {
-        DPoint3d vec90point;
-        if (keyPoints.size() >= 3)
-            vec90point = keyPoints[2];
-        else
-            vec90point = CalculateVec90KeyPoint(newDynamicKeyPoint);
+    ResetDynamicKeyPoint();
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
 
-        GetManipulationStrategyR().AppendDynamicKeyPoints({vec90point, newDynamicKeyPoint});
+    if (strategy.IsEndSet())
+        {
+        return;
         }
+
+    if (strategy.IsCenterSet())
+        {
+        strategy.SetDynamicEnd(newDynamicKeyPoint);
+        return;
+        }
+
+    if (strategy.IsStartSet())
+        {
+        strategy.SetDynamicCenter(newDynamicKeyPoint);
+        return;
+        }
+
+    strategy.SetDynamicStart(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -64,14 +75,24 @@ void ArcStartCenterPlacementStrategy::_AddDynamicKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void ArcStartCenterPlacementStrategy::_PopKeyPoint()
     {
-    bvector<DPoint3d> const& keyPoints = _GetKeyPoints();
-    if (keyPoints.size() == 4)
+    ResetDynamicKeyPoint();
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyR();
+
+    if (strategy.IsEndSet())
         {
-        GetManipulationStrategyR().PopKeyPoint();
-        GetManipulationStrategyR().PopKeyPoint();
+        strategy.ResetEnd();
+        return;
         }
-    else
+
+    if (strategy.IsCenterSet())
         {
-        T_Super::_PopKeyPoint();
+        strategy.ResetCenter();
+        return;
+        }
+
+    if (strategy.IsStartSet())
+        {
+        strategy.ResetStart();
+        return;
         }
     }

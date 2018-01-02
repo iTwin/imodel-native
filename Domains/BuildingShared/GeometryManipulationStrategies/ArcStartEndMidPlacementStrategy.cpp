@@ -10,14 +10,6 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-ArcManipulationStrategyR ArcStartEndMidPlacementStrategy::GetArcManipulationStrategyR()
-    {
-    return dynamic_cast<ArcManipulationStrategyR>(GetManipulationStrategyR());
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 void ArcStartEndMidPlacementStrategy::_AddKeyPoint

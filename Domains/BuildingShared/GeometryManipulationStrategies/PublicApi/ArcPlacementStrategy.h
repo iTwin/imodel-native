@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/ArcPlacementStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,9 +19,10 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
     DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
 
     protected:
-        ArcPlacementStrategy(EllipseManipulationStrategyP manipulationStrategy)
+        ArcPlacementStrategy(ArcManipulationStrategyP manipulationStrategy)
             : T_Super(manipulationStrategy) {}
     
+        ArcManipulationStrategyR GetArcManipulationStrategyR();
         DPoint3d CalculateVec90KeyPoint(DPoint3dCR endPoint) const;
     };
 

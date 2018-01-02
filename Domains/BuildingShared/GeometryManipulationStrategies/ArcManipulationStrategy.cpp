@@ -37,9 +37,11 @@ KEY_POINT_ACCESSOR_IMPL(End, s_endIndex)
 //---------------+---------------+---------------+---------------+---------------+------
 ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
     {
-    if (!IsStartSet() || !IsMidSet() || !IsEndSet())
-        return nullptr;
+    if (IsStartSet() && IsMidSet() && IsEndSet())
+        return ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd()));
 
-    DEllipse3d arc = DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd());
-    return ICurvePrimitive::CreateArc(arc);
+    if (IsCenterSet() && IsStartSet() && IsEndSet())
+        return ICurvePrimitive::CreateArc(DEllipse3d::FromArcCenterStartEnd(GetCenter(), GetStart(), GetEnd()));
+
+    return nullptr;
     }

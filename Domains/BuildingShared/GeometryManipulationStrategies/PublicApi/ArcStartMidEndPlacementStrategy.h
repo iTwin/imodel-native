@@ -23,8 +23,6 @@ struct ArcStartMidEndPlacementStrategy : public ArcPlacementStrategy
             : T_Super(ArcManipulationStrategy::Create().get())
             {}
 
-        ArcManipulationStrategyR GetArcManipulationStrategyR();
-
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;

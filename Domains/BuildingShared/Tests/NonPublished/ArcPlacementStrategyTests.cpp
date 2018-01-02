@@ -28,27 +28,27 @@ struct ArcStartEndMidPlacementStrategyTests : public BuildingSharedTestFixtureBa
     {
     };
 
-void assertKeyPoints(ArcManipulationStrategyCR sut, bool startSet, bool endSet, bool midSet, bool centerSet)
+void assertKeyPoints(ArcManipulationStrategyCR sut, bool startSet, bool endSet, bool midSet, bool centerSet, Utf8CP message = "")
     {
     if (startSet)
-        ASSERT_TRUE(sut.IsStartSet());
+        ASSERT_TRUE(sut.IsStartSet()) << message;
     else
-        ASSERT_FALSE(sut.IsStartSet());
+        ASSERT_FALSE(sut.IsStartSet()) << message;
 
     if (endSet)
-        ASSERT_TRUE(sut.IsEndSet());
+        ASSERT_TRUE(sut.IsEndSet()) << message;
     else
-        ASSERT_FALSE(sut.IsEndSet());
+        ASSERT_FALSE(sut.IsEndSet()) << message;
 
     if (midSet)
-        ASSERT_TRUE(sut.IsMidSet());
+        ASSERT_TRUE(sut.IsMidSet()) << message;
     else
-        ASSERT_FALSE(sut.IsMidSet());
+        ASSERT_FALSE(sut.IsMidSet()) << message;
 
     if (centerSet)
-        ASSERT_TRUE(sut.IsCenterSet());
+        ASSERT_TRUE(sut.IsCenterSet()) << message;
     else
-        ASSERT_FALSE(sut.IsCenterSet());
+        ASSERT_FALSE(sut.IsCenterSet()) << message;
     }
 
 END_BUILDING_SHARED_NAMESPACE
@@ -59,54 +59,53 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcStartCenterPlacementStrategyTests, AddKeyPoint_AccepsAMaximumOf3KeyPoints)
+TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
+    ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
-    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
-    sut->AddKeyPoint({-2,0,0});
-    sut->AddKeyPoint({0,0,0});
-    sut->AddKeyPoint({0,1,0});
+    assertKeyPoints(manipSut, false, false, false, false, "Initial state");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "Initial state";
+
+    sut->AddDynamicKeyPoint({2,0,0});
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
+    assertKeyPoints(manipSut, true, false, false, false, "[AddDynamicKeyPoint] Has 1 dynamic key point");
+
     sut->AddKeyPoint({2,0,0});
-    ASSERT_EQ(sut->GetKeyPoints().size(), 4);
-    ASSERT_TRUE(sut->GetKeyPoints()[0].AlmostEqual({-2,0,0}));
-    ASSERT_TRUE(sut->GetKeyPoints()[1].AlmostEqual({0,0,0}));
-    // sut->GetKeyPoints()[2] is generated.
-    ASSERT_TRUE(sut->GetKeyPoints()[3].AlmostEqual({0,1,0}));
-    }
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point";
+    assertKeyPoints(manipSut, true, false, false, false, "[AddKeyPoint] Has 1 key point");
+    sut->AddDynamicKeyPoint({0,-3,0});
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point";
+    assertKeyPoints(manipSut, true, false, false, true, "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point");
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcStartCenterPlacementStrategyTests, AddKeyPoint_2KeyPointsExist_Adding3rdAdds2KeyPoints)
-    {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
-    ASSERT_TRUE(sut.IsValid());
-    sut->AddKeyPoint({-2,0,0});
-    sut->AddKeyPoint({0,0,0});
-    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    sut->AddKeyPoint({0,-3,0});
+    assertKeyPoints(manipSut, true, false, false, true, "[AddKeyPoint] Has 2 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points";
+    sut->AddDynamicKeyPoint({0,3,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point");
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point";
 
-    sut->AddKeyPoint({0,1,0});
-    ASSERT_EQ(sut->GetKeyPoints().size(), 4);
-    }
+    sut->AddKeyPoint({0,3,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Has 3 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key points";
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcStartCenterPlacementStrategyTests, PopKeyPoint_4KeyPointsExist_PopsGeneratedKeyPoint)
-    {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
-    ASSERT_TRUE(sut.IsValid());
-
-    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
-    sut->AddKeyPoint({-2,0,0});
-    sut->AddKeyPoint({0,0,0});
-    sut->AddKeyPoint({0,1,0});
-    ASSERT_EQ(sut->GetKeyPoints().size(), 4);
+    sut->AddDynamicKeyPoint({2,0,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Can't add more than 3 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Can't add more than 3 key points";
+    sut->AddKeyPoint({2,0,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Can't add more than 3 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Can't add more than 3 key points";
 
     sut->PopKeyPoint();
-    ASSERT_EQ(sut->GetKeyPoints().size(), 2);
+    assertKeyPoints(manipSut, true, false, false, true, "[PopKeyPoint] Has 2 key point");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key point";
+    sut->PopKeyPoint();
+    assertKeyPoints(manipSut, true, false, false, false, "[PopKeyPoint] Has 1 key point");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point";
+    sut->PopKeyPoint();
+    assertKeyPoints(manipSut, false, false, false, false, "[PopKeyPoint] Has 0 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
     }
 
 //--------------------------------------------------------------------------------------
@@ -206,66 +205,84 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_1KeyPoint_ResultIsInvalid)
+TEST_F(ArcCenterStartPlacementStrategyTests, KeyPointManipulation)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
+    ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
-    sut->AddKeyPoint({0,0,0});
-    ASSERT_FALSE(sut->FinishPrimitive().IsValid());
-    }
+    assertKeyPoints(manipSut, false, false, false, false, "Initial state");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "Initial state";
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcCenterStartPlacementStrategyTests, IsDynamicKeyPointSet_FirstKeyPointAdded)
-    {
-    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
-    ASSERT_TRUE(sut.IsValid());
-
-    sut->AddKeyPoint({0,0,0});
-    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcCenterStartPlacementStrategyTests, 1KP1DKP_KeyPointIsCenter)
-    {
-    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
-    ASSERT_TRUE(sut.IsValid());
-
-    sut->AddKeyPoint({0,0,0});
     sut->AddDynamicKeyPoint({2,0,0});
-    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
-    ASSERT_TRUE(arcPrimitive.IsValid());
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
+    assertKeyPoints(manipSut, false, false, false, true, "[AddDynamicKeyPoint] Has 1 dynamic key point");
 
-    DEllipse3d arc;
-    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
-    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
-    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), arc.vector90.Magnitude());
-    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
+    sut->AddKeyPoint({2,0,0});
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point";
+    assertKeyPoints(manipSut, false, false, false, true, "[AddKeyPoint] Has 1 key point");
+    sut->AddDynamicKeyPoint({0,-3,0});
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point";
+    assertKeyPoints(manipSut, true, false, false, true, "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point");
+
+    sut->AddKeyPoint({0,-3,0});
+    assertKeyPoints(manipSut, true, false, false, true, "[AddKeyPoint] Has 2 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points";
+    sut->AddDynamicKeyPoint({0,3,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point");
+    ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point";
+
+    sut->AddKeyPoint({0,3,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Has 3 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key points";
+
+    sut->AddDynamicKeyPoint({2,0,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Can't add more than 3 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Can't add more than 3 key points";
+    sut->AddKeyPoint({2,0,0});
+    assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Can't add more than 3 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Can't add more than 3 key points";
+
+    sut->PopKeyPoint();
+    assertKeyPoints(manipSut, true, false, false, true, "[PopKeyPoint] Has 2 key point");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key point";
+    sut->PopKeyPoint();
+    assertKeyPoints(manipSut, false, false, false, true, "[PopKeyPoint] Has 1 key point");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point";
+    sut->PopKeyPoint();
+    assertKeyPoints(manipSut, false, false, false, false, "[PopKeyPoint] Has 0 key points");
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ArcCenterStartPlacementStrategyTests, 1KP1DKP_KeyPointIsCenter_AfterDynamicReset)
+TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
     ASSERT_TRUE(sut.IsValid());
 
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";
     sut->AddKeyPoint({0,0,0});
-    sut->ResetDynamicKeyPoint();
-    sut->AddDynamicKeyPoint({2,0,0});
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 1 key point";
+    sut->AddKeyPoint({2,0,0});
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 2 key points";
+    sut->AddKeyPoint({-3,3,0});
     ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
-    ASSERT_TRUE(arcPrimitive.IsValid());
+    ASSERT_TRUE(arcPrimitive.IsValid()) << "Is not valid with 3 key points";
 
-    DEllipse3d arc;
-    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
-    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
-    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), arc.vector90.Magnitude());
-    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 2);
+    DEllipse3d expectedArc = DEllipse3d::FromVectors({0,0,0}, DVec3d::From(2, 0, 0), DVec3d::From(0, 2, 0), 0, Angle::DegreesToRadians(135));
+    DVec3d expectedNormal = DVec3d::FromCrossProduct(expectedArc.vector0, expectedArc.vector90);
+    DEllipse3d actualArc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(actualArc));
+    DVec3d actualNormal = DVec3d::FromCrossProduct(actualArc.vector0, actualArc.vector90);
+
+    ASSERT_TRUE(actualArc.center.AlmostEqual(expectedArc.center));
+    ASSERT_TRUE(actualArc.IsCircular());
+    ASSERT_DOUBLE_EQ(actualArc.vector0.Magnitude(), expectedArc.vector0.Magnitude());
+    ASSERT_DOUBLE_EQ(actualArc.sweep, expectedArc.sweep);
+    ASSERT_DOUBLE_EQ(actualArc.start, expectedArc.start);
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
     }
 
 #pragma endregion
