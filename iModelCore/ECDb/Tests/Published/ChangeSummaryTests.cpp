@@ -614,14 +614,22 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
         if (expectedSuccess)
             {
             if (cachePath != nullptr)
-                EXPECT_EQ(SUCCESS, ecdb.ExtractChangeSummary(summaryKey, *cachePath, ChangeSetArg(changeset))) << assertMessage;
+                {
+                ECDb cacheFile;
+                ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(*cachePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+                EXPECT_EQ(SUCCESS, ECDb::ExtractChangeSummary(summaryKey, cacheFile, ecdb, ChangeSetArg(changeset))) << assertMessage;
+                }
             else
                 EXPECT_EQ(SUCCESS, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
             }
         else
             {
             if (cachePath != nullptr)
-                EXPECT_EQ(ERROR, ecdb.ExtractChangeSummary(summaryKey, *cachePath, ChangeSetArg(changeset))) << assertMessage;
+                {
+                ECDb cacheFile;
+                ASSERT_EQ(BE_SQLITE_OK, cacheFile.OpenBeSQLiteDb(*cachePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+                EXPECT_EQ(ERROR, ECDb::ExtractChangeSummary(summaryKey, cacheFile, ecdb, ChangeSetArg(changeset))) << assertMessage;
+                }
             else
                 EXPECT_EQ(ERROR, ecdb.ExtractChangeSummary(summaryKey, ChangeSetArg(changeset))) << assertMessage;
             }
