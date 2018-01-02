@@ -170,6 +170,7 @@ private:
     bvector<BeSQLite::EC::ECInstanceKey> m_primaryInstanceKeys;
     mutable ContentQueryCPtr m_query;
     mutable ContentQueryCPtr m_adjustedQuery;
+    bool m_mergedResults;
 private:
     ECPRESENTATION_EXPORT NestedContentProvider(ContentProviderContextR, ContentDescriptor::NestedContentField const&);
     ECPRESENTATION_EXPORT NestedContentProvider(NestedContentProviderCR);
@@ -187,6 +188,7 @@ public:
     ContentDescriptor::NestedContentField const& GetContentField() const {return m_field;}
     void SetPrimaryInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const&);
     void SetPrimaryInstanceKey(BeSQLite::EC::ECInstanceKeyCR);
+    void SetIsResultsMerged(bool mergedResults);
 };
 
 /*=================================================================================**//**

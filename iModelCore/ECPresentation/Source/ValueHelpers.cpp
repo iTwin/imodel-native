@@ -97,6 +97,10 @@ static rapidjson::Document ParseJson(Utf8CP serialized, rapidjson::MemoryPoolAll
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
     {
+    if (PRIMITIVETYPE_Point2d == value.GetColumnInfo().GetDataType().GetPrimitiveType())
+        return value.GetPoint2d();
+    // why does this assert when value IS actually a string?
+    //BeAssert(PRIMITIVETYPE_String == value.GetColumnInfo().GetDataType().GetPrimitiveType());
     return GetPoint2dFromJsonString(value.GetText());
     }
 
@@ -105,6 +109,11 @@ DPoint2d ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
     {
+    if (PRIMITIVETYPE_Point3d == value.GetColumnInfo().GetDataType().GetPrimitiveType())
+        return value.GetPoint3d();
+    // why does this assert when value IS actually a string?
+    // RulesDrivenECPresentationManagerContentTests.ReturnsPointPropertyContent
+    //BeAssert(PRIMITIVETYPE_String == value.GetColumnInfo().GetDataType().GetPrimitiveType());
     return GetPoint3dFromJsonString(value.GetText());
     }
 
@@ -253,8 +262,9 @@ rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primit
             doc.SetString(value.GetText(), doc.GetAllocator());
             return doc;
         case PRIMITIVETYPE_Point2d:
+            return GetPoint2dJson(GetPoint2dFromSqlValue(value), allocator);
         case PRIMITIVETYPE_Point3d:
-            return ParseJson(value.GetText(), allocator);
+            return GetPoint3dJson(GetPoint3dFromSqlValue(value), allocator);
         case PRIMITIVETYPE_Binary:
         case PRIMITIVETYPE_IGeometry:
             return doc;

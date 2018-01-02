@@ -73,10 +73,7 @@ CachedECSqlStatementPtr QueryExecutor::GetStatement() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryExecutor::_Reset()
     {
-    m_readStarted = false;
-    m_readFinished = false;
-
-    if (nullptr != m_query)
+    if (nullptr != m_query && m_readStarted)
         {
         CachedECSqlStatementPtr statement = GetStatement();
         if (statement.IsNull())
@@ -84,6 +81,9 @@ void QueryExecutor::_Reset()
         else
             statement->ClearBindings();
         }
+
+    m_readStarted = false;
+    m_readFinished = false;
     }
 
 /*---------------------------------------------------------------------------------**//**

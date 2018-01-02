@@ -4932,6 +4932,98 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsPointsArrayPropertyValue, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="PointsArrayProperty" typeName="point3d" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyValue)
+    {
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("PointsArrayProperty", 2);
+        instance.SetValue("PointsArrayProperty", ECValue(DPoint3d::From(0, 0, 0)), 0);
+        instance.SetValue("PointsArrayProperty", ECValue(DPoint3d::From(1, 1, 1)), 1);
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("PointsArrayProperty", 3);
+        instance.SetValue("PointsArrayProperty", ECValue(DPoint3d::From(3, 3, 3)), 0);
+        instance.SetValue("PointsArrayProperty", ECValue(DPoint3d::From(4, 4, 4)), 1);
+        instance.SetValue("PointsArrayProperty", ECValue(DPoint3d::From(5, 5, 5)), 2);
+        });
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("LoadsPointsArrayPropertyValue", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false);
+    rule->AddSpecification(*spec);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
+    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    rapidjson::Document expectedFieldType;
+    expectedFieldType.Parse(R"({
+        "ValueFormat": "Array",
+        "TypeName": "point3d[]",
+        "MemberType": {
+            "ValueFormat": "Primitive",
+            "TypeName": "point3d"
+            }
+        })");
+    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    EXPECT_EQ(expectedFieldType, actualFieldType)
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues1;
+    expectedValues1.Parse(R"(
+        {
+        "MyClass_PointsArrayProperty": [
+            {"x": 0, "y": 0, "z": 0}, 
+            {"x": 1, "y": 1, "z": 1}
+        ]})");
+    EXPECT_EQ(expectedValues1, recordJson1["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    
+    rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
+    rapidjson::Document expectedValues2;
+    expectedValues2.Parse(R"(
+        {
+        "MyClass_PointsArrayProperty": [
+            {"x": 3, "y": 3, "z": 3},
+            {"x": 4, "y": 4, "z": 4},
+            {"x": 5, "y": 5, "z": 5}
+        ]})");
+    EXPECT_EQ(expectedValues2, recordJson2["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesDescriptorsWithSimilarNavigationProperties, R"*(

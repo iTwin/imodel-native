@@ -322,6 +322,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
     Utf8CP fieldName = field.GetName().c_str();
     bool isRelatedContent = !field.GetRelationshipPath().empty();
     NestedContentProviderPtr provider = GetNestedContentProvider(field, cacheable);
+    provider->SetIsResultsMerged(descriptor.MergeResults());
     if (descriptor.MergeResults())
         {
         // if records are merged, have to query nested content for each merged record individually 
@@ -943,7 +944,7 @@ void ContentProvider::InvalidateContent()
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 NestedContentProvider::NestedContentProvider(ContentProviderContextR context, ContentDescriptor::NestedContentField const& field)
-    : ContentProvider(context), m_field(field)
+    : ContentProvider(context), m_field(field), m_mergedResults(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -958,7 +959,8 @@ NestedContentProvider::NestedContentProvider(NestedContentProviderCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NestedContentProvider::_Reset()
     {
-    m_adjustedQuery = nullptr;
+    if (!m_mergedResults)
+        m_adjustedQuery = nullptr;
     ContentProvider::_Reset();
     }
 
@@ -991,7 +993,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
     if (m_query.IsNull())
         return nullptr;
 
-    if (m_adjustedQuery.IsNull())
+    if (m_adjustedQuery.IsNull() && !m_mergedResults)
         {
         Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
         ContentQueryPtr query = m_query->Clone();
@@ -1009,6 +1011,25 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
             }
         QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);
         m_adjustedQuery = query;
+        }
+
+    if (m_mergedResults)
+        {
+        if (m_adjustedQuery.IsNull())
+            {
+            BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetInstanceId())};
+            ContentQueryPtr query = m_query->Clone();
+            Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
+            Utf8String whereClause;
+            whereClause.append("[").append(idFieldAlias).append("].[ECInstanceId] = ? ");
+            QueryBuilderHelpers::Where(query, whereClause.c_str(), bindings);
+            m_adjustedQuery = query;
+            }
+        else
+            {
+            BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetInstanceId())};
+            const_cast<ContentQuery*>(m_adjustedQuery.get())->AsComplexQuery()->SetBoundValues(bindings);
+            }
         }
         
     return m_adjustedQuery;
@@ -1029,4 +1050,12 @@ void NestedContentProvider::SetPrimaryInstanceKeys(bvector<ECInstanceKey> const&
 void NestedContentProvider::SetPrimaryInstanceKey(ECInstanceKeyCR key)
     {
     SetPrimaryInstanceKeys({key});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void NestedContentProvider::SetIsResultsMerged(bool mergedResults)
+    {
+    m_mergedResults = mergedResults;
     }
