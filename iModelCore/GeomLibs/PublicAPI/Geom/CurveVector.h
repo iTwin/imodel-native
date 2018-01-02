@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/CurveVector.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -243,6 +243,20 @@ GEOMDLLIMPEXP static CurveVectorPtr Create (BoundaryType boundaryType);
 
 //! Create a curve vector with a single primitive and given boundary type.
 GEOMDLLIMPEXP static CurveVectorPtr Create (BoundaryType boundaryType, ICurvePrimitivePtr primitive);
+
+//! Create a curve vector from a variable amount of primitives
+template<typename ...Primitives>
+static CurveVectorPtr CurveVector::CreateAndPopulate(CurveVector::BoundaryType boundaryType, Primitives... primitives)
+{
+	ICurvePrimitivePtr args[] {primitives...};	// Unpack the curve primitives. If non-desired type, will throw compile error.
+	CurveVectorPtr curveVector = new CurveVector(boundaryType);
+	for (ICurvePrimitivePtr const& curvePrimitive : args)
+		{
+		curveVector->push_back(curvePrimitive);
+		}
+
+	return curveVector;
+}
 
 //! Return a "deep copy"
 GEOMDLLIMPEXP CurveVectorPtr Clone () const;

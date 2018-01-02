@@ -2549,3 +2549,40 @@ TEST(CPLineString,EndFuzz)
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Nate.Rex		01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, VariableNumberOfArgs)
+	{
+	DEllipse3d arc1 = DEllipse3d::From(
+		0, 0, 0,
+		0.5, 1, 0,
+		-0.2, 0.2, 0,
+		Angle::DegreesToRadians(-120),
+		Angle::DegreesToRadians(240));
+	auto cpArc1 = ICurvePrimitive::CreateArc(arc1);
+	DEllipse3d arc2 = DEllipse3d::From(
+		5, 6, 0,
+		0.5, 1, 0,
+		-0.2, 0.2, 0,
+		Angle::DegreesToRadians(-120),
+		Angle::DegreesToRadians(240));
+	auto cpArc2 = ICurvePrimitive::CreateArc(arc2);
+	DEllipse3d arc3 = DEllipse3d::From(
+		8, -10, 0,
+		0.5, 1, 0,
+		-0.2, 0.2, 0,
+		Angle::DegreesToRadians(-120),
+		Angle::DegreesToRadians(240));
+	auto cpArc3 = ICurvePrimitive::CreateArc(arc3);
+
+	CurveVectorPtr curveVector0 = CurveVector::CreateAndPopulate(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, cpArc1, cpArc2, cpArc3);
+	CurveVectorPtr curveVector2 = CurveVector::CreateAndPopulate(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, cpArc1);
+
+	// re-extract them
+	bvector<ICurvePrimitivePtr> primitives;
+	for (ICurvePrimitivePtr& curvePrimitive : *curveVector0) {
+		primitives.push_back(curvePrimitive);
+	}
+	}
