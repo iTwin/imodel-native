@@ -269,6 +269,41 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
+    <!-- ******************************* -->
+    <!-- ***** Compatibility Tests ***** -->
+    <!-- ******************************* -->
+
+    <Part Name="SchemaRoundtripDependencies">
+        <NuGetPackage>ECSchemaUtility</NuGetPackage>
+        <Bindings>
+            <Assemblies ProductDirectoryName="ManagedUtilities">nuget/netstandard2.0/*</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="SchemaRoundtripValidationScript" BentleyBuildMakeFile="mki/SchemaRoundtripValidation/SchemaRoundtripValidation.mke" OnlyPlatforms="x64">
+        <SubPart PartName="BisSchemas"/>
+        <SubPart PartName="SchemaComparison"/>
+        <SubPart PartName="SchemaRoundtrip"/>
+        <SubPart PartName="SchemaRoundtripDependencies"/>
+    </Part>
+
+    <Product Name="SchemaRoundtripValidation" SaveProduct="true" PrgOutputDir="SchemaRoundtripValidation">
+        <Directories DirectoryListName="AllBisSchemas-Directories"/>
+        <Directories DirectoryListName="SchemaComparison"/>
+        <Directories DirectoryListName="SchemaRoundtrip"/>
+        <Directories DirectoryListName="ECObjects"/>
+        <Directories DirectoryListName="SchemaRoundtripValidation-Directories"/>
+        <SubPart PartName="BisSchemas"/>
+        <SubPart PartName="SchemaComparison"/>
+        <SubPart PartName="SchemaRoundtrip"/>
+        <SubPart PartName="SchemaRoundtripValidationScript"/>
+        <SubPart PartName="SchemaRoundtripDependencies"/>
+    </Product>
+
+    <ProductDirectoryList ListName="SchemaRoundtripValidation-Directories">
+        <ProductDirectory Name="ManagedUtilities" Path="ECSchemaUtility"/>
+    </ProductDirectoryList>
+
     <!-- *********************************************************** -->
     <!-- **** NuGet package creation                            **** -->
     <!-- *********************************************************** -->
@@ -406,5 +441,65 @@
         <SubPart PartName="RunGtest" />
         <Directories DirectoryListName="ECObjectsTested"/>
     </Product>
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ///////////////////////////////////// BIS /////////////////////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <Product Name="BisSchemasValidation" SaveProduct="true" PrgOutputDir="AllBisSchemas">
+        <Directories DirectoryListName="AllBisSchemas-Directories"/>
+        <Directories DirectoryListName="SchemaValidator"/>
+        <Directories DirectoryListName="ECObjects"/>
+        <SubPart PartName="BisSchemas"/>
+        <SubPart PartName="SchemaValidator"/>
+        <SubPart PartName="ValidateSchemas"/>
+    </Product>
+
+    <Part Name="ValidateSchemas" BentleyBuildMakeFile="mki/BisSchemasValidation/SchemaValidatorSetup.mke" OnlyPlatforms="x64">
+        <SubPart PartName="BisSchemas"/>
+        <SubPart PartName="SchemaValidator"/>
+    </Part>
+
+    <Part Name="BisSchemas">
+        <SubPart PartName="PublicAPI"                   PartFile="DgnPlatform"          Repository="DgnPlatform"/>
+        <SubPart PartName="PublicAPI"                   PartFile="Planning"             Repository="DgnDomains-Planning"/>
+        <SubPart PartName="PublicAPI"                   PartFile="ConstructionSchema"   Repository="ConstructionSchema"/>
+        <SubPart PartName="PublicAPI"                   PartFile="Costing"              Repository="DgnDomains-Costing"/>
+        <SubPart PartName="GistSchema"                  PartFile="Gist"                 Repository="Gist"/>
+        <SubPart PartName="PublicAPI"                   PartFile="BridgePhysical"       Repository="DgnDomains-BridgePhysical"/>
+        <SubPart PartName="PublicAPI"                   PartFile="RoadRailPhysical"     Repository="DgnDomains-RoadRailPhysical"/>
+        <SubPart PartName="AecUnitsPublicAPI"           PartFile="AecUnits"             Repository="DgnDomains-DesignModelingUnits"/>
+        <SubPart PartName="PublicAPI"                   PartFile="LinearReferencing"    Repository="DgnDomains-LinearReferencing"/>
+        <SubPart PartName="PublicAPI"                   PartFile="RoadRailAlignment"    Repository="DgnDomains-RoadRailAlignment"/>
+        <SubPart PartName="PlantDomainSchemas"          PartFile="PlantDomain"          Repository="DgnDomains-Plant"/>
+        <SubPart PartName="DataCaptureSchemasPublicAPI" PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="ScalableMeshSchemaPublicAPI" PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="RasterPublicAPI"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="PointCloudPublicAPI"         PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="ThreeMxPublicAPI"            PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="ECDbLibrary"                 PartFile="ECDb"                 Repository="ECDb"/>
+        <SubPart PartName="ECObjectsSchema"             PartFile="iModelSchemaEditor"   Repository="iModelSchemaEditor"/>
+        <SubPart PartName="GridsSchema"                 PartFile="Grids"                Repository="DgnDomains-Grids" />
+        <SubPart PartName="ConstraintModelSchema"       PartFile="ConstraintSystem"     Repository="DgnDomains-ConstraintSystem" />
+        <SubPart PartName="SiteSchema"                  PartFile="Site"                 Repository="DgnDomains-Site" />
+        <SubPart PartName="SpacePlanningSchema"         PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning" />
+        <SubPart PartName="BuildingPhysicalPublicAPI"   PartFile="BuildingDomains"          Repository="DgnDomains-Building" />
+        <SubPart PartName="StructuralDomainPublicAPI"   PartFile="StructuralDomains"        Repository="DgnDomains-Structural" />
+        <SubPart PartName="ElectricalPhysicalPublicAPI" PartFile="ElectricalDomains"        Repository="DgnDomains-Electrical" />
+        <SubPart PartName="ProfilesDomainPublicAPI"     PartFile="ProfilesDomain"           Repository="DgnDomains-Profiles" />
+        <SubPart PartName="FormsDomainPublicAPI"        PartFile="FormsDomain"              Repository="DgnDomains-Forms" />
+    </Part>
+
+    <ProductDirectoryList ListName="AllBisSchemas-Directories">
+        <ProductDirectory Name="Assets" Path=""/>
+        <ProductDirectory Name="Assets" Path="" LibType="static"/>
+        <ProductDirectory Name="PlantDomainSchemasDir" Path="Assets/ECSchemas/Domain"/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="StructuralDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="ElectricalDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="BuildingDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="FormsDomainIncludes" Deliver="false"/>
+    </ProductDirectoryList>
 
 </BuildContext>

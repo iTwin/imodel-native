@@ -1,0 +1,25 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/BisSchemasValidation/SchemaValidatorSetup.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+productDir=$(OutputRootDir)Product/BisSchemasValidation/
+
+pathToSchemas1=$(productDir)Assets/ECSchemas/Dgn/
+pathToSchemas2=$(productDir)Assets/ECSchemas/Domain/
+pathToRefSchemas1=$(productDir)Assets/ECSchemas/Standard/
+pathToRefSchemas2=$(productDir)Assets/ECSchemas/ECDb/
+pathToOutputLogs=$(productDir)ValidationLogs/
+
+SCHEMA_VALIDATOR_EXE_DIRECTORY = $(productDir)
+SCHEMAS_DIRECTORY =  $(pathToSchemas1);$(pathToSchemas2)
+SCHEMAS_REFERENCE_DIRECTORY = $(pathToRefSchemas1);$(pathToRefSchemas2)
+LOG_DIRECTORY = $(pathToOutputLogs)
+
+SHAREPOINT_SITE_URL = https:\/\/bentley.sharepoint.com\/sites\/BIS\/ 
+SHAREPOINT_LIST_NAME = "Schema Development Status"
+
+%include ValidateSchemas.mki
