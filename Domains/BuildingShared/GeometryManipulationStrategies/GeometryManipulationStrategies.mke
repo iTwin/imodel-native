@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: GeometryManipulationStrategies/GeometryManipulationStrategies.mke $
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 AppName = GeometryManipulationStrategies
 CCompPDBName = $(AppName)
@@ -35,7 +35,23 @@ $(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.c
 
 $(o)LinePlacementStrategy$(oext)    : $(_MakeFilePath)LinePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LinePlacementStrategy.h
 
+$(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EllipseManipulationStrategy.h
+
 $(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
+
+$(o)CurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)CurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurveVectorPlacementStrategy.h
+
+$(o)CurvePrimitivePlacementStrategy$(oext) : $(_MakeFilePath)CurvePrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitivePlacementStrategy.h
+
+$(o)ArcPlacementStrategy$(oext) : $(_MakeFilePath)ArcPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcPlacementStrategy.h
+
+$(o)ArcStartCenterPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartCenterPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartCenterPlacementStrategy.h
+
+$(o)ArcCenterStartPlacementStrategy$(oext) : $(_MakeFilePath)ArcCenterStartPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcCenterStartPlacementStrategy.h
+
+$(o)ArcStartMidEndPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartMidEndPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartMidEndPlacementStrategy.h
+
+$(o)ArcStartEndMidPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartEndMidPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartEndMidPlacementStrategy.h
 
 
 %include MultiCppCompileGo.mki

@@ -123,6 +123,23 @@ void GeometryManipulationStrategy::_AppendDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::_AppendDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    if (newDynamicKeyPoints.empty())
+        return;
+
+    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
+    for (DPoint3dCR newDynamicKeyPoint : newDynamicKeyPoints)
+        m_keyPointsWithDynamicKeyPoint.push_back(newDynamicKeyPoint);
+    m_dynamicKeyPointSet = true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
 void GeometryManipulationStrategy::_InsertDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint, 
@@ -149,6 +166,91 @@ void GeometryManipulationStrategy::_InsertDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::_InsertDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints, 
+    size_t index
+)
+    {
+    if (newDynamicKeyPoints.empty())
+        return;
+
+    if (m_keyPoints.size() < index)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    if (m_keyPoints.size() == index)
+        {
+        _AppendDynamicKeyPoints(newDynamicKeyPoints);
+        return;
+        }
+
+    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
+    for(size_t i = index; i-index < newDynamicKeyPoints.size(); ++i)
+        {
+        if (m_keyPointsWithDynamicKeyPoint.size() == i)
+            m_keyPointsWithDynamicKeyPoint.push_back(newDynamicKeyPoints[i - index]);
+        else
+            m_keyPointsWithDynamicKeyPoint.insert(&m_keyPointsWithDynamicKeyPoint[i], newDynamicKeyPoints[i - index]);
+        }
+    m_dynamicKeyPointSet = true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::_UpsertDynamicKeyPoint
+(
+    DPoint3d newDynamicKeyPoint, 
+    size_t index
+)
+    {
+    if (m_keyPoints.size() == index)
+        _AppendDynamicKeyPoint(newDynamicKeyPoint);
+    else
+        _UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::_UpsertDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints, 
+    size_t index
+)
+    {
+    if (newDynamicKeyPoints.empty())
+        return;
+
+    if (index > m_keyPoints.size())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    if (newDynamicKeyPoints.size() == 1)
+        {
+        _UpsertDynamicKeyPoint(newDynamicKeyPoints.front(), index);
+        return;
+        }
+
+    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
+    for (size_t i = index; i - index < newDynamicKeyPoints.size(); ++i)
+        {
+        if (m_keyPointsWithDynamicKeyPoint.size() == i)
+            m_keyPointsWithDynamicKeyPoint.push_back(newDynamicKeyPoints[i - index]); // append
+        else
+            m_keyPointsWithDynamicKeyPoint[i] = newDynamicKeyPoints[i - index]; // update
+        }
+    m_dynamicKeyPointSet = true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
 void GeometryManipulationStrategy::_UpdateDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint, 
@@ -169,6 +271,30 @@ void GeometryManipulationStrategy::_UpdateDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::_UpdateDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints, 
+    size_t index
+)
+    {
+    if (newDynamicKeyPoints.empty())
+        return;
+
+    if (m_keyPoints.size() < index + newDynamicKeyPoints.size())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
+    for (size_t i = 0; i < newDynamicKeyPoints.size(); ++i)
+        m_keyPointsWithDynamicKeyPoint[i + index] = newDynamicKeyPoints[i];
+    m_dynamicKeyPointSet = true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
 void GeometryManipulationStrategy::_ResetDynamicKeyPoint()
     {
     m_dynamicKeyPointSet = false;
@@ -183,4 +309,98 @@ bvector<DPoint3d> const& GeometryManipulationStrategy::_GetKeyPoints() const
         return m_keyPointsWithDynamicKeyPoint;
     
     return m_keyPoints;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::AppendDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
+    {
+    _AppendDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::AppendDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    _AppendDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::InsertDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint,
+    size_t index
+)
+    {
+    _InsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::InsertDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints,
+    size_t index
+)
+    {
+    _InsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::UpdateDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint,
+    size_t index
+)
+    {
+    _UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::UpdateDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints,
+    size_t index
+)
+    {
+    _UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::UpsertDynamicKeyPoint
+(
+    DPoint3d newDynamicKeyPoint,
+    size_t index
+)
+    {
+    _UpsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                12/2017
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::UpsertDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints,
+    size_t index
+)
+    {
+    _UpsertDynamicKeyPoints(newDynamicKeyPoints, index);
     }
