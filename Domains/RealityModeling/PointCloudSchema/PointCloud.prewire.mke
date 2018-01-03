@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)PublicApi/PointCloud : $(_MakeFilePath)../PublicApi/PointCloud
+$(BuildContext)PublicAPI/PointCloud : $(_MakeFilePath)../PublicApi/PointCloud
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)ECSchemas/Domain/PointCloud.ecschema.xml : $(_MakeFilePath)PointCloud.ecschema.xml
