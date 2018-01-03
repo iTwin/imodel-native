@@ -115,3 +115,14 @@ WStringTest.FlakyTest
     # c:\build\src\mds06t\Bentley\Tests\Published\WString_test.cpp(1582): error: Value of: s1 != s2
     # Actual: false
     # Expected: true
+
+BeFileTests1.CreateFile1
+
+    # TFS#800616
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 01/02/2018
+    # this is a test
+    # c:\build\src\mds06t\Bentley\Tests\Published\TimeOutSampleTest.cpp(63): error: Value of: futureResult.wait_for (dur) != std::future_status::timeout
+    # Actual: false
+    # Expected: true
+
+
