@@ -1555,9 +1555,11 @@ static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
     }
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
-static void dummy() {;}
-static BeFileName getModuleFileName(void* addr)
+
+static BeFileName getLibraryDir()
     {
+    void* addr = (void*)getLibraryDir;
+
     MEMORY_BASIC_INFORMATION mbi;
     HINSTANCE h = VirtualQuery (addr, &mbi, sizeof mbi)? (HINSTANCE)mbi.AllocationBase: (HINSTANCE)addr;
 
@@ -1565,26 +1567,21 @@ static BeFileName getModuleFileName(void* addr)
     if (0 == ::GetModuleFileNameW (h, tModuleName, MAX_PATH)) 
         return BeFileName();
 
-    return BeFileName(tModuleName);
+    return BeFileName(tModuleName).GetDirectoryName();
     }
-static BeFileName getAddonDir()
-    {
-    return getModuleFileName(&dummy).GetDirectoryName();
-    }
+
 #elif defined (BENTLEYCONFIG_OS_LINUX)
 
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 #include <dlfcn.h>
 
-static void dummy() {;}
-
-static BeFileName getAddonDir()
+static BeFileName getLibraryDir()
     {
     Dl_info  dlInfo;
-    if (0 == dladdr(&dummy, &dlInfo))
+    if (0 == dladdr((void*)getLibraryDir, &dlInfo)) // (yes, 0 means failure)
         return BeFileName();
 
-    return BeFileName(dlInfo.dli_sname, true);
+    return BeFileName(dlInfo.dli_sname, true).GetDirectoryName();
     }
 
 #elif defined (BENTLEYCONFIG_OS_APPLE_MACOS)
@@ -1592,7 +1589,7 @@ static BeFileName getAddonDir()
 
 // *** TODO: This is probably not going to work. We need the MacOS equivalent of dladdr
 
-static BeFileName getAddonDir()
+static BeFileName getLibraryDir()
     {
     WString curdir;
     Desktop::FileSystem::GetCwd(curdir);
@@ -1608,7 +1605,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     {
     Napi::HandleScope scope(env);
 
-    BeFileName addondir = getAddonDir();
+    BeFileName addondir = getLibraryDir();
 
     AddonUtils::Initialize(addondir, throwJsExceptionOnAssert);
     NodeAddonDgnDb::Init(env, exports);
