@@ -1564,7 +1564,7 @@ static BeFileName getLibraryDir()
     HINSTANCE h = VirtualQuery (addr, &mbi, sizeof mbi)? (HINSTANCE)mbi.AllocationBase: (HINSTANCE)addr;
 
     WChar tModuleName[MAX_PATH];
-    if (0 == ::GetModuleFileNameW (h, tModuleName, MAX_PATH)) 
+    if (0 == ::GetModuleFileNameW (h, tModuleName, MAX_PATH)) // (yes, 0 means failure)
         return BeFileName();
 
     return BeFileName(tModuleName).GetDirectoryName();
