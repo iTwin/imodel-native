@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/lib/CesiumPublisher.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TilePublisher/CesiumPublisher.h>
@@ -127,6 +127,35 @@ TileGeneratorStatus TilesetPublisher::_AcceptPublishedTilesetInfo(DgnModelCR mod
     return TileGeneratorStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr     PublisherParams::GetDefaultModel(DgnDbR db, DgnViewId defaultViewId) const   
+    {
+    auto            viewDef2d = db.Elements().Get<ViewDefinition2d>(defaultViewId);
+
+    if (viewDef2d.IsValid())
+        return db.Models().GetModel(viewDef2d->GetBaseModelId());
+
+    auto            spatialView = db.Elements().GetForEdit<SpatialViewDefinition>(defaultViewId);
+        
+    if (!spatialView.IsValid() ||
+        spatialView->GetModelSelector().GetModels().empty())
+        return nullptr;
+
+    return db.Models().GetModel(*spatialView->GetModelSelector().GetModels().begin());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+UnitSystem      PublisherParams::GetUnitSystem (DgnDbR db, DgnViewId defaultViewId) const
+    {
+    auto        defaultModel = dynamic_cast<GeometricModelCP> (GetDefaultModel(db, defaultViewId).get());
+
+    return nullptr != defaultModel ? defaultModel->GetFormatter().GetMasterUnits().GetSystem() : UnitSystem::Undefined;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -137,7 +166,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     Status      status;
 
     if (Status::Success != (status = GetViewsetJson (json, groundPoint, m_defaultViewId, params.GetGlobeMode())))
-        return status;
+        return status;                                                                                                                                      
 
     Json::Value viewerOptions = params.GetViewerOptions();
 
@@ -145,6 +174,25 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     if (viewerOptions["imageryProvider"].isNull())
         viewerOptions["imageryProvider"] = IsGeolocated() ? "BingMapsAerialWithLabels" : "NaturalEarth";
 
+
+    switch (params.GetUnitSystem(GetDgnDb(), m_defaultViewId))
+        {
+         case UnitSystem::Metric:
+            viewerOptions["unitSystem"] = "Metric";
+            break;
+
+        case UnitSystem::English:
+            viewerOptions["unitSystem"] = "English";
+            break;
+
+        case UnitSystem::USSurvey:
+            viewerOptions["unitSystem"] = "USSurvey";
+            break;
+
+        case UnitSystem::Undefined:
+            BeAssert(false && "Undefined unit system");
+            break;
+        }
     json["viewerOptions"] = viewerOptions;
 
     Json::Value     revisionsJson;

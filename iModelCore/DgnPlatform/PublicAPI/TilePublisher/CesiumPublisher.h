@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/TilePublisher/CesiumPublisher.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,6 +71,9 @@ protected:
     Utf8String                      m_repository;
 
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
+    TILEPUBLISHER_EXPORT DgnModelPtr GetDefaultModel(DgnDbR db, DgnViewId defaultViewId) const;
+
+
 public:
     PublisherParams () { }
     PublisherParams(BeFileNameCR inputFileName, BeFileNameCR outputDir, WStringCR tilesetName)
@@ -97,9 +100,9 @@ public:
     HistoryMode GetHistoryMode() const { return m_historyMode; }
     void SetBimiumDistDir(BeFileNameCR bimiumDistDir) { m_bimiumDistDir = bimiumDistDir; }
     BeFileNameCR GetBimiumDistDir() const { return m_bimiumDistDir; }
-
     TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const;
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
+    TILEPUBLISHER_EXPORT UnitSystem GetUnitSystem(DgnDbR db, DgnViewId defaultViewId) const;
 
     // For History publishing...
     Utf8StringCR GetUser() const { return m_userName; }
