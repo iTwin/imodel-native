@@ -2,7 +2,7 @@
 #
 #     $Source: makePackages.py $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -266,9 +266,11 @@ if __name__ == '__main__':
     # Generate the other packages that describe or re-deliver the platform-specific addon packages.
     # Note that we do this only in a Windows build (and for the win32 platform). That is the "master" build.
     # Builds for all other platforms only publish their platform-specific addon packages.
-    if nodeOS == 'win32':
-        publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
-        publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
-        publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    if nodeOS != 'win32':
+        doPublish = False;
+
+    publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
 
     exit(0)

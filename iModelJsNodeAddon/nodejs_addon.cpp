@@ -1556,6 +1556,8 @@ static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
+// TODO: This is implemented by DeskTop::FileSystem. Delete this and use that as soon as Bentley has been merged.
+
 static BeFileName getLibraryDir()
     {
     void* addr = (void*)getLibraryDir;
@@ -1570,7 +1572,7 @@ static BeFileName getLibraryDir()
     return BeFileName(tModuleName).GetDirectoryName();
     }
 
-#elif defined (BENTLEYCONFIG_OS_LINUX)
+#elif defined (BENTLEYCONFIG_OS_LINUX) || defined (BENTLEYCONFIG_OS_APPLE_MACOS)
 
 #define _GNU_SOURCE         /* See feature_test_macros(7) */
 #include <dlfcn.h>
@@ -1581,20 +1583,12 @@ static BeFileName getLibraryDir()
     if (0 == dladdr((void*)getLibraryDir, &dlInfo)) // (yes, 0 means failure)
         return BeFileName();
 
-    return BeFileName(dlInfo.dli_sname, true).GetDirectoryName();
+    return BeFileName(dlInfo.dli_fname, true).GetDirectoryName();
     }
 
-#elif defined (BENTLEYCONFIG_OS_APPLE_MACOS)
-#include <Bentley/Desktop/FileSystem.h>
+#else
 
-// *** TODO: This is probably not going to work. We need the MacOS equivalent of dladdr
-
-static BeFileName getLibraryDir()
-    {
-    WString curdir;
-    Desktop::FileSystem::GetCwd(curdir);
-    return BeFileName(curdir.c_str());
-    }
+#error unsupported platform
 
 #endif
 

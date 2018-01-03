@@ -139,14 +139,10 @@ On Linux:
 export ImodelJsRoot=<The parent directory of imodeljs-core>
 cd $OutRoot/LinuxX64/packages/imodeljs-nodeaddon
 npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64
-cd $OutRoot/LinuxX64/packages/imodeljs-electronaddon
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-electronaddonapi $OutRoot/LinuxX64/packages/imodeljs-e_1_6_11-linux-x64
 cd $ImodelJsRoot/imodeljs-core/source/backend
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon $OutRoot/LinuxX64/packages/imodeljs-electronaddon
+npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon 
 cd $ImodelJsRoot/imodeljs-core/source/test
 npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-nodeaddon
-cd $ImodelJsRoot/imodeljs-core/source/testbed
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-nodeaddonapi $OutRoot/LinuxX64/packages/imodeljs-electronaddon
 cd $ImodelJsRoot/imodeljs-core
 
 ```
