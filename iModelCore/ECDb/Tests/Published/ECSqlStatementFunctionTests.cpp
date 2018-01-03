@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatementFunctionTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -33,7 +33,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
-    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeCache());
+    ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeCache(ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName())));
 
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},

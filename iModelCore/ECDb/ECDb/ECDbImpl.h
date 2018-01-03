@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -114,7 +114,6 @@ private:
 
     void ClearECDbCache(Utf8CP tableSpace = nullptr) const;
     DbResult OnDbOpening() const;
-    DbResult OnDbOpened(Db::OpenParams const&) const;
     DbResult OnDbCreated() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;
     DbResult OnDbDetached(Utf8CP tableSpaceName) const;

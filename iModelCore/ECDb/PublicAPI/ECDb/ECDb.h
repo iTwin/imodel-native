@@ -89,43 +89,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ECDb : Db
 {
 public:
     //=======================================================================================
-    //! Options that control what to do with the Change cache file when opening an ECDb file
-    //! @see ECDb::OpenParams @see ECDb::AttachChangeCache  @see @ref ECDbChange
-    // @bsienum                                                    11/17
-    //=======================================================================================
-    enum class ChangeCacheMode
-        {
-        AttachAndCreateIfNotExists,
-        AttachIfExists,
-        DoNotAttach
-        };
-
-    //=======================================================================================
-    // @bsiclass                                                    11/17
-    //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
-        {
-        private:
-            ChangeCacheMode m_changeCacheMode = ChangeCacheMode::DoNotAttach;
-            BeFileName m_changeCachePath;
-
-        public:
-            explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
-            OpenParams(OpenMode openMode, ChangeCacheMode changeCacheMode) : Db::OpenParams(openMode, BeSQLite::DefaultTxn::Yes), m_changeCacheMode(changeCacheMode) {}
-            virtual ~OpenParams() {}
-
-            OpenParams& SetChangeCacheMode(ChangeCacheMode mode) { m_changeCacheMode = mode; return *this; }
-            OpenParams& SetChangeCachePath(BeFileNameCR changeCachePath) { m_changeCachePath = changeCachePath; return *this; }
-
-            //! Gets the ChangeCacheMode
-            //!@note If a profile upgrade has to be performed while opening a file,
-            //!the specified mode is ignored and ChangeCacheMode::AttachAndCreateIfNotExists is used.
-            //! @return ChangeCacheMode
-            ChangeCacheMode GetChangeCacheMode() const { return m_changeCacheMode; }
-            BeFileNameCR GetChangeCachePath() const { return m_changeCachePath; }
-        };
-
-    //=======================================================================================
     //! Compile-time Settings that subclasses can set.
     // @bsiclass                                                    02/2017
     //+===============+===============+===============+===============+===============+======
@@ -230,7 +193,6 @@ protected:
     ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
-    ECDB_EXPORT DbResult _OnDbOpened(Db::OpenParams const&) override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
     ECDB_EXPORT DbResult _OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT void _OnDbClose() override;
@@ -324,17 +286,12 @@ public:
 
     //! Attaches the Changes cache file to this %ECDb file.
     //! If it does not exist, a new one is created and attached.
-    //! If a cache file is already attached, an error is returned
+    //! If a cache file is already attached, an error is returned.
     //! @note Attaching a file means that any open transactions are committed first (see BentleyApi::BeSQLite::Db::AttachDb).
-    //! 
-    //! Alternatively you can specify a corresponding ECDb::ChangeCacheMode so that the cache
-    //! is attached at opening time already.
-    //! @param[in] changeCachePath Path to the change cache file. If omitted, the default path will be used.
+    //! @param[in] changeCachePath Path to the change cache file.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
-    //! @see BentleyApi::BeSQLite::EC::ECDb::OpenParams
-    //! @see BentleyApi::BeSQLite::EC::ECDb::ChangeCacheMode
-    ECDB_EXPORT DbResult AttachChangeCache(BeFileNameCR changeCachePath = BeFileName()) const;
+    ECDB_EXPORT DbResult AttachChangeCache(BeFileNameCR changeCachePath) const;
 
     //! Creates a new Changes cache file for this %ECDb file but does not attach it.
     //! @remarks This method will return an error, if the cache file already exists.
@@ -356,8 +313,8 @@ public:
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
     //! @note The change summaries are persisted in a separate cache file. Before extracting you must make sure
-    //! the cache exists and is attached. Either call ECDb::AttachChangeCache first, or specify the appropriate
-    //! ECDb::ChangeCacheMode when opening the %ECDb file. If the cache does not exist or is not attached, the method returns ERROR.
+    //! the cache exists and is attached. Call ECDb::AttachChangeCache first. 
+    //! If the cache does not exist or is not attached, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
     //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
@@ -373,9 +330,9 @@ public:
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
     //! @note The change summaries are persisted in a separate cache file, specified by @p changeCacheFile.
-    //! Before extracting you must make sure the cache exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first, 
-    //! or specify the appropriate ECDb::ChangeCacheMode when opening the %ECDb file. If the cache does not exist, the method returns ERROR.
+    //! Before extracting you must make sure the cache exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first. 
     //! The change cache file doesn't have to be attached though.
+    //! If the cache does not exist, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
     //! @param[in] changeCacheFile Open read-write connection to the Changes cache file

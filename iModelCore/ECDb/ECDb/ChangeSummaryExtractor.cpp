@@ -851,8 +851,7 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
             return BE_SQLITE_ERROR;
             }
 
-        //Must open the cache file with "DoNotAttach" to avoid that a cache to the cache is being created
-        DbResult r = m_ownedChangeCacheECDb.OpenBeSQLiteDb(m_attachedChangeCachePath.c_str(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ChangeCacheMode::DoNotAttach));
+        DbResult r = m_ownedChangeCacheECDb.OpenBeSQLiteDb(m_attachedChangeCachePath.c_str(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
         if (BE_SQLITE_OK != r)
             return r;
         

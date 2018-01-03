@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -38,29 +38,6 @@ DbResult ECDb::Impl::OnDbOpening() const
     {
     RegisterBuiltinFunctions();
     return m_idSequenceManager.InitializeSequences();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                11/2017
-//---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::Impl::OnDbOpened(Db::OpenParams const& params) const
-    {
-    ECDb::OpenParams const* ecdbParams = dynamic_cast<ECDb::OpenParams const*> (&params);
-    ChangeCacheMode changeCacheMode = ChangeCacheMode::DoNotAttach;
-    if (ecdbParams != nullptr)
-        changeCacheMode = ecdbParams->GetChangeCacheMode();
-
-    if (changeCacheMode != ChangeCacheMode::DoNotAttach)
-        {
-        PERFLOG_START("ECDb", "Open> Attach Changes cache file");
-        const bool createCacheIfNotExists = changeCacheMode == ChangeCacheMode::AttachAndCreateIfNotExists;
-        const DbResult r = m_changeManager.AttachChangeCacheFile(ecdbParams != nullptr ? ecdbParams->GetChangeCachePath() : BeFileName(), createCacheIfNotExists);
-        if (BE_SQLITE_OK != r)
-            return r;
-        PERFLOG_FINISH("ECDb", "Open> Attach Changes cache file");
-        }
-
-    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------

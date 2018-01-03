@@ -107,6 +107,12 @@ DbResult ChangeManager::AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool c
     if (!m_ecdb.IsDbOpen())
         return BE_SQLITE_ERROR;
 
+    if (cacheFilePath.empty())
+        {
+        m_ecdb.GetImpl().Issues().Report("Failed to attach the Changes cache file. Path to Changes cache file must not be empty.");
+        return BE_SQLITE_ERROR;
+        }
+
     if (Utf8String::IsNullOrEmpty(m_ecdb.GetDbFileName()))
         {
         m_ecdb.GetImpl().Issues().Report("Failed to attach the Changes cache file. Primary file is an in-memory or temporary ECDb file for which Change cache files are not supported.");
@@ -116,32 +122,28 @@ DbResult ChangeManager::AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool c
     if (DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ECChange))
         return BE_SQLITE_ERROR;
 
-    BeFileName cachePath(cacheFilePath);
-    if (cachePath.empty())
-        cachePath = DetermineDefaultCachePath(m_ecdb.GetDbFileName());
-
-    const bool cacheAlreadyExisted = cachePath.DoesPathExist();
+    const bool cacheAlreadyExisted = cacheFilePath.DoesPathExist();
     if (!cacheAlreadyExisted)
         {
         if (!createIfNotExists)
             return BE_SQLITE_OK;
 
         ECDb changeCache;
-        DbResult r = CreateChangeCacheFile(changeCache, cachePath);
+        DbResult r = CreateChangeCacheFile(changeCache, cacheFilePath);
         if (BE_SQLITE_OK != r)
             return r;
         }
 
-    if (!cachePath.DoesPathExist())
+    if (!cacheFilePath.DoesPathExist())
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
         }
 
-    DbResult r = m_ecdb.AttachDb(cachePath.GetNameUtf8().c_str(), TABLESPACE_ECChange);
+    DbResult r = m_ecdb.AttachDb(cacheFilePath.GetNameUtf8().c_str(), TABLESPACE_ECChange);
     if (BE_SQLITE_OK != r)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to attach Change cache file '%s': %s", cachePath.GetNameUtf8().c_str(), m_ecdb.GetLastError().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to attach Change cache file '%s': %s", cacheFilePath.GetNameUtf8().c_str(), m_ecdb.GetLastError().c_str());
         return r;
         }
 
