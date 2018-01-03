@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaSerializationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -98,11 +98,11 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     enumeration->SetDisplayLabel("This is a display label.");
     enumeration->SetDescription("This is a description.");
     ECEnumeratorP enumerator;
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 1));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator1", 1));
     enumerator->SetDisplayLabel("First");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 2));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator2", 2));
     enumerator->SetDisplayLabel("Second");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator3", 3));
     enumerator->SetDisplayLabel("Third");
 
     PrimitiveECPropertyP prop;
@@ -121,7 +121,7 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     SchemaWriteStatus status = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base.xml").c_str());
     EXPECT_EQ(SchemaWriteStatus::Success, status);
 
-    status = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), ECVersion::V3_1);
+    status = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), ECVersion::V3_2);
     EXPECT_EQ(SchemaWriteStatus::Success, status);
 
     WString ecSchemaXmlString;
@@ -240,11 +240,11 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     enumeration->SetDisplayLabel("This is a display label.");
     enumeration->SetDescription("This is a description.");
     ECEnumeratorP enumerator;
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 1));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator1", 1));
     enumerator->SetDisplayLabel("First");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 2));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator2", 2));
     enumerator->SetDisplayLabel("Second");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator3", 3));
     enumerator->SetDisplayLabel("Third");
 
     PrimitiveECPropertyP prop;
@@ -282,7 +282,7 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     legacyFullSchemaName.AssignUtf8(schema->GetLegacyFullSchemaName().c_str());
     legacyFullSchemaName.append(L".ecschema.xml");
 
-    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), ECVersion::V3_1);
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), ECVersion::V3_2);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), ECVersion::V2_0);
@@ -490,13 +490,13 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
     schema->CreateEnumeration(enumeration, "ExampleEnumeration", PrimitiveType::PRIMITIVETYPE_Integer);
     enumeration->SetIsStrict(true);
     ECEnumeratorP enumeratorA;
-    enumeration->CreateEnumerator(enumeratorA, 1);
+    enumeration->CreateEnumerator(enumeratorA, "EnumeratorA", 1);
     enumeratorA->SetDisplayLabel("None");
     ECEnumeratorP enumeratorB;
-    enumeration->CreateEnumerator(enumeratorB, 2);
+    enumeration->CreateEnumerator(enumeratorB, "EnumeratorB", 2);
     enumeratorB->SetDisplayLabel("SomeVal");
     ECEnumeratorP enumeratorC;
-    enumeration->CreateEnumerator(enumeratorC, 3);
+    enumeration->CreateEnumerator(enumeratorC, "EnumeratorC", 3);
     enumeratorC->SetDisplayLabel("AnotherVal");
 
     // Property Category

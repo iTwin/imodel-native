@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaLocalizedStrings.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -105,6 +105,18 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDescription(ECEnumerationCR e
 
     Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(ecEnumeration);
 
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  12/2017
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetEnumeratorDescription(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(ecEnumerator);
     return GetLocalizedString(key.c_str(), invariantDescription);
     }
 

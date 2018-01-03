@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaJson.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,7 +27,7 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaReferences()
     for (auto const& pair : m_ecSchema.GetReferencedSchemas())
         {
         Json::Value v = Json::Value(Json::ValueType::objectValue);
-        v[SCHEMAREF_NAME_ATTRIBUTE] = pair.first.GetName();
+        v[NAME_ATTRIBUTE] = pair.first.GetName();
         v[SCHEMAREF_VERSION_ATTRIBUTE] = pair.first.GetVersionString();
         jsonRefArr.append(v);
         }
@@ -141,7 +141,7 @@ SchemaWriteStatus SchemaJsonWriter::Serialize()
 
     m_jsonRoot = Json::Value(Json::ValueType::objectValue);
     m_jsonRoot[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_URI;
-    m_jsonRoot[ECJSON_SCHEMA_NAME_ATTRIBUTE] = m_ecSchema.GetName();
+    m_jsonRoot[NAME_ATTRIBUTE] = m_ecSchema.GetName();
     m_jsonRoot[SCHEMA_VERSION_ATTRIBUTE] = m_ecSchema.GetSchemaKey().GetVersionString();
     m_jsonRoot[ALIAS_ATTRIBUTE] = m_ecSchema.GetAlias();
 

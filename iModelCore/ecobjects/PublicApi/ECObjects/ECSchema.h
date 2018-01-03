@@ -1848,9 +1848,9 @@ public:
     void SetIsStrict(bool value) {m_isStrict = value;}
 
     //!Creates a new enumerator at the end of this enumeration.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8CP value);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, Utf8CP value);
     //!Creates a new enumerator at the end of this enumeration.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, int32_t value);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, int32_t value);
     //! Finds the enumerator with the provided integer value, returns nullptr if none found.
     ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(int32_t value) const;
     //! Finds the enumerator with the provided string value, returns nullptr if none found.
@@ -1888,27 +1888,38 @@ private:
     ECEnumerationCR m_enum;
     int32_t m_intValue;
     Utf8String m_stringValue;
-
-    mutable Utf8String m_displayLabel;
-    bool m_hasExplicitDisplayLabel;
+    ECValidatedName m_validatedName;
+    Utf8String m_description;
 
     //  Lifecycle management:  The enumeration implementation will
     //  serve as a factory for enumerators and will manage their lifecycle.
-    explicit ECEnumerator(ECEnumerationCR parent, int32_t value) : m_enum(parent), m_intValue(value), m_hasExplicitDisplayLabel(false) {}
-    explicit ECEnumerator(ECEnumerationCR parent, Utf8CP value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
+    explicit ECEnumerator(ECEnumerationCR parent, int32_t value) : m_enum(parent), m_intValue(value) {}
+    explicit ECEnumerator(ECEnumerationCR parent, Utf8CP value) : m_enum(parent), m_stringValue(value) {}
     ~ECEnumerator() {}
 
 public:
     //! The ECEnumeration that this enumerator is defined in
     ECEnumerationCR GetEnumeration() const {return m_enum;}
     //! Whether the display label is explicitly defined or not
-    bool GetIsDisplayLabelDefined() const {return m_hasExplicitDisplayLabel;}
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();}
     //! Sets the display label of this enumerator
-    void SetDisplayLabel(Utf8CP value) {m_hasExplicitDisplayLabel = true; m_displayLabel = value;}
-    //! Gets the display label of this enumerator.  If no display label has been set explicitly, it will return the name of the enumerator
+    ECOBJECTS_EXPORT void SetDisplayLabel(Utf8StringCR value);
+    //! Gets the localized display label of this enumerator. If no display label has been set explicitly, it will return the name of the enumerator.
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-    //! Gets the invariant display label for this enumerator. This will return nullptr if no label is available, and the value is not a string.
+    //! Gets the invariant display label for this enumerator. If no display label has been set explicitly, it will return the name of the enumerator.
     ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
+
+    //! Sets the name of this enumerator.
+    ECOBJECTS_EXPORT ECObjectsStatus SetName(Utf8StringCR name);
+    //! Gets the name of this enumerator.
+    Utf8StringCR GetName() const {return m_validatedName.GetName();}
+
+    //! Sets the description of this enumerator.
+    void SetDescription(Utf8StringCR value) {m_description = value;}
+    //! Gets the description of this enumerator. Returns the localized description if one exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
+    //! Gets the invariant description for this enumerator.
+    Utf8StringCR GetInvariantDescription() const {return m_description;}
 
     //!Returns true if this enumerator holds an integer value
     bool IsInteger() const { return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_Integer; }
@@ -2286,7 +2297,9 @@ private:
     ECRelationshipConstraintClassList    m_constraintClasses;
 
     ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
+    ECObjectsStatus             SetMultiplicityFromLegacyString(Utf8CP multiplicity, bool validate);
     ECObjectsStatus             SetMultiplicity(Utf8CP multiplicity, bool validate);
+
 
     ECObjectsStatus             AddClass(ECClassCR classConstraint);
     ECObjectsStatus             RemoveClass(ECClassCR classConstraint);

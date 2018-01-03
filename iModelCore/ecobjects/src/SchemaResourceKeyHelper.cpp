@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaResourceKeyHelper.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -68,6 +68,13 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECEnumerationCR ecEnum
     return GetTypeDescriptionKey(ecEnumeration.GetSchema().GetName().c_str(),
                                  ecEnumeration.GetName().c_str(),
                                  ecEnumeration.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECEnumeratorCR ecEnumerator)
+    {
+    return GetTypeDescriptionKey(ecEnumerator.GetEnumeration().GetSchema().GetName().c_str(),
+                                 ecEnumerator.GetName().c_str(),
+                                 ecEnumerator.GetInvariantDescription().c_str());
     }
 
 Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity)

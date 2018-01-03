@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CustomAttributeConversionsTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -147,7 +147,7 @@ struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
     void ValidateSchema(ECSchemaR schema, bool useFreshReadContext = true)
         {
         Utf8String out;
-        EXPECT_EQ(SchemaWriteStatus::Success, schema.WriteToXmlString(out, ECVersion::V3_1));
+        EXPECT_EQ(SchemaWriteStatus::Success, schema.WriteToXmlString(out, ECVersion::Latest));
 
         ECSchemaPtr schemaCopy;
         if (useFreshReadContext)
@@ -367,7 +367,7 @@ TEST_F(StandardValueToEnumConversionTest, StandardValuesTest)
         {
         int i = enumerator->GetInteger();
         Utf8String displayLabel = enumerator->GetDisplayLabel();
-        EXPECT_EQ(displayLabel, sdValues[i]) << "Enumrator displaylabel doesnot match StandardValue's Display String";
+        EXPECT_EQ(displayLabel, sdValues[i]) << "Enumerator displaylabel does not match StandardValue's Display String";
         }
     }
 
@@ -438,7 +438,6 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestSimple)
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title3")) << "Enumeration Name_Title3 should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(true, ecEnum->GetIsStrict()) << "Name_Title3 has not set MustBeFromList. Default is true so GetIsStrict() should return true";
-
     }
 
 //---------------------------------------------------------------------------------------

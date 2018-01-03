@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaCopyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -163,9 +163,9 @@ TEST_F(SchemaCopyTest, CopySchemaWithEnumeration)
     enumeration->SetDisplayLabel("My Display Label");
     enumeration->SetDescription("Test Description");
     enumeration->SetIsStrict(false);
-    enumeration->CreateEnumerator(enumeratorA, "Value A");
+    enumeration->CreateEnumerator(enumeratorA, "EnumeratorA", "Value A");
     enumeratorA->SetDisplayLabel("The value for A");
-    enumeration->CreateEnumerator(enumeratorB, "Value B");
+    enumeration->CreateEnumerator(enumeratorB, "EnumeratorB", "Value B");
     enumeratorB->SetDisplayLabel("The value for B");
 
     CopySchema();

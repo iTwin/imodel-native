@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -981,7 +981,7 @@ SchemaWriteStatus ECProperty::_WriteJson(Json::Value& outValue, bool isInherited
     if (m_forSupplementation)
         return SchemaWriteStatus::Success;
 
-    outValue[ECJSON_ECPROPERTY_NAME] = GetName();
+    outValue[NAME_ATTRIBUTE] = GetName();
 
     Utf8String propertyType;
     if (GetIsPrimitive())

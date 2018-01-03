@@ -172,9 +172,9 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
     for (BeXmlNodeP& schemaReferenceNode : schemaReferenceNodes)
         {
         SchemaKey key;
-        if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(key.m_schemaName, SCHEMAREF_NAME_ATTRIBUTE))
+        if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(key.m_schemaName, NAME_ATTRIBUTE))
             {
-            LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", schemaReferenceNode->GetName(), SCHEMAREF_NAME_ATTRIBUTE);
+            LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", schemaReferenceNode->GetName(), NAME_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
@@ -1144,7 +1144,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
         {
         ECSchemaP   refSchema = mapPair.first;
         m_xmlWriter.WriteElementStart(ECXML_SCHEMAREFERENCE_ELEMENT);
-        m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
+        m_xmlWriter.WriteAttribute(NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
         if (ECVersion::V2_0 == m_ecXmlVersion)
             {

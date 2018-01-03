@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchemaConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -592,7 +592,7 @@ ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueIn
     for (auto const& pair : nonConflictingValues)
         {
         ECEnumeratorP enumerator;
-        enumeration->CreateEnumerator(enumerator, pair.first);
+        enumeration->CreateEnumerator(enumerator, ECNameValidation::EncodeToValidName(pair.second), pair.first);
         enumerator->SetDisplayLabel(pair.second.c_str());
 
         // Add it to the sdInfo so that subsequent classes can be compared against it. 
@@ -823,7 +823,7 @@ ECObjectsStatus StandardValuesConverter::MergeEnumeration(ECEnumerationP& enumer
         ECEnumeratorP enumerator = enumeration->FindEnumerator(pair.first);
         if (enumerator == nullptr)
             {
-            enumeration->CreateEnumerator(enumerator, pair.first);
+            enumeration->CreateEnumerator(enumerator, ECNameValidation::EncodeToValidName(pair.second), pair.first);
             enumerator->SetDisplayLabel(pair.second.c_str());
             }
         else if (enumerator->GetInvariantDisplayLabel() != pair.second)
@@ -875,7 +875,7 @@ ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enume
 
     for (auto const& pair : sdInfo.m_valuesMap)
         {
-        status = enumeration->CreateEnumerator(enumerator, pair.first);
+        status = enumeration->CreateEnumerator(enumerator, ECNameValidation::EncodeToValidName(pair.second), pair.first);
         if (ECObjectsStatus::Success != status)
             return status;
 

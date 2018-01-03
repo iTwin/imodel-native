@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaParseUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -228,7 +228,15 @@ ECObjectsStatus SchemaParseUtils::ParseModifierXmlString(ECClassModifier& modifi
 * @bsimethod                                    Caleb.Shafer                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
+//
+// Prior to EC3.2 multiplicity strings were parsed with scanf using the format string "(%d..%d)" and would "pass" if the first integer was parsed
+// successfully, irregardless of whether the entire string was valid or not. Using this multiplicity string parsing mechanism the strings
+//      "(3..N)"
+//      "(3,N)"
+//      "(3banana)"
+// Would all be parsed as if they were "(3..*)". For schemas with ECVersion 3.2 or later, this bug was fixed and the restrictions on valid
+// multiplicity strings were tightened. The ParseLegacyMultiplicityString method exists solely for comparability with old EC versions.
+ECObjectsStatus SchemaParseUtils::ParseLegacyMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
@@ -256,6 +264,30 @@ ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t &lowerLimit, 
     // Otherwise, we just assume the upper limit is '*' and is unbounded
     upperLimit = UINT_MAX;
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString)
+    {
+    static std::regex rgx("\\(([0-9]+)\\s*\\.\\.\\s*([0-9]+|\\*)\\)", std::regex::optimize);
+    // For the multiplicity string in the form (lowerLimit..upperLimit) described by the above regex string.
+    // match[0] : entire string
+    // match[1] : lowerLimit
+    // match[2] : upperLimit
+    std::cmatch match;
+
+    if (!std::regex_match(multiplicityString.c_str(), match, rgx))
+        {
+        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    lowerLimit = (uint32_t)BeStringUtilities::ParseUInt64(match[1].str().c_str());
+    upperLimit = match[2].str() == "*" ? UINT_MAX : (uint32_t)BeStringUtilities::ParseUInt64(match[2].str().c_str());
+
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

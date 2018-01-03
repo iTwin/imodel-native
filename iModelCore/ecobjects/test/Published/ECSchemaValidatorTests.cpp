@@ -13,7 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaValidatorTests : ECTestFixture {};
-struct SchemaConverterTests : ECTestFixture {};
 
 // Test valdiation and conversion of schema validation rules
 Utf8CP oldStandardSchemaNames[] =

@@ -2,7 +2,7 @@
 |
 |     $Source: src/PropertyCategory.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -131,7 +131,7 @@ SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standa
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
-        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        outValue[NAME_ATTRIBUTE] = GetName();
         }
 
     outValue[ECJSON_SCHEMA_CHILD_TYPE] = PROPERTY_CATEGORY_ELEMENT;

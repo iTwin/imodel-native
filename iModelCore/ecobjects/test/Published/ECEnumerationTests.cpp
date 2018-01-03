@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECEnumerationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -51,26 +51,27 @@ TEST_F(ECEnumerationTest, CheckEnumerationBasicProperties)
     EXPECT_STREQ(enumeration->GetDisplayLabel().c_str(), "Display Label");
     EXPECT_STREQ(enumeration->GetInvariantDisplayLabel().c_str(), "Display Label");
 
-    ECEnumeratorP enumerator;
-    status = enumeration->CreateEnumerator(enumerator, 5);
+    ECEnumeratorP enumerator1;
+    status = enumeration->CreateEnumerator(enumerator1, "Enumerator1", 5);
     EXPECT_TRUE(status == ECObjectsStatus::Success);
-    EXPECT_TRUE(enumerator != nullptr);
-    EXPECT_STREQ(enumerator->GetInvariantDisplayLabel().c_str(), "5");
-    enumerator->SetDisplayLabel("DLBL");
+    EXPECT_TRUE(enumerator1 != nullptr);
+    EXPECT_STREQ(enumerator1->GetInvariantDisplayLabel().c_str(), "Enumerator1");
+    enumerator1->SetDisplayLabel("DLBL");
 
-    EXPECT_STREQ(enumerator->GetDisplayLabel().c_str(), "DLBL");
+    EXPECT_STREQ(enumerator1->GetName().c_str(), "Enumerator1");
+    EXPECT_STREQ(enumerator1->GetDisplayLabel().c_str(), "DLBL");
 
-    EXPECT_TRUE(enumerator->GetInteger() == 5);
-    EXPECT_STREQ(enumerator->GetString().c_str(), "");
-    EXPECT_FALSE(enumerator->IsString());
-    EXPECT_TRUE(enumerator->IsInteger());
+    EXPECT_TRUE(enumerator1->GetInteger() == 5);
+    EXPECT_STREQ(enumerator1->GetString().c_str(), "");
+    EXPECT_FALSE(enumerator1->IsString());
+    EXPECT_TRUE(enumerator1->IsInteger());
 
     ECEnumeratorP enumerator2;
-    status = enumeration->CreateEnumerator(enumerator2, 5);
+    status = enumeration->CreateEnumerator(enumerator2, "Enumerator2", 5);
     EXPECT_TRUE(status == ECObjectsStatus::NamedItemAlreadyExists);
     EXPECT_TRUE(enumerator2 == nullptr);
 
-    status = enumeration->CreateEnumerator(enumerator2, 1);
+    status = enumeration->CreateEnumerator(enumerator2, "Enumerator2", 1);
     EXPECT_TRUE(status == ECObjectsStatus::Success);
     EXPECT_TRUE(enumerator2 != nullptr);
     enumerator2->SetDisplayLabel("DLBL2");
@@ -83,7 +84,7 @@ TEST_F(ECEnumerationTest, CheckEnumerationBasicProperties)
         EXPECT_TRUE(p != nullptr);
         if (i == 0)
             {
-            EXPECT_TRUE(p == enumerator);
+            EXPECT_TRUE(p == enumerator1);
             }
         else if (i == 1)
             {
@@ -178,11 +179,11 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     EXPECT_STREQ("string", enumeration->GetTypeName().c_str());
 
     ECEnumeratorP enumerator;
-    EXPECT_TRUE(enumeration->CreateEnumerator(enumerator, "First") == ECObjectsStatus::Success);
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "FirstEnumerator", "First"));
     enumerator->SetDisplayLabel("First Value");
-    EXPECT_TRUE(enumeration->CreateEnumerator(enumerator, "Second") == ECObjectsStatus::Success);
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "SecondEnumerator", "Second"));
     enumerator->SetDisplayLabel("Second Value");
-    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 2);
+    EXPECT_EQ(2, enumeration->GetEnumeratorCount());
 
     ECEntityClassP entityClass;
     status = schema->CreateEntityClass(entityClass, "EntityClass");
@@ -202,7 +203,7 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     EXPECT_STREQ("Enumeration", arrProperty->GetTypeName().c_str());
 
     Utf8String ecSchemaXmlString;
-    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_1);
+    SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::Latest);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     ECSchemaPtr deserializedSchema;
@@ -212,15 +213,16 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
 
     ECEnumerationP deserializedEnumeration;
     deserializedEnumeration = deserializedSchema->GetEnumerationP("Enumeration");
-    ASSERT_TRUE(deserializedEnumeration != nullptr);
+    ASSERT_NE(nullptr, deserializedEnumeration);
     EXPECT_STREQ("dl", deserializedEnumeration->GetDisplayLabel().c_str());
     EXPECT_STREQ("de", deserializedEnumeration->GetDescription().c_str());
     EXPECT_STREQ("string", deserializedEnumeration->GetTypeName().c_str());
 
-    EXPECT_TRUE(deserializedEnumeration->GetEnumeratorCount() == 2);
-    enumerator = deserializedEnumeration->FindEnumerator("First");
-    EXPECT_TRUE(enumerator != nullptr);
-    EXPECT_STREQ("First Value", enumerator->GetInvariantDisplayLabel().c_str());
+    EXPECT_EQ(2, deserializedEnumeration->GetEnumeratorCount());
+    enumerator = deserializedEnumeration->FindEnumerator("Second");
+    ASSERT_NE(nullptr, enumerator);
+    EXPECT_STREQ("SecondEnumerator", enumerator->GetName().c_str());
+    EXPECT_STREQ("Second Value", enumerator->GetInvariantDisplayLabel().c_str());
     EXPECT_FALSE(deserializedEnumeration->GetIsStrict());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
@@ -239,12 +241,72 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     EXPECT_STREQ("string", propertyEnumeration->GetTypeName().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          12/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, TestEnumeratorSetInteger)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationP intEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(intEnumeration, "IntegerTestEnumeration", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(intEnumeration != nullptr);
+    ECEnumeratorP intEnumerator0;
+    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intEnumerator0, "Enumerator0", 3));
+    ECEnumeratorP intEnumerator1;
+    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intEnumerator1, "Enumerator1", 4));
+
+    EXPECT_EQ(ECObjectsStatus::Success, intEnumerator1->SetInteger(5)) << "Setting a type-matched enumerator to a unique value should succeed.";
+    EXPECT_NE(ECObjectsStatus::Success, intEnumerator1->SetInteger(intEnumerator0->GetInteger())) << "Setting a type-matched enumerator to a non-unique value should fail.";
+
+    ECEnumerationP strEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(strEnumeration, "StringTestEnumeration", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_TRUE(strEnumeration != nullptr);
+    ECEnumeratorP strEnumerator;
+    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator, "StringEnumerator", "foo"));
+
+    EXPECT_NE(ECObjectsStatus::Success, strEnumerator->SetInteger(9)) << "Setting a type-mismatched enumerator should fail.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          12/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, TestEnumeratorSetString)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationP strEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(strEnumeration, "StringTestEnumeration", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_TRUE(strEnumeration != nullptr);
+    ECEnumeratorP strEnumerator0;
+    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator0, "Enumerator0", "foo"));
+    ECEnumeratorP strEnumerator1;
+    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator1, "Enumerator1", "bar"));
+
+    EXPECT_EQ(ECObjectsStatus::Success, strEnumerator1->SetString("baz")) << "Setting a type-matched enumerator to a unique value should succeed.";
+    EXPECT_NE(ECObjectsStatus::Success, strEnumerator1->SetString(strEnumerator0->GetString().c_str())) << "Setting a type-matched enumerator to a non-unique value should fail.";
+
+    ECEnumerationP intEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(intEnumeration, "IntegerTestEnumeration", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(intEnumeration != nullptr);
+    ECEnumeratorP intInumerator;
+    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intInumerator, "IntegerEnumerator", 3));
+
+    EXPECT_NE(ECObjectsStatus::Success, intInumerator->SetString("qux")) << "Setting a type-mismatched enumerator should fail.";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
     {
-    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    Utf8CP refSchemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='ReferencedSchema' version='01.00' displayLabel='Display Label' description='Description' nameSpacePrefix='ref' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECEnumeration typeName='RevisionStatus' backingTypeName='int' description='...' displayLabel='Revision Status' isStrict='False'>"
         "       <ECEnumerator value='0' displayLabel='Undefined' />"
@@ -255,13 +317,11 @@ TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
         "       <ECEnumerator value='5' displayLabel='Obsolete' />"
         "   </ECEnumeration>"
         "</ECSchema>";
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-
     ECSchemaPtr refSchema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, schemaXML, *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status);
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, refSchemaXML, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
 
-    schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Stuff' version='09.06' displayLabel='Display Label' description='Description' nameSpacePrefix='stuff' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECSchemaReference name='ReferencedSchema' version='01.00' prefix='ref' />"
         "   <ECClass typeName='Document' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
@@ -274,13 +334,13 @@ TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
         "</ECSchema>";
     ECSchemaPtr schema;
     status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
 
-    ECEnumerationP enumeration;
-    enumeration = refSchema->GetEnumerationP("RevisionStatus");
-    ASSERT_TRUE(enumeration != nullptr);
-    EXPECT_STREQ("int", enumeration->GetTypeName().c_str());
-    EXPECT_FALSE(enumeration->GetIsStrict());
+    ECEnumerationP refEnumeration;
+    refEnumeration = refSchema->GetEnumerationP("RevisionStatus");
+    ASSERT_TRUE(nullptr != refEnumeration);
+    EXPECT_STREQ("int", refEnumeration->GetTypeName().c_str());
+    EXPECT_FALSE(refEnumeration->GetIsStrict());
 
     ECClassCP documentClass = schema->GetClassCP("Document");
     ECPropertyP deserializedProperty = documentClass->GetPropertyP("RevisionStatus");
@@ -288,14 +348,14 @@ TEST_F(ECEnumerationTest, ExpectSuccessWithEnumerationInReferencedSchema)
     PrimitiveECPropertyCP deserializedPrimitive = deserializedProperty->GetAsPrimitiveProperty();
     ASSERT_TRUE(nullptr != deserializedPrimitive);
 
-    ECEnumerationCP propertyEnumeration = deserializedPrimitive->GetEnumeration();
-    ASSERT_TRUE(nullptr != propertyEnumeration);
-    EXPECT_STREQ("int", propertyEnumeration->GetTypeName().c_str());
-    ASSERT_TRUE(enumeration == propertyEnumeration);
+    ECEnumerationCP deserializedPropertyEnumeration = deserializedPrimitive->GetEnumeration();
+    ASSERT_TRUE(nullptr != deserializedPropertyEnumeration);
+    EXPECT_STREQ("int", deserializedPropertyEnumeration->GetTypeName().c_str());
+    ASSERT_TRUE(refEnumeration == deserializedPropertyEnumeration);
 
-    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 6);
-    ECEnumeratorP ecEnumerator = enumeration->FindEnumerator(3);
-    EXPECT_TRUE(ecEnumerator != nullptr);
+    EXPECT_EQ(6, refEnumeration->GetEnumeratorCount());
+    ECEnumeratorP ecEnumerator = refEnumeration->FindEnumerator(3);
+    ASSERT_TRUE(nullptr != ecEnumerator);
     EXPECT_TRUE(ecEnumerator->GetInteger() == 3);
     Utf8StringCR displayLabel = ecEnumerator->GetDisplayLabel();
     EXPECT_STREQ(displayLabel.c_str(), "Approved");
@@ -354,13 +414,13 @@ TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
     schema->CreateEnumeration(enumeration, "ExampleEnumeration", PrimitiveType::PRIMITIVETYPE_Integer);
     enumeration->SetIsStrict(true);
     ECEnumeratorP enumeratorA;
-    enumeration->CreateEnumerator(enumeratorA, 1);
+    enumeration->CreateEnumerator(enumeratorA, "EnumeratorA", 1);
     enumeratorA->SetDisplayLabel("None");
     ECEnumeratorP enumeratorB;
-    enumeration->CreateEnumerator(enumeratorB, 2);
+    enumeration->CreateEnumerator(enumeratorB, "EnumeratorB", 2);
     enumeratorB->SetDisplayLabel("SomeVal");
     ECEnumeratorP enumeratorC;
-    enumeration->CreateEnumerator(enumeratorC, 3);
+    enumeration->CreateEnumerator(enumeratorC, "EnumeratorC", 3);
     enumeratorC->SetDisplayLabel("AnotherVal");
     Json::Value schemaJson;
     EXPECT_EQ(SchemaWriteStatus::Success, enumeration->WriteJson(schemaJson, true));

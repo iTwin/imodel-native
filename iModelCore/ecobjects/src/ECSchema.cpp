@@ -1442,9 +1442,9 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECE
         {
         ECEnumeratorP targetEnumerator;
         if (PrimitiveType::PRIMITIVETYPE_Integer == targetEnumeration->GetType())
-            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetInteger());
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetName(), sourceEnumerator->GetInteger());
         else
-            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetString().c_str());
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetName(), sourceEnumerator->GetString().c_str());
 
         if (sourceEnumerator->GetIsDisplayLabelDefined())
             targetEnumerator->SetDisplayLabel(sourceEnumerator->GetInvariantDisplayLabel().c_str());

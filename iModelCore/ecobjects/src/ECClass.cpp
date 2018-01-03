@@ -2408,7 +2408,7 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
-        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        outValue[NAME_ATTRIBUTE] = GetName();
         }
 
     bool isMixin = false;
@@ -3571,7 +3571,11 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass, %s, must have a %s attribute.", m_relClass->GetFullName(), MULTIPLICITY_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        SetMultiplicity(multiplicity.c_str(), false);
+
+        if (m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2))
+            SetMultiplicity(multiplicity.c_str(), false);
+        else
+            SetMultiplicityFromLegacyString(multiplicity.c_str(), false);
         }
     else
         {
@@ -3999,13 +4003,36 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity) {
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicityFromLegacyString(Utf8CP multiplicity, bool validate)
+    {
+    PRECONDITION (nullptr != multiplicity, ECObjectsStatus::PreconditionViolated);
+    uint32_t lowerLimit;
+    uint32_t upperLimit;
+    if (ECObjectsStatus::Success != SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, multiplicity))
+        {
+        LOG.errorv ("Failed to parse the RelationshipMultiplicity string '%s'.", multiplicity);
+        return ECObjectsStatus::ParseError;
+        }
+
+    if (validate)
+        {
+        ECObjectsStatus validationStatus = ValidateMultiplicityConstraint(lowerLimit, upperLimit);
+        if (validationStatus != ECObjectsStatus::Success)
+            return validationStatus;
+        }
+
+    return SetMultiplicity(lowerLimit, upperLimit);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                  12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, bool validate)
     {
     PRECONDITION (nullptr != multiplicity, ECObjectsStatus::PreconditionViolated);
     uint32_t lowerLimit;
     uint32_t upperLimit;
-    ECObjectsStatus status = SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, multiplicity);
-    if (ECObjectsStatus::Success != status)
+    if (ECObjectsStatus::Success != SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, multiplicity))
         {
         LOG.errorv ("Failed to parse the RelationshipMultiplicity string '%s'.", multiplicity);
         return ECObjectsStatus::ParseError;

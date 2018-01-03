@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/ECObjects/SchemaParseUtils.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,12 +18,10 @@
 
 #define ECJSON_URI_SPEC_ATTRIBUTE           "$schema"
 #define ECXML_SCHEMA_NAME_ATTRIBUTE         "schemaName"
-#define ECJSON_SCHEMA_NAME_ATTRIBUTE        "name"
 
 #define ECJSON_SCHEMA_CHILDREN_ATTRIBUTE    "children"
 #define ECJSON_PARENT_VERSION_ATTRIBUTE     "schemaVersion"
 #define ECJSON_PARENT_SCHEMA_ATTRIBUTE      "schema"
-#define ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE  "name"
 #define ECJSON_SCHEMA_CHILD_TYPE            "schemaChildType"
 
 #define ECXML_ENTITYCLASS_ELEMENT           "ECEntityClass"
@@ -66,6 +64,7 @@
 #define ECJSON_DISPLAY_LABEL_ATTRIBUTE      "label"
 #define SCHEMA_VERSION_ATTRIBUTE            "version"
 #define ALIAS_ATTRIBUTE                     "alias"
+#define NAME_ATTRIBUTE                      "name"
 #define DESCRIPTION_ATTRIBUTE               "description"
 #define APPLIES_TO                          "appliesTo"
 #define CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE   APPLIES_TO
@@ -85,7 +84,6 @@
 #define ECJSON_UNIT_FORMAT_UNIT             "unit"
 #define ECJSON_UNIT_FORMAT_FORMAT           "format"
 #define PRIORITY_ATTRIBUTE                  "priority"
-#define ECJSON_ECPROPERTY_NAME              "name"
 #define READONLY_ATTRIBUTE                  "readOnly"
 #define CATEGORY_ATTRIBUTE                  "category"
 #define TYPE_NAME_ATTRIBUTE                 "typeName"
@@ -116,14 +114,12 @@
 #define MODIFIER_ATTRIBUTE                  "modifier"
 #define PROPERTY_NAME_ATTRIBUTE             "propertyName"
 #define SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE   "nameSpacePrefix"
-#define SCHEMAREF_NAME_ATTRIBUTE            "name"
 #define SCHEMAREF_VERSION_ATTRIBUTE         "version"
 #define SCHEMAREF_PREFIX_ATTRIBUTE          "prefix"
 #define STRENGTH_ATTRIBUTE                  "strength"
 #define STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"
 #define CARDINALITY_ATTRIBUTE               "cardinality"
 #define CONSTRAINTCLASSNAME_ATTRIBUTE       "class"
-#define KEYPROPERTYNAME_ATTRIBUTE           "name"
 
 #define ECXML_TRUE                          "True"
 #define ECXML_FALSE                         "False"
@@ -238,6 +234,7 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseXmlFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseModifierXmlString(ECClassModifier& modifier, Utf8StringCR modifierString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseLegacyMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
     ECOBJECTS_EXPORT static ECObjectsStatus ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString);
