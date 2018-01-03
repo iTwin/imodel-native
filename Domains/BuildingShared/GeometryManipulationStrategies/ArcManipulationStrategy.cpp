@@ -42,17 +42,37 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
 
     if (IsCenterSet() && IsStartSet() && IsEndSet())
         {
-        DEllipse3d tmpArc = DEllipse3d::FromArcCenterStartEnd(GetCenter(), GetStart(), GetEnd());
-        if (DoubleOps::AlmostEqual(tmpArc.sweep, 0) && DoubleOps::AlmostEqual(GetSweep(), 0))
+        DVec3d centerStart = DVec3d::FromStartEnd(GetCenter(), GetStart());
+        if (DoubleOps::AlmostEqual(centerStart.Magnitude(), 0)) // 0 radius arc
+            return nullptr;
+
+        DVec3d centerEnd = DVec3d::FromStartEnd(GetCenter(), GetEnd());
+
+        bool startEndCenterInLine = DoubleOps::AlmostEqual(DVec3d::FromCrossProduct(centerStart, centerEnd).Magnitude(), 0);
+        if (startEndCenterInLine)
             {
             DVec3d normal;
-            if (BentleyStatus::ERROR != _TryGetProperty(prop_Normal(), normal))
+            if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
+                return nullptr;
+
+            double centerEndMagnitude = centerEnd.Magnitude();
+            DEllipse3d arc = DEllipse3d::FromCenterNormalRadius(GetCenter(), normal, GetCenter().Distance(GetStart()));
+            if (DoubleOps::AlmostEqual(centerEndMagnitude, 0) ||
+                DoubleOps::AlmostEqual(centerStart.AngleTo(centerEnd), 0))
                 {
-                DEllipse3d arc = DEllipse3d::FromCenterNormalRadius(GetCenter(), normal, GetCenter().Distance(GetStart()));
+                return ICurvePrimitive::CreateArc(arc);
+                }
+            else if (!DoubleOps::AlmostEqual(centerEndMagnitude, 0))
+                {
+                arc.sweep = GetSweep();
+                if (DoubleOps::AlmostEqual(arc.sweep, 0))
+                    arc.sweep = Angle::Pi();
                 return ICurvePrimitive::CreateArc(arc);
                 }
             }
-        else if (DoubleOps::AlmostEqual(GetSweep(), tmpArc.sweep))
+
+        DEllipse3d tmpArc = DEllipse3d::FromArcCenterStartEnd(GetCenter(), GetStart(), GetEnd());
+        if (DoubleOps::AlmostEqual(GetSweep(), tmpArc.sweep))
             return ICurvePrimitive::CreateArc(tmpArc);
         else
             {
