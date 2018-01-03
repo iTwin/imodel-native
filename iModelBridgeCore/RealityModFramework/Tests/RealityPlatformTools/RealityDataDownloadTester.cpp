@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/RealityDataDownloadTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -254,6 +254,14 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
     BeFileName::EmptyAndRemoveDirectory(directory.c_str());
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            10/2016
+//-------------------------------------------------------------------------------------
+TEST_F(RealityDataDownloadTestFixture, UnzipTest)
+    {
+    //RealityModFrameworkTestsUtils::GetDirectory()
+    EXPECT_TRUE(RealityDataDownload::UnZipFile(L"TestData\\RealityPlatformTools\\download.zip", L"TestData\\RealityPlatformTools\\downloadUnzip"));
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016

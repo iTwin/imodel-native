@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/WSGServicesTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -983,13 +983,22 @@ TEST_F(WSGServicesRequestFixture, ProxyTest)
     EXPECT_TRUE(cred.Equals("test2"));
     }
 
+void tokenCallback(Utf8StringR token, time_t& timer)
+    {
+    token = "here's a token";
+    timer = 700;
+    }
+
 //-------------------------------------------------------------------------------------
-// @bsimethod                          Remi.Charbonneau                         05/2017
+// @bsimethod                          Spencer.Mason                           01/2018
 //-------------------------------------------------------------------------------------
 TEST_F(WSGServicesRequestFixture, ConnectTokenManagerTest)
     {
-    ConnectTokenManager ctm = ConnectTokenManager::GetInstance();
-    EXPECT_TRUE(!ctm.GetToken().empty());
+    ConnectTokenManager& ctm = ConnectTokenManager::GetInstance();
+
+    ctm.SetTokenCallback(tokenCallback);
+
+    EXPECT_TRUE(ctm.GetToken().ContainsI("here's a token"));
     }
 
 //-------------------------------------------------------------------------------------
