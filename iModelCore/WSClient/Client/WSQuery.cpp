@@ -62,7 +62,7 @@ WSQuery(objectId.schemaName, objectId.className, polymorphic)
 Utf8String WSQuery::EscapeValue(Utf8String value)
     {
     value.ReplaceAll("'", "''");
-    return HttpClient::EscapeString(value);
+    return BeUri::EscapeString(value);
     }
 
 /*--------------------------------------------------------------------------------------+
