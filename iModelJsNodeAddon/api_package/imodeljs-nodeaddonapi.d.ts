@@ -109,6 +109,31 @@ declare class NodeAddonDgnDb {
   /** Close this iModel. */
   closeDgnDb(): void;
 
+  /** Creates an EC change cache for this iModel (but does not attach it). 
+   * @param changeCacheFile The created change cache ECDb file
+   * @param changeCachePath The full path to the EC change cache file in the local file system
+   * @return non-zero error status if operation failed.
+  */
+  createChangeCache(changeCacheFile: NodeAddonECDb, changeCachePath: string) : DbResult;
+
+  /** Attaches an EC change cache file to this iModel. 
+   * @param changeCachePath The full path to the EC change cache file in the local file system
+   * @return non-zero error status if operation failed.
+  */
+  attachChangeCache(changeCachePath: string) : DbResult;
+
+  /** Determines whether the EC Changes cache file is attached to this iModel. 
+   * @return true if the changes cache is attached. false otherwise
+  */
+  isChangeCacheAttached() : boolean;
+
+  /** Extracts a change summary from the specified Changeset file
+   * @param changeCacheFile The change cache ECDb file where the extracted change summary will be persisted
+   * @param changesetFilePath The full path to the SQLite changeset file in the local file system
+   * @return The ChangeSummary ECInstanceId as hex string or error codes in case of failure
+  */
+  extractChangeSummary(changeCacheFile: NodeAddonECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
+  
   /**
    * Set the briefcase Id of this iModel.
    * @param idvalue The briefcase Id value.
