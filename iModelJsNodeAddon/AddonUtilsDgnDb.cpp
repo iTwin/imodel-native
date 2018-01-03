@@ -15,7 +15,7 @@
 BE_JSON_NAME(baseClasses)
 BE_JSON_NAME(code)
 BE_JSON_NAME(customAttributes)
-BE_JSON_NAME(description)
+//BE_JSON_NAME(description)
 BE_JSON_NAME(direction)
 BE_JSON_NAME(displayLabel)
 BE_JSON_NAME(ecclass)
