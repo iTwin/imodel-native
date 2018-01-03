@@ -15,7 +15,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     virtual void _SetProperty(Utf8CP key, value_type const& value) {}
 
 #define GMS_V_TRYGET_PROPERTY_TYPE(value_type) \
-    virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) { return BentleyStatus::ERROR; }
+    virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) const { return BentleyStatus::ERROR; }
 
 #define GMS_V_SET_TRYGET_PROPERTY_TYPE(value_type) \
     GMS_V_SET_PROPERTY_TYPE(value_type) \
@@ -25,7 +25,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetProperty(Utf8CP key, value_type const& value);
 
 #define GMS_TRYGET_PROPERTY_TYPE(value_type) \
-    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool TryGetProperty(Utf8CP key, value_type& value);
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus TryGetProperty(Utf8CP key, value_type& value) const;
 
 #define GMS_SET_TRYGET_PROPERTY_TYPE(value_type) \
     GMS_SET_PROPERTY_TYPE(value_type) \
@@ -52,6 +52,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase
     protected:
         GMS_PROPERTY_TYPE(int)
         GMS_PROPERTY_TYPE(double)
+        GMS_PROPERTY_TYPE(DVec3d)
         GMS_PROPERTY_TYPE(Dgn::DgnElementId)
         GMS_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_PROPERTY_TYPE(Utf8String)

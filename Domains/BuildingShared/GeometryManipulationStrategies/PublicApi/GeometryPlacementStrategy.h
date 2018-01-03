@@ -11,6 +11,12 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryPlacementStrategy)
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
+#define GMS_PROPERTY_OVERRIDE(value_type) \
+    protected: \
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, value_type const& value) override; \
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) const override; \
+    private:
+
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
@@ -33,6 +39,13 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint();
+
+        GMS_PROPERTY_OVERRIDE(int)
+        GMS_PROPERTY_OVERRIDE(double)
+        GMS_PROPERTY_OVERRIDE(DVec3d)
+        GMS_PROPERTY_OVERRIDE(Dgn::DgnElementId)
+        GMS_PROPERTY_OVERRIDE(Dgn::DgnElement)
+        GMS_PROPERTY_OVERRIDE(Utf8String)
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategyCR GetManipulationStrategy() const;

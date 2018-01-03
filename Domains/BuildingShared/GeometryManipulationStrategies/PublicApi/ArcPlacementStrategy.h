@@ -30,6 +30,9 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
         ArcManipulationStrategyCR GetArcManipulationStrategy() const { return *m_manipulationStrategy; }
         ArcManipulationStrategyR GetArcManipulationStrategyR() { return *m_manipulationStrategy; }
+
+    public:
+        BE_PROP_NAME(Normal)
     };
 
 END_BUILDING_SHARED_NAMESPACE

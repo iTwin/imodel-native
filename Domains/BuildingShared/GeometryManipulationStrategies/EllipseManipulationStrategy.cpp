@@ -150,8 +150,8 @@ double EllipseManipulationStrategy::CalculateSweep
     {
     DVec3d vec0 = DVec3d::FromStartEnd(center, start);
     DVec3d endVec = DVec3d::FromStartEnd(center, end);
-    BeAssert(!DoubleOps::AlmostEqual(m_orientation.Magnitude(), 0));
-    return vec0.SignedAngleTo(endVec, m_orientation);
+    BeAssert(!m_normal.IsZero());
+    return vec0.SignedAngleTo(endVec, m_normal);
     }
 
 //--------------------------------------------------------------------------------------
@@ -164,12 +164,12 @@ void EllipseManipulationStrategy::UpdateSweep
     DPoint3dCR end
 )
     {
-    if (m_orientation.IsZero())
+    if (m_normal.IsZero())
         {
-        m_orientation = DVec3d::FromCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, end));
+        _SetProperty(prop_Normal(), DVec3d::FromCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, end)));
         }
 
-    if (DoubleOps::AlmostEqual(m_orientation.Magnitude(), 0))
+    if (m_normal.IsZero())
         return;
 
     double sweep = CalculateSweep(start, center, end);
@@ -302,4 +302,46 @@ void EllipseManipulationStrategy::_OnKeyPointsChanged()
         {
         UpdateSweep(GetStart(), GetCenter(), GetKeyPoints()[s_endIndex]);
         }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void EllipseManipulationStrategy::_SetProperty
+(
+    Utf8CP key,
+    DVec3d const& value
+)
+    {
+    T_Super::_SetProperty(key, value);
+
+    if (0 == strcmp(prop_Normal(), key))
+        {
+        DVec3d tmpVec = value;
+        if (!DoubleOps::AlmostEqual(tmpVec.Normalize(), 0))
+            m_normal = tmpVec;
+        else
+            m_normal.Zero();
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus EllipseManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    DVec3d& value
+) const
+    {
+    if (0 == strcmp(prop_Normal(), key))
+        {
+        if (!DoubleOps::AlmostEqual(m_normal.Magnitude(), 0))
+            {
+            value = m_normal;
+            return BentleyStatus::SUCCESS;
+            }
+        }
+
+    return T_Super::_TryGetProperty(key, value);
     }

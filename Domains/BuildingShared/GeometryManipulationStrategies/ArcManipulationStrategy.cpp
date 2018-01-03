@@ -43,7 +43,16 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
     if (IsCenterSet() && IsStartSet() && IsEndSet())
         {
         DEllipse3d tmpArc = DEllipse3d::FromArcCenterStartEnd(GetCenter(), GetStart(), GetEnd());
-        if (DoubleOps::AlmostEqual(GetSweep(), tmpArc.sweep))
+        if (DoubleOps::AlmostEqual(tmpArc.sweep, 0) && DoubleOps::AlmostEqual(GetSweep(), 0))
+            {
+            DVec3d normal;
+            if (BentleyStatus::ERROR != _TryGetProperty(prop_Normal(), normal))
+                {
+                DEllipse3d arc = DEllipse3d::FromCenterNormalRadius(GetCenter(), normal, GetCenter().Distance(GetStart()));
+                return ICurvePrimitive::CreateArc(arc);
+                }
+            }
+        else if (DoubleOps::AlmostEqual(GetSweep(), tmpArc.sweep))
             return ICurvePrimitive::CreateArc(tmpArc);
         else
             {

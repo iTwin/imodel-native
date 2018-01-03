@@ -126,3 +126,20 @@ GeometryManipulationStrategyCR GeometryPlacementStrategy::GetManipulationStrateg
     {
     return _GetManipulationStrategy();
     }
+
+#define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
+    void GeometryPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value) \
+        { \
+        _GetManipulationStrategyR().SetProperty(key, value); \
+        } \
+    BentleyStatus GeometryPlacementStrategy::_TryGetProperty(Utf8CP key, value_type& value) const \
+        { \
+        return _GetManipulationStrategy().TryGetProperty(key, value); \
+        }
+
+GMS_PROPERTY_OVERRIDE_IMPL(int)
+GMS_PROPERTY_OVERRIDE_IMPL(double)
+GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElement)
+GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)
