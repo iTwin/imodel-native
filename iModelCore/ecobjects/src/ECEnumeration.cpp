@@ -228,37 +228,9 @@ SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalon
             return SchemaWriteStatus::FailedToCreateJson;
         enumeratorArr.append(enumeratorObj);
         }
-    if ()
-        outValue[ECJSON_ENUMERATOR_ELEMENT] = enumeratorArr;
+    outValue[ECJSON_ENUMERATOR_ELEMENT] = enumeratorArr;
 
     return SchemaWriteStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman              01/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECEnumeration::WriteEnumeratorsJson(Json::Value& outArray)
-    {
-    outArray = Json::Value(Json::ValueType::arrayValue);
-    for (const auto enumerator : GetEnumerators())
-        {
-        Json::Value enumeratorObj = Json::Value(Json::ValueType::objectValue);
-        if (GetSchema().GetECVersion() >= ECVersion::V3_2)
-            {
-            enumeratorObj[NAME_ATTRIBUTE] = enumerator->GetName();
-            if (enumerator->GetInvariantDescription().length() > 0)
-                enumeratorObj[DESCRIPTION_ATTRIBUTE] = enumerator->GetInvariantDescription();
-            }
-        if (enumerator->GetIsDisplayLabelDefined())
-            enumeratorObj[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = enumerator->GetInvariantDisplayLabel();
-        if (GetTypeName() == EC_PRIMITIVE_TYPENAME_INTEGER)
-            enumeratorObj[ENUMERATOR_VALUE_ATTRIBUTE] = Json::Value(enumerator->GetInteger());
-        else if (GetTypeName() == EC_PRIMITIVE_TYPENAME_STRING)
-            enumeratorObj[ENUMERATOR_VALUE_ATTRIBUTE] = Json::Value(enumerator->GetString());
-        else
-            return SchemaWriteStatus::FailedToCreateJson;
-        outArray.append(enumeratorObj);
-        }
     }
 
 //---------------------------------------------------------------------------------------
