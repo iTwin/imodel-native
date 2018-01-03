@@ -2,7 +2,7 @@
 |
 |     $Source: TestUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -315,7 +315,7 @@ Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 			return Json::Value();
 
 		GeometricPrimitive::GeometryType geomType = geom->GetGeometryType();
-		switch (geomType) {
+		switch ((int)geomType) {
 		case 1:		// CurvePrimitive
 		{
 			ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
