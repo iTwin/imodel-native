@@ -115,3 +115,6 @@ WStringTest.FlakyTest
     # c:\build\src\mds06t\Bentley\Tests\Published\WString_test.cpp(1582): error: Value of: s1 != s2
     # Actual: false
     # Expected: true
+
+# This exists to test a new timeout mechanism, so cannot fail slow builds right now.
+BeFileTests1.CreateFile1
