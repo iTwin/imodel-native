@@ -31,13 +31,6 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     GMS_SET_PROPERTY_TYPE(value_type) \
     GMS_TRYGET_PROPERTY_TYPE(value_type)
 
-#define GMS_PROPERTY_TYPE(value_type) \
-    protected: \
-        GMS_V_SET_TRYGET_PROPERTY_TYPE(value_type) \
-    public: \
-        GMS_SET_TRYGET_PROPERTY_TYPE(value_type) \
-    private:
-
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
@@ -50,20 +43,26 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         friend struct GeometryPlacementStrategy;
 
     protected:
-        GMS_PROPERTY_TYPE(int)
-        GMS_PROPERTY_TYPE(double)
-        GMS_PROPERTY_TYPE(DVec3d)
-        GMS_PROPERTY_TYPE(Dgn::DgnElementId)
-        GMS_PROPERTY_TYPE(Dgn::DgnElement)
-        GMS_PROPERTY_TYPE(Utf8String)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(int)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(double)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(DVec3d)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElementId)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(Utf8String)
 
-    protected:
         virtual bvector<DPoint3d> const& _GetKeyPoints() const = 0;
 
         virtual bool _IsDynamicKeyPointSet() const = 0;
         virtual void _ResetDynamicKeyPoint() = 0;
 
     public:
+        GMS_SET_TRYGET_PROPERTY_TYPE(int)
+        GMS_SET_TRYGET_PROPERTY_TYPE(double)
+        GMS_SET_TRYGET_PROPERTY_TYPE(DVec3d)
+        GMS_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElementId)
+        GMS_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
+        GMS_SET_TRYGET_PROPERTY_TYPE(Utf8String)
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> const& GetKeyPoints() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsDynamicKeyPointSet() const;
