@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/CurvePrimitivePlacementStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,8 +19,8 @@ struct CurvePrimitivePlacementStrategy : public CurveVectorPlacementStrategy
     DEFINE_T_SUPER(CurveVectorPlacementStrategy)
 
     protected:
-        CurvePrimitivePlacementStrategy(CurvePrimitiveManipulationStrategyP manipulationStrategy)
-            : T_Super(manipulationStrategy) {}
+        CurvePrimitivePlacementStrategy()
+            : T_Super() {}
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const;

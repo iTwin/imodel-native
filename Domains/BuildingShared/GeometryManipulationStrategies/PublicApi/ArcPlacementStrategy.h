@@ -18,12 +18,18 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
     {
     DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
 
+    private:
+        ArcManipulationStrategyPtr m_manipulationStrategy;
+
     protected:
-        ArcPlacementStrategy(ArcManipulationStrategyP manipulationStrategy)
-            : T_Super(manipulationStrategy) {}
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementStrategy(ArcManipulationStrategyP manipulationStrategy);
     
-        ArcManipulationStrategyR GetArcManipulationStrategyR();
         DPoint3d CalculateVec90KeyPoint(DPoint3dCR endPoint) const;
+
+        virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        ArcManipulationStrategyCR GetArcManipulationStrategy() const { return *m_manipulationStrategy; }
+        ArcManipulationStrategyR GetArcManipulationStrategyR() { return *m_manipulationStrategy; }
     };
 
 END_BUILDING_SHARED_NAMESPACE

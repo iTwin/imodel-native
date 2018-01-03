@@ -10,6 +10,19 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategy::ArcPlacementStrategy
+(
+    ArcManipulationStrategyP manipulationStrategy
+)
+    : T_Super()
+    , m_manipulationStrategy(manipulationStrategy)
+    {
+    BeAssert(m_manipulationStrategy.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 DPoint3d ArcPlacementStrategy::CalculateVec90KeyPoint
@@ -36,12 +49,4 @@ DPoint3d ArcPlacementStrategy::CalculateVec90KeyPoint
     DPoint3d vec90Point = center;
     vec90Point.Add(vec90);
     return vec90Point;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-ArcManipulationStrategyR ArcPlacementStrategy::GetArcManipulationStrategyR()
-    {
-    return dynamic_cast<ArcManipulationStrategyR>(GetManipulationStrategyR());
     }

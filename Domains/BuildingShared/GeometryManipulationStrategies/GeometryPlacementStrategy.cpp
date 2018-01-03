@@ -12,25 +12,12 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-GeometryPlacementStrategy::GeometryPlacementStrategy
-(
-    GeometryManipulationStrategyP manipulationStrategy
-)
-    : T_Super()
-    , m_manipulationStrategy(manipulationStrategy)
-    {
-    BeAssert(m_manipulationStrategy.IsValid());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::_AddKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
     {
-    m_manipulationStrategy->AppendKeyPoint(newKeyPoint);
+    _GetManipulationStrategyR().AppendKeyPoint(newKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -41,7 +28,7 @@ void GeometryPlacementStrategy::AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    m_manipulationStrategy->_ResetDynamicKeyPoint();
+    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
     _AddKeyPoint(newKeyPoint);
     }
 
@@ -50,7 +37,7 @@ void GeometryPlacementStrategy::AddKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 bvector<DPoint3d> const& GeometryPlacementStrategy::_GetKeyPoints() const
     {
-    return m_manipulationStrategy->GetKeyPoints();
+    return _GetManipulationStrategy().GetKeyPoints();
     }
 
 //--------------------------------------------------------------------------------------
@@ -58,7 +45,7 @@ bvector<DPoint3d> const& GeometryPlacementStrategy::_GetKeyPoints() const
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::_PopKeyPoint()
     {
-    m_manipulationStrategy->PopKeyPoint();
+    _GetManipulationStrategyR().PopKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -66,7 +53,7 @@ void GeometryPlacementStrategy::_PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::PopKeyPoint()
     {
-    m_manipulationStrategy->_ResetDynamicKeyPoint();
+    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
     _PopKeyPoint();
     }
 
@@ -75,7 +62,7 @@ void GeometryPlacementStrategy::PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 bool GeometryPlacementStrategy::_IsDynamicKeyPointSet() const
     {
-    return m_manipulationStrategy->IsDynamicKeyPointSet();
+    return _GetManipulationStrategy().IsDynamicKeyPointSet();
     }
 
 //--------------------------------------------------------------------------------------
@@ -86,7 +73,7 @@ void GeometryPlacementStrategy::_AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    m_manipulationStrategy->AppendDynamicKeyPoint(newDynamicKeyPoint);
+    _GetManipulationStrategyR().AppendDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -97,7 +84,7 @@ void GeometryPlacementStrategy::_AddDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    m_manipulationStrategy->AppendDynamicKeyPoints(newDynamicKeyPoints);
+    _GetManipulationStrategyR().AppendDynamicKeyPoints(newDynamicKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------
@@ -108,7 +95,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    m_manipulationStrategy->_ResetDynamicKeyPoint();
+    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
     _AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
@@ -120,7 +107,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    m_manipulationStrategy->_ResetDynamicKeyPoint();
+    _GetManipulationStrategyR()._ResetDynamicKeyPoint();
     _AddDynamicKeyPoints(newDynamicKeyPoints);
     }
 
@@ -129,5 +116,13 @@ void GeometryPlacementStrategy::AddDynamicKeyPoints
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::_ResetDynamicKeyPoint()
     {
-    m_manipulationStrategy->ResetDynamicKeyPoint();
+    _GetManipulationStrategyR().ResetDynamicKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+GeometryManipulationStrategyCR GeometryPlacementStrategy::GetManipulationStrategy() const
+    {
+    return _GetManipulationStrategy();
     }

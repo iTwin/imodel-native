@@ -18,13 +18,11 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
     {
     DEFINE_T_SUPER(GeometryManipulationStrategyBase)
 
-    private:
-        GeometryManipulationStrategyPtr m_manipulationStrategy;
-
     protected:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategy(GeometryManipulationStrategyP manipulationStrategy);
+        GeometryPlacementStrategy() : T_Super() {}
 
-        GeometryManipulationStrategyR GetManipulationStrategyR() { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const = 0;
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() = 0;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> const& _GetKeyPoints() const override;
 
@@ -37,7 +35,7 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint();
 
     public:
-        GeometryManipulationStrategyCR GetManipulationStrategy() const { return *m_manipulationStrategy; }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategyCR GetManipulationStrategy() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
