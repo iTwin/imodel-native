@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFileName.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
@@ -2446,4 +2446,45 @@ BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     exepath.BeGetFullPathName();
     return exepath.GetDirectoryName();
     }
+#endif
+
+static void dummyFunc() {}
+
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName Desktop::FileSystem::GetLibraryDir()
+    {
+    void* addr = (void*)dummyFunc;
+
+    MEMORY_BASIC_INFORMATION mbi;
+    HINSTANCE h = VirtualQuery (addr, &mbi, sizeof mbi)? (HINSTANCE)mbi.AllocationBase: (HINSTANCE)addr;
+
+    WChar tModuleName[MAX_PATH];
+    if (0 == ::GetModuleFileNameW (h, tModuleName, MAX_PATH)) // (yes, 0 means failure)
+        return BeFileName();
+
+    return BeFileName(tModuleName).GetDirectoryName();
+    }
+
+#elif defined (BENTLEYCONFIG_OS_LINUX) || defined (BENTLEYCONFIG_OS_APPLE_MACOS)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName Desktop::FileSystem::GetLibraryDir()
+    {
+    Dl_info  dlInfo;
+    if (0 == dladdr((void*)dummyFunc, &dlInfo)) // (yes, 0 means failure)
+        return BeFileName();
+
+    return BeFileName(dlInfo.dli_fname, true).GetDirectoryName();
+    }
+
+#else
+
+#error unsupported platform
+
 #endif

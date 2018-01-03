@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Desktop/FileSystem.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,12 +55,17 @@ struct FileSystem
     BENTLEYDLL_EXPORT static BeFileNameStatus GetCwd (WStringR currentDirectory);
 /** @} */
 
-/** @name Initial Path */
+/** @name Executable Paths */
 /** @{ */
     //! Get the directory from which the executing program was launched. This is a full path. It does not include the name of the executable program itself.
     //! @note This function is not implemented for mobile apps. Use DgnPlatformLib::Host::GetKnownLocations for a portable way to identify known locations.
     BENTLEYDLL_EXPORT static BeFileName GetExecutableDir(BeFileNameCP moduleName = nullptr);
-/** @} */
+
+    //! Get the directory from which the executing library was loaded. This is a full path. It does not include the name of the library itself.
+    //! @note This function is not implemented for mobile apps. Use DgnPlatformLib::Host::GetKnownLocations for a portable way to identify known locations.
+    BENTLEYDLL_EXPORT static BeFileName GetLibraryDir();
+
+    /** @} */
 };
 
 }// Desktop
