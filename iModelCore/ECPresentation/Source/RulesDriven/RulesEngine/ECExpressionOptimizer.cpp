@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECExpressionOptimizer.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -69,10 +69,17 @@ IsOfClassOptimizedExpression::~IsOfClassOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey() || nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
+    if (nullptr == params.GetSelectedNodeKey())
         return false;
-        
-    ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
+
+    NavNodeKeyCP nodeKey = params.GetSelectedNodeKey();
+    ECClassId lookupClassId;
+    if (nullptr != nodeKey->AsECInstanceNodeKey())
+        lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
+    else if (nullptr != nodeKey->AsECClassGroupingNodeKey())
+        lookupClassId = nodeKey->AsECClassGroupingNodeKey()->GetECClassId();
+    else
+        return false;
     
     auto cacheIter = m_cache.find(&params.GetConnection().GetDb());
     if (m_cache.end() == cacheIter)
@@ -133,10 +140,17 @@ ClassNameOptimizedExpression::~ClassNameOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey() || nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
+    if (nullptr == params.GetSelectedNodeKey())
         return false;
 
-    ECClassId lookupClassId = params.GetSelectedNodeKey()->AsECInstanceNodeKey()->GetECClassId();
+    NavNodeKeyCP nodeKey = params.GetSelectedNodeKey();
+    ECClassId lookupClassId;
+    if (nullptr != nodeKey->AsECInstanceNodeKey())
+        lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
+    else if (nullptr != nodeKey->AsECClassGroupingNodeKey())
+        lookupClassId = nodeKey->AsECClassGroupingNodeKey()->GetECClassId();
+    else
+        return false;
 
     auto cacheIter = m_resultsCache.find(&params.GetConnection().GetDb());
     if (m_resultsCache.end() == cacheIter)

@@ -57,6 +57,7 @@
     <ClCompile Include="NonPublished\RulesEngine\NavNodesDataSourceTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\NavNodeTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\NodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\OptimizedExpressionsEvaluationTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\PresentationManagerImplTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\QueryBasedNodesProviderTests.cpp" />
