@@ -2485,6 +2485,10 @@ BeFileName Desktop::FileSystem::GetLibraryDir()
 
 #else
 
-#error unsupported platform
+BeFileName Desktop::FileSystem::GetLibraryDir()
+    {
+    BeAssert(false && "Unsupported platform");
+    return BeFileName();
+    }
 
 #endif
