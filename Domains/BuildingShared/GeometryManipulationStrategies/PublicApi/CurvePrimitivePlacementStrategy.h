@@ -14,15 +14,14 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct CurvePrimitivePlacementStrategy : public CurveVectorPlacementStrategy
+struct CurvePrimitivePlacementStrategy : public GeometryPlacementStrategy
     {
-    DEFINE_T_SUPER(CurveVectorPlacementStrategy)
+    DEFINE_T_SUPER(GeometryPlacementStrategy)
 
     protected:
         CurvePrimitivePlacementStrategy()
             : T_Super() {}
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const;
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
