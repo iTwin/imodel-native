@@ -5,6 +5,9 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#if defined (BENTLEY_WIN32)
+#include <windows.h>
+#endif
 #include <functional>
 #include <queue>
 #include <sys/types.h>
@@ -12,7 +15,6 @@
 #include <memory>
 #include "suppress_warnings.h"
 #include <imodeljs-nodeaddonapi.package.version.h>
-
 #include <node-addon-api/napi.h>
 #include <uv/uv.h>
 #undef X_OK // node\uv-win.h defines this, and then folly/portability/Unistd.h re-defines it.
@@ -1510,16 +1512,61 @@ static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, B
     //    LOG.errorv(L"ASSERTION FAILURE: %ls %ls %d\n", msg, file, line);
     }
 
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+static void dummy() {;}
+static BeFileName getModuleFileName(void* addr)
+    {
+    MEMORY_BASIC_INFORMATION mbi;
+    HINSTANCE h = VirtualQuery (addr, &mbi, sizeof mbi)? (HINSTANCE)mbi.AllocationBase: (HINSTANCE)addr;
+
+    WChar tModuleName[MAX_PATH];
+    if (0 == ::GetModuleFileNameW (h, tModuleName, MAX_PATH)) 
+        return BeFileName();
+
+    return BeFileName(tModuleName);
+    }
+static BeFileName getAddonDir()
+    {
+    return getModuleFileName(&dummy).GetDirectoryName();
+    }
+#elif defined (BENTLEYCONFIG_OS_LINUX)
+
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
+#include <dlfcn.h>
+
+static void dummy() {;}
+
+static BeFileName getAddonDir()
+    {
+    Dl_info  dlInfo;
+    if (0 == dladdr(pFunc, &dlInfo))
+        return BeFileName();
+
+    return BeFileName(dlInfo.dli_sname, true);
+    }
+
+#else if defined (BENTLEYCONFIG_OS_APPLE_MACOS)
+#include <Bentley/Desktop/FileSystem.h>
+
+// *** TODO: This is probably not going to work. We need the MacOS equivalent of dladdr
+
+static BeFileName getAddonDir()
+    {
+    WString curdir;
+    Desktop::FileSystem::GetCwd(curdir);
+    return BeFileName(curdir.c_str());
+    }
+
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
-// static void registerModule(Napi::Env env, Napi::Object exports)
     {
     Napi::HandleScope scope(env);
 
-    auto filename = env.Global().Get("module").ToObject().Get("filename").As<Napi::String>();
-    BeFileName addondir = BeFileName(filename.Utf8Value().c_str(), true).GetDirectoryName();
+    BeFileName addondir = getAddonDir();
 
     AddonUtils::Initialize(addondir, throwJsExceptionOnAssert);
     NodeAddonDgnDb::Init(env, exports);
