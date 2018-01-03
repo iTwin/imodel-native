@@ -1581,13 +1581,13 @@ static void dummy() {;}
 static BeFileName getAddonDir()
     {
     Dl_info  dlInfo;
-    if (0 == dladdr(pFunc, &dlInfo))
+    if (0 == dladdr(&dummy, &dlInfo))
         return BeFileName();
 
     return BeFileName(dlInfo.dli_sname, true);
     }
 
-#else if defined (BENTLEYCONFIG_OS_APPLE_MACOS)
+#elif defined (BENTLEYCONFIG_OS_APPLE_MACOS)
 #include <Bentley/Desktop/FileSystem.h>
 
 // *** TODO: This is probably not going to work. We need the MacOS equivalent of dladdr
