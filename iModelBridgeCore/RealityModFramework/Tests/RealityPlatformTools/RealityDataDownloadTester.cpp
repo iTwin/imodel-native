@@ -13,6 +13,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
 #include <RealityPlatformTools/RealityDataDownload.h>
+#include "../Common/RealityModFrameworkTestsCommon.h"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -259,8 +260,20 @@ TEST_F(RealityDataDownloadTestFixture, DownloadCacheAndReport)
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataDownloadTestFixture, UnzipTest)
     {
-    //RealityModFrameworkTestsUtils::GetDirectory()
-    EXPECT_TRUE(RealityDataDownload::UnZipFile(L"TestData\\RealityPlatformTools\\download.zip", L"TestData\\RealityPlatformTools\\downloadUnzip"));
+    WString zipString = RealityModFrameworkTestsUtils::GetTestDataPath(L"Testdata\\RealityPlatformTools\\download.zip");
+
+    WString outString = GetDirectory(); 
+    outString.append(L"Unzip/");
+    InitTestDirectory(outString.c_str());
+    WString dl = outString;
+    dl.append(L"download");
+    InitTestDirectory(dl.c_str());
+
+    outString.ReplaceAll(L"\\",L"/");
+
+    EXPECT_TRUE(RealityDataDownload::UnZipFile(zipString, outString));
+
+    BeFileName::EmptyAndRemoveDirectory(outString.c_str());
     }
 
 //-------------------------------------------------------------------------------------
