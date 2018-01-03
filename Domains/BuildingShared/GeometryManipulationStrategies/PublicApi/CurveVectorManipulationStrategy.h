@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/CurveVectorManipulationStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,6 +25,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;
+
+        static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
     };
 
 END_BUILDING_SHARED_NAMESPACE

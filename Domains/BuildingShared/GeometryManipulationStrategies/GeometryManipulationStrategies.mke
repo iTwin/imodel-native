@@ -31,6 +31,8 @@ $(o)CurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)CurveVectorManipula
 
 $(o)CurvePrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)CurvePrimitiveManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitiveManipulationStrategy.h
 
+$(o)ChildCurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)ChildCurveVectorManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ChildCurveVectorManipulationStrategy.h
+
 $(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
 
 $(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EllipseManipulationStrategy.h
@@ -42,6 +44,8 @@ $(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy
 $(o)CurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)CurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurveVectorPlacementStrategy.h
 
 $(o)CurvePrimitivePlacementStrategy$(oext) : $(_MakeFilePath)CurvePrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitivePlacementStrategy.h
+
+$(o)ChildCurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)ChildCurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ChildCurveVectorPlacementStrategy.h
 
 $(o)ArcPlacementStrategy$(oext) : $(_MakeFilePath)ArcPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcPlacementStrategy.h
 
