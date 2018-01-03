@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -840,12 +840,10 @@ bool Converter::_IsModelPrivate(DgnV8ModelCR v8Model)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-#ifdef WIP_MERGE_Raman
 static UnitDefinition fromV8(DgnV8Api::UnitDefinition const& v8Def)
     {
     return UnitDefinition(UnitBase(v8Def.GetBase()), UnitSystem(v8Def.GetSystem()), v8Def.GetNumerator(), v8Def.GetDenominator(), Utf8String(v8Def.GetLabelCP()).c_str());
     }
-#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -1034,6 +1032,9 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
     GeometricModelP geometricModel = model->ToGeometricModelP();
     if (geometricModel != nullptr)
         {
+#ifdef NEEDS_WORK_RAMAN
+        // m_rootModelRef is not available so fix for 515560 below is not currently posssible....
+
         /* Note: We use the V8 root model to set the display info for *all* of the models as a stop 
          * gap measure (in Q4) to fix TFS#515560: 
          * Users reported a discrepancy between the units displayed in DgnDb based Navigator and v8i Microstation. 
@@ -1042,9 +1043,11 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
          * The longer term fix for this issue is to make these display settings as something that's defined for the 
          * entire DgnDb/BIM, and not individual models. This is tracked by TFS#634638. 
          */
-#ifdef WIP_MERGE_Raman
         DgnV8Api::ModelInfo const& v8ModelInfo = m_rootModelRef->GetDgnModelP()->GetModelInfo();
-        GeometricModel::DisplayInfo& displayInfo = geometricModel->GetDisplayInfoR();
+#else
+        DgnV8Api::ModelInfo const& v8ModelInfo = v8Model.GetModelInfo();
+#endif
+        auto& displayInfo = geometricModel->GetFormatterR();
 
         displayInfo.SetUnits(fromV8(v8ModelInfo.GetMasterUnit()), fromV8(v8ModelInfo.GetSubUnit()));
         displayInfo.SetRoundoffUnit(v8ModelInfo.GetRoundoffUnit(), v8ModelInfo.GetRoundoffRatio());
@@ -1055,7 +1058,6 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         displayInfo.SetDirectionMode(DirectionMode(v8ModelInfo.GetDirectionMode()));
         displayInfo.SetDirectionClockwise(v8ModelInfo.GetDirectionClockwise());
         displayInfo.SetDirectionBaseDir(v8ModelInfo.GetDirectionBaseDir());
-#endif
         }
 
     /* WIP: move description to modeled element instead of model.
