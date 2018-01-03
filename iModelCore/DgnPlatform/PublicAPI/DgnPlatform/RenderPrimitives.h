@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RenderPrimitives.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -312,6 +312,49 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/17
+//=======================================================================================
+struct MeshArgs : TriMeshArgs
+{
+    bvector<uint32_t>                   m_colorTable;
+    bvector<PolylineEdgeArgs::Polyline> m_polylineEdges;
+
+    template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = (0 != src.size() ? src.data() : nullptr); }
+    template<typename T, typename U> void Set(uint32_t& count, T& ptr, U const& src)
+        {
+        count = static_cast<uint32_t>(src.size());
+        Set(ptr, src);
+        }
+
+    void Clear();
+    bool Init(MeshCR mesh);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct PolylineArgs : IndexedPolylineArgs
+{
+    bvector<Polyline>   m_polylines;
+    bvector<uint32_t>   m_colorTable;
+
+    bool IsValid() const { return !m_polylines.empty(); }
+
+    void Reset();
+    bool Init(MeshCR mesh);
+    void FinishInit(MeshCR mesh);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
+struct MeshGraphicArgs
+{
+    PolylineArgs    m_polylineArgs;
+    MeshArgs        m_meshArgs;
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct Mesh : RefCountedBase
@@ -399,7 +442,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
     uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, struct GetMeshGraphicsArgs& args, DgnDbR db) const;
+    GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
 };
 
 //=======================================================================================
@@ -869,113 +912,6 @@ public:
     //! If enabled, TextString range will be tested against chord tolerance to determine whether the text should be stroked or rendered as a simple box.
     //! By default, it is always stroked.
     void SetCheckGlyphBoxes(bool check) { m_checkGlyphBoxes = check; }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   03/17
-//=======================================================================================
-struct MeshArgs : TriMeshArgs
-{
-    bvector<uint32_t>               m_colorTable;
-
-    template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = (0 != src.size() ? src.data() : nullptr); }
-    template<typename T, typename U> void Set(uint32_t& count, T& ptr, U const& src)
-        {
-        count = static_cast<uint32_t>(src.size());
-        Set(ptr, src);
-        }
-
-    void Clear();
-    bool Init(MeshCR mesh);
-};
-
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct IndexedPolyline : IndexedPolylineArgs::Polyline
-{
-    bool IsValid() const { return 0 < m_numIndices; }
-
-    void Reset()
-        {
-        m_numIndices = 0;
-        m_vertIndex = nullptr;
-        m_startDistance = 0.0;
-        }
-
-    bool Init(MeshPolylineCR line) { return Init(line.GetIndices(), line.GetStartDistance(), line.GetRangeCenter()); }
-        
-    bool Init (bvector<uint32_t> const& indices, double startDistance, DPoint3dCR rangeCenter)
-        {
-        Reset();
-
-        m_numIndices = static_cast<uint32_t>(indices.size());
-        m_vertIndex = &indices[0];
-        m_startDistance = startDistance;
-        m_rangeCenter = rangeCenter;
-
-        return IsValid();
-        }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct PolylineArgs : IndexedPolylineArgs
-{
-    bvector<IndexedPolyline>    m_polylines;
-    bvector<uint32_t>           m_colorTable;
-
-    bool IsValid() const { return !m_polylines.empty(); }
-
-    void Reset();
-    bool Init(MeshCR mesh);
-    void FinishInit(MeshCR mesh);
-};
-
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     05/2017
-//=======================================================================================
-struct ElementMeshEdgeArgs : MeshEdgeArgs
-{
-    bvector<uint32_t>               m_colorTable;
-
-    bool Init(MeshCR mesh);
-};
-
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     05/2017
-//=======================================================================================
-struct ElementSilhouetteEdgeArgs : SilhouetteEdgeArgs
-{
-    bvector<uint32_t>               m_colorTable;
-
-    bool Init(MeshCR mesh);
-};
-
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     05/2017
-//=======================================================================================
-struct ElementPolylineEdgeArgs : PolylineArgs
-{
-    bool Init(MeshCR mesh);
-};
-
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     05/2017
-//=======================================================================================
-struct GetMeshGraphicsArgs
-{
-    PolylineArgs                     m_polylineArgs;
-    MeshArgs                         m_meshArgs;
-    ElementMeshEdgeArgs              m_visibleEdgesArgs;
-    ElementSilhouetteEdgeArgs        m_invisibleEdgesArgs;
-    ElementPolylineEdgeArgs          m_polylineEdgesArgs;
 };
 
 //=======================================================================================

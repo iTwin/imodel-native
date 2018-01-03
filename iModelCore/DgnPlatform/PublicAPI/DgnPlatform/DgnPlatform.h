@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -401,8 +401,9 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshEdgeCreationOptions)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(IndexedPolylineArgs)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(PointCloudArgs)
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshEdgeArgs);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(EdgeArgs);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(SilhouetteEdgeArgs);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(PolylineEdgeArgs);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(QPoint3d)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(QPoint2d)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(OctEncodedNormal)

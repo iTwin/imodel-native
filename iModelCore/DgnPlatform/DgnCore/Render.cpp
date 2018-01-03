@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Render.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -931,43 +931,22 @@ void FeatureSymbologyOverrides::ClearSubCategoryOverrides(DgnSubCategoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdge::MeshEdge(uint32_t index0, uint32_t index1)
-    {
-    if (index0 < index1)
-        {
-        m_indices[0] = index0;
-        m_indices[1] = index1;
-        }
-    else
-        {
-        m_indices[0] = index1;
-        m_indices[1] = index0;
-        }
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshEdge::operator < (MeshEdge const& rhs) const
+bool MeshEdge::operator<(MeshEdge const& rhs) const
     {
     return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR qparams, bool isPlanar)
+bool EdgeArgs::Init(MeshEdgesCR meshEdges)
     {
-    if (meshEdges.m_visible.empty())
+    auto const& visible = meshEdges.m_visible;
+    if (visible.empty())
         return false;
 
-    m_points        = points;
-    m_pointParams   = qparams;
-    m_edges         = meshEdges.m_visible.data();
-    m_numEdges      = meshEdges.m_visible.size();
-    m_isPlanar      = isPlanar;
+    m_edges = visible.data();
+    m_numEdges = visible.size();
 
     return true;
     }
@@ -975,17 +954,15 @@ bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::Para
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR params)
+bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges)
     {
-    if (meshEdges.m_silhouette.empty())
+    auto const& silhouette = meshEdges.m_silhouette;
+    if (silhouette.empty())
         return false;
 
-    m_points        = points;
-    m_pointParams   = params;
-    m_edges         = meshEdges.m_silhouette.data();
-    m_numEdges      = meshEdges.m_silhouette.size();
-    m_normals       = meshEdges.m_silhouetteNormals.data();
-    m_isPlanar      = false;
+    m_edges = silhouette.data();
+    m_numEdges = silhouette.size();
+    m_normals = meshEdges.m_silhouetteNormals.data();
 
     return true;
     }

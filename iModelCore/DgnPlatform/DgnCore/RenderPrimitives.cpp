@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderPrimitives.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -763,44 +763,22 @@ bool Mesh::HasNonPlanarNormals() const
     }
      
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
+* @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db) const
+GraphicPtr Mesh::GetGraphics(MeshGraphicArgs& args, SystemCR system, DgnDbR db) const
     {
-    bool haveMesh = !Triangles().Empty();
-    bool havePolyline = !haveMesh && !Polylines().empty();
-
-    if (!haveMesh && !havePolyline)
-        return;                                                                   
-
-    Render::GraphicPtr thisGraphic;
-
-    if (haveMesh)
+    GraphicPtr graphic;
+    if (!Triangles().Empty())
         {
-        if (args.m_meshArgs.Init(*this) &&
-            (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db)).IsValid())
-            graphics.push_back (thisGraphic);
-
-        MeshEdgesPtr    edges = GetEdges();
-
-        if (args.m_visibleEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
-
-        if (args.m_invisibleEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
-
-        if (args.m_polylineEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineEdgesArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
+        if (args.m_meshArgs.Init(*this))
+            graphic = system._CreateTriMesh(args.m_meshArgs, db);
         }
-    else                           
+    else if (!Polylines().empty() && args.m_polylineArgs.Init(*this))
         {
-        if (args.m_polylineArgs.Init(*this) &&
-            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
+        graphic = system._CreateIndexedPolylines(args.m_polylineArgs, db);
         }
+
+    return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1943,11 +1921,15 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR context) const
     {
-    MeshList                meshes = ToMeshes(options, tolerance, context);
-    GetMeshGraphicsArgs     args;
+    MeshList            meshes = ToMeshes(options, tolerance, context);
+    MeshGraphicArgs     args;
 
     for (auto const& mesh : meshes)
-        mesh->GetGraphics (graphics, GetSystem(), args, GetDgnDb());
+        {
+        auto graphic = mesh->GetGraphics(args, GetSystem(), GetDgnDb());
+        if (graphic.IsValid())
+            graphics.push_back(graphic);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2176,10 +2158,29 @@ bool MeshArgs::Init(MeshCR mesh)
     m_material = mesh.GetDisplayParams().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
     m_isPlanar = mesh.IsPlanar();
-    m_edgeWidth = mesh.GetDisplayParams().GetLineWidth();
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+    m_is2d = mesh.Is2d();
 
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
+
+    m_edges.m_width = mesh.GetDisplayParams().GetLineWidth();
+
+    MeshEdgesCP meshEdges = mesh.GetEdges().get();
+    if (nullptr == meshEdges)
+        return true;
+
+    m_edges.m_edges.Init(*meshEdges);
+    m_edges.m_silhouettes.Init(*meshEdges);
+
+    m_polylineEdges.reserve(meshEdges->m_polylines.size());
+    for (auto const& meshPolyline : meshEdges->m_polylines)
+        {
+        PolylineEdgeArgs::Polyline polyline;
+        if (polyline.Init(meshPolyline))
+            m_polylineEdges.push_back(polyline);
+        }
+
+    m_edges.m_polylines.Init(m_polylineEdges);
 
     return true;
     }
@@ -2197,100 +2198,14 @@ void MeshArgs::Clear()
     m_textureUV = nullptr;
     m_texture = nullptr;
     m_isPlanar = false;
+    m_is2d = false;
 
     m_colors.Reset();
     m_colorTable.clear();
     m_features.Reset();
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void initLinearGraphicParams(T& args, MeshCR mesh)
-    {
-    args.m_linePixels = mesh.GetDisplayParams().GetLinePixels();
-    args.m_width = mesh.GetDisplayParams().GetLineWidth();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementMeshEdgeArgs::Init(MeshCR mesh)
-    {
-    MeshEdgesPtr    meshEdges = mesh.GetEdges();
-    m_pointParams = mesh.Points().GetParams();
-
-    initLinearGraphicParams(*this, mesh);
-
-    if (!meshEdges.IsValid() || meshEdges->m_visible.empty())
-        return false;
-
-    m_points    = mesh.Points().data();
-    m_edges     = meshEdges->m_visible.data();
-    m_numEdges  = meshEdges->m_visible.size();
-    m_isPlanar  = mesh.IsPlanar();
-    
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
-    mesh.ToFeatureIndex(m_features);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh)
-    {
-    MeshEdgesPtr    meshEdges = mesh.GetEdges();
-    m_pointParams = mesh.Points().GetParams();
-
-    initLinearGraphicParams(*this, mesh);
-
-    if (!meshEdges.IsValid() || meshEdges->m_silhouette.empty())
-        return false;
-
-    m_points    = mesh.Points().data();
-    m_normals   = meshEdges->m_silhouetteNormals.data();
-    m_edges     = meshEdges->m_silhouette.data();
-    m_numEdges  = meshEdges->m_silhouette.size();
-
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
-    mesh.ToFeatureIndex(m_features);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
-    {
-    Reset();
-    MeshEdgesPtr    meshEdges = mesh.GetEdges();
-    m_pointParams = mesh.Points().GetParams();
-
-    initLinearGraphicParams(*this, mesh);
-
-    if (!meshEdges.IsValid() || meshEdges->m_polylines.empty())
-        return false;
-
-    m_disjoint = false;
-    m_isEdge = true;
-    m_is2d = mesh.Is2d();
-    m_isPlanar  = mesh.IsPlanar();
-
-    m_polylines.reserve(meshEdges->m_polylines.size());
-
-    for (auto& polyline : meshEdges->m_polylines)
-        {
-        IndexedPolyline indexedPolyline;
-
-        if (indexedPolyline.Init(polyline.GetIndices(), polyline.GetStartDistance(), polyline.GetRangeCenter()))
-            m_polylines.push_back(indexedPolyline);
-        }
-                                                
-    FinishInit(mesh);
-    return true;
+    m_polylineEdges.clear();
+    m_edges.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2316,21 +2231,22 @@ bool PolylineArgs::Init(MeshCR mesh)
     {
     Reset();
 
-    initLinearGraphicParams(*this, mesh);
+    m_width = mesh.GetDisplayParams().GetLineWidth();
+    m_linePixels = mesh.GetDisplayParams().GetLinePixels();
 
     m_is2d = mesh.Is2d();
     m_isPlanar = mesh.IsPlanar();
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
-    m_isEdge = mesh.GetDisplayParams().HasRegionOutline();
 
     m_polylines.reserve(mesh.Polylines().size());
 
     for (auto const& polyline : mesh.Polylines())
         {
-        IndexedPolyline indexedPolyline;
+        IndexedPolylineArgs::Polyline indexedPolyline;
         if (indexedPolyline.Init(polyline))
             m_polylines.push_back(indexedPolyline);
         }
+
     if (!IsValid())
         return false;
 
