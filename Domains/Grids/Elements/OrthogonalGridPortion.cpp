@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/OrthogonalGridPortion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,12 +32,15 @@ OrthogonalGrid::OrthogonalGrid
 CreateParams const& params
 ) : T_Super(params)
     {
-    SetDefaultCoordinateIncrementX(params.m_defaultCoordinateIncrementX);
-    SetDefaultCoordinateIncrementY(params.m_defaultCoordinateIncrementY);
-    SetDefaultStartExtentX(params.m_defaultStartExtentX);
-    SetDefaultEndExtentX(params.m_defaultEndExtentX);
-    SetDefaultStartExtentY(params.m_defaultStartExtentY);
-    SetDefaultEndExtentY(params.m_defaultEndExtentY);
+    if (params.m_classId.IsValid()) // elements created via handler have no classid.
+        {
+        SetDefaultCoordinateIncrementX(params.m_defaultCoordinateIncrementX);
+        SetDefaultCoordinateIncrementY(params.m_defaultCoordinateIncrementY);
+        SetDefaultStartExtentX(params.m_defaultStartExtentX);
+        SetDefaultEndExtentX(params.m_defaultEndExtentX);
+        SetDefaultStartExtentY(params.m_defaultStartExtentY);
+        SetDefaultEndExtentY(params.m_defaultEndExtentY);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,7 +107,7 @@ int ySurfaceCount
     for (int i = 0; i < ySurfaceCount; i++)
         {
         PlanCartesianGridSurface::CreateAndInsert(paramsY);
-        paramsY.m_coordinate += params.m_defaultCoordinateIncrementX;
+        paramsY.m_coordinate += params.m_defaultCoordinateIncrementY;
         }
 
     return thisGrid;
@@ -198,52 +201,6 @@ double distance
                                  direction,
                                  distance);
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  10/17
-//---------------------------------------------------------------------------------------
-Dgn::RepositoryStatus OrthogonalGrid::RotateToAngleXY(double theta, bool updateDimensions)
-    {
-    DgnDbR db = GetDgnDb();
-    Dgn::RepositoryStatus status = RepositoryStatus::Success;
-
-    bvector<GridSurfacePtr> gridElements;
-    for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
-        {
-        GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
-        BeAssert(surface.IsValid() && "Grid surfaces related to grid portion must be valid");
-
-        gridElements.push_back(surface);
-        }
-
-    if (gridElements.empty())
-        return status;
-
-    // Get rotation origin point
-    DPoint3d rotationOrigin = gridElements.front()->GetPlacement().GetOrigin();
-
-    for (GridSurfacePtr surface : gridElements)
-        {
-        surface->RotateXY(rotationOrigin, theta);
-        if (RepositoryStatus::Success != (status = BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "update GridSurface")))
-            return status;
-        surface->Update();
-        }
-
-    if (!updateDimensions)
-        return status;
-
-    RotMatrix rotMatrix = RotMatrix::FromAxisAndRotationAngle(2, theta);
-
-    for (GridSurfacePtr gridSurface : gridElements)
-        {
-        bvector<BeSQLite::EC::ECInstanceId> relationships = DimensionHandler::GetDimensioningRelationshipInstances(db, gridSurface->GetElementId());
-        for (BeSQLite::EC::ECInstanceId instance : relationships)
-            DimensionHandler::RotateDirection(db, instance, rotMatrix);
-        }
-
-    return status;
     }
 
 

@@ -337,9 +337,6 @@ CreateParams const& params
     {
     PlanCartesianGridSurfacePtr gridSurface = new PlanCartesianGridSurface (params);
 
-    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
-        return nullptr;
-
     return gridSurface;
     }
 
@@ -398,31 +395,35 @@ Dgn::DgnDbStatus                PlanCartesianGridSurface::RecomputeGeometryStrea
 
     //start from the grid transform
     Placement3dCR currGridPlacement = grid->GetPlacement();
-    Placement3d thisPlacement(currGridPlacement);
+    SetPlacement(Placement3d()); //set the start local coordinates
+    Transform rotation = Transform::FromIdentity();
+    Transform coordTrans = Transform::From(0.0, coordinate, 0.0);
 
-    //rotate to the right direction
+    //figure out the rotation
     if (isYAxis)
         {
-        Transform rotation = Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, msGeomConst_piOver2);
-        thisPlacement.TryApplyTransform(rotation);
+        rotation = Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, -msGeomConst_piOver2);
         //also negate the sta/end params
-        startPt.Negate();
-        endPt.Negate();
+        startPt.x = -startPt.x;
+        endPt.x = -endPt.x;
         }
 
-    //translate by coordinate
-    Transform coordTrans = Transform::From(coordinate, 0.0, 0.0);
-    thisPlacement.TryApplyTransform(coordTrans);
-
-    //finally, set the geometry
-    SetPlacement(thisPlacement);
-
+    //now set the geometry
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(startPt, endPt));
     DgnExtrusionDetail detail = DgnExtrusionDetail(CurveVector::Create(line), DVec3d::From(0, 0, height), false);
     ISolidPrimitivePtr geometryInLocalCoords = ISolidPrimitive::CreateDgnExtrusion(detail);
 
     if (BentleyStatus::SUCCESS != SetGeometry(geometryInLocalCoords))
         Dgn::DgnDbStatus::WriteError;
+
+    //translate to member position
+    Placement3d thisPlacement(GetPlacement());
+    thisPlacement.TryApplyTransform(coordTrans);
+    thisPlacement.TryApplyTransform(rotation);
+    Transform gridTrans = grid->GetPlacementTransform();
+    thisPlacement.TryApplyTransform(gridTrans);
+
+    SetPlacement(thisPlacement);
 
     return Dgn::DgnDbStatus::Success;
     }

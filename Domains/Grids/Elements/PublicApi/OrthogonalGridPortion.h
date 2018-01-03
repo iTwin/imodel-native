@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/OrthogonalGridPortion.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -121,15 +121,6 @@ public:
     //! @param[in]  ySurfaceCount   count of surfaces to create on Y axis
     //! @return                     grid with gridsurfaces in submodel
     GRIDELEMENTS_EXPORT static OrthogonalGridPtr CreateAndInsertWithSurfaces(CreateParams const& params, int xSurfaceCount, int ySurfaceCount);
-
-    //---------------------------------------------------------------------------------------
-    // Geometry modification
-    //---------------------------------------------------------------------------------------
-    //!Rotates orthogonal grid by given angle in radians on XY plane
-    //! @param[in] theta            angle to rotate on XY plane
-    //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
-    //! @return                     Dgn::RepositoryStatus::Success if no error has occured when rotating the grid
-    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta, bool updateDimensions = false);
 
 
 

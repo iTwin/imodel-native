@@ -32,12 +32,13 @@ T_Super::CreateParams const& params
 SketchGridPtr        SketchGrid::Create
 (
 Dgn::SpatialLocationModelCR model,
+Dgn::DgnElementId scopeElementId,
 Utf8CP          name,
 double defaultStartElevation,
 double defaultEndElevation
 )
     {
-    return new SketchGrid(PlanGrid::CreateParams(model, model.GetModeledElementId (), name, QueryClassId(model.GetDgnDb()), defaultStartElevation, defaultEndElevation));
+    return new SketchGrid(PlanGrid::CreateParams(model, scopeElementId, name, QueryClassId(model.GetDgnDb()), defaultStartElevation, defaultEndElevation));
     }
 
 END_GRIDS_NAMESPACE

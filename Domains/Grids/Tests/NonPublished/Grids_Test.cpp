@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/Grids_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -51,7 +51,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 0, 0)
         //! Dimensions = false
         //! Extension = false
-        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+        OrthogonalGrid::CreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
         //! Utility for testing
         //! returns create params for orthogonal grid with values:
@@ -66,7 +66,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 0, 0)
         //! Dimensions = true
         //! Extension = false
-        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+        OrthogonalGrid::CreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
         //! Utility for testing
         //! returns create params for orthogonal grid with values:
@@ -81,7 +81,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 1, 0)
         //! Dimensions = false
         //! Extension = true
-        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+        OrthogonalGrid::CreateParams GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
         //! Utility for testing
         //! returns create params for orthogonal grid with values:
@@ -96,7 +96,7 @@ struct GridsTestFixture : public GridsTestFixtureBase
         //! Vertical extension = (0, 1, 0)
         //! Dimensions = true
         //! Extension = true
-        OrthogonalGrid::StandardCreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+        OrthogonalGrid::CreateParams GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
         //! Utility for testing
         //! returns create params for radial grid with values:
@@ -134,94 +134,86 @@ void GridsTestFixture::TearDown()
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrained()
+OrthogonalGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrained()
     {
+    //5 horiz
+    //4 vert
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    return OrthogonalGrid::StandardCreateParams(m_model.get(),
-                                                       db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-                                                       5, /*horizontal count*/
-                                                       4, /*vertical count*/
-                                                       15, /*horizontal interval*/
-                                                       10, /*vertical interval*/
-                                                       50, /*length*/
-                                                       70, /*height*/
-                                                       horizExtTrans,
-                                                       vertExtTrans,
-                                                       false, /*create dimensions*/
-                                                       false, /*extebd height*/
-                                                       "Unconstrained Grid");
+    return OrthogonalGrid::CreateParams(*m_model,
+                                                db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                "Unconstrained Grid",
+                                                15, /*defaultCoordIncX*/
+                                                10, /*defaultCoordIncY*/
+                                                0.0, /*defaultStaExtX*/
+                                                50.0, /*defaultEndExtX*/
+                                                0.0, /*defaultStaExtY*/
+                                                50.0, /*defaultEndExtY*/
+                                                0.0, /*defaultStaElevation*/
+                                                70.0 /*defaultEndElevation*/
+                                                );
     }
 
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrained()
+OrthogonalGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrained()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    return OrthogonalGrid::StandardCreateParams(m_model.get(),
-                                                       db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-                                                       5, /*horizontal count*/
-                                                       4, /*vertical count*/
-                                                       15, /*horizontal interval*/
-                                                       10, /*vertical interval*/
-                                                       50, /*length*/
-                                                       70, /*height*/
-                                                       horizExtTrans,
-                                                       vertExtTrans,
-                                                       true, /*create dimensions*/
-                                                       false, /*extebd height*/
-                                                       "Constrained Grid");
+    return OrthogonalGrid::CreateParams(*m_model,
+                                                db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                "Constrained Grid",
+                                                15, /*defaultCoordIncX*/
+                                                10, /*defaultCoordIncY*/
+                                                0.0, /*defaultStaExtX*/
+                                                50.0, /*defaultEndExtX*/
+                                                0.0, /*defaultStaExtY*/
+                                                50.0, /*defaultEndExtY*/
+                                                0.0, /*defaultStaElevation*/
+                                                70.0 /*defaultEndElevation*/
+                                                );
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              10/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended()
+OrthogonalGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    DVec3d horizExtTrans = DVec3d::From(1.0, 0.0, 0.0);
-    DVec3d vertExtTrans = DVec3d::From(0.0, 1.0, 0.0);
-    return OrthogonalGrid::StandardCreateParams(m_model.get(),
-                                                       db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-                                                       5, /*horizontal count*/
-                                                       4, /*vertical count*/
-                                                       15, /*horizontal interval*/
-                                                       10, /*vertical interval*/
-                                                       50, /*length*/
-                                                       70, /*height*/
-                                                       horizExtTrans,
-                                                       vertExtTrans,
-                                                       false, /*create dimensions*/
-                                                       true, /*extend height*/
-                                                       "Unconstrained Grid");
+    return OrthogonalGrid::CreateParams(*m_model,
+                                                db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                "Unconstrained Grid",
+                                                15, /*defaultCoordIncX*/
+                                                10, /*defaultCoordIncY*/
+                                                -1.0, /*defaultStaExtX*/
+                                                49.0, /*defaultEndExtX*/
+                                                -1.0, /*defaultStaExtY*/
+                                                49, /*defaultEndExtY*/
+                                                0.0, /*defaultStaElevation*/
+                                                70.0 /*defaultEndElevation*/
+                                                );
     }
 
 //---------------------------------------------------------------------------------------
 // @bemethod                                      Haroldas.Vitunskas              11/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
-OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended()
+OrthogonalGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended()
     {
     DgnDbR db = *DgnClientApp::App().Project();
     DVec3d horizExtTrans = DVec3d::From(1.0, 0.0, 0.0);
     DVec3d vertExtTrans = DVec3d::From(0.0, 1.0, 0.0);
-    return OrthogonalGrid::StandardCreateParams(m_model.get(),
-                                                       db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-                                                       5, /*horizontal count*/
-                                                       4, /*vertical count*/
-                                                       15, /*horizontal interval*/
-                                                       10, /*vertical interval*/
-                                                       50, /*length*/
-                                                       70, /*height*/
-                                                       horizExtTrans,
-                                                       vertExtTrans,
-                                                       true, /*create dimensions*/
-                                                       true, /*extend height*/
-                                                       "Constrained Grid");
+    return OrthogonalGrid::CreateParams(*m_model,
+                                        db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                        "Constrained Grid",
+                                        15, /*defaultCoordIncX*/
+                                        10, /*defaultCoordIncY*/
+                                        -1.0, /*defaultStaExtX*/
+                                        49.0, /*defaultEndExtX*/
+                                        -1.0, /*defaultStaExtY*/
+                                        49, /*defaultEndExtY*/
+                                        0.0, /*defaultStaElevation*/
+                                        70.0 /*defaultEndElevation*/
+                                        );
     }
 
 //---------------------------------------------------------------------------------------
@@ -230,7 +222,7 @@ OrthogonalGrid::StandardCreateParams GridsTestFixture::GetTestDefaultCreateParam
 RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGrid()
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    return RadialGrid::CreateParams(m_model.get(),
+    return RadialGrid::CreateParams(*m_model,
                                            db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                            7, /*plane count*/
                                            5, /*circular count*/
@@ -239,6 +231,8 @@ RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGr
                                            70, /*length*/
                                            50, /*height*/
                                            "Radial Grid",
+                                           0.0,
+                                           70.0,
                                            false /*extend heihgt*/);
     }
 
@@ -248,9 +242,9 @@ RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGr
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert (createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     DPlane3d gridPlane = orthogonalGridUnconstrained->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
@@ -363,10 +357,16 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
     ASSERT_TRUE(DPoint3d::From(20, 0, 0).AlmostEqual(verticalElements[2]->GetPlacement().GetOrigin())) << "Vertical plane 2 origin is incorrect";
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
-    // all elements placement rotation angle should be 0
-    for (GridPlanarSurfaceCPtr plane : allElements)
+    // all horizontal elements placement rotation angle should be 0
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        }
+
+    // all vertical elements placement rotation angle should be 0
+    for (GridPlanarSurfaceCPtr plane : verticalElements)
+        {
+        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -408,9 +408,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -421,7 +421,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(23, 76, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrained->TranslateToPoint(newBaseOrigin)) << "orthogonal grid translation was not successful";
+    Placement3d translatedPlacement(orthogonalGridUnconstrained->GetPlacement());
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    orthogonalGridUnconstrained->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridUnconstrained->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
@@ -483,7 +486,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -493,9 +496,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -506,12 +509,14 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
         }
 
     double newAngle = msGeomConst_pi / 6; // 30 deg
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
+    Placement3d translatedPlacement(orthogonalGridUnconstrained->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    orthogonalGridUnconstrained->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridUnconstrained->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
 
     double existingAngle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridUnconstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
-    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    ASSERT_EQ(newAngle, orthogonalGridUnconstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -572,7 +577,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -582,9 +587,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
 TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
 
-    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -595,14 +600,15 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(23, 76, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrained->TranslateToPoint(newBaseOrigin)) << "orthogonal grid translation was not successful";
     double newAngle = msGeomConst_pi / 6; // 30 deg
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
+    Placement3d translatedPlacement(orthogonalGridUnconstrained->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    orthogonalGridUnconstrained->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridUnconstrained->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
 
-    double existingAngle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridUnconstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
-    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    ASSERT_EQ(newAngle, orthogonalGridUnconstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
@@ -664,7 +670,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -674,9 +680,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
-    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     DPlane3d gridPlane = orthogonalGridUnconstrainedExtended->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
@@ -789,8 +795,8 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
     ASSERT_TRUE(DPoint3d::From(20, 0, 0).AlmostEqual(verticalElements[2]->GetPlacement().GetOrigin())) << "Vertical plane 2 origin is incorrect";
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
-    // all elements placement rotation angle should be 0
-    for (GridPlanarSurfaceCPtr plane : allElements)
+    // all horizontal elements placement rotation angle should be 0
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -802,11 +808,11 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
         {
         double length = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid surface length should be accessible";
-        ASSERT_EQ(52, length) << "Grid surface length is incorrect";
+        ASSERT_EQ(50, length) << "Grid surface length is incorrect";
 
         double height = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetHeight(height)) << "Grid surface height should be accessible";
-        ASSERT_EQ(70 + 2 * BUILDING_TOLERANCE, height) << "Grid surface height is incorrect";
+        ASSERT_EQ(70, height) << "Grid surface height is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -834,9 +840,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
-    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -847,7 +853,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(23, 76, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrainedExtended->TranslateToPoint(newBaseOrigin)) << "orthogonal grid translation was not successful";
+    Placement3d translatedPlacement(orthogonalGridUnconstrainedExtended->GetPlacement());
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    orthogonalGridUnconstrainedExtended->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridUnconstrainedExtended->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
@@ -909,7 +918,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -919,9 +928,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrainedExtended();
 
-    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridUnconstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -932,7 +941,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
         }
 
     double newAngle = msGeomConst_pi / 6; // 30 deg
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridUnconstrainedExtended->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
+    Placement3d translatedPlacement(orthogonalGridUnconstrainedExtended->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    orthogonalGridUnconstrainedExtended->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridUnconstrainedExtended->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
 
     bvector<DgnElementId> axesIds = orthogonalGridUnconstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
@@ -994,7 +1006,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1004,9 +1016,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     DPlane3d gridPlane = orthogonalGridConstrained->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
@@ -1119,8 +1131,8 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
     ASSERT_TRUE(DPoint3d::From(20, 0, 0).AlmostEqual(verticalElements[2]->GetPlacement().GetOrigin())) << "Vertical plane 2 origin is incorrect";
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
-    // all elements placement rotation angle should be 0
-    for (GridPlanarSurfaceCPtr plane : allElements)
+    // all horizontal elements placement rotation angle should be 0
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1164,9 +1176,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -1177,7 +1189,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(23, 76, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrained->TranslateToPoint(newBaseOrigin)) << "orthogonal grid translation was not successful";
+    Placement3d translatedPlacement(orthogonalGridConstrained->GetPlacement());
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    orthogonalGridConstrained->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridConstrained->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
 
     bvector<DgnElementId> axesIds = orthogonalGridConstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
@@ -1239,7 +1254,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1249,9 +1264,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -1262,12 +1277,14 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
         }
 
     double newAngle = msGeomConst_pi / 6; // 30 deg
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
+    Placement3d translatedPlacement(orthogonalGridConstrained->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    orthogonalGridConstrained->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridConstrained->Update().IsValid()) << "orthogonal grid rotation was not successful";
     db.SaveChanges();
 
     double existingAngle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridConstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
-    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    ASSERT_EQ(newAngle, orthogonalGridConstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
     
     bvector<DgnElementId> axesIds = orthogonalGridConstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -1328,7 +1345,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1338,9 +1355,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
 TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTranslationAndRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrained();
 
-    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrained = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -1351,14 +1368,16 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(23, 76, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrained->TranslateToPoint(newBaseOrigin)) << "orthogonal grid translation was not successful";
     double newAngle = msGeomConst_pi / 6; // 30 deg
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrained->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
+    Placement3d translatedPlacement(orthogonalGridConstrained->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    orthogonalGridConstrained->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridConstrained->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
 
     double existingAngle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridConstrained->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
-    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    ASSERT_EQ(newAngle, orthogonalGridConstrained->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
     bvector<DgnElementId> axesIds = orthogonalGridConstrained->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -1419,7 +1438,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1429,9 +1448,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
-    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     DPlane3d gridPlane = orthogonalGridConstrainedExtended->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
@@ -1544,8 +1563,8 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
     ASSERT_TRUE(DPoint3d::From(20, 0, 0).AlmostEqual(verticalElements[2]->GetPlacement().GetOrigin())) << "Vertical plane 2 origin is incorrect";
     ASSERT_TRUE(DPoint3d::From(30, 0, 0).AlmostEqual(verticalElements[3]->GetPlacement().GetOrigin())) << "Vertical plane 3 origin is incorrect";
 
-    // all elements placement rotation angle should be 0
-    for (GridPlanarSurfaceCPtr plane : allElements)
+    // all horizontal elements placement rotation angle should be 0
+    for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
         ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
@@ -1557,11 +1576,11 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
         {
         double length = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetLength(length)) << "Grid surface length should be accessible";
-        ASSERT_EQ(52, length) << "Grid surface length is incorrect";
+        ASSERT_EQ(50, length) << "Grid surface length is incorrect";
 
         double height = 0;
         ASSERT_EQ(BentleyStatus::SUCCESS, plane->TryGetHeight(height)) << "Grid surface height should be accessible";
-        ASSERT_EQ(70 + 2 * BUILDING_TOLERANCE, height) << "Grid surface height is incorrect";
+        ASSERT_EQ(70, height) << "Grid surface height is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -1589,9 +1608,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfterTranslation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
-    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -1602,7 +1621,10 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(23, 76, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrainedExtended->TranslateToPoint(newBaseOrigin)) << "orthogonal grid translation was not successful";
+    Placement3d translatedPlacement(orthogonalGridConstrainedExtended->GetPlacement());
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    orthogonalGridConstrainedExtended->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridConstrainedExtended->Update().IsValid()) << "orthogonal grid translation was not successful";
     db.SaveChanges();
 
     bvector<DgnElementId> axesIds = orthogonalGridConstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
@@ -1664,7 +1686,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1674,9 +1696,9 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfterRotation)
     {
     DgnDbR db = *DgnClientApp::App().Project();
-    OrthogonalGrid::StandardCreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridConstrainedExtended();
 
-    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsert(createParams);
+    OrthogonalGridPtr orthogonalGridConstrainedExtended = OrthogonalGrid::CreateAndInsertWithSurfaces(createParams, 5, 4);
 
     db.SaveChanges();
 
@@ -1687,12 +1709,14 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
         }
 
     double newAngle = msGeomConst_pi / 6; // 30 deg
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, orthogonalGridConstrainedExtended->RotateToAngleXY(newAngle)) << "orthogonal grid rotation was not successful";
+    Placement3d translatedPlacement(orthogonalGridConstrainedExtended->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    orthogonalGridConstrainedExtended->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(orthogonalGridConstrainedExtended->Update().IsValid()) << "orthogonal grid translation+rotation was not successful";
     db.SaveChanges();
 
     double existingAngle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, orthogonalGridConstrainedExtended->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
-    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    ASSERT_EQ(newAngle, orthogonalGridConstrainedExtended->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
     bvector<DgnElementId> axesIds = orthogonalGridConstrainedExtended->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -1753,7 +1777,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
   
@@ -1764,7 +1788,9 @@ TEST_F(GridsTestFixture, RadialGrid_Empty_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    RadialGridPtr empty = RadialGrid::Create(*m_model.get());
+    RadialGrid::CreateParams params(*m_model, m_model->GetModeledElementId(), 0, 0, 0, 0, 0 , 0, "empty radial grid", 0, 10, false);
+
+    RadialGridPtr empty = RadialGrid::Create(params);
     ASSERT_TRUE(empty.IsValid()) << "Failed to create empty radial grid";
     ASSERT_TRUE(empty->Insert().IsValid()) << "Failed to insert empty grid";
 
@@ -1944,7 +1970,10 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(43, 57, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->TranslateToPoint(newBaseOrigin)) << "radial grid translation was not successful";
+    Placement3d translatedPlacement(radialGrid->GetPlacement());
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    radialGrid->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(radialGrid->Update().IsValid()) << "radial grid translation was not successful";
     db.SaveChanges();
 
     bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
@@ -1989,11 +2018,6 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     allElements.insert(allElements.end(), planeElements.begin(), planeElements.end());
     allElements.insert(allElements.end(), arcElements.begin(), arcElements.end());
 
-    // all elements placement origins should be: (43, 57, 0).
-    for (GridSurfaceCPtr surface : allElements)
-        {
-        ASSERT_TRUE(DPoint3d::From(43, 57, 0).AlmostEqual(surface->GetPlacement().GetOrigin(), 0.1)) << "Grid surface origin is incorrect";
-        }
 
     // all plane elements rotation angle should be i * iteration_angle = i * 7 * msGeomConst_pi / 180
     for (size_t i = 0; i < planeElements.size(); ++i)
@@ -2029,12 +2053,14 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
         }
 
     double newAngle = msGeomConst_pi / 4; // 45 DEG
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->RotateToAngleXY(newAngle)) << "radial grid rotation was not successful";
+    Placement3d translatedPlacement(radialGrid->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    radialGrid->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(radialGrid->Update().IsValid()) << "radial grid rotation was not successful";
     db.SaveChanges();
 
     double existingAngle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, radialGrid->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
-    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    ASSERT_EQ(newAngle, radialGrid->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
     bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -2118,15 +2144,15 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
         }
 
     DPoint3d newBaseOrigin = DPoint3d::From(43, 57, 0);
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->TranslateToPoint(newBaseOrigin)) << "radial grid translation was not successful";
-
     double newAngle = msGeomConst_pi / 4; // 45 DEG
-    ASSERT_EQ(Dgn::RepositoryStatus::Success, radialGrid->RotateToAngleXY(newAngle)) << "radial grid rotation was not successful";
+    Placement3d translatedPlacement(radialGrid->GetPlacement());
+    translatedPlacement.GetAnglesR().SetYaw(AngleInDegrees::FromRadians(newAngle));
+    translatedPlacement.SetOrigin(newBaseOrigin);
+    radialGrid->SetPlacement(translatedPlacement);
+    ASSERT_TRUE(radialGrid->Update().IsValid()) << "radial grid translation+rotation was not successful";
     db.SaveChanges();
 
-    double existingAngle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, radialGrid->GetGridRotationAngleXY(existingAngle)) << "Failed to get grid's rotation angle";
-    ASSERT_EQ(newAngle, existingAngle) << "Grid's rotation angle is incorrect";
+    ASSERT_EQ(newAngle, radialGrid->GetPlacement().GetAngles().GetYaw().Radians()) << "Grid's rotation angle is incorrect";
 
     bvector<DgnElementId> axesIds = radialGrid->MakeAxesIterator().BuildIdList<DgnElementId>();
     if (2 != axesIds.size())
@@ -2171,10 +2197,10 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     allElements.insert(allElements.end(), arcElements.begin(), arcElements.end());
 
     // all elements placement origins should be: (43, 57, 0).
-    for (GridSurfaceCPtr surface : allElements)
+    /*for (GridSurfaceCPtr surface : allElements)
         {
         ASSERT_TRUE(DPoint3d::From(43, 57, 0).AlmostEqual(surface->GetPlacement().GetOrigin(), 0.1)) << "Grid surface origin is incorrect";
-        }
+        }*/
 
     // all plane elements rotation angle should be newAngle + i * iteration_angle = msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180
     for (size_t i = 0; i < planeElements.size(); ++i)
@@ -2198,7 +2224,7 @@ TEST_F(GridsTestFixture, SketchGrid_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), "Sketch Grid");
+    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), m_model->GetModeledElementId(), "Sketch Grid", 0.0, 10.0);
 
     DPlane3d gridPlane = sketchGrid->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
@@ -2407,7 +2433,7 @@ TEST_F (GridsTestFixture, InsertUpdateInvalidGeometrySurfaces)
     {
     DgnDbR db = *DgnClientApp::App ().Project ();
 
-    SketchGridPtr grid = SketchGrid::Create (*m_model, "SketchGrid-1");
+    SketchGridPtr grid = SketchGrid::Create (*m_model, m_model->GetModeledElementId(), "SketchGrid-1", 0.0, 10.0);
     grid->Insert ();
     GeneralGridAxisPtr axis1 = GeneralGridAxis::CreateAndInsert (db.GetDictionaryModel (), *grid);
 
@@ -2586,7 +2612,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
         ++gridIteration;
         }
 
-    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (m_model.get(),
+    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                             db.Elements ().GetRootSubject ()->GetElementId (),
                                                                             "Floor-Grid"),
                                                                             floorPlaneCurves,
@@ -2625,23 +2651,20 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     // Create orthogonal grid
     /////////////////////////////////////////////////////////////
-    DVec3d horizExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    DVec3d vertExtTrans = DVec3d::From(0.0, 0.0, 0.0);
-    OrthogonalGrid::StandardCreateParams orthogonalParams = OrthogonalGrid::StandardCreateParams(m_model.get(),
-                                                                                                               db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-                                                                                                               2, /*horizontal count*/
-                                                                                                               1, /*vertical count*/
-                                                                                                               15, /*horizontal interval*/
-                                                                                                               10, /*vertical interval*/
-                                                                                                               50, /*length*/
-                                                                                                               30, /*height*/
-                                                                                                               horizExtTrans,
-                                                                                                               vertExtTrans,
-                                                                                                               true, /*create dimensions*/
-                                                                                                               true, /*extend height*/
-                                                                                                               "Orthogonal Grid");
+    OrthogonalGrid::CreateParams orthogonalParams = OrthogonalGrid::CreateParams(*m_model,
+                                                                                 db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                                                 "Orthogonal Grid",
+                                                                                 15, /*defaultCoordIncX*/
+                                                                                 10, /*defaultCoordIncY*/
+                                                                                 0.0, /*defaultStaExtX*/
+                                                                                 50.0, /*defaultEndExtX*/
+                                                                                 0.0, /*defaultStaExtY*/
+                                                                                 50.0, /*defaultEndExtY*/
+                                                                                 - 2*BUILDING_TOLERANCE, /*defaultStaElevation*/
+                                                                                 30.0 + 2*BUILDING_TOLERANCE /*defaultEndElevation*/
+                                                                                 );
 
-    OrthogonalGridPtr orthogonalGrid = OrthogonalGrid::CreateAndInsert(orthogonalParams);
+    OrthogonalGridPtr orthogonalGrid = OrthogonalGrid::CreateAndInsertWithSurfaces(orthogonalParams, 2, 1);
     ASSERT_TRUE(orthogonalGrid.IsValid()) << "Failed to create orthogonal grid";
 
     db.SaveChanges();
@@ -2720,7 +2743,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
         ++gridIteration;
         }
 
-    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (m_model.get (),
+    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                               db.Elements ().GetRootSubject ()->GetElementId (),
                                                                               "Floor-Grid"),
                                                                               floorPlaneCurves,
@@ -2758,7 +2781,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     // Create radial grid
     /////////////////////////////////////////////////////////////
-    RadialGrid::CreateParams radialParams = RadialGrid::CreateParams(m_model.get(),
+    RadialGrid::CreateParams radialParams = RadialGrid::CreateParams(*m_model,
                                                                                    db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
                                                                                    2, /*plane count*/
                                                                                    2, /*arc count*/
@@ -2767,6 +2790,8 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
                                                                                    50, /*length*/
                                                                                    30, /*height*/
                                                                                    "Radial Grid",
+                                                                                   0.0,
+                                                                                   30.0,
                                                                                    true /*extend height*/);
 
     RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(radialParams);
@@ -2855,7 +2880,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
         ++gridIteration;
         }
 
-    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (m_model.get (),
+    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                               db.Elements ().GetRootSubject ()->GetElementId (),
                                                                               "Floor-Grid"),
                                                                               floorPlaneCurves,
@@ -2893,7 +2918,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     /////////////////////////////////////////////////////////////
     // Create sketch grid
     /////////////////////////////////////////////////////////////
-    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model.get(), "Sketch Grid");
+    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Sketch Grid", 0.0, 10.0);
     ASSERT_TRUE(sketchGrid.IsValid()) << "Failed to create sketch grid";
     ASSERT_TRUE(sketchGrid->Insert().IsValid()) << "Failed to insert sketch grid";
     db.SaveChanges();
@@ -3148,7 +3173,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), "Grid");
+    SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
     
     /////////////////////////////////////////////////////////////
@@ -3181,7 +3206,7 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     /////////////////////////////////////////////////////////////
     // Try setting grid id to a grid axis
     /////////////////////////////////////////////////////////////
-    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), "Other Grid");
+    SketchGridPtr otherGrid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Other Grid", 0.0, 10.0);
     ASSERT_TRUE(otherGrid->Insert().IsValid()) << "Failed to insert grid";
 
     gridAxis0->SetGridId(otherGrid->GetElementId());
@@ -3222,7 +3247,7 @@ TEST_F(GridsTestFixture, GridSurfacesTests)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    SketchGridPtr grid = SketchGrid::Create(*m_model.get(), "Grid");
+    SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
     ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
 
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();

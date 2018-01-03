@@ -3,7 +3,7 @@
 |
 |     $Source: Grids/Grids.ecschema.xml $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 ======================================================================================= -->
 <ECSchema schemaName="Grids" nameSpacePrefix="grids" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
@@ -242,6 +242,8 @@
           <AppliesToEntityClass>GridSurface</AppliesToEntityClass>
         </IsMixin>
       </ECCustomAttributes>
+      <ECProperty propertyName="StartElevation" displayLabel="StartElevation" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="EndElevation" displayLabel="EndElevation" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="PlanGridPlanarSurface" description="A planar plangrid surface element.">

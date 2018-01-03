@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridPortion.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -84,7 +84,7 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
 
-    GRIDELEMENTS_EXPORT virtual void _OnUpdated(Dgn::DgnElementCR original) const override;
+    GRIDELEMENTS_EXPORT void _OnUpdateFinished() const override;
 
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
 
@@ -102,27 +102,9 @@ public:
     //! @return                 the surfaces model
     GRIDELEMENTS_EXPORT Dgn::SpatialLocationModelPtr    GetSurfacesModel() const;
 
-    //! Returns an angle the grid elements have rotated to
-    //! @param[out] angle   angle that the grid elements have rotated to 
-    //! @return BentleyStatus::ERROR if grid has no elements
-    GRIDELEMENTS_EXPORT BentleyStatus GetGridRotationAngleXY(double& angle) const;
-
     //! Returns name of this grid
     //! @return name of model this grid is in
     GRIDELEMENTS_EXPORT Utf8CP  GetName() const;
-
-    //---------------------------------------------------------------------------------------
-    // Geometry modification
-    //---------------------------------------------------------------------------------------
-    //! Translates grid to given point, 
-    //! @param[in] point    point to translate to
-    //! @returuns           Dgn::RepositoryStatus::Success if no error has occured when translating grid
-    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus TranslateToPoint(DPoint3d point);
-
-    //! Rotates grid to given angle
-    //! @param[in] theta    angle to rotate to
-    //! @returns            Dgn::RepositoryStatus::Success if no error has occured when rotating grid
-    GRIDELEMENTS_EXPORT Dgn::RepositoryStatus RotateToAngleXY(double theta);
 
     //---------------------------------------------------------------------------------------
     // Queries

@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/GridPortion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Grids/gridsApi.h>
@@ -61,8 +61,11 @@ PlanGrid::PlanGrid
 CreateParams const& params
 ) : T_Super(params)
     {
-    SetDefaultStartElevation(params.m_defaultStartElevation);
-    SetDefaultEndElevation(params.m_defaultEndElevation);
+    if (params.m_classId.IsValid()) // elements created via handler have no classid.
+        {
+        SetDefaultStartElevation(params.m_defaultStartElevation);
+        SetDefaultEndElevation(params.m_defaultEndElevation);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -78,61 +81,6 @@ DPlane3d PlanGrid::GetPlane
     RotMatrix rotMatrix = angles.ToRotMatrix ();
     rotMatrix.Multiply (plane.normal);
     return plane;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-RepositoryStatus Grid::RotateToAngleXY (double theta)
-    {
-    RepositoryStatus status = RepositoryStatus::Success;
-    for (Dgn::ElementIteratorEntry pIterEntry : MakeIterator ())
-        {
-        GridSurfacePtr gridSurface = GetDgnDb ().Elements ().GetForEdit<GridSurface> (pIterEntry.GetElementId ());
-        gridSurface->RotateXY (theta);
-        if (RepositoryStatus::Success != (status = BuildingLocks_LockElementForOperation (*gridSurface, BeSQLite::DbOpcode::Update, "update GridSurface")))
-            return status;
-        gridSurface->Update ();
-        }
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-RepositoryStatus Grid::TranslateToPoint (DPoint3d point)
-    {
-    RepositoryStatus status = RepositoryStatus::Success;
-    Dgn::ElementIterator gridElements = MakeIterator ();
-
-    GridSurfaceCPtr firstGridElem = GetDgnDb ().Elements ().Get<GridSurface> ((*gridElements.begin()).GetElementId ());
-
-    DVec3d translation = DVec3d::FromStartEnd (firstGridElem->GetPlacement ().GetOrigin (), point);
-
-    for (Dgn::ElementIteratorEntry pIterEntry : gridElements)
-        {
-        GridSurfacePtr gridSurface = GetDgnDb ().Elements ().GetForEdit<GridSurface> (pIterEntry.GetElementId());
-        gridSurface->Translate (translation);
-        if (RepositoryStatus::Success != (status = BuildingLocks_LockElementForOperation (*gridSurface, BeSQLite::DbOpcode::Update, "update GridSurface")))
-            return status;
-        gridSurface->Update ();
-        }
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  10/17
-//---------------------------------------------------------------------------------------
-BentleyStatus Grid::GetGridRotationAngleXY(double& angle) const
-    {
-    bvector<DgnElementId> gridElementIds = MakeIterator().BuildIdList<DgnElementId>();
-    if (gridElementIds.empty() || !gridElementIds.front().IsValid())
-        return BentleyStatus::ERROR;
-
-    GridSurfaceCPtr firstElem = GetDgnDb().Elements().Get<GridSurface>(gridElementIds.front());
-    angle = GeometryUtils::PlacementToAngleXY(firstElem->GetPlacement());
-
-    return BentleyStatus::SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
@@ -258,6 +206,13 @@ Dgn::DgnDbStatus      Grid::_OnUpdate
         {
         return _Validate ();
         }
+
+    /*if (_NeedsUpdateSurfacesOnPlacementChange() &&
+        !GetPlacement().GetTransform().IsEqual(original.ToGeometrySource3d()->GetPlacement().GetTransform(), PLACEMENT_TOLERANCE, PLACEMENT_TOLERANCE))
+        {
+        m_needsUpdateSurfacesOnFinished = true;
+        }*/
+
     return status;
     }
 
@@ -303,20 +258,16 @@ Dgn::DgnModelCR targetModel
     return SUCCESS;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  12/2017
+* @bsimethod                                    Jonas.Valiunas                  01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                            Grid::_OnUpdated
+void                            Grid::_OnUpdateFinished
 (
-Dgn::DgnElementCR original
 ) const
     {
-    Dgn::DgnDbR db = GetDgnDb();
-    //only if the placement has changed, we want to fix the gridsurfaces.
-    if (_NeedsUpdateSurfacesOnPlacementChange() &&
-        !GetPlacement().GetTransform().IsEqual(original.ToGeometrySource3d()->GetPlacement().GetTransform(), PLACEMENT_TOLERANCE, PLACEMENT_TOLERANCE))
+    if (_NeedsUpdateSurfacesOnPlacementChange())
         {
+        Dgn::DgnDbR db = GetDgnDb();
         for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
             {
             GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
@@ -326,8 +277,7 @@ Dgn::DgnElementCR original
             surface->Update();
             }
         }
-
-    T_Super::_OnUpdated(original);
+    T_Super::_OnUpdateFinished();
     }
 
 /*---------------------------------------------------------------------------------**//**
