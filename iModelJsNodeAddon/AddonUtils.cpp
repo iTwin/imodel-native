@@ -583,43 +583,34 @@ BeSQLite::DbResult AddonUtils::ExecuteStatement(Utf8StringR instanceId, ECSqlSta
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-JsECDbPtr AddonUtils::OpenECDb(DbResult &dbres, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
+DbResult AddonUtils::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
     {
     if (!pathname.DoesPathExist())
-        {
-        dbres = DbResult::BE_SQLITE_NOTFOUND;
-        return nullptr;
-        }
+        return BE_SQLITE_NOTFOUND;
 
-    JsECDbPtr ecdb = new JsECDb();
-    dbres = ecdb->OpenBeSQLiteDb(pathname, BeSQLite::Db::OpenParams(openMode));
-    if (dbres != BE_SQLITE_OK)
-        return nullptr;
+    DbResult res = ecdb.OpenBeSQLiteDb(pathname, BeSQLite::Db::OpenParams(openMode));
+    if (res != BE_SQLITE_OK)
+        return res;
 
-    ecdb->AddIssueListener(s_listener);
-    return ecdb;
+    ecdb.AddIssueListener(s_listener);
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-JsECDbPtr AddonUtils::CreateECDb(DbResult &dbres, BeFileNameCR pathname)
+DbResult AddonUtils::CreateECDb(ECDbR ecdb, BeFileNameCR pathname)
     {
     BeFileName path = pathname.GetDirectoryName();
     if (!path.DoesPathExist())
-        {
-        dbres = DbResult::BE_SQLITE_NOTFOUND;
-        return nullptr;
-        }
+        return BE_SQLITE_NOTFOUND;
 
-    JsECDbPtr ecdb = new JsECDb();
+    DbResult res = ecdb.CreateNewDb(pathname);
+    if (res != BE_SQLITE_OK)
+        return res;
 
-    dbres = ecdb->CreateNewDb(pathname);
-    if (dbres != BE_SQLITE_OK)
-        return nullptr;
-
-    ecdb->AddIssueListener(s_listener);
-    return ecdb;
+    ecdb.AddIssueListener(s_listener);
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------

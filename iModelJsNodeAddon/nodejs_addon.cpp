@@ -70,29 +70,27 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define OPTIONAL_ARGUMENT_INTEGER(i, var, default)\
     int var;\
-    if (info.Length() <= (i)) {\
+    if (info.Length() <= (i) || info[i].IsUndefined()) {\
         var = (default);\
     }\
     else if (info[i].IsNumber()) {\
         var = info[i].As<Napi::Number>().Int32Value();\
     }\
-    else if (info[i].IsUndefined()) {\
-    } else {\
+    else {\
         var = (default);\
         Napi::TypeError::New(Env(), "Argument " #i " must be an integer").ThrowAsJavaScriptException();\
     }
 
 #define OPTIONAL_ARGUMENT_STRING(i, var)\
     Utf8String var;\
-    if (info.Length() <= (i)) {\
+    if (info.Length() <= (i) || info[i].IsUndefined()) {\
         ;\
     }\
     else if (info[i].IsString()) {\
         var = info[i].As<Napi::String>().Utf8Value().c_str();\
     }\
-    else if (info[i].IsUndefined()) {\
-    } else {\
-        Napi::TypeError::New(Env(), "Argument " #i " must be string").ThrowAsJavaScriptException();\
+    else {\
+        Napi::TypeError::New(Env(), "Argument " #i " must be string or undefined").ThrowAsJavaScriptException();\
     }
 
 #ifdef WIP_NAPI
@@ -148,9 +146,10 @@ struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb>
     static Napi::FunctionReference s_constructor;
 
     JsECDbPtr m_ecdb;
-    NodeAddonECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECDb>(info) {}
+    NodeAddonECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECDb>(info), m_ecdb(new JsECDb()) {}
     ~NodeAddonECDb() {}
 
+    bool IsValid() const { return m_ecdb != nullptr; }
     ECDbR GetECDb() {return *m_ecdb;}
 
     // Check if val is really a NodeAddonECDb peer object
@@ -161,106 +160,65 @@ struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb>
         return obj.InstanceOf(s_constructor.Value());
         }
 
-    template <typename STATUSTYPE>
-    struct ECDbWorkerBase : Napi::AsyncWorker
-        {
-        NodeAddonECDb *m_addonDb; // input
-        STATUSTYPE m_status;    // output
-        
-        ECDbWorkerBase(NodeAddonECDb* adb, Napi::Function cb) 
-            : Napi::AsyncWorker(adb->Value(), cb), m_addonDb(adb), m_status((STATUSTYPE)0) {}
-
-        ECDbR GetECDb() { return *m_addonDb->GetECDb(); }
-
-        void OnOK() override
-            {
-            if (Env().IsExceptionPending())
-                {
-                printf ("got here\n");
-                return;
-                }
-
-            if (_HadError())
-                Callback().MakeCallback(Receiver().Value(), {NodeUtils::CreateErrorObject0(m_status, _GetErrorDescription(), Env())});
-            else
-                Callback().MakeCallback(Receiver().Value(), {Env().Undefined(), _GetSuccessValue()});
-            }
-
-        void OnError(const Napi::Error& e) override
-            {
-            auto msg = e.Message();
-            auto dgnErrMsg = _GetErrorDescription();
-            if (dgnErrMsg)
-                msg.append(dgnErrMsg);
-            Callback().MakeCallback(Receiver().Value(), {NodeUtils::CreateErrorObject0(m_status, msg.c_str(), Env())});
-            }
-
-        virtual Utf8CP _GetErrorDescription() {return nullptr;}
-        virtual Napi::Value _GetSuccessValue() = 0;
-        virtual bool _HadError() {return (STATUSTYPE)0 != m_status;}        
-        };
-
-    Napi::Value CreateDbSync(const Napi::CallbackInfo& info)
+    Napi::Value CreateDb(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, dbname);
         RETURN_IF_HAD_EXCEPTION_SYNC
-        if (m_ecdb.IsValid() && m_ecdb->IsDbOpen())
-            return Napi::Number::New(Env(), (int)BE_SQLITE_ERROR);
+        if (IsOpenInternal())
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
-        DbResult status;
-        m_ecdb = AddonUtils::CreateECDb(status, BeFileName(dbname.c_str(), true));
-        if (!m_ecdb.IsValid() || status != BE_SQLITE_OK)
+        DbResult status = AddonUtils::CreateECDb(*m_ecdb, BeFileName(dbname.c_str(), true));
+        if (status != BE_SQLITE_OK)
             m_ecdb = nullptr;
             
         return Napi::Number::New(Env(), (int)status);
         }
 
-    Napi::Value OpenDbSync(const Napi::CallbackInfo& info)
+    Napi::Value OpenDb(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, dbname);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         RETURN_IF_HAD_EXCEPTION_SYNC
-        if (m_ecdb.IsValid() && m_ecdb->IsDbOpen())
-            return Napi::Number::New(Env(), (int)BE_SQLITE_ERROR);
+        if (IsOpenInternal())
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
-        DbResult status;
-        m_ecdb = AddonUtils::OpenECDb(status, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
-        if (!m_ecdb.IsValid() || status != BE_SQLITE_OK)
+        DbResult status = AddonUtils::OpenECDb(*m_ecdb, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        if (status != BE_SQLITE_OK)
             m_ecdb = nullptr;
             
         return Napi::Number::New(Env(), (int)status);
         }
 
-    Napi::Value CloseDbSync(const Napi::CallbackInfo& info)
+    Napi::Value CloseDb(const Napi::CallbackInfo& info)
         {
-        if (!m_ecdb.IsValid() ||!m_ecdb->IsDbOpen())
-            return Napi::Number::New(Env(), (int)BE_SQLITE_ERROR);
+        if (!IsOpenInternal())
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
 
         m_ecdb->CloseDb();
-         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
+        return Napi::Number::New(Env(), (int) BE_SQLITE_OK);
         }
 
-    Napi::Value SaveChangesSync(const Napi::CallbackInfo& info)
+    Napi::Value SaveChanges(const Napi::CallbackInfo& info)
         {            
         OPTIONAL_ARGUMENT_STRING(0, changeSetName);        
         RETURN_IF_HAD_EXCEPTION_SYNC
-        if (!m_ecdb.IsValid() || !m_ecdb->IsDbOpen())
+        if (!IsOpenInternal())
             return Napi::Number::New(Env(), (int)BE_SQLITE_ERROR);
 
         DbResult status = m_ecdb->SaveChanges(changeSetName.empty() ? nullptr : changeSetName.c_str());        
         return Napi::Number::New(Env(), (int)status);
         }
 
-    Napi::Value AbandonChangesSync(const Napi::CallbackInfo& info)
+    Napi::Value AbandonChanges(const Napi::CallbackInfo& info)
         {            
-        if (!m_ecdb.IsValid() || !m_ecdb->IsDbOpen())
+        if (!IsOpenInternal())
             return Napi::Number::New(Env(), (int)BE_SQLITE_ERROR);
 
         DbResult status = m_ecdb->AbandonChanges();        
         return Napi::Number::New(Env(), (int)status);
         }
 
-    Napi::Value ImportSchemaSync(const Napi::CallbackInfo& info)
+    Napi::Value ImportSchema(const Napi::CallbackInfo& info)
         {  
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);          
         RETURN_IF_HAD_EXCEPTION_SYNC
@@ -271,17 +229,10 @@ struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb>
          return Napi::Number::New(Env(), (int)status);  
         }
 
-    Napi::Value IsOpenSync(const Napi::CallbackInfo& info)
-        {  
-        bool isOpen = m_ecdb.IsValid() && m_ecdb->IsDbOpen();
-        return Napi::Boolean::New(Env(), isOpen);  
-        }
+    Napi::Value IsOpen(const Napi::CallbackInfo& info) { return Napi::Boolean::New(Env(), IsOpenInternal()); }
 
+    bool IsOpenInternal() const { return m_ecdb.IsValid() && m_ecdb->IsDbOpen(); }
 
-    bool IsOpen() const
-        {  
-        return m_ecdb.IsValid() && m_ecdb->IsDbOpen();
-        }
     //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
     void AddRef() { this->Ref(); }
 
@@ -295,13 +246,13 @@ struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb>
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECDb", {
-            InstanceMethod("createDb", &NodeAddonECDb::CreateDbSync),
-            InstanceMethod("openDb", &NodeAddonECDb::OpenDbSync),
-            InstanceMethod("closeDb", &NodeAddonECDb::CloseDbSync),
-            InstanceMethod("saveChanges", &NodeAddonECDb::SaveChangesSync),
-            InstanceMethod("abandonChanges", &NodeAddonECDb::AbandonChangesSync),
-            InstanceMethod("importSchema", &NodeAddonECDb::ImportSchemaSync),
-            InstanceMethod("isOpen", &NodeAddonECDb::IsOpenSync)
+            InstanceMethod("createDb", &NodeAddonECDb::CreateDb),
+            InstanceMethod("openDb", &NodeAddonECDb::OpenDb),
+            InstanceMethod("closeDb", &NodeAddonECDb::CloseDb),
+            InstanceMethod("saveChanges", &NodeAddonECDb::SaveChanges),
+            InstanceMethod("abandonChanges", &NodeAddonECDb::AbandonChanges),
+            InstanceMethod("importSchema", &NodeAddonECDb::ImportSchema),
+            InstanceMethod("isOpen", &NodeAddonECDb::IsOpen)
         });
 
         exports.Set("NodeAddonECDb", t);
@@ -1047,6 +998,93 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         m_dgndb = nullptr;
         }
 
+    //=======================================================================================
+    // MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value CreateChangeCache(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
+        REQUIRE_ARGUMENT_STRING(1, changeCachePathStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        if (!changeCacheECDb->IsValid())
+            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR);
+
+        BeFileName changeCachePath(changeCachePathStr.c_str(), true);
+        DbResult stat = GetDgnDb().CreateChangeCache(changeCacheECDb->GetECDb(), changeCachePath);
+        return Napi::Number::New(Env(), (int) stat);
+        }
+
+    //=======================================================================================
+    // MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value AttachChangeCache(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_STRING(0, changeCachePathStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        BeFileName changeCachePath(changeCachePathStr.c_str(), true);
+        DbResult stat = GetDgnDb().AttachChangeCache(changeCachePath);
+        return Napi::Number::New(Env(), (int) stat);
+        }
+
+    //=======================================================================================
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value IsChangeCacheAttached(const Napi::CallbackInfo&)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        bool isAttached = GetDgnDb().IsChangeCacheAttached();
+        return Napi::Boolean::New(Env(), isAttached);
+        }
+
+    //=======================================================================================
+    // MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD because it writes to disk
+    //! @bsimethod
+    //=======================================================================================
+    Napi::Value ExtractChangeSummary(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
+        REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
+        RETURN_IF_HAD_EXCEPTION_SYNC
+
+        if (!changeCacheECDb->IsValid())
+            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR);
+
+        struct AddonChangeSet : BeSQLite::ChangeSet
+            {
+            ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { return ConflictResolution::Skip; }
+            };
+
+        AddonChangeSet changeset;
+        {
+        BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
+
+        RevisionChangesFileReader fs(changesetFilePath, GetDgnDb());
+        BeSQLite::ChangeGroup group;
+        DbResult r = fs.ToChangeGroup(group);
+        if (BE_SQLITE_OK != r)
+            return CreateBentleyReturnErrorObject(r);
+
+        r = changeset.FromChangeGroup(group);
+        if (BE_SQLITE_OK != r)
+            return CreateBentleyReturnErrorObject(r);
+        }
+
+        ECInstanceKey changeSummaryKey;
+        if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeset)))
+            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR);
+
+        return CreateBentleyReturnSuccessObject(Napi::String::New(Env(), changeSummaryKey.GetInstanceId().ToHexStr().c_str()));
+        }
+
     Napi::Value SetBriefcaseId(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN_SYNC
@@ -1209,6 +1247,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("openDgnDb", &NodeAddonDgnDb::StartOpenDgnDb),
             InstanceMethod("openDgnDbSync", &NodeAddonDgnDb::OpenDgnDbSync),
             InstanceMethod("closeDgnDb", &NodeAddonDgnDb::CloseDgnDb),
+            InstanceMethod("createChangeCache", &NodeAddonDgnDb::CreateChangeCache),
+            InstanceMethod("attachChangeCache", &NodeAddonDgnDb::AttachChangeCache),
+            InstanceMethod("isChangeCacheAttached", &NodeAddonDgnDb::IsChangeCacheAttached),
+            InstanceMethod("extractChangeSummary", &NodeAddonDgnDb::ExtractChangeSummary),
             InstanceMethod("setBriefcaseId", &NodeAddonDgnDb::SetBriefcaseId),
             InstanceMethod("getBriefcaseId", &NodeAddonDgnDb::GetBriefcaseId),
             InstanceMethod("getParentChangeSetId", &NodeAddonDgnDb::GetParentChangeSetId),
@@ -1326,7 +1368,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         }
         else if (NodeAddonECDb::HasInstance(info[paramIdx])) {
             NodeAddonECDb* var = NodeAddonECDb::Unwrap(info[paramIdx].As<Napi::Object>());
-            if (!var->IsOpen())
+            if (!var->IsOpenInternal())
                 return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());            
             ecdb = &var->GetECDb();        
         }
