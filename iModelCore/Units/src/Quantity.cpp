@@ -2,7 +2,7 @@
 |
 |     $Source: src/Quantity.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -180,6 +180,33 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
     return ae; //almost_equal(temp, rhs.m_magnitude, m_tolerance);
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              David Fox-Rabinovitz     12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double Quantity::absMax(double a, double b)
+    {
+    a = fabs(a);
+    b = fabs(b);
+    double diff = a - b;
+    double max = (diff >= 0.0) ? a : b;
+    return max;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              David Fox-Rabinovitz     12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double Quantity::relDiff(double a, double b)
+    {
+    double max = absMax(a, b);
+    double diff = fabs(a - b);
+    if (max > 1.0e-12 && diff > 1.0e-12)
+        return diff / max;
+    return 0.0;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              David Fox-Rabinovitz     12/17
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Quantity::IsClose(QuantityCR rhs, double tolerance) const
     {
     if (IsNullQuantity() || rhs.IsNullQuantity() || GetPhenomenon() != rhs.GetPhenomenon())
@@ -189,9 +216,9 @@ bool Quantity::IsClose(QuantityCR rhs, double tolerance) const
     double temp;
     if (SUCCESS != ConvertTo(rhs.m_unit, temp))
         return false;
-    return fabs(rhs.m_magnitude - temp) < tolerance;
+    double rd = relDiff(rhs.m_magnitude, temp);
+    return rd < tolerance;
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16

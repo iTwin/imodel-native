@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Units/Quantity.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -34,6 +34,8 @@ private:
     //BentleyStatus ConvertTo(Utf8CP unitName, double& value) const;
     BentleyStatus ConvertTo(UnitCP unit, double& value) const;
     UnitsProblemCode GetConvertedMagnitude(double& value, UnitCP unit) const;
+    static double absMax(double a, double b);
+    static double relDiff(double a, double b);
 public:
 
     Quantity() :m_tolerance(1000), m_magnitude(0.0), m_unit(nullptr) {}   // Invalid - empty - quantity
