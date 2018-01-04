@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryManipulationStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,6 +18,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
     {
     DEFINE_T_SUPER(GeometryManipulationStrategyBase)
 
+    friend struct GeometryPlacementStrategy;
+
     private:
         bvector<DPoint3d> m_keyPoints;
         bvector<DPoint3d> m_keyPointsWithDynamicKeyPoint;
@@ -25,7 +27,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategy();
-
+        
+        bvector<DPoint3d>& GetKeyPointsR() { return m_keyPoints; }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> const& _GetKeyPoints() const override;
 
         virtual bool _IsDynamicKeyPointSet() const override { return m_dynamicKeyPointSet; }
@@ -38,6 +41,8 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ResetDynamicKeyPoint() override;
+
+        virtual void _OnKeyPointsChanged() {};
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/ArcStartMidEndPlacementStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,17 +20,14 @@ struct ArcStartMidEndPlacementStrategy : public ArcPlacementStrategy
 
     private:
         ArcStartMidEndPlacementStrategy()
-            : T_Super(EllipseManipulationStrategy::Create().get())
+            : T_Super(ArcManipulationStrategy::Create().get())
             {}
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsDynamicKeyPointSet() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
-
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
     public:
         static ArcStartMidEndPlacementStrategyPtr Create() { return new ArcStartMidEndPlacementStrategy(); }

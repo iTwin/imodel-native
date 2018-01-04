@@ -37,6 +37,8 @@ $(o)LinePlacementStrategy$(oext)    : $(_MakeFilePath)LinePlacementStrategy.cpp 
 
 $(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EllipseManipulationStrategy.h
 
+$(o)ArcManipulationStrategy$(oext) : $(_MakeFilePath)ArcManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcManipulationStrategy.h
+
 $(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
 
 $(o)CurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)CurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurveVectorPlacementStrategy.h
