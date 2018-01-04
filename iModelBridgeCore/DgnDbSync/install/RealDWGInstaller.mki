@@ -6,11 +6,20 @@
 #
 #--------------------------------------------------------------------------------------*/
 
-%if defined (CALLED_FROM_WIX_BUNDLE_BUILD)
+%warn reach here....
+
+LANGUAGE_CULTURE = en
+BENTLEYLANGUAGE = $(LANGUAGE)
+
+INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
+
+%warn reach here too....
 
 %if !defined (BBLanguagePackBuild)
 BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
 %endif
 
-%endif
+INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
+INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag.wxs
+
 

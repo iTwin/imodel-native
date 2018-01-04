@@ -126,13 +126,15 @@
         <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
       
         <InstallerWixFile SourceFile="install\RealDwgImporter"/>
-        <WixBundleFile      SourceFile="install\RealDWGBundle" LanguagePackBundle="install\RealDWGBundle" LanguageBundle="install\RealDWGBundle"/>
+        <WixBundleFile      SourceFile="install\RealDWGBundle"/>
     </Product>
 
     <Part Name="RealDWGInstallFiles" BMakeFile="install/realDWGinstallerfiles.prewire.mke" >
         <Bindings>
             <Files BindToWixBuild="true">
                 RealDWGInstallerFiles\RealDWGBundle.bundle.wxs
+                RealDWGInstallerFiles\DwgMergeModuleFrag.wxs
+                RealDWGInstallerFiles\DwgRegistryFrag.wxs
                 RealDWGInstallerFiles\RealDWGInstaller.mki
             </Files>
         </Bindings>
