@@ -566,7 +566,7 @@ void AttachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
     std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
 
-    const size_t switchArgIndex = 0;
+    // unused - const size_t switchArgIndex = 0;
     if (args.size() != 2)
         {
         IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
@@ -609,7 +609,7 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
     std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
 
-    const size_t switchArgIndex = 0;
+    // unused - const size_t switchArgIndex = 0;
     if (args.size() != 1)
         {
         IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
