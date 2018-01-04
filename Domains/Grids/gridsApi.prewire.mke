@@ -23,3 +23,5 @@ $(BuildContext)PublicAPI/Grids/Elements : $(_MakeFilePath)Elements/PublicAPI
 $(BuildContext)PublicAPI/Grids/Handlers : $(_MakeFilePath)Handlers/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
     
+$(BuildContext)PublicAPI/Grids/Strategies : $(_MakeFilePath)Strategies/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)

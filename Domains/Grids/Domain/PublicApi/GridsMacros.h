@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Domain/PublicApi/GridsMacros.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,6 +41,12 @@
 #define GRIDHANDLERS_EXPORT EXPORT_ATTRIBUTE
 #else
 #define GRIDHANDLERS_EXPORT IMPORT_ATTRIBUTE
+#endif
+
+#if defined (__GRIDSTRATEGIES_BUILD__)
+#define GRIDSTRATEGIES_EXPORT EXPORT_ATTRIBUTE
+#else
+#define GRIDSTRATEGIES_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 #if defined (__GRIDSDOMAIN_BUILD__)

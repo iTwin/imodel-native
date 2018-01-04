@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/PublicApi/gridsApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,6 +29,6 @@
 #include "Handlers/IntersectionCurveHandlers.h"
 #include "Handlers/PortionHandlers.h"
 #include "Handlers/GridHandlers.h"
-
+#include "Strategies/GridStrategies.h"
 
 
