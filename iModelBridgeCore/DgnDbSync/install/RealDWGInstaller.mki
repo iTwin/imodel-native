@@ -23,3 +23,6 @@ INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag.wxs
 
 
+INSTALLER_VALIDATOR_OPT     + -sice:ICE30
+
+
