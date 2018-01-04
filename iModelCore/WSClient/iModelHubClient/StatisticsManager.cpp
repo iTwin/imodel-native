@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/StatisticsManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/StatisticsManager.h>
@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 StatisticsInfoTaskPtr StatisticsManager::QueryUserStatistics
 (
 Utf8StringCR userId,
-bvector<StatisticsProperties> propertiesToSelect,
+StatisticsProperties propertiesToSelect,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -74,7 +74,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 MultipleStatisticsInfoTaskPtr StatisticsManager::QueryAllUsersStatistics
 (
-bvector<StatisticsProperties> propertiesToSelect,
+StatisticsProperties propertiesToSelect,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -122,7 +122,7 @@ ICancellationTokenPtr cancellationToken
 MultipleStatisticsInfoTaskPtr StatisticsManager::QueryUsersStatistics
 (
 bvector<Utf8String> usersIds,
-bvector<StatisticsProperties> propertiesToSelect,
+StatisticsProperties propertiesToSelect,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -181,39 +181,23 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Benas.Kikutis               11/2017
 //---------------------------------------------------------------------------------------
-void StatisticsManager::AddHasStatisticsSelect(Utf8StringR selectString, bvector<StatisticsProperties> propertiesToSelect)
+void StatisticsManager::AddHasStatisticsSelect(Utf8StringR selectString, StatisticsProperties propertiesToSelect)
     { 
     // in case you add couple properties your select string will look like this: *,@x.BriefcasesCount,@x.OwnedLocksCount&@x=HasStatistics-forward-Statistics
-    if (propertiesToSelect.capacity() == 0)
+    if (StatisticsProperties::All == propertiesToSelect)
         {
         selectString.Sprintf("%s,@x.%s", selectString.c_str(), "*");
         }
     else
         {
-        Utf8String stringPropertyValue;
-        for (auto propertyValue : propertiesToSelect)
-            {
-            switch (propertyValue)
-                {
-                case StatisticsProperties::BriefcaseCount:
-                    stringPropertyValue = ServerSchema::Property::BriefcasesCount;
-                    break;
-                case StatisticsProperties::OwnedLocksCount:
-                    stringPropertyValue = ServerSchema::Property::OwnedLocksCount;
-                    break;
-                case StatisticsProperties::PushedChangeSetsCount:
-                    stringPropertyValue = ServerSchema::Property::PushedChangeSetsCount;
-                    break;
-                case StatisticsProperties::LastChangeSetPushDate:
-                    stringPropertyValue = ServerSchema::Property::LastChangeSetPushDate;
-                    break;
-                default:
-                    BeAssert(false && "Update StatisticsManager::AddHasStatisticsSelect with the newest version of StatisticsProperties.");
-                    continue;
-                }
-
-            selectString.Sprintf("%s,@x.%s", selectString.c_str(), stringPropertyValue.c_str());
-            }
+        if (0 != (StatisticsProperties::BriefcaseCount & propertiesToSelect))
+            selectString.Sprintf("%s,@x.%s", selectString.c_str(), ServerSchema::Property::BriefcasesCount);
+        if (0 != (StatisticsProperties::OwnedLocksCount & propertiesToSelect))
+            selectString.Sprintf("%s,@x.%s", selectString.c_str(), ServerSchema::Property::OwnedLocksCount);
+        if (0 != (StatisticsProperties::PushedChangeSetsCount & propertiesToSelect))
+            selectString.Sprintf("%s,@x.%s", selectString.c_str(), ServerSchema::Property::PushedChangeSetsCount);
+        if (0 != (StatisticsProperties::LastChangeSetPushDate & propertiesToSelect))
+            selectString.Sprintf("%s,@x.%s", selectString.c_str(), ServerSchema::Property::LastChangeSetPushDate);
         }
     selectString.Sprintf("%s&@x=%s-forward-%s", selectString.c_str(), ServerSchema::Relationship::HasStatistics, ServerSchema::Class::Statistics);
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/StatisticsInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,12 +20,13 @@ DEFINE_TASK_TYPEDEFS(bvector<StatisticsInfoPtr>, MultipleStatisticsInfo);
 //! Available statistics properties
 //@bsiclass                                      Benas.Kikutis             12/2017
 //=======================================================================================
-enum StatisticsProperties
+enum StatisticsProperties ENUM_UNDERLYING_TYPE(uint32_t)
     {
-    BriefcaseCount,
-    OwnedLocksCount,
-    PushedChangeSetsCount,
-    LastChangeSetPushDate
+    All = 0,
+    BriefcaseCount = 1 << 0,
+    OwnedLocksCount = 1 << 1,
+    PushedChangeSetsCount = 1 << 2,
+    LastChangeSetPushDate = 1 << 3
     // After updating please also update StatisticsManager::AddHasStatisticsSelect
     };
 

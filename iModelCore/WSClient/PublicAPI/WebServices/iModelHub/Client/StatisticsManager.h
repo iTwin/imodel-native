@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/StatisticsManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,24 +27,24 @@ struct StatisticsManager : RefCountedBase
         StatisticsManager(WebServices::IWSRepositoryClientPtr wsRepositoryClient) : m_repositoryClient(wsRepositoryClient) {};
         StatisticsManager() {};
 
-        static void AddHasStatisticsSelect(Utf8StringR selectString, bvector<StatisticsProperties> propertiesToSelect = bvector<StatisticsProperties>());
+        static void AddHasStatisticsSelect(Utf8StringR selectString, StatisticsProperties propertiesToSelect);
     public:
         //! Returns all users statistics.
         //! @param[in] propertiesToSelect
         //! @param[in] cancellationToken
-        IMODELHUBCLIENT_EXPORT MultipleStatisticsInfoTaskPtr QueryAllUsersStatistics(bvector<StatisticsProperties> propertiesToSelect = bvector<StatisticsProperties>(), ICancellationTokenPtr cancellationToken = nullptr) const;
+        IMODELHUBCLIENT_EXPORT MultipleStatisticsInfoTaskPtr QueryAllUsersStatistics(StatisticsProperties propertiesToSelect = StatisticsProperties::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
         //! Returns statistics by user id.
         //! @param[in] userId
         //! @param[in] propertiesToSelect
         //! @param[in] cancellationToken
-        IMODELHUBCLIENT_EXPORT StatisticsInfoTaskPtr QueryUserStatistics(Utf8StringCR userId, bvector<StatisticsProperties> propertiesToSelect = bvector<StatisticsProperties>(), ICancellationTokenPtr cancellationToken = nullptr) const;
+        IMODELHUBCLIENT_EXPORT StatisticsInfoTaskPtr QueryUserStatistics(Utf8StringCR userId, StatisticsProperties propertiesToSelect = StatisticsProperties::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
         //! Returns multiple users statistics info by users ids.
         //! @param[in] usersIds
         //! @param[in] propertiesToSelect
         //! @param[in] cancellationToken
-        IMODELHUBCLIENT_EXPORT MultipleStatisticsInfoTaskPtr QueryUsersStatistics(bvector<Utf8String> usersIds, bvector<StatisticsProperties> propertiesToSelect = bvector<StatisticsProperties>(), ICancellationTokenPtr cancellationToken = nullptr) const;
+        IMODELHUBCLIENT_EXPORT MultipleStatisticsInfoTaskPtr QueryUsersStatistics(bvector<Utf8String> usersIds, StatisticsProperties propertiesToSelect = StatisticsProperties::All, ICancellationTokenPtr cancellationToken = nullptr) const;
     };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
