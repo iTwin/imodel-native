@@ -2448,10 +2448,9 @@ BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     }
 #endif
 
-static void dummyFunc() {}
-
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
+static void dummyFunc() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2471,6 +2470,7 @@ BeFileName Desktop::FileSystem::GetLibraryDir()
 
 #elif defined (BENTLEYCONFIG_OS_LINUX) || defined (BENTLEYCONFIG_OS_APPLE_MACOS)
 
+static void dummyFunc() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
