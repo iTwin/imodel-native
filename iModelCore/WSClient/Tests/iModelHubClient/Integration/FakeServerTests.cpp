@@ -1,19 +1,22 @@
-#include "FakeServer.h"
+#include "Helpers.h"
+#include "../FakeServer/FakeServer.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
-#include "../BackDoor/PublicAPI/BackDoor/WebServices/iModelHub/iModelHubTests.h"
+#include <BeHttp/ProxyHttpHandler.h>
 #include "IntegrationTestsBase.h"
-#include "MockIMHubHttpHandler.h"
+#include "../FakeServer/MockIMHubHttpHandler.h"
+#include "../../../iModelHubClient/Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
+USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_HTTP
 
 class FakeServerFixture : public IntegrationTestsBase
     {
     public:
         BeFileName outPath;
         BeFileName m_seed;
-        ScopediModelHubHost *m_pHost;
         ClientPtr    m_client;
         BeFileName GetOutputDirectory()
             {
@@ -54,7 +57,8 @@ class FakeServerFixture : public IntegrationTestsBase
             EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DeleteAlliModels(serverPath));
             }
     };
-/*
+
+#ifdef __WIP__ 
 TEST_F(FakeServerFixture, CreateiModelFromSeed) 
     {
     WCharCP serverPath = outPath.GetWCharCP();
@@ -65,7 +69,8 @@ TEST_F(FakeServerFixture, CreateiModelFromSeed)
     DgnDbPtr m_db = FakeServer::AcquireBriefcase(res, downloadPath, seedFile);
     EXPECT_EQ(DbResult::BE_SQLITE_OK, res);
     EXPECT_TRUE(m_db.IsValid());
-    }*/
+    }
+#endif
 
 Utf8String GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString)
     {
@@ -109,7 +114,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
 TEST_F(FakeServerFixture, CreateiModel)
     {
     Utf8String projectId("7ffff-sdsd-wew");
-    
+   
     Utf8String iModelName("BriefcaseTest9999");
     Utf8String description("This is a test uploadfile");
     Json::Value objectCreationJson = iModelCreationJson(iModelName, description);
