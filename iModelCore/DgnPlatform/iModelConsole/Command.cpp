@@ -741,7 +741,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         const bool trackingWasOn = tracker->IsTracking();
         tracker->EndTracking();//end the changeset
-        IModelConsole::WriteLine("Successfully created revision and extracted ChangeSummary (Id: %s) from it.", changeSummaryKey.GetInstanceId().ToString());
+        IModelConsole::WriteLine("Successfully created revision and extracted ChangeSummary (Id: %s) from it.", changeSummaryKey.GetInstanceId().ToString().c_str());
         if (trackingWasOn)
             tracker->EnableTracking(true);
 
