@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/RadialGridPortion.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,6 +78,12 @@ private:
 protected:
     explicit GRIDELEMENTS_EXPORT RadialGrid (CreateParams const& params);
 
+    //! Called when this element is about to be replace its original element in the DgnDb.
+    //! @param [in] original the original state of this element.
+    //! Subclasses may override this method to control whether their instances are updated.
+    //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
+    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
 
     static BentleyStatus CreateAndInsertGridSurfaces (CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR planeAxis, GridAxisCR arcAxis);
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/RadialGridPortion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -130,6 +130,41 @@ RadialGridPtr RadialGrid::CreateAndInsert (CreateParams const& params)
             return nullptr;
         }
     return thisGrid;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus      RadialGrid::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
+    Transform originalTrans = original.ToGeometrySource3d()->GetPlacement().GetTransform();
+    Transform newTrans = GetPlacement().GetTransform();
+    if (_NeedsUpdateSurfacesOnPlacementChange() &&
+    !newTrans.IsEqual(originalTrans, PLACEMENT_TOLERANCE, PLACEMENT_TOLERANCE))
+        {
+        //figure out the delta(diff)
+        Transform inverted, diff;
+        bsiTransform_invertTransform(&inverted, &originalTrans);
+        bsiTransform_multiplyTransformTransform(&diff, &inverted, &newTrans);
+        Dgn::DgnDbR db = GetDgnDb();
+        //apply delta to each surface, just a workaround for now...
+        for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
+            {
+            GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
+            Placement3d newPlacement(surface->GetPlacement());
+            newPlacement.TryApplyTransform(diff);
+            surface->SetPlacement(newPlacement);
+            if (RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "update GridSurface"))
+                BeAssert(!"failed to acquire lock for element update");
+            surface->Update();
+            }
+        }
+
+    return status;
     }
 
 END_GRIDS_NAMESPACE
