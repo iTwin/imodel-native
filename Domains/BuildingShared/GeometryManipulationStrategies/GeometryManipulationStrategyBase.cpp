@@ -48,3 +48,19 @@ void GeometryManipulationStrategyBase::ResetDynamicKeyPoint()
     {
     _ResetDynamicKeyPoint();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryManipulationStrategyBase::IsComplete() const
+    {
+    return _IsComplete();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryManipulationStrategyBase::CanAcceptMorePoints() const
+    {
+    return _CanAcceptMorePoints();
+    }

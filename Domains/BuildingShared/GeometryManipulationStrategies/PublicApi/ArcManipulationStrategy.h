@@ -16,7 +16,8 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool Is##name##Set() const; \
     void Set##name(DPoint3dCR newValue); \
     void Reset##name(); \
-    void SetDynamic##name(DPoint3dCR newValue);
+    void SetDynamic##name(DPoint3dCR newValue); \
+    bool Is##name##Dynamic() const;
 
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               01/2018
@@ -37,6 +38,8 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
         virtual void _OnKeyPointsChanged() override;
+
+        virtual bool _IsComplete() const override;
 
     public:
         static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }

@@ -127,6 +127,22 @@ GeometryManipulationStrategyCR GeometryPlacementStrategy::GetManipulationStrateg
     return _GetManipulationStrategy();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryPlacementStrategy::_IsComplete() const
+    {
+    return _GetManipulationStrategy().IsComplete();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryPlacementStrategy::_CanAcceptMorePoints() const
+    {
+    return _GetManipulationStrategy().CanAcceptMorePoints();
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void GeometryPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \

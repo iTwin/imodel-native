@@ -38,6 +38,9 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint();
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override;
+
         GMS_PROPERTY_OVERRIDE(int)
         GMS_PROPERTY_OVERRIDE(double)
         GMS_PROPERTY_OVERRIDE(DVec3d)

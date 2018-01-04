@@ -18,10 +18,15 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
     {
     DEFINE_T_SUPER(GeometryManipulationStrategy)
 
+    bvector<CurvePrimitiveManipulationStrategyPtr> m_primitiveStrategies;
+
     protected:
         CurveVectorManipulationStrategy() : T_Super() {}
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const;
+
+        virtual bool _IsComplete() const override;
+        virtual bool _CanAcceptMorePoints() const override { return true; }
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;

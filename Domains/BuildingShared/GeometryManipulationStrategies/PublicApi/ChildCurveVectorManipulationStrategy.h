@@ -26,6 +26,9 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
     protected:
         virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
+        virtual bool _IsComplete() const override;
+        virtual bool _CanAcceptMorePoints() const override;
+
     public:
         ChildCurveVectorManipulationStrategyPtr Create() { return new ChildCurveVectorManipulationStrategy(); }
     };

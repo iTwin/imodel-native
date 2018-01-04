@@ -12,8 +12,8 @@
 
 #include "GeometryManipulationStrategyBase.h"
 #include "GeometryManipulationStrategy.h"
-#include "CurveVectorManipulationStrategy.h"
 #include "CurvePrimitiveManipulationStrategy.h"
+#include "CurveVectorManipulationStrategy.h"
 #include "ChildCurveVectorManipulationStrategy.h"
 #include "LineManipulationStrategy.h"
 #include "EllipseManipulationStrategy.h"

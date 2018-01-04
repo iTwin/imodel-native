@@ -55,6 +55,9 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         virtual bool _IsDynamicKeyPointSet() const = 0;
         virtual void _ResetDynamicKeyPoint() = 0;
 
+        virtual bool _IsComplete() const = 0;
+        virtual bool _CanAcceptMorePoints() const = 0;
+
     public:
         GMS_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_SET_TRYGET_PROPERTY_TYPE(double)
@@ -67,6 +70,9 @@ struct GeometryManipulationStrategyBase : RefCountedBase
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsDynamicKeyPointSet() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ResetDynamicKeyPoint();
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsComplete() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool CanAcceptMorePoints() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

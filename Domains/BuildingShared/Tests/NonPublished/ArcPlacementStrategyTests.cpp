@@ -67,26 +67,40 @@ TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
 
     assertKeyPoints(manipSut, false, false, false, false, "Initial state");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "Initial state";
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
 
     sut->AddDynamicKeyPoint({2,0,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, false, false, "[AddDynamicKeyPoint] Has 1 dynamic key point");
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
 
     sut->AddKeyPoint({2,0,0});
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point";
     assertKeyPoints(manipSut, true, false, false, false, "[AddKeyPoint] Has 1 key point");
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
     sut->AddDynamicKeyPoint({0,-3,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, false, true, "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point");
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
 
     sut->AddKeyPoint({0,-3,0});
     assertKeyPoints(manipSut, true, false, false, true, "[AddKeyPoint] Has 2 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points";
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
     sut->AddDynamicKeyPoint({0,3,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point");
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point";
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
 
     sut->AddKeyPoint({0,3,0});
+    ASSERT_TRUE(sut->IsComplete());
+    ASSERT_FALSE(sut->CanAcceptMorePoints());
     assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Has 3 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key points";
 
@@ -100,12 +114,18 @@ TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, false, true, "[PopKeyPoint] Has 2 key point");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key point";
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, false, false, "[PopKeyPoint] Has 1 key point");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point";
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, false, false, false, false, "[PopKeyPoint] Has 0 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
     }
 
 //--------------------------------------------------------------------------------------

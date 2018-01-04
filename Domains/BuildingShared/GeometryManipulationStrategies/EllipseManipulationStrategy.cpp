@@ -345,3 +345,19 @@ BentleyStatus EllipseManipulationStrategy::_TryGetProperty
 
     return T_Super::_TryGetProperty(key, value);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool EllipseManipulationStrategy::_IsComplete() const
+    {
+    return GetAcceptedKeyPoints().size() == 3;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool EllipseManipulationStrategy::_CanAcceptMorePoints() const
+    {
+    return !_IsComplete();
+    }

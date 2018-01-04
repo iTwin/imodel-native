@@ -25,7 +25,8 @@ ArcManipulationStrategy::ArcManipulationStrategy()
     DPoint3dCR ArcManipulationStrategy::Get##name() const {BeAssert(Is##name##Set()); return GetKeyPoints()[index];} \
     void ArcManipulationStrategy::Set##name(DPoint3dCR newValue) {ReplaceKeyPoint(newValue, index);} \
     void ArcManipulationStrategy::Reset##name() {ReplaceKeyPoint(INVALID_POINT, index);} \
-    void ArcManipulationStrategy::SetDynamic##name(DPoint3dCR newValue) {UpdateDynamicKeyPoint(newValue, index);}
+    void ArcManipulationStrategy::SetDynamic##name(DPoint3dCR newValue) {UpdateDynamicKeyPoint(newValue, index);} \
+    bool ArcManipulationStrategy::Is##name##Dynamic() const {return !GetAcceptedKeyPoints()[index].AlmostEqual(GetKeyPoints()[index]);}
 
 KEY_POINT_ACCESSOR_IMPL(Start, s_startIndex)
 KEY_POINT_ACCESSOR_IMPL(Center, s_centerIndex)
@@ -99,4 +100,13 @@ void ArcManipulationStrategy::_OnKeyPointsChanged()
         DEllipse3d tmpArc = DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd());
         UpdateSweep(GetStart(), tmpArc.center, GetEnd());
         }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcManipulationStrategy::_IsComplete() const
+    {
+    return IsStartSet() && !IsStartDynamic() && IsEndSet() && !IsEndDynamic() &&
+        ((IsMidSet() && !IsMidDynamic()) || (IsCenterSet() && !IsCenterDynamic()));
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/LineManipulationStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
@@ -33,4 +33,20 @@ void LineManipulationStrategy::_AppendKeyPoint
     if ((IsDynamicKeyPointSet() && keyPoints.size() <= 2) ||
         (!IsDynamicKeyPointSet() && keyPoints.size() < 2))
         T_Super::_AppendKeyPoint(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool LineManipulationStrategy::_IsComplete() const 
+    {
+    return GetAcceptedKeyPoints().size() == 2;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool LineManipulationStrategy::_CanAcceptMorePoints() const 
+    {
+    return !_IsComplete();
     }

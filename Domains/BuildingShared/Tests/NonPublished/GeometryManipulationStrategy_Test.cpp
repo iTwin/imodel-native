@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GeometryManipulationStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -15,7 +15,10 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 struct GeometryManipulationStrategyTests : public BuildingSharedTestFixtureBase
     {
     struct SUT : public GeometryManipulationStrategy
-        {};
+        {
+        virtual bool _IsComplete() const override { return false; }
+        virtual bool _CanAcceptMorePoints() const override { return true; }
+        };
     };
 
 END_BUILDING_SHARED_NAMESPACE

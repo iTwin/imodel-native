@@ -29,3 +29,19 @@ ICurvePrimitivePtr ChildCurveVectorManipulationStrategy::_FinishPrimitive() cons
 
     return ICurvePrimitive::CreateChildCurveVector(child);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ChildCurveVectorManipulationStrategy::_IsComplete() const 
+    {
+    return m_cvManipulationStrategy->IsComplete();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ChildCurveVectorManipulationStrategy::_CanAcceptMorePoints() const 
+    {
+    return m_cvManipulationStrategy->CanAcceptMorePoints();
+    }
