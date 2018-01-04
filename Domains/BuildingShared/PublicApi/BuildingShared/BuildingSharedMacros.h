@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BuildingShared/BuildingSharedMacros.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,9 +40,6 @@
 
 
 // Properties
-#define BUILDINGSHARED_PROP_StartPoint                                   "StartPoint"
-#define BUILDINGSHARED_PROP_EndPoint                                     "EndPoint"
-#define BUILDINGSHARED_PROP_Point                                        "Point"
 #define BUILDINGSHARED_PROP_Length                                       "Length"
 #define BUILDINGSHARED_PROP_Angle                                        "Angle"
 

@@ -17,23 +17,13 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : CurvePrimitivePlace
     DEFINE_T_SUPER(CurvePrimitivePlacementStrategy);
 
     protected:
-        LinePointsPlacementStrategy() : T_Super(LineManipulationStrategy::Create()) {};
+        LinePointsPlacementStrategy() : T_Super(LineManipulationStrategy::Create().get()) {};
 
-        virtual ICurvePrimitivePtr _GetCurvePrimitive() override;
-        
-        virtual BentleyStatus _SetPropertyValuePoint3d(Utf8CP propertyName, const DPoint3d & value) override;
-        virtual BentleyStatus _GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const override;
-
-        virtual void _Reset() override {};
-
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
     public:
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
-
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus SetStartPoint(DPoint3d const & startPoint) { return _SetPropertyValuePoint3d(BUILDINGSHARED_PROP_StartPoint, startPoint); }
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus GetStartPoint(DPoint3d & startPoint) const { return _GetPropertyValuePoint3d(BUILDINGSHARED_PROP_StartPoint, startPoint); }
-
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus SetEndPoint(DPoint3d const & endPoint) { return _SetPropertyValuePoint3d(BUILDINGSHARED_PROP_EndPoint, endPoint); }
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus GetEndPoint(DPoint3d & endPoint) const { return _GetPropertyValuePoint3d(BUILDINGSHARED_PROP_EndPoint, endPoint); }
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : CurvePrimitivePlacementStrategy
@@ -41,35 +31,35 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : CurvePrim
     DEFINE_T_SUPER(CurvePrimitivePlacementStrategy);
 
     private:
-        double m_length;
-        double m_angle;
+        double m_length = 0;
+        double m_angle = 0;
+
         DPlane3d m_workingPlane;
 
     protected:
-        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : T_Super(LineManipulationStrategy::Create()), m_workingPlane(workingPlane) {} // TODO
+        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : T_Super(LineManipulationStrategy::Create().get()), m_workingPlane(workingPlane) {}
 
-        virtual ICurvePrimitivePtr _GetCurvePrimitive() override;
-
-        virtual BentleyStatus _SetPropertyValuePoint3d(Utf8CP propertyName, const DPoint3d & value) override;
-        virtual BentleyStatus _GetPropertyValuePoint3d(Utf8CP propertyName, DPoint3d & value) const override;
-
-        virtual BentleyStatus _SetPropertyValueDouble(Utf8CP propertyName, const double & value) override;
-        virtual BentleyStatus _GetPropertyValueDouble(Utf8CP propertyName, double & value) const override;
-
-        virtual void _SetWorkingPlane(DPlane3d const & plane) { m_workingPlane = plane; }
+        virtual void _SetWorkingPlane(DPlane3d const & plane);
         virtual DPlane3d _GetWorkingPlane() const { return m_workingPlane; }
 
-        /*virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
-        virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index);
-        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) = 0;*/
+        virtual void _SetProperty(Utf8CP key, const double & value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
+    
+        void _SetLength(double const & length);
+        double _GetLength() const;
+
+        void _SetAngle(double const & angle);
+        double _GetAngle() const;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint();
+
+        BentleyStatus CalculateEndPoint(DPoint3dR endPoint);
+        void UpdateEndPoint();
     public:
-        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointLengthAnglePlacementStrategyPtr Create(DPlane3d const& plane);
-
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus SetLength(double const & length) { return _SetPropertyValueDouble(BUILDINGSHARED_PROP_Length, length); }
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus GetLength(double & length) const { return _GetPropertyValueDouble(BUILDINGSHARED_PROP_Length, length); }
-
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus SetAngle(double const & angle) { return _SetPropertyValueDouble(BUILDINGSHARED_PROP_Angle, angle); }
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus GetAngle(double & angle) const { return _GetPropertyValueDouble(BUILDINGSHARED_PROP_Angle, angle); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointLengthAnglePlacementStrategyPtr Create(DPlane3d const& plane) { return new LinePointLengthAnglePlacementStrategy(plane); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void          SetWorkingPlane(DPlane3d const & plane) { return _SetWorkingPlane(plane); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPlane3d      GetWorkingPlane() const { return _GetWorkingPlane(); }

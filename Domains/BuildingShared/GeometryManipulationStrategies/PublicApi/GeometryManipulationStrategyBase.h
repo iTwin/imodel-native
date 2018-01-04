@@ -2,7 +2,7 @@
 |
 |     $Source: GeometryManipulationStrategies/PublicApi/GeometryManipulationStrategyBase.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,14 +14,14 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 #define GMS_V_SET_PROPERTY_TYPE(value_type) \
     virtual void _SetProperty(Utf8CP key, value_type const& value) {}
 #define GMS_V_TRYGET_PROPERTY_TYPE(value_type) \
-    virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) { return BentleyStatus::ERROR; }
+    virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) const { return BentleyStatus::ERROR; }
 #define GMS_V_SET_TRYGET_PROPERTY_TYPE(value_type) \
     GMS_V_SET_PROPERTY_TYPE(value_type) \
     GMS_V_TRYGET_PROPERTY_TYPE(value_type)
 #define GMS_SET_PROPERTY_TYPE(value_type) \
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetProperty(Utf8CP key, value_type const& value);
 #define GMS_TRYGET_PROPERTY_TYPE(value_type) \
-    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool TryGetProperty(Utf8CP key, value_type& value);
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT BentleyStatus TryGetProperty(Utf8CP key, value_type& value) const;
 #define GMS_SET_TRYGET_PROPERTY_TYPE(value_type) \
     GMS_SET_PROPERTY_TYPE(value_type) \
     GMS_TRYGET_PROPERTY_TYPE(value_type)

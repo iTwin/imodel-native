@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/CurveStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeXml\BeXml.h>
@@ -13,8 +13,8 @@
 #include <DgnPlatform/FunctionalDomain.h>
 #include <sstream>
 #include <DgnClientFx/DgnClientApp.h>
-#include "BuildingSharedTestFixtureBase.h"
 #include <BuildingShared/BuildingSharedApi.h>
+#include "BuildingSharedTestFixtureBase.h"
 
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -34,6 +34,15 @@ void CompareCurves(ICurvePrimitivePtr lhs, ICurvePrimitivePtr rhs)
     ASSERT_TRUE(lhs->IsSameStructureAndGeometry(*rhs, 0.1)) << "Curves should have same geometry";
     }
 
+void ComparePoints(bvector<DPoint3d> lhs, bvector<DPoint3d> rhs)
+    {
+    ASSERT_EQ(lhs.size(), rhs.size()) << "There should be an equal amount of points";
+    for (size_t i = 0; i < lhs.size(); ++i)
+        {
+        ASSERT_TRUE(lhs[i].AlmostEqual(rhs[i])) << "Points should be almost equal";
+        }
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              12/2017
 //---------------+---------------+---------------+---------------+---------------+------
@@ -43,70 +52,145 @@ TEST_F(CurveStrategyTests, LineByPointsTests)
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     // Check initial state
-    DPoint3d startPoint, endPoint;
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->GetStartPoint(startPoint)) << "Start point should not be initially set";
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->GetEndPoint(endPoint)) << "End point should not be initially set";
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should be created with no initial points";
 
-    ICurvePrimitivePtr createdCurve = strategy->GetCurvePrimitive();
+    ICurvePrimitivePtr createdCurve = strategy->FinishPrimitive();
     ASSERT_TRUE(createdCurve.IsNull()) << "no curve should be created with 0 points";
 
-    // Try adding points
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->AddPoint({ 0, 0, 0 })) << "Adding point should not fail";
+    // Try adding key points
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ComparePoints({ { 0, 0, 0 } }, strategy->GetKeyPoints());
 
-    createdCurve = strategy->GetCurvePrimitive();
+    createdCurve = strategy->FinishPrimitive();
     ASSERT_TRUE(createdCurve.IsNull()) << "no curve should be created with 1 point";
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->AddPoint({ 5, 5, 0 })) << "Adding point should not fail";
+    strategy->AddKeyPoint({ 5, 5, 0 });
+    ComparePoints({ { 0, 0, 0 },{ 5, 5, 0 } }, strategy->GetKeyPoints());
 
-    createdCurve = strategy->GetCurvePrimitive();
+    createdCurve = strategy->FinishPrimitive();
     ASSERT_TRUE(createdCurve.IsValid()) << "Failed to create curve";
 
     ICurvePrimitivePtr expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 5, 5, 0 });
     CompareCurves(createdCurve, expected);
 
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->AddPoint({ 15, 15, 5 })) << "Adding 3rd point should fail";
+    strategy->AddKeyPoint({ 15, 15, 5 });
+    ComparePoints({ { 0, 0, 0 },{ 5, 5, 0 } }, strategy->GetKeyPoints());
 
-    createdCurve = strategy->Reset();
-    ASSERT_TRUE(createdCurve.IsValid()) << "Failed to create final curve";
+    createdCurve = strategy->FinishPrimitive();
     CompareCurves(createdCurve, expected);
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->GetStartPoint(startPoint)) << "Start point should not be initially set";
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->GetEndPoint(endPoint)) << "End point should not be initially set";
-    ASSERT_TRUE(strategy->GetCurvePrimitive().IsNull()) << "no curve should be created with 0 points";
 
-    // Try adding points with properties interface
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->SetEndPoint({ 15, 15, 15 })) << "Setting end point without setting strating point should fail";
+    strategy->PopKeyPoint();
+    ComparePoints({ {0, 0, 0} }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    ASSERT_TRUE(createdCurve.IsNull()) << "No curve should be created with 1 point";
+
+    strategy->AddDynamicKeyPoint({ 7, 5, 4 });
+    ComparePoints({ {0, 0, 0}, {7, 5, 4} }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 7, 5, 4 });
+    CompareCurves(createdCurve, expected);
+
+    strategy->AddDynamicKeyPoint({ 1, 2, 3 });
+    ComparePoints({ { 0, 0, 0 }, { 1, 2, 3 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 1, 2, 3 });
+    CompareCurves(createdCurve, expected);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
+    {
+    LinePointLengthAnglePlacementStrategyPtr strategy = LinePointLengthAnglePlacementStrategy::Create
+    (
+        DPlane3d::FromOriginAndNormal /*XY plane*/
+        (
+            DPoint3d::From(0, 0, 0),
+            DVec3d::From(0, 0, 1)
+        )
+    );
+
+    // Check initial state
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should be created with no initial points";
     
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->SetStartPoint({ 7, 32, 4 })) << "Setting start point should not fail";
-    ASSERT_TRUE(strategy->GetCurvePrimitive().IsNull()) << "no curve should be created with 1 point";
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->SetEndPoint({ 17, 37, 6 })) << "Setting end point should not fail";
+    double length, angle;
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Length, length)) << "Initially, length should be accessible";
+    ASSERT_EQ(0, length) << "Initial length should be 0";
     
-    createdCurve = strategy->GetCurvePrimitive();
-    ASSERT_TRUE(createdCurve.IsValid()) << "Failed to create curve";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Angle, angle)) << "Initially, angle should be accessible";
+    ASSERT_EQ(0, angle) << "Initial angle should be 0";
 
-    expected = ICurvePrimitive::CreateLine({ 7, 32, 4 }, { 17, 37, 6 });
+    ICurvePrimitivePtr createdCurve = strategy->FinishPrimitive();
+    ASSERT_TRUE(createdCurve.IsNull()) << "no curve should be created with 0 points";
+    
+    // Try setting properties
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ComparePoints({ { 0, 0, 0 },{ 0, 0, 0 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    ICurvePrimitivePtr expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 0, 0, 0 });
     CompareCurves(createdCurve, expected);
 
-    // Try modifying points
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->SetStartPoint({ 13, 34, 0 })) << "Setting start point should not fail";
-    createdCurve = strategy->GetCurvePrimitive();
-    ASSERT_TRUE(createdCurve.IsValid()) << "Failed to create curve";
-
-    expected = ICurvePrimitive::CreateLine({ 13, 34, 0 }, { 17, 37, 6 });
+    strategy->SetProperty(BUILDINGSHARED_PROP_Length, 2.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Length, length)) << "Getting length should not fail";
+    ASSERT_DOUBLE_EQ(2.0, length) << "Length is incorrect";
+    ComparePoints({ {0, 0, 0},{ 2, 0, 0 } }, strategy->GetKeyPoints());
+    
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 2, 0, 0 });
     CompareCurves(createdCurve, expected);
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->SetEndPoint({ 57, 46, 23 })) << "Setting end point should not fail";
+    strategy->SetProperty(BUILDINGSHARED_PROP_Angle, msGeomConst_pi / 2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Angle, angle)) << "Getting angle should not fail";
+    ASSERT_DOUBLE_EQ(msGeomConst_pi / 2, angle) << "Angle is incorrect";
+    ComparePoints({ {0, 0, 0}, {0, 2, 0} }, strategy->GetKeyPoints());
 
-    createdCurve = strategy->GetCurvePrimitive();
-    ASSERT_TRUE(createdCurve.IsValid()) << "Failed to create curve";
-
-    expected = ICurvePrimitive::CreateLine({ 13, 34, 0 }, { 57, 46, 23 });
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 0, 2, 0 });
     CompareCurves(createdCurve, expected);
 
-    createdCurve = strategy->Reset();
-    ASSERT_TRUE(createdCurve.IsValid()) << "Failed to create final curve";
+    strategy->PopKeyPoint();
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()); // popping the key point should also pop the generated point
+    
+    strategy->AddDynamicKeyPoint({ 1, 2, 3 });
+    ComparePoints({ { 1, 2, 3 },{ 1, 4, 3 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 4, 3 });
     CompareCurves(createdCurve, expected);
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->GetStartPoint(startPoint)) << "Start point should not be initially set";
-    ASSERT_EQ(BentleyStatus::ERROR, strategy->GetEndPoint(endPoint)) << "End point should not be initially set";
-    ASSERT_TRUE(strategy->GetCurvePrimitive().IsNull()) << "no curve should be created with 0 points";
+
+    strategy->SetProperty(BUILDINGSHARED_PROP_Length, 5.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Length, length)) << "Getting length should not fail";
+    ASSERT_DOUBLE_EQ(5.0, length) << "Length is incorrect";
+    ComparePoints({ { 1, 2, 3 },{ 1, 7, 3 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 7, 3 });
+    CompareCurves(createdCurve, expected);
+
+    strategy->SetProperty(BUILDINGSHARED_PROP_Angle, msGeomConst_pi / 4);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Angle, angle)) << "Getting angle should not fail";
+    ASSERT_DOUBLE_EQ(msGeomConst_pi / 4, angle) << "Angle is incorrect";
+    ComparePoints({ { 1, 2, 3 },{ 1 + std::sqrt(25.0/2.0), 2 + std::sqrt(25.0/2.0), 3 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1 + sqrt(25.0 / 2.0), 2 + sqrt(25.0 / 2.0), 3 });
+    CompareCurves(createdCurve, expected);
+
+    DPlane3d otherPlane = DPlane3d::FromOriginAndNormal
+    (
+        DPoint3d::From(0, 0, 0),
+        DVec3d::From(1, 0, 0)
+    );
+
+    strategy->SetWorkingPlane(otherPlane);
+    ComparePoints({ { 1, 2, 3 },{ 1, 2 + sqrt(25.0 / 2.0), 3 - sqrt(25.0 / 2.0) } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 2 + sqrt(25.0 / 2.0), 3 - sqrt(25.0 / 2.0) });
+    CompareCurves(createdCurve, expected);
     }
