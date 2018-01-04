@@ -358,14 +358,6 @@ void Host::SetupJsRuntime()
         return;
         }
 
-    auto propsR = initParams.GetPropertyNames();
-    Napi::Array const& props = propsR;
-    for (uint32_t i=0; i<props.Length(); ++i)
-        {
-        auto propName = props[i].As<Napi::String>().Utf8Value();
-        printf("%s\n", propName.c_str());
-        }
-
     m_notifyIdle.Reset(initParams.Get("notifyIdle").As<Napi::Function>());
     m_notifyShutdown.Reset(initParams.Get("notifyShutdown").As<Napi::Function>());
     m_notifyReady.Reset(initParams.Get("notifyReady").As<Napi::Function>());

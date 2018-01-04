@@ -321,8 +321,10 @@ public:
     //---------------------------------------------------------------------------------------
     static void PerformTests (Js::RuntimeR runtime)
         {
+#ifdef COMMENT_OUT
         BasicTcp (runtime);
         BasicWebSockets (runtime);
+#endif
         BasicFileSystem (runtime);
         }
     };

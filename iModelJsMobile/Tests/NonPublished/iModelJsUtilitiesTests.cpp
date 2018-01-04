@@ -93,7 +93,7 @@ TEST_F (iModelJsTestFixture, JavaScriptUtilities)
 
             auto c2 = Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
                 {
-                BeAssert (info.Length() == 11);
+                BeAssert (info.Length() == 10);
     
                 BeAssert(info[0].IsUndefined());
                 BeAssert(info[1].IsNull());
@@ -110,7 +110,7 @@ TEST_F (iModelJsTestFixture, JavaScriptUtilities)
                 return info.Env().Undefined();
                 });
                 
-            c2 ({env.Global(), u, n, o, a, ab, b, n2, s, c, e});
+            c2 ({u, n, o, a, ab, b, n2, s, c, e});
 
             BeAssert (a.Length() == 0);
             a[(uint32_t)0] = n2;
