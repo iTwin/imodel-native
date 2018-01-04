@@ -1,0 +1,16 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: install/RealDWGInstaller.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+%if defined (CALLED_FROM_WIX_BUNDLE_BUILD)
+
+%if !defined (BBLanguagePackBuild)
+BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
+%endif
+
+%endif
+

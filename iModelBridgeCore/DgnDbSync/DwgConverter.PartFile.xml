@@ -117,12 +117,26 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="Docs"                LibType="Dynamic"/>
         <SubPart PartName="RealDwgImportExe" />
+        <SubPart PartName="RealDWGInstallFiles" />
+
         <Directories DirectoryListName="RealDwgConverterDirList" />
         <Directories DirectoryListName="DwgAppCommonDirList" />
+        
+        <SubPart Repository="Miscdev-Eula" PartFile="Eula" PartName="Eula"/>
         <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
       
         <InstallerWixFile SourceFile="install\RealDwgImporter"/>
+        <WixBundleFile      SourceFile="install\RealDWGBundle" LanguagePackBundle="install\RealDWGBundle" LanguageBundle="install\RealDWGBundle"/>
     </Product>
+
+    <Part Name="RealDWGInstallFiles" BMakeFile="install/realDWGinstallerfiles.prewire.mke" >
+        <Bindings>
+            <Files BindToWixBuild="true">
+                RealDWGInstallerFiles\RealDWGBundle.bundle.wxs
+                RealDWGInstallerFiles\RealDWGInstaller.mki
+            </Files>
+        </Bindings>
+    </Part>
 
     <Part Name="RealDwgImportExe" BentleyBuildMakeFile="Dwg/Apps/DwgImportExe.mke" BMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2018" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley"/>

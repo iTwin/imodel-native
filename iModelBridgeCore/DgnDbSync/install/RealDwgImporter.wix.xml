@@ -7,10 +7,15 @@
         <ProductShortName>RealDwgImporter</ProductShortName>
         <ProductCode>${REL_V}.${MAJ_V}.${MIN_V}.${PartName}.${Platform}.RealDwgImporter.MSI</ProductCode>
         <UpgradeCode>{A5317CFE-71FB-4171-B77A-D033B05A66DB};{990A583A-74DE-4238-9A5C-54CFC392AB7A}</UpgradeCode>
+        <MkiBeforeCompile>RealDWGInstaller.mki</MkiBeforeCompile>
 
         <WxsElementRefs>UIRef=WixUI_WithInstallLocations</WxsElementRefs>
     </Product>
-
-
+    
+    <Bundle>
+        <BundleUpgradeCode>{4FF58DD3-57A1-47AA-A45F-08123F14E2FB};{6C6587AF-B359-4F68-ABB8-ED39135E6262}</BundleUpgradeCode>
+        <!--<BundleMkiFileName>RealDWGInstaller.mki</BundleMkiFileName>-->
+        <BundleName>RealDwgImporterBundle</BundleName>            
+    </Bundle>
 </BuildInstallSet>
 

@@ -1,0 +1,28 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: install/realDWGinstallerfiles.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+PolicyFile      = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+
+%include mdl.mki
+%include RealDWGInstaller.mki
+
+BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
+
+RealDWGInstallFiles    = $(BuildContext)RealDWGInstallerFiles/
+                
+#----------------------------------------------------------------------*/
+# Symlink files needed for powerproduct build in BuildContext
+#----------------------------------------------------------------------*/
+always:
+    @CreateSymLinks.py -f"$(RealDWGInstallFiles)MstnBundle.bundle.wxs=$(_MakeFilePath)RealDWGBundle.bundle.wxs"
+
+$(RealDWGInstallFiles)RealDWGInstaller.mki : $(_MakeFilePath)RealDWGInstaller.mki
+    $(LinkFirstDepToFirstTarget)
+
+
+
