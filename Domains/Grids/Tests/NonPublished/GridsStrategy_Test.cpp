@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GridsStrategy_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeXml\BeXml.h>
@@ -197,7 +197,7 @@ TEST_F(GridsStrategyTests, LineGridPlacementStrategyTests)
     {
     // Try a valid axis modification
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
-    axis = GridAxis::CreateAndInsert(defModel, *m_sketchGrid);
+    axis = GeneralGridAxis::CreateAndInsert(defModel, *m_sketchGrid);
     ASSERT_TRUE(axis.IsValid()) << "Failed to create grid axis";
 
     ASSERT_EQ(nullptr, strategy->SetAxis(axis).get()) << "Grid surface should not be created with 0 points";
@@ -207,7 +207,7 @@ TEST_F(GridsStrategyTests, LineGridPlacementStrategyTests)
     ASSERT_EQ(nullptr, strategy->SetAxis(nullptr).get()) << "Grid surface should not be created with 0 points";
     ASSERT_TRUE(strategy->GetAxis().IsValid()) << "Axis is incorrect after modification";
 
-    otherGridAxis = GridAxis::CreateAndInsert(defModel, *otherGrid);
+    otherGridAxis = GeneralGridAxis::CreateAndInsert(defModel, *otherGrid);
     ASSERT_TRUE(otherGridAxis.IsValid()) << "Failed to create axis";
 
     ASSERT_EQ(nullptr, strategy->SetAxis(otherGridAxis).get()) << "Grid surface should not be created with 0 points";
@@ -444,7 +444,7 @@ TEST_F(GridsStrategyTests, CSEArcGridPlacementStrategyTests)
     {
     // Try a valid axis modification
     Dgn::DefinitionModelCR defModel = db.GetDictionaryModel();
-    axis = GridAxis::CreateAndInsert(defModel, *m_sketchGrid);
+    axis = GeneralGridAxis::CreateAndInsert(defModel, *m_sketchGrid);
     ASSERT_TRUE(axis.IsValid()) << "Failed to create grid axis";
 
     ASSERT_EQ(nullptr, strategy->SetAxis(axis).get()) << "Grid surface should not be created with 0 points";
@@ -454,7 +454,7 @@ TEST_F(GridsStrategyTests, CSEArcGridPlacementStrategyTests)
     ASSERT_EQ(nullptr, strategy->SetAxis(nullptr).get()) << "Grid surface should not be created with 0 points";
     ASSERT_TRUE(strategy->GetAxis().IsValid()) << "Axis is incorrect after modification";
 
-    otherGridAxis = GridAxis::CreateAndInsert(defModel, *otherGrid);
+    otherGridAxis = GeneralGridAxis::CreateAndInsert(defModel, *otherGrid);
     ASSERT_TRUE(otherGridAxis.IsValid()) << "Failed to create axis";
 
     ASSERT_EQ(nullptr, strategy->SetAxis(otherGridAxis).get()) << "Grid surface should not be created with 0 points";

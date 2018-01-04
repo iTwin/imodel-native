@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Strategies/SketchGridPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,7 +18,7 @@ BEGIN_GRIDS_NAMESPACE
 Grids::GridAxisPtr SketchGridPlacementStrategy::_CreateAndInsertNewAxis()
     {
     Dgn::DefinitionModelCR defModel = GetDb().GetDictionaryModel();
-    return GridAxis::CreateAndInsert(defModel, *m_grid);
+    return GeneralGridAxis::CreateAndInsert(defModel, *m_grid);
     }
 
 //---------------------------------------------------------------------------------------
