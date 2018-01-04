@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,17 +33,19 @@ private:
     ConnectSignInManagerPtr m_signinMgr;
     static ClientHelper* s_instance;
     static BeMutex s_mutex;
+    IHttpHandlerPtr m_customHandler;
 
     static Utf8CP str_BentleyConnectMain() {return "BentleyCONNECT--Main";}
 
     //! Construct the helper
-    ClientHelper(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr) : m_clientInfo(clientInfo), m_localState(ls) {}
+    ClientHelper(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr, IHttpHandlerPtr customHandler = nullptr)
+        : m_clientInfo(clientInfo), m_localState(ls), m_customHandler(customHandler){}
 public:
     //! Create or update the singleton instance.
     //! @param clientInfo   Client information.
     //! @param ls           Local storage.
     //! @return the singleton instance.
-    IMODELHUBCLIENT_EXPORT static ClientHelper* Initialize(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr);
+    IMODELHUBCLIENT_EXPORT static ClientHelper* Initialize(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr, IHttpHandlerPtr customHandler = nullptr);
 
     //! Get the singleton instance
     IMODELHUBCLIENT_EXPORT static ClientHelper* GetInstance();

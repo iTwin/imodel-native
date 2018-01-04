@@ -2,10 +2,10 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/MultiProgressCallbackHandlerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "BaseMockHttpHandlerTest.h"
+#include "../Helpers/BaseMockHttpHandlerTest.h"
 #include "../../../iModelHubClient/MultiProgressCallbackHandler.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -14,11 +14,11 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 //@bsimethod                                     Algirdas.Mikoliunas             09/2017
 //---------------------------------------------------------------------------------------
 struct MultiProgressCallbackHandlerTests : public Tests::BaseMockHttpHandlerTest
-{
-    virtual void SetUp() override
     {
-    }
-};
+    virtual void SetUp() override
+        {
+        }
+    };
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             09/2017

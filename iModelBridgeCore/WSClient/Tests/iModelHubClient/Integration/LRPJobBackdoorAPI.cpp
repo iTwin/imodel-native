@@ -2,12 +2,10 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/LRPJobBackdoorAPI.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "LRPJobBackdoorAPI.h"
-#include "iModelHubTests.h"
-#include "IntegrationTestsHelper.h"
 #include "../../../iModelHubClient/Utils.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES

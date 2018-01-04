@@ -2,12 +2,12 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/EventParserTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #pragma once
-#include "BaseMockHttpHandlerTest.h"
+#include "Helpers.h"
+
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016

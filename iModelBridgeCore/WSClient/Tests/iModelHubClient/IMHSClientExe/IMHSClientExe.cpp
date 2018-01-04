@@ -2,22 +2,25 @@
 |
 |     $Source: Tests/iModelHubClient/IMHSClientExe/IMHSClientExe.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "IMHSClientExe.h"
 #include <WebServices/iModelHub/Client/Client.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeThread.h>
-#include "../Integration/IntegrationTestsBase.h"
+#include "../Helpers/IntegrationTestsSettings.h"
+#include "../Helpers/DgnPlatformHelpers.h"
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
+#include <BeHttp/ProxyHttpHandler.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Algirdas.Mikoliunas                12/16
@@ -34,16 +37,16 @@ BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
     m_exePath = exePath;
     DgnPlatformLib::Initialize(*this, true);
 
-    WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
+    WebServices::ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
 
     auto clientHelper = ClientHelper::Initialize(clientInfo);
 
     auto manager = ConnectSignInManager::Create(clientInfo, ProxyHttpHandler::GetFiddlerProxyIfReachable());
-    SignInResult signInResult = manager->SignInWithCredentials(IntegrationTestSettings::Instance().GetValidAdminCredentials())->GetResult();
+    SignInResult signInResult = manager->SignInWithCredentials(IntegrationTestsSettings::Instance().GetValidAdminCredentials())->GetResult();
     if (!signInResult.IsSuccess())
         return BSIERROR;
 
-    ClientPtr client = clientHelper->SignInWithManager(manager, IntegrationTestSettings::Instance().GetEnvironment());
+    ClientPtr client = clientHelper->SignInWithManager(manager, IntegrationTestsSettings::Instance().GetEnvironment());
 
     WString logFileName = L"iModelHubIntgerationTests.log";
     WString path = _wgetenv(L"LOCALAPPDATA") + WString(L"\\Bentley\\LogsThread\\");
