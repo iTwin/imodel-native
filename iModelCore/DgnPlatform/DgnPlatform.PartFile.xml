@@ -544,7 +544,7 @@
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      <SubProduct ProductName="BimConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
+      <SubProduct ProductName="iModelConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
       
       <!-- This can't be active because Sam doesn't want iModelJsNodeAddon merged between bim0200 and bim0200dev. -->
       <!-- <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" Repository="iModelJsNodeAddon" /> -->
@@ -598,40 +598,40 @@
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // BimConsole                                                           // -->
+    <!-- // iModelConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Product Name="BimConsole">
-        <SubPart PartName="BimConsoleExe-Windows" LibType="Dynamic" />
-        <SubPart PartName="BimConsoleExe-Linux" LibType="Static" />
-         <SubPart PartName="BimConsoleExe-MacOS" LibType="Static" />
-        <Directories DirectoryListName="BimConsoleDirList" />
+    <Product Name="iModelConsole">
+        <SubPart PartName="iModelConsoleExe-Windows" LibType="Dynamic" />
+        <SubPart PartName="iModelConsoleExe-Linux" LibType="Static" />
+         <SubPart PartName="iModelConsoleExe-MacOS" LibType="Static" />
+        <Directories DirectoryListName="iModelConsoleDirList" />
     </Product>
 
-    <Part Name="BimConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="BimConsoleExe" />
+    <Part Name="iModelConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="iModelConsoleExe" />
     </Part>
     
-    <Part Name="BimConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
-        <SubPart PartName="BimConsoleExe" />
+    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" />
     </Part>
 
-    <Part Name="BimConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
-        <SubPart PartName="BimConsoleExe" />
+    <Part Name="iModelConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" />
     </Part>
 
-    <Part Name="BimConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="BimConsole/BimConsole.mke" >
+    <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
         <SubPart PartName="DgnPlatformLib"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
-                Delivery/BimConsole$(exeext)
+                Delivery/iModelConsole$(exeext)
                 Delivery/logging.config.xml
             </Files>
         </Bindings>
     </Part>
 
-    <ProductDirectoryList ListName="BimConsoleDirList" >
+    <ProductDirectoryList ListName="iModelConsoleDirList" >
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
         <ProductDirectory Name="ApplicationRoot"                Path="" LibType="Static" />
         <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>

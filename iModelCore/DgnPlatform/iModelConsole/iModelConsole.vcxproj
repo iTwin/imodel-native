@@ -11,17 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BimConsole.h" />
-    <ClInclude Include="Command.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="BimConsole.cpp" />
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="ECSqlCommand.cpp" />
+    <ClCompile Include="iModelConsole.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="BimConsole.mke" />
+    <ClInclude Include="Command.h" />
+    <ClInclude Include="iModelConsole.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="iModelConsole.mke" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{742B1919-03DD-4404-9BFB-231FFB0E4D30}</ProjectGuid>
