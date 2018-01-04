@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgImporter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -239,6 +239,7 @@ struct DwgImporter
     friend struct DwgSyncInfo;
     friend struct DwgImportHost;
     friend struct ViewportFactory;
+    friend struct AttributeFactory;
     friend struct MaterialFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
@@ -646,21 +647,24 @@ public:
     typedef bmap<DwgDbObjectId, RenderMaterialId>       T_MaterialIdMap;
     typedef bmap<Utf8String, DgnTextureId>              T_MaterialTextureIdMap;
 
-    struct ECSqlCache : BeSQLite::Db::AppData
+    //! ElementAspect's host element cache for PresentationRules
+    struct PresentationRuleContent
         {
     private:
-        DwgImporter& m_importer;
-        mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceInserter*>  m_inserterCache;
-        mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*>   m_updaterCache;
-
+        Utf8String  m_attrdefClassName;
+        Utf8String  m_hostElementClass;
+        Utf8String  m_hostElementSchema;
     public:
-        explicit ECSqlCache (DwgImporter& in) : m_importer(in) {}
-        ~ECSqlCache ();
-
-        static ECSqlCache const&    GetCache (DwgImporter& in);
-        BeSQLite::EC::ECInstanceInserter const&   GetInserter (ECN::ECClassCR) const;
-        BeSQLite::EC::ECInstanceUpdater const&    GetUpdater (ECN::ECClassCR) const;
-        };  // ECSqlCache
+        explicit PresentationRuleContent (Utf8StringCR a, Utf8StringCR c, Utf8StringCR s) : m_attrdefClassName(a), m_hostElementClass(c), m_hostElementSchema(s) {}
+        Utf8StringCR    GetAttrdefClass () const { return m_attrdefClassName; }
+        Utf8StringCR    GetHostElementClass () const { return m_hostElementClass; }
+        Utf8StringCR    GetHostElementSchema () const { return m_hostElementSchema; }
+        bool operator==(PresentationRuleContent const& c) const
+            {
+            return m_attrdefClassName.Equals(c.GetAttrdefClass()) && m_hostElementClass.Equals(c.GetHostElementClass()) && m_hostElementSchema.Equals(c.GetHostElementSchema());
+            }
+        };  // PresentationRuleContent
+    typedef bvector<PresentationRuleContent>    T_PresentationRuleContents;
 
     struct ConstantBlockAttrdefs
         {
@@ -857,7 +861,7 @@ public:
     //! Miscellaneous strings needed for DwgImporter
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
         L10N_STRING(AttrdefsSchemaDescription)         // =="Block attribute definitions created from DWG file %ls"==
-        L10N_STRING(BlockAttrdefDescription)           // =="Attribute definitions created from block %ls"==
+        L10N_STRING(BlockAttrdefDescription)           // =="Attribute definition created from DWG block %ls"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
     
     struct IssueReporter
@@ -953,6 +957,7 @@ protected:
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
     T_GeometryBuilderList       m_sharedGeometryPartList;
+    T_PresentationRuleContents  m_presentationRuleContents;
 
 private:
     void                    InitUncategorizedCategory ();
@@ -1016,6 +1021,12 @@ protected:
 
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
     DGNDBSYNC_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
+    //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
+    DGNDBSYNC_EXPORT BentleyStatus  MakeSchemaChanges ();
+    //! Cache a PresentationRule content of a host element which must be seperated from the modelspace as a PhysicalObject and a paperspace as a DrawingGraphic.
+    DGNDBSYNC_EXPORT BentleyStatus  AddPresentationRuleContent (DgnElementCR hostElement, Utf8StringCR attrdefName);
+    //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _EmbedPresentationRules ();
 
     //! @name  Creating DgnModels for DWG
     //! @{
@@ -1166,7 +1177,6 @@ public:
     DgnTextureId                        GetDgnMaterialTextureFor (Utf8StringCR fileName);
     T_MaterialIdMap&                    GetImportedDgnMaterials () { return m_importedMaterials; }
     void                                AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
-    ECSqlCache const&                   GetECSqlCache () const;
     ECN::ECSchemaCP                     GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
     bool                                GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
     DgnCategoryId                       FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);

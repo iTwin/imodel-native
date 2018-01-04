@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgImporter.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -130,7 +130,8 @@ LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ImagePP$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)Raster$(libext) 
-LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnView.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnView$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ECPresentation$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
 
 %if $(DWGTOOLKIT) == "OpenDwg"
