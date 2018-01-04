@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/iModelHubClient/BuildTests.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -64,3 +64,9 @@ $(BuildContext)Delivery/iModelHubNativeTests/SchemaVersionTest.02.02.02.ecschema
 
 $(BuildContext)Delivery/iModelHubNativeTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/iModelHubNativeTests/ignore_list_dev.txt : $(baseDir)ignore_list_dev.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/iModelHubNativeTests/ignore_list_qa.txt : $(baseDir)ignore_list_qa.txt
+    $(LinkFirstDepToFirstTarget)

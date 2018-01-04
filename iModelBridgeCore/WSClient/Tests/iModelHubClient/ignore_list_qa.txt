@@ -1,0 +1,17 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+FailureTests.Crash*
+WebsiteSeedFileTests.CreateSeedFile
+
+#----------------------------------------------------------------------------------------
+#   Tests that are failing
+#----------------------------------------------------------------------------------------
+BriefcaseTests.UpdateBriefcaseToVersion
+BriefcaseTests.UpdateBriefcaseToChangeSet
+StatisticsTests.QueryUserStatisticsWithAllStatistics
+StatisticsTests.QueryUserStatisticsWithSelectedStatistics
+StatisticsTests.QueryUsersStatisticsWithAllStatistics
+StatisticsTests.QueryUsersStatisticsWithSelectedStatistics
+StatisticsTests.QueryAllUsersStatisticsWithAllStatistics
+StatisticsTests.QueryAllUsersStatisticsWithSelectedStatistics

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/Statistics_Tests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
@@ -31,6 +31,10 @@ struct StatisticsTests : public IntegrationTestsBase
     DateTime m_changeSetPushDate;
 
     BriefcasePtr m_adminBriefcase;
+
+    StatisticsProperties briefcasesProperty = StatisticsProperties::BriefcaseCount;
+    StatisticsProperties briefcasesLocksProperties = (StatisticsProperties) (StatisticsProperties::BriefcaseCount | StatisticsProperties::OwnedLocksCount);
+    StatisticsProperties briefcasesLocksChangeSetDateProperties = (StatisticsProperties) (StatisticsProperties::BriefcaseCount | StatisticsProperties::OwnedLocksCount | StatisticsProperties::LastChangeSetPushDate);
 
     virtual void SetUp() override
         {
@@ -109,15 +113,15 @@ TEST_F(StatisticsTests, QueryUserStatisticsWithSelectedStatistics)
     {
     auto statisticsManager = m_connection->GetStatisticsManager();
 
-    auto statistics1 = statisticsManager.QueryUserStatistics(m_userAdminId, bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount })->GetResult().GetValue();
+    auto statistics1 = statisticsManager.QueryUserStatistics(m_userAdminId, briefcasesProperty )->GetResult().GetValue();
     EXPECT_EQ(m_userAdminId, statistics1->GetUserInfo()->GetId());
     AssertUserStatistics(statistics1, 2, -1, -1, DateTime());
 
-    auto statistics2 = statisticsManager.QueryUserStatistics(m_userAdminId, bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount, StatisticsProperties::OwnedLocksCount })->GetResult().GetValue();
+    auto statistics2 = statisticsManager.QueryUserStatistics(m_userAdminId, briefcasesLocksProperties )->GetResult().GetValue();
     EXPECT_EQ(m_userAdminId, statistics2->GetUserInfo()->GetId());
     AssertUserStatistics(statistics2, 2, 4, -1, DateTime());
 
-    auto statistics3 = statisticsManager.QueryUserStatistics(m_userAdminId, bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount, StatisticsProperties::OwnedLocksCount, StatisticsProperties::LastChangeSetPushDate })->GetResult().GetValue();
+    auto statistics3 = statisticsManager.QueryUserStatistics(m_userAdminId, briefcasesLocksChangeSetDateProperties )->GetResult().GetValue();
     EXPECT_EQ(m_userAdminId, statistics3->GetUserInfo()->GetId());
     AssertUserStatistics(statistics3, 2, 4, -1, m_changeSetPushDate);
     }
@@ -161,7 +165,7 @@ TEST_F(StatisticsTests, QueryUsersStatisticsWithSelectedStatistics)
     {
     auto statisticsManager = m_connection->GetStatisticsManager();
 
-    auto statisticsResult1 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId, m_userNonAdminId}, bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount })->GetResult();
+    auto statisticsResult1 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId, m_userNonAdminId}, briefcasesProperty)->GetResult();
     EXPECT_SUCCESS(statisticsResult1);
 
     EXPECT_EQ(2, statisticsResult1.GetValue().size());
@@ -188,7 +192,7 @@ TEST_F(StatisticsTests, QueryUsersStatisticsWithSelectedStatistics)
     EXPECT_TRUE(successUser2);
 
 
-    auto statisticsResult2 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId, m_userNonAdminId}, bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount, StatisticsProperties::OwnedLocksCount })->GetResult();
+    auto statisticsResult2 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId, m_userNonAdminId}, briefcasesLocksProperties)->GetResult();
     EXPECT_SUCCESS(statisticsResult2);
 
     EXPECT_EQ(2, statisticsResult2.GetValue().size());
@@ -215,7 +219,7 @@ TEST_F(StatisticsTests, QueryUsersStatisticsWithSelectedStatistics)
     EXPECT_TRUE(successUser2);
 
 
-    auto statisticsResult3 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId, m_userNonAdminId}, bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount, StatisticsProperties::OwnedLocksCount, StatisticsProperties::LastChangeSetPushDate })->GetResult();
+    auto statisticsResult3 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId, m_userNonAdminId}, briefcasesLocksChangeSetDateProperties)->GetResult();
     EXPECT_SUCCESS(statisticsResult3);
 
     EXPECT_EQ(2, statisticsResult3.GetValue().size());
@@ -242,7 +246,7 @@ TEST_F(StatisticsTests, QueryUsersStatisticsWithSelectedStatistics)
     EXPECT_TRUE(successUser2);
 
 
-    auto statisticsResult4 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId}, bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount })->GetResult();
+    auto statisticsResult4 = statisticsManager.QueryUsersStatistics(bvector<Utf8String>{m_userAdminId}, briefcasesProperty)->GetResult();
     EXPECT_SUCCESS(statisticsResult4);
 
     EXPECT_EQ(1, statisticsResult4.GetValue().size());
@@ -306,7 +310,7 @@ TEST_F(StatisticsTests, QueryAllUsersStatisticsWithSelectedStatistics)
     {
     auto statisticsManager = m_connection->GetStatisticsManager();
 
-    auto statisticsResult1 = statisticsManager.QueryAllUsersStatistics(bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount })->GetResult();
+    auto statisticsResult1 = statisticsManager.QueryAllUsersStatistics(briefcasesProperty)->GetResult();
     EXPECT_SUCCESS(statisticsResult1);
 
     bool successUser1 = false;
@@ -331,7 +335,7 @@ TEST_F(StatisticsTests, QueryAllUsersStatisticsWithSelectedStatistics)
     EXPECT_TRUE(successUser2);
 
 
-    auto statisticsResult2 = statisticsManager.QueryAllUsersStatistics(bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount, StatisticsProperties::OwnedLocksCount })->GetResult();
+    auto statisticsResult2 = statisticsManager.QueryAllUsersStatistics(briefcasesLocksProperties)->GetResult();
     EXPECT_SUCCESS(statisticsResult2);
 
     successUser1 = false;
@@ -356,7 +360,7 @@ TEST_F(StatisticsTests, QueryAllUsersStatisticsWithSelectedStatistics)
     EXPECT_TRUE(successUser2);
 
 
-    auto statisticsResult3 = statisticsManager.QueryAllUsersStatistics(bvector<StatisticsProperties>{ StatisticsProperties::BriefcaseCount, StatisticsProperties::OwnedLocksCount, StatisticsProperties::LastChangeSetPushDate })->GetResult();
+    auto statisticsResult3 = statisticsManager.QueryAllUsersStatistics(briefcasesLocksChangeSetDateProperties)->GetResult();
     EXPECT_SUCCESS(statisticsResult3);
 
     successUser1 = false;
