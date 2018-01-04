@@ -12,12 +12,24 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointLengthAnglePlacementStrateg
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : CurvePrimitivePlacementStrategy
+struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
     {
-    DEFINE_T_SUPER(CurvePrimitivePlacementStrategy);
+    private:
+        LineManipulationStrategyPtr m_manipulationStrategy = LineManipulationStrategy::Create();
+        
+    protected:
+        virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        LineManipulationStrategyCR GetLineManipulationStrategy() const { return *m_manipulationStrategy; }
+        LineManipulationStrategyR GetLineManipulationStrategyR() { return *m_manipulationStrategy; }
+    };
+
+struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrategy
+    {
+    DEFINE_T_SUPER(LinePlacementStrategy);
 
     protected:
-        LinePointsPlacementStrategy() : T_Super(LineManipulationStrategy::Create().get()) {};
+        LinePointsPlacementStrategy() : T_Super() {};
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
@@ -26,9 +38,9 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : CurvePrimitivePlace
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : CurvePrimitivePlacementStrategy
+struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
     {
-    DEFINE_T_SUPER(CurvePrimitivePlacementStrategy);
+    DEFINE_T_SUPER(LinePlacementStrategy);
 
     private:
         double m_length = 0;
@@ -37,7 +49,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : CurvePrim
         DPlane3d m_workingPlane;
 
     protected:
-        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : T_Super(LineManipulationStrategy::Create().get()), m_workingPlane(workingPlane) {}
+        LinePointLengthAnglePlacementStrategy(DPlane3d const & workingPlane) : T_Super(), m_workingPlane(workingPlane) {}
 
         virtual void _SetWorkingPlane(DPlane3d const & plane);
         virtual DPlane3d _GetWorkingPlane() const { return m_workingPlane; }

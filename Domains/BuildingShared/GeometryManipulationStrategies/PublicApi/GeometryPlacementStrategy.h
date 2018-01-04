@@ -22,9 +22,6 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
     {
     DEFINE_T_SUPER(GeometryManipulationStrategyBase)
 
-    private:
-        GeometryManipulationStrategyPtr m_manipulationStrategy;
-
     protected:
         GeometryPlacementStrategy() : T_Super() {}
 

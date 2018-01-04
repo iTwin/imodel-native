@@ -128,7 +128,7 @@ void LinePointLengthAnglePlacementStrategy::UpdateEndPoint()
         {
         BeAssert(_GetKeyPoints().size() > 0 && "There should be at least 1 key point");
         if (!IsDynamicKeyPointSet())
-            GetManipulationStrategyR().ReplaceKeyPoint(endPoint, 1);
+            GetLineManipulationStrategyR().ReplaceKeyPoint(endPoint, 1);
         else
             {
             DPoint3d firstPoint = _GetKeyPoints().front();
