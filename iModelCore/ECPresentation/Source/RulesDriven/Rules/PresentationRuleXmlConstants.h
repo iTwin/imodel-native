@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,6 +70,10 @@
 #define LABEL_OVERRIDE_XML_NODE_NAME                                                  "LabelOverride"
 #define LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL                                            "Label"
 #define LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION                                      "Description"
+
+#define INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME                                          "InstanceLabelOverride"
+#define INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_CLASSNAME                                "ClassName"
+#define INSTANCE_LABEL_OVERRIDE_XML_ATTRIBUTE_PROPERTYNAMES                            "PropertyNames"
 
 #define STYLE_OVERRIDE_XML_NODE_NAME                                                  "StyleOverride"
 #define STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR                                        "ForeColor"

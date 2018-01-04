@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/CheckBoxRule.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -32,7 +32,7 @@ Utf8StringCR propertyName,
 bool      useInversedPropertyValue,
 bool      defaultValue,
 Utf8StringCR isEnabled
-) : CustomizationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), 
+) : ConditionalCustomizationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), 
     m_useInversedPropertyValue (useInversedPropertyValue), m_defaultValue (defaultValue), m_isEnabled (isEnabled)
     {
     }
@@ -62,7 +62,7 @@ bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_isEnabled, CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED))
         m_isEnabled = "";
 
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalCustomizationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,7 +74,7 @@ void CheckBoxRule::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE, m_useInversedPropertyValue);
     xmlNode->AddAttributeBooleanValue (CHECKBOX_RULE_XML_ATTRIBUTE_DEFAULTVALUE, m_defaultValue);
     xmlNode->AddAttributeStringValue (CHECKBOX_RULE_XML_ATTRIBUTE_ISENABLED, m_isEnabled.c_str());
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,7 +107,7 @@ void CheckBoxRule::_Accept(CustomizationRuleVisitor& visitor) const {visitor._Vi
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 CheckBoxRule::_ComputeHash(Utf8CP parentHash) const
     {
-    MD5 md5 = CustomizationRule::_ComputeHash(parentHash);
+    MD5 md5 = ConditionalCustomizationRule::_ComputeHash(parentHash);
     md5.Add(m_propertyName.c_str(), m_propertyName.size());
     md5.Add(&m_useInversedPropertyValue, sizeof(m_useInversedPropertyValue));
     md5.Add(&m_defaultValue, sizeof(m_defaultValue));

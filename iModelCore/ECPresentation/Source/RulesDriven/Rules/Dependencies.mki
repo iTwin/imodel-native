@@ -2,7 +2,7 @@
 #
 #     $Source: Source/RulesDriven/Rules/Dependencies.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -27,6 +27,7 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)PresentationRule.h \
                                     $(PresentationRulesPublicApiDirectory)PresentationRuleSet.h \
                                     $(PresentationRulesPublicApiDirectory)LabelOverride.h \
+                                    $(PresentationRulesPublicApiDirectory)InstanceLabelOverride.h \
                                     $(PresentationRulesPublicApiDirectory)StyleOverride.h \
                                     $(PresentationRulesPublicApiDirectory)LocalizationResourceKeyDefinition.h \
                                     $(PresentationRulesPublicApiDirectory)UserSettingsGroup.h \

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/RenameNodeRule.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -15,15 +15,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenameNodeRule::RenameNodeRule () : CustomizationRule()
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                              dmitrijus.tiazlovas                   11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 RenameNodeRule::RenameNodeRule (Utf8StringCR condition, int priority)
-    : CustomizationRule(condition, priority, false)
+    : ConditionalCustomizationRule(condition, priority, false)
     {
     }
 
@@ -40,7 +33,7 @@ CharCP RenameNodeRule::_GetXmlElementName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RenameNodeRule::_ReadXml (BeXmlNodeP xmlNode)
     {
-    return PresentationRule::_ReadXml (xmlNode);
+    return ConditionalCustomizationRule::_ReadXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -48,7 +41,7 @@ bool RenameNodeRule::_ReadXml (BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RenameNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
-    PresentationRule::_WriteXml (xmlNode);
+    ConditionalCustomizationRule::_WriteXml (xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,5 +54,5 @@ void RenameNodeRule::_Accept(CustomizationRuleVisitor& visitor) const {visitor._
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 RenameNodeRule::_ComputeHash(Utf8CP parentHash) const
     {
-    return CustomizationRule::_ComputeHash(parentHash);
+    return ConditionalCustomizationRule::_ComputeHash(parentHash);
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/PresentationRulesTypes.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,6 +20,7 @@ ECPRESENTATION_TYPEDEFS(PresentationRuleSet);
 ECPRESENTATION_TYPEDEFS(CustomizationRule);
 ECPRESENTATION_TYPEDEFS(RootNodeRule);
 ECPRESENTATION_TYPEDEFS(LabelOverride);
+ECPRESENTATION_TYPEDEFS(InstanceLabelOverride);
 ECPRESENTATION_TYPEDEFS(StyleOverride);
 ECPRESENTATION_TYPEDEFS(CheckBoxRule);
 ECPRESENTATION_TYPEDEFS(RenameNodeRule);

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/PresentationRule.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -123,15 +123,15 @@ MD5 PresentationKey::_ComputeHash(Utf8CP parentHash) const
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRule::PresentationRule ()
-    : PresentationKey (), m_condition (""), m_onlyIfNotHandled (false)
+    : m_onlyIfNotHandled (false)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRule::PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled)
-    : PresentationKey (priority), m_condition (condition), m_onlyIfNotHandled (onlyIfNotHandled)
+PresentationRule::PresentationRule (int priority, bool onlyIfNotHandled)
+    : PresentationKey (priority), m_onlyIfNotHandled (onlyIfNotHandled)
     {
     }
 
@@ -140,10 +140,6 @@ PresentationRule::PresentationRule (Utf8StringCR condition, int priority, bool o
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
     {
-    //Optional:
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
-        m_condition = "";
-
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_onlyIfNotHandled, COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED))
         m_onlyIfNotHandled = false;
 
@@ -155,19 +151,8 @@ bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PresentationRule::_WriteXml (BeXmlNodeP xmlNode) const
     {
-    xmlNode->AddAttributeStringValue (PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str ());
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED, m_onlyIfNotHandled);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR PresentationRule::GetCondition (void) const       { return m_condition; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Tom.Amon                        03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRule::SetCondition (Utf8String value)         { m_condition = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -180,8 +165,47 @@ bool PresentationRule::GetOnlyIfNotHandled (void) const     { return m_onlyIfNot
 MD5 PresentationRule::_ComputeHash(Utf8CP parentHash) const
     {
     MD5 md5 = PresentationKey::_ComputeHash(parentHash);
-    md5.Add(m_condition.c_str(), m_condition.size());
     md5.Add(&m_onlyIfNotHandled, sizeof(m_onlyIfNotHandled));
+    return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ConditionalPresentationRule::GetCondition() const { return m_condition; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConditionalPresentationRule::SetCondition(Utf8String value) { m_condition = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConditionalPresentationRule::_ReadXml(BeXmlNodeP xmlNode)
+    {
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
+        m_condition = "";
+
+    return PresentationRule::_ReadXml(xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConditionalPresentationRule::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    xmlNode->AddAttributeStringValue(PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str());
+    PresentationRule::_WriteXml(xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+MD5 ConditionalPresentationRule::_ComputeHash(Utf8CP parentHash) const
+    {
+    MD5 md5 = PresentationRule::_ComputeHash(parentHash);
+    md5.Add(m_condition.c_str(), m_condition.size());
     return md5;
     }
 

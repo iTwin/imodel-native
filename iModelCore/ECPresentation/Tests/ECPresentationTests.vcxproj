@@ -86,6 +86,7 @@
     <ClCompile Include="Published\PresentationRules\GroupingRuleTests.cpp" />
     <ClCompile Include="Published\PresentationRules\ImageIdOverrideTests.cpp" />
     <ClCompile Include="Published\PresentationRules\InstanceNodesOfSpecificClassesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp" />
     <ClCompile Include="Published\PresentationRules\LabelOverrideTests.cpp" />
     <ClCompile Include="Published\PresentationRules\LocalizationResourceKeyDefinitionTests.cpp" />
     <ClCompile Include="Published\PresentationRules\PresentationRuleSetTests.cpp" />
