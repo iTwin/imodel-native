@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseManipulationStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -48,6 +46,7 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { BeAssert(false && "Not implemented"); return nullptr; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _OnKeyPointsChanged() override;
 

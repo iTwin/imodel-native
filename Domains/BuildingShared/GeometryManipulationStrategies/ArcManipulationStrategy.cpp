@@ -110,3 +110,11 @@ bool ArcManipulationStrategy::_IsComplete() const
     return IsStartSet() && !IsStartDynamic() && IsEndSet() && !IsEndDynamic() &&
         ((IsMidSet() && !IsMidDynamic()) || (IsCenterSet() && !IsCenterDynamic()));
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr ArcManipulationStrategy::_CreateDefaultPlacementStrategy()
+    {
+    return ArcStartMidEndPlacementStrategy::Create(this);
+    }

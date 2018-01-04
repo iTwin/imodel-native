@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcManipulationStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define KEY_POINT_ACCESSOR_DECL(name, index) \
@@ -29,13 +27,14 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
     private:
         static const size_t s_startIndex = 0;
         static const size_t s_midPointIndex = 1;
-        static const size_t s_endIndex = 2;
-        static const size_t s_centerIndex = 3;
+        static const size_t s_centerIndex = 2;
+        static const size_t s_endIndex = 3;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
 
         virtual void _OnKeyPointsChanged() override;
 

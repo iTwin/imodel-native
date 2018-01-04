@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ChildCurveVectorManipulationStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -25,6 +23,7 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
 
     protected:
         virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { BeAssert(false && "Not implemented"); return nullptr; }
 
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override;

@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurveVectorManipulationStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -20,6 +18,9 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
     bvector<CurvePrimitiveManipulationStrategyPtr> m_primitiveStrategies;
 
+    private:
+        CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
+
     protected:
         CurveVectorManipulationStrategy() : T_Super() {}
 
@@ -30,8 +31,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override { return true; }
 
-        virtual bool _IsDynamicKeyPointSet() const override { BeAssert(false && "Not implemented"); return false; }
-        virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override { BeAssert(false && "Not implemented"); }
+        virtual bool _IsDynamicKeyPointSet() const override;
+        virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
         virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
@@ -39,12 +40,12 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _ResetDynamicKeyPoint() override { BeAssert(false && "Not implemented"); }
+        virtual void _ResetDynamicKeyPoint() override;
 
-        virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override { BeAssert(false && "Not implemented"); }
+        virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
         virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _PopKeyPoint() override { BeAssert(false && "Not implemented"); }
+        virtual void _PopKeyPoint() override;
         virtual void _RemoveKeyPoint(size_t index) override { BeAssert(false && "Not implemented"); }
 
     public:

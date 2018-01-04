@@ -16,9 +16,11 @@ struct GeometryManipulationStrategyTests : public BuildingSharedTestFixtureBase
     {
     struct SUT : public CurvePrimitiveManipulationStrategy
         {
-        virtual bool _IsComplete() const override { return false; }
-        virtual bool _CanAcceptMorePoints() const override { return true; }
-        virtual ICurvePrimitivePtr _FinishPrimitive() const override { return nullptr; }
+        protected:
+            virtual bool _IsComplete() const override { return false; }
+            virtual bool _CanAcceptMorePoints() const override { return true; }
+            virtual ICurvePrimitivePtr _FinishPrimitive() const override { return nullptr; }
+            virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { return nullptr; }
         };
     };
 

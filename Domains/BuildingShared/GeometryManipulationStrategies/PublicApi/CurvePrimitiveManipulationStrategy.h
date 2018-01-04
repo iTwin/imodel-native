@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurvePrimitiveManipulationStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -47,8 +45,10 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _RemoveKeyPoint(size_t index) override;
 
         virtual ICurvePrimitivePtr _FinishPrimitive() const = 0;
+        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() = 0;
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
+        CurvePrimitivePlacementStrategyPtr CreateDefaultPlacementStrategy();
 
         bvector<DPoint3d> const& GetAcceptedKeyPoints() const { return m_keyPoints; }
     };

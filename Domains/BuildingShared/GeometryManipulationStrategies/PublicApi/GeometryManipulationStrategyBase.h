@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryManipulationStrategyBase)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define GMS_V_SET_PROPERTY_TYPE(value_type) \

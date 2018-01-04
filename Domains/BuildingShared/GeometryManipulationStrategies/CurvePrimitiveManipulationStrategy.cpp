@@ -294,3 +294,11 @@ bvector<DPoint3d> CurvePrimitiveManipulationStrategy::_GetKeyPoints() const
 
     return m_keyPoints;
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateDefaultPlacementStrategy()
+    {
+    return _CreateDefaultPlacementStrategy();
+    }

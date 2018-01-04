@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcStartMidEndPlacementStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -19,9 +17,8 @@ struct ArcStartMidEndPlacementStrategy : public ArcPlacementStrategy
     DEFINE_T_SUPER(ArcPlacementStrategy)
 
     private:
-        ArcStartMidEndPlacementStrategy()
-            : T_Super(ArcManipulationStrategy::Create().get())
-            {}
+        ArcStartMidEndPlacementStrategy() : T_Super(ArcManipulationStrategy::Create().get()) {}
+        ArcStartMidEndPlacementStrategy(ArcManipulationStrategyP manipulationStrategy) : T_Super(manipulationStrategy) {}
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
@@ -31,6 +28,7 @@ struct ArcStartMidEndPlacementStrategy : public ArcPlacementStrategy
 
     public:
         static ArcStartMidEndPlacementStrategyPtr Create() { return new ArcStartMidEndPlacementStrategy(); }
+        static ArcStartMidEndPlacementStrategyPtr Create(ArcManipulationStrategyP manipulationStrategy) { return new ArcStartMidEndPlacementStrategy(manipulationStrategy); }
     };
 
 END_BUILDING_SHARED_NAMESPACE

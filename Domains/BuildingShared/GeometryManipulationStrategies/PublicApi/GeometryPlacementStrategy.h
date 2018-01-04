@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryPlacementStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define GMS_PROPERTY_OVERRIDE(value_type) \
