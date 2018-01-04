@@ -8,7 +8,6 @@
         <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="libuv" PartFile="libuv" Repository="Thirdparty-libuv" />
-        <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
         <SubPart PartName="iModelJsWindows-Only-SubParts" />
 
         <Bindings>

@@ -53,7 +53,7 @@ private:
 
 protected:
     IMODELJS_EXPORT virtual Utf8CP SupplyName() const = 0;
-    IMODELJS_EXPORT virtual Napi::Value ExportJsModule (Napi::Env& env) = 0;
+    IMODELJS_EXPORT virtual Napi::Value ExportJsModule (Js::RuntimeR) = 0;
 
 public:
     IMODELJS_EXPORT static void Install (InstallCallback_T const& callback);
@@ -80,7 +80,7 @@ private:
 
     void Install (ExtensionPtr extension);
     void Shutdown();
-    Napi::Value DeliverExtension (Napi::Env& env, Utf8StringCR identifier);
+    Napi::Value DeliverExtension (Js::RuntimeR, Utf8StringCR identifier);
 
     static void InstallCoreExtensions();
 
@@ -245,7 +245,7 @@ private:
 
     static Utf8CP InitScript();
 
-    Napi::Function EvaluateInitScript (Napi::Env& env);
+    Napi::Function EvaluateInitScript (Js::RuntimeR);
     Napi::Object CreateInitParams (Napi::Env& env);
     void FindPrototypes (Napi::Object exports);
 
@@ -274,7 +274,7 @@ private:
 
 protected:
     IMODELJS_EXPORT Utf8CP SupplyName() const override { return "@bentley/imodeljs-services-tier-utilities"; }
-    IMODELJS_EXPORT Napi::Value ExportJsModule (Napi::Env& env) override;
+    IMODELJS_EXPORT Napi::Value ExportJsModule (Js::RuntimeR) override;
 
 public:
     IMODELJS_EXPORT JsPrototypesCR GetPrototypes() const { return m_prototypes; }

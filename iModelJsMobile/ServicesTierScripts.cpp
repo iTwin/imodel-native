@@ -2,7 +2,7 @@
 |
 |     $Source: ServicesTierScripts.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
@@ -361,6 +361,12 @@ Utf8CP Host::InitScript()
         let nextIdleCallbacks = [];
         let shutDownHandlers = [];
 
+        if (!params.hasOwnProperty("deliverExtension"))
+            throw new Error("deliverExtension not found on params");
+
+        if (!params.hasOwnProperty("evaluateScript"))
+            throw new Error("evaluateScript not found on params");
+
         params.notifyIdle = function() {
             let l = nextIdleCallbacks.length;
             for (var i = 0; i != l; ++i) 
@@ -375,6 +381,10 @@ Utf8CP Host::InitScript()
         };
 
         params.replacementRequire = function (identifier) {
+
+            console_log('replacementRequire ' + identifier);
+            console_log(new Error().stack);
+
             if (extensionCache.hasOwnProperty (identifier))
                 return extensionCache [identifier];
 
@@ -430,10 +440,14 @@ Utf8CP Host::InitScript()
         params.notifyReady = function() {
             let info = bentley.imodeljs.servicesTier.getHostInfo();
 
+            console_log('info=' + JSON.stringify(info));
             let argv = parseArgv (info.argv);
-            let initialScript = (argv.data.length !== 0) ? argv.data [argv.data.length - 1] : 0;
+            let initialScript = (argv.data.length !== 0) ? argv.data [argv.data.length - 1] : null;
+
+            console_log('notifyReady. argv.data.length = ' + argv.data.length);
             if (initialScript !== null)
                 {
+                console_log('initialScript = ' + initialScript);
                 if (initialScript [0] !== '/' && initialScript.indexOf (':') === -1)
                     {
                     initialScript = info.cwd + '/' + initialScript;
@@ -519,6 +533,8 @@ Utf8CP UvHost::RequireScript()
         let moduleCache = {};
 
         let utilities = null;
+
+
 
         class Path {
             constructor (path) {

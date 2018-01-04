@@ -523,10 +523,10 @@ public:
 private:
     websocketpp_server_t m_server;
 
-    websocketpp_ServerEndpoint (UtilitiesCR owner, Napi::HandleScope scope);
+    websocketpp_ServerEndpoint (UtilitiesCR owner, Napi::CallbackInfo const&);
 
 public:
-    static Napi::Object Create (UtilitiesCR owner, Napi::HandleScope scope);
+    static Napi::Object Create (UtilitiesCR owner, Napi::CallbackInfo const&);
 
     websocketpp_server_t const& GetServer() const { return m_server; }
     websocketpp_server_t& GetServer() { return m_server; }

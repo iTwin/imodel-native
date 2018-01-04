@@ -31,7 +31,7 @@ private:
 public:
     static void ResetFailedJsAssertCount();
     static size_t GetFailedJsAssertCount();
-    static void InstallTestingUtilities (Napi::Env env, Napi::HandleScope scope);
+    static void InstallTestingUtilities (Js::RuntimeR);
 
     iModelJsTestFixture();
     ~iModelJsTestFixture() override;

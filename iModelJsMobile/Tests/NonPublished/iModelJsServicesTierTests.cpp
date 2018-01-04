@@ -115,8 +115,8 @@ public:
     //---------------------------------------------------------------------------------------
     static void PerformTests (Js::RuntimeR runtime)
         {
-        Utilities (runtime, scope);
-        ExtensionLoading (runtime, scope);
+        Utilities (runtime);
+        ExtensionLoading (runtime);
         }
     };
 
@@ -375,11 +375,11 @@ static void Setup (Js::RuntimeR runtime)
     {
     iModelJsTestFixture::InstallTestingUtilities (runtime);
 
-    runtime.Env().Global().Set ("__iModelJsServicesTierTests_OnTestFinished", scope.CreateCallback ([](Napi::CallbackInfo info) -> Napi::Value
+    runtime.Env().Global().Set ("__iModelJsServicesTierTests_OnTestFinished", Napi::Function::New(runtime.Env(), [](Napi::CallbackInfo const& info) -> Napi::Value
         {
         OnTestFinished();
 
-        return runtime.Env().Undefined();
+        return info.Env().Undefined();
         }));
     }
 
@@ -392,14 +392,14 @@ static void PerformTests()
     s_finishedTests = 0;
     s_wait = true;
 
-    ServicesTier::Host::GetInstance().PostToEventLoop ([]()
+    ServicesTier::Host::GetInstance().PostToEventLoop([]()
         {
         auto& runtime = ServicesTier::Host::GetInstance().GetJsRuntime();
-        Napi::HandleScope scope (runtime.Env());
+        Napi::HandleScope scope(runtime.Env());
 
-        Setup (runtime);
-        Core::PerformTests (runtime);
-        ServicesTierUtilities::PerformTests (runtime;
+        Setup(runtime);
+        Core::PerformTests(runtime);
+        ServicesTierUtilities::PerformTests(runtime);
         s_wait = false;
         });
 

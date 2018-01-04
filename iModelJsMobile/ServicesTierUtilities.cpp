@@ -477,23 +477,25 @@ void JsApi::uv_tcp_Server::SetListenCallback (Napi::Function value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-JsApi::websocketpp_ServerEndpoint::websocketpp_ServerEndpoint (UtilitiesCR owner, Napi::HandleScope scope)
+JsApi::websocketpp_ServerEndpoint::websocketpp_ServerEndpoint (UtilitiesCR owner, Napi::CallbackInfo const& info)
     : ObjectBase (owner)
     {
     m_server.clear_access_channels (websocketpp::log::alevel::all);
     m_server.clear_error_channels (websocketpp::log::elevel::all);
 
-    SetObject(Napi::External<void*>::New(this));
+#ifdef WIP_EXTERNAL
+    SetObject(Napi::External<JsApi::websocketpp_ServerEndpoint>::New(info.Env(), this));
+#endif
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-Napi::Object JsApi::websocketpp_ServerEndpoint::Create (UtilitiesCR owner, Napi::HandleScope scope)
+Napi::Object JsApi::websocketpp_ServerEndpoint::Create (UtilitiesCR owner, Napi::CallbackInfo const& info)
     {
-    auto instance = new websocketpp_ServerEndpoint (owner, scope); //deleted by websocketpp_Base_Dispose
+    auto instance = new websocketpp_ServerEndpoint (owner, info); //deleted by websocketpp_Base_Dispose
 
-    auto object = instance->GetObject().Get().AsObject();
+    auto object = instance->GetObject();
     auto setPrototypeResult = object.SetPrototype (owner.GetPrototypes().websocketpp_ServerEndpoint.Get());
     BeAssert (setPrototypeResult);
 
@@ -509,7 +511,7 @@ JsApi::websocketpp_ClientConnection::websocketpp_ClientConnection (UtilitiesCR o
       m_relay      (*this),
       m_output     (&m_relay)
     {
-    GetObject().Assign (owner.Env(), scope.CreateExternal (this));
+    GetObject().Assign (owner.Env(), Napi::External<JsApi::websocketpp_ClientConnection>::New(owner.Env(), this));
     
     Forwarder forwarder (*this);
     m_connection->set_open_handler (forwarder);
@@ -525,13 +527,13 @@ JsApi::websocketpp_ClientConnection::websocketpp_ClientConnection (UtilitiesCR o
 //---------------------------------------------------------------------------------------
 Napi::Object JsApi::websocketpp_ClientConnection::Create (UtilitiesCR owner, websocketpp_connection_ptr_t const& connection)
     {
-    auto instance = new websocketpp_ClientConnection (owner, scope, connection); //deleted by websocketpp_Base_Dispose
+    auto instance = new websocketpp_ClientConnection (owner, info, connection); //deleted by websocketpp_Base_Dispose
 
     auto object = instance->GetObject().Get().AsObject();
     auto setPrototypeResult = object.SetPrototype (owner.GetPrototypes().websocketpp_ClientConnection.Get());
     BeAssert (setPrototypeResult);
 
-    auto setHandlerProperty = object.Set ("handler", scope.CreateNull());
+    auto setHandlerProperty = object.Set ("handler", info.CreateNull());
     BeAssert (setHandlerProperty);
 
     return object;
@@ -621,7 +623,7 @@ void JsApi::websocketpp_ClientConnection::Forwarder::operator() (websocketpp::co
     auto& payload = message->get_raw_payload();
     
     auto payloadBuffer = scope.CreateArrayBuffer (&payload [0], payload.size());
-    callback (object, payloadBuffer, scope.CreateNumber (opcode));
+    callback (object, payloadBuffer, info.CreateNumber (opcode));
     }
 
 //---------------------------------------------------------------------------------------
@@ -859,9 +861,9 @@ uv_connect_t* UvTcpConnectRequest::GetPointer() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-Napi::Function Utilities::EvaluateInitScript (Napi::Env& env)
+Napi::Function Utilities::EvaluateInitScript (Js::RuntimeR runtime)
     {
-    auto evaluation = Env().EvaluateScript (InitScript());
+    auto evaluation = runtime.EvaluateScript (InitScript());
     BeAssert (evaluation.status == napi_ok);
 
     return evaluation.value.As<Napi::Function>();
@@ -872,7 +874,7 @@ Napi::Function Utilities::EvaluateInitScript (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_Handle_close (Napi::Env& env)
     {
-    return scope.CreateCallback ([](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
 
@@ -888,7 +890,7 @@ Napi::Function Utilities::uv_Handle_close (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_io_shutdown (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
@@ -899,12 +901,12 @@ Napi::Function Utilities::uv_io_shutdown (Napi::Env& env)
 
         UvIoStreamShutdownRequest request (streamInstance->GetUvIoStream(), &JsApi::uv_io_shutdown_Promise::Handler, status);
         if (status >= 0)
-            return JsApi::uv_io_shutdown_Promise::Create (streamInstance->GetOwner(), info.GetScope(), std::move (request));
+            return JsApi::uv_io_shutdown_Promise::Create (streamInstance->GetOwner(), info, std::move (request));
 
         BeAssert (status < 0);
-        auto result = streamInstance->CreateStatus (info.GetScope(), status);
+        auto result = streamInstance->CreateStatus (info, status);
 
-        return JsApi::Promise::CreateAndReject (info.GetScope(), result);
+        return JsApi::Promise::CreateAndReject (info, result);
         });
     }
 
@@ -913,7 +915,7 @@ Napi::Function Utilities::uv_io_shutdown (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_io_Stream_isReadable (Napi::Env& env)
     {
-    return scope.CreateCallback ([](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
 
@@ -929,7 +931,7 @@ Napi::Function Utilities::uv_io_Stream_isReadable (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_io_Stream_isWritable (Napi::Env& env)
     {
-    return scope.CreateCallback ([](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
 
@@ -945,7 +947,7 @@ Napi::Function Utilities::uv_io_Stream_isWritable (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_io_Stream_read (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -958,7 +960,7 @@ Napi::Function Utilities::uv_io_Stream_read (Napi::Env& env)
 
         auto result = uv_read_start (instance->GetUvIoStream().GetPointer(), &JsApi::uv_io_Stream::AllocHandler, &JsApi::uv_io_Stream::ReadHandler);
 
-        return instance->CreateStatus (info.GetScope(), result);
+        return instance->CreateStatus (info, result);
         });
     }
 
@@ -967,7 +969,7 @@ Napi::Function Utilities::uv_io_Stream_read (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_io_Stream_write (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -980,12 +982,12 @@ Napi::Function Utilities::uv_io_Stream_write (Napi::Env& env)
         UvBuffer buffer (data);
         UvIoStreamWriteRequest request (instance->GetUvIoStream(), buffer, &JsApi::uv_io_Stream_write_Promise::Handler, status);
         if (status >= 0)
-            return JsApi::uv_io_Stream_write_Promise::Create (instance->GetOwner(), info.GetScope(), std::move (request));
+            return JsApi::uv_io_Stream_write_Promise::Create (instance->GetOwner(), info, std::move (request));
 
         BeAssert (status < 0);
-        auto result = instance->CreateStatus (info.GetScope(), status);
+        auto result = instance->CreateStatus (info, status);
 
-        return JsApi::Promise::CreateAndReject (info.GetScope(), result);
+        return JsApi::Promise::CreateAndReject (info, result);
         });
     }
 
@@ -994,7 +996,7 @@ Napi::Function Utilities::uv_io_Stream_write (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_tcp_bind (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (3);
 
@@ -1013,8 +1015,8 @@ Napi::Function Utilities::uv_tcp_bind (Napi::Env& env)
                 status = ::uv_tcp_bind (handle.GetPointer(), descriptor.GetPointer(), 0);
                 if (status >= 0)
                     {
-                    auto server = JsApi::uv_tcp_Server::Create (*this, info.GetScope(), std::move (handle));
-                    auto result = JsApi::uv_tcp_BindResult::Create (*this, info.GetScope(), status, server);
+                    auto server = JsApi::uv_tcp_Server::Create (*this, info, std::move (handle));
+                    auto result = JsApi::uv_tcp_BindResult::Create (*this, info, status, server);
 
                     return result;
                     }
@@ -1026,7 +1028,7 @@ Napi::Function Utilities::uv_tcp_bind (Napi::Env& env)
             }
 
         BeAssert (status <= 0);
-        auto result = JsApi::uv_tcp_BindResult::Create (*this, info.GetScope(), status, JS_CALLBACK_NULL);
+        auto result = JsApi::uv_tcp_BindResult::Create (*this, info, status, JS_CALLBACK_NULL);
 
         return result;
         });
@@ -1037,7 +1039,7 @@ Napi::Function Utilities::uv_tcp_bind (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_tcp_connect (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (3);
 
@@ -1055,16 +1057,16 @@ Napi::Function Utilities::uv_tcp_connect (Napi::Env& env)
                 {
                 UvTcpConnectRequest request (descriptor, handle, &JsApi::uv_tcp_connect_Promise::Handler, status);
                 if (status >= 0)
-                    return JsApi::uv_tcp_connect_Promise::Create (*this, info.GetScope(), std::move (handle), std::move (request));
+                    return JsApi::uv_tcp_connect_Promise::Create (*this, info, std::move (handle), std::move (request));
                 else
                     handle.Close();
                 }
             }
 
         BeAssert (status <= 0);
-        auto result = JsApi::uv_tcp_ConnectResult::Create (*this, info.GetScope(), status, JS_CALLBACK_NULL);
+        auto result = JsApi::uv_tcp_ConnectResult::Create (*this, info, status, JS_CALLBACK_NULL);
 
-        return JsApi::Promise::CreateAndReject (info.GetScope(), result);
+        return JsApi::Promise::CreateAndReject (info, result);
         });
     }
 
@@ -1073,7 +1075,7 @@ Napi::Function Utilities::uv_tcp_connect (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_tcp_Handle_setNoDelay (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -1083,7 +1085,7 @@ Napi::Function Utilities::uv_tcp_Handle_setNoDelay (Napi::Env& env)
         auto instance = info.CastThis<JsApi::uv_tcp_Handle>();
         auto result = uv_tcp_nodelay (instance->GetUvTcpHandle().GetPointer(), enable.GetValue());
 
-        return instance->CreateStatus (info.GetScope(), result);
+        return instance->CreateStatus (info, result);
         });
     }
 
@@ -1092,7 +1094,7 @@ Napi::Function Utilities::uv_tcp_Handle_setNoDelay (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_tcp_Handle_setKeepAlive (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -1103,7 +1105,7 @@ Napi::Function Utilities::uv_tcp_Handle_setKeepAlive (Napi::Env& env)
         auto instance = info.CastThis<JsApi::uv_tcp_Handle>();
         auto result = uv_tcp_keepalive (instance->GetUvTcpHandle().GetPointer(), enable.GetValue(), static_cast<unsigned int>(delay.GetValue()));
 
-        return instance->CreateStatus (info.GetScope(), result);
+        return instance->CreateStatus (info, result);
         });
     }
 
@@ -1112,7 +1114,7 @@ Napi::Function Utilities::uv_tcp_Handle_setKeepAlive (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_tcp_Server_setSimultaneousAccepts (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -1122,7 +1124,7 @@ Napi::Function Utilities::uv_tcp_Server_setSimultaneousAccepts (Napi::Env& env)
         auto instance = info.CastThis<JsApi::uv_tcp_Handle>();
         auto result = uv_tcp_simultaneous_accepts (instance->GetUvTcpHandle().GetPointer(), enable.GetValue());
 
-        return instance->CreateStatus (info.GetScope(), result);
+        return instance->CreateStatus (info, result);
         });
     }
 
@@ -1131,7 +1133,7 @@ Napi::Function Utilities::uv_tcp_Server_setSimultaneousAccepts (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_tcp_Server_listen (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -1144,7 +1146,7 @@ Napi::Function Utilities::uv_tcp_Server_listen (Napi::Env& env)
 
         auto result = uv_listen (instance->GetUvIoStream().GetPointer(), static_cast<int>(backlog.GetValue()), &JsApi::uv_tcp_Server::ListenHandler);
 
-        return instance->CreateStatus (info.GetScope(), result);
+        return instance->CreateStatus (info, result);
         });
     }
 
@@ -1153,7 +1155,7 @@ Napi::Function Utilities::uv_tcp_Server_listen (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_tcp_Server_accept (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -1164,7 +1166,7 @@ Napi::Function Utilities::uv_tcp_Server_accept (Napi::Env& env)
         auto connectionInstance = connection.Cast<JsApi::uv_tcp_Handle>();
         auto result = uv_accept (instance->GetUvIoStream().GetPointer(), connectionInstance->GetUvIoStream().GetPointer());
 
-        return instance->CreateStatus (info.GetScope(), result);
+        return instance->CreateStatus (info, result);
         });
     }
 
@@ -1173,7 +1175,7 @@ Napi::Function Utilities::uv_tcp_Server_accept (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::websocketpp_Base_Dispose (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
 
@@ -1189,7 +1191,7 @@ Napi::Function Utilities::websocketpp_Base_Dispose (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::websocketpp_ClientConnection_process (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (3);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -1212,7 +1214,7 @@ Napi::Function Utilities::websocketpp_ClientConnection_process (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::websocketpp_ClientConnection_send (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
@@ -1233,9 +1235,9 @@ Napi::Function Utilities::websocketpp_ClientConnection_send (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::websocketpp_ServerEndpoint_constructor (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
-        return JsApi::websocketpp_ServerEndpoint::Create (*this, info.GetScope());
+        return JsApi::websocketpp_ServerEndpoint::Create (*this, info);
         });
     }
 
@@ -1244,7 +1246,7 @@ Napi::Function Utilities::websocketpp_ServerEndpoint_constructor (Napi::Env& env
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::websocketpp_ServerEndpoint_createConnection (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_EXTERNAL_THIS;
 
@@ -1254,7 +1256,7 @@ Napi::Function Utilities::websocketpp_ServerEndpoint_createConnection (Napi::Env
         if (connection == nullptr)
             return JS_CALLBACK_NULL;
         else
-            return JsApi::websocketpp_ClientConnection::Create (*this, info.GetScope(), connection);
+            return JsApi::websocketpp_ClientConnection::Create (*this, info, connection);
         });
     }
 
@@ -1263,7 +1265,7 @@ Napi::Function Utilities::websocketpp_ServerEndpoint_createConnection (Napi::Env
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_open (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (3);
 
@@ -1284,7 +1286,7 @@ Napi::Function Utilities::uv_fs_open (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_stat (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
@@ -1318,7 +1320,7 @@ Napi::Function Utilities::uv_fs_stat (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_read (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
 
@@ -1339,7 +1341,7 @@ Napi::Function Utilities::uv_fs_read (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_close (Napi::Env& env)
     {
-    return scope.CreateCallback ([this](Napi::CallbackInfo info) -> Napi::Value
+    return scope.CreateCallback ([this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
@@ -1356,7 +1358,7 @@ Napi::Function Utilities::uv_fs_close (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-Napi::Object Utilities::CreateInitParams (Napi::Env& env)
+Napi::Object Utilities::CreateInitParams(Napi::Env& env)
     {
     auto params = Napi::Object::New(env);
     params.Set ("uv_Handle_close",                             uv_Handle_close (scope));
@@ -1417,7 +1419,7 @@ Napi::Object Utilities::CreateInitParams (Napi::Env& env)
     params.Set ("uv_fs_O_RAW",        scope.CreateNumber (O_RAW));
     params.Set ("uv_fs_O_TEMPORARY",  scope.CreateNumber (O_TEMPORARY));
     params.Set ("uv_fs_O_NOINHERIT",  scope.CreateNumber (O_NOINHERIT));
-    params.Set ("uv_fs_O_SEQUENTIAL", scope.CreateNumber (O_SEQUENTIAL));
+    params.Set ("uv_fs_O_SEQUENTIAL", info.CreateNumber (O_SEQUENTIAL));
     params.Set ("uv_fs_O_RANDOM",     scope.CreateNumber (O_RANDOM));
 
     params.Set ("uv_fs_S_IFMT",   scope.CreateNumber (S_IFMT));
@@ -1425,7 +1427,7 @@ Napi::Object Utilities::CreateInitParams (Napi::Env& env)
     params.Set ("uv_fs_S_IFCHR",  scope.CreateNumber (S_IFCHR));
     params.Set ("uv_fs_S_IFREG",  scope.CreateNumber (S_IFREG));
     params.Set ("uv_fs_S_IREAD",  scope.CreateNumber (S_IREAD));
-    params.Set ("uv_fs_S_IWRITE", scope.CreateNumber (S_IWRITE));
+    params.Set ("uv_fs_S_IWRITE", info.CreateNumber (S_IWRITE));
     params.Set ("uv_fs_S_IEXEC",  scope.CreateNumber (S_IEXEC));
 
     return params;
@@ -1460,12 +1462,12 @@ void Utilities::FindPrototypes (Napi::Object exports)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-Napi::Value Utilities::ExportJsModule (Napi::Env& env)
+Napi::Value Utilities::ExportJsModule(Js::RuntimeR runtime)
     {
-    auto initScript = EvaluateInitScript (scope);
-    auto initParams = CreateInitParams (scope);
+    auto initScript = EvaluateInitScript();
+    auto initParams = CreateInitParams(runtime.Env());
 
-    auto exports = initScript (Env().GetGlobal(), initParams).AsObject();
+    auto exports = initScript (runtime.Env().GetGlobal(), initParams).AsObject();
     FindPrototypes (exports);
 
     return exports;

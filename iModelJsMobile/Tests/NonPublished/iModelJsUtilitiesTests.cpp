@@ -19,7 +19,6 @@ static size_t s_jsExternalSize = 0;
 //---------------------------------------------------------------------------------------
 static Napi::Value JsCallback (Napi::CallbackInfo const& info)
     {
-    BeAssert (&info.Env() == &s_jsRuntime->Env());
     BeAssert (info.This() == s_jsRuntime->Env().Global());
     BeAssert (!info.IsConstructCall());
     BeAssert (info.Length() == 0);
@@ -27,11 +26,6 @@ static Napi::Value JsCallback (Napi::CallbackInfo const& info)
     Js::RuntimeR runtime = Js::Runtime::GetRuntime(info.Env());
     return runtime.EvaluateScript ("1 + 1").value;
     }
-
-static void NopFinalizer(void*)
-{
-
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
@@ -51,7 +45,6 @@ TEST_F (iModelJsTestFixture, JavaScriptUtilities)
 
         {
             Napi::HandleScope scope (env);
-            BeAssert (&scope.Env() == &runtime.Env());
 
             auto result = runtime.EvaluateScript ("1 + 1");
             BeAssert (result.status == Js::EvaluateStatus::Success);
@@ -91,7 +84,7 @@ TEST_F (iModelJsTestFixture, JavaScriptUtilities)
 
             auto c = Napi::Function::New(env, &JsCallback);
             BeAssert (c.IsFunction());
-            BeAssert (c ({env.Global()}).As<Napi::Number>().DoubleValue() == 2.0);
+            BeAssert (c ({}).As<Napi::Number>().DoubleValue() == 2.0);
 
             void* pThis = this;
             auto e = Napi::External<void*>::New(env, &pThis);
@@ -111,7 +104,7 @@ TEST_F (iModelJsTestFixture, JavaScriptUtilities)
                 BeAssert(info[5].As<Napi::Boolean>().Value() == true);
                 BeAssert(info[6].As<Napi::Number>().DoubleValue() == 2.0);
                 BeAssert(info[7].As<Napi::String>().Utf8Value() == "hello");
-                BeAssert(info[8].As<Napi::Function>() ({info.Env().Global()}).As<Napi::Number>().DoubleValue() == 2.0);
+                BeAssert(info[8].As<Napi::Function>() ({}).As<Napi::Number>().DoubleValue() == 2.0);
                 // *** TBD: BeAssert(info[9].As<Napi::External>().Data() == s_jsExternal);
 
                 return info.Env().Undefined();
@@ -154,7 +147,7 @@ TEST_F (iModelJsTestFixture, JavaScriptUtilities)
             BeAssert ( b.Value().As<Napi::Boolean>().Value() == true);
             BeAssert (n2.Value().As<Napi::Number>().DoubleValue() == 2.0);
             BeAssert ( s.Value().As<Napi::String>().Utf8Value() == "hello");
-            BeAssert ( c.Value().As<Napi::Function>() ({env.Global()}).As<Napi::Number>().DoubleValue() == 2.0);
+            BeAssert ( c.Value().As<Napi::Function>() ({}).As<Napi::Number>().DoubleValue() == 2.0);
             BeAssert ( e.Value().As<Napi::External<void*>>().Data() == &pThis);
             }
         }

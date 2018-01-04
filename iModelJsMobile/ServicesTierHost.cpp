@@ -186,7 +186,13 @@ void Host::HandleReady()
 
     auto& env = Env();
     Napi::HandleScope scope (env);
-    m_notifyReady.Value().As<Napi::Function>().Call(env.Global(), {});
+    try {
+        m_notifyReady.Value().As<Napi::Function>()({});
+        }
+    catch (Napi::Error err)
+        {
+        fprintf(stderr, "%s\n", err.Message().c_str());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -219,7 +225,7 @@ void Host::HandleIdle()
     OnIdle();
 
     if (!m_notifyIdle.IsEmpty())
-        m_notifyIdle.Value().As<Napi::Function>() ({Env().Global()});
+        m_notifyIdle.Value().As<Napi::Function>() ({});
     }
 
 //---------------------------------------------------------------------------------------
@@ -292,7 +298,7 @@ void Host::SetupJsRuntime()
         if (!identifierArgument.IsString())
             return env.Undefined();
 
-        return m_environment->DeliverExtension (env, identifierArgument.As<Napi::String>().Utf8Value().c_str());
+        return m_environment->DeliverExtension (Js::Runtime::GetRuntime(info.Env()), identifierArgument.As<Napi::String>().Utf8Value().c_str());
         }));
 
     initParams.Set ("evaluateScript", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
@@ -335,11 +341,34 @@ void Host::SetupJsRuntime()
     SupplyJsInfoValues (env, info);
     initParams.Set ("info", info);
 
-    initScriptEvaluation.value.As<Napi::Function>() ({env.Global(), initParams});
+    try {
+        initScriptEvaluation.value.As<Napi::Function>() ({initParams});
+        }
+    catch (Napi::Error err) // JS threw an exception
+        {
+        fprintf(stderr, "%s\n", err.Message().c_str());
+        return;
+        }
+
+    auto propsR = initParams.GetPropertyNames();
+    Napi::Array const& props = propsR;
+    for (uint32_t i=0; i<props.Length(); ++i)
+        {
+        auto propName = props[i].As<Napi::String>().Utf8Value();
+        printf("%s\n", propName.c_str());
+        }
 
     m_notifyIdle.Reset(initParams.Get("notifyIdle").As<Napi::Function>());
     m_notifyShutdown.Reset(initParams.Get("notifyShutdown").As<Napi::Function>());
     m_notifyReady.Reset(initParams.Get("notifyReady").As<Napi::Function>());
+
+    env.Global().Set ("console_log", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
+        {
+        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+        auto msg = JS_CALLBACK_GET_STRING(0);
+        printf("%s\n", msg.Utf8Value().c_str());
+        return info.Env().Undefined();
+        }));
     }
 
 //---------------------------------------------------------------------------------------
@@ -350,7 +379,7 @@ void Host::TeardownJsRuntime()
     auto& env = Env();
     Napi::HandleScope scope (env);
 
-    m_notifyShutdown.Value().As<Napi::Function>() ({env.Global()});
+    m_notifyShutdown.Value().As<Napi::Function>() ({});
     
     m_notifyIdle.Reset();
     m_notifyShutdown.Reset();

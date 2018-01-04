@@ -61,13 +61,13 @@ void Environment::Install (ExtensionPtr extension)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-Napi::Value Environment::DeliverExtension (Napi::Env& env, Utf8StringCR identifier)
+Napi::Value Environment::DeliverExtension(Js::RuntimeR runtime, Utf8StringCR identifier)
     {
-    auto it = m_extensions.find (identifier);
+    auto it = m_extensions.find(identifier);
     if (it == m_extensions.end())
-        return env.Undefined();
+        return runtime.Env().Undefined();
 
-    return it->second->ExportJsModule (env);
+    return it->second->ExportJsModule(runtime);
     }
 
 //---------------------------------------------------------------------------------------

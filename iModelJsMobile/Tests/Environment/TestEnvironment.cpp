@@ -103,6 +103,7 @@ void iModelJsTestFixture::RunSystemMessageLoop()
 void iModelJsTestFixture::InstallTestingUtilities (Js::RuntimeR runtime)
     {
     auto& config = ServicesTier::Host::GetConfig();
+    Napi::Env env = runtime.Env();
     if (config.enableJsDebugger && config.waitForJsDebugger)
         {
         auto evaluateResult = runtime.EvaluateScript (u8R"(
@@ -127,16 +128,21 @@ void iModelJsTestFixture::InstallTestingUtilities (Js::RuntimeR runtime)
         }
     else
         {
-        env.Global().Set ("BeAssert", scope.CreateCallback ([](Napi::CallbackInfo info) -> Napi::Value
+        env.Global().Set ("BeAssert", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
             {
             JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
             auto condition = JS_CALLBACK_GET_BOOLEAN (0);
 
-            if (!condition.GetValue())
+            if (!condition.Value())
                 {
                 ++s_failedJsAssertCount;
-                info.Env().ThrowException (JS_CALLBACK_NULL);
+                std::string message("BeAssert");
+                if (info.Length() > 1)
+                    {
+                    message = info[1].As<Napi::String>().Utf8Value();
+                    }
+                Napi::Error::New(info.Env(), message.c_str()).ThrowAsJavaScriptException();
                 }
 
             return JS_CALLBACK_UNDEFINED;

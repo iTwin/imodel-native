@@ -5,6 +5,7 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+NOSTRICT=1
 %include mdl.mki
 
 nameToDefine = __IMODELJS_BUILD__
@@ -27,6 +28,9 @@ o = $(OutputRootDir)build/$(appName)/
 %endif
 
 $(BuildContext)PublicAPI/iModelJs : $(baseDir)PublicAPI/iModelJs
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/node-addon-api : $(baseDir)PublicAPI/node-addon-api
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 #--------------------------------------------------------------------------------------
@@ -60,6 +64,32 @@ $(o)ServicesTierExtension$(oext) : $(baseDir)ServicesTierExtension.cpp ${MultiCo
 iModelJsObjs =% $(MultiCompileObjectList)
 
 #--------------------------------------------------------------------------------------
+#   Compile our version of node-addon-api
+#--------------------------------------------------------------------------------------
+
+nodeAddonApiPublicApiSourceDir = $(baseDir)PublicAPI/node-addon-api/
+
+napiHeaders = $(nodeAddonApiPublicApiSourceDir)napi.h
+
+cDefs + -DUSING_UV_SHARED=1
+cDefs + -DEXTERNAL_NAPI=1
+cIncs + -I$(nodeAddonApiPublicApiSourceDir)
+
+%if $(TARGET_PLATFORM) == "Windows"
+
+nodeApiV8Dir = $(baseDir)v8/
+
+cDefs + -DUSING_V8_SHARED=1
+
+$(o)node_api$(oext)       : $(nodeApiV8Dir)node_api.cc $(napiHeaders) ${MultiCompileDepends}
+
+$(o)node_internals$(oext) : $(nodeApiV8Dir)node_internals.cc $(napiHeaders) ${MultiCompileDepends}
+
+imodelJsObjs + $(o)node_api$(oext) $(o)node_internals$(oext)
+
+%endif
+
+#--------------------------------------------------------------------------------------
 #   Create the library
 #--------------------------------------------------------------------------------------
 DLM_NAME = $(appName)
@@ -75,7 +105,6 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
 
 LINKER_LIBRARIES + $(ContextLibPrefix)libuv$(stlibext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)node-addon-api$(libext)
 
 %if $(TARGET_PLATFORM) == "Windows"
     LINKER_LIBRARIES + $(ContextLibPrefix)v8$(stlibext) $(ContextLibPrefix)v8_libbase$(stlibext) $(ContextLibPrefix)v8_libplatform$(stlibext)

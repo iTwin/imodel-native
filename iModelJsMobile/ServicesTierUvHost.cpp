@@ -62,7 +62,7 @@ Napi::Function UvHost::SupplyJsRequireHandler (Napi::Env& env, Napi::Object init
     BeAssert (requireScriptEvaluation.status == Js::EvaluateStatus::Success);
             
     Napi::Function func(Env(), requireScriptEvaluation.value);
-    return func({Env().Global(), initParams}).As<Napi::Function>();
+    return func({initParams}).As<Napi::Function>();
     }
 
 //---------------------------------------------------------------------------------------
