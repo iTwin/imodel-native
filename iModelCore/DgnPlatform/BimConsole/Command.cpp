@@ -2,7 +2,7 @@
 |
 |     $Source: BimConsole/Command.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -121,7 +121,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     //default mode: read-only
     Db::OpenMode openMode = Db::OpenMode::Readonly;
-    ECDb::ChangeCacheMode changeCacheMode = ECDb::ChangeCacheMode::DoNotAttach;
+    bool attachChangeCache = false;
     bool openAsECDb = false;
 
     const size_t switchCount = argCount - 1;
@@ -136,7 +136,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             else if (arg.EqualsI("asecdb"))
                 openAsECDb = true;
             else if (arg.EqualsI("attachchanges"))
-                changeCacheMode = ECDb::ChangeCacheMode::AttachAndCreateIfNotExists;
+                attachChangeCache = true;
             }
         }
 
@@ -150,7 +150,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         }
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
-    Utf8CP attachChangeMessage = changeCacheMode == ECDb::ChangeCacheMode::DoNotAttach ? "" : " and attached EC changes cache file";
+    Utf8CP attachChangeMessage = attachChangeCache ? " and attached EC changes cache file" : "";
     //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or BIM file, we close it
     //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
@@ -176,16 +176,24 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         DbResult bimStat;
         Dgn::DgnDb::OpenParams params(openMode);
-        params.SetChangeCacheMode(changeCacheMode);
         Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
-        if (BE_SQLITE_OK == bimStat)
+        if (BE_SQLITE_OK != bimStat)
             {
-            session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
-            BimConsole::WriteLine("Opened BIM file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
+            BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
             return;
             }
 
-        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        if (attachChangeCache)
+            {
+            if (BE_SQLITE_OK != bim->AttachChangeCache(ECDb::GetDefaultChangeCachePath(filePath.GetNameUtf8().c_str())))
+                {
+                BimConsole::WriteErrorLine("Could not attach Changes cache to file '%s'.", filePath.GetNameUtf8().c_str());
+                return;
+                }
+            }
+
+        session.SetFile(std::unique_ptr<SessionFile>(new BimFile(bim)));
+        BimConsole::WriteLine("Opened BIM file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
         return;
         }
 
@@ -194,19 +202,27 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         sqliteFile->GetHandleR().CloseDb();
 
         std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-        if (BE_SQLITE_OK == ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode, changeCacheMode)))
+        if (BE_SQLITE_OK != ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode)))
             {
-            session.SetFile(std::move(ecdbFile));
-            if (isBimFile)
-                BimConsole::WriteLine("Opened BIM file as ECDb file '%s' in %s mode. This can damage the file as BIM validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
-            else
-                BimConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
+            ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
+            BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
             return;
             }
 
+        if (attachChangeCache)
+            {
+            if (BE_SQLITE_OK != ecdbFile->GetECDbHandle()->AttachChangeCache(ECDb::GetDefaultChangeCachePath(filePath.GetNameUtf8().c_str())))
+                {
+                BimConsole::WriteErrorLine("Could not attach Changes cache to file '%s'.", filePath.GetNameUtf8().c_str());
+                return;
+                }
+            }
 
-        ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
-        BimConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
+        session.SetFile(std::move(ecdbFile));
+        if (isBimFile)
+            BimConsole::WriteLine("Opened BIM file as ECDb file '%s' in %s mode. This can damage the file as BIM validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
+        else
+            BimConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
         return;
         }
 
@@ -672,25 +688,19 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        if (args.size() == 2)
-            {
-            if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache(BeFileName(args[1])))
-                {
-                BimConsole::WriteErrorLine("Failed to attach Change cache file %s.", args[1].c_str());
-                return;
-                }
+        BeFileName cachePath;
+        if (args.size() == 1)
+            cachePath = ECDb::GetDefaultChangeCachePath(session.GetFileR().GetECDbHandle()->GetDbFileName());
+        else
+            cachePath = BeFileName(args[1]);
 
-            BimConsole::WriteLine("Attached Change cache file %s.", args[1].c_str());
+        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache(cachePath))
+            {
+            BimConsole::WriteErrorLine("Failed to attach Change cache file %s.", cachePath.GetNameUtf8().c_str());
             return;
             }
 
-        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache())
-            {
-            BimConsole::WriteErrorLine("Failed to attach Change cache file.");
-            return;
-            }
-
-        BimConsole::WriteLine("Attached Change cache file.");
+        BimConsole::WriteLine("Attached Change cache file %s.", cachePath.GetNameUtf8().c_str());
         return;
         }
 
