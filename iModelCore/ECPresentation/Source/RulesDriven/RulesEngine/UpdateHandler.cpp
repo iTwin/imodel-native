@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/UpdateHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -887,9 +887,9 @@ void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToC
         nodeChanged = true;
         }
 
-    // if old node was expanded, we have to expand new node too if it has children
+    // if old node was expanded, we have to expand new node too
     bool isOldNodeExpanded = (nullptr != oldNode && oldNode->IsExpanded());
-    if (isOldNodeExpanded && nodeToCustomize.HasChildren() && !nodeToCustomize.IsExpanded())
+    if (isOldNodeExpanded && !nodeToCustomize.IsExpanded())
         {
         nodeToCustomize.SetIsExpanded(true);
         nodeChanged = true;

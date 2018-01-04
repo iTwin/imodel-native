@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/UpdateTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -5764,4 +5764,53 @@ TEST_F (ContentUpdateTests, DoesNotInvalidateWhenUnusedUserSettingChanges)
 
     // expect 0 update records
     ASSERT_EQ(0, m_updateRecordsHandler->GetFullUpdateRecords().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenWasRemoved)
+    {
+    // insert some widget instances
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotCollapseNodeIfItWasExpandedAndLastChildrenWasRemoved", 1, 0, false, "", "", "", false);
+    s_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    ChildNodeRule* childRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*childRule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options("DoesNotCollapseNodeIfItWasExpandedAndLastChildrenWasRemoved", TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    
+    // expect 1 root node which has children
+    ASSERT_EQ(1, rootNodes.GetSize());
+    ASSERT_TRUE(rootNodes[0].IsValid());
+    EXPECT_TRUE(rootNodes[0]->HasChildren());
+
+    // expand root node
+    SetNodeExpanded(*rootNodes[0]);
+
+    // request for children
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+
+    // expect 1 child
+    ASSERT_EQ(1, childNodes.GetSize());
+
+    // delete child
+    RulesEngineTestHelpers::DeleteInstance(m_db, *gadget);
+    s_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+    
+    // expect root node to be expanded but without children
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_TRUE(rootNodes[0]->IsExpanded());
+    EXPECT_FALSE(rootNodes[0]->HasChildren());
     }
