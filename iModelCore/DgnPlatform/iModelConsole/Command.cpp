@@ -55,7 +55,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 26 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 27 && "Command was added or removed, please update the HelpCommand accordingly.");
     IModelConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     IModelConsole::WriteLine();
     IModelConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -151,13 +151,13 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
     Utf8CP attachChangeMessage = attachChangeCache ? " and attached EC changes cache file" : "";
-    //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or BIM file, we close it
+    //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or iModel file, we close it
     //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
     if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
         {
         sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
-        IModelConsole::WriteErrorLine("Could not open file '%s'. File might not be a BIM file, ECDb file, or BeSQLite file.", filePath.GetNameUtf8().c_str());
+        IModelConsole::WriteErrorLine("Could not open file '%s'. File might not be a iModel file, ECDb file, or BeSQLite file.", filePath.GetNameUtf8().c_str());
         return;
         }
 
@@ -169,15 +169,15 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    const bool isBimFile = profileInfos.find(SessionFile::ProfileInfo::Type::IModel) != profileInfos.end();
-    if (isBimFile && !openAsECDb)
+    const bool isIModelFile = profileInfos.find(SessionFile::ProfileInfo::Type::IModel) != profileInfos.end();
+    if (isIModelFile && !openAsECDb)
         {
         sqliteFile->GetHandleR().CloseDb();
 
-        DbResult bimStat;
+        DbResult stat;
         Dgn::DgnDb::OpenParams params(openMode);
-        Dgn::DgnDbPtr bim = Dgn::DgnDb::OpenDgnDb(&bimStat, filePath, params);
-        if (BE_SQLITE_OK != bimStat)
+        Dgn::DgnDbPtr iModel = Dgn::DgnDb::OpenDgnDb(&stat, filePath, params);
+        if (BE_SQLITE_OK != stat)
             {
             IModelConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
             return;
@@ -185,15 +185,15 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         if (attachChangeCache)
             {
-            if (BE_SQLITE_OK != bim->AttachChangeCache(ECDb::GetDefaultChangeCachePath(filePath.GetNameUtf8().c_str())))
+            if (BE_SQLITE_OK != iModel->AttachChangeCache(ECDb::GetDefaultChangeCachePath(filePath.GetNameUtf8().c_str())))
                 {
                 IModelConsole::WriteErrorLine("Could not attach Changes cache to file '%s'.", filePath.GetNameUtf8().c_str());
                 return;
                 }
             }
 
-        session.SetFile(std::unique_ptr<SessionFile>(new IModelFile(bim)));
-        IModelConsole::WriteLine("Opened BIM file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
+        session.SetFile(std::unique_ptr<SessionFile>(new IModelFile(iModel)));
+        IModelConsole::WriteLine("Opened iModel file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
         return;
         }
 
@@ -219,8 +219,8 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             }
 
         session.SetFile(std::move(ecdbFile));
-        if (isBimFile)
-            IModelConsole::WriteLine("Opened BIM file as ECDb file '%s' in %s mode. This can damage the file as BIM validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
+        if (isIModelFile)
+            IModelConsole::WriteLine("Opened iModel file as ECDb file '%s' in %s mode. This can damage the file as iModel validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
         else
             IModelConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
         return;
@@ -252,9 +252,9 @@ void CloseCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //---------------------------------------------------------------------------------------
 Utf8String CreateCommand::_GetUsage() const
     {
-    return  " .create [bim|ecdb|besqlite] [<BIM root subject label>] <file path>\r\n"
-        COMMAND_USAGE_IDENT "Creates a new BIM (default), ECDb file, or BeSQLite file.\r\n"
-        COMMAND_USAGE_IDENT "When creating a BIM file, passing a root subject label is mandatory.";
+    return  " .create [iModel|ecdb|besqlite] [<iModel root subject label>] <file path>\r\n"
+        COMMAND_USAGE_IDENT "Creates a new iModel (default), ECDb file, or BeSQLite file.\r\n"
+        COMMAND_USAGE_IDENT "When creating a iModel file, passing a root subject label is mandatory.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -289,7 +289,7 @@ void CreateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         if (args.size() > 2)
             {
-            IModelConsole::WriteErrorLine("You can only specify a root subject label for BIM files. Usage: %s", GetUsage().c_str());
+            IModelConsole::WriteErrorLine("You can only specify a root subject label for iModel files. Usage: %s", GetUsage().c_str());
             return;
             }
 
@@ -300,7 +300,7 @@ void CreateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         size_t rootSubjectNameIndex = 0;
         size_t filePathIndex = 0;
-        if (args[0].EqualsIAscii("bim"))
+        if (args[0].EqualsIAscii("iModel"))
             {
             if (args.size() != 3)
                 {
@@ -342,15 +342,15 @@ void CreateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             createParams.SetOverwriteExisting(true);
 
             DbResult fileStatus;
-            Dgn::DgnDbPtr bim = Dgn::DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
+            Dgn::DgnDbPtr iModel = Dgn::DgnDb::CreateDgnDb(&fileStatus, filePath, createParams);
             if (BE_SQLITE_OK != fileStatus)
                 {
-                IModelConsole::WriteErrorLine("Failed to create BIM file %s.", filePath.GetNameUtf8().c_str());
+                IModelConsole::WriteErrorLine("Failed to create iModel file '%s'.", filePath.GetNameUtf8().c_str());
                 return;
                 }
 
-            session.SetFile(std::unique_ptr<SessionFile>(new IModelFile(bim)));
-            IModelConsole::WriteLine("Successfully created BIM file %s", filePath.GetNameUtf8().c_str());
+            session.SetFile(std::unique_ptr<SessionFile>(new IModelFile(iModel)));
+            IModelConsole::WriteLine("Successfully created iModel file '%s' with root subject '%s'.", filePath.GetNameUtf8().c_str(), rootSubjectName);
             return;
             }
 
@@ -409,8 +409,8 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
 
         if (session.GetFile().GetType() == SessionFile::Type::IModel)
             {
-            Dgn::DgnDbCR bimFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
-            IModelConsole::WriteLine("  Root subject: %s", bimFile.Elements().GetRootSubject()->GetUserLabel());
+            Dgn::DgnDbCR iModelFile = session.GetFile().GetAs<IModelFile>().GetDgnDbHandle();
+            IModelConsole::WriteLine("  Root subject: %s", iModelFile.Elements().GetRootSubject()->GetUserLabel());
             }
 
         Statement stmt;
@@ -1442,7 +1442,7 @@ void MetadataCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         Utf8CP rootClassAlias = columnInfo.GetRootClassAlias();
 
-        IModelConsole::WriteLine("%3d     %-35s %-35s %-9s %-25s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), isSystemProp? "yes":"no", typeName.c_str(), rootClassName.c_str(), rootClassAlias);
+        IModelConsole::WriteLine("%3d     %-35s %-35s %-8s %-25s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), isSystemProp? "yes":"no", typeName.c_str(), rootClassName.c_str(), rootClassAlias);
         }
 
     IModelConsole::WriteLine();
