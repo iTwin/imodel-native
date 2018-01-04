@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatementTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -2337,31 +2337,32 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
     for (int i = 0; i < 9; i++)
         {
         ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
-        ASSERT_FALSE(colInfo.IsGeneratedProperty());
-        ASSERT_TRUE(colInfo.GetDataType().IsPrimitive());
+        EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
+        EXPECT_FALSE(colInfo.IsGeneratedProperty()) << colInfo.GetPropertyPath().ToString();
+        EXPECT_TRUE(colInfo.GetDataType().IsPrimitive()) << colInfo.GetPropertyPath().ToString();
 
         if (i < 2)
             {
-            ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str());
-            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType());
+            ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
+            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << colInfo.GetPropertyPath().ToString();
             }
         else if (i < 4)
             {
             ECClassCR navPropMemberClass = colInfo.GetProperty()->GetClass();
-            ASSERT_STREQ("NavigationECSqlSystemProperties", navPropMemberClass.GetName().c_str());
-            ASSERT_TRUE(navPropMemberClass.IsStructClass());
-            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType());
+            ASSERT_STREQ("NavigationECSqlSystemProperties", navPropMemberClass.GetName().c_str()) << colInfo.GetPropertyPath().ToString();
+            ASSERT_TRUE(navPropMemberClass.IsStructClass()) << colInfo.GetPropertyPath().ToString();
+            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << colInfo.GetPropertyPath().ToString();
             }
         else
             {
             ECClassCR pointMemberClass = colInfo.GetProperty()->GetClass();
-            ASSERT_STREQ("PointECSqlSystemProperties", pointMemberClass.GetName().c_str());
-            ASSERT_TRUE(pointMemberClass.IsStructClass());
-            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Double, colInfo.GetDataType().GetPrimitiveType());
+            ASSERT_STREQ("PointECSqlSystemProperties", pointMemberClass.GetName().c_str()) << colInfo.GetPropertyPath().ToString();
+            ASSERT_TRUE(pointMemberClass.IsStructClass()) << colInfo.GetPropertyPath().ToString();
+            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Double, colInfo.GetDataType().GetPrimitiveType()) << colInfo.GetPropertyPath().ToString();
             }
 
-        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias()));
-        ASSERT_STREQ("P", colInfo.GetRootClass().GetName().c_str());
+        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias())) << colInfo.GetPropertyPath().ToString();
+        ASSERT_STREQ("P", colInfo.GetRootClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
         }
     }
 
@@ -2374,16 +2375,17 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
     for (int i = 0; i < 6; i++)
         {
         ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
-        ASSERT_FALSE(colInfo.IsGeneratedProperty());
-        ASSERT_TRUE(colInfo.GetDataType().IsPrimitive());
-        ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType());
+        EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
+        EXPECT_FALSE(colInfo.IsGeneratedProperty()) << colInfo.GetPropertyPath().ToString();
+        ASSERT_TRUE(colInfo.GetDataType().IsPrimitive()) << colInfo.GetPropertyPath().ToString();
+        ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << colInfo.GetPropertyPath().ToString();
         if (i < 2)
-            ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str());
+            ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
         else
-            ASSERT_STREQ("RelationshipECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str());
+            ASSERT_STREQ("RelationshipECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
 
-        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias()));
-        ASSERT_STREQ("PSAHasPSA_NN", colInfo.GetRootClass().GetName().c_str());
+        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias())) << colInfo.GetPropertyPath().ToString();
+        ASSERT_STREQ("PSAHasPSA_NN", colInfo.GetRootClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
         }
     }
 
@@ -2408,6 +2410,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
 
     ASSERT_FALSE(value1.IsNull());
     ASSERT_FALSE(columnInfo1.IsGeneratedProperty());
+    ASSERT_TRUE(columnInfo1.IsSystemProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo1.GetProperty()->GetClass().GetName().c_str());
     ASSERT_STREQ("c1", columnInfo1.GetRootClassAlias());
     ASSERT_STREQ("PSA", columnInfo1.GetRootClass().GetName().c_str());
@@ -2416,6 +2419,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     auto const& columnInfo2 = value2.GetColumnInfo();
 
     ASSERT_FALSE(value2.IsNull());
+    ASSERT_TRUE(columnInfo2.IsSystemProperty());
     ASSERT_FALSE(columnInfo2.IsGeneratedProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo2.GetProperty()->GetClass().GetName().c_str());
     ASSERT_STREQ("c2", columnInfo2.GetRootClassAlias());
@@ -2425,6 +2429,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     auto const& columnInfo3 = value3.GetColumnInfo();
 
     ASSERT_FALSE(value3.IsNull());
+    ASSERT_TRUE(columnInfo3.IsSystemProperty());
     ASSERT_FALSE(columnInfo3.IsGeneratedProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo3.GetProperty()->GetClass().GetName().c_str());
     ASSERT_STREQ("c1", columnInfo3.GetRootClassAlias());
@@ -2434,6 +2439,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     auto const& columnInfo4 = value4.GetColumnInfo();
 
     ASSERT_FALSE(value4.IsNull());
+    ASSERT_TRUE(columnInfo4.IsSystemProperty());
     ASSERT_FALSE(columnInfo4.IsGeneratedProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo4.GetProperty()->GetClass().GetName().c_str());
     ASSERT_STREQ("c2", columnInfo4.GetRootClassAlias());
@@ -2456,6 +2462,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndNavigationAndPointProp)
     for (int i = 0; i < 3; i++)
         {
         ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
+        ASSERT_FALSE(colInfo.IsSystemProperty());
         ASSERT_FALSE(colInfo.IsGeneratedProperty());
         switch (i)
             {
@@ -3591,7 +3598,7 @@ struct PropertyPathEntry
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertColumnInfo(Utf8CP expectedPropertyName, bool expectedIsGenerated, Utf8CP expectedPropPathStr, Utf8CP expectedRootClassName, Utf8CP expectedRootClassAlias, ECSqlColumnInfoCR actualColumnInfo)
+void AssertColumnInfo(Utf8CP expectedPropertyName, bool expectedIsSystem, bool expectedIsGenerated, Utf8CP expectedPropPathStr, Utf8CP expectedRootClassName, Utf8CP expectedRootClassAlias, ECSqlColumnInfoCR actualColumnInfo)
     {
     auto actualProperty = actualColumnInfo.GetProperty();
     if (expectedPropertyName == nullptr)
@@ -3604,6 +3611,7 @@ void AssertColumnInfo(Utf8CP expectedPropertyName, bool expectedIsGenerated, Utf
         EXPECT_STREQ(expectedPropertyName, actualProperty->GetName().c_str());
         }
 
+    EXPECT_EQ(expectedIsSystem, actualColumnInfo.IsSystemProperty());
     EXPECT_EQ(expectedIsGenerated, actualColumnInfo.IsGeneratedProperty());
 
     ECSqlPropertyPath const& actualPropPath = actualColumnInfo.GetPropertyPath();
@@ -3672,7 +3680,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
 
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
-    AssertColumnInfo("Dt_Array", false, "Dt_Array", "PSA", "c", topLevelColumnInfo);
+    AssertColumnInfo("Dt_Array", false, false, "Dt_Array", "PSA", "c", topLevelColumnInfo);
     auto const& topLevelArrayValue = stmt.GetValue(0);
 
     //out of bounds test
@@ -3686,7 +3694,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
         auto const& arrayElementColumnInfo = arrayElement.GetColumnInfo();
         Utf8String expectedPropPath;
         expectedPropPath.Sprintf("Dt_Array[%d]", arrayIndex);
-        AssertColumnInfo(nullptr, false, expectedPropPath.c_str(), "PSA", "c", arrayElementColumnInfo);
+        AssertColumnInfo(nullptr, false, false, expectedPropPath.c_str(), "PSA", "c", arrayElementColumnInfo);
 
         arrayIndex++;
         }
@@ -3707,7 +3715,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
 
     //Top level column
     ECSqlColumnInfo const& topLevelColumnInfo = stmt.GetColumnInfo(0);
-    AssertColumnInfo("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
+    AssertColumnInfo("SAStructProp", false, false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
 
     //out of bounds test
     {
@@ -3717,13 +3725,14 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
 
     //SAStructProp.PStructProp level
     IECSqlValue const& topLevelStructValue = stmt.GetValue(0);
-    AssertColumnInfo("PStructProp", false, "SAStructProp.PStructProp", "SA", nullptr, topLevelStructValue["PStructProp"].GetColumnInfo());
+    AssertColumnInfo("PStructProp", false, false, "SAStructProp.PStructProp", "SA", nullptr, topLevelStructValue["PStructProp"].GetColumnInfo());
 
     //SAStructProp.PStructProp.XXX level
     IECSqlValue const& nestedStructValue = topLevelStructValue["PStructProp"];
-    AssertColumnInfo("b", false, "SAStructProp.PStructProp.b", "SA", nullptr, nestedStructValue["b"].GetColumnInfo());
-    AssertColumnInfo("bi", false, "SAStructProp.PStructProp.bi", "SA", nullptr, nestedStructValue["bi"].GetColumnInfo());
-    AssertColumnInfo("p2d", false, "SAStructProp.PStructProp.p2d", "SA", nullptr, nestedStructValue["p2d"].GetColumnInfo());
+    AssertColumnInfo("b", false, false, "SAStructProp.PStructProp.b", "SA", nullptr, nestedStructValue["b"].GetColumnInfo());
+    AssertColumnInfo("bi", false, false, "SAStructProp.PStructProp.bi", "SA", nullptr, nestedStructValue["bi"].GetColumnInfo());
+    AssertColumnInfo("p2d", false, false, "SAStructProp.PStructProp.p2d", "SA", nullptr, nestedStructValue["p2d"].GetColumnInfo());
+    AssertColumnInfo("p2d.X", true, false, "SAStructProp.PStructProp.p2d.X", "SA", nullptr, nestedStructValue["p2d"]["X"].GetColumnInfo());
 
     //invalid struct members
     ASSERT_FALSE(nestedStructValue[""].GetColumnInfo().IsValid());
@@ -3744,14 +3753,14 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
 
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo(0);
-    AssertColumnInfo("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
+    AssertColumnInfo("SAStructProp", false, false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
     auto const& topLevelStructValue = stmt.GetValue(0);
 
     ASSERT_FALSE(stmt.GetColumnInfo(-1).IsValid());
 
     //SAStructProp.PStruct_Array level
     auto const& pstructArrayValue = topLevelStructValue["PStruct_Array"];
-    AssertColumnInfo("PStruct_Array", false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayValue.GetColumnInfo());
+    AssertColumnInfo("PStruct_Array", false, false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayValue.GetColumnInfo());
 
     //out of bounds test
     ASSERT_FALSE(topLevelStructValue[""].GetColumnInfo().IsValid()) << "GetValue ("").GetColumnInfo () for struct value";
@@ -3766,12 +3775,12 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
         ASSERT_FALSE(arrayElementFirstColumnInfo.IsValid());
 
         expectedPropPath.Sprintf("SAStructProp.PStruct_Array[%d].b", arrayIndex);
-        AssertColumnInfo("b", false, expectedPropPath.c_str(), "SA", nullptr, arrayElementFirstColumnInfo);
+        AssertColumnInfo("b", false, false, expectedPropPath.c_str(), "SA", nullptr, arrayElementFirstColumnInfo);
 
         //second struct member
         auto const& arrayElementSecondColumnInfo = arrayElement["bi"].GetColumnInfo();
         expectedPropPath.Sprintf("SAStructProp.PStruct_Array[%d].bi", arrayIndex);
-        AssertColumnInfo("bi", false, expectedPropPath.c_str(), "SA", nullptr, arrayElementSecondColumnInfo);
+        AssertColumnInfo("bi", false, false, expectedPropPath.c_str(), "SA", nullptr, arrayElementSecondColumnInfo);
 
         ASSERT_FALSE(arrayElement["foo"].GetColumnInfo().IsValid());
 

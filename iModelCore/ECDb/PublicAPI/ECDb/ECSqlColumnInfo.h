@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlColumnInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -196,20 +196,21 @@ struct ECSqlColumnInfo final
         DateTime::Info m_dateTimeInfo;
         ECN::ECStructClassCP m_structType = nullptr;
         ECN::ECPropertyCP m_property = nullptr;
+        bool m_isSystemProperty = false;
         bool m_isGeneratedProperty = false;
         ECSqlPropertyPath m_propertyPath;
         ECN::ECClassCP m_rootClass = nullptr;
         Utf8String m_rootClassAlias;
 
-        ECSqlColumnInfo(ECN::ECTypeDescriptor const&, DateTime::Info const&, ECN::ECStructClassCP, ECN::ECPropertyCP, bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
+        ECSqlColumnInfo(ECN::ECTypeDescriptor const&, DateTime::Info const&, ECN::ECStructClassCP, ECN::ECPropertyCP, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
 
         static ECN::ECTypeDescriptor DetermineDataType(DateTime::Info&, ECN::ECStructClassCP&, ECN::ECPropertyCR);
 
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
         ECSqlColumnInfo();
-        static ECSqlColumnInfo CreateTopLevel(bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
-        static ECSqlColumnInfo CreateChild(ECSqlColumnInfo const& parent, ECN::ECPropertyCR childProperty);
+        static ECSqlColumnInfo CreateTopLevel(bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const&, ECN::ECClassCR rootClass, Utf8CP rootClassAlias);
+        static ECSqlColumnInfo CreateChild(ECSqlColumnInfo const& parent, ECN::ECPropertyCR childProperty, bool isSystemProperty);
         static ECSqlColumnInfo CreateForArrayElement(ECSqlColumnInfo const& parent, int arrayIndex);
 #endif
 
@@ -237,6 +238,11 @@ struct ECSqlColumnInfo final
         //! @note When called from an IECSqlValue that represents an array @b element, this method will return nullptr.
         //! @return ECProperty backing the column represented by this info object.
         ECN::ECPropertyCP GetProperty() const { return m_property; }
+
+        //! Indicates whether the property returned from ECSqlColumnInfo::GetProperty is an ECSQL system property.
+        //! @return true if ECSqlColumnInfo::GetProperty is an ECSQL system property. false otherwise.
+        //! @see @ref ECSqlSystemProperties
+        bool IsSystemProperty() const { return m_isSystemProperty; }
 
         //! Indicates whether the property returned from GetProperty is a generated one or whether it 
         //! directly refers to an existing ECProperty of one of the classes in the FROM or JOIN clauses.

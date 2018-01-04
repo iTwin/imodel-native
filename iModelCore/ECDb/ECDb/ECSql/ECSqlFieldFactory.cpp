@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -80,7 +80,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
 //static
 ECSqlStatus ECSqlFieldFactory::CreateChildField(std::unique_ptr<ECSqlField>& childField, ECSqlPrepareContext& ctx, int& sqlColumnIndex, ECSqlColumnInfo const& parentFieldColumnInfo, ECN::ECPropertyCR childProperty)
     {
-    ECSqlColumnInfo columnInfo = ECSqlColumnInfo::CreateChild(parentFieldColumnInfo, childProperty);
+    ECSqlColumnInfo columnInfo = ECSqlColumnInfo::CreateChild(parentFieldColumnInfo, childProperty, ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(childProperty).IsSystemProperty());
 
     if (childProperty.GetIsStruct())
         {
@@ -106,6 +106,7 @@ ECSqlStatus ECSqlFieldFactory::CreateChildField(std::unique_ptr<ECSqlField>& chi
     BeAssert(false && "No ECSqlField instantiated");
     return ECSqlStatus::Error;
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -227,7 +228,9 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromPropertyNameExp(ECSq
     BeAssert(ecsqlPropPath.Size() > 0 && "Error in program logic. Property path must not be empty.");
 
     ECClassCR& rootClass = internalPropPath.GetClassMap()->GetClass();
-    return ECSqlColumnInfo::CreateTopLevel(false, std::move(ecsqlPropPath), rootClass, propertyNameExp.GetClassName());
+    ECPropertyCP leafProp = ecsqlPropPath.GetLeafEntry().GetProperty();
+    const bool isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
+    return ECSqlColumnInfo::CreateTopLevel(isSystem, false, std::move(ecsqlPropPath), rootClass, propertyNameExp.GetClassName());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -238,7 +241,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromGeneratedProperty(EC
     {
     ECSqlPropertyPath propertyPath;
     propertyPath.AddEntry(generatedProperty);
-    return ECSqlColumnInfo::CreateTopLevel(true, std::move(propertyPath), generatedProperty.GetClass(), nullptr);
+    return ECSqlColumnInfo::CreateTopLevel(false, true, std::move(propertyPath), generatedProperty.GetClass(), nullptr);
     }
 
 //-----------------------------------------------------------------------------------------

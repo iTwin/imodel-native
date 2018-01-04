@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlColumnInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -21,15 +21,15 @@ ECSqlColumnInfo::ECSqlColumnInfo() {}
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Info const& dateTimeInfo, ECN::ECStructClassCP structType, ECPropertyCP ecProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
-    : m_dataType(dataType), m_dateTimeInfo(dateTimeInfo), m_structType(structType), m_property(ecProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(&rootClass), m_rootClassAlias(rootClassAlias)
+ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Info const& dateTimeInfo, ECN::ECStructClassCP structType, ECPropertyCP ecProperty, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
+    : m_dataType(dataType), m_dateTimeInfo(dateTimeInfo), m_structType(structType), m_property(ecProperty), m_isSystemProperty(isSystemProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(&rootClass), m_rootClassAlias(rootClassAlias)
     {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
+ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
     {
     BeAssert(propertyPath.Size() > 0);
     ECPropertyCP ecProperty = propertyPath.GetLeafEntry().GetProperty();
@@ -37,23 +37,24 @@ ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isGeneratedProperty, ECSqlP
     DateTime::Info dateTimeInfo;
     ECStructClassCP structType = nullptr;
     ECTypeDescriptor typeDescriptor = DetermineDataType(dateTimeInfo, structType, *ecProperty);
-    return ECSqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, isGeneratedProperty, propertyPath, rootClass, rootClassAlias);
+    return ECSqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, isSystemProperty, isGeneratedProperty, propertyPath, rootClass, rootClassAlias);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlColumnInfo ECSqlColumnInfo::CreateChild(ECSqlColumnInfo const& parent, ECPropertyCR childProperty)
+ECSqlColumnInfo ECSqlColumnInfo::CreateChild(ECSqlColumnInfo const& parent, ECPropertyCR childProperty, bool isSystemProperty)
     {
     DateTime::Info dateTimeInfo;
     ECStructClassCP structType = nullptr;
     ECTypeDescriptor dataType = DetermineDataType(dateTimeInfo, structType, childProperty);
+
     ECSqlPropertyPath childPropPath;
     childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
     childPropPath.AddEntry(childProperty);
 
-    return ECSqlColumnInfo(dataType, dateTimeInfo, structType, &childProperty, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
+    return ECSqlColumnInfo(dataType, dateTimeInfo, structType, &childProperty, isSystemProperty, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
     }
 
 //--------------------------------------------------------------------------------------
@@ -81,7 +82,7 @@ ECSqlColumnInfo ECSqlColumnInfo::CreateForArrayElement(ECSqlColumnInfo const& pa
     childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
     childPropPath.AddEntry(arrayIndex);
 
-    return ECSqlColumnInfo(arrayElementDataType, dateTimeInfo, structType, nullptr, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
+    return ECSqlColumnInfo(arrayElementDataType, dateTimeInfo, structType, nullptr, false, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
     }
 
 //--------------------------------------------------------------------------------------

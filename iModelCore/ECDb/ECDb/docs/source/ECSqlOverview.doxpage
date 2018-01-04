@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECSqlOverview.doxpage $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,20 +51,37 @@
     ECSQL defines a set of built-in system properties. They don't have to be defined in the ECSchemas.
     They are described in the next sections.
 
-    @note All system properties are read-only, i.e. they cannot be updated with an ECSQL UPDATE statement.
 
-    @subsection ECSqlECInstanceIdDetails ECInstanceId
+    @subsection ECSqlSystemPropertyECInstanceId ECInstanceId
     The ECInstanceId is the unique identifier for an ECInstance. In @ref ECSQLOverview you use the
     reserved token @c %ECInstanceId to refer to the ECInstanceId of an instance,
-    e.g. <c>SELECT Name FROM myschema.Foo WHERE <b>ECInstanceId</b> = 123</c>.
 
-    @subsection ECSQLECClassIdDetails ECClassId
+    @note The ECInstanceId property is read-only, i.e. it cannot be updated with an ECSQL UPDATE statement.
+
+    Example: <c>SELECT Name FROM myschema.Foo WHERE <b>ECInstanceId</b> = 123</c>.
+
+    @subsection ECSqlSystemPropertyECClassId ECClassId
     The reserved token @b ECClassId refers to the BentleyApi::ECN::ECClassId of an ECClass in an ECSQL statement. 
     The ECClassId is a numeric id that uniquely identifies an ECClass in the @ref ECDbFile. The ECClassId is read-only.
 
+    @note The ECInstanceId property is read-only, i.e. it cannot be updated with an ECSQL UPDATE statement.
+
     Example: <c>SELECT ECInstanceId, <b>ECClassId</b> FROM myschema.Foo</c>
 
-    @subsection ECSQLSourceTargetConstraintDetails ECRelationship's Source and Target Constraints
+
+    @subsection ECSQLSystemPropertyPoint Point Coordinates
+    Accessing the coordinates of Point2d/Point3d properties can be done via the reserved tokens @b X, @b Y, @b Z.
+
+    Example: <c>SELECT Origin.<b>X</b>, Origin.<b>Y</b> FROM myschema.Foo</c>
+
+    @subsection ECSQLSystemPropertyNavigation Navigation Property Members
+    Accessing the members of Navigation properties can be done via the reserved tokens @b Id and @b RelECClassId.
+
+    Example: <c>SELECT Parent.<b>Id</b>, Parent.<b>RelECClassId</b> FROM myschema.Element</c>
+
+    see @ref ECDbNavigationProperties
+
+    @subsection ECSQLSystemPropertyRelConstraints ECRelationship's Source and Target Constraints
     When referring to an ECRelationshipClass in an ECSQL statement, @c %SourceECInstanceId and @c %SourceECClassId refer
     to the %ECInstanceId and %ECClassId of the source ECInstance of the relationship. Likewise @c %TargetECInstanceId
     and @c %TargetECClassId refer to the %ECInstanceId and %ECClassId of the target ECInstance of the relationship.
@@ -72,8 +89,8 @@
     Example: <c>SELECT <b>SourceECInstanceId, SourceECClassId</b> FROM myschema.FooHasGoo<br>
     WHERE <b>TargetECInstanceId</b> = 4432 AND <b>TargetECClassId</b>=3120</c>
 
-    %SourceECInstanceId and %TargetECInstanceId are of the same type as @ref ECSqlECInstanceIdDetails. %SourceECClassId and %TargetECClassId
-    are of the same type as the @ref ECSQLECClassIdDetails "ECClassId".
+    %SourceECInstanceId and %TargetECInstanceId are of the same type as @ref ECSqlSystemPropertyECInstanceId. %SourceECClassId and %TargetECClassId
+    are of the same type as the @ref ECSqlSystemPropertyECClassId "ECClassId".
 
     @section ECSQLBindingParameterTokens Binding parameters ? and :name
     In an ECSQL statement @c ? or <c>:name</c> are used as placeholder for parameters that are bound to the statement via the statements binding API (see ECSqlStatement).
@@ -144,7 +161,7 @@
 
 
     @section ECSQLSamplesECInstanceIdECClassId ECInstanceId and ECClassId
-    See section @ref ECSqlECInstanceIdDetails and @ref ECSQLECClassIdDetails for the
+    See section @ref ECSqlSystemPropertyECInstanceId and @ref ECSqlSystemPropertyECClassId for the
     background on ECInstanceId and ECClassId.
 
         SELECT ECInstanceId FROM stco.Employee
@@ -158,16 +175,6 @@
         FROM stco.Employee e
         JOIN stco.Company c USING stco.CompanyHasEmployees
         WHERE c.Name = ?
-
-    Specifying the ECInstanceId in an INSERT statement is not allowed as ECDb automatically generates the ECInstanceId implicitly.
-    For the exceptional case of creating an empty instance, i.e. where only the ECInstanceId is generated, and all properties are set
-    to NULL, the following ECSQL has to be used:
-
-        INSERT INTO stco.Employee(ECInstanceId) VALUES(NULL)
-
-    This is in particular the only way to create instances for ECClasses that do not have any ECProperties defined.
-    This cannot be used for ECRelationships as empty relationship instances would violate against the implicit NOT NULL
-    constraints of the system properties SourceECInstanceId and TargetECInstanceId.
 
     @section ECSQLSamplesJoins Joins
     @subsection ECSQLSamplesJoinsConvenienceSyntax Convenience syntax JOIN USING
@@ -193,7 +200,7 @@
     @subsection ECSQLSamplesJoinsStandardSyntax Standard syntax
     @b @c SourceECInstanceId, @b @c SourceECClassId, @b @c TargetECInstanceId, and @b @c TargetECClassId are
     special tokens in ECSQL available for every @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass".
-    See also @ref ECSQLSourceTargetConstraintDetails.
+    See also @ref ECSQLSystemPropertyRelConstraints.
 
     #####JOIN ON Style
 
@@ -221,14 +228,14 @@
     
     If an NavigationECProperty is defined for an ECRelationshipClass, inserting, updating, deleting must be done via the navigation property:
 
-        INSERT INTO stco.Employee(FirstName, LastName, Company) VALUES (?,?,?)  -- Company is a navigation property for the ECRelationshipClass CompanyHasEmployees
+        INSERT INTO stco.Employee(FirstName, LastName, Company) VALUES(?,?,?)  -- Company is a navigation property for the ECRelationshipClass CompanyHasEmployees
 
     If no NavigationECProperty is defined for an ECRelationshipClass, then you can treat the ECRelationshipClass like an ECClass
-    with the special tokens @b SourceECInstanceId, @b SourceECClassId, @b TargetECInstanceId, @b TargetECClassId:
+    with the special tokens @b SourceECInstanceId and @b TargetECInstanceId:
         
-        INSERT INTO stco.HardwareUsedByEmployee (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (1, 61, 2, 65)
+        INSERT INTO stco.HardwareUsedByEmployee(SourceECInstanceId, TargetECInstanceId) VALUES(1, 2)
 
-        INSERT INTO stco.HardwareUsedByEmployee (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?,?,?,?)
+        INSERT INTO stco.HardwareUsedByEmployee(SourceECInstanceId, TargetECInstanceId) VALUES(?,?)
 
 
     @section ECSQLSamplesPolymorphism Polymorphism

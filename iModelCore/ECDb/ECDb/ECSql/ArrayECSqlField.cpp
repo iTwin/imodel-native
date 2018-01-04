@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ArrayECSqlField.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -370,7 +370,7 @@ IECSqlValue const& ArrayECSqlField::JsonECSqlValue::CreateStructMemberValue(ECN:
         }
 
     BeAssert(m_structMemberCache.find(memberName) == m_structMemberCache.end());
-    ECSqlColumnInfo memberColInfo = ECSqlColumnInfo::CreateChild(m_columnInfo, memberProp);
+    ECSqlColumnInfo memberColInfo = ECSqlColumnInfo::CreateChild(m_columnInfo, memberProp, m_ecdb.Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(memberProp).IsSystemProperty());
     std::unique_ptr<JsonECSqlValue> memberValue = std::make_unique<JsonECSqlValue>(m_ecdb, *memberJson, memberColInfo);
     JsonECSqlValue const* memberValueCP = memberValue.get();
     m_structMemberCache[memberName] = std::move(memberValue);
