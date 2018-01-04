@@ -14,9 +14,7 @@ BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 //---------------------------------------------------------------------------------------
 void Environment::InstallCoreExtensions()
     {
-#ifdef WIP_UTILITIES
     Extension::Install ([]() { return new Utilities; });
-#endif
     }
 
 //---------------------------------------------------------------------------------------

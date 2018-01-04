@@ -243,11 +243,9 @@ public:
 private:
     JsPrototypes m_prototypes;
 
+#ifdef COMMENT_OUT
     static Utf8CP InitScript();
-
-    Napi::Function EvaluateInitScript (Js::RuntimeR);
-    Napi::Object CreateInitParams (Napi::Env& env);
-    void FindPrototypes (Napi::Object exports);
+    Napi::Function EvaluateInitScript(Js::RuntimeR);
 
     Napi::Function uv_Handle_close (Napi::Env& env);
     Napi::Function uv_io_shutdown (Napi::Env& env);
@@ -267,6 +265,13 @@ private:
     Napi::Function websocketpp_ClientConnection_send (Napi::Env& env);
     Napi::Function websocketpp_ServerEndpoint_constructor (Napi::Env& env);
     Napi::Function websocketpp_ServerEndpoint_createConnection (Napi::Env& env);
+#endif
+
+    static Utf8CP SimpleInitScript();
+    Napi::Function EvaluateSimpleInitScript(Js::RuntimeR);
+    Napi::Object CreateInitParams (Napi::Env& env);
+    void FindPrototypes (Napi::Object exports);
+    
     Napi::Function uv_fs_open (Napi::Env& env);
     Napi::Function uv_fs_stat (Napi::Env& env);
     Napi::Function uv_fs_read (Napi::Env& env);

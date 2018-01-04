@@ -348,6 +348,97 @@ Utf8CP Utilities::InitScript()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Steve.Wilson                    6/17
+//---------------------------------------------------------------------------------------
+Utf8CP Utilities::SimpleInitScript()
+    {
+    return u8R"(
+
+    (function (params) {
+
+        let abtostr = function (buf, start, len) {
+            return String.fromCharCode.apply (this, new Uint16Array (buf, start, len));
+        };
+
+        let abtostr8 = function (buf, start, len) {
+            return String.fromCharCode.apply (this, new Uint8Array (buf, start, len));
+        };
+
+        let strtoab = function (str) {
+            let buffer = new ArrayBuffer (str.length * 2);
+            let view = new Uint16Array (buffer);
+                
+            for (var i = 0; i != str.length; ++i)
+                view [i] = str.charCodeAt (i);
+                    
+            return buffer;
+        };
+
+        let strtoab8 = function (str) {
+            let buffer = new ArrayBuffer (str.length);
+            let view = new Uint8Array (buffer);
+                
+            for (var i = 0; i != str.length; ++i)
+                view [i] = str.charCodeAt (i);
+                    
+            return buffer;
+        };
+
+        let uv_fs_open  = params.uv_fs_open;
+        let uv_fs_stat  = params.uv_fs_stat;
+        let uv_fs_read  = params.uv_fs_read;
+        let uv_fs_close = params.uv_fs_close;
+
+        let uv_fs_isValid = function (file)
+            {
+            return file >= 0;
+            };
+
+        let exports = {
+            abtostr: abtostr,
+            abtostr8: abtostr8,
+            strtoab: strtoab,
+            strtoab8: strtoab8,
+
+            fs: {
+                O_RDONLY:     params.uv_fs_O_RDONLY,
+                O_WRONLY:     params.uv_fs_O_WRONLY,
+                O_RDWR:       params.uv_fs_O_RDWR,
+                O_APPEND:     params.uv_fs_O_APPEND,
+                O_CREAT:      params.uv_fs_O_CREAT,
+                O_TRUNC:      params.uv_fs_O_TRUNC,
+                O_EXCL:       params.uv_fs_O_EXCL,
+                O_TEXT:       params.uv_fs_O_TEXT,
+                O_BINARY:     params.uv_fs_O_BINARY,
+                O_RAW:        params.uv_fs_O_RAW,
+                O_TEMPORARY:  params.uv_fs_O_TEMPORARY,
+                O_NOINHERIT:  params.uv_fs_O_NOINHERIT,
+                O_SEQUENTIAL: params.uv_fs_O_SEQUENTIAL,
+                O_RANDOM:     params.uv_fs_O_RANDOM,
+
+                S_IFMT:   params.uv_fs_S_IFMT,
+                S_IFDIR:  params.uv_fs_S_IFDIR,
+                S_IFCHR:  params.uv_fs_S_IFCHR,
+                S_IFREG:  params.uv_fs_S_IFREG,
+                S_IREAD:  params.uv_fs_S_IREAD,
+                S_IWRITE: params.uv_fs_S_IWRITE,
+                S_IEXEC:  params.uv_fs_S_IEXEC,
+
+                open:    uv_fs_open,
+                stat:    uv_fs_stat,
+                isValid: uv_fs_isValid,
+                read:    uv_fs_read,
+                close :  uv_fs_close
+            }
+        };
+
+        return exports;
+    });
+
+    )";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
 Utf8CP Host::InitScript()

@@ -57,7 +57,7 @@ $(o)ServicesTierEnvironment$(oext) : $(baseDir)ServicesTierEnvironment.cpp ${Mul
 
 $(o)ServicesTierExtension$(oext) : $(baseDir)ServicesTierExtension.cpp ${MultiCompileDepends}
 
-# $(o)ServicesTierUtilities$(oext) : $(baseDir)ServicesTierUtilities.cpp ${MultiCompileDepends}
+$(o)ServicesTierUtilities$(oext) : $(baseDir)ServicesTierUtilities.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
