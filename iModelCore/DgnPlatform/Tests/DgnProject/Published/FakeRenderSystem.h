@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/FakeRenderSystem.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -176,8 +176,6 @@ protected:
     GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const { BeAssert(false); return nullptr; }
     GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
-    GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
-    GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const { return FakeGraphic::Create(dgndb); }
@@ -193,8 +191,6 @@ struct GraphicProcessor
 {
     virtual void Process(TriMeshArgsCR args) { }
     virtual void Process(IndexedPolylineArgsCR args) { }
-    virtual void Process(MeshEdgeArgsCR args) { }
-    virtual void Process(SilhouetteEdgeArgsCR args) { }
     virtual void Process(PointCloudArgsCR args) { }
     virtual void Process(ISprite&, DPoint3dCR, DPoint3dCR, int) { }
 
@@ -217,8 +213,6 @@ public:
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return m_proc->CreateGraphic(*const_cast<GraphicProcessorSystem*>(this), params); }
     GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
     GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
-    GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
-    GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
     GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR db) const override { m_proc->Process(args); return FakeGraphic::Create(db); }
     GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR loc, DPoint3dCR xvec, int transparency, DgnDbR db) const override { m_proc->Process(sprite, loc, xvec, transparency); return FakeGraphic::Create(db); }
 
