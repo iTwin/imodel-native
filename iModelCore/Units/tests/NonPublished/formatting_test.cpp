@@ -458,10 +458,13 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("3 HR 13 MIN 7 S", 0, "S");
 
     LOG.info("\n============= Equivalence of quantity test =================");
+
     FormattingTestFixture::ParseToQuantity("5:6", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity("5:", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity(":6", 0, "IN", "fi8");
     FormattingTestFixture::ParseToQuantity("135:23:11", 0, "ARC_DEG", "dms8");
+    FormattingTestFixture::ParseToQuantity("3  1/5 FT", 0, "MM", "real");
+    FormattingTestFixture::ParseToQuantity("3  1/5 FT", 0, "IN", "real");
 
     FormattingTestFixture::VerifyQuantity("135:23:11", "ARC_DEG", "dms8", 135.386389, "ARC_DEG");
     FormattingTestFixture::VerifyQuantity("5:6", "IN", "fi8", 1.6764, "M");
@@ -469,7 +472,16 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::VerifyQuantity("5:", "IN", "fi8", 152.4, "CM");
     FormattingTestFixture::VerifyQuantity("3:13:7", "S", "hms", 11587.0, "S");
     FormattingTestFixture::VerifyQuantity("3:13:7", "S", "hms", 193.116667, "MIN");
-    
+    FormattingTestFixture::VerifyQuantity("3 1/5 FT", "IN", "real", 975.36, "MM");
+    FormattingTestFixture::VerifyQuantity("3 1/5 FT", "IN", "real", 38.4, "IN");
+    FormattingTestFixture::VerifyQuantity("975.36", "MM", "real", 38.4, "IN");
+    FormattingTestFixture::VerifyQuantity("1 3/13 IN", "IN", "real", 1.2307692, "IN");
+    FormattingTestFixture::VerifyQuantity("1 3/13 IN", "IN", "real", 31.26154, "MM");
+    FormattingTestFixture::VerifyQuantity("3/23", "M", "real", 130.4348, "MM");
+    FormattingTestFixture::VerifyQuantity("13/113", "M", "real", 115.044, "MM");
+    FormattingTestFixture::VerifyQuantity("13/113", "M", "real", 0.37744, "FT");
+
+    LOG.info("============= Equivalence of quantity test (end) \n=================");
 
     //FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
     FormattingTestFixture::TestScanPointVector(u8"ЯA型号   sautéςερ135°11'30-1/4\"");
@@ -477,7 +489,6 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::TestScanPointVector("1+512.15m");
     FormattingTestFixture::TestScanTriplets("1+512.15m");
     FormattingTestFixture::TestScanTriplets("-23.45E-03_MM");
-    LOG.info("============= Equivalence of quantity test (end) \n=================");
 
     FormattingTestFixture::TestGrabber("23.451e03_MM");
     Utf8CP tail = FormattingTestFixture::TestGrabber("1+512.15m");
