@@ -2,7 +2,7 @@
 |
 |     $Source: CivilBaseGeometry/Native/AlignmentPairEditor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "CivilBaseGeometryInternal.h"
@@ -1144,9 +1144,9 @@ bool AlignmentPairEditor::SolveArcPI(bvector<AlignmentPI>& pis, size_t index) co
     const DPoint3d currPI = pis[index].GetPILocation();
     const DPoint3d nextPI = (index + 1 < pis.size()) ? pis[index + 1].GetPILocation() : pInfo->arc.endPoint;
     const double radius = pInfo->arc.radius;
-    const Orientation orientation = pInfo->arc.orientation;
 
-    ICurvePrimitivePtr primitive = BuildArc(prevPI, currPI, nextPI, radius, orientation);
+    // We don't know the orientation beforehand, just pass in Unknown.
+    ICurvePrimitivePtr primitive = BuildArc(prevPI, currPI, nextPI, radius, Orientation::ORIENTATION_Unknown);
     if (!primitive.IsValid())
         return false;
 
