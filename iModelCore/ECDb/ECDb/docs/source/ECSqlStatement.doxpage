@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECSqlStatement.doxpage $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@
 
     @section ECInstanceIdInECDb ECInstanceId in the ECDb API
 
-    In %ECDb @ref ECSqlECInstanceIdDetails "ECSQL's ECInstanceId" is always a @b numeric value and serves
+    In %ECDb @ref ECSqlSystemPropertyECInstanceId "ECSQL's ECInstanceId" is always a @b numeric value and serves
     as the primary key of the table that corresponds to the domain @ref BentleyApi::ECN::ECClass "ECClasses".
 
     @e Details

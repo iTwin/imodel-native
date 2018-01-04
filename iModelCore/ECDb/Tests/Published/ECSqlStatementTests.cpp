@@ -3732,7 +3732,6 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
     AssertColumnInfo("b", false, false, "SAStructProp.PStructProp.b", "SA", nullptr, nestedStructValue["b"].GetColumnInfo());
     AssertColumnInfo("bi", false, false, "SAStructProp.PStructProp.bi", "SA", nullptr, nestedStructValue["bi"].GetColumnInfo());
     AssertColumnInfo("p2d", false, false, "SAStructProp.PStructProp.p2d", "SA", nullptr, nestedStructValue["p2d"].GetColumnInfo());
-    AssertColumnInfo("p2d.X", true, false, "SAStructProp.PStructProp.p2d.X", "SA", nullptr, nestedStructValue["p2d"]["X"].GetColumnInfo());
 
     //invalid struct members
     ASSERT_FALSE(nestedStructValue[""].GetColumnInfo().IsValid());
