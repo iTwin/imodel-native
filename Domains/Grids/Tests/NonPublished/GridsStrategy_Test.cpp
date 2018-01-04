@@ -99,7 +99,7 @@ void GridsStrategyTests::SetUp()
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
     SpatialLocationPartitionCPtr partition = SpatialLocationPartition::CreateAndInsert(*rootSubject, "GridSpatialPartition");
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
-    m_sketchGrid = SketchGrid::Create(*m_model.get(), "Sketch grid");
+    m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
     m_sketchGrid->Insert();
     }
 
@@ -191,7 +191,7 @@ TEST_F(GridsStrategyTests, LineGridPlacementStrategyTests)
     ASSERT_EQ(50, strategy->GetHeight()) << "Height incorrect after modifying";
     }
     GridAxisPtr axis, otherAxis, otherGridAxis;
-    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), "Sketch grid 2");
+    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), m_model->GetModeledElementId(), "Sketch grid 2", 0.0, 10.0);
     ASSERT_TRUE(otherGrid.IsValid()) << "Failed to create other grid";
     ASSERT_TRUE(otherGrid->Insert().IsValid()) << "Failed to insert other grid";
     {
@@ -438,7 +438,7 @@ TEST_F(GridsStrategyTests, CSEArcGridPlacementStrategyTests)
     ASSERT_EQ(50, strategy->GetHeight()) << "Height incorrect after modifying";
     }
     GridAxisPtr axis, otherAxis, otherGridAxis;
-    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), "Sketch grid 2");
+    SketchGridPtr otherGrid = SketchGrid::Create(*m_model.get(), m_model->GetModeledElementId(), "Sketch grid 2", 0.0, 10.0);
     ASSERT_TRUE(otherGrid.IsValid()) << "Failed to create other grid";
     ASSERT_TRUE(otherGrid->Insert().IsValid()) << "Failed to insert other grid";
     {
