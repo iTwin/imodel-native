@@ -58,6 +58,9 @@
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
 
+        <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData"/>
+        <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData" LibType="static"/>
+
         <ProductDirectory Name="PlantDomainSchemasDir" Path="Assets/ECSchemas/Domain"/>
 
         <ProductDirectory Name="VendorNotices" Deliver="false" />
