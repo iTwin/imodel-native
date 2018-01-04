@@ -35,7 +35,7 @@ void GeometryPlacementStrategy::AddKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> const& GeometryPlacementStrategy::_GetKeyPoints() const
+bvector<DPoint3d> GeometryPlacementStrategy::_GetKeyPoints() const
     {
     return _GetManipulationStrategy().GetKeyPoints();
     }

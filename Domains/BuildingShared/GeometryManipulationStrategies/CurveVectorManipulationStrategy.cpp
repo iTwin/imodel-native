@@ -35,3 +35,19 @@ bool CurveVectorManipulationStrategy::_IsComplete() const
         std::none_of(m_primitiveStrategies.begin(), m_primitiveStrategies.end(),
                     [] (CurvePrimitiveManipulationStrategyPtr const& s) { return !s->IsComplete(); });
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> CurveVectorManipulationStrategy::_GetKeyPoints() const
+    {
+    bvector<DPoint3d> allKeyPoints;
+
+    for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategies)
+        {
+        bvector<DPoint3d> const& strategyKeyPoints = strategy->GetKeyPoints();
+        allKeyPoints.insert(allKeyPoints.end(), strategyKeyPoints.begin(), strategyKeyPoints.end());
+        }
+
+    return allKeyPoints;
+    }

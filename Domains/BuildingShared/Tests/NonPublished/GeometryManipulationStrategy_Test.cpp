@@ -14,10 +14,11 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 struct GeometryManipulationStrategyTests : public BuildingSharedTestFixtureBase
     {
-    struct SUT : public GeometryManipulationStrategy
+    struct SUT : public CurvePrimitiveManipulationStrategy
         {
         virtual bool _IsComplete() const override { return false; }
         virtual bool _CanAcceptMorePoints() const override { return true; }
+        virtual ICurvePrimitivePtr _FinishPrimitive() const override { return nullptr; }
         };
     };
 

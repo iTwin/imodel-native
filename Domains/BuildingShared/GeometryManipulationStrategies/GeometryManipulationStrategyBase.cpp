@@ -28,7 +28,7 @@ SET_TRYGET_PROPERTY_IMPL(Utf8String)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> const& GeometryManipulationStrategyBase::GetKeyPoints() const
+bvector<DPoint3d> GeometryManipulationStrategyBase::GetKeyPoints() const
     {
     return _GetKeyPoints();
     }

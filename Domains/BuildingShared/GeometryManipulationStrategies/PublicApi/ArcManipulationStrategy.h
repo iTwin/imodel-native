@@ -12,7 +12,7 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcManipulationStrategy)
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define KEY_POINT_ACCESSOR_DECL(name, index) \
-    DPoint3dCR Get##name() const; \
+    DPoint3d Get##name() const; \
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool Is##name##Set() const; \
     void Set##name(DPoint3dCR newValue); \
     void Reset##name(); \
