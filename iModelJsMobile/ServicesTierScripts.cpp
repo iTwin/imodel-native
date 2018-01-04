@@ -382,9 +382,6 @@ Utf8CP Host::InitScript()
 
         params.replacementRequire = function (identifier) {
 
-            console_log('replacementRequire ' + identifier);
-            console_log(new Error().stack);
-
             if (extensionCache.hasOwnProperty (identifier))
                 return extensionCache [identifier];
 
@@ -412,6 +409,7 @@ Utf8CP Host::InitScript()
 
         let parseArgv = function (argv) {
             let result = { executable: "", options: [], data: [], arguments: [] };
+            argv = argv.trim();
             let tokens = argv.split (/\s+/);
             
             result.executable = tokens [0];
@@ -440,14 +438,11 @@ Utf8CP Host::InitScript()
         params.notifyReady = function() {
             let info = bentley.imodeljs.servicesTier.getHostInfo();
 
-            console_log('info=' + JSON.stringify(info));
             let argv = parseArgv (info.argv);
             let initialScript = (argv.data.length !== 0) ? argv.data [argv.data.length - 1] : null;
 
-            console_log('notifyReady. argv.data.length = ' + argv.data.length);
             if (initialScript !== null)
                 {
-                console_log('initialScript = ' + initialScript);
                 if (initialScript [0] !== '/' && initialScript.indexOf (':') === -1)
                     {
                     initialScript = info.cwd + '/' + initialScript;

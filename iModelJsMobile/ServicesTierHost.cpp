@@ -225,7 +225,15 @@ void Host::HandleIdle()
     OnIdle();
 
     if (!m_notifyIdle.IsEmpty())
-        m_notifyIdle.Value().As<Napi::Function>() ({});
+        {
+        try {
+            m_notifyIdle.Value().As<Napi::Function>() ({});
+            }
+        catch (Napi::Error err)
+            {
+            fprintf(stderr, err.Message().c_str());
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
