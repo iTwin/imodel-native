@@ -12,7 +12,11 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //=====================================================================================
 struct RDSRequestManager : public WSGRequestManager
     {    
-    REALITYDATAPLATFORM_EXPORT static void Setup();
+    //! Sets all necessary parameters to complete calls
+    //! the serverUrl can be provider by the user, if it is known
+    //! otherwise (if the ConnectionClient is available) the serverUrl will be determined automatically
+    //! serverUrl format example "https://connect-realitydataservices.bentley.com/"
+    REALITYDATAPLATFORM_EXPORT static void Setup(Utf8String serverUrl = "");
     };
 
 struct ConnectedNavNode : public NavNode

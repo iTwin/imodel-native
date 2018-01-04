@@ -10,7 +10,11 @@ typedef std::function<bvector<Utf8String>(bvector<GeoPoint2d> footprint, Spatial
 
 struct GCSRequestManager : public WSGRequestManager
     {
-    REALITYDATAPLATFORM_EXPORT static void Setup();
+    //! Sets all necessary parameters to complete calls
+    //! the serverUrl can be provider by the user, if it is known
+    //! otherwise (if the ConnectionClient is available) the serverUrl will be determined automatically
+    //! serverUrl format example "https://connect-realitydataservices.bentley.com/"
+    REALITYDATAPLATFORM_EXPORT static void Setup(Utf8String serverUrl = "");
     REALITYDATAPLATFORM_EXPORT static void SimplePackageDownload(bvector<GeoPoint2d> footprint, 
         bvector<RealityDataBase::Classification> classes, SE_selectionFunction pi_func, BeFileName path,
         BeFileName certificatePath = BeFileName(), RealityDataDownload_ProxyCallBack proxyCallback = nullptr);

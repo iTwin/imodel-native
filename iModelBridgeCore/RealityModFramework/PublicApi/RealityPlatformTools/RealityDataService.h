@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/RealityDataService.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -783,6 +783,7 @@ protected:
     bool SetupNextEntry();
     void ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg);
     Utf8String GetAzureToken();
+    void InitTool();
 
     AzureHandshake*             m_handshakeRequest;
     bvector<RealityDataFileTransfer*>         m_filesToTransfer;

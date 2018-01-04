@@ -996,6 +996,8 @@ TEST_F(WSGServicesRequestFixture, ConnectTokenManagerTest)
     {
     ConnectTokenManager& ctm = ConnectTokenManager::GetInstance();
 
+    EXPECT_TRUE(!ctm.GetToken().empty());
+
     ctm.SetTokenCallback(tokenCallback);
     ctm.RefreshToken();
 

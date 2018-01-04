@@ -109,9 +109,11 @@ void GCSRequestManager::GCS_status_func(int index, void *pClient, int ErrorCode,
     return separatedDirectoryForZip.GetWCharCP();
     }*/
 
-void GCSRequestManager::Setup()
+void GCSRequestManager::Setup(Utf8String serverUrl)
     {
-    Utf8String serverName = MakeBuddiCall(L"ContextServices");
+    Utf8String serverName = serverUrl;
+    if(serverName.empty())
+        serverName = MakeBuddiCall(L"ContextServices");
     WSGServer server = WSGServer(serverName, false);
 
     RawServerResponse versionResponse = RawServerResponse();

@@ -2,9 +2,11 @@
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
-void RDSRequestManager::Setup()
+void RDSRequestManager::Setup(Utf8String serverUrl)
     {
-    Utf8String serverName = MakeBuddiCall(L"RealityDataServices");
+    Utf8String serverName = serverUrl;
+    if(serverName.empty())
+        serverName = MakeBuddiCall(L"RealityDataServices");
     WSGServer server = WSGServer(serverName, false);
     
     RawServerResponse versionResponse = RawServerResponse();

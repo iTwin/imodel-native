@@ -1,19 +1,19 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatformToolsLight/SimpleRDSApi.cpp $
+|     $Source: RealityPlatformToolsLight/SimpleWSGBase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "../RealityPlatform/SimpleRDSApi.cpp"
+#include "../RealityPlatform/SimpleWSGBase.cpp"
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-Utf8String RDSRequestManager::MakeBuddiCall()
+Utf8String WSGRequestManager::MakeBuddiCall()
     {
-    return "https://connect-realitydataservices.bentley.com/";
+    return "NO CONNECTIONCLIENT";
     }
