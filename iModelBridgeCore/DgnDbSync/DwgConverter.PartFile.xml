@@ -85,6 +85,7 @@
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
         <SubPart PartName="ImagePP"             PartFile="ImagePP"              Repository="ImagePP"/>
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="OpenDwgDb" />
         <Bindings>
@@ -167,6 +168,7 @@
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
         <SubPart PartName="ImagePP"             PartFile="ImagePP"              Repository="ImagePP"/>
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="RealDwgDb" />
         <Bindings>
@@ -245,6 +247,7 @@
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"          Repository="DgnPlatform"/>
         <SubPart PartName="ImagePP"             PartFile="ImagePP"              Repository="ImagePP"/>
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
+        <SubPart PartName="ECPresentation"      PartFile="ECPresentation"       Repository="ECPresentation"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"/>
         <SubPart PartName="RealDwg2017Db" />
         <Bindings>

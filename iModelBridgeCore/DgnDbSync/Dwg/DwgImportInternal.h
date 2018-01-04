@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImportInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,8 @@
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 
 #include <Raster/RasterApi.h>
+#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 #include <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
 #include <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
@@ -73,6 +75,7 @@ using namespace BentleyApi::Dgn;
 using namespace BentleyApi::BeSQLite;
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_DGNDBSYNC
 USING_NAMESPACE_DWGDB

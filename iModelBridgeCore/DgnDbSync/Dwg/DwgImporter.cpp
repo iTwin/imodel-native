@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -65,6 +65,50 @@ void            DwgImporter::ImportAttributeDefinitionSchema (ECSchemaR attrdefS
 
     // get back newly added schema:
     m_attributeDefinitionSchema = m_dgndb->Schemas().GetSchema (attrdefSchema.GetName().c_str(), true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::MakeSchemaChanges ()
+    {
+    if (!m_dgndb.IsValid() || !m_dwgdb.IsValid())
+        return  static_cast<BentleyStatus>(DgnDbStatus::NotOpen);
+
+    DwgDbBlockTablePtr  blockTable (m_dwgdb->GetBlockTableId(), DwgDbOpenMode::ForRead);
+    if (DwgDbStatus::Success != blockTable.OpenStatus())
+        return  BSIERROR;
+
+    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
+    if (!iter.IsValid())
+        return  BSIERROR;
+
+    // collect attribute definitions from regular blocks
+    ECSchemaPtr     attrdefSchema;
+    for (iter.Start(); !iter.Done(); iter.Step())
+        {
+        DwgDbObjectId   blockId = iter.GetRecordId ();
+        if (!blockId.IsValid() || m_dwgdb->GetModelspaceId() == blockId || m_dwgdb->GetPaperspaceId() == blockId)
+            continue;
+
+        DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
+        if (block.IsNull() || block->IsLayout() || block->IsExternalReference())
+            continue;
+
+        // create an attrdef ECClass from the block:
+        if (block->HasAttributeDefinitions())
+            this->AddAttrdefECClassFromBlock(attrdefSchema, *block.get());
+        }
+
+    if (attrdefSchema.IsValid() && attrdefSchema->GetClassCount() > 0)
+        {
+        if (m_dgndb->BriefcaseManager().LockSchemas().Result() != RepositoryStatus::Success)
+            return  static_cast<BentleyStatus>(DgnDbStatus::LockNotHeld);
+
+        this->ImportAttributeDefinitionSchema (*attrdefSchema);
+        }
+
+    return  BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -963,9 +1007,6 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
     SubjectCPtr parentSubject = this->GetSpatialParentSubject ();
     BeAssert (parentSubject.IsValid() && "parent subject for spatial models not set yet!!");
 
-    // will collect attribute definitions from regular blocks
-    ECSchemaPtr     attrdefSchema;
-
     // walk through all blocks and create models for paperspace and xref blocks:
     for (iter.Start(); !iter.Done(); iter.Step())
         {
@@ -1125,15 +1166,8 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                 }
             continue;
             }
-
-        // create an attrdef ECClass from the block:
-        if (block->HasAttributeDefinitions())
-            this->AddAttrdefECClassFromBlock(attrdefSchema, *block.get());
         }
     
-    if (attrdefSchema.IsValid() && attrdefSchema->GetClassCount() > 0)
-        this->ImportAttributeDefinitionSchema (*attrdefSchema);
-
     /*-----------------------------------------------------------------------------------
     Now we have passed the model discovery phase, we can update model transforms if the 
     root transform has been changed from previous import.  Raster models and some xRef
@@ -1484,6 +1518,7 @@ void            DwgImporter::_FinishImport ()
     {
     _PostProcessViewports ();
     _EmbedFonts ();
+    _EmbedPresentationRules ();
 
     m_dgndb->GeoLocation().InitializeProjectExtents();
 
@@ -1677,6 +1712,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_dwgModelMap.clear ();
     m_materialSearchPaths.clear ();
     m_isProcessingDwgModelMap = false;
+    m_presentationRuleContents.clear ();
 
     this->SetStepName (ProgressMessage::STEP_INITIALIZING());
 
@@ -1708,6 +1744,7 @@ DwgImporter::~DwgImporter ()
     m_paperspaceXrefs.clear ();
     m_paperspaceViews.clear ();
     m_loadedXrefFiles.clear ();
+    m_presentationRuleContents.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**

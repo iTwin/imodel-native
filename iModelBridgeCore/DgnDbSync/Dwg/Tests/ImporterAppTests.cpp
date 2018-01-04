@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterAppTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterBaseFixture.h"
@@ -119,3 +119,22 @@ TEST_F(ImporterAppTests, Description)
     EXPECT_TRUE(description.CompareTo("TestDescription") == 0) << "Description does not match";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ImporterAppTests, BudweiserBenchmark)
+    {
+    WString fileName = L"budweiser2018.dwg";
+    BeFileName inFile;
+    MakeWritableCopyOf(inFile, fileName.c_str());
+    createCommand();
+    addInputFile(inFile.c_str());
+    addOutputFile(GetOutputDir());
+    addCompressFlag();
+    ASSERT_EQ(SUCCESS, RunCMD(m_command));
+
+    BeFileName outFile = GetIBimFileName(inFile);
+
+    EXPECT_PRESENT(outFile.c_str())
+    EXPECT_PRESENT(inFile.c_str())
+    }

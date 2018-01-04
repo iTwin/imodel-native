@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Apps/DwgBridge.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnDbSync/Dwg/DwgBridge.h>
@@ -147,6 +147,17 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgBridge::_MakeSchemaChanges () 
+    {
+    // create DwgAttributeDefinition shema
+    if (BentleyStatus::SUCCESS != m_importer->MakeSchemaChanges() || m_importer->WasAborted())
+        return  BentleyStatus::ERROR;
+    return  BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

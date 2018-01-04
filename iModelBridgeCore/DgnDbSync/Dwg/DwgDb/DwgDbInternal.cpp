@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DwgDbInternal.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgDbInternal.h"
@@ -275,6 +275,8 @@ Acad::ErrorStatus   DwgDbDxfFiler::writeVector2d(AcDb::DxfCode code, const AcGeV
 Acad::ErrorStatus   DwgDbDxfFiler::writeVector3d(AcDb::DxfCode code, const AcGeVector3d& val, int prec) { return static_cast<Acad::ErrorStatus>(m_clientFiler._Write(static_cast<DxfGroupCode>(code), Util::DVec3dFrom(val), static_cast<IDxfFiler::DoublePrecision>(prec))); }
 Acad::ErrorStatus   DwgDbDxfFiler::writeScale3d (AcDb::DxfCode code, const AcGeScale3d& val, int prec) { return static_cast<Acad::ErrorStatus>(m_clientFiler._Write(static_cast<DxfGroupCode>(code), val.sx, val.sy, val.sz, static_cast<IDxfFiler::DoublePrecision>(prec))); }
 bool                DwgDbDxfFiler::includesDefaultValues() const { return  false; }
+// need to implement group code 101 from attrdef that otherwise results in a fatal error from RealDWG!
+Acad::ErrorStatus   DwgDbDxfFiler::writeEmbeddedObjectStart () { return static_cast<Acad::ErrorStatus>(m_clientFiler._Write(DxfGroupCode::EmbeddedObjectStart, DwgString(L"Embedded Object"))); }
 #endif  // DWGTOOLKIT_
 
 DWGRX_NO_CONS_DEFINE_MEMBERS(DwgDbDxfFiler, DWGDB_Type(DxfFiler))
