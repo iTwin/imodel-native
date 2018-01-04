@@ -75,12 +75,16 @@
     <NMakeCleanCommandLine>bb -p CivilBaseGeometry -f CivilBaseGeometry -r civil-geometry -ax64 re CivilBaseGeometryDll -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(SrcRoot)CivilBaseGeometry\PublicAPI\;$(SrcRoot)CivilBaseGeometry\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)Winx64\build\$(MSBuildProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>bb -p CivilBaseGeometry -f CivilBaseGeometry -r civil-geometry -ax64 re CivilBaseGeometryDll</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -p CivilBaseGeometry -f CivilBaseGeometry -r civil-geometry -ax64 re CivilBaseGeometryDll -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(SrcRoot)CivilBaseGeometry\PublicAPI\;$(SrcRoot)CivilBaseGeometry\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)Winx64\build\$(MSBuildProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
