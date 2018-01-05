@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/Revision_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -1328,7 +1328,6 @@ TEST_F(RevisionTestFixture, ReverseAndReinstate)
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column1 FROM TestTable WHERE Id=1", 108));
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2017
 //---------------------------------------------------------------------------------------
@@ -1707,6 +1706,151 @@ TEST_F(RevisionTestFixture, TableAndColumnAdditions)
     
     ASSERT_EQ(afterCount, GetColumnCount(*m_db, "bis_DefinitionElement"));
     ASSERT_TRUE(m_db->TableExists("bis_DefinitionElement_Overflow"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2018
+//---------------------------------------------------------------------------------------
+bvector<DgnRevisionCP> filterRevisions(DgnRevisionPtr* revisionPtrs, int startIndex, int finishIndex)
+    {
+    bvector<DgnRevisionCP> filteredRevisions;
+    int incOrDec = finishIndex > startIndex ? +1 : -1;
+    for (int ii = startIndex; ii != finishIndex + incOrDec; ii += incOrDec)
+        filteredRevisions.push_back(revisionPtrs[ii].get());
+    return filteredRevisions;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    01/2017
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
+    {
+    /* These scenarios have been reported by the IModelHub team */
+    DgnRevisionPtr revisionPtrs[11]; // 0 - Initial revision
+    int ii = 0;
+
+    // Setup baseline
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"MoreChanges.bim");
+    m_db->CreateTable("TestTable1", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->SaveChanges("Created Initial Model");
+    revisionPtrs[ii] = CreateRevision();
+    ASSERT_TRUE(revisionPtrs[ii].IsValid());
+    BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
+    BackupTestFile();
+
+    // Create revisions 1-3 with data changes
+    while (++ii <= 3)
+        {
+        Utf8PrintfString sql("INSERT INTO TestTable1(Id, Column1) VALUES(%d,%d)", ii, ii);
+        ASSERT_EQ(m_db->ExecuteSql(sql.c_str()), BE_SQLITE_OK);
+        m_db->SaveChanges();
+        revisionPtrs[ii] = CreateRevision();
+        ASSERT_TRUE(revisionPtrs[ii].IsValid());
+        }
+
+    // Create revision 4 with schema change
+    m_db->CreateTable("TestTable2", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->SaveChanges();
+    revisionPtrs[ii] = CreateRevision();
+    ASSERT_TRUE(revisionPtrs[ii].IsValid());
+
+    // Create revision 5-8 with data changes
+    while (++ii <= 8)
+        {
+        Utf8PrintfString sql("INSERT INTO TestTable2(Id, Column1) VALUES(%d,%d)", ii, ii);
+        ASSERT_EQ(m_db->ExecuteSql(sql.c_str()), BE_SQLITE_OK);
+        m_db->SaveChanges();
+        revisionPtrs[ii] = CreateRevision();
+        ASSERT_TRUE(revisionPtrs[ii].IsValid());
+        }
+
+    // Create revision 9 with schema change
+    m_db->CreateTable("TestTable3", "Id INTEGER PRIMARY KEY, Column1 INTEGER");
+    m_db->SaveChanges();
+    revisionPtrs[ii] = CreateRevision();
+    ASSERT_TRUE(revisionPtrs[ii].IsValid());
+    ++ii;
+
+    // Create revision 10 with data change
+    Utf8PrintfString sql("INSERT INTO TestTable3(Id, Column1) VALUES(%d,%d)", ii, ii);
+    ASSERT_EQ(m_db->ExecuteSql(sql.c_str()), BE_SQLITE_OK);
+    m_db->SaveChanges();
+    revisionPtrs[ii] = CreateRevision();
+    ASSERT_TRUE(revisionPtrs[ii].IsValid());
+    ASSERT_TRUE(ii == 10);
+
+    /* 
+     * Test 1: Reopen with Reverse 
+     */
+    RestoreTestFile();
+    DbResult openStatus;
+    bvector<DgnRevisionCP> processRevisions;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
+
+    // Merge Rev 1-6
+    m_db->CloseDb();
+    processRevisions = filterRevisions(revisionPtrs, 1, 6);
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    ASSERT_FALSE(m_db->Revisions().HasReversedRevisions());
+    ASSERT_STREQ(m_db->Revisions().GetReversedRevisionId().c_str(), "");
+    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetId().c_str());
+
+    // Reverse to Rev 2 (i.e., 6-3)
+    m_db->CloseDb();
+    processRevisions = filterRevisions(revisionPtrs, 6, 3);
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, SchemaUpgradeOptions::RevisionUpgradeOptions::Reverse);
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    ASSERT_TRUE(m_db->Revisions().HasReversedRevisions());
+    ASSERT_STREQ(m_db->Revisions().GetReversedRevisionId().c_str(), revisionPtrs[2]->GetId().c_str());
+    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetId().c_str());
+
+    /*
+    * Test 2: Invalid merge (of revision 7-9)
+    */
+    m_db->CloseDb();
+    processRevisions = filterRevisions(revisionPtrs, 7, 9);
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+    BeTest::SetFailOnAssert(false);
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    BeTest::SetFailOnAssert(true);
+    ASSERT_FALSE(m_db.IsValid()) << "Could perform an invalid merge";
+
+    openParams.GetSchemaUpgradeOptionsR().Reset();
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+    ASSERT_TRUE(m_db->Revisions().HasReversedRevisions());
+    ASSERT_STREQ(m_db->Revisions().GetReversedRevisionId().c_str(), revisionPtrs[2]->GetId().c_str());
+    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetId().c_str());
+
+    /*
+    * Test 3: Reinstate and merge
+    */
+    // Reinstate 3-6
+    m_db->CloseDb();
+    processRevisions = filterRevisions(revisionPtrs, 3, 6);
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, SchemaUpgradeOptions::RevisionUpgradeOptions::Reinstate);
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    ASSERT_FALSE(m_db->Revisions().HasReversedRevisions());
+    ASSERT_STREQ(m_db->Revisions().GetReversedRevisionId().c_str(), "");
+    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[6]->GetId().c_str());
+
+    // Merge Rev 7-9
+    m_db->CloseDb();
+    processRevisions = filterRevisions(revisionPtrs, 7, 9);
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(processRevisions, SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+    m_db = DgnDb::OpenDgnDb(&openStatus, fileName, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+    
+    ASSERT_FALSE(m_db->Revisions().HasReversedRevisions());
+    ASSERT_STREQ(m_db->Revisions().GetReversedRevisionId().c_str(), "");
+    ASSERT_STREQ(m_db->Revisions().GetParentRevisionId().c_str(), revisionPtrs[9]->GetId().c_str());
     }
 
 #ifdef DEBUG_REVISION_TEST_MANUAL

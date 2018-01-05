@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDomain.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -83,19 +83,20 @@ enum class DomainUpgradeOptions : int
 //! Option to control the revision upgrades
 enum class RevisionUpgradeOptions : int
     {
+    None,
     Merge, //!< Revisions will be merged in
     Reverse, //!< Revisions will be reversed
     Reinstate //!< Revisions will be reinstated
     };
 
 private:
-    DomainUpgradeOptions m_domainUpgradeOptions;
+    DomainUpgradeOptions m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
     bvector<DgnRevisionCP> m_upgradeRevisions;
-    RevisionUpgradeOptions m_revisionUpgradeOptions;
+    RevisionUpgradeOptions m_revisionUpgradeOptions = RevisionUpgradeOptions::None;
 
 public:
     //! Default constructor
-    SchemaUpgradeOptions() : m_domainUpgradeOptions(DomainUpgradeOptions::ValidateOnly) {}
+    SchemaUpgradeOptions() {}
 
     //! Constructor to setup schema upgrades from the registered domains
     SchemaUpgradeOptions(DomainUpgradeOptions domainOptions) { SetUpgradeFromDomains(domainOptions); }
@@ -104,7 +105,7 @@ public:
     SchemaUpgradeOptions(DgnRevisionCR revision, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge) { SetUpgradeFromRevision(revision, revisionOptions); }
 
     //! Constructor to setup schema upgrades by merging revisions (that may contain schema changes).
-    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions) { SetUpgradeFromRevisions(revisions); }
+    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions, RevisionUpgradeOptions revisionOptions = RevisionUpgradeOptions::Merge) { SetUpgradeFromRevisions(revisions, revisionOptions); }
 
     //! Setup to upgrade schemas from the registered domains
     void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::UseDefaults)
@@ -138,6 +139,14 @@ public:
 
     //! Returns true if schemas are to be upgraded from the domains.
     bool AreDomainUpgradesAllowed() const;
+
+    //! Resets the options
+    void Reset()
+        {
+        m_domainUpgradeOptions = DomainUpgradeOptions::ValidateOnly;
+        m_upgradeRevisions.clear();
+        m_revisionUpgradeOptions = RevisionUpgradeOptions::None;
+        }
 };
 
 //=======================================================================================
