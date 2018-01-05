@@ -1,8 +1,8 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: BimConsole/BimConsole.mke $
+#  $Source: iModelConsole/iModelConsole.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %if !defined (BuildContext)
@@ -13,15 +13,15 @@
 
 SrcDir              = $(_MakeFilePath)
 SubpartLibs         = $(BuildContext)SubParts/Libs/
-o                   = $(OutputRootDir)Build/BimConsole/
+o                   = $(OutputRootDir)Build/iModelConsole/
 ContextDeliveryDir  = $(BuildContext)Delivery/
-appName             = BimConsole
+appName             = iModelConsole
 
 always:
     ~mkdir $(o)
 
 AllHeaders = \
-        $(SrcDir)BimConsole.h \
+        $(SrcDir)iModelConsole.h \
         $(SrcDir)Command.h
 
 
@@ -29,7 +29,7 @@ AllHeaders = \
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)BimConsole$(oext) : $(SrcDir)BimConsole.cpp ${AllHeaders}  ${MultiCompileDepends}
+$(o)iModelConsole$(oext) : $(SrcDir)iModelConsole.cpp ${AllHeaders}  ${MultiCompileDepends}
 
 $(o)Command$(oext) : $(SrcDir)Command.cpp ${AllHeaders}  ${MultiCompileDepends}
 

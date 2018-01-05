@@ -11,17 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BimConsole.h" />
-    <ClInclude Include="Command.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="BimConsole.cpp" />
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="ECSqlCommand.cpp" />
+    <ClCompile Include="iModelConsole.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="BimConsole.mke" />
+    <ClInclude Include="Command.h" />
+    <ClInclude Include="iModelConsole.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="iModelConsole.mke" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{742B1919-03DD-4404-9BFB-231FFB0E4D30}</ProjectGuid>
@@ -50,11 +50,11 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <OutDir>$(OutRoot)Winx64\Build\BimConsole\</OutDir>
-    <IntDir>$(OutRoot)Winx64\Build\BimConsole\</IntDir>
+    <OutDir>$(OutRoot)Winx64\Build\iModelConsole\</OutDir>
+    <IntDir>$(OutRoot)Winx64\Build\iModelConsole\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\BimConsole\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\BimConsole\</BaseIntermediateOutputPath>
-    <NMakeOutput>$(OutRoot)\Winx64\Product\BimConsole\BimConsole.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)\Winx64\Product\iModelConsole\iModelConsole.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

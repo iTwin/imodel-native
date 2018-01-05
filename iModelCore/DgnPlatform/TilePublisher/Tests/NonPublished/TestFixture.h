@@ -21,6 +21,7 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
+USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
 
 namespace TileIO = BentleyApi::Dgn::TileTree::IO;
 
@@ -93,6 +94,7 @@ private:
     void Read(BeFileNameCR filename);
     void Read(Json::Value const& json);
 public:
+    typedef std::initializer_list<ColorDef> ColorDefList;
     struct DisplayStyle
     {
         ColorDef    m_backgroundColor;
@@ -223,6 +225,7 @@ public:
     static void ExpectEqual(DgnModelIdSet const& lhs, DgnModelIdSet const& rhs) { ExpectEqualSets(lhs, rhs); }
     static void ExpectEqual(Model const& lhs, Model const& rhs) { lhs.ExpectEqual(rhs); }
     static void ExpectEqual(View const& lhs, View const& rhs) { lhs.ExpectEqual(rhs); }
+    static void VerifyMesh(Render::Primitives::Mesh const&, int triangles, int poliLines, int points, int normals, int params, ColorDefList const& colorDefs, bool areColorsUniform );
 
     template<typename T> static void ExpectEqual(T const& lhs, T const& rhs)
         {
@@ -333,6 +336,7 @@ public:
 
     // Create a spatial category (for 3d elements)
     DgnCategoryId InsertSpatialCategory(Utf8CP name) { return DgnDbTestUtils::InsertSpatialCategory(GetDb(), name); }
+    DgnSubCategoryId InsertSubCategory(DgnCategoryId categoryId, Utf8CP name, ColorDefCR color);
 
     // Spatial (3d) views can display any number of spatial models, defined by a ModelSelector which holds a DgnModelIdSet of the viewed models.
     ModelSelectorCPtr InsertModelSelector(DgnModelId modelId, Utf8CP name="") { DgnModelIdSet modelIds; modelIds.insert(modelId); return InsertModelSelector(modelIds, name); }
@@ -385,7 +389,7 @@ public:
     static Utf8String GetRelativeTilesetUrl(DgnModelId modelId, DgnDbR db);
 
 //  [ === Evaluating output === ]
-    
+
     // Verify feature exists in feature table. If expectedId != -1, verify it has the expected ID within the table.
     static void ExpectFeatureId(uint32_t expectedId, Render::FeatureCR feature, Render::FeatureTableCR table)
         {
@@ -393,6 +397,11 @@ public:
         EXPECT_TRUE(table.FindIndex(actualId, feature));
         if (-1 != expectedId)
             EXPECT_EQ(expectedId, actualId);
+        }
+    static void ExpectFeatureId(uint32_t expectedId, Render::FeatureTableCR table, DgnElementCR elem, DgnSubCategoryId subCatId, DgnGeometryClass geomClass = DgnGeometryClass::Primary)
+        {
+        Render::Feature feature(elem.GetElementId(), subCatId, geomClass);
+        ExpectFeatureId(expectedId, feature, table);
         }
 
     static void ExpectFeatureId(uint32_t expectedId, Render::FeatureTableCR table, DgnElementCR elem, DgnCategoryId catId, DgnGeometryClass geomClass = DgnGeometryClass::Primary)

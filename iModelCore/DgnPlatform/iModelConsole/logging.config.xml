@@ -4,7 +4,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
 
     <appender name="General" class="org.apache.log4j.FileAppender">
-        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\bimconsole.log"/> <!-- Required -->
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelConsole\\imodelconsole.log"/> <!-- Required -->
         <param name="createpath" value="true"/> <!-- Optional -->
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%d{ISO8601} %-5p %c - %m%n"/>
@@ -13,7 +13,7 @@
     </appender>
     
      <appender name="ECSqlStatementPrepareDiagnostics" class="org.apache.log4j.FileAppender">
-        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\ecsqlstatement_prepare_diagnostics.log"/> <!-- Required -->
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelConsole\\ecsqlstatement_prepare_diagnostics.log"/> <!-- Required -->
         <param name="createpath" value="true"/> <!-- Optional -->
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%m%n"/>
@@ -22,7 +22,7 @@
     </appender>
 
     <appender name="ECSqlStatementCacheDiagnostics" class="org.apache.log4j.FileAppender">
-        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\ecsqlstatement_cache_diagnostics.log"/> <!-- Required -->
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelConsole\\ecsqlstatement_cache_diagnostics.log"/> <!-- Required -->
         <param name="createpath" value="true"/> <!-- Optional -->
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%m%n"/>
@@ -31,7 +31,7 @@
     </appender>
 
     <appender name="BeSQLiteDiagnosticsPrepare" class="org.apache.log4j.FileAppender">
-        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\besqlite_diagnostics_prepare.log"/> <!-- Required -->
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelConsole\\besqlite_diagnostics_prepare.log"/> <!-- Required -->
         <param name="createpath" value="true"/> <!-- Optional -->
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%m%n"/>
@@ -40,7 +40,7 @@
     </appender>
 
     <appender name="BeSQLiteDiagnosticsQueryPlan" class="org.apache.log4j.FileAppender">
-        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\besqlite_diagnostics_queryplan.log"/> <!-- Required -->
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelConsole\\besqlite_diagnostics_queryplan.log"/> <!-- Required -->
         <param name="createpath" value="true"/> <!-- Optional -->
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%m%n"/>
@@ -49,7 +49,7 @@
     </appender>
 
     <appender name="BeSQLiteDiagnosticsTableScans" class="org.apache.log4j.FileAppender">
-        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\besqlite_diagnostics_tablescans.log"/> <!-- Required -->
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelConsole\\besqlite_diagnostics_tablescans.log"/> <!-- Required -->
         <param name="createpath" value="true"/> <!-- Optional -->
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%m%n"/>
