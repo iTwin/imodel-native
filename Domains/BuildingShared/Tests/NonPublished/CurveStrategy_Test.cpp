@@ -257,3 +257,96 @@ TEST_F(CurveStrategyTests, LinePointsLengthTests)
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 7, 3 });
     CompareCurves(createdCurve, expected);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveStrategyTests, LinePointsAngleTests)
+    {
+    LinePointsAnglePlacementStrategyPtr strategy = LinePointsAnglePlacementStrategy::Create
+    (
+        DPlane3d::FromOriginAndNormal
+        (
+            DPoint3d::From(0, 0, 0),
+            DVec3d::From(0, 0, 1)
+        )
+    );
+
+    // Check initial state
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should be created with no initial points";
+
+    double angle;
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Initially, angle should be accessible";
+    ASSERT_EQ(0, angle) << "Initial angle should be 0";
+
+    ICurvePrimitivePtr createdCurve = strategy->FinishPrimitive();
+    ASSERT_TRUE(createdCurve.IsNull()) << "no curve should be created with 0 points";
+
+    // Try setting properties
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ComparePoints({ { 0, 0, 0 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    ASSERT_TRUE(createdCurve.IsNull()) << "Curve shouldn't be created with 0 points";
+
+    strategy->AddKeyPoint({ 1, 2, 3 });
+    ComparePoints({ { 0, 0, 0 }, {std::sqrt(14.0), 0, 0} }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    ICurvePrimitivePtr expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { std::sqrt(14.0), 0, 0 });
+    CompareCurves(createdCurve, expected);
+
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
+    ASSERT_DOUBLE_EQ(msGeomConst_pi / 2, angle) << "Angle is incorrect";
+    ComparePoints({ { 0, 0, 0 },{ 0, std::sqrt(14.0), 0 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 0, std::sqrt(14.0), 0 });
+    CompareCurves(createdCurve, expected);
+
+    strategy->PopKeyPoint();
+    strategy->PopKeyPoint();
+    ASSERT_EQ(0, strategy->GetKeyPoints().size());
+
+    strategy->AddKeyPoint({ 1, 2, 3 });
+    ComparePoints({ { 1, 2, 3 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    ASSERT_TRUE(createdCurve.IsNull()) << "Curve shouldn't be created with 0 points";
+
+    strategy->AddDynamicKeyPoint({ 2, 2, 2 });
+    ComparePoints({ { 1, 2, 3 }, {1, 2.0 + std::sqrt(2.0), 3 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 2.0 + std::sqrt(2.0), 3 });
+    CompareCurves(createdCurve, expected);
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 2.0 + std::sqrt(2.0), 3 });
+    CompareCurves(createdCurve, expected);
+
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 4);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
+    ASSERT_DOUBLE_EQ(msGeomConst_pi / 4, angle) << "Angle is incorrect";
+    ComparePoints({ { 1, 2, 3 },{ 2, 3, 3 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 2, 3, 3 });
+    CompareCurves(createdCurve, expected);
+
+    DPlane3d otherPlane = DPlane3d::FromOriginAndNormal
+    (
+        DPoint3d::From(0, 0, 0),
+        DVec3d::From(1, 0, 0)
+    );
+
+    strategy->SetWorkingPlane(otherPlane);
+    ComparePoints({ { 1, 2, 3 },{ 1, 3, 2 } }, strategy->GetKeyPoints());
+
+    createdCurve = strategy->FinishPrimitive();
+    expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 3, 2 });
+    CompareCurves(createdCurve, expected);
+    }
