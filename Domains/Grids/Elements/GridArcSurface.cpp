@@ -272,4 +272,93 @@ CreateParams const& params
 
     return gridSurface;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanCircumferentialGridSurface::RecomputeGeometryStream
+(
+)
+    {
+    GridAxisCPtr gridAxis = GetDgnDb().Elements().Get<GridAxis>(GetAxisId());
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+
+    double staElev = GetStartElevation();
+    double endElev = GetEndElevation();
+    double height = endElev - staElev;
+
+    double radius = GetRadius();
+    double startAngle = GetStartAngle();
+    double endAngle = GetEndAngle();
+    double length = endAngle - startAngle;
+
+    bool isCircularAxis = gridAxis->IsCircularAxis();
+
+    if (!isCircularAxis) //must be on CircularAxis
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    if (DoubleOps::AlmostEqualFraction(length, 0.0))    //should have a length
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    DVec3d xVec = DVec3d::From(1.0, 0.0, 0.0);
+    DVec3d yVec = DVec3d::From(0.0, 1.0, 0.0);
+    DPoint3d center = DPoint3d::From(0.0, 0.0, staElev);
+
+    DEllipse3d ellipse = DEllipse3d::FromVectors(center, yVec, xVec, -startAngle, -length);
+
+
+    //start from the grid transform
+    Placement3dCR currGridPlacement = grid->GetPlacement();
+    SetPlacement(Placement3d()); //set the start local coordinates
+
+    //now set the geometry
+    ICurvePrimitivePtr arcPrimitive = ICurvePrimitive::CreateArc(ellipse);
+    DgnExtrusionDetail detail = DgnExtrusionDetail(CurveVector::Create(arcPrimitive), DVec3d::From(0, 0, height), false);
+    ISolidPrimitivePtr geometryInLocalCoords = ISolidPrimitive::CreateDgnExtrusion(detail);
+
+    if (BentleyStatus::SUCCESS != SetGeometry(geometryInLocalCoords))
+        Dgn::DgnDbStatus::WriteError;
+
+    //translate to member position
+    Placement3d thisPlacement(GetPlacement());
+    Transform gridTrans = grid->GetPlacementTransform();
+    thisPlacement.TryApplyTransform(gridTrans);
+
+    SetPlacement(thisPlacement);
+
+    return Dgn::DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanCircumferentialGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnUpdate(original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanCircumferentialGridSurface::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnInsert();
+    }
+
 END_GRIDS_NAMESPACE

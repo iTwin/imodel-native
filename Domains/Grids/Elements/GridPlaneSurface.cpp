@@ -505,10 +505,10 @@ Dgn::DgnDbStatus                PlanRadialGridSurface::RecomputeGeometryStream
 
     double angle = GetAngle();
     double startRadius = GetStartRadius();
-    double endRadius = GetEndRadius;
+    double endRadius = GetEndRadius();
     double length = endRadius - startRadius;
 
-    bool isradialAxis = gridAxis->IsRadialAxisY();
+    bool isradialAxis = gridAxis->IsRadialAxis();
 
     if (!isradialAxis) //must be on RadialAxis
         return Dgn::DgnDbStatus::ValidationFailed;
@@ -576,6 +576,7 @@ Dgn::DgnDbStatus                PlanRadialGridSurface::_OnInsert
 
     return T_Super::_OnInsert();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
