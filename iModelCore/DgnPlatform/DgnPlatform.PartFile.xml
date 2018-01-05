@@ -536,7 +536,7 @@
     <!-- ******************* "NoView" Tests - all tests up through DgnPlatform ********************* -->
     <!-- ******************************************************************************************* -->
 
-    <Part Name="DgnPlatformNoViewTested">
+    <Part Name="DgnPlatformNoViewTested" PrgOutputDir="DgnClientSdk">
       <RequiredRepository>DgnDbTestingScripts</RequiredRepository><!--To Automate Unit Testing on Linux-->
                 
       <!-- Cannot include because they depend on DgnView
