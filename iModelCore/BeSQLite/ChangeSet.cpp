@@ -2,7 +2,7 @@
 |
 |     $Source: ChangeSet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/ChangeSet.h>
@@ -759,6 +759,9 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
     result = changeSet.FromChangeGroup(changeGroup);
     if (result != BE_SQLITE_OK)
         return result;
+
+    if (!changeSet.IsValid())
+        return BE_SQLITE_OK; // Empty change stream
 
     return invert ? changeSet.Invert() : BE_SQLITE_OK;
     }
