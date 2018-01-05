@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/RealityDataServiceTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -70,6 +70,9 @@ TEST_F(RealityDataServiceFixture, RealityDataUrl)
 TEST_F(RealityDataServiceFixture, RealityDataRelationshipByRelatedIdRequest)
 	{
 	RealityDataRelationshipByProjectIdRequest dataRequest("myIdentifierID");
+
+    EXPECT_STREQ(dataRequest.GetId().c_str(), "myIdentifierID");
+
 	EXPECT_STREQ(dataRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityDataRelationship?$filter=RelatedId+eq+'myIdentifierID'");
 	}
 
@@ -238,6 +241,10 @@ TEST_F(RealityDataServiceFixture, RealityDataListByUltimateIdPagedRequest)
 	{
     RealityDataListByUltimateIdPagedRequest requestUT("MyIdentifier",77,75);
 
+    EXPECT_STREQ(requestUT.GetId().c_str(), "MyIdentifier");
+    EXPECT_EQ(requestUT.GetPageSize(), 75);
+    EXPECT_EQ(requestUT.GetStartIndex(), 77);
+
 	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData?$filter=UltimateId+eq+'MyIdentifier'&$skip=77&$top=75");
 	}
 
@@ -272,6 +279,8 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipByProjectIdPagedRequest
 	{
 	RealityDataRelationshipByProjectIdPagedRequest requestUT("MyIdentifier");
 
+    EXPECT_STREQ(requestUT.GetId().c_str(), "MyIdentifier");
+
 	auto filter = RealityDataFilterCreator::FilterByName("MyName");
 	requestUT.SetFilter(filter);
 	requestUT.SortBy(RealityDataField::Copyright, false);
@@ -293,6 +302,8 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipByProjectIdPagedRequest
 TEST_F(RealityDataServiceFixture, RealityDataRelationshipByRealityDataIdPagedRequest)
 	{
 	RealityDataRelationshipByRealityDataIdPagedRequest requestUT("MyIdentifier");
+
+    EXPECT_STREQ(requestUT.GetId().c_str(), "MyIdentifier");
 
 	auto filter = RealityDataFilterCreator::FilterByName("MyName");
 	requestUT.SetFilter(filter);
@@ -605,6 +616,9 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentByIdRequestBadRequest)
 		}));
 
 	RealityDataDocumentByIdRequest requestUT("RealityDataID");
+    
+    EXPECT_STREQ(requestUT.GetId().c_str(), "RealityDataID");
+
 	RawServerResponse rawResponse{};
 
 	s_realityDataService->Request(requestUT, rawResponse);
@@ -624,11 +638,13 @@ TEST_F(RealityDataServiceFixture, RealityDataDocumentContentByIdRequestBadReques
 		}));
 
 	RealityDataDocumentContentByIdRequest requestUT("RealityDataID");
+    
+    EXPECT_TRUE(requestUT.GetTokenTimer() < 0);
+
 	RawServerResponse rawResponse{};
 
 	s_realityDataService->Request(requestUT,new BeFile() ,rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
-    
 	}
 
 //=====================================================================================
@@ -893,6 +909,9 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
     DateTime dt = DateTime::GetCurrentTimeUtc();
     DateTime::FromString(dt, "2017-06-06");
 	RealityDataEnterpriseStatRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a4", dt);
+
+    EXPECT_STREQ(requestUT.GetId().c_str(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+
 	RawServerResponse rawResponse{};
     RealityDataEnterpriseStat stats;
 
@@ -1009,6 +1028,9 @@ TEST_F(RealityDataServiceFixture, RealityDataExtendedByIdRequestGoodRequest)
         }));
 
     RealityDataExtendedByIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a5");
+
+    EXPECT_STREQ(requestUT.GetId().c_str(), "72adad30-c07c-465d-a1fe-2f2dfac950a5");
+
     RawServerResponse rawResponse{};
 
     auto realityData = s_realityDataService->Request(requestUT, rawResponse);
@@ -1189,6 +1211,9 @@ TEST_F(RealityDataServiceFixture, RealityDataRelationshipByRealityDataIdRequestG
 		}));
 
 	RealityDataRelationshipByRealityDataIdRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a6");
+
+    EXPECT_STREQ(requestUT.GetId().c_str(), "72adad30-c07c-465d-a1fe-2f2dfac950a6");
+
 	RawServerResponse rawResponse{};
    
 	auto vector = s_realityDataService->Request(requestUT, rawResponse);

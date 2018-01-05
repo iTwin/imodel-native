@@ -1,8 +1,8 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatformTools/RealityDataObjectsTester.cpp $
+//:>     $Source: Tests/RealityPlatform/RealityDataObjectsTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -14,7 +14,6 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataObjects.h>
-#include <RealityPlatformTools/RealityConversionTools.h>
 
 #include <algorithm>
 
@@ -920,6 +919,10 @@ TEST_F(RealityDataObjectTestFixture, RealityDataRelationshipBasicTest)
     EXPECT_STREQ(myRelationShip2->GetRealityDataId().c_str(), "8411d048-78ec-495a-b263-cad44dba7a17");
     EXPECT_STREQ(myRelationShip2->GetRelatedId().c_str(), "73597d7f-e2fe-4704-8ee9-be37ed1f3d37");
     EXPECT_STREQ(myRelationShip2->GetRelationType().c_str(), "CONNECT-Project");
+
+    //empty
+    RealityDataRelationshipPtr myRelationShip3 = RealityDataRelationship::Create();
+    EXPECT_TRUE(myRelationShip3->GetRealityDataId().empty());
     }
 
 
@@ -948,6 +951,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataRelationshipGetSet)
 //-------------------------------------------------------------------------------------
 TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
     {
+    RealityDataDocumentPtr emptyDocument = RealityDataDocument::Create();
+
+    EXPECT_TRUE(emptyDocument != nullptr);
 
     Utf8CP jsonString = "{"
         "\"instances\": ["

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/GeoCoordinationServiceTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <Bentley/BeTest.h>
@@ -248,6 +248,8 @@ TEST_F(GeoCoordinationServiceRequestFixture, DownloadReportBadRequest)
     tempFile->Close();
 
     auto request = DownloadReportUploadRequest("randomguid", "myidentifier", BeFileName(fileName));
+
+    EXPECT_EQ(request.GetMessageSize(), 0);
 
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("Error Uploading DownloadReport"), _));
 

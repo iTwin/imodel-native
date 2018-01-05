@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/SimpleRDSTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -127,7 +127,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataRelationshipCreateRequestTest)
     rel.SetRealityDataId("MyIdentifier");
     ConnectedResponse response = rel.Create();
 
-    EXPECT_FALSE(response.simpleSuccess);
+    EXPECT_FALSE(response.GetSuccess());
 
     rel.SetRelatedId("MYProjectID");
     response = rel.Create();
@@ -179,6 +179,10 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataFolderTest)
 //=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataTest)
     {
+    ConnectedRealityData emptyRd = ConnectedRealityData();
+
+    EXPECT_TRUE(emptyRd.GetMetadataUrl().empty());
+
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
         EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/RealityData/72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a5");
