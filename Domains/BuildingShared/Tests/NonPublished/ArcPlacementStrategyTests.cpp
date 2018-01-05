@@ -231,12 +231,12 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
     sut->AddKeyPoint({0,0,0});
     sut->AddKeyPoint({1,0,0});
     DVec3d normal;
-    ASSERT_NE(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+    ASSERT_NE(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal, normal));
     ASSERT_FALSE(sut->FinishPrimitive().IsValid());
 
     DVec3d expectedNormal = DVec3d::From(0, 0, 1);
-    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
-    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal, expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal, normal));
     ASSERT_TRUE(normal.AlmostEqual(expectedNormal));
     
     ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
@@ -265,12 +265,12 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
     sut->AddKeyPoint({0,0,0});
     sut->AddKeyPoint({-3,0,0});
     DVec3d normal;
-    ASSERT_NE(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+    ASSERT_NE(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal, normal));
     ASSERT_FALSE(sut->FinishPrimitive().IsValid());
 
     DVec3d expectedNormal = DVec3d::From(0, 0, 1);
-    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
-    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal, expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal, normal));
     ASSERT_TRUE(normal.AlmostEqual(expectedNormal));
 
     ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
@@ -296,8 +296,8 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
 
     DVec3d normal;
     DVec3d expectedNormal = DVec3d::From(0, 0, 1);
-    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
-    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal, expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal, normal));
 
     sut->AddKeyPoint({2,0,0});
     sut->AddKeyPoint({0,0,0});

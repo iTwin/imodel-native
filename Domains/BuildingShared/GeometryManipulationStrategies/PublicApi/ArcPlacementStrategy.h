@@ -30,7 +30,7 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
         ArcManipulationStrategyR GetArcManipulationStrategyR() { return *m_manipulationStrategy; }
 
     public:
-        BE_PROP_NAME(Normal)
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Normal;
     };
 
 END_BUILDING_SHARED_NAMESPACE

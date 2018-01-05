@@ -53,7 +53,7 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
         if (startEndCenterInLine)
             {
             DVec3d normal;
-            if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
+            if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal, normal))
                 return nullptr;
 
             double centerEndMagnitude = centerEnd.Magnitude();

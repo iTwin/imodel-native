@@ -118,10 +118,10 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should be created with no initial points";
     
     double length, angle;
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Length, length)) << "Initially, length should be accessible";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Initially, length should be accessible";
     ASSERT_EQ(0, length) << "Initial length should be 0";
     
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Angle, angle)) << "Initially, angle should be accessible";
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Initially, angle should be accessible";
     ASSERT_EQ(0, angle) << "Initial angle should be 0";
 
     ICurvePrimitivePtr createdCurve = strategy->FinishPrimitive();
@@ -135,8 +135,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     ICurvePrimitivePtr expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 0, 0, 0 });
     CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(BUILDINGSHARED_PROP_Length, 2.0);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Length, length)) << "Getting length should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Length, 2.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Getting length should not fail";
     ASSERT_DOUBLE_EQ(2.0, length) << "Length is incorrect";
     ComparePoints({ {0, 0, 0},{ 2, 0, 0 } }, strategy->GetKeyPoints());
     
@@ -144,8 +144,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     expected = ICurvePrimitive::CreateLine({ 0, 0, 0 }, { 2, 0, 0 });
     CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(BUILDINGSHARED_PROP_Angle, msGeomConst_pi / 2);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Angle, angle)) << "Getting angle should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 2);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
     ASSERT_DOUBLE_EQ(msGeomConst_pi / 2, angle) << "Angle is incorrect";
     ComparePoints({ {0, 0, 0}, {0, 2, 0} }, strategy->GetKeyPoints());
 
@@ -163,8 +163,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 4, 3 });
     CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(BUILDINGSHARED_PROP_Length, 5.0);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Length, length)) << "Getting length should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Length, 5.0);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Length, length)) << "Getting length should not fail";
     ASSERT_DOUBLE_EQ(5.0, length) << "Length is incorrect";
     ComparePoints({ { 1, 2, 3 },{ 1, 7, 3 } }, strategy->GetKeyPoints());
 
@@ -172,8 +172,8 @@ TEST_F(CurveStrategyTests, LinePointAngleLengthTests)
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 7, 3 });
     CompareCurves(createdCurve, expected);
 
-    strategy->SetProperty(BUILDINGSHARED_PROP_Angle, msGeomConst_pi / 4);
-    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(BUILDINGSHARED_PROP_Angle, angle)) << "Getting angle should not fail";
+    strategy->SetProperty(LinePlacementStrategy::prop_Angle, msGeomConst_pi / 4);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(LinePlacementStrategy::prop_Angle, angle)) << "Getting angle should not fail";
     ASSERT_DOUBLE_EQ(msGeomConst_pi / 4, angle) << "Angle is incorrect";
     ComparePoints({ { 1, 2, 3 },{ 1 + std::sqrt(25.0/2.0), 2 + std::sqrt(25.0/2.0), 3 } }, strategy->GetKeyPoints());
 
