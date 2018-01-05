@@ -484,9 +484,6 @@ CreateParams const& params
     {
     PlanRadialGridSurfacePtr gridSurface = new PlanRadialGridSurface (params);
 
-    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
-        return nullptr;
-
     return gridSurface;
     }
 
@@ -545,7 +542,7 @@ Dgn::DgnDbStatus                PlanRadialGridSurface::RecomputeGeometryStream
     //start from the grid transform
     Placement3dCR currGridPlacement = grid->GetPlacement();
     SetPlacement(Placement3d()); //set the start local coordinates
-    Transform rotation = Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, -angle);
+    Transform rotation = Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
 
     //now set the geometry
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(startPt, endPt));

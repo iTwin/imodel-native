@@ -271,9 +271,6 @@ CreateParams const& params
     {
     PlanCircumferentialGridSurfacePtr gridSurface = new PlanCircumferentialGridSurface (params);
 
-    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
-        return nullptr;
-
     return gridSurface;
     }
 
@@ -325,11 +322,11 @@ Dgn::DgnDbStatus                PlanCircumferentialGridSurface::RecomputeGeometr
     if (DoubleOps::AlmostEqualFraction(length, 0.0))    //should have a length
         return Dgn::DgnDbStatus::ValidationFailed;
 
-    DVec3d xVec = DVec3d::From(1.0, 0.0, 0.0);
-    DVec3d yVec = DVec3d::From(0.0, 1.0, 0.0);
+    DVec3d xVec = DVec3d::From(radius, 0.0, 0.0);
+    DVec3d yVec = DVec3d::From(0.0, radius, 0.0);
     DPoint3d center = DPoint3d::From(0.0, 0.0, staElev);
 
-    DEllipse3d ellipse = DEllipse3d::FromVectors(center, yVec, xVec, -startAngle, -length);
+    DEllipse3d ellipse = DEllipse3d::FromVectors(center, yVec, xVec, startAngle, length);
 
 
     //start from the grid transform

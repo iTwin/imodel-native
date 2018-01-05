@@ -208,8 +208,8 @@
       <ECProperty propertyName="DefaultRadiusIncrement" displayLabel="DefaultRadiusIncrement" typeName="double" kindOfQuantity="Angle"/>
       <ECProperty propertyName="DefaultStartAngle" displayLabel="DefaultStartAngle" typeName="double" kindOfQuantity="Angle"/>
       <ECProperty propertyName="DefaultEndAngle" displayLabel="DefaultEndAngle" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="DefaultStartExtent" displayLabel="DefaultStartExtent" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultEndExtent" displayLabel="DefaultEndExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultStartRadius" displayLabel="DefaultStartRadius" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultEndRadius" displayLabel="DefaultEndRadius" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="SketchGrid" description="A SketchGrid contains surfaces whose positions are not constrained (other than being swept to the grid normal)">

@@ -223,17 +223,17 @@ RadialGrid::CreateParams GridsTestFixture::GetTestDefaultCreateParamsForRadialGr
     {
     DgnDbR db = *DgnClientApp::App().Project();
     return RadialGrid::CreateParams(*m_model,
-                                           db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-                                           7, /*plane count*/
-                                           5, /*circular count*/
-                                           7 * msGeomConst_pi / 180, /*plane iteration angle*/
-                                           13, /*circular interval*/
-                                           70, /*length*/
-                                           50, /*height*/
-                                           "Radial Grid",
-                                           0.0,
-                                           70.0,
-                                           false /*extend heihgt*/);
+                                    db.Elements().GetRootSubject()->GetElementId(), /*scope element*/
+                                    "Radial Grid",   /*name*/
+                                    7 * msGeomConst_pi / 180, /*defaultAngleIncrement*/
+                                    13, /*defaultRadiusIncrement*/
+                                    -msGeomConst_piOver12, /*defaultStartAngle*/
+                                    7 * 7 * msGeomConst_pi / 180 + msGeomConst_piOver12, /*defaultEndAngle*/
+                                    0.0, /*defaultStartRadius*/
+                                    70, /*defaultEndRadius*/
+                                    0.0, /*defaultstaElevation*/
+                                    50 /*defaultendElevation*/
+                                    );
     }
 
 //---------------------------------------------------------------------------------------
@@ -1788,7 +1788,7 @@ TEST_F(GridsTestFixture, RadialGrid_Empty_CreatedAndDeleted)
     {
     DgnDbR db = *DgnClientApp::App().Project();
 
-    RadialGrid::CreateParams params(*m_model, m_model->GetModeledElementId(), 0, 0, 0, 0, 0 , 0, "empty radial grid", 0, 10, false);
+    RadialGrid::CreateParams params(*m_model, m_model->GetModeledElementId(), "empty radial grid", 0, 0, 0, 0, 0 , 0, 0, 10);
 
     RadialGridPtr empty = RadialGrid::Create(params);
     ASSERT_TRUE(empty.IsValid()) << "Failed to create empty radial grid";
@@ -1807,7 +1807,7 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     DgnDbR db = *DgnClientApp::App().Project();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
 
     DPlane3d gridPlane = radialGrid->GetPlane();
     ASSERT_TRUE(gridPlane.origin.AlmostEqual({ 0, 0, 0 })) << "Grid plane origin is incorrect";
@@ -1889,13 +1889,13 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     for (size_t i = 0; i < planeElements.size(); ++i)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
-        ASSERT_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be 0
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -1915,8 +1915,8 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
         {
         GridArcSurfaceCPtr arc = arcElements[i];
         double r = (i + 1) * 13;
-        double extendLength = (2 * UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH)) / r;
-        double theta = (7 * 7) * msGeomConst_pi / 180 + extendLength;
+        double extendAngle = (2 * msGeomConst_piOver12);
+        double theta = (7 * 7) * msGeomConst_pi / 180 + extendAngle;
         double expectedLength = r * theta;
 
         double length = 0;
@@ -1959,7 +1959,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
     DgnDbR db = *DgnClientApp::App().Project();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
 
     db.SaveChanges();
 
@@ -2024,13 +2024,13 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
 
-        ASSERT_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be 0
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
     }
 
@@ -2042,7 +2042,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
     DgnDbR db = *DgnClientApp::App().Project();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
 
     db.SaveChanges();
 
@@ -2115,13 +2115,13 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
 
-        ASSERT_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be msGeomConst_pi / 4
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        ASSERT_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
     }
 
@@ -2133,7 +2133,7 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
     DgnDbR db = *DgnClientApp::App().Project();
     RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
 
-    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(createParams, 7, 5);
 
     db.SaveChanges();
 
@@ -2207,13 +2207,13 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
 
-        ASSERT_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be msGeomConst_pi / 4
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        ASSERT_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
     }    
     
@@ -2782,19 +2782,19 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     // Create radial grid
     /////////////////////////////////////////////////////////////
     RadialGrid::CreateParams radialParams = RadialGrid::CreateParams(*m_model,
-                                                                                   db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
-                                                                                   2, /*plane count*/
-                                                                                   2, /*arc count*/
-                                                                                   30 * msGeomConst_pi / 180, /*plane iteration angle*/
-                                                                                   10, /*circular interval*/
-                                                                                   50, /*length*/
-                                                                                   30, /*height*/
-                                                                                   "Radial Grid",
-                                                                                   0.0,
-                                                                                   30.0,
-                                                                                   true /*extend height*/);
+                                                                     db.Elements().GetRootSubject()->GetElementId(), /*parent element*/
+                                                                     "Radial Grid",
+                                                                     msGeomConst_pi / 6, /*defaultAngleIncrement*/
+                                                                     10, /*defaultRadiusIncrement*/
+                                                                     0.0, /*defaultStartAngle*/
+                                                                     msGeomConst_pi / 6 * 2, /*defaultEndAngle*/
+                                                                     0.0, /*defaultStartRadius*/
+                                                                     50, /*defaultEndRadius*/
+                                                                     -BUILDING_TOLERANCE, /*defaultstaElevation*/
+                                                                     30+BUILDING_TOLERANCE /*defaultendElevation*/
+                                                                     );
 
-    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(radialParams);
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsertWithSurfaces(radialParams, 2, 2);
     ASSERT_TRUE(radialGrid.IsValid()) << "Failed to create radial grid";
 
     db.SaveChanges();

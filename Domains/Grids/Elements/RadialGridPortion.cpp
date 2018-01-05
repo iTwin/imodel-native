@@ -87,7 +87,7 @@ int circumferentialSurfaceCount
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
 
     PlanRadialGridSurface::CreateParams paramsRadial(*subModel, *thisGrid->GetRadialAxis(), 0.0, params.m_defaultStartRadius, params.m_defaultEndRadius, params.m_defaultStartElevation, params.m_defaultEndElevation);
-    PlanCircumferentialGridSurface::CreateParams paramsCircular(*subModel, *thisGrid->GetCircularAxis(), 0.0, params.m_defaultStartAngle, params.m_defaultEndAngle, params.m_defaultStartElevation, params.m_defaultEndElevation);
+    PlanCircumferentialGridSurface::CreateParams paramsCircular(*subModel, *thisGrid->GetCircularAxis(), params.m_defaultRadiusIncrement, params.m_defaultStartAngle, params.m_defaultEndAngle, params.m_defaultStartElevation, params.m_defaultEndElevation);
 
     for (int i = 0; i < radialSurfaceCount; i++)
         {
