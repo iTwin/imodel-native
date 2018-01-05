@@ -3227,7 +3227,7 @@ public:
     DGNVIEW_EXPORT virtual void _QueueReset();
     virtual int _SetGatherFrameTimings(bool gather) {return 0;}
     virtual void _GetFrameTimings(double* timings) {}
-    virtual void _GetFrameTimingNames(WCharP* timingNames) {}
+    virtual void _GetFrameTimingNames(WCharCP* timingNames) {}
 
     int GetId() const {return m_id;}
     void SetAbortFlag() {m_abort=true;}
