@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="BisCore" alias="bis" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1" displayLabel="BIS Core" description="The BIS core classes that all other domain schemas extend.">
+<ECSchema schemaName="BisCore" alias="bis" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" displayLabel="BIS Core" description="The BIS core classes that all other domain schemas extend.">
 
     <ECSchemaReference name="CoreCustomAttributes" version="1.0" alias="CoreCA"/>
     <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
@@ -27,13 +27,13 @@
 
     <!-- Restrictions that may be applied to a CustomHandledProperty. Must match the ECSqlClassParams::StatementType enum -->
     <ECEnumeration typeName="CustomHandledPropertyStatementType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="None"/>
-        <ECEnumerator value="1" displayLabel="Select"/>
-        <ECEnumerator value="2" displayLabel="Insert"/>
-        <ECEnumerator value="3" displayLabel="ReadOnly = Select|Insert"/>
-        <ECEnumerator value="4" displayLabel="Update"/>
-        <ECEnumerator value="6" displayLabel="InsertUpdate = Insert | Update"/>
-        <ECEnumerator value="7" displayLabel="All = Select | Insert | Update"/>
+        <ECEnumerator name="None" value="0" displayLabel="None"/>
+        <ECEnumerator name="Select" value="1" displayLabel="Select"/>
+        <ECEnumerator name="Insert" value="2" displayLabel="Insert"/>
+        <ECEnumerator name="ReadOnly" value="3" displayLabel="ReadOnly = Select|Insert"/>
+        <ECEnumerator name="Update" value="4" displayLabel="Update"/>
+        <ECEnumerator name="InsertUpdate" value="6" displayLabel="InsertUpdate = Insert | Update"/>
+        <ECEnumerator name="All" value="7" displayLabel="All = Select | Insert | Update"/>
     </ECEnumeration>
 
     <ECCustomAttributeClass typeName="CustomHandledProperty" description="Applied to an element's property to indicate that the property's value is handled specially by a C++ class." appliesTo="AnyProperty">
@@ -42,8 +42,8 @@
 
     <!-- Restrictions that may be applied to an AutoHandledProperty. Must match the ECSqlClassParams::StatementType enum -->
     <ECEnumeration typeName="AutoHandledPropertyStatementType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="3" displayLabel="ReadOnly = Select|Insert"/>
-        <ECEnumerator value="7" displayLabel="All = Select | Insert | Update"/>
+        <ECEnumerator name="ReadOnly"  value="3" displayLabel="ReadOnly = Select|Insert"/>
+        <ECEnumerator name="All" value="7" displayLabel="All = Select | Insert | Update"/>
     </ECEnumeration>
 
     <ECCustomAttributeClass typeName="AutoHandledProperty" description="Applied to an element's property to indicate that select, update, and insert of the property's value are handled automatically by the platform." appliesTo="AnyProperty">
