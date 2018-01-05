@@ -490,6 +490,93 @@ CreateParams const& params
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanRadialGridSurface::RecomputeGeometryStream
+(
+)
+    {
+    GridAxisCPtr gridAxis = GetDgnDb().Elements().Get<GridAxis>(GetAxisId());
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+
+    double staElev = GetStartElevation();
+    double endElev = GetEndElevation();
+    double height = endElev - staElev;
+
+    double angle = GetAngle();
+    double startRadius = GetStartRadius();
+    double endRadius = GetEndRadius;
+    double length = endRadius - startRadius;
+
+    bool isradialAxis = gridAxis->IsRadialAxisY();
+
+    if (!isradialAxis) //must be on RadialAxis
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    if (DoubleOps::AlmostEqualFraction(length, 0.0))    //should have a length
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+
+    //first, create the surface in local coordinates..
+    DPoint3d startPt = DPoint3d::From(startRadius, 0.0, staElev);
+    DPoint3d endPt = DPoint3d::From(endRadius, 0.0, staElev);
+
+    //start from the grid transform
+    Placement3dCR currGridPlacement = grid->GetPlacement();
+    SetPlacement(Placement3d()); //set the start local coordinates
+    Transform rotation = Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, -angle);
+
+    //now set the geometry
+    ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(startPt, endPt));
+    DgnExtrusionDetail detail = DgnExtrusionDetail(CurveVector::Create(line), DVec3d::From(0, 0, height), false);
+    ISolidPrimitivePtr geometryInLocalCoords = ISolidPrimitive::CreateDgnExtrusion(detail);
+
+    if (BentleyStatus::SUCCESS != SetGeometry(geometryInLocalCoords))
+        Dgn::DgnDbStatus::WriteError;
+
+    //translate to member position
+    Placement3d thisPlacement(GetPlacement());
+    thisPlacement.TryApplyTransform(rotation);
+    Transform gridTrans = grid->GetPlacementTransform();
+    thisPlacement.TryApplyTransform(gridTrans);
+
+    SetPlacement(thisPlacement);
+
+    return Dgn::DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanRadialGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnUpdate(original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                PlanRadialGridSurface::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnInsert();
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElevationGridSurface::ElevationGridSurface

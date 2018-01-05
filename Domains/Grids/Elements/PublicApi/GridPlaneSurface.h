@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridPlaneSurface.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -271,6 +271,19 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
         explicit GRIDELEMENTS_EXPORT PlanRadialGridSurface(CreateParams const& params);
         friend struct PlanRadialGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
+
+        //! Called when an element is about to be inserted into the DgnDb.
+        //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+
+        //! Called when this element is about to be replace its original element in the DgnDb.
+        //! @param [in] original the original state of this element.
+        //! Subclasses may override this method to control whether their instances are updated.
+        //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS(PlanRadialGridSurface, GRIDELEMENTS_EXPORT)
 
