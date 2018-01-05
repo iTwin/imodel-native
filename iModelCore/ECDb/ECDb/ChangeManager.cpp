@@ -160,7 +160,7 @@ DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cacheP
     {
     if (cachePath.DoesPathExist())
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists and could not be deleted.", cachePath.GetNameUtf8().c_str());
+        m_ecdb.GetImpl().Issues().Report("Failed to create Change cache file '%s'. The file already exists.", cachePath.GetNameUtf8().c_str());
         return BE_SQLITE_ERROR;
         }
 
