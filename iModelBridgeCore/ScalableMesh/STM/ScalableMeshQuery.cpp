@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2806,9 +2806,14 @@ void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<
     }
 
 void IScalableMeshNode::ClearCachedData()
-{
+    {
 	return _ClearCachedData();
-}
+    }
+
+SMNodeViewStatus IScalableMeshNode::IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
+    {
+    return _IsCorrectForView(viewDependentQueryParams);
+    }
 
 #ifdef WIP_MESH_IMPORT
 bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
@@ -2969,9 +2974,18 @@ template class ScalableMeshCachedMeshNode<DPoint3d>;
 
 template class ScalableMeshCachedDisplayNode<DPoint3d>;
 
-template class ScalableMeshNodeEdit<DPoint3d>;
+template class ScalableMeshNodeEdit<DPoint3d>;   
 
 template class ScalableMeshNodeWithReprojection<DPoint3d>;
+
+template int BuildQueryObject<DPoint3d>(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
+    ISMPointIndexQuery<DPoint3d, Extent3dType>*&                        pQueryObject,
+    const DPoint3d*                                                       pQueryExtentPts,
+    int                                                                   nbQueryExtentPts,
+    IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
+    IScalableMesh*                                                        smP);
+
+
 
 // reactivate warning
 //#pragma warning (restore: 4250)

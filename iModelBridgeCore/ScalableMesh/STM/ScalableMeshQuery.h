@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -58,7 +58,6 @@ typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 struct ScalableMeshExtentQuery;
 typedef RefCountedPtr<ScalableMeshExtentQuery> ScalableMeshExtentQueryPtr;
-
 
 /*==================================================================*/
 /*        QUERY PARAMETERS IMPLEMENTATION SECTION - START           */
@@ -1396,6 +1395,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
 		virtual void _ClearCachedData() override;
 
+        SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const override;
+
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
 
@@ -1670,6 +1671,15 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */
 /*==================================================================*/
+
+
+template <class POINT> int BuildQueryObject(
+        ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
+        const DPoint3d*                                                       pQueryExtentPts,
+        int                                                                   nbQueryExtentPts,
+        IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
+        IScalableMesh*                                                        smP);
+
 
 
 //#include "ScalableMeshPointQuery.hpp"

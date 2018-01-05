@@ -308,13 +308,14 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
     {
-#if 1
-    // NEEDS_WORK_SM : Imagepp needs to be updated on bim02
-	assert(!"Imagepp needs to be updated on bim02");
+#if 1    
     return;
 #else
     if (m_streamingRasterFile != nullptr)
         { 
+        // NEEDS_WORK_SM : Imagepp needs to be updated on bim02
+        assert(!"Imagepp needs to be updated on bim02");
+
         HGFTileIDList blocks;
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  

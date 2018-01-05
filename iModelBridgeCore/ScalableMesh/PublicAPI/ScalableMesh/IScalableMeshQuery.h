@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -522,7 +522,9 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const = 0;
 
-		virtual void _ClearCachedData() = 0;
+		virtual void _ClearCachedData() = 0;      
+
+        virtual SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const = 0;
 
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
@@ -608,6 +610,8 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const;
 
 		BENTLEY_SM_EXPORT void ClearCachedData();
+
+        BENTLEY_SM_EXPORT SMNodeViewStatus IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const;
 
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);

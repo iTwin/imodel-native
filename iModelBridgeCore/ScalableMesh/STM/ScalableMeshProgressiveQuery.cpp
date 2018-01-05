@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1132,64 +1132,6 @@ ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
     }
 
 
-template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
-    ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
-    const DPoint3d*                                                       pQueryExtentPts,
-    int                                                                   nbQueryExtentPts,
-    IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
-    IScalableMesh*                                                        smP)
-    {
-    //MST More validation is required here.
-    assert(queryParam != 0);
-
-    int status = SUCCESS;
-
-    Extent3dType queryExtent;
-    /*
-    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
-
-    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
-    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
-
-    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
-    nbQueryExtentPts,
-    minZ,
-    maxZ));
-    */
-    //MS Need to be removed
-    double viewportRotMatrix[3][3];
-    double rootToViewMatrix[4][4];
-
-    memcpy(rootToViewMatrix, queryParam->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
-    
-    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>(queryExtent,
-        rootToViewMatrix,
-        viewportRotMatrix,
-        queryParam->GetViewBox(),
-        false,
-        queryParam->GetViewClipVector(),
-        smP->ShouldInvertClips(),
-        100000000);
-
-    // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
-
-    viewDependentQueryP->SetMeanScreenPixelsPerPoint(queryParam->GetMinScreenPixelsPerPoint() * s_minScreenPixelCorrectionFactor);
-
-    viewDependentQueryP->SetMaxPixelError(queryParam->GetMaxPixelError());
-
-    //MS : Might need to be done at the ScalableMeshReprojectionQuery level.    
-    if ((queryParam->GetSourceGCS() != 0) && (queryParam->GetTargetGCS() != 0))
-        {
-        BaseGCSCPtr sourcePtr = queryParam->GetSourceGCS();
-        BaseGCSCPtr targetPtr = queryParam->GetTargetGCS();
-        viewDependentQueryP->SetReprojectionInfo(sourcePtr, targetPtr);
-        }   
-
-
-    pQueryObject = (ISMPointIndexQuery<POINT, Extent3dType>*)(viewDependentQueryP);
-
-    return status;
-    }
 
 #ifndef NDEBUG
 static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;

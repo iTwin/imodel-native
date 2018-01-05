@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -162,6 +162,13 @@ enum class SMTextureType
     None = 0,
     Embedded,
     Streaming
+    };
+
+enum class SMNodeViewStatus
+    {
+    NotVisible = 0,
+    TooCoarse,
+    Fine
     };
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100

@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -3060,6 +3060,105 @@ template <class POINT> void ScalableMeshNode<POINT>::_ClearCachedData()
 {
 	m_node->RemoveNonDisplayPoolData();
 }
+
+static double s_minScreenPixelCorrectionFactor = 1.0;
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
+    ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
+    const DPoint3d*                                                       pQueryExtentPts,
+    int                                                                   nbQueryExtentPts,
+    IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
+    IScalableMesh*                                                        smP)
+    {
+    //MST More validation is required here.
+    assert(queryParam != 0);
+
+    int status = SUCCESS;
+
+    Extent3dType queryExtent;
+    /*
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
+
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
+
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
+    nbQueryExtentPts,
+    minZ,
+    maxZ));
+    */
+    //MS Need to be removed
+    double viewportRotMatrix[3][3];
+    double rootToViewMatrix[4][4];
+
+    memcpy(rootToViewMatrix, queryParam->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
+
+    bool shouldInvertClip = false;
+
+    if (smP != nullptr)
+        shouldInvertClip = smP->ShouldInvertClips();
+
+    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>(queryExtent,
+        rootToViewMatrix,
+        viewportRotMatrix,
+        queryParam->GetViewBox(),
+        false,
+        queryParam->GetViewClipVector(),
+        shouldInvertClip,
+        100000000);
+
+    // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
+
+    viewDependentQueryP->SetMeanScreenPixelsPerPoint(queryParam->GetMinScreenPixelsPerPoint() * s_minScreenPixelCorrectionFactor);
+
+    viewDependentQueryP->SetMaxPixelError(queryParam->GetMaxPixelError());
+
+    //MS : Might need to be done at the ScalableMeshReprojectionQuery level.    
+    if ((queryParam->GetSourceGCS() != 0) && (queryParam->GetTargetGCS() != 0))
+        {
+        BaseGCSCPtr sourcePtr = queryParam->GetSourceGCS();
+        BaseGCSCPtr targetPtr = queryParam->GetTargetGCS();
+        viewDependentQueryP->SetReprojectionInfo(sourcePtr, targetPtr);
+        }
+
+    pQueryObject = (ISMPointIndexQuery<POINT, Extent3dType>*)(viewDependentQueryP);
+
+    return status;
+    }
+
+END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const
+    {
+    ISMPointIndexQuery<POINT, Extent3dType>* queryObjectP;
+
+    BentleyB0200::ScalableMesh::BuildQueryObject<POINT>(queryObjectP, 0/*pQueryExtentPts*/, 0/*nbQueryExtentPts*/, viewDependentQueryParams, nullptr);
+
+    HFCPtr<SMPointIndexNode<POINT, Extent3dType>> pSubNodes[1];
+    ProducedNodeContainer<POINT, Extent3dType> foundNodes;
+    
+    bool digDown = queryObjectP->Query(m_node,
+                                       pSubNodes,
+                                       0,
+                                       foundNodes);
+
+    if (digDown == true)
+        {
+        if (m_node->IsLeaf())
+            return SMNodeViewStatus::Fine;
+
+        return SMNodeViewStatus::TooCoarse;
+        }
+    else
+    if (foundNodes.GetNodes().size() > 0)
+        {
+        return SMNodeViewStatus::Fine;
+        }
+    
+    return SMNodeViewStatus::NotVisible;    
+    }
 
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices)
     {
