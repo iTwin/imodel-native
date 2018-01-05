@@ -84,6 +84,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsLengthPlacementStrategy : LinePlacement
 
     private:
         double m_length = 0;
+        DVec3d m_direction;
 
     protected:
         LinePointsLengthPlacementStrategy() : T_Super() {}

@@ -235,6 +235,10 @@ void LinePointsLengthPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
     if (_GetKeyPoints().size() < 2)
         T_Super::_AddKeyPoint(newKeyPoint);
 
+    bvector<DPoint3d> points = _GetKeyPoints();
+    if (2 == points.size())
+        m_direction = DVec3d::FromStartEnd(points[0], points[1]);
+
     AdjustEndPoint();
     }
 
@@ -246,6 +250,10 @@ void LinePointsLengthPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynami
     if ((!IsDynamicKeyPointSet() && _GetKeyPoints().size() < 2) ||
         (IsDynamicKeyPointSet() && _GetKeyPoints().size() <= 2))
         T_Super::_AddDynamicKeyPoint(newDynamicKeyPoint);
+
+    bvector<DPoint3d> points = _GetKeyPoints();
+    if (2 == points.size())
+        m_direction = DVec3d::FromStartEnd(points[0], points[1]);
 
     AdjustEndPoint();
     }
@@ -272,9 +280,9 @@ BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
         return BentleyStatus::SUCCESS; // Noting to do
 
     DPoint3d startPoint = points[0];
-    DPoint3d endPoint = points[1];
+    DPoint3d endPoint;
     
-    DVec3d direction = DVec3d::FromStartEnd(startPoint, endPoint);
+    DVec3d direction = m_direction;
     direction.ScaleToLength(m_length);
 
     endPoint = startPoint;
