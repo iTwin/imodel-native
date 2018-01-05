@@ -11,14 +11,12 @@ BENTLEYLANGUAGE = $(LANGUAGE)
 
 INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
 
-%if !defined (BBLanguagePackBuild)
 BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
-%endif
 
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag.wxs
 
 
-INSTALLER_VALIDATOR_OPT     + -sice:ICE30
+#INSTALLER_VALIDATOR_OPT     + -sice:ICE30
 
 
