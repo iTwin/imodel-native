@@ -29,6 +29,8 @@ struct SmCachedDisplayMesh
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
     {

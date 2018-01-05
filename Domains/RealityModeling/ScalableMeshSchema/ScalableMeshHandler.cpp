@@ -2,7 +2,7 @@
 |
 |     $Source: ScalableMeshSchema/ScalableMeshHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -505,7 +505,7 @@ void ScalableMeshModel::DrawBingLogo(ViewContextR context, Byte const* pBitmapRG
     }
 
 static bool s_loadTexture = true;
-static bool s_waitQueryComplete = false;
+static bool s_waitQueryComplete = true;
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                    Mathieu.St-Pierre  08/17
@@ -552,10 +552,11 @@ void SMNode::_GetCustomMetadata(Utf8StringR name, Json::Value& data) const
 * @bsimethod                                                    Mathieu.St-Pierre  08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool s_tryProgQuery = false;
+static bool s_tryCustomSelect = true;
 
 Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
     { 
-    if (!s_tryProgQuery)
+    if (!s_tryProgQuery && !s_tryCustomSelect)
         return __super::_GetChildren(load);
 /*
     if (!IsReady())
@@ -668,11 +669,143 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.St-Pierre  12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+
+#ifndef NDEBUG
+    static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
+#else
+    //static double s_firstNodeSearchingDelay = (double)1 / 10 * CLOCKS_PER_SEC;
+    static double s_firstNodeSearchingDelay = (double)1 / 60 * CLOCKS_PER_SEC;
+#endif
+
 Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args) const
-    {           
+    {
+
+    if (s_tryCustomSelect)
+        {        
+        static clock_t startTime = 0;
+        static IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams;
+
+        if (m_parent == nullptr)
+            {
+            startTime = clock();
+            
+            viewDependentQueryParams = IScalableMeshViewDependentMeshQueryParams::CreateParams();
+
+            DMatrix4d localToView(args.m_context.GetWorldToView().M0);
+
+            ClipVectorPtr clipVector;
+            //clip = args.m_context.GetTransformClipStack().GetClip();
+            Render::FrustumPlanes frustumPlanes(args.m_context.GetFrustumPlanes());
+
+            ConvexClipPlaneSet convexClipPlaneSet(&frustumPlanes.m_planes[0], 6);
+
+            ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+
+            ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
+
+            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
+
+
+            DMatrix4d smToUOR = DMatrix4d::From(m_3smModel->m_smToModelUorTransform);
+
+            bsiDMatrix4d_multiply(&localToView, &localToView, &smToUOR);
+            
+            viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
+
+            if (m_3smModel->m_textureInfo->IsUsingBingMap())
+            {
+                viewDependentQueryParams->SetMaxPixelError(s_maxPixelErrorStreamingTexture);
+            }
+            else
+            {
+                viewDependentQueryParams->SetMaxPixelError(s_maxPixelError);
+            }
+
+            viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);
+
+            clipVector->TransformInPlace(m_3smModel->m_modelUorToSmTransform);
+
+            viewDependentQueryParams->SetViewClipVector(clipVector);
+            }
+
+        if ((clock() - startTime) > s_firstNodeSearchingDelay)
+            {
+            return SelectParent::Yes;            
+            }
+        
+
+        DgnDb::VerifyClientThread();        
+
+        SMNodeViewStatus viewStatus = m_scalableMeshNodePtr->IsCorrectForView(viewDependentQueryParams);
+
+        if (viewStatus == SMNodeViewStatus::NotVisible)
+            {
+            return SelectParent::No;
+            }
+
+        if (viewStatus == SMNodeViewStatus::Fine)
+            {
+            if (IsReady())
+                {
+                selected.push_back(this);
+                return SelectParent::No;
+                }
+            else
+                {
+                /*
+                SMNodePtr thisTile(const_cast<SMNode*>(this));
+                m_3smModel->m_currentDrawingInfoPtr->m_nodesToLoad.push_back(thisTile);
+                */
+                args.InsertMissing(*this);
+                return SelectParent::Yes;
+                }
+            }
+
+        assert(viewStatus == SMNodeViewStatus::TooCoarse);
+        //if (viewStatus == SMNodeViewStatus::TooCoarse)        
+        bool drawParent = false;
+        
+        auto children = _GetChildren(true);
+
+        if (nullptr != children)
+            {
+            for (auto const& child : *children)
+                {
+                if (SelectParent::Yes == child->_SelectTiles(selected, args))
+                    {
+                    drawParent = true;
+                    // NB: We must continue iterating children so that they can be requested if missing...
+                    }
+                }
+            }
+
+        if (!drawParent)
+            {
+            return SelectParent::No;
+            }
+
+        if (IsReady())
+            {
+            if (_HasGraphics())
+                selected.push_back(this);
+
+            return SelectParent::No;
+            }
+        else if (_HasBackupGraphics())
+            {
+            // Caching previous graphics while regenerating tile to reduce flishy-flash when model changes.
+            selected.push_back(this);
+            return SelectParent::No;
+            }
+
+        return SelectParent::Yes;
+        }
+
 
     if (m_parent == nullptr && s_tryProgQuery)
         { 
+        //m_displayNodesCache->SetRenderSys(Dgn::Render::SystemP renderSys);
+
         ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&args.m_context));
         
         //nextDrawingInfoPtr->m_smPtr = m_smPtr.get();
@@ -735,6 +868,8 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
         if (newQuery)
             {
 
+            m_3smModel->m_currentDrawingInfoPtr = nextDrawingInfoPtr;
+
             BentleyStatus status;
 
             /*
@@ -744,8 +879,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
                 assert(status == SUCCESS);
             //}
 
-            m_3smModel->m_currentDrawingInfoPtr = nextDrawingInfoPtr;
-
+            
             DMatrix4d localToView(args.m_context.GetWorldToView().M0);
 
             ClipVectorPtr clipVector;
@@ -875,7 +1009,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
                 }
             }
         }
-
+        
     if (s_tryProgQuery)
         {
         DgnDb::VerifyClientThread();
@@ -899,7 +1033,9 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
                 return SelectParent::No;
                 }
             else
-                {
+                {                                
+                SMNodePtr thisTile(const_cast<SMNode*>(this));
+                //m_3smModel->m_currentDrawingInfoPtr->m_nodesToLoad.push_back(thisTile);
                 args.InsertMissing(*this);
                 return SelectParent::Yes;
                 }        
@@ -947,7 +1083,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
 
         return SelectParent::Yes;
         }
-        
+    
     return __super::_SelectTiles(selected, args);
     }
 
@@ -1196,7 +1332,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 #endif
 
 
-    if (!s_tryProgQuery)
+    if (!s_tryProgQuery && !s_tryCustomSelect)
         { 
         bvector<IScalableMeshNodePtr> childrenNodes(m_scalableMeshNodePtr->GetChildrenNodes());
     

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ScalableMeshSchema/ScalableMeshHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,6 +55,7 @@ private:
     DMatrix4d     m_localToViewTransformation;
     DRange3d      m_range;
     bset<__int64> m_ancestorsOfCorrectNodes;
+    
 
     void AccumulateAncestorNodes(IScalableMeshNodePtr& parentNode)
         {
@@ -71,7 +72,7 @@ public:
     int m_currentQuery;
     int m_terrainQuery;
     bvector<BentleyB0200::Dgn::ClipVectorPtr> m_coverageClips;
-    bool m_hasCoverage;
+    bool m_hasCoverage;    
     bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_meshNodes;
     bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_overviewNodes;
     bvector<BentleyB0200::ScalableMesh::IScalableMeshCachedDisplayNodePtr> m_terrainMeshNodes;
