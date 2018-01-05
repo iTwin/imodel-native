@@ -136,6 +136,7 @@ private:
     static void DispatchExtensionCallback (Extension::InstallCallback_T const& callback);
 
     static Utf8CP InitScript();
+    void DefineNodeWorkAlikes();
 
     void HandleReady();
     void HandleIdle();

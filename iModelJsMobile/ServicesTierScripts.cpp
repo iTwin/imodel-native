@@ -474,7 +474,6 @@ Utf8CP Host::InitScript()
 
         params.replacementRequire = function (identifier) {
 
-
             if (extensionCache.hasOwnProperty (identifier))
                 return extensionCache [identifier];
 
@@ -488,8 +487,9 @@ Utf8CP Host::InitScript()
             if (typeof (moduleContents) !== "undefined")
                 return moduleContents;
 
-            if (originalRequire !== null)
+            if (originalRequire !== null) {
                 return originalRequire.apply (this, arguments);
+            }
         };
 
         if (typeof (require) !== "undefined") {
@@ -548,20 +548,6 @@ Utf8CP Host::InitScript()
                 require (initialScript);
                 }
         };
-
-
-
-
-
-
-        
-
-        
-
-
-
-
-
 
         //todo: move these to utilities (ie, not at global scope)
 
@@ -780,12 +766,10 @@ Utf8CP UvHost::RequireScript()
             
             let i = parts.length - 1;
             while (i >= 0) {
-                if (parts [i] === "node_modules")
-                    continue;
-
-                let dir = parts.slice (0, i + 1).join ('/') + "/node_modules";
-                dirs.push (dir);
-
+                if (parts [i] !== "node_modules") {
+                    let dir = parts.slice (0, i + 1).join ('/') + "/node_modules";
+                    dirs.push (dir);
+                }
                 --i;
             }
 
@@ -798,6 +782,7 @@ Utf8CP UvHost::RequireScript()
             for (var i = 0; i != paths.length; ++i) {
                 if (isFile (paths [i])) {
                     result = new Module (paths [i], parentModule);
+                    console_log('loaded Module = ' + JSON.stringify(result));
                     return;
                 }
             }
@@ -838,6 +823,10 @@ Utf8CP UvHost::RequireScript()
             if (result !== null) return;
 
             let dirs = getNodeModulesPaths (start);
+
+            console_log('loadFromNodeModules(identifier=' + identifier + ', start=' + JSON.stringify(start) + ')');
+            console_log('dirs to try = ' + JSON.stringify(dirs));
+
             for (var i = 0; i != dirs.length; ++i) {
                 let qualifiedIdentifier = dirs [i] + "/" + identifier;
 
@@ -855,10 +844,15 @@ Utf8CP UvHost::RequireScript()
             
             result = null;
 
+            console_log('load(' + identifier + ')');
+
             let info = bentley.imodeljs.servicesTier.getHostInfo();
 
             if (parentModule === null)
                 parentModule = new Module (info.cwd, null);
+
+            console_log('parentModule = ' + JSON.stringify(parentModule));
+
 
             let parentPrefix = parentModule.filename;
             if (isFile (parentPrefix))
@@ -894,7 +888,7 @@ Utf8CP UvHost::RequireScript()
                 result.load();
                 if (!result.loaded)
                     delete moduleCache [result.id];
-
+                
                 return result.exports;
             } else {
                 throw new Error ("Cannot find module '" + identifier + "'");

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "iModelJsInternal.h"
 #include <vector>
+#include <Bentley/BeFileName.h>
 
 static std::vector<BentleyApi::iModelJs::ServicesTier::Extension::InstallCallback_T> s_extensionsQueue;
 
@@ -290,83 +291,191 @@ void Host::SetupJsRuntime()
 	auto& env = Env();
     Napi::HandleScope scope (env);
 
-    auto initScriptEvaluation = runtime.EvaluateScript (InitScript());
-    BeAssert (initScriptEvaluation.status == Js::EvaluateStatus::Success);
+    try {   // must process Napi/JS errors before we destroy the HandleScope
+        auto initScriptEvaluation = runtime.EvaluateScript (InitScript());
+        BeAssert (initScriptEvaluation.status == Js::EvaluateStatus::Success);
 
-    auto initParams = Napi::Object::New(env);
+        auto initParams = Napi::Object::New(env);
 
-    initParams.Set ("deliverExtension", Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
-        {
-        auto env = info.Env();
+        initParams.Set ("deliverExtension", Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+            {
+            auto env = info.Env();
 
-        if (info.Length() == 0)
-            return env.Undefined();
+            if (info.Length() == 0)
+                return env.Undefined();
 
-        auto identifierArgument = info[0];
-        if (!identifierArgument.IsString())
-            return env.Undefined();
+            auto identifierArgument = info[0];
+            if (!identifierArgument.IsString())
+                return env.Undefined();
 
-        return m_environment->DeliverExtension (Js::Runtime::GetRuntime(info.Env()), identifierArgument.As<Napi::String>().Utf8Value().c_str());
-        }));
+            return m_environment->DeliverExtension (Js::Runtime::GetRuntime(info.Env()), identifierArgument.As<Napi::String>().Utf8Value().c_str());
+            }));
 
-    initParams.Set ("evaluateScript", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
-        {
-        auto env = info.Env();
-        auto& runtime = Js::Runtime::GetRuntime(env);
+        initParams.Set ("evaluateScript", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
+            {
+            auto env = info.Env();
+            auto& runtime = Js::Runtime::GetRuntime(env);
 
-        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(2);
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(2);
 
-        auto script = JS_CALLBACK_GET_STRING(0);
-        auto identifier = JS_CALLBACK_GET_STRING(1);
+            auto script = JS_CALLBACK_GET_STRING(0);
+            auto identifier = JS_CALLBACK_GET_STRING(1);
 
-        auto result = runtime.EvaluateScript (script, identifier);
-        if (result.status == Js::EvaluateStatus::ParseError)
-            Napi::Error::New(env, "Parse Error").ThrowAsJavaScriptException();
-        else if (result.status == Js::EvaluateStatus::RuntimeError)
-            Napi::Error::New(env, result.message.c_str()).ThrowAsJavaScriptException();
-        else if (result.status == Js::EvaluateStatus::Success)
-            return result.value;
+            auto result = runtime.EvaluateScript (script, identifier);
+            if (result.status == Js::EvaluateStatus::ParseError)
+                Napi::Error::New(env, "Parse Error").ThrowAsJavaScriptException();
+            else if (result.status == Js::EvaluateStatus::RuntimeError)
+                Napi::Error::New(env, result.message.c_str()).ThrowAsJavaScriptException();
+            else if (result.status == Js::EvaluateStatus::Success)
+                return result.value;
         
-        return JS_CALLBACK_UNDEFINED;
-        }));
+            return JS_CALLBACK_UNDEFINED;
+            }));
 
-    initParams.Set ("createStringFromUtf8Buffer", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
-        {
-        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
+        initParams.Set ("createStringFromUtf8Buffer", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
+            {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
-        auto buffer = JS_CALLBACK_GET_ARRAY_BUFFER (0);
+            auto buffer = JS_CALLBACK_GET_ARRAY_BUFFER (0);
         
-        Utf8String string (static_cast<CharP>(buffer.Data()), buffer.ByteLength());
+            Utf8String string (static_cast<CharP>(buffer.Data()), buffer.ByteLength());
 
-        return JS_CALLBACK_STRING (string.c_str());
-        }));
+            return JS_CALLBACK_STRING (string.c_str());
+            }));
 
-    initParams.Set ("require", SupplyJsRequireHandler (env, initParams));
+        initParams.Set ("require", SupplyJsRequireHandler (env, initParams));
 
-    auto info = Napi::Object::New(env);
-    SupplyJsInfoValues (env, info);
-    initParams.Set ("info", info);
+        auto info = Napi::Object::New(env);
+        SupplyJsInfoValues (env, info);
+        initParams.Set ("info", info);
 
-    try {
         initScriptEvaluation.value.As<Napi::Function>() ({initParams});
+
+        m_notifyIdle.Reset(initParams.Get("notifyIdle").As<Napi::Function>());
+        m_notifyShutdown.Reset(initParams.Get("notifyShutdown").As<Napi::Function>());
+        m_notifyReady.Reset(initParams.Get("notifyReady").As<Napi::Function>());
+
+        env.Global().Set ("console_log", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
+            {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto msg = JS_CALLBACK_GET_STRING(0);
+            printf("%s\n", msg.Utf8Value().c_str());
+            return info.Env().Undefined();
+            }));
+
+        DefineNodeWorkAlikes();
         }
     catch (Napi::Error err) // JS threw an exception
         {
         fprintf(stderr, "%s\n", err.Message().c_str());
         return;
         }
+    }
 
-    m_notifyIdle.Reset(initParams.Get("notifyIdle").As<Napi::Function>());
-    m_notifyShutdown.Reset(initParams.Get("notifyShutdown").As<Napi::Function>());
-    m_notifyReady.Reset(initParams.Get("notifyReady").As<Napi::Function>());
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Steve.Wilson                    7/2017
+//---------------------------------------------------------------------------------------
+void Host::DefineNodeWorkAlikes()
+    {
+	auto& env = Env();
 
-    env.Global().Set ("console_log", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
-        {
-        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
-        auto msg = JS_CALLBACK_GET_STRING(0);
-        printf("%s\n", msg.Utf8Value().c_str());
-        return info.Env().Undefined();
-        }));
+    // -------------------------------------------------------------------
+    //  process
+    // -------------------------------------------------------------------
+    auto process = Napi::Object::New(env);
+    process["env"] = Napi::Object::New(env);       // this is a dummy. It's supposed to be the system environment, but that doesn't make sense on mobile devices.
+                                                // We might try populating it with config variables ...
+    process["on"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) {
+        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(2);
+
+        // *** TBD: support for event handlers?
+
+    });
+
+    process["exit"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) {
+        // *** TBD: support this?
+
+    });
+
+    env.Global()["process"] = process;
+
+    // -------------------------------------------------------------------
+    //  process
+    // -------------------------------------------------------------------
+    auto path = Napi::Object::New(env);
+#ifdef _WIN32
+    bool isWin32 = true;
+    Utf8CP delim = ";";
+#else
+    bool isWin32 = false;
+    Utf8CP delim = ":";
+#endif
+    path["posix"] = Napi::Boolean::New(env, !isWin32);
+    path["win32"] = Napi::Boolean::New(env, isWin32);
+    path["sep"] = Napi::String::New(env, DIR_SEPARATOR);
+    path["delimiter"] = Napi::String::New(env, delim);
+    path["basename"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            // TBD: optional 'ext' argument ...
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::String::New(info.Env(), Utf8String(fname.GetBaseName()).c_str());
+        });
+    path["dirname"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::String::New(info.Env(), Utf8String(fname.GetDirectoryName()).c_str());
+        });
+    path["extname"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::String::New(info.Env(), Utf8String(fname.GetExtension()).c_str());
+        });
+    path["normalize"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            if (fnameS.Utf8Value().empty())
+                {
+                return Napi::String::New(info.Env(), "."); // as per node docs
+                }
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            WString fixed;
+            BeFileName::FixPathName(fixed, fname, true);
+            return Napi::String::New(info.Env(), Utf8String(fixed).c_str());
+        });
+    path["join"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            // *** TBD: what will the arguments look like? An array?
+            auto fnames = JS_CALLBACK_GET_ARRAY(0);
+            if (fnames.Length() == 0)
+                {
+                Napi::Error::New(info.Env(), "not enough arguments").ThrowAsJavaScriptException();
+                return info.Env().Undefined();
+                }
+            auto const& fnamesC = fnames;
+            BeFileName path(fnamesC[(uint32_t)0].As<Napi::String>().Utf8Value().c_str(), true);
+            for (uint32_t i = 1; i < fnamesC.Length(); ++i)
+                {
+                path.AppendToPath(BeFileName(fnamesC[i].As<Napi::String>().Utf8Value().c_str(), true));
+                }
+            return Napi::String::New(info.Env(), Utf8String(path).c_str());
+        });
+    path["isAbsolute"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::Boolean::New(info.Env(), fname.IsAbsolutePath());
+        });
+
+        /* TBD
+path.format(pathObject)
+path.parse(path)
+path.relative(from, to)
+path.resolve([...paths])
+path.toNamespacedPath(path)
+*/
     }
 
 //---------------------------------------------------------------------------------------
