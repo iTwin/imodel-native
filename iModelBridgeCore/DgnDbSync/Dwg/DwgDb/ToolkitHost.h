@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/ToolkitHost.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,6 +63,10 @@ public:
     ~DwgToolkitHost ();
     void                            SetApplicationHost (IDwgDbHost& appHost);   // app host
     DwgDbProgressMeter*             NewWorkingProgressMeter (IDwgDbProgressMeter* appMeter);    // working progress meter
+    // same as getRemoteFile
+    DwgDbStatus                     DownloadOrGetCachedFile (WStringR local, WStringCR url, bool ignoreCache = false) const;
+    // inverse lookup as in isRemoteFile
+    bool                            FindCachedLocalFile (WStringR cached, WStringCR url);
     static DwgToolkitHost&          GetHost ();     // toolkit host
 
 #if defined (DWGTOOLKIT_OpenDwg)

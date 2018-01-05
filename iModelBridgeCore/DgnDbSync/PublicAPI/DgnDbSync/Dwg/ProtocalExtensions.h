@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/ProtocalExtensions.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -122,6 +122,8 @@ private:
     void        AddModelToViews (DgnModelId modelId);
     void        UpdateViews (DgnModelId modelId, bool isOn);
     bool        CopyRasterToDgnDbFolder (BeFileNameCR rasterFile, BeFileNameCR dbFile, BeFileNameCR altPath);
+    //! check and replace an URL path with its local cache file name (download & cache as necessary).
+    bool        GetUrlCacheFile (DwgStringR checkPath);
     };  // DwgRasterImageExt
 
 /*=================================================================================**//**
