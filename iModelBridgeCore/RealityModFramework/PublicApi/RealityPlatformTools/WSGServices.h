@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/WSGServices.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -377,21 +377,51 @@ public:
 
     REALITYDATAPLATFORM_EXPORT virtual ~WSGPagedRequest() {}
     REALITYDATAPLATFORM_EXPORT WSGPagedRequest(WSGPagedRequest const& object);
-    REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object) { if(&object != this){WSGURL::operator=(object);  m_startIndex = object.m_startIndex; m_pageSize = object.m_pageSize; } return *this;}
+    REALITYDATAPLATFORM_EXPORT WSGPagedRequest& operator=(WSGPagedRequest const & object) 
+        { 
+        if(&object != this)
+            {
+            WSGURL::operator=(object);  
+            m_startIndex = object.m_startIndex; 
+            m_pageSize = object.m_pageSize; 
+            } 
+        return *this;
+        }
 
     //! Get/Set the page size. It must be greater or equal to 1 
-    REALITYDATAPLATFORM_EXPORT void SetPageSize(uint16_t pageSize) {BeAssert(pageSize > 0); m_validRequestString = false; m_pageSize = pageSize;}
+    REALITYDATAPLATFORM_EXPORT void SetPageSize(uint16_t pageSize) 
+        {
+        BeAssert(pageSize > 0); 
+        m_validRequestString = false; 
+        m_pageSize = pageSize;
+        }
     REALITYDATAPLATFORM_EXPORT uint16_t GetPageSize() const {return m_pageSize;}
   
     //! The start index of the request.
-    REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint32_t startIndex) {m_validRequestString = false; m_startIndex = startIndex;} 
+    REALITYDATAPLATFORM_EXPORT void SetStartIndex(uint32_t startIndex) 
+        {
+        m_validRequestString = false; 
+        m_startIndex = startIndex;
+        } 
     REALITYDATAPLATFORM_EXPORT uint32_t GetStartIndex() const {return m_startIndex;}
 
     //! Page oriented methods. These methods advance a page, rewind a page or go to specified page.
     //! according to current page size and start index
-    REALITYDATAPLATFORM_EXPORT virtual void AdvancePage() const {m_validRequestString = false; m_startIndex += m_pageSize;}
-    REALITYDATAPLATFORM_EXPORT void RewindPage() {m_validRequestString = false; m_startIndex = (m_startIndex <= m_pageSize ? 0 : m_startIndex-m_pageSize);}
-    REALITYDATAPLATFORM_EXPORT void GoToPage(int page) {m_validRequestString = false; m_startIndex = (uint32_t)(page * m_pageSize);}
+    REALITYDATAPLATFORM_EXPORT virtual void AdvancePage() const 
+        {
+        m_validRequestString = false; 
+        m_startIndex += m_pageSize;
+        }
+    REALITYDATAPLATFORM_EXPORT void RewindPage() 
+        {
+        m_validRequestString = false; 
+        m_startIndex = (m_startIndex <= m_pageSize ? 0 : m_startIndex-m_pageSize);
+        }
+    REALITYDATAPLATFORM_EXPORT void GoToPage(int page) 
+        {
+        m_validRequestString = false; 
+        m_startIndex = (uint32_t)(page * m_pageSize);
+        }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override = 0; //virtual class, not to be used directly
@@ -473,8 +503,16 @@ struct ProxyManager
         REALITYDATAPLATFORM_EXPORT static ProxyManager& GetInstance();
 
         //! Set proxy informations
-        REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; }
-        REALITYDATAPLATFORM_EXPORT void GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) { proxyUrl = m_proxyUrl; proxyCreds = m_proxyCreds; }
+        REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) 
+            { 
+            m_proxyUrl = proxyUrl; 
+            m_proxyCreds = proxyCreds; 
+            }
+        REALITYDATAPLATFORM_EXPORT void GetCurrentProxyUrlAndCredentials(Utf8StringR proxyUrl, Utf8StringR proxyCreds) 
+            { 
+            proxyUrl = m_proxyUrl; 
+            proxyCreds = m_proxyCreds; 
+            }
 
     private:
         Utf8String          m_proxyUrl;

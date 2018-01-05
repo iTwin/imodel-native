@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/GeoCoordinationService.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -124,7 +124,14 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT GeoCoordinationServicePagedRequest() { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; m_startIndex = 0; m_pageSize = 25; }
+    REALITYDATAPLATFORM_EXPORT GeoCoordinationServicePagedRequest() 
+        { 
+        m_validRequestString = false; 
+        m_requestType = HttpRequestType::GET_Request; 
+        m_sort = false; 
+        m_startIndex = 0; 
+        m_pageSize = 25; 
+        }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(Utf8StringCR filter) { m_filter = filter; }
 
@@ -140,7 +147,12 @@ public:
 protected:
     virtual void _PrepareHttpRequestStringAndPayload() const override = 0;
 
-    GeoCoordinationServicePagedRequest(uint16_t startIndex, uint8_t pageSize) { m_startIndex = startIndex; m_pageSize = pageSize; BeAssert(m_pageSize >0); }
+    GeoCoordinationServicePagedRequest(uint16_t startIndex, uint8_t pageSize) 
+        { 
+        m_startIndex = startIndex; 
+        m_pageSize = pageSize; 
+        BeAssert(m_pageSize >0); 
+        }
 
     Utf8String m_order;
     Utf8String m_filter;
@@ -184,7 +196,11 @@ struct SpatialEntityWithDetailsByIdRequest : public GeoCoordinationServiceReques
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT SpatialEntityWithDetailsByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT SpatialEntityWithDetailsByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -203,7 +219,11 @@ struct SpatialEntityByIdRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT SpatialEntityByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT SpatialEntityByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -223,7 +243,11 @@ struct SpatialEntityDataSourceByIdRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -242,7 +266,11 @@ struct SpatialEntityServerByIdRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT SpatialEntityServerByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT SpatialEntityServerByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -261,7 +289,11 @@ struct SpatialEntityMetadataByIdRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -303,7 +335,11 @@ struct PreparedPackageRequest : public GeoCoordinationServiceRequest
     {
 public:
     //! Create a request for spatial entity of the given identifier
-    REALITYDATAPLATFORM_EXPORT PreparedPackageRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT PreparedPackageRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
    
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;

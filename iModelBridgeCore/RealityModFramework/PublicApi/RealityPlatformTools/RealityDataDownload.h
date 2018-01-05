@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatformTools/RealityDataDownload.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -302,26 +302,33 @@ public:
     REALITYDATAPLATFORM_EXPORT static bool UnZipFile(const char* pi_srtSrc, const char* pi_strDest);
 
     //! Set proxy informations
-    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
+    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) 
+        { 
+        m_proxyUrl = proxyUrl; 
+        m_proxyCreds = proxyCreds; 
+        };
 
     //! Set certificate path for https download.
     REALITYDATAPLATFORM_EXPORT void SetCertificatePath(WStringCR certificatePath) { m_certPath = certificatePath; };
 
     //! Set callback to follow progression of the download.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step = 0.01) 
-                                                                   {m_pProgressFunc = pi_func; m_progressStep = pi_step;};
+        {
+        m_pProgressFunc = pi_func; 
+        m_progressStep = pi_step;
+        }
     //! Set callback to allow the user to mass cancel all downloads
     REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataDownload_HeartbeatCallBack pi_func)
-                                                                   {m_pHeartbeatFunc = pi_func;};
+                                                                   {m_pHeartbeatFunc = pi_func;}
 
     //! Set callback to know to status, download done or error.
-    REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
+    REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; }
 
     //! Set callback to chose a proxy to use, for each url.
-    REALITYDATAPLATFORM_EXPORT void SetProxyCallBack(RealityDataDownload_ProxyCallBack pi_func) { m_pProxyFunc = pi_func; };
+    REALITYDATAPLATFORM_EXPORT void SetProxyCallBack(RealityDataDownload_ProxyCallBack pi_func) { m_pProxyFunc = pi_func; }
 
     //! Set callback to add authentication token to REST call.
-    REALITYDATAPLATFORM_EXPORT void SetTokenCallBack(RealityDataDownload_TokenCallBack pi_func) { m_pTokenFunc = pi_func; };
+    REALITYDATAPLATFORM_EXPORT void SetTokenCallBack(RealityDataDownload_TokenCallBack pi_func) { m_pTokenFunc = pi_func; }
 
     //! Start the download progress for all links.
     REALITYDATAPLATFORM_EXPORT DownloadReport* Perform();

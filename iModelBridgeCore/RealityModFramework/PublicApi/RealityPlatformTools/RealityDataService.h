@@ -78,8 +78,16 @@ struct RealityDataAllEnterpriseStatsRequest : public RealityDataUrl
     {
 public:
     // Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest(DateTime date) { m_validRequestString = false; m_date = date;}
-    REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest() {m_validRequestString = false; m_date = DateTime::GetCurrentTimeUtc();}
+    REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest(DateTime date) 
+        { 
+        m_validRequestString = false; 
+        m_date = date;
+        }
+    REALITYDATAPLATFORM_EXPORT RealityDataAllEnterpriseStatsRequest() 
+        {
+        m_validRequestString = false; 
+        m_date = DateTime::GetCurrentTimeUtc();
+        }
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
@@ -120,7 +128,11 @@ struct RealityDataByIdRequest : public RealityDataUrl
     {
 public:
 	// Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataByIdRequest(Utf8StringCR identifier) 
+        {
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataByIdRequest(){}
    
 protected:
@@ -139,7 +151,11 @@ struct RealityDataExtendedByIdRequest : public RealityDataUrl
     {
 public:
     // Only identifier is required to retreive RealityData
-    REALITYDATAPLATFORM_EXPORT RealityDataExtendedByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataExtendedByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataExtendedByIdRequest() {}
 
 protected:
@@ -157,7 +173,11 @@ private:
 struct RealityDataRelationshipByProjectIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByProjectIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByProjectIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -174,7 +194,11 @@ private:
 struct RealityDataRelationshipByRealityDataIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByRealityDataIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByRealityDataIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false;
+        m_id = identifier; 
+        }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -192,7 +216,11 @@ private:
 struct RealityDataFolderByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataFolderByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataFolderByIdRequest(){}
 
 protected:
@@ -210,7 +238,11 @@ private:
 struct RealityDataDocumentByIdRequest : public RealityDataUrl
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDocumentByIdRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataDocumentByIdRequest(){}
 	
 protected:
@@ -258,7 +290,10 @@ struct RealityDataDocumentContentByIdRequest : public RealityDataUrl
 public:
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8StringCR identifier) : 
         m_handshakeRequest(nullptr), m_allowAzureRedirection(true), m_AzureRedirected(false)
-    { m_validRequestString = false; m_id = identifier; }
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
     
     //REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(Utf8CP identifier) : m_identifier(identifier) {}
     REALITYDATAPLATFORM_EXPORT RealityDataDocumentContentByIdRequest(const RealityDataDocumentContentByIdRequest &object); 
@@ -442,7 +477,12 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetSchema() const override;
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRepoId() const override;
 
-    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) { m_validRequestString = false; m_requestType = HttpRequestType::GET_Request; m_sort = false; }
+    REALITYDATAPLATFORM_EXPORT RealityDataPagedRequest() : m_informationSourceFilteringSet(false) 
+        { 
+        m_validRequestString = false; 
+        m_requestType = HttpRequestType::GET_Request; 
+        m_sort = false; 
+        }
 
     REALITYDATAPLATFORM_EXPORT void SetFilter(const RDSFilter& filter);
     REALITYDATAPLATFORM_EXPORT void SetQuery(Utf8StringCR query);
@@ -513,7 +553,11 @@ protected:
 struct RealityDataRelationshipByProjectIdPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByProjectIdPagedRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier;
+        }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -531,7 +575,11 @@ private:
 struct RealityDataRelationshipByRealityDataIdPagedRequest : public RealityDataPagedRequest
     {
 public:
-    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByRealityDataIdPagedRequest(Utf8StringCR identifier) { m_validRequestString = false; m_id = identifier; }
+    REALITYDATAPLATFORM_EXPORT RealityDataRelationshipByRealityDataIdPagedRequest(Utf8StringCR identifier) 
+        { 
+        m_validRequestString = false; 
+        m_id = identifier; 
+        }
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
@@ -550,7 +598,11 @@ struct AllRealityDataByRootId : public RealityDataDocumentContentByIdRequest
 public:
     REALITYDATAPLATFORM_EXPORT AllRealityDataByRootId(Utf8StringCR rootId); 
 
-    REALITYDATAPLATFORM_EXPORT void SetMarker(Utf8String marker) const { m_validRequestString = false; m_marker = marker; }
+    REALITYDATAPLATFORM_EXPORT void SetMarker(Utf8String marker) const 
+        { 
+        m_validRequestString = false; 
+        m_marker = marker; 
+        }
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetFilter() const { return m_filter; }
 
@@ -617,7 +669,12 @@ protected:
 //=====================================================================================
 struct RealityDataDelete : public RealityDataUrl
     {
-    REALITYDATAPLATFORM_EXPORT RealityDataDelete(Utf8String realityDataId) { m_validRequestString = false; m_id = realityDataId; m_requestType = HttpRequestType::DELETE_Request; }
+    REALITYDATAPLATFORM_EXPORT RealityDataDelete(Utf8String realityDataId) 
+        { 
+        m_validRequestString = false; 
+        m_id = realityDataId; 
+        m_requestType = HttpRequestType::DELETE_Request; 
+        }
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataDelete(){}
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
