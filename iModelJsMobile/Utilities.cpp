@@ -46,12 +46,14 @@ void Runtime::OnDestroy()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
-Runtime::EvaluateResult Runtime::EvaluateScript (Utf8CP script, Utf8CP identifier)
+Runtime::EvaluateResult Runtime::EvaluateScript (Napi::String script, Napi::String identifier)
     {
     EvaluateResult result;
 
+    // TODO: identifier??
+
     napi_value resvalue;
-    auto nstatus = napi_run_script(Env(), Napi::String::New(Env(), script), &resvalue);
+    auto nstatus = napi_run_script(Env(), script, &resvalue);
     if (napi_ok == nstatus)
         {
         result.status = EvaluateStatus::Success;
@@ -68,6 +70,9 @@ Runtime::EvaluateResult Runtime::EvaluateScript (Utf8CP script, Utf8CP identifie
 
     return result;
     }
+
+Runtime::EvaluateResult Runtime::EvaluateScript (Napi::String script) {return EvaluateScript(script, Napi::String::New(Env(), ""));}
+Runtime::EvaluateResult Runtime::EvaluateScript (Utf8CP str, Utf8CP id) {return EvaluateScript(Napi::String::New(Env(), str), Napi::String::New(Env(), id));}
 
 END_BENTLEY_IMODELJS_JS_NAMESPACE
 
@@ -383,7 +388,8 @@ void Runtime::NotifyIdle()
     auto platform = getV8Platform();
     auto isolate = RuntimeInternal::GetIsolate (*this);
     
-    GetDebugger()->NotifyIdle();
+    if (GetDebugger())
+        GetDebugger()->NotifyIdle();
     while (v8::platform::PumpMessageLoop (platform, isolate)) { ; }
     v8::platform::RunIdleTasks (platform, isolate, 50.0 / 1000);
     isolate->RunMicrotasks();

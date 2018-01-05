@@ -314,14 +314,12 @@ void Host::SetupJsRuntime()
         auto env = info.Env();
         auto& runtime = Js::Runtime::GetRuntime(env);
 
-        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
+        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(2);
 
-        auto script = JS_CALLBACK_GET_STRING (0);
-        auto identifier = JS_CALLBACK_GET_STRING (1);
+        auto script = JS_CALLBACK_GET_STRING(0);
+        auto identifier = JS_CALLBACK_GET_STRING(1);
 
-        auto identifierS = identifier.Utf8Value();
-
-        auto result = runtime.EvaluateScript (script.Utf8Value().c_str(), (identifierS == "") ? nullptr : identifierS.c_str());
+        auto result = runtime.EvaluateScript (script, identifier);
         if (result.status == Js::EvaluateStatus::ParseError)
             Napi::Error::New(env, "Parse Error").ThrowAsJavaScriptException();
         else if (result.status == Js::EvaluateStatus::RuntimeError)

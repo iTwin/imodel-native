@@ -108,10 +108,12 @@ private:
 public:
     IMODELJS_EXPORT static void* GetInitializationData();
 
-    IMODELJS_EXPORT Runtime (Utf8CP name = nullptr, bool startDebugger = true, uint16_t debuggerPort = 0);
+    IMODELJS_EXPORT Runtime (Utf8CP name = nullptr, bool startDebugger = false, uint16_t debuggerPort = 0);
     IMODELJS_EXPORT ~Runtime();
 
-    IMODELJS_EXPORT EvaluateResult EvaluateScript (Utf8CP script, Utf8CP identifier = nullptr);
+    IMODELJS_EXPORT EvaluateResult EvaluateScript (Napi::String script, Napi::String identifier);
+    IMODELJS_EXPORT EvaluateResult EvaluateScript (Napi::String script);
+    IMODELJS_EXPORT EvaluateResult EvaluateScript (Utf8CP script, Utf8CP identifier = "");
     IMODELJS_EXPORT Engine GetEngine() const { return m_engine; }
     IMODELJS_EXPORT Utf8CP GetName() const { return m_name; }
     IMODELJS_EXPORT DebuggerP GetDebugger() const { return m_debugger; }

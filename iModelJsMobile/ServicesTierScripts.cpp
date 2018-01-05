@@ -12,6 +12,7 @@ BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
+#ifdef COMMENT_OUT
 Utf8CP Utilities::InitScript()
     {
     return u8R"(
@@ -346,7 +347,7 @@ Utf8CP Utilities::InitScript()
 
     )";
     }
-
+#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
@@ -472,6 +473,7 @@ Utf8CP Host::InitScript()
         };
 
         params.replacementRequire = function (identifier) {
+
 
             if (extensionCache.hasOwnProperty (identifier))
                 return extensionCache [identifier];
@@ -728,6 +730,7 @@ Utf8CP UvHost::RequireScript()
 
         let makeRequireFunction = function (mod) {
             function require (path) {
+
                 return mod.require (path);
             }
 

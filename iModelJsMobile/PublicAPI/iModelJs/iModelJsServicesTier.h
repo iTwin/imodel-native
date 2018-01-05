@@ -109,7 +109,7 @@ public:
         std::atomic<bool> waitForJsDebugger;
         std::atomic<uint16_t> jsDebuggerPort;
 
-        Config() : enableJsDebugger  (true),
+        Config() : enableJsDebugger  (false),
                    waitForJsDebugger (false),
                    jsDebuggerPort    (9229) { ; }
         };
