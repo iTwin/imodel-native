@@ -28,6 +28,15 @@ RadialGrid::RadialGrid
 CreateParams const& params
 ) : T_Super(params) 
     {
+    if (params.m_classId.IsValid()) // elements created via handler have no classid.
+        {
+        SetDefaultAngleIncrement(params.m_defaultAngleIncrement);
+        SetDefaultRadiusIncrement(params.m_defaultRadiusIncrement);
+        SetDefaultStartAngle(params.m_defaultStartAngle);
+        SetDefaultEndAngle(params.m_defaultEndAngle);
+        SetDefaultStartRadius(params.m_defaultStartRadius);
+        SetDefaultEndRadius(params.m_defaultEndRadius);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -42,75 +51,11 @@ CreateParams const& params
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-BentleyStatus RadialGrid::CreateAndInsertGridSurfaces(CreateParams params, Dgn::SpatialLocationModelCPtr model, GridAxisCR planeAxis, GridAxisCR arcAxis)
-    {
-    bvector<GridSurfacePtr> surfaces;
-
-    double height = params.m_height;
-
-    if (params.m_extendHeight)
-        height += 2 * BUILDING_TOLERANCE;
-
-    DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length, height);
-
-    if (params.m_extendHeight)
-        extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
-
-    GridPlanarSurfacePtr baseGridPlane = GridPlanarSurface::Create(*model.get(), planeAxis, extDetail);
-    if (!baseGridPlane.IsValid())
-        return BentleyStatus::ERROR;
-
-    if (params.m_planeCount > 0)
-        surfaces.push_back (baseGridPlane);
-
-    // Create plane grids
-    for (int i = 1; i < params.m_planeCount; ++i)
-        {
-        GridPlanarSurfacePtr planeSurface = dynamic_cast<GridPlanarSurface *>(baseGridPlane->Clone().get());
-        if (!planeSurface.IsValid())
-            return BentleyStatus::ERROR;
-
-        planeSurface->RotateXY(i * params.m_planeIterationAngle);
-        surfaces.push_back(planeSurface);
-        }
-
-    // Create arc grids
-    for (int i = 0; i < params.m_circularCount; ++i)
-        {
-        DgnExtrusionDetail extDetail = GeometryUtils::CreateArcExtrusionDetail((i + 1) * params.m_circularInterval, params.m_planeIterationAngle * params.m_planeCount, height, UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH));
-        
-        if (params.m_extendHeight)
-            extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
-        
-        GridArcSurfacePtr arcSurface = GridArcSurface::Create(*model.get(), arcAxis, extDetail);
-        if (!arcSurface.IsValid())
-            return BentleyStatus::ERROR;
-
-        surfaces.push_back(arcSurface);
-        }
-
-    // insert elements
-    for (GridSurfacePtr gridSurface : surfaces)
-        {
-        Dgn::RepositoryStatus lockStatus = BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting gridSurface");
-        if (Dgn::RepositoryStatus::Success != lockStatus)
-            return BentleyStatus::ERROR;
-
-        if (gridSurface->Insert().IsNull())
-            return BentleyStatus::ERROR;
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                     10/17
 //---------------------------------------------------------------------------------------
 RadialGridPtr RadialGrid::CreateAndInsert (CreateParams const& params)
     {
-    RadialGridPtr thisGrid = new RadialGrid (params);
+    RadialGridPtr thisGrid = RadialGrid::Create(params);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting Radial grid");
 
@@ -124,12 +69,79 @@ RadialGridPtr RadialGrid::CreateAndInsert (CreateParams const& params)
 
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
 
-    if (subModel.IsValid())
-        {
-        if (BentleyStatus::ERROR == CreateAndInsertGridSurfaces(params, subModel.get(), *planeAxis, *arcAxis))
-            return nullptr;
-        }
     return thisGrid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RadialGridPtr        RadialGrid::CreateAndInsertWithSurfaces
+(
+CreateParams const& params,
+int radialSurfaceCount,
+int circumferentialSurfaceCount
+)
+    {
+    RadialGridPtr thisGrid = RadialGrid::CreateAndInsert(params);
+
+    Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
+
+    PlanRadialGridSurface::CreateParams paramsRadial(*subModel, *thisGrid->GetRadialAxis(), 0.0, params.m_defaultStartRadius, params.m_defaultEndRadius, params.m_defaultStartElevation, params.m_defaultEndElevation);
+    PlanCircumferentialGridSurface::CreateParams paramsCircular(*subModel, *thisGrid->GetCircularAxis(), 0.0, params.m_defaultStartAngle, params.m_defaultEndAngle, params.m_defaultStartElevation, params.m_defaultEndElevation);
+
+    for (int i = 0; i < radialSurfaceCount; i++)
+        {
+        PlanRadialGridSurface::CreateAndInsert(paramsRadial);
+        paramsRadial.m_angle += params.m_defaultAngleIncrement;
+        }
+
+    for (int i = 0; i < circumferentialSurfaceCount; i++)
+        {
+        PlanCircumferentialGridSurface::CreateAndInsert(paramsCircular);
+        paramsCircular.m_radius += params.m_defaultRadiusIncrement;
+        }
+
+    return thisGrid;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RadialAxisCPtr        RadialGrid::GetRadialAxis
+(
+) const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_RadialAxis), "WHERE Grid=?");
+    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
+        {
+        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        }
+
+    if (iterator == iterator.end())
+        return nullptr;
+
+    return GetDgnDb().Elements().Get<RadialAxis>((*iterator.begin()).GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CircularAxisCPtr        RadialGrid::GetCircularAxis
+(
+) const
+    {
+    Dgn::ElementIterator iterator = GetDgnDb().Elements().MakeIterator(GRIDS_SCHEMA(GRIDS_CLASS_CircularAxis), "WHERE Grid=?");
+    ECN::ECClassId relClassId = GetDgnDb().Schemas().GetClassId(GRIDS_SCHEMA_NAME, GRIDS_REL_GridHasAxes);
+    if (BeSQLite::EC::ECSqlStatement* pStmnt = iterator.GetStatement())
+        {
+        pStmnt->BindNavigationValue(1, GetElementId(), relClassId);
+        }
+
+    if (iterator == iterator.end())
+        return nullptr;
+
+    return GetDgnDb().Elements().Get<CircularAxis>((*iterator.begin()).GetElementId());
     }
 
 //--------------------------------------------------------------------------------------

@@ -4,12 +4,16 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
+#include <BuildingShared/BuildingSharedApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridArcSurface)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridArcSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridArcSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanGridArcSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanCircumferentialGridSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(SketchArcGridSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -268,6 +272,24 @@ CreateParams const& params
     PlanCircumferentialGridSurfacePtr gridSurface = new PlanCircumferentialGridSurface (params);
 
     if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
+        return nullptr;
+
+    return gridSurface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanCircumferentialGridSurfacePtr             PlanCircumferentialGridSurface::CreateAndInsert
+(
+CreateParams const& params
+)
+    {
+    PlanCircumferentialGridSurfacePtr gridSurface = PlanCircumferentialGridSurface::Create(params);
+
+    BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting PlanCircumferentialGridSurface");
+
+    if (!gridSurface->Insert().IsValid())
         return nullptr;
 
     return gridSurface;

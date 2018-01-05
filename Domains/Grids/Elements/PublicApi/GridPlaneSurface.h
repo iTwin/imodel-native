@@ -291,6 +291,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
         //! @param[in]  params           params to create PlanRadialGridSurface
         GRIDELEMENTS_EXPORT static  PlanRadialGridSurfacePtr Create(CreateParams const& params);
 
+        //! Creates a PlanRadialGridSurface surface
+        //! @param[in]  params           params to create PlanRadialGridSurface
+        GRIDELEMENTS_EXPORT static  PlanRadialGridSurfacePtr CreateAndInsert(CreateParams const& params);
+
         //! Gets angle for this PlanRadialGridSurface
         //! @return Coordinate of this PlanRadialGridSurface
         GRIDELEMENTS_EXPORT double      GetAngle() const { return GetPropertyValueDouble(prop_Angle()); }

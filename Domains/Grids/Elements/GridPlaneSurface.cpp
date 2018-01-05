@@ -10,11 +10,12 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridPlanarSurface)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanCartesianGridSurface)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (SketchLineGridSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridPlanarSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanGridPlanarSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanRadialGridSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanCartesianGridSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(ElevationGridSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(SketchLineGridSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -489,6 +490,23 @@ CreateParams const& params
     return gridSurface;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PlanRadialGridSurfacePtr             PlanRadialGridSurface::CreateAndInsert
+(
+CreateParams const& params
+)
+    {
+    PlanRadialGridSurfacePtr gridSurface = PlanRadialGridSurface::Create(params);
+
+    BuildingLocks_LockElementForOperation(*gridSurface, BeSQLite::DbOpcode::Insert, "Inserting PlanRadialGridSurface");
+
+    if (!gridSurface->Insert().IsValid())
+        return nullptr;
+
+    return gridSurface;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

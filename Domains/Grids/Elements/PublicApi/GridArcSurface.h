@@ -158,6 +158,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCircumferentialGridSurface : PlanGridArcSurfa
         //! @param[in]  params           params to create PlanCircumferentialGridSurface
         GRIDELEMENTS_EXPORT static  PlanCircumferentialGridSurfacePtr Create(CreateParams const& params);
 
+        //! Creates a PlanCircumferentialGridSurface surface
+        //! @param[in]  params           params to create PlanCircumferentialGridSurface
+        GRIDELEMENTS_EXPORT static  PlanCircumferentialGridSurfacePtr CreateAndInsert(CreateParams const& params);
+
         //! Gets radius for this PlanCircumferentialGridSurface
         //! @return radius of this PlanCircumferentialGridSurface
         GRIDELEMENTS_EXPORT double      GetRadius() const { return GetPropertyValueDouble(prop_Radius()); }

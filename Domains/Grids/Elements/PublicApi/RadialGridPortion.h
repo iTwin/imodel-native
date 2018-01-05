@@ -29,41 +29,47 @@ public:
         {
         DEFINE_T_SUPER(RadialGrid::T_Super::CreateParams);
 
-        int m_planeCount;
-        int m_circularCount;
-        double m_planeIterationAngle;
-        double m_circularInterval;
-        double m_length;
-        double m_height;
-        bool m_extendHeight;    //TODO: Remove, needs to be handled by the tools
+        double m_defaultAngleIncrement;
+        double m_defaultRadiusIncrement;
+        double m_defaultStartAngle;
+        double m_defaultEndAngle;
+        double m_defaultStartRadius;
+        double m_defaultEndRadius;
 
         //! Creates create parameters for radial grid
-        //! @param[in] model                model to create the grid in
-        //! @param[in] planeCount           grid planes count
-        //! @param[in] circularCount        grid arcs count
-        //! @param[in] planeIterationAngle  angle between each grid plane in radians
-        //! @param[in] circularInterval     distance between grid arcs
-        //! @param[in] length               length of grid planes
-        //! @param[in] height               height of grid surfaces
-        //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
-        CreateParams(Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, int planeCount, int circularCount, double planeIterationAngle,
-                               double circularInterval, double length, double height, Utf8CP name, double defaultstaElevation, double defaultendElevation, bool extendHeight = false) :
-            T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()), defaultstaElevation, defaultendElevation),
-            m_planeCount(planeCount),
-            m_circularCount(circularCount),
-            m_planeIterationAngle(planeIterationAngle),
-            m_circularInterval(circularInterval),
-            m_length(length),
-            m_height(height),
-            m_extendHeight(extendHeight)
+        //! @param[in] model                    model to create the grid in
+        //! @param[in] scopeElementId           scope element id
+        //! @param[in] name                     grid name, must be unique
+        //! @param[in] defaultAngleIncrement    default angle increment
+        //! @param[in] defaultRadiusIncrement   default radius increment
+        //! @param[in] defaultStartAngle        default start angle
+        //! @param[in] defaultEndAngle          default end angle
+        //! @param[in] defaultStartRadius       default start radius
+        //! @param[in] defaultEndRadius         default end radius
+        //! @param[in] defaultstaElevation      default start elevation
+        //! @param[in] defaultendElevation      default end elevation
+        CreateParams(Dgn::SpatialLocationModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultAngleIncrement,
+                     double defaultRadiusIncrement, double defaultStartAngle, double defaultEndAngle, double defaultStartRadius, 
+                     double defaultEndRadius, double defaultstaElevation, double defaultendElevation) :
+            T_Super (model, scopeElementId, name, QueryClassId (model.GetDgnDb ()), defaultstaElevation, defaultendElevation)
             {
+            m_defaultAngleIncrement = defaultAngleIncrement;
+            m_defaultRadiusIncrement = defaultRadiusIncrement;
+            m_defaultStartAngle = defaultStartAngle;
+            m_defaultEndAngle = defaultEndAngle;
+            m_defaultStartRadius = defaultStartRadius;
+            m_defaultEndRadius = defaultEndRadius;
             }
 
         //! Constructor from base params. Chiefly for internal use.
         //! @param[in]      params   The base element parameters
         //! @return 
         explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
-            : T_Super(params) { }
+            : T_Super(params) 
+                {
+                m_defaultAngleIncrement = m_defaultRadiusIncrement = m_defaultStartAngle =
+                    m_defaultEndAngle = m_defaultStartRadius = m_defaultEndRadius = 0.0; //initialize with zeros, this is not supposed to be valid..
+                }
         };
 
 private:
@@ -104,6 +110,24 @@ public:
     //! @param[in]  params  create params for this grid portion. See CreateParams
     //! @return             Radial grid
     GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsert (CreateParams const& params);
+
+    //! Creates radial grid with a specified number of surfaces in axes, with default parameters
+    //! @param[in]  params          radial grid parameters containing information about the grid. For more info look up CreateParams
+    //! @param[in]  radialSurfaceCount   count of surfaces to create on radial axis
+    //! @param[in]  circumferentialSurfaceCount   count of surfaces to create on circular axis
+    //! @return                     grid with gridsurfaces in submodel
+    GRIDELEMENTS_EXPORT static RadialGridPtr CreateAndInsertWithSurfaces(CreateParams const& params, int radialSurfaceCount, int circumferentialSurfaceCount);
+
+    //---------------------------------------------------------------------------------------
+    // getters/setters
+    //---------------------------------------------------------------------------------------
+    //! Gets X axis
+    //! @return DefaultCoordinateIncrementX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT RadialAxisCPtr        GetRadialAxis() const;
+
+    //! Gets Y axis
+    //! @return DefaultCoordinateIncrementX of this OrthogonalGrid
+    GRIDELEMENTS_EXPORT CircularAxisCPtr      GetCircularAxis() const;
 
     //! Gets default angle increment of this RadialGrid
     //! @return DefaultAngleIncrement of this RadialGrid
