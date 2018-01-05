@@ -1,24 +1,27 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: install/RealDWGInstaller.mki $
+#     $Source: install/BundleRealDWGInstaller.mki $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
+%include installframework.bundle.mki
+%include installFrameworkBeforeCompile.mki
+
+
 LANGUAGE_CULTURE = en
 BENTLEYLANGUAGE = $(LANGUAGE)
 
-INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
+#INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
 
-%if !defined (BBLanguagePackBuild)
+
 BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
-%endif
 
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag.wxs
 
 
-INSTALLER_VALIDATOR_OPT     + -sice:ICE30
+#INSTALLER_VALIDATOR_OPT     + -sice:ICE30
 
 

@@ -14,7 +14,7 @@
     
     <Bundle>
         <BundleUpgradeCode>{4FF58DD3-57A1-47AA-A45F-08123F14E2FB};{6C6587AF-B359-4F68-ABB8-ED39135E6262}</BundleUpgradeCode>
-        <!--<BundleMkiFileName>RealDWGInstaller.mki</BundleMkiFileName>-->
+        <BundleMkiFileName>BundleRealDWGInstaller.mki</BundleMkiFileName>
         <BundleName>RealDwgImporter Bundle</BundleName>            
     </Bundle>
 </BuildInstallSet>

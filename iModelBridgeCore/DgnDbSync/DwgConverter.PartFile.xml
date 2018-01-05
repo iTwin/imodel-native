@@ -137,6 +137,7 @@
                 RealDWGInstallerFiles\DwgMergeModuleFrag.wxs
                 RealDWGInstallerFiles\DwgRegistryFrag.wxs
                 RealDWGInstallerFiles\RealDWGInstaller.mki
+                RealDWGInstallerFiles\BundleRealDWGInstaller.mki
             </Files>
         </Bindings>
     </Part>

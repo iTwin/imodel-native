@@ -23,5 +23,8 @@ always:
 $(RealDWGInstallFiles)RealDWGInstaller.mki : $(_MakeFilePath)RealDWGInstaller.mki
     $(LinkFirstDepToFirstTarget)
 
+$(RealDWGInstallFiles)BundleRealDWGInstaller.mki : $(_MakeFilePath)BundleRealDWGInstaller.mki
+    $(LinkFirstDepToFirstTarget)
+
 
 
