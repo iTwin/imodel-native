@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/PublicApi/ArcPlacementStrategy.h $
+|     $Source: GeometryManipulationStrategies/PublicApi/ChildCurveVectorPlacementStrategy.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,25 +12,20 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
+struct ChildCurveVectorPlacementStrategy : public GeometryPlacementStrategy
     {
-    DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
+    DEFINE_T_SUPER(GeometryPlacementStrategy)
 
     private:
-        ArcManipulationStrategyPtr m_manipulationStrategy;
+        ChildCurveVectorManipulationStrategyPtr m_manipulationStrategy;
 
     protected:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementStrategy(ArcManipulationStrategyP manipulationStrategy);
-    
-        DPoint3d CalculateVec90KeyPoint(DPoint3dCR endPoint) const;
+        ChildCurveVectorPlacementStrategy(ChildCurveVectorManipulationStrategyP manipulationStrategy);
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
         virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
-        ArcManipulationStrategyCR GetArcManipulationStrategy() const { return *m_manipulationStrategy; }
-        ArcManipulationStrategyR GetArcManipulationStrategyR() { return *m_manipulationStrategy; }
-
-    public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Normal;
+        ChildCurveVectorManipulationStrategyCR GetChildCurveVectorManipulationStrategy() const { return *m_manipulationStrategy; }
+        ChildCurveVectorManipulationStrategyR GetChildCurveVectorManipulationStrategyR() { return *m_manipulationStrategy; }
     };
 
 END_BUILDING_SHARED_NAMESPACE

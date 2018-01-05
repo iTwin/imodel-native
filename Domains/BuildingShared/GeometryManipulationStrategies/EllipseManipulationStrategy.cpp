@@ -11,6 +11,8 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
+const Utf8CP EllipseManipulationStrategy::prop_Normal = "Normal";
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
@@ -166,7 +168,7 @@ void EllipseManipulationStrategy::UpdateSweep
     {
     if (m_normal.IsZero())
         {
-        _SetProperty(prop_Normal(), DVec3d::FromCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, end)));
+        _SetProperty(prop_Normal, DVec3d::FromCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, end)));
         }
 
     if (m_normal.IsZero())
@@ -315,7 +317,7 @@ void EllipseManipulationStrategy::_SetProperty
     {
     T_Super::_SetProperty(key, value);
 
-    if (0 == strcmp(prop_Normal(), key))
+    if (0 == strcmp(prop_Normal, key))
         {
         DVec3d tmpVec = value;
         if (!DoubleOps::AlmostEqual(tmpVec.Normalize(), 0))
@@ -334,7 +336,7 @@ BentleyStatus EllipseManipulationStrategy::_TryGetProperty
     DVec3d& value
 ) const
     {
-    if (0 == strcmp(prop_Normal(), key))
+    if (0 == strcmp(prop_Normal, key))
         {
         if (!DoubleOps::AlmostEqual(m_normal.Magnitude(), 0))
             {
@@ -344,4 +346,20 @@ BentleyStatus EllipseManipulationStrategy::_TryGetProperty
         }
 
     return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool EllipseManipulationStrategy::_IsComplete() const
+    {
+    return GetAcceptedKeyPoints().size() == 3;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool EllipseManipulationStrategy::_CanAcceptMorePoints() const
+    {
+    return !_IsComplete();
     }

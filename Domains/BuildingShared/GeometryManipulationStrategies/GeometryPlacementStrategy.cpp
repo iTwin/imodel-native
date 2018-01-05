@@ -35,7 +35,7 @@ void GeometryPlacementStrategy::AddKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> const& GeometryPlacementStrategy::_GetKeyPoints() const
+bvector<DPoint3d> GeometryPlacementStrategy::_GetKeyPoints() const
     {
     return _GetManipulationStrategy().GetKeyPoints();
     }
@@ -125,6 +125,22 @@ void GeometryPlacementStrategy::_ResetDynamicKeyPoint()
 GeometryManipulationStrategyCR GeometryPlacementStrategy::GetManipulationStrategy() const
     {
     return _GetManipulationStrategy();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryPlacementStrategy::_IsComplete() const
+    {
+    return _GetManipulationStrategy().IsComplete();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryPlacementStrategy::_CanAcceptMorePoints() const
+    {
+    return _GetManipulationStrategy().CanAcceptMorePoints();
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

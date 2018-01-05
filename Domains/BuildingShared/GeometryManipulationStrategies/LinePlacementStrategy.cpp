@@ -9,6 +9,9 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
+const Utf8CP LinePlacementStrategy::prop_Length = "Length";
+const Utf8CP LinePlacementStrategy::prop_Angle = "Angle";
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // LinePointsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -153,9 +156,9 @@ void LinePointLengthAnglePlacementStrategy::_SetWorkingPlane(DPlane3d const & pl
 //---------------+---------------+---------------+---------------+---------------+------
 void LinePointLengthAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
-    if (0 == strcmp(BUILDINGSHARED_PROP_Length, key))
+    if (0 == strcmp(LinePlacementStrategy::prop_Length, key))
         _SetLength(value);
-    else if (0 == strcmp(BUILDINGSHARED_PROP_Angle, key))
+    else if (0 == strcmp(LinePlacementStrategy::prop_Angle, key))
         _SetAngle(value);
 
     UpdateEndPoint();
@@ -166,9 +169,9 @@ void LinePointLengthAnglePlacementStrategy::_SetProperty(Utf8CP key, const doubl
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LinePointLengthAnglePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    if (0 == strcmp(BUILDINGSHARED_PROP_Length, key))
+    if (0 == strcmp(LinePlacementStrategy::prop_Length, key))
         value = _GetLength();
-    else if (0 == strcmp(BUILDINGSHARED_PROP_Angle, key))
+    else if (0 == strcmp(LinePlacementStrategy::prop_Angle, key))
         value = _GetAngle();
     else
         return BentleyStatus::ERROR;

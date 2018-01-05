@@ -23,6 +23,10 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
         LineManipulationStrategyCR GetLineManipulationStrategy() const { return *m_manipulationStrategy; }
         LineManipulationStrategyR GetLineManipulationStrategyR() { return *m_manipulationStrategy; }
+
+    public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Length;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Angle;
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrategy
