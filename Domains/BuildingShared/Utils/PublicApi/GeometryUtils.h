@@ -2,7 +2,7 @@
 |
 |     $Source: Utils/PublicApi/GeometryUtils.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -362,6 +362,12 @@ public:
 
     //! Checks if given ICurvePrimitives have the same geometry (within tolerance).
     BUILDINGSHAREDUTILS_EXPORT static bool IsSameGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallMetricDistance());
-    };
+
+    //! Transforms vector from XY plane onto a given one
+    //! @param[out] transformed transformed vector
+    //! @param[in]  vector      vector to transform
+    //! @param[in]  plane       plane to transform vector on
+    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane);
+};
 
 END_BUILDING_SHARED_NAMESPACE

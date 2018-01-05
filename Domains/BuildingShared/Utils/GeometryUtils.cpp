@@ -2,7 +2,7 @@
 |
 |     $Source: Utils/GeometryUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2520,6 +2520,33 @@ bool GeometryUtils::IsSameGeometry
         }
 
     return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus GeometryUtils::TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
+    {
+    if (!plane.normal.IsPositiveParallelTo(DVec3d::From(0, 0, 1))) // rotate only if if normal is not the same as XY plane's
+        {
+        double transformAngle = DVec3d::From(0, 0, 1).AngleTo(plane.normal);
+        DVec3d rotationAxis = DVec3d::FromCrossProduct(DVec3d::From(0, 0, 1), plane.normal);
+
+        ValidatedDVec3d rotated = DVec3d::FromRotateVectorAroundVector(vector, rotationAxis, Angle::FromRadians(transformAngle));
+        if (!rotated.IsValid())
+            return BentleyStatus::ERROR;
+
+        vector = rotated.Value();
+        }
+
+    if (!plane.origin.AlmostEqual(DPoint3d::FromZero()))
+        {
+        DVec3d translation = DVec3d::From(plane.origin);
+        vector.Add(translation);
+        }
+
+    transformed = vector;
+    return BentleyStatus::SUCCESS;
     }
 
 END_BUILDING_SHARED_NAMESPACE

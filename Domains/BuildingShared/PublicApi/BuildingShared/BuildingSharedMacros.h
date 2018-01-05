@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/BuildingShared/BuildingSharedMacros.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,6 +37,11 @@
 #else
 #define GEOMETRYMANIPULATIONSTRATEGIES_EXPORT IMPORT_ATTRIBUTE
 #endif
+
+
+// Properties
+#define BUILDINGSHARED_PROP_Length                                       "Length"
+#define BUILDINGSHARED_PROP_Angle                                        "Angle"
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types

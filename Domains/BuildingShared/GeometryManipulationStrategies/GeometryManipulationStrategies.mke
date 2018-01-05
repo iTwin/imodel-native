@@ -35,6 +35,8 @@ $(o)ChildCurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)ChildCurveVect
 
 $(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
 
+$(o)LinePlacementStrategy$(oext)    : $(_MakeFilePath)LinePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LinePlacementStrategy.h
+
 $(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EllipseManipulationStrategy.h
 
 $(o)ArcManipulationStrategy$(oext) : $(_MakeFilePath)ArcManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcManipulationStrategy.h
@@ -74,5 +76,6 @@ DLM_OBJECT_FILES = $(objs)
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki

@@ -40,6 +40,7 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcStartEndMidPlacementStrategy)
 #include "CurveVectorPlacementStrategy.h"
 #include "CurvePrimitivePlacementStrategy.h"
 #include "ChildCurveVectorPlacementStrategy.h"
+#include "LinePlacementStrategy.h"
 #include "ArcPlacementStrategy.h"
 #include "ArcStartCenterPlacementStrategy.h"
 #include "ArcCenterStartPlacementStrategy.h"
