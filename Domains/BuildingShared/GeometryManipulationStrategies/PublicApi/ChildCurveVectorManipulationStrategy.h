@@ -28,8 +28,10 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override;
 
+        CurvePrimitiveManipulationStrategyPtr _Clone() const override;
+
     public:
-        ChildCurveVectorManipulationStrategyPtr Create() { return new ChildCurveVectorManipulationStrategy(); }
+        static ChildCurveVectorManipulationStrategyPtr Create() { return new ChildCurveVectorManipulationStrategy(); }
     };
 
 END_BUILDING_SHARED_NAMESPACE

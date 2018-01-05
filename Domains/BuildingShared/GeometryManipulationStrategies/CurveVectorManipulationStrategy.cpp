@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
-#define DEFAULT_MANIPULATION_STRATEGY ArcManipulationStrategy::Create()
+#define DEFAULT_MANIPULATION_STRATEGY LineManipulationStrategy::Create()
 
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -143,7 +143,26 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyF
         placementStrategy = m_primitiveStrategies.back()->CreateDefaultPlacementStrategy();
     else
         {
-        CurvePrimitiveManipulationStrategyPtr manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
+        CurvePrimitiveManipulationStrategyPtr manipulationStrategy;
+
+        switch (m_geometryType)
+            {
+            case GeometryType::Arc:
+                manipulationStrategy = ArcManipulationStrategy::Create();
+                break;
+            case GeometryType::Line:
+                manipulationStrategy = LineManipulationStrategy::Create();
+                break;
+            default:
+                if (m_primitiveStrategies.empty())
+                    manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
+                else
+                    manipulationStrategy = m_primitiveStrategies.back()->Clone();
+                break;
+            }
+
+        BeAssert(manipulationStrategy.IsValid());
+
         placementStrategy = manipulationStrategy->CreateDefaultPlacementStrategy();
         if (!m_primitiveStrategies.empty())
             {
@@ -177,4 +196,18 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
 )
     {
     GetStrategyForAppend()->AddKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeGeometryType
+(
+    GeometryType newGeometryType
+)
+    {
+    if (m_geometryType == newGeometryType)
+        return;
+
+    m_geometryType = newGeometryType;
     }

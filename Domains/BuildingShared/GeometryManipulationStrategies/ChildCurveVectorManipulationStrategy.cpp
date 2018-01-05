@@ -45,3 +45,11 @@ bool ChildCurveVectorManipulationStrategy::_CanAcceptMorePoints() const
     {
     return m_cvManipulationStrategy->CanAcceptMorePoints();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitiveManipulationStrategyPtr ChildCurveVectorManipulationStrategy::_Clone() const
+    {
+    return Create();
+    }

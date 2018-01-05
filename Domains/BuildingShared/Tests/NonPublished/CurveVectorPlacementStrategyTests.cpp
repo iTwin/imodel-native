@@ -30,6 +30,8 @@ TEST_F(CurveVectorPlacementStrategyTests, IsComplete_Finish_WithArcs)
     CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({0,0,0},{2,2,0},{4,0,0})),
                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({4,0,0},{6,-2,0},{8,0,0}))});
 
+    sut->ChangeGeometryType(GeometryType::Arc);
+
     ASSERT_FALSE(sut->IsComplete()) << "Empty";
     ASSERT_FALSE(sut->Finish().IsValid());
 
