@@ -12,7 +12,7 @@
 // @bsistruct                                                   Paul.Connelly   11/17
 //=======================================================================================
 struct SampleTestFixture : TestFixture
-{
+    {
 
     void RedRectangle();
     void TwoElementsNonUniformColor();
@@ -22,7 +22,7 @@ struct SampleTestFixture : TestFixture
         SetupDb(testName);
         testImpl();
         }
-};
+    };
 
 #define DEFINE_SAMPLE_TEST(MEMBER_FUNC) TEST_F(SampleTestFixture, MEMBER_FUNC) \
     { \
@@ -92,35 +92,15 @@ void SampleTestFixture::RedRectangle()
     Render::Primitives::MeshList const& meshes = tileGeom.Meshes();
     Render::FeatureTableCR featureTable = meshes.FeatureTable();
     EXPECT_EQ(1, featureTable.size());
-    
+
     // NB: The published tile's batch table has an unused 'invalid' feature at index 0, which the tile reader omits from the FeatureTable.
     ExpectFeatureId(1, featureTable, *elem, catId);
 
     // Verify geometry
     ASSERT_EQ(1, meshes.size());
     Render::Primitives::MeshCR mesh = *meshes[0];
-    EXPECT_FALSE(mesh.IsEmpty());
-    EXPECT_EQ(Render::Primitives::Mesh::PrimitiveType::Mesh, mesh.GetType());
-    EXPECT_FALSE(nullptr == mesh.GetFeatureTable());
-    EXPECT_EQ(mesh.Triangles().Count(), 2);
-    EXPECT_TRUE(mesh.Polylines().empty());
-    EXPECT_EQ(mesh.Points().size(), 4);
-    EXPECT_EQ(mesh.Normals().size(), 4);
-    EXPECT_TRUE(mesh.Params().empty());
 
-    // Verify colors
-    Render::Primitives::ColorTableCR colors = mesh.GetColorTable();
-    ASSERT_TRUE(colors.IsUniform());
-    EXPECT_EQ(ColorDef::Red().GetValue(), colors.begin()->first);
-    EXPECT_EQ(0, colors.begin()->second);
-
-    // Verify feature IDs
-    Render::FeatureIndex feats;
-    mesh.ToFeatureIndex(feats);
-
-    // NB: We might expect a uniform feature table, but the indices are set directly from the batch table json.
-    // The tile reader doesn't both to check if all the indices are identical (they are).
-    EXPECT_FALSE(feats.IsUniform());
+    AppData::VerifyMesh(mesh, 2, 0, 4, 4, 0, AppData::ColorDefList {ColorDef::Red()}, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,40 +176,16 @@ void SampleTestFixture::TwoElementsNonUniformColor()
     Render::Primitives::MeshList const& meshes = tileGeom.Meshes();
     Render::FeatureTableCR featureTable = meshes.FeatureTable();
     EXPECT_EQ(2, featureTable.size());
-    
+
     // NB: We're relying on elements being processed and assigned feature IDs in a specific order...
     ExpectFeatureId(1, featureTable, *rectangle, catId);
     ExpectFeatureId(2, featureTable, *triangle, catId);
 
     // Verify geometry. 1 mesh with two colors.
     ASSERT_EQ(1, meshes.size());
+
     Render::Primitives::MeshCR mesh = *meshes[0];
-    EXPECT_FALSE(mesh.IsEmpty());
-    EXPECT_EQ(Render::Primitives::Mesh::PrimitiveType::Mesh, mesh.GetType());
-    EXPECT_FALSE(nullptr == mesh.GetFeatureTable());
-    EXPECT_EQ(mesh.Triangles().Count(), 3);
-    EXPECT_TRUE(mesh.Polylines().empty());
-    EXPECT_EQ(mesh.Points().size(), 7);
-    EXPECT_EQ(mesh.Normals().size(), 7);
-    EXPECT_TRUE(mesh.Params().empty());
-
-    // Verify colors. Again relying on order of element processing...
-    Render::Primitives::ColorTableCR colors = mesh.GetColorTable();
-    EXPECT_FALSE(colors.IsUniform());
-    ASSERT_EQ(colors.size(), 2);
-
-    auto iter = colors.begin();
-    EXPECT_EQ(ColorDef::Red().GetValue(), iter->first);
-    EXPECT_EQ(0, iter->second);
-    ++iter;
-    EXPECT_EQ(ColorDef::Blue().GetValue(), iter->first);
-    EXPECT_EQ(1, iter->second);
-
-    // Verify feature IDs
-    Render::FeatureIndex feats;
-    mesh.ToFeatureIndex(feats);
-
-    EXPECT_FALSE(feats.IsUniform());
+    AppData::VerifyMesh(mesh, 3, 0, 7, 7, 0, AppData::ColorDefList {ColorDef::Red(), ColorDef::Blue()}, false);
     }
 
 DEFINE_SAMPLE_TEST(RedRectangle);
