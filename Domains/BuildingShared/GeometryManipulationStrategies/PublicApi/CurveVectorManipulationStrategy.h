@@ -20,6 +20,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
     private:
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
+        bool IsLastStrategyReadyForPop() const;
 
     protected:
         CurveVectorManipulationStrategy() : T_Super() {}

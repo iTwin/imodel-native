@@ -40,6 +40,11 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
 
         virtual bool _IsComplete() const override;
 
+        virtual bool _IsEmpty() const override;
+        virtual bool _IsSingleKeyPointLeft() const override;
+        virtual DPoint3d _GetLastKeyPoint() const override;
+        virtual DPoint3d _GetFirstKeyPoint() const override;
+
     public:
         static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }
 

@@ -302,3 +302,67 @@ CurvePrimitivePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateDef
     {
     return _CreateDefaultPlacementStrategy();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitiveManipulationStrategy::_IsEmpty() const 
+    {
+    return _GetKeyPoints().empty(); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitiveManipulationStrategy::_IsSingleKeyPointLeft() const 
+    { 
+    return _GetKeyPoints().size() == 1; 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d CurvePrimitiveManipulationStrategy::_GetLastKeyPoint() const
+    {
+    return _GetKeyPoints().back();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d CurvePrimitiveManipulationStrategy::_GetFirstKeyPoint() const
+    {
+    return _GetKeyPoints().front();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitiveManipulationStrategy::IsEmpty() const
+    {
+    return _IsEmpty();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitiveManipulationStrategy::IsSingleKeyPointLeft() const
+    {
+    return _IsSingleKeyPointLeft();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d CurvePrimitiveManipulationStrategy::GetLastKeyPoint() const
+    {
+    return _GetLastKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d CurvePrimitiveManipulationStrategy::GetFirstKeyPoint() const
+    {
+    return _GetFirstKeyPoint();
+    }

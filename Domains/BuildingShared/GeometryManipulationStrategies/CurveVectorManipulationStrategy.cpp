@@ -16,8 +16,21 @@ USING_NAMESPACE_BUILDING_SHARED
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr CurveVectorManipulationStrategy::_Finish() const
     {
-    BeAssert(false && "Not implemented.");
-    return nullptr;
+    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    
+    for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategies)
+        {
+        ICurvePrimitivePtr primitive = strategy->FinishPrimitive();
+        if (primitive.IsNull())
+            continue;
+
+        cv->Add(primitive);
+        }
+
+    if (cv->empty())
+        return nullptr;
+
+    return cv;
     }
 
 //--------------------------------------------------------------------------------------
@@ -80,17 +93,43 @@ void CurveVectorManipulationStrategy::_ResetDynamicKeyPoint()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
+bool CurveVectorManipulationStrategy::IsLastStrategyReadyForPop() const
+    {
+    if (m_primitiveStrategies.empty())
+        return false;
+
+    if (m_primitiveStrategies.size() == 1 && m_primitiveStrategies.back()->IsEmpty())
+        return true;
+
+    if (m_primitiveStrategies.size() > 1)
+        {
+        CurvePrimitiveManipulationStrategyR lastStrategy = *m_primitiveStrategies.back();
+        if (lastStrategy.IsEmpty())
+            return true;
+
+        CurvePrimitiveManipulationStrategyR secondToLastStrategy = *m_primitiveStrategies[m_primitiveStrategies.size() - 2];
+        if (lastStrategy.IsSingleKeyPointLeft() &&
+            lastStrategy.GetFirstKeyPoint().AlmostEqual(secondToLastStrategy.GetLastKeyPoint()))
+            return true;
+        }
+
+    return false;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::_PopKeyPoint()
     {
     if (m_primitiveStrategies.empty())
         return;
 
-    if (m_primitiveStrategies.size() > 1 && m_primitiveStrategies.back()->GetAcceptedKeyPoints().empty())
+    m_primitiveStrategies.back()->CreateDefaultPlacementStrategy()->PopKeyPoint();
+
+    if (IsLastStrategyReadyForPop())
         {
         m_primitiveStrategies.pop_back();
         }
-
-    m_primitiveStrategies.back()->PopKeyPoint();
     }
 
 //--------------------------------------------------------------------------------------
@@ -98,23 +137,24 @@ void CurveVectorManipulationStrategy::_PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyForAppend()
     {
-    CurvePrimitiveManipulationStrategyPtr manipulationStrategy;
+    CurvePrimitivePlacementStrategyPtr placementStrategy;
 
     if (!m_primitiveStrategies.empty() && m_primitiveStrategies.back()->CanAcceptMorePoints())
-        manipulationStrategy = m_primitiveStrategies.back();
+        placementStrategy = m_primitiveStrategies.back()->CreateDefaultPlacementStrategy();
     else
         {
-        manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
+        CurvePrimitiveManipulationStrategyPtr manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
+        placementStrategy = manipulationStrategy->CreateDefaultPlacementStrategy();
         if (!m_primitiveStrategies.empty())
             {
             bvector<DPoint3d> lastStrategyAcceptedKeyPoints = m_primitiveStrategies.back()->GetAcceptedKeyPoints();
             if (!lastStrategyAcceptedKeyPoints.empty())
-                manipulationStrategy->AppendKeyPoint(lastStrategyAcceptedKeyPoints.back());
+                placementStrategy->AddKeyPoint(lastStrategyAcceptedKeyPoints.back());
             }
         m_primitiveStrategies.push_back(manipulationStrategy);
         }
 
-    return manipulationStrategy->CreateDefaultPlacementStrategy();
+    return placementStrategy;
     }
 
 //--------------------------------------------------------------------------------------

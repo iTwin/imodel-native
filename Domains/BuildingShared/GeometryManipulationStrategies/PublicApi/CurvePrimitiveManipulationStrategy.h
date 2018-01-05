@@ -46,11 +46,22 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
 
         virtual ICurvePrimitivePtr _FinishPrimitive() const = 0;
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() = 0;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsEmpty() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsSingleKeyPointLeft() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _GetLastKeyPoint() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _GetFirstKeyPoint() const;
+
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
         CurvePrimitivePlacementStrategyPtr CreateDefaultPlacementStrategy();
 
         bvector<DPoint3d> const& GetAcceptedKeyPoints() const { return m_keyPoints; }
+
+        bool IsEmpty() const;
+        bool IsSingleKeyPointLeft() const;
+        DPoint3d GetLastKeyPoint() const;
+        DPoint3d GetFirstKeyPoint() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE
