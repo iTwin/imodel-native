@@ -271,6 +271,10 @@
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="Dlls"/>         
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="Dlls"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="Dlls"/>         
+        <ProductDirectory Name="Assets" Path="Dlls"/>         
     </ProductDirectoryList>
 
 <ProductDirectoryList ListName="ScalableMeshLumenSdk">
