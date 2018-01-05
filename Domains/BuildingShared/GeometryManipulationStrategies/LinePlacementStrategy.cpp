@@ -319,7 +319,7 @@ BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
-    if (0 == strcmp(BUILDINGSHARED_PROP_Length, key))
+    if (0 == strcmp(prop_Length, key))
         _SetLength(value);
     
     AdjustEndPoint();
@@ -330,7 +330,7 @@ void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & 
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LinePointsLengthPlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
-    if (0 == strcmp(BUILDINGSHARED_PROP_Length, key))
+    if (0 == strcmp(prop_Length, key))
         value = _GetLength();
     else
         return BentleyStatus::ERROR;
