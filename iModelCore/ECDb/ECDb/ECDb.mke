@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/ECDb.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -468,7 +468,7 @@ $(BuildContext)ECSchemas/ECDb/ECDbFileInfo.02.00.00.ecschema.xml : $(_MakeFilePa
 $(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMap.02.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMeta.01.00.00.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbMeta.04.00.01.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMeta.04.00.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbSchemaPolicies.01.00.00.ecschema.xml

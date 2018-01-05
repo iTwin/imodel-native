@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECDbFileInfo" alias="ecdbf" version="02.00.00" description="ECDb FileInfo" displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECDbFileInfo" alias="ecdbf" version="02.00.00" description="ECDb FileInfo" displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
 
@@ -43,10 +43,10 @@
     </ECEntityClass>
     
     <ECEnumeration typeName="StandardRootFolderType" backingTypeName="int" isStrict="False" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." displayLabel="Root Folder Type">
-        <ECEnumerator value="0" displayLabel="DocumentsFolder" />
-        <ECEnumerator value="1" displayLabel="TemporaryFolder" />
-        <ECEnumerator value="2" displayLabel="CachesFolder" />
-        <ECEnumerator value="3" displayLabel="LocalStateFolder" />
+        <ECEnumerator name="DocumentsFolder" value="0"  />
+        <ECEnumerator name="TemporaryFolder" value="1"  />
+        <ECEnumerator name="CachesFolder" value="2"  />
+        <ECEnumerator name="LocalStateFolder" value="3"  />
     </ECEnumeration>
     
     <ECEntityClass typeName="ExternalFileInfo" description="Attributes of a file stored external to the repository." displayLabel="External File Info">

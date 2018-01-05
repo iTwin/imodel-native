@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/FileFormatCompatibilityTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -1049,6 +1049,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ECDb upgradedFile;
     ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
+    //verify 4.0.1 upgrade
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT Name FROM " BEDB_TABLE_Local " ORDER BY Name"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "First row";
@@ -1056,6 +1057,58 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Second row";
     ASSERT_STRCASEEQ("ec_instanceidsequence", stmt.GetValueText(0)) << "Second row";
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
+    stmt.Finalize();
+    
+    //verify 4.0.2 upgrade
+    Db benchmarkFile;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    Statement benchmarkEnumsStmt, upgradedEnumsStmt;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkEnumsStmt.Prepare(benchmarkFile, "SELECT EnumValues,Name FROM ec_Enumeration ORDER BY Id"));
+    ASSERT_EQ(BE_SQLITE_OK, upgradedEnumsStmt.Prepare(upgradedFile, "SELECT EnumValues FROM ec_Enumeration ORDER BY Id"));
+
+    while (BE_SQLITE_ROW == benchmarkEnumsStmt.Step())
+        {
+        Utf8CP enumName = benchmarkEnumsStmt.GetValueText(1);
+        ASSERT_EQ(BE_SQLITE_ROW, upgradedEnumsStmt.Step());
+
+        Json::Value benchmarkEnumValuesJson, upgradedEnumValuesJson;
+        ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(benchmarkEnumValuesJson, benchmarkEnumsStmt.GetValueText(0)));
+        ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(upgradedEnumValuesJson, upgradedEnumsStmt.GetValueText(0)));
+        ASSERT_EQ(benchmarkEnumValuesJson.size(), upgradedEnumValuesJson.size());
+        for (Json::ArrayIndex i = 0; i < benchmarkEnumValuesJson.size(); i++)
+            {
+            Json::Value const& benchmarkEnumValueJson = benchmarkEnumValuesJson[i];
+            Json::Value const& upgradedEnumValueJson = upgradedEnumValuesJson[i];
+            ASSERT_TRUE(upgradedEnumValueJson.isMember("Name"));
+            Utf8CP actualName = upgradedEnumValueJson["Name"].asCString();
+            if (benchmarkEnumValueJson.isMember("DisplayLabel"))
+                {
+                Utf8CP benchmarkDisplayLabel = benchmarkEnumValueJson["DisplayLabel"].asCString();
+                if (ECNameValidation::IsValidName(benchmarkDisplayLabel))
+                    {
+                    EXPECT_FALSE(upgradedEnumValueJson.isMember("DisplayLabel"));
+                    EXPECT_STREQ(benchmarkDisplayLabel, actualName);
+                    }
+                else
+                    {
+                    EXPECT_TRUE(upgradedEnumValueJson.isMember("DisplayLabel"));
+                    EXPECT_STREQ(ECNameValidation::EncodeToValidName(benchmarkDisplayLabel).c_str(), actualName);
+                    }
+                continue;
+                }
+
+            //no display label
+            Utf8String expectedName;
+            if (benchmarkEnumValueJson.isMember("IntValue"))
+                expectedName.Sprintf("%s_%d", enumName, benchmarkEnumValueJson["IntValue"].asInt());
+            else
+                expectedName.Sprintf("%s_%s", enumName, benchmarkEnumValueJson["StringValue"].asCString());
+
+            EXPECT_STREQ(expectedName.c_str(), actualName);
+            }
+        }
+    ASSERT_EQ(BE_SQLITE_DONE, upgradedEnumsStmt.Step());
     }
 
 //---------------------------------------------------------------------------------------

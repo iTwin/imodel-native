@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaPersistenceHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,11 +10,11 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+#define ECDBMETA_PROP_ECEnumerator_Name "Name"
 #define ECDBMETA_PROP_ECEnumerator_IntValue "IntValue"
 #define ECDBMETA_PROP_ECEnumerator_StringValue "StringValue"
 #define ECDBMETA_PROP_ECEnumerator_DisplayLabel "DisplayLabel"
-
-
+#define ECDBMETA_PROP_ECEnumerator_Description "Description"
 
 //=======================================================================================
 // @bsienum                                                Krischan.Eberle      12/2015

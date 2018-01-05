@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ProfileTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -187,8 +187,8 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
             {ProfileVersion(3,100,1,1), Db::OpenMode::ReadWrite, BE_SQLITE_ERROR_ProfileTooOld, false},
             {ProfileVersion(4,0,0,0), Db::OpenMode::Readonly, BE_SQLITE_OK, true},
             {ProfileVersion(4,0,0,0), Db::OpenMode::ReadWrite, BE_SQLITE_OK, true},
-            {ProfileVersion(4,0,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
-            {ProfileVersion(4,0,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
+            {ProfileVersion(4,0,0,1), Db::OpenMode::Readonly, BE_SQLITE_OK, true},
+            {ProfileVersion(4,0,0,1), Db::OpenMode::ReadWrite, BE_SQLITE_OK, true},
             {ProfileVersion(4,0,0,2), Db::OpenMode::Readonly, BE_SQLITE_OK, false},
             {ProfileVersion(4,0,0,2), Db::OpenMode::ReadWrite, BE_SQLITE_OK, false},
             {ProfileVersion(4,0,0,3), Db::OpenMode::Readonly, BE_SQLITE_OK, false},

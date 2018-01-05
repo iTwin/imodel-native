@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaPersistenceHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -397,6 +397,10 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
         {
         rapidjson::Value enumValueJson(rapidjson::kObjectType);
 
+        Utf8StringCR enumValueName = enumValue->GetName();
+        enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Name, rapidjson::Value(enumValueName.c_str(), (rapidjson::SizeType) enumValueName.size(), jsonAllocator).Move(),
+                                jsonAllocator);
+
         if (enumValue->IsInteger())
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_IntValue, rapidjson::Value(enumValue->GetInteger()).Move(), jsonAllocator);
         else if (enumValue->IsString())
@@ -417,6 +421,15 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
             Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel,
                                     rapidjson::Value(displayLabel.c_str(), (rapidjson::SizeType) displayLabel.size(), jsonAllocator).Move(),
+                                    jsonAllocator);
+
+            }
+
+        if (!enumValue->GetInvariantDescription().empty())
+            {
+            Utf8StringCR description = enumValue->GetInvariantDescription();
+            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Description,
+                                    rapidjson::Value(description.c_str(), (rapidjson::SizeType) description.size(), jsonAllocator).Move(),
                                     jsonAllocator);
 
             }
@@ -449,22 +462,26 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
     for (rapidjson::Value const& enumValueJson : enumValuesJson.GetArray())
         {
         BeAssert(enumValueJson.IsObject());
-        BeAssert(enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue));
+        BeAssert(enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_Name) && (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue) || enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue)));
 
         ECEnumeratorP enumValue = nullptr;
+
+        rapidjson::Value const& nameVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_Name];
+        BeAssert(nameVal.IsString());
+        Utf8CP name = nameVal.GetString();
 
         if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_IntValue))
             {
             rapidjson::Value const& intVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue];
             BeAssert(intVal.IsInt());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, intVal.GetInt()))
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, intVal.GetInt()))
                 return ERROR;
             }
         else if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_StringValue))
             {
             rapidjson::Value const& stringVal = enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue];
             BeAssert(stringVal.IsString());
-            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, stringVal.GetString()))
+            if (ECObjectsStatus::Success != ecEnum.CreateEnumerator(enumValue, name, stringVal.GetString()))
                 return ERROR;
             }
         else
@@ -477,6 +494,12 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
             {
             Utf8CP displayLabel = enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel].GetString();
             enumValue->SetDisplayLabel(displayLabel);
+            }
+
+        if (enumValueJson.HasMember(ECDBMETA_PROP_ECEnumerator_Description))
+            {
+            Utf8CP description = enumValueJson[ECDBMETA_PROP_ECEnumerator_Description].GetString();
+            enumValue->SetDescription(description);
             }
         }
 

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbMetaSchemaECSqlTestFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -428,6 +428,12 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expec
         ASSERT_TRUE(memberVal.GetColumnInfo().GetProperty() != nullptr);
         Utf8StringCR memberName = memberVal.GetColumnInfo().GetProperty()->GetName();
 
+        if (memberName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expectedEnumValue.GetName().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].Name";
+            continue;
+            }
+
         if (memberName.EqualsI("IntValue"))
             {
             if (expectedEnumValue.IsInteger())
@@ -453,6 +459,16 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expec
                 ASSERT_STREQ(expectedEnumValue.GetDisplayLabel().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].DisplayLabel";
             else
                 ASSERT_TRUE(memberVal.IsNull()) << "ECEnumerationDef.EnumValues[].DisplayLabel if not defined";
+
+            continue;
+            }
+
+        if (memberName.EqualsI("Description"))
+            {
+            if (!expectedEnumValue.GetDescription().empty())
+                ASSERT_STREQ(expectedEnumValue.GetDescription().c_str(), memberVal.GetText()) << "ECEnumerationDef.EnumValues[].Description";
+            else
+                ASSERT_TRUE(memberVal.IsNull()) << "ECEnumerationDef.EnumValues[].Description if not defined";
 
             continue;
             }

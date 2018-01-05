@@ -2,16 +2,105 @@
 |
 |     $Source: ECDb/ProfileUpgrader.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <json/json.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ProfileUpgrader_XXX *********************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    01/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id,EnumValues,Name FROM main." TABLE_Enumeration))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not retrieve existing enumerations: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    bmap<int64_t, Json::Value> enumValues;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Json::Value& enumValuesJson = enumValues[stmt.GetValueInt64(0)];
+        if (!Json::Reader::Parse(stmt.GetValueText(1), enumValuesJson))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Could not parse ECEnumeration values JSON: %s.", stmt.GetValueText(1));
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        Utf8CP enumName = stmt.GetValueText(2);
+
+        // now upgrade the enum values json
+        for (Json::Value& enumValueJson : enumValuesJson)
+            {
+            if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel))
+                {
+                Utf8CP displayLabel = enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel].asCString();
+                const bool displayLabelIsValidName = ECNameValidation::IsValidName(displayLabel);
+                Utf8String name;
+                if (displayLabelIsValidName)
+                    name.assign(displayLabel);
+                else
+                    name = ECNameValidation::EncodeToValidName(displayLabel);
+
+                enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = name;
+
+                if (displayLabelIsValidName)
+                    enumValueJson.removeMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel);
+
+                continue;
+                }
+
+            //no display label
+            Utf8String name;
+            if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_IntValue))
+                name.Sprintf("%s_%d", enumName, enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue].asInt());
+            else if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_StringValue))
+                name.Sprintf("%s_%s", enumName, enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue].asCString());
+            else
+                {
+                BeAssert(false);
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
+
+            BeAssert(ECNameValidation::IsValidName(name.c_str()));
+            enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = name;
+            }
+        }
+
+    stmt.Finalize();
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE main." TABLE_Enumeration " SET EnumValues=? WHERE Id=?"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Failed to update the table " TABLE_Enumeration ": %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    for (bpair<int64_t, Json::Value> kvPair : enumValues)
+        {
+        Utf8String enumValuesStr = kvPair.second.ToString();
+        if (BE_SQLITE_OK != stmt.BindText(1, enumValuesStr, Statement::MakeCopy::No) ||
+            BE_SQLITE_OK != stmt.BindInt64(2, kvPair.first) ||
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.errorv("ECDb profile upgrade failed: Failed to update the table " TABLE_Enumeration ": %s.", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated table " TABLE_Enumeration " to EC3.2 format.");
+    return BE_SQLITE_OK;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    10/2017
@@ -59,7 +148,7 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    schemaKey = SchemaKey("ECDbMeta", 1, 0, 0);
+    schemaKey = SchemaKey("ECDbMeta", 4, 0, 1);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
@@ -122,7 +211,7 @@ BentleyStatus ProfileSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContextR rea
 Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_ClassECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"

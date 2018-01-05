@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ProfileManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -148,6 +148,7 @@ DbResult ProfileManager::RunUpgraders(ECDbCR ecdb)
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ProfileUpgrader>> upgraders;
     upgraders.push_back(std::make_unique<ProfileUpgrader_4001>());
+    upgraders.push_back(std::make_unique<ProfileUpgrader_4002>());
 
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {

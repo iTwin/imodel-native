@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="ECDbChange" alias="change" version="01.00.00" displayLabel="ECDb Change" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECDbChange" alias="change" version="01.00.00" displayLabel="ECDb Change" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
 
     <ECEntityClass typeName="ChangeSummary" displayLabel="Summary" modifier="Sealed">
@@ -7,9 +7,9 @@
     </ECEntityClass>
 
     <ECEnumeration typeName="OpCode" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="1" displayLabel="Insert"/>
-        <ECEnumerator value="2" displayLabel="Update"/>
-        <ECEnumerator value="4" displayLabel="Delete"/>
+        <ECEnumerator name="Insert" value="1" />
+        <ECEnumerator name="Update" value="2" />
+        <ECEnumerator name="Delete" value="4" />
     </ECEnumeration>
 
     <ECStructClass typeName="InstanceKey" displayLabel="InstanceKey" modifier="Sealed">

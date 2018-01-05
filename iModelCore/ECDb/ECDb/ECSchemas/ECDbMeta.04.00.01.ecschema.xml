@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECEntityClass typeName="ECSchemaDef" description="ECSchema" displayLabel="ECSchema" modifier="Sealed">
         <ECCustomAttributes>
@@ -52,9 +52,11 @@
         <ECProperty propertyName="RelationshipStrengthDirection" typeName="ECRelationshipDirection" description="Applies to ECClassType::Relationship only."/>
     </ECEntityClass>
     <ECStructClass typeName="ECEnumeratorDef" modifier="Sealed">
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="IntValue" typeName="int"/>
         <ECProperty propertyName="StringValue" typeName="string"/>
-        <ECProperty propertyName="DisplayLabel" typeName="string"/>
     </ECStructClass>
     <ECEntityClass typeName="ECEnumerationDef" description="ECEnumeration" displayLabel="ECEnumeration" modifier="Sealed">
         <ECCustomAttributes>
@@ -322,64 +324,64 @@
         </Target>
     </ECRelationshipClass>
     <ECEnumeration typeName="ECCustomAttributeContainerType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="1" displayLabel="Schema"/>
-        <ECEnumerator value="2" displayLabel="EntityClass"/>
-        <ECEnumerator value="4" displayLabel="CustomAttributeClass"/>
-        <ECEnumerator value="8" displayLabel="StructClass"/>
-        <ECEnumerator value="16" displayLabel="RelationshipClass"/>
-        <ECEnumerator value="30" displayLabel="AnyClass"/>
-        <ECEnumerator value="32" displayLabel="PrimitiveProperty"/>
-        <ECEnumerator value="64" displayLabel="StructProperty"/>
-        <ECEnumerator value="128" displayLabel="PrimitiveArrayProperty"/>
-        <ECEnumerator value="256" displayLabel="StructArrayProperty"/>
-        <ECEnumerator value="512" displayLabel="NavigationProperty"/>
-        <ECEnumerator value="992" displayLabel="AnyProperty"/>
-        <ECEnumerator value="1024" displayLabel="SourceRelationshipConstraint"/>
-        <ECEnumerator value="2048" displayLabel="TargetRelationshipConstraint"/>
-        <ECEnumerator value="3072" displayLabel="AnyRelationshipConstraint"/>
-        <ECEnumerator value="4095" displayLabel="Any"/>
+        <ECEnumerator name="Schema" value="1" />
+        <ECEnumerator name="EntityClass" value="2" />
+        <ECEnumerator name="CustomAttributeClass" value="4" />
+        <ECEnumerator name="StructClass" value="8" />
+        <ECEnumerator name="RelationshipClass" value="16" />
+        <ECEnumerator name="AnyClass" value="30" />
+        <ECEnumerator name="PrimitiveProperty" value="32" />
+        <ECEnumerator name="StructProperty" value="64" />
+        <ECEnumerator name="PrimitiveArrayProperty" value="128" />
+        <ECEnumerator name="StructArrayProperty" value="256" />
+        <ECEnumerator name="NavigationProperty" value="512" />
+        <ECEnumerator name="AnyProperty" value="992" />
+        <ECEnumerator name="SourceRelationshipConstraint" value="1024" />
+        <ECEnumerator name="TargetRelationshipConstraint" value="2048" />
+        <ECEnumerator name="AnyRelationshipConstraint" value="3072" />
+        <ECEnumerator name="Any" value="4095" />
     </ECEnumeration>
     <ECEnumeration typeName="ECClassModifier" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="None"/>
-        <ECEnumerator value="1" displayLabel="Abstract"/>
-        <ECEnumerator value="2" displayLabel="Sealed"/>
+        <ECEnumerator name="None" value="0" />
+        <ECEnumerator name="Abstract" value="1" />
+        <ECEnumerator name="Sealed" value="2" />
     </ECEnumeration>
     <ECEnumeration typeName="ECRelationshipEnd" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Source"/>
-        <ECEnumerator value="1" displayLabel="Target"/>
+        <ECEnumerator name="Source" value="0" />
+        <ECEnumerator name="Target" value="1" />
     </ECEnumeration>
     <ECEnumeration typeName="ECClassType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Entity"/>
-        <ECEnumerator value="1" displayLabel="Relationship"/>
-        <ECEnumerator value="2" displayLabel="Struct"/>
-        <ECEnumerator value="3" displayLabel="CustomAttribute"/>
+        <ECEnumerator name="Entity" value="0" />
+        <ECEnumerator name="Relationship" value="1" />
+        <ECEnumerator name="Struct" value="2" />
+        <ECEnumerator name="CustomAttribute" value="3" />
     </ECEnumeration>
     <ECEnumeration typeName="ECPropertyKind" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Primitive"/>
-        <ECEnumerator value="1" displayLabel="Struct"/>
-        <ECEnumerator value="2" displayLabel="PrimitiveArray"/>
-        <ECEnumerator value="3" displayLabel="StructArray"/>
-        <ECEnumerator value="4" displayLabel="Navigation"/>
+        <ECEnumerator name="Primitive" value="0" />
+        <ECEnumerator name="Struct" value="1" />
+        <ECEnumerator name="PrimitiveArray" value="2" />
+        <ECEnumerator name="StructArray" value="3" />
+        <ECEnumerator name="Navigation" value="4" />
     </ECEnumeration>
     <ECEnumeration typeName="ECRelationshipDirection" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="1" displayLabel="Forward"/>
-        <ECEnumerator value="2" displayLabel="Backward"/>
+        <ECEnumerator name="Forward" value="1" />
+        <ECEnumerator name="Backward" value="2" />
     </ECEnumeration>
     <ECEnumeration typeName="ECRelationshipStrength" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Referencing"/>
-        <ECEnumerator value="1" displayLabel="Holding"/>
-        <ECEnumerator value="2" displayLabel="Embedding"/>
+        <ECEnumerator name="Referencing" value="0" />
+        <ECEnumerator name="Holding" value="1" />
+        <ECEnumerator name="Embedding" value="2" />
     </ECEnumeration>
     <ECEnumeration typeName="PrimitiveType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="257" displayLabel="Binary"/>
-        <ECEnumerator value="513" displayLabel="Boolean"/>
-        <ECEnumerator value="769" displayLabel="DateTime"/>
-        <ECEnumerator value="1025" displayLabel="Double"/>
-        <ECEnumerator value="1281" displayLabel="Integer"/>
-        <ECEnumerator value="1537" displayLabel="Long"/>
-        <ECEnumerator value="1793" displayLabel="Point2D"/>
-        <ECEnumerator value="2049" displayLabel="Point3D"/>
-        <ECEnumerator value="2305" displayLabel="String"/>
-        <ECEnumerator value="2561" displayLabel="IGeometry"/>
+        <ECEnumerator name="Binary" value="257" />
+        <ECEnumerator name="Boolean" value="513" />
+        <ECEnumerator name="DateTime" value="769" />
+        <ECEnumerator name="Double" value="1025" />
+        <ECEnumerator name="Integer" value="1281" />
+        <ECEnumerator name="Long" value="1537" />
+        <ECEnumerator name="Point2d" value="1793" />
+        <ECEnumerator name="Point3d" value="2049" />
+        <ECEnumerator name="String" value="2305" />
+        <ECEnumerator name="IGeometry" value="2561" />
     </ECEnumeration>
 </ECSchema>

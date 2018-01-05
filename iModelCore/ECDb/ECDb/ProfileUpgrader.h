@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ProfileUpgrader.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,6 +26,15 @@ public:
     DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
     };
 
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle     01/2018
+//+===============+===============+===============+===============+===============+======
+struct ProfileUpgrader_4002 final : ProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        DbResult _Upgrade(ECDbCR) const override;
+    };
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle     10/2017
 //+===============+===============+===============+===============+===============+======
