@@ -13,7 +13,7 @@
 #include <ImagePP/all/h/HGF2DTransfoModel.h>
 #include <ImagePP/all/h/HGF2DCoordSys.h>
 #include <ImagePP/all/h/HRPPixelNeighbourhood.h>
-#include <ImageppInternal/gra/HRAImageSurface.h>
+#include <ImagePPInternal/gra/HRAImageSurface.h>
 
 
 

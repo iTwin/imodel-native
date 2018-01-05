@@ -24,7 +24,7 @@ ippUtlDir           = $(ippAllDir)utl/
 
 ippPublicAPISrc     = $(SrcImagepp)PublicApi/ImagePP/
 ippInc              = $(ippPublicAPISrc)h/
-ippAllInc           = $(ippPublicAPISrc)All/h/
+ippAllInc           = $(ippPublicAPISrc)all/h/
 ippInterfaceInc     = $(ippAllInc)interface/
 
 ippPrivateAPISrc    = $(SrcImagepp)PrivateApi/

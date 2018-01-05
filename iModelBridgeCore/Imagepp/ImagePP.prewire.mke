@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-SrcImagePP      = $(SrcRoot)ImagePP/
+SrcImagePP      = $(SrcRoot)Imagepp/
 %include $(SrcImagepp)mki/imageppdirs.mki
 
 #----------------------------------------------------------------------
@@ -22,7 +22,7 @@ srcDir          = $(_MakeFilePath)
 
 # Wire in my own public header files.
 always:
-   ~linkdir "$(PublicApiDir)ImagePP=$(srcDir)PublicAPI\ImagePP"
+   ~linkdir "$(PublicApiDir)ImagePP=$(srcDir)PublicApi/ImagePP"
 
 ippExternalLibDir   = $(SrcImagepp)ext/
 

@@ -15,7 +15,7 @@ appName             = ImagePP
 CCompPDBName        = $(appName)
 DLM_NAME            = $(appName)
 
-SrcImagePP      = $(SrcRoot)ImagePP/
+SrcImagePP      = $(SrcRoot)Imagepp/
 %include $(SrcImagepp)mki/imageppdirs.mki
 
 
