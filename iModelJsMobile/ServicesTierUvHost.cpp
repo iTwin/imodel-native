@@ -91,6 +91,9 @@ void UvHost::EventLoopThreadMain()
 
     m_jsRuntime = new Js::Runtime("iModel.js Services Tier", config.enableJsDebugger, config.jsDebuggerPort);
 
+    NodeWorkAlike::Globals::Install(*m_jsRuntime);
+    Extension::Install ([]() { return new NodeWorkAlike::Extension_path; });
+
     NotifyStarting();
     uv_run (GetEventLoop(), UV_RUN_DEFAULT);
     NotifyStop();

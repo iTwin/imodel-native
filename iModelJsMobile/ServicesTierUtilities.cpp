@@ -1492,4 +1492,122 @@ Napi::Value Utilities::ExportJsModule(Js::RuntimeR runtime)
     return exports;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                    01/2018
+//---------------------------------------------------------------------------------------
+void NodeWorkAlike::Globals::Install(Js::RuntimeR runtime)
+    {
+	auto& env = runtime.Env();
+
+    Napi::HandleScope scope (env);
+
+    auto process = Napi::Object::New(env);
+    process["env"] = Napi::Object::New(env);       // this is a dummy. It's supposed to be the system environment, but that doesn't make sense on mobile devices.
+                                                // We might try populating it with config variables ...
+    process["on"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) {
+        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(2);
+
+        // *** TBD: support for event handlers?
+
+    });
+
+    process["exit"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) {
+        // *** TBD: support this?
+
+    });
+
+    env.Global()["process"] = process;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                    01/2018
+//---------------------------------------------------------------------------------------
+Napi::Value NodeWorkAlike::Extension_path::ExportJsModule(Js::RuntimeR runtime)
+    {
+	auto& env = runtime.Env();
+
+    Napi::HandleScope scope (env);
+
+    auto exports = Napi::Object::New(env);
+
+    auto path = Napi::Object::New(env);
+#ifdef _WIN32
+    bool isWin32 = true;
+    Utf8CP delim = ";";
+#else
+    bool isWin32 = false;
+    Utf8CP delim = ":";
+#endif
+    path["posix"] = Napi::Boolean::New(env, !isWin32);
+    path["win32"] = Napi::Boolean::New(env, isWin32);
+    path["sep"] = Napi::String::New(env, DIR_SEPARATOR);
+    path["delimiter"] = Napi::String::New(env, delim);
+    path["basename"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            // TBD: optional 'ext' argument ...
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::String::New(info.Env(), Utf8String(fname.GetBaseName()).c_str());
+        });
+    path["dirname"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::String::New(info.Env(), Utf8String(fname.GetDirectoryName()).c_str());
+        });
+    path["extname"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::String::New(info.Env(), Utf8String(fname.GetExtension()).c_str());
+        });
+    path["normalize"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            if (fnameS.Utf8Value().empty())
+                {
+                return Napi::String::New(info.Env(), "."); // as per node docs
+                }
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            WString fixed;
+            BeFileName::FixPathName(fixed, fname, true);
+            return Napi::String::New(info.Env(), Utf8String(fixed).c_str());
+        });
+    path["join"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            // *** TBD: what will the arguments look like? An array?
+            auto fnames = JS_CALLBACK_GET_ARRAY(0);
+            if (fnames.Length() == 0)
+                {
+                Napi::Error::New(info.Env(), "not enough arguments").ThrowAsJavaScriptException();
+                return info.Env().Undefined();
+                }
+            auto const& fnamesC = fnames;
+            BeFileName path(fnamesC[(uint32_t)0].As<Napi::String>().Utf8Value().c_str(), true);
+            for (uint32_t i = 1; i < fnamesC.Length(); ++i)
+                {
+                path.AppendToPath(BeFileName(fnamesC[i].As<Napi::String>().Utf8Value().c_str(), true));
+                }
+            return Napi::String::New(info.Env(), Utf8String(path).c_str());
+        });
+    path["isAbsolute"] = Napi::Function::New(env, [] (Napi::CallbackInfo const& info) -> Napi::Value {
+            JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS(1);
+            auto fnameS = JS_CALLBACK_GET_STRING(0);
+            BeFileName fname(fnameS.Utf8Value().c_str(), true);
+            return Napi::Boolean::New(info.Env(), fname.IsAbsolutePath());
+        });
+
+        /* TBD
+path.format(pathObject)
+path.parse(path)
+path.relative(from, to)
+path.resolve([...paths])
+path.toNamespacedPath(path)
+*/
+
+    exports["path"] = path;
+
+    return exports;
+    }
+
 END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE

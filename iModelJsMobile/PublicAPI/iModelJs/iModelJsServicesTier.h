@@ -286,6 +286,23 @@ public:
     IMODELJS_EXPORT JsPrototypesCR GetPrototypes() const { return m_prototypes; }
     };
 
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson   01/18
+//=======================================================================================
+struct NodeWorkAlike
+    {
+    struct Globals 
+        {
+        static void Install(Js::RuntimeR);
+        };
+
+    struct Extension_path : Extension 
+        {
+        Utf8CP SupplyName() const override {return "path";}
+        Napi::Value ExportJsModule (Js::RuntimeR) override;
+        };
+    };
+
 END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 
 //__PUBLISH_SECTION_END__
