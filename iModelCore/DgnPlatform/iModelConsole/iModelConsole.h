@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BimConsole/BimConsole.h $
+|     $Source: iModelConsole/iModelConsole.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,18 +15,18 @@ USING_NAMESPACE_BENTLEY
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Affan.Khan         07/2017
 //---------------------------------------------------------------------------------------
-struct BimConsoleChangeTracker final : BeSQLite::ChangeTracker
+struct IModelConsoleChangeTracker final : BeSQLite::ChangeTracker
     {
-    explicit BimConsoleChangeTracker(BeSQLite::DbR db) : BeSQLite::ChangeTracker() { SetDb(&db); }
+    explicit IModelConsoleChangeTracker(BeSQLite::DbR db) : BeSQLite::ChangeTracker() { SetDb(&db); }
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Continue; }
     };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Affan.Khan         07/2017
 //---------------------------------------------------------------------------------------
-struct BimConsoleChangeSet final : BeSQLite::ChangeSet
+struct IModelConsoleChangeSet final : BeSQLite::ChangeSet
     {
-    BimConsoleChangeSet() : BeSQLite::ChangeSet() {}
+    IModelConsoleChangeSet() : BeSQLite::ChangeSet() {}
     ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { BeAssert(false && "Unexpected conflict"); return ConflictResolution::Skip; }
     };
 
@@ -38,7 +38,7 @@ struct SessionFile
     public:
         enum class Type
             {
-            Bim,
+            IModel,
             ECDb,
             BeSQLite
             };
@@ -49,7 +49,7 @@ struct SessionFile
                 {
                 BeSQLite,
                 ECDb,
-                DgnDb,
+                IModel,
                 Unknown
                 };
 
@@ -62,7 +62,7 @@ struct SessionFile
 
     private:
         Type m_type;
-        std::unique_ptr<BimConsoleChangeTracker> m_changeTracker;
+        std::unique_ptr<IModelConsoleChangeTracker> m_changeTracker;
 
         virtual BeSQLite::EC::ECDb* _GetECDbHandle() const = 0;
         virtual BeSQLite::Db& _GetBeSqliteHandle() const { BeAssert(_GetECDbHandle() != nullptr); return *_GetECDbHandle(); }
@@ -95,7 +95,7 @@ struct SessionFile
         bool TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>&) const;
         bool EnableTracking(bool enable);
         bool IsTracking() const { return m_changeTracker != nullptr && m_changeTracker->IsTracking(); }
-        BimConsoleChangeTracker* GetTracker() const { return m_changeTracker.get(); }
+        IModelConsoleChangeTracker* GetTracker() const { return m_changeTracker.get(); }
         Type GetType() const { return m_type; }
         Utf8CP TypeToString() const { return TypeToString(m_type); }
         static Utf8CP TypeToString(Type type);
@@ -105,7 +105,7 @@ struct SessionFile
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     07/2016
 //---------------------------------------------------------------------------------------
-struct BimFile final : SessionFile
+struct IModelFile final : SessionFile
     {
     private:
         mutable Dgn::DgnDbPtr m_file;
@@ -113,8 +113,8 @@ struct BimFile final : SessionFile
         BeSQLite::EC::ECDb* _GetECDbHandle() const override { BeAssert(m_file != nullptr); return m_file.get(); }
 
     public:
-        explicit BimFile(Dgn::DgnDbPtr bim) : SessionFile(Type::Bim), m_file(bim) {}
-        ~BimFile() { Finalize(); }
+        explicit IModelFile(Dgn::DgnDbPtr iModel) : SessionFile(Type::IModel), m_file(iModel) {}
+        ~IModelFile() { Finalize(); }
         Dgn::DgnDbCR GetDgnDbHandle() const { BeAssert(IsOpen()); return *m_file; }
         Dgn::DgnDbR GetDgnDbHandleR() const { BeAssert(IsOpen()); return *m_file; }
     };
@@ -190,7 +190,7 @@ struct Session final
 //=======================================================================================
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct BimConsole final : Dgn::DgnPlatformLib::Host
+struct IModelConsole final : Dgn::DgnPlatformLib::Host
     {
     private:
         static const Utf8Char COMMAND_PREFIX = '.';
@@ -200,7 +200,7 @@ struct BimConsole final : Dgn::DgnPlatformLib::Host
         std::vector<Utf8String> m_commandHistory;
         std::map<Utf8String, std::shared_ptr<Command>> m_commands;
 
-        void _SupplyProductName(Utf8StringR name) override { name.assign("BimConsole"); }
+        void _SupplyProductName(Utf8StringR name) override { name.assign("iModelConsole"); }
         IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::KnownDesktopLocationsAdmin; }
         BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
@@ -217,7 +217,7 @@ struct BimConsole final : Dgn::DgnPlatformLib::Host
         void AddToHistory(Utf8StringCR command) { return m_commandHistory.push_back(command); }
         std::vector<Utf8String> const& GetCommandHistory() const { return m_commandHistory; }
 
-        static void WritePrompt() { Write("BIM> "); }
+        static void WritePrompt() { Write("iModelConsole> "); }
         static void Write(FILE* stream, Utf8CP format, va_list args);
         static FILE* GetIn();
         static FILE* GetOut();
@@ -225,7 +225,7 @@ struct BimConsole final : Dgn::DgnPlatformLib::Host
 
 
     public:
-        BimConsole() {}
+        IModelConsole() {}
         int Run(int argc, WCharCP argv[]);
 
         static size_t FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar = L'\0');
@@ -235,6 +235,8 @@ struct BimConsole final : Dgn::DgnPlatformLib::Host
         static void WriteError(Utf8CP format, ...);
         static void WriteErrorLine(Utf8CP format, ...);
         static void WriteLine();
+
+        static Utf8String FormatId(BeInt64Id id) { return id.IsValid()? id.ToHexStr() : Utf8String(); }
     };
 
 

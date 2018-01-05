@@ -38,7 +38,7 @@ ModelSelectorCPtr TestFixture::InsertModelSelector(DgnModelIdSet const& modelIds
     DgnDbR db = GetDb();
     ModelSelector sel(db.GetDictionaryModel(), name);
     sel.GetModelsR() = modelIds;
-    
+
     auto ret = db.Elements().Insert(sel);
     EXPECT_TRUE(ret.IsValid());
 
@@ -216,6 +216,20 @@ BeFileName TestFixture::GetAppDataFileName() const
     return filename;
     }
 
+DgnSubCategoryId TestFixture::InsertSubCategory (DgnCategoryId categoryId, Utf8CP name, ColorDefCR color)
+    {
+    DgnDbR db = GetDb();
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(color);
+    DgnSubCategoryPtr newSubCategory = new DgnSubCategory(DgnSubCategory::CreateParams(db, categoryId, name, appearance));
+    if (!newSubCategory.IsValid())
+        return DgnSubCategoryId();
+    DgnSubCategoryCPtr insertedSubCategory = newSubCategory->Insert();
+    if (!insertedSubCategory.IsValid())
+        return DgnSubCategoryId();
+    return insertedSubCategory->GetSubCategoryId();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -294,6 +308,53 @@ void AppData::ExpectEqual(AppData const& rhs) const
     ExpectEqual(m_displayStyles, rhs.m_displayStyles);
     ExpectEqual(m_modelSelectors, rhs.m_modelSelectors);
     ExpectEqual(m_models, rhs.m_models);
+    }
+
+void AppData::VerifyMesh(Render::Primitives::Mesh const& mesh, int triangles, int polilines, int points, int normals, int params, ColorDefList const& colorDefs, bool areColorsUniform)
+    {
+    // verify mech
+    EXPECT_FALSE(mesh.IsEmpty());
+    EXPECT_EQ(Render::Primitives::Mesh::PrimitiveType::Mesh, mesh.GetType());
+    EXPECT_FALSE(nullptr == mesh.GetFeatureTable());
+    EXPECT_EQ(mesh.Triangles().Count(), triangles);
+    EXPECT_EQ(mesh.Polylines().size(), polilines);
+    EXPECT_EQ(mesh.Points().size(), points);
+    EXPECT_EQ(mesh.Normals().size(), normals);
+    EXPECT_EQ(mesh.Params().size(), params);
+
+    // Verify colors. Again relying on order of element processing...
+    Render::Primitives::ColorTableCR colors = mesh.GetColorTable();
+    ASSERT_EQ(colors.size(), colorDefs.size());
+
+    if (!areColorsUniform)
+        EXPECT_FALSE(colors.IsUniform());
+    else
+        EXPECT_TRUE(colors.IsUniform());
+
+    std::vector<bpair<uint32_t, uint16_t> > v;
+    copy(colors.begin(), colors.end(), back_inserter(v));
+
+    sort(v.begin(), v.end(),
+         [] (const bpair<int, int>  &p1, const bpair<int, int> &p2)
+            {
+            return p1.second < p2.second;
+            });
+
+    int i = 0;
+    auto iter = colorDefs.begin();
+    for (auto const &item : v)
+        {
+        EXPECT_EQ(item.first, iter->GetValue());
+        EXPECT_EQ(item.second, i);
+        iter++;
+        i++;
+        }
+
+    // Verify feature IDs
+    Render::FeatureIndex feats;
+    mesh.ToFeatureIndex(feats);
+
+    EXPECT_FALSE(feats.IsUniform());
     }
 
 /*---------------------------------------------------------------------------------**//**

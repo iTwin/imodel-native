@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Command.cpp" />
+    <ClCompile Include="ECSqlCommand.cpp" />
+    <ClCompile Include="iModelConsole.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Command.h" />
+    <ClInclude Include="iModelConsole.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="iModelConsole.mke" />
+  </ItemGroup>
+</Project>

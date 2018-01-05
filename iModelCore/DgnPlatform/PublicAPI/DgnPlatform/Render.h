@@ -3271,6 +3271,9 @@ public:
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();
+    virtual int _SetGatherFrameTimings(bool gather) {return 0;}
+    virtual void _GetFrameTimings(double* timings) {}
+    virtual void _GetFrameTimingNames(WCharP* timingNames) {}
 
     int GetId() const {return m_id;}
     void SetAbortFlag() {m_abort=true;}
