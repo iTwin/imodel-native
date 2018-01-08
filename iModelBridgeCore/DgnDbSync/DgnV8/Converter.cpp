@@ -2438,7 +2438,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
         {                                                                                                                           // *** WIP_BIM_BRIDGE -- remove this logic
         Utf8String duplicateMessage;                                                                                                // *** WIP_BIM_BRIDGE -- remove this logic
         duplicateMessage.Sprintf("Duplicate element code '%s' ignored", code.GetValueUtf8().c_str());                                   // *** WIP_BIM_BRIDGE -- remove this logic
-        ReportIssue(IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());         // *** WIP_BIM_BRIDGE -- remove this logic
+        ReportIssue(IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());         // *** WIP_BIM_BRIDGE -- remove this logic
                                                                                                                                     // *** WIP_BIM_BRIDGE -- remove this logic
         DgnDbStatus stat2 = results.m_element->SetCode(DgnCode::CreateEmpty()); // just leave the code null                         // *** WIP_BIM_BRIDGE -- remove this logic
         BeAssert(DgnDbStatus::Success == stat2);                                                                                    // *** WIP_BIM_BRIDGE -- remove this logic
@@ -2953,7 +2953,7 @@ SyncInfo::V8ElementMapping Converter::FindFirstElementMappedTo(DgnV8ModelCR v8Mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementMapping Converter::FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
+SyncInfo::V8ElementMapping Converter::_FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
                                                                IChangeDetector::T_SyncInfoElementFilter* filter)
     {
     ElementRefP targetEl;

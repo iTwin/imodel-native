@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/Converter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -971,6 +971,8 @@ protected:
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
 
+    DGNDBSYNC_EXPORT virtual SyncInfo::V8ElementMapping _FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
+
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
@@ -1707,8 +1709,8 @@ public:
     //! @param v8ElementId Identifies the V8 element to look up
     //! @param filter   Optional. Chooses among existing elements in SyncInfo
     //! @return Mapping information for this element, if found, or an invalid mapping if the element is not found in syncinfo or if the display path is empty or invalid.
-    DGNDBSYNC_EXPORT SyncInfo::V8ElementMapping FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
-                                                                         IChangeDetector::T_SyncInfoElementFilter* filter = nullptr);
+    SyncInfo::V8ElementMapping FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, IChangeDetector::T_SyncInfoElementFilter* filter = nullptr) 
+        { return _FindFirstElementMappedTo(proxyPath, tail, filter); }
 
     DGNDBSYNC_EXPORT void InitUncategorizedCategory();
     DGNDBSYNC_EXPORT void InitUncategorizedDrawingCategory();
@@ -1965,7 +1967,6 @@ public:
     //! @private
     DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
 
-    //! @}
 };
 
 //=======================================================================================
