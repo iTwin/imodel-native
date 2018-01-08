@@ -161,7 +161,7 @@ protected:
     Show                m_show;
     bmap<DgnElementId, DbOpcode>    m_persistentOpcodeCache;
     bmap<DgnElementId, DbOpcode>    m_transientOpcodeCache;
-    std::function<void(SpatialViewControllerPtr)>   m_cnmHandler;
+    std::function<void(ControllerPtr)>   m_cnmHandler;
 
     DgnElementId        m_focusedElementId;
     Utf8String          m_labelString;
@@ -191,8 +191,8 @@ public:
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
     bool WantShowOnlyCurrent() const { return kShowCurrent == m_show; }
     bool WantShowOnlyTarget() const { return kShowTarget == m_show; }
-    void SetItemsDisplayHandler(std::function<void(SpatialViewControllerPtr)> handler) { m_cnmHandler = handler; }
-    std::function<void(SpatialViewControllerPtr)> GetHandler() { return m_cnmHandler; }
+    DGNPLATFORM_EXPORT void SetItemsDisplayHandler(std::function<void(ControllerPtr)> handler);
+    std::function<void(ControllerPtr)> GetHandler() { return m_cnmHandler; }
 
     DGNPLATFORM_EXPORT void SetModelDisplay(DgnModelIdSet& modelIds, bool visible);
     DGNPLATFORM_EXPORT void SetCategoryDisplay(DgnCategoryIdSet& categories, bool visible);

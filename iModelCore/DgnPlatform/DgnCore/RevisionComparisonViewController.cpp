@@ -96,13 +96,21 @@ StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpco
 +---------------+---------------+---------------+---------------+---------------+------*/
  RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(flags)//, m_label(TextString::Create())
     {
-    m_cnmHandler = [](SpatialViewControllerPtr controller){ };
+    m_cnmHandler = [](RevisionComparison::ControllerPtr controller){ };
 
     // Build the opcode cache
     for (auto state : m_comparisonData->GetPersistentStates())
         m_persistentOpcodeCache[state.m_elementId] = state.m_opcode;
     for (auto state : m_comparisonData->GetTransientStates())
         m_transientOpcodeCache[state.m_element->GetElementId()] = state.m_opcode;
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
+void RevisionComparison::Controller::SetItemsDisplayHandler(std::function<void(RevisionComparison::ControllerPtr)> handler)
+    {
+    m_cnmHandler = handler;
     }
 
 //-------------------------------------------------------------------------------------------
