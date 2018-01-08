@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/RepositoryCompatibilityTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -149,6 +149,9 @@ void CreateTestPaths(IWSRepositoryClientPtr client, Utf8CP testName, BeFileName&
 
 struct RepositoryCompatibilityTests_Create : RepositoryCompatibilityTests {};
 INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_Create, ::testing::ValuesIn(s_createTestData));
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(RepositoryCompatibilityTests_Create, Create)
     {
     auto repository = GetParam().create;
@@ -165,6 +168,9 @@ TEST_P(RepositoryCompatibilityTests_Create, Create)
 
 struct RepositoryCompatibilityTests_Upgrade : RepositoryCompatibilityTests {};
 INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_Upgrade, ::testing::ValuesIn(s_upgradeTestData));
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     {
     // Create base cache
