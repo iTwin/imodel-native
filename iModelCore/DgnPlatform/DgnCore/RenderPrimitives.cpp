@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RenderPrimitives.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -2957,10 +2957,11 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
     {
+    constexpr double s_toleranceMult = 0.25;
     auto const& params = GetCreateParams();
     if (params.IsViewCoordinates())
         {
-        return 0.25;
+        return s_toleranceMult;
         }
     else if (nullptr == params.GetViewport())
         {
@@ -2974,7 +2975,7 @@ double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
 
         // NB: Geometry::CreateFacetOptions() will apply any scale factors from transform...no need to do it here.
         DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-        return params.GetViewport()->GetPixelSizeAtPoint(&pt);
+        return params.GetViewport()->GetPixelSizeAtPoint(&pt) * s_toleranceMult;
         }
     }
 

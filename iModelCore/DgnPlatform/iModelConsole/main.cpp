@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BimConsole/main.cpp $
+|     $Source: iModelConsole/main.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include "BimConsole.h"
+#include "iModelConsole.h"
 #include <Logging/bentleylogging.h>
 
 #ifdef COMMENT_OUT_UNUSED_VARIABLE
@@ -20,13 +20,13 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
-void BimConsoleBeAssertHandler(wchar_t const* message, wchar_t const* file, unsigned line, BeAssertFunctions::AssertType atype)
+void IModelConsoleBeAssertHandler(wchar_t const* message, wchar_t const* file, unsigned line, BeAssertFunctions::AssertType atype)
     {
     WString errorMessage;
     errorMessage.Sprintf(L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
 
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->errorv(errorMessage.c_str());
-    BimConsole::WriteErrorLine(Utf8String(errorMessage).c_str());
+    IModelConsole::WriteErrorLine(Utf8String(errorMessage).c_str());
     }
 
 bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir);
@@ -49,7 +49,7 @@ void InitLogging(BeFileNameCR exeDir)
 //---------------------------------------------------------------------------------------
 bool TryGetLogConfigPath(BeFileNameR logConfigPath, BeFileNameCR exeDir)
     {
-    Utf8String configFilePathStr(getenv("BIMCONSOLE_LOGGING_CONFIG"));
+    Utf8String configFilePathStr(getenv("IMODELCONSOLE_LOGGING_CONFIG"));
     logConfigPath = BeFileName(configFilePathStr);
     if (!configFilePathStr.empty() && logConfigPath.DoesPathExist())
         return true;
@@ -69,7 +69,6 @@ int wmain(int argc, WCharCP argv[])
 #ifdef _WIN32
 #if defined (UNICODE_OUTPUT_FOR_TESTING)
     // turning this on makes it so we can show unicode characters, but screws up piped output for programs like python.
-    // Since BimConsole output is not a production concept anyway, is merely for testing.
     _setmode(_fileno(stdout), _O_U16TEXT);  // so we can output any and all unicode to the console
     _setmode(_fileno(stderr), _O_U16TEXT);  // so we can output any and all unicode to the console
 #endif
@@ -94,10 +93,10 @@ int wmain(int argc, WCharCP argv[])
     // (http://cboard.cprogramming.com/cplusplus-programming/145590-non-english-characters-cout-2.html)
     setlocale(LC_CTYPE, "");
 
-    //set customized assert handler as default handler causes exception which makes BimConsole crash.
-    BeAssertFunctions::SetBeAssertHandler(BimConsoleBeAssertHandler);
+    //set customized assert handler as default handler causes exception which makes iModelConsole crash.
+    BeAssertFunctions::SetBeAssertHandler(IModelConsoleBeAssertHandler);
 
-    BimConsole app;
+    IModelConsole app;
     Dgn::DgnPlatformLib::Initialize(app, false);
     return app.Run(argc, argv);
     }
