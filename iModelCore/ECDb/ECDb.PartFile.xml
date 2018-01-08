@@ -35,9 +35,6 @@
                 Delivery/openoffice-notice.txt
                 Delivery/openoffice-license.txt
             </VendorNotices>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
-                ECSchemas/ECDb/*.ecschema.xml
-            </Files>
             <Directory SourceName="Dox/Pages/ECDb" SubPartDirectory="Dox/Pages/ECDb"/>
             <Directory SourceName="Dox/Images/ECDb" SubPartDirectory="Dox/Images/ECDb"/>
             <Directory SourceName="Dox/Files/ECDb" SubPartDirectory="Dox/Files/ECDb"/>
