@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/IECPresentationManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -130,6 +130,7 @@ public:
 
     //! Get the connection manager used by this presentation manager.
     IConnectionManagerCR GetConnections() const {return m_connections;}
+    IConnectionManagerR Connections() { return m_connections; }
 /** @} */
 
 /** @name Navigation  
