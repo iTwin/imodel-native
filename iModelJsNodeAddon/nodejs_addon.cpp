@@ -16,7 +16,7 @@
 #include "suppress_warnings.h"
 #include <imodeljs-nodeaddonapi.package.version.h>
 #include <node-addon-api/napi.h>
-#include <uv/uv.h>
+#include <libuv/uv.h>
 #undef X_OK // node\uv-win.h defines this, and then folly/portability/Unistd.h re-defines it.
 
 #include <json/value.h>
