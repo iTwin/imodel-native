@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/RealityDataServiceConsole.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -423,6 +423,7 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
     if (!installed)
         {
         DisplayInfo("Connection client does not seem to be installed\n", DisplayOption::Error);
+        CCApi_FreeApi(api);
         return "";
         }
     bool running = false;
@@ -430,6 +431,7 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
     if (status != APIERR_SUCCESS || !running)
         {
         DisplayInfo("Connection client does not seem to be running\n", DisplayOption::Error);
+        CCApi_FreeApi(api);
         return "";
         }
     bool loggedIn = false;
@@ -437,6 +439,7 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
     if (status != APIERR_SUCCESS || !loggedIn)
         {
         DisplayInfo("Connection client does not seem to be logged in\n", DisplayOption::Error);
+        CCApi_FreeApi(api);
         return "";
         }
     bool acceptedEula = false;
@@ -444,6 +447,7 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
     if (status != APIERR_SUCCESS || !acceptedEula)
         {
         DisplayInfo("Connection client user does not seem to have accepted EULA\n", DisplayOption::Error);
+        CCApi_FreeApi(api);
         return "";
         }
     bool sessionActive = false;
@@ -451,6 +455,7 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
     if (status != APIERR_SUCCESS || !sessionActive)
         {
         DisplayInfo("Connection client does not seem to have an active session\n", DisplayOption::Error);
+        CCApi_FreeApi(api);
         return "";
         }
 

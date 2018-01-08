@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/RealityConversionTools.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -289,13 +289,13 @@ StatusInt RealityConversionTools::JsonToRealityDataExtended(Utf8CP data, bvector
         JsonToRealityData(realityData, properties);
 
         if (properties.isMember("OriginService") && !properties["OriginService"].isNull())
-            realityData->SetOrganizationId(Utf8CP(properties["OriginService"].asString().c_str()));
+            realityData->SetOriginService(Utf8CP(properties["OriginService"].asString().c_str()));
         if (properties.isMember("UsePermissionOverride") && !properties["UsePermissionOverride"].isNull())
-            realityData->SetOrganizationId(Utf8CP(properties["UsePermissionOverride"].asString().c_str()));
+            realityData->SetUsePermissionOverride(Utf8CP(properties["UsePermissionOverride"].asString().c_str()));
         if (properties.isMember("ManagePermissionOverride") && !properties["ManagePermissionOverride"].isNull())
-            realityData->SetOrganizationId(Utf8CP(properties["ManagePermissionOverride"].asString().c_str()));
+            realityData->SetManagePermissionOverride(Utf8CP(properties["ManagePermissionOverride"].asString().c_str()));
         if (properties.isMember("AssignPermissionOverride") && !properties["AssignPermissionOverride"].isNull())
-            realityData->SetOrganizationId(Utf8CP(properties["AssignPermissionOverride"].asString().c_str()));
+            realityData->SetAssignPermissionOverride(Utf8CP(properties["AssignPermissionOverride"].asString().c_str()));
 
         outData->push_back(realityData);
         }
@@ -1056,7 +1056,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                           11/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-RealityDataDownload::sisterFileVector RealityConversionTools::RealityDataToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource, BeFileNameCR destinationFolder)
+RealityDataDownload::sisterFileVector RealityConversionTools::SpatialEntityDataSourceToSisterVector(RealityPlatform::SpatialEntityDataSourceCR dataSource, BeFileNameCR destinationFolder)
     {
     bvector<RealityPlatform::UriPtr> sisters;
     RealityDataDownload::sisterFileVector sfVector = RealityDataDownload::sisterFileVector();
@@ -1119,13 +1119,13 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
             
             if(mbSource != nullptr)
                 {
-                RealityDataDownload::sisterFileVector subVector = RealityDataToSisterVector(*mbSource->GetRedBand(), destinationFolder);
+                RealityDataDownload::sisterFileVector subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetRedBand(), destinationFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
-                subVector = RealityDataToSisterVector(*mbSource->GetBlueBand(), destinationFolder);
+                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetBlueBand(), destinationFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
-                subVector = RealityDataToSisterVector(*mbSource->GetGreenBand(), destinationFolder);
+                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetGreenBand(), destinationFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
-                subVector = RealityDataToSisterVector(*mbSource->GetPanchromaticBand(), destinationFolder);
+                subVector = SpatialEntityDataSourceToSisterVector(*mbSource->GetPanchromaticBand(), destinationFolder);
                 sfVector.insert(sfVector.end(), subVector.begin(), subVector.end());
                 }
             /*else if (wmsSource != nullptr)
@@ -1134,7 +1134,7 @@ RealityDataDownload::Link_File_wMirrors_wSisters RealityConversionTools::Package
                 {}*/
             else
                 {
-                sfVector = RealityDataToSisterVector(mirror, destinationFolder);
+                sfVector = SpatialEntityDataSourceToSisterVector(mirror, destinationFolder);
                 }
             mVector.push_back(sfVector);
             }
@@ -1178,7 +1178,7 @@ RealityDataDownload::mirrorWSistersVector RealityConversionTools::RealityDataToM
 
     for (size_t i = 0; i < mirrorCount; ++i)
         {
-        mVector.push_back(RealityDataToSisterVector(realityData.GetDataSource(i), destinationFolder));
+        mVector.push_back(SpatialEntityDataSourceToSisterVector(realityData.GetDataSource(i), destinationFolder));
         }
     return mVector;
     }

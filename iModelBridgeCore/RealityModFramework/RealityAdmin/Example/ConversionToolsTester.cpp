@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/Example/ConversionToolsTester.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,7 +13,6 @@
 
 #include <RealityPlatformTools/RealityDataDownload.h>
 #include <RealityPlatform/RealityDataPackage.h>
-#include <RealityPlatformTools/md5.h>
 #include <RealityPlatformTools/RealityConversionTools.h>
 
 #include <stdio.h>

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/GeoCoordinationServiceRequestObjectTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -230,6 +230,7 @@ TEST_F(GeoCoordinationServiceRequestsFixture, SpatialEntityWithDetailsSpatialReq
     EXPECT_THAT(requestUnderTest.GetHttpRequestString().c_str(), HasSubstr(subStringToVerify.c_str()));
 
     requestUnderTest.SetPageSize(50);
+    EXPECT_EQ(requestUnderTest.GetPageSize(), 50);
     subStringToVerify = Utf8PrintfString("&$skip=%u&$top=%u", 25, 50);
     EXPECT_THAT(requestUnderTest.GetHttpRequestString().c_str(), HasSubstr(subStringToVerify.c_str()));
 

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformToolsComplete/SimpleWSGBase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -24,6 +24,7 @@ Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     if (!installed)
         {
         ReportError("Connection client does not seem to be installed");
+        CCApi_FreeApi(api);
         return "";
         }
     bool running = false;
@@ -31,6 +32,7 @@ Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     if (status != APIERR_SUCCESS || !running)
         {
         ReportError("Connection client does not seem to be running");
+        CCApi_FreeApi(api);
         return "";
         }
     bool loggedIn = false;
@@ -38,6 +40,7 @@ Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     if (status != APIERR_SUCCESS || !loggedIn)
         {
         ReportError("Connection client does not seem to be logged in");
+        CCApi_FreeApi(api);
         return "";
         }
     bool acceptedEula = false;
@@ -45,6 +48,7 @@ Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     if (status != APIERR_SUCCESS || !acceptedEula)
         {
         ReportError("Connection client user does not seem to have accepted EULA");
+        CCApi_FreeApi(api);
         return "";
         }
     bool sessionActive = false;
@@ -52,6 +56,7 @@ Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
     if (status != APIERR_SUCCESS || !sessionActive)
         {
         ReportError("Connection client does not seem to have an active session\n");
+        CCApi_FreeApi(api);
         return "";
         }
 

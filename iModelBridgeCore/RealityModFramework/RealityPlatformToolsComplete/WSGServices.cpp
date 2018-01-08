@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformToolsComplete/WSGServices.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -191,6 +191,7 @@ void ConnectTokenManager::RefreshToken() const
     if (!installed)
         {
         std::cout << "Connection client does not seem to be installed" << std::endl;
+        CCApi_FreeApi(api);
         return;
         }
     bool running = false;
@@ -198,6 +199,7 @@ void ConnectTokenManager::RefreshToken() const
     if (status != APIERR_SUCCESS || !running)
         {
         std::cout << "Connection client does not seem to be running" << std::endl;
+        CCApi_FreeApi(api);
         return;
         }
     bool loggedIn = false;
@@ -205,6 +207,7 @@ void ConnectTokenManager::RefreshToken() const
     if (status != APIERR_SUCCESS || !loggedIn)
         {
         std::cout << "Connection client does not seem to be logged in" << std::endl;
+        CCApi_FreeApi(api);
         return;
         }
     bool acceptedEula = false;
@@ -212,6 +215,7 @@ void ConnectTokenManager::RefreshToken() const
     if (status != APIERR_SUCCESS || !acceptedEula)
         {
         std::cout << "Connection client user does not seem to have accepted EULA" << std::endl;
+        CCApi_FreeApi(api);
         return;
         }
     bool sessionActive = false;
@@ -219,6 +223,7 @@ void ConnectTokenManager::RefreshToken() const
     if (status != APIERR_SUCCESS || !sessionActive)
         {
         std::cout << "Connection client does not seem to have an active session" << std::endl;
+        CCApi_FreeApi(api);
         return;
         }
 
@@ -228,7 +233,10 @@ void ConnectTokenManager::RefreshToken() const
 
     status = CCApi_GetSerializedDelegateSecurityToken(api, relyingParty, lpwstrToken, maxTokenLength);
     if (status != APIERR_SUCCESS)
-    return;
+        {
+        CCApi_FreeApi(api);
+        return;
+        }
 
     char* charToken = new char[maxTokenLength];
     wcstombs(charToken, lpwstrToken, maxTokenLength);

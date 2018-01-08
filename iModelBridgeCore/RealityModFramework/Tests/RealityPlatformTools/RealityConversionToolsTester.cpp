@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatformTools/RealityConversionToolsTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -28,6 +28,7 @@ class RealityConversionTestFixture : public testing::Test
         static Utf8CP s_EnterpriseStatJSONString;
         static Utf8CP s_ManyEnterpriseStatsJSONString;
         static Utf8CP s_RealityDataJSONString;
+        static Utf8CP s_RealityDataExtendedJSONString;
 		static Utf8CP s_EntityDataSourceJSONString;
 		static Utf8CP s_SpatialEntityServerJSONString;
 		static Utf8CP s_SpatialEntityMetadataJSONString;
@@ -52,7 +53,7 @@ Utf8CP RealityConversionTestFixture::s_TwoSpatialEntityJSONString = R"(
 					"Id": "14812",
 					"Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
 					"Name": "N38W093",
-					"Description": null,
+					"Description": "a spatial entity",
 					"ContactInformation": null,
 					"Keywords": null,
 					"Legal": "Data available from the U.S. Geological Survey",
@@ -69,7 +70,7 @@ Utf8CP RealityConversionTestFixture::s_TwoSpatialEntityJSONString = R"(
 					"DataProvider": "USGS",
 					"DataProviderName": "United States Geological Survey",
 					"ThumbnailURL": "http://www.example.com/thumbnail.jpg",
-					"MetadataURL": null,
+					"MetadataURL": "http://www.example.com/metadata.txt",
 					"RawMetadataURL": null,
 					"RawMetadataFormat": null,
 					"SubAPI": null
@@ -89,7 +90,7 @@ Utf8CP RealityConversionTestFixture::s_TwoSpatialEntityJSONString = R"(
 					"Keywords": null,
 					"Legal": "Data also available from the U.S. Geological Survey",
 					"ProcessingDescription": "This is a dummy description that is not Lorem Ipsum based",
-					"DataSourceType": "hgt;tif;dem",
+					"Type": "hgt;tif;dem",
 					"AccuracyResolutionDensity": null,
 					"Date": "2005-07-05T12:12:00",
 					"Classification": "Terrain",
@@ -123,7 +124,8 @@ Utf8CP RealityConversionTestFixture::s_EnterpriseStatJSONString = R"(
                     "NumberOfRealityData": 1425,
                     "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
                     "UltimateId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
-                    "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
+                    "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "Date": "2005-07-05T12:12:00"
                 },
                 "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
             }
@@ -287,6 +289,79 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "OwnedBy": "francis.boily@bentley.com",
                     "Hidden": true,
                     "DelegatePermissions": true
+                },
+                "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+            }
+        ]
+    }
+    )";
+
+    Utf8CP RealityConversionTestFixture::s_RealityDataExtendedJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                "schemaName": "S3MX",
+                "className": "RealityData",
+                "properties": {
+                    "Id": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "ContainerName": "af3c43a9-1797-4765-a7c3-6f1cd6706fa9",
+                    "DataLocationGuid": "99999999-9999-9999-9999-999999999999",
+                    "Name": "Helsinki",
+                    "Dataset": "Geogratis",
+                    "Group": "TestGroup",
+                    "Description": "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.",
+                    "RootDocument": "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx",
+                    "FileSize": "1036657",
+                    "Classification": "Terrain",
+                    "Streamed": false,
+                    "DataSourceType": "3mx",
+                    "Footprint": {
+                        "Coordinates": [
+                            {
+                                "Longitude": "24.7828757",
+                                "Latitude": "59.9224887"
+                            },
+                            {
+                                "Longitude": "25.2544848",
+                                "Latitude": "59.9224887"
+                            },
+                            {
+                                "Longitude": "25.2544848",
+                                "Latitude": "60.2978389"
+                            },
+                            {
+                                "Longitude": "24.7828757",
+                                "Latitude": "60.2978389"
+                            },
+                            {
+                                "Longitude": "24.7828757",
+                                "Latitude": "59.9224887"
+                            }
+                        ]
+                    },
+                    "ApproximateFootprint": true,
+                    "ThumbnailDocument": "Helsinki/thumbnail.jpg",
+                    "MetadataUrl": "www.bigTest.com",
+                    "UltimateId": "uId",
+                    "UltimateSite": "www.bigTest.com/1",
+                    "Copyright": "Copyright goes here",
+                    "TermsOfUse": "And the terms go here",
+                    "AccuracyInMeters": "16.147",
+                    "ResolutionInMeters": "13.45x16.34",
+                    "Visibility": "PRIVATE",
+                    "Listable": true,
+                    "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
+                    "Date": "2017-02-01T22:26:06.414Z",
+                    "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
+                    "OwnedBy": "francis.boily@bentley.com",
+                    "Hidden": false,
+                    "DelegatePermissions": false,
+                    "OriginService": "ServiceOrigin",
+                    "UsePermissionOverride": "UseIt",
+                    "ManagePermissionOverride": "Unmanaged",
+                    "AssignPermissionOverride": "Unassigned"
                 },
                 "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
             }
@@ -469,6 +544,7 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntitybvector)
 
     ASSERT_EQ(spatialData->GetName(), "N38W093");    
     ASSERT_EQ(spatialData->GetIdentifier(), "14812");
+    ASSERT_EQ(spatialData->GetDescription(), "a spatial entity");
     ASSERT_EQ(spatialData->GetDataType(), "hgt");
     ASSERT_EQ(spatialData->GetProvider(), "USGS");
 	ASSERT_EQ(spatialData->GetProviderName(), "United States Geological Survey");
@@ -494,6 +570,8 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntitybvector)
         ASSERT_EQ(spatialData->GetFootprint()[i].longitude, footprint[i].longitude);
         ASSERT_EQ(spatialData->GetFootprint()[i].latitude, footprint[i].latitude);
         }
+
+    ASSERT_EQ(spatialData->GetMetadataCP()->GetMetadataUrl(), "http://www.example.com/metadata.txt");
     }
 
 //-------------------------------------------------------------------------------------
@@ -509,7 +587,7 @@ TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
     ASSERT_EQ(stat.GetOrganizationId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     ASSERT_EQ(stat.GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     ASSERT_EQ(stat.GetUltimateSite(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
-
+    ASSERT_STREQ(stat.GetDate().ToString().c_str(), "2005-07-05T12:12:00.000");
     }
 
 
@@ -625,6 +703,64 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
     ASSERT_EQ(realityData->IsHidden(), false);
     ASSERT_EQ(realityData->HasDelegatePermissions(), false);
+    DRange2dCR range = realityData->GetFootprintExtent();
+    ASSERT_TRUE(std::abs(range.low.x - 24.7828757) < 0.000000001);
+    ASSERT_TRUE(std::abs(range.low.y - 59.9224887) < 0.000000001);
+    ASSERT_TRUE(std::abs(range.high.x - 25.2544848) < 0.000000001);
+    ASSERT_TRUE(std::abs(range.high.y - 60.2978389) < 0.000000001);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            01/2018
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToRealityDataExtended)
+    {
+    bvector<RealityDataExtendedPtr> realityVector = bvector<RealityDataExtendedPtr>();
+    StatusInt status = RealityConversionTools::JsonToRealityDataExtended(s_RealityDataExtendedJSONString, &realityVector);
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(realityVector.size(), 1);
+    RealityDataExtendedPtr realityData = realityVector[0];
+    ASSERT_TRUE(realityData.IsValid());
+
+    ASSERT_EQ(realityData->GetIdentifier(), "af3c43a9-1797-4765-a7c3-6f1cd6706fa9");
+    ASSERT_EQ(realityData->GetOrganizationId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    ASSERT_EQ(realityData->GetContainerName(), "af3c43a9-1797-4765-a7c3-6f1cd6706fa9");
+    ASSERT_EQ(realityData->GetDataLocationGuid(), "99999999-9999-9999-9999-999999999999");
+    ASSERT_EQ(realityData->GetName(), "Helsinki");
+    ASSERT_EQ(realityData->GetDataset(), "Geogratis");
+    ASSERT_EQ(realityData->GetGroup(), "TestGroup");
+    ASSERT_EQ(realityData->GetDescription(), "Helsinki is the capital and largest city of Finland. It is in the region of Uusimaa, in southern Finland, on the shore of the Gulf of Finland. Helsinki has a population of 629,512,[3] an urban population of 1,214,210,[7] and a metropolitan population of over 1.4 million, making it the most populous municipality and urban area in Finland.");
+    ASSERT_EQ(realityData->GetRootDocument(), "Helsinki/Scene/Production_Helsinki_3MX_ok.3mx");
+    ASSERT_EQ(realityData->GetTotalSize(), 1036657);
+    ASSERT_EQ(realityData->GetClassification(), RealityDataBase::Classification::TERRAIN);
+    ASSERT_EQ(realityData->GetClassificationTag(), "Terrain");
+    ASSERT_EQ(realityData->IsStreamed(), false);
+    ASSERT_EQ(realityData->GetRealityDataType(), "3mx");
+    ASSERT_EQ(realityData->GetFootprintString(), "{\"Coordinates\": [{\"Longitude\": \"24.782875700\", \"Latitude\": \"59.922488700\"},{\"Longitude\": \"25.254484800\", \"Latitude\": \"59.922488700\"},{\"Longitude\": \"25.254484800\", \"Latitude\": \"60.297838900\"},{\"Longitude\": \"24.782875700\", \"Latitude\": \"60.297838900\"},{\"Longitude\": \"24.782875700\", \"Latitude\": \"59.922488700\"}]}");
+    ASSERT_EQ(realityData->IsApproximateFootprint(), true);
+    ASSERT_EQ(realityData->GetThumbnailDocument(), "Helsinki/thumbnail.jpg");
+    ASSERT_EQ(realityData->GetMetadataUrl(), "www.bigTest.com");
+    ASSERT_EQ(realityData->GetUltimateId(), "uId");
+    ASSERT_EQ(realityData->GetUltimateSite(), "www.bigTest.com/1");
+    ASSERT_EQ(realityData->GetCopyright(), "Copyright goes here");
+    ASSERT_EQ(realityData->GetTermsOfUse(), "And the terms go here");
+    ASSERT_EQ(realityData->GetAccuracy(), "16.147");
+    ASSERT_EQ(realityData->GetAccuracyValue(), 16.147);
+    ASSERT_EQ(realityData->GetResolution(), "13.45x16.34");
+    ASSERT_EQ(realityData->GetResolutionValue(), sqrt(13.45 * 16.34));
+    ASSERT_EQ(realityData->GetVisibility(), RealityDataBase::Visibility::PRIVATE);
+    ASSERT_EQ(realityData->GetVisibilityTag(), "PRIVATE");
+    ASSERT_EQ(realityData->IsListable(), true);
+    ASSERT_EQ(realityData->GetModifiedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
+    ASSERT_EQ(realityData->GetLastAccessedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
+    ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
+    ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
+    ASSERT_EQ(realityData->IsHidden(), false);
+    ASSERT_EQ(realityData->HasDelegatePermissions(), false);
+    ASSERT_EQ(realityData->GetOriginService(), "ServiceOrigin");
+    ASSERT_EQ(realityData->GetUsePermissionOverride(), "UseIt");
+    ASSERT_EQ(realityData->GetManagePermissionOverride(), "Unmanaged");
+    ASSERT_EQ(realityData->GetAssignPermissionOverride(), "Unassigned");
     DRange2dCR range = realityData->GetFootprintExtent();
     ASSERT_TRUE(std::abs(range.low.x - 24.7828757) < 0.000000001);
     ASSERT_TRUE(std::abs(range.low.y - 59.9224887) < 0.000000001);
@@ -832,6 +968,36 @@ TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityMetadata)
 
 	ASSERT_EQ(ERROR, status);
 	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            01/2018
+//-------------------------------------------------------------------------------------
+/*TEST_F(RealityConversionTestFixture, RealityDataToMirrorVector)
+    {
+    SpatialEntityDataSourcePtr mySpatialEntityDataSource = SpatialEntityDataSource::Create();
+
+    UriPtr uri = Uri::Create("http:\\\\somewhere.com\\SomeLocation");
+    mySpatialEntityDataSource->SetUri(*uri);
+    mySpatialEntityDataSource->SetGeoCS("EPSG:4326;NAVD88");
+    mySpatialEntityDataSource->SetCompoundType("zip");
+    mySpatialEntityDataSource->SetSize(12345);
+    mySpatialEntityDataSource->SetNoDataValue("0:0:0");
+    mySpatialEntityDataSource->SetDataType("tif");
+    mySpatialEntityDataSource->SetLocationInCompound(".\\a.tif");
+
+    PackageRealityDataPtr prd = PackageRealityData::CreateUndefined(*(mySpatialEntityDataSource.get()));
+
+    Utf8String samplePath(GetDirectory());
+    samplePath.append("..\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
+    BeFileName fileName(samplePath);
+
+    RealityDataDownload::mirrorWSistersVector mWsVector = RealityConversionTools::RealityDataToMirrorVector(*(prd.get()), fileName);
+
+    ASSERT_EQ(mWsVector[0][0].m_url, "http:\\\\somewhere.com\\SomeLocation");
+    ASSERT_EQ(mWsVector[0][0].m_filePath, samplePath.c_str());
+    ASSERT_EQ(mWsVector[0][0].m_tokenType, "");
+    ASSERT_EQ(mWsVector[0][0].m_cap, nullptr);
+    }*/
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017

@@ -54,61 +54,6 @@ void GCSRequestManager::GCS_status_func(int index, void *pClient, int ErrorCode,
         }
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsifunction                                    Francis Boily                   09/2015
-//+---------------+---------------+---------------+---------------+---------------+------*/
-/*static WString createDirWithHash(Utf8StringCR uri, WStringCR tempPath, uint64_t filesize)
-    {
-    // Extract filename form URL, the last part of the URL until a '/'or '\' or '='
-    WString urlW(uri.c_str(), BentleyCharEncoding::Utf8);
-    urlW.ReplaceAll(WCSALT_DIR_SEPARATOR, WCSDIR_SEPARATOR);
-    WString delim = WCSDIR_SEPARATOR;
-    delim += L"=";
-    bvector<WString> pathComponents;
-    bvector<WString> filenameComponents;
-    BeStringUtilities::Split(urlW.c_str(), delim.c_str(), NULL, pathComponents);
-    BeStringUtilities::Split(pathComponents[pathComponents.size() - 1].c_str(), L".", filenameComponents);
-
-    // Creating one directory per file because we'll need to unzip it into the directory
-    BeFileName separatedDirectoryForZip(tempPath);
-    WString filenameTemp = filenameComponents[0];
-
-    // Creating the MD5 hash
-    MD5Context md5c;
-    MD5Init(&md5c);
-
-    //Adding the filesize to the hash
-    Utf8String hashWithFilesize = uri;
-    hashWithFilesize.append(Utf8PrintfString("%d", filesize));
-
-    // Append that data to the MD5 buffer 
-    MD5Update(&md5c, (const unsigned char*)hashWithFilesize.c_str(), (int)strlen(uri.c_str()));
-    // Calculate the hash of the current fragment
-    unsigned char signature[16];
-    MD5Final(signature, &md5c);
-
-    WString finalHashValue;
-    char tempHashFragment[3];
-    // Write the resulting hashed strings in the result vector
-    for (int j = 0; j < sizeof signature; ++j)
-        {
-        // Bytes are written one by one (one byte equals 2 hex characters)
-        sprintf_s(tempHashFragment, sizeof(tempHashFragment), "%02X", signature[j]);
-        finalHashValue.AppendA(tempHashFragment);
-        }
-
-    // Appending the hash to the current directory
-    filenameTemp.AppendUtf8("_");
-    filenameTemp.append(finalHashValue.c_str());
-    separatedDirectoryForZip.AppendToPath(filenameTemp.c_str());
-    separatedDirectoryForZip.AppendSeparator();
-
-    if (!separatedDirectoryForZip.DoesPathExist())
-        BeFileName::CreateNewDirectory(separatedDirectoryForZip);
-
-    return separatedDirectoryForZip.GetWCharCP();
-    }*/
-
 void GCSRequestManager::Setup(Utf8String serverUrl)
     {
     Utf8String serverName = serverUrl;

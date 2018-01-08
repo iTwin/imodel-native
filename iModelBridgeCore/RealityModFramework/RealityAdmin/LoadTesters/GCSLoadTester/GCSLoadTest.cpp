@@ -463,6 +463,7 @@ int main(int argc, char* argv[])
     if (!installed)
         {
         cout << "Client not installed, or COM not registered" << endl;
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
@@ -471,12 +472,14 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"IsRunning failed with error code %d\n", status);
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
     if (!running)
         {
         cout << "Client not running" << endl;
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
@@ -485,12 +488,14 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"IsLoggedIn failed with error code %d\n", status);
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
     if (!loggedIn)
         {
         cout << "Client not logged in" << endl;
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
@@ -499,12 +504,14 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"CCApi_HasUserAcceptedEULA failed with error code %d\n", status);
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
     if (!acceptedEula)
         {
         cout << "Client has not accepted the EULA" << endl;
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
@@ -513,12 +520,14 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"CCApi_IsUserSessionActive failed with error code %d\n", status);
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
     if (!sessionActive)
         {
         cout << "Session not active" << endl;
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }
@@ -531,6 +540,7 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"CCApi_GetSerializedDelegateSecurityToken failed with error code %d\n", status);
+        CCApi_FreeApi(api);
         getch();
         return -1;
         }

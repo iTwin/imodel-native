@@ -747,6 +747,7 @@ int main(int argc, char* argv[])
     if (!installed)
         {
         std::cout << "Connection client does not seem to be installed" << std::endl;
+        CCApi_FreeApi(api);
         return -1;
         }
     bool running = false;
@@ -754,6 +755,7 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS || !running)
         {
         std::cout << "Connection client does not seem to be running" << std::endl;
+        CCApi_FreeApi(api);
         return -1;
         }
     bool loggedIn = false;
@@ -761,6 +763,7 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS || !loggedIn)
         {
         std::cout << "Connection client does not seem to be logged in" << std::endl;
+        CCApi_FreeApi(api);
         return -1;
         }
     bool acceptedEula = false;
@@ -768,6 +771,7 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS || !acceptedEula)
         {
         std::cout << "Connection client user does not seem to have accepted EULA" << std::endl;
+        CCApi_FreeApi(api);
         return -1;
         }
     bool sessionActive = false;
@@ -775,6 +779,7 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS || !sessionActive)
         {
         std::cout << "Connection client does not seem to have an active session" << std::endl;
+        CCApi_FreeApi(api);
         return -1;
         }
 

@@ -9,6 +9,7 @@
 #include <Bentley/BeTest.h>
 #include "../../RealityPlatformTools/RealityDataServiceInternal.h"
 #include "../Common/RealityModFrameworkTestsCommon.h"
+#include <RealityPlatformTools/SimpleRDSApi.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -22,6 +23,43 @@ using ::testing::Matcher;
 using ::testing::Mock;
 using ::testing::Return;
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason                  10/2017
+//! SimpleRDSFixture
+//=====================================================================================
+class SimpleRDSFixture : public MockWSGRequestFixture
+    {
+public:
+    static RealityDataService* s_realityDataServices;
+
+    static void SetUpTestCase()
+        {
+        s_mockWSGInstance = new MockWSGRequest();
+        s_realityDataServices = new RealityDataService();
+        s_realityDataServices->SetServerComponents("myserver.com", "9.9", "myRepo", "mySchema", "zz:\\mycertificate.pfx", "myProjectID");
+        }
+
+    static void TearDownTestCase()
+        {
+        delete s_realityDataServices;
+        s_realityDataServices = nullptr;
+        delete s_mockWSGInstance;
+        s_mockWSGInstance = nullptr;
+        }
+    };
+
+struct MockRDSRequestManager : RDSRequestManager
+    {   
+    MockRDSRequestManager() : RDSRequestManager()
+        {}
+
+    ~MockRDSRequestManager()
+        {
+        }
+
+    MOCK_METHOD0(Setup, void());
+    };
+
 RealityDataService* SimpleRDSFixture::s_realityDataServices = nullptr;
 
 //=====================================================================================
@@ -32,6 +70,26 @@ TEST_F(SimpleRDSFixture, BuddiTest)
     Utf8String url = RDSRequestManager::MakeBuddiCall(L"RealityDataServices");
 
     EXPECT_TRUE(url.ContainsI("realitydataservices"));
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  01/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedNavNodeTest)
+    {
+    Utf8String schema = "schema"; 
+    Utf8String id = "id"; 
+    Utf8String typeSystem = "typeSystem"; 
+    Utf8String rootId = "rootId";
+
+    NavNode originNode = NavNode(schema, id, typeSystem, rootId);
+
+    ConnectedNavNode cNode = ConnectedNavNode(originNode);
+
+    EXPECT_STREQ(originNode.GetSchemaName().c_str(), cNode.GetSchemaName().c_str());
+    EXPECT_STREQ(originNode.GetInstanceId().c_str(), cNode.GetInstanceId().c_str());
+    EXPECT_STREQ(originNode.GetTypeSystem().c_str(), cNode.GetTypeSystem().c_str());
+    EXPECT_STREQ(originNode.GetRootId().c_str(), cNode.GetRootId().c_str());
     }
 
 //=====================================================================================
