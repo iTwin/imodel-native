@@ -209,5 +209,38 @@ void CurveVectorManipulationStrategy::ChangeGeometryType
     if (m_geometryType == newGeometryType)
         return;
 
+    if (!m_primitiveStrategies.empty() && !m_primitiveStrategies.back()->IsComplete())
+        {
+        bvector<DPoint3d> const& lastPrimitiveKeyPoints = m_primitiveStrategies.back()->GetKeyPoints();
+        CurvePrimitiveManipulationStrategyPtr newPrimitiveStrategy;
+        switch (newGeometryType)
+            {
+            case GeometryType::Line:
+            {
+                newPrimitiveStrategy = LineManipulationStrategy::Create();
+                CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
+                if (!lastPrimitiveKeyPoints.empty())
+                    tmpPlacementStrategy->AddKeyPoint(lastPrimitiveKeyPoints.front());
+                break;
+            }
+            case GeometryType::Arc:
+            {
+                newPrimitiveStrategy = ArcManipulationStrategy::Create();
+                CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
+                for (int i = 0; i < 2; ++i)
+                    {
+                    if (lastPrimitiveKeyPoints.size() - 1 < i)
+                        break;
+                    tmpPlacementStrategy->AddKeyPoint(lastPrimitiveKeyPoints[i]);
+                    }
+                break;
+            }
+            default:
+                return;
+            }
+
+        m_primitiveStrategies[m_primitiveStrategies.size() - 1] = newPrimitiveStrategy;
+        }
+
     m_geometryType = newGeometryType;
     }
