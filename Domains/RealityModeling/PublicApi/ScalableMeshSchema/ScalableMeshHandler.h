@@ -410,7 +410,7 @@ public:
 
         SCALABLEMESH_SCHEMA_EXPORT static void GetScalableMeshTypes(BentleyApi::Dgn::DgnDbCR dgnDb, bool& has3D, bool& hasTerrain, bool& hasExtractedTerrain, bool& hasCesium3DTiles);
 		
-    SCALABLEMESH_SCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
+    SCALABLEMESH_SCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb, bool createDir = true);
 
         SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh(bool wantGroup = true);        
 

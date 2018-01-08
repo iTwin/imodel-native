@@ -39,7 +39,7 @@
     <NMakeBuildCommandLine>bb -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema  </NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema -c
-BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeReBuildCommandLine>
+bb -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityModeling re ScalableMeshSchema</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>E:\dgndb06SM\out\Release\Winx64\BuildContexts\RealityModeling\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>

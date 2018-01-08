@@ -2125,7 +2125,7 @@ BeFileName ScalableMeshModel::GenerateClipFileName(BeFileNameCR smFilename, DgnD
         }
     else
         {
-        clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
+        clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject, false)).GetDirectoryName();
         }
         
     Utf8Char modelIdStr[1000];
@@ -2526,13 +2526,15 @@ IScalableMesh* ScalableMeshModel::GetScalableMeshHandle()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
+WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb, bool createDir)
     {
     BeFileName tmFileName;
     tmFileName = dgnDb.GetFileName().GetDirectoryName();
     tmFileName.AppendToPath(dgnDb.GetFileName().GetFileNameWithoutExtension().c_str());
-    if (!tmFileName.DoesPathExist())
+
+    if (!tmFileName.DoesPathExist() && createDir)
         BeFileName::CreateNewDirectory(tmFileName.c_str());
+
     tmFileName.AppendString(L"\\terrain.3sm");
     return tmFileName;
     }
