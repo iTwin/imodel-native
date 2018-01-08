@@ -59,6 +59,8 @@ $(o)ArcStartMidEndPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartMidEndPlace
 
 $(o)ArcStartEndMidPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartEndMidPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartEndMidPlacementStrategy.h
 
+$(o)SplineManipulationStrategy$(oext) : $(_MakeFilePath)SplineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplineManipulationStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

@@ -30,7 +30,7 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Angle;
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrategy
+struct LinePointsPlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 
@@ -44,7 +44,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrate
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
+struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 
@@ -83,7 +83,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlace
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPlane3d      GetWorkingPlane() const { return _GetWorkingPlane(); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointsLengthPlacementStrategy : LinePlacementStrategy
+struct LinePointsLengthPlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 
@@ -109,7 +109,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsLengthPlacementStrategy : LinePlacement
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsLengthPlacementStrategyPtr Create() { return new LinePointsLengthPlacementStrategy(); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointsAnglePlacementStrategy : LinePlacementStrategy
+struct LinePointsAnglePlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 
