@@ -30,9 +30,6 @@ o = $(OutputRootDir)build/$(appName)/
 $(BuildContext)PublicAPI/iModelJs : $(baseDir)PublicAPI/iModelJs
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)PublicAPI/node-addon-api : $(baseDir)PublicAPI/node-addon-api
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
 #--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------

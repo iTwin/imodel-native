@@ -8,6 +8,7 @@
         <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="libuv" PartFile="libuv" Repository="Thirdparty-libuv" />
+        <SubPart PartName="node-addon-api"/>
         <SubPart PartName="iModelJsWindows-Only-SubParts" />
 
         <Bindings>
@@ -22,6 +23,40 @@
         <SubPart PartName="google_v8-Windows" PartFile="BePortableUi" Repository="BePortableUi"/>
     </Part>
 
+    <Part Name="node-addon-api" BentleyBuildMakeFile="prewirenapi.mke">
+        <Bindings>
+            <PublicAPI Domain="node-addon-api"/>
+        </Bindings>
+    </Part>
+
+    <!-- ======================================================================================================== 
+      Platform-specific apps
+     ======================================================================================================== -->
+    <!-- This is a fake product that allows for testing of the mobile architecture on Windows desktop -->
+    <Product Name="imodeljswinx64-product">
+        <SubPart PartName="imodeljswinx64-exe"/>
+        <Directories DirectoryListName="imodeljswinx64" />
+    </Product>
+
+    <Part Name="imodeljswinx64-exe" BentleyBuildMakeFile="apps/winx64/imodeljswinx64-exe.mke">
+        <SubPart PartName="iModelJs" />
+        <SubPart PartName="iModelJsNodeAddonLib-Mobile-WinX64-Experiment" Repository="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/imodeljswinx64(exeext)</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="imodeljswinx64">
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="ApplicationRoot" Path="" LibType="Static"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+    
     <!-- ======================================================================================================== 
       Build Unit Tests 
      ======================================================================================================== -->
