@@ -38,10 +38,10 @@ CurveVectorPtr CurveVectorPlacementStrategy::Finish() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void CurveVectorPlacementStrategy::ChangeGeometryType
+void CurveVectorPlacementStrategy::ChangeDefaultNewGeometryType
 (
-    GeometryType newGeometryType
+    DefaultNewGeometryType newGeometryType
 )
     {
-    m_manipulationStrategy->ChangeGeometryType(newGeometryType);
+    m_manipulationStrategy->ChangeDefaultNewGeometryType(newGeometryType);
     }

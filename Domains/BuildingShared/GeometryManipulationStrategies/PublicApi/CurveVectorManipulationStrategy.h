@@ -9,7 +9,7 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-enum class GeometryType
+enum class DefaultNewGeometryType
     {
     Default = 0,
     Line,
@@ -25,13 +25,13 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
     private:
         bvector<CurvePrimitiveManipulationStrategyPtr> m_primitiveStrategies;
-        GeometryType m_geometryType;
+        DefaultNewGeometryType m_defaultNewGeometryType;
 
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
 
     protected:
-        CurveVectorManipulationStrategy() : T_Super(), m_geometryType(GeometryType::Line) {}
+        CurveVectorManipulationStrategy() : T_Super(), m_defaultNewGeometryType(DefaultNewGeometryType::Line) {}
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const;
 
@@ -62,7 +62,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
 
-        void ChangeGeometryType(GeometryType newGeometryType);
+        void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
     };
 
 END_BUILDING_SHARED_NAMESPACE

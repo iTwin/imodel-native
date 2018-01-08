@@ -30,7 +30,7 @@ TEST_F(CurveVectorPlacementStrategyTests, IsComplete_Finish_WithArcs)
     CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({0,0,0},{2,2,0},{4,0,0})),
                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({4,0,0},{6,-2,0},{8,0,0}))});
 
-    sut->ChangeGeometryType(GeometryType::Arc);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
 
     ASSERT_FALSE(sut->IsComplete()) << "Empty";
     ASSERT_FALSE(sut->Finish().IsValid());
@@ -98,7 +98,7 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLines)
     CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateLine({0,0,0}, {2,0,0}),
                                                      ICurvePrimitive::CreateLine({2,0,0},{2,2,0})});
 
-    sut->ChangeGeometryType(GeometryType::Line);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
 
     ASSERT_FALSE(sut->Finish().IsValid());
     
@@ -128,7 +128,7 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineAndArc)
     CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateLine({0,0,0}, {2,0,0}),
                                                      ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({2,0,0},{3,1,0},{1,1,0}))});
 
-    sut->ChangeGeometryType(GeometryType::Line);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
 
     ASSERT_FALSE(sut->Finish().IsValid());
 
@@ -140,7 +140,7 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineAndArc)
     ASSERT_TRUE(cv1.IsValid());
     ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1));
     
-    sut->ChangeGeometryType(GeometryType::Arc);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
 
     sut->AddKeyPoint({3,1,0});
     CurveVectorPtr cv1_1 = sut->Finish();
@@ -165,7 +165,7 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateArcAndLine)
     CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({0,0,0}, {2,2,0}, {4,0,0})),
                                                      ICurvePrimitive::CreateLine({4,0,0},{4,-2,0})});
 
-    sut->ChangeGeometryType(GeometryType::Arc);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
 
     ASSERT_FALSE(sut->Finish().IsValid());
 
@@ -180,7 +180,7 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateArcAndLine)
     ASSERT_TRUE(cv1.IsValid());
     ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1));
 
-    sut->ChangeGeometryType(GeometryType::Line);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
 
     sut->AddKeyPoint({4,-2,0});
     CurveVectorPtr cv2 = sut->Finish();
@@ -198,14 +198,14 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromLineToArc)
 
     CurveVectorPtr expectedCV = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({0,0,0},{2,2,0},{4,0,0}))});
 
-    sut->ChangeGeometryType(GeometryType::Line);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
 
     ASSERT_FALSE(sut->Finish().IsValid());
 
     sut->AddKeyPoint({0,0,0});
     ASSERT_FALSE(sut->Finish().IsValid());
 
-    sut->ChangeGeometryType(GeometryType::Arc);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
     ASSERT_FALSE(sut->Finish().IsValid());
 
     sut->AddKeyPoint({2,2,0});
@@ -227,7 +227,7 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToLine_StartMidKeyPoints)
 
     CurveVectorPtr expectedCV = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateLine({0,0,0},{2,0,0})});
 
-    sut->ChangeGeometryType(GeometryType::Arc);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
 
     ASSERT_FALSE(sut->Finish().IsValid());
 
@@ -237,7 +237,7 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToLine_StartMidKeyPoints)
     sut->AddKeyPoint({2,2,0});
     ASSERT_FALSE(sut->Finish().IsValid());
 
-    sut->ChangeGeometryType(GeometryType::Line);
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
     ASSERT_FALSE(sut->Finish().IsValid());
 
     sut->AddKeyPoint({2,0,0});

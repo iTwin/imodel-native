@@ -145,12 +145,12 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyF
         {
         CurvePrimitiveManipulationStrategyPtr manipulationStrategy;
 
-        switch (m_geometryType)
+        switch (m_defaultNewGeometryType)
             {
-            case GeometryType::Arc:
+            case DefaultNewGeometryType::Arc:
                 manipulationStrategy = ArcManipulationStrategy::Create();
                 break;
-            case GeometryType::Line:
+            case DefaultNewGeometryType::Line:
                 manipulationStrategy = LineManipulationStrategy::Create();
                 break;
             default:
@@ -201,12 +201,12 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void CurveVectorManipulationStrategy::ChangeGeometryType
+void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
 (
-    GeometryType newGeometryType
+    DefaultNewGeometryType newGeometryType
 )
     {
-    if (m_geometryType == newGeometryType)
+    if (m_defaultNewGeometryType == newGeometryType)
         return;
 
     if (!m_primitiveStrategies.empty() && !m_primitiveStrategies.back()->IsComplete())
@@ -215,7 +215,7 @@ void CurveVectorManipulationStrategy::ChangeGeometryType
         CurvePrimitiveManipulationStrategyPtr newPrimitiveStrategy;
         switch (newGeometryType)
             {
-            case GeometryType::Line:
+            case DefaultNewGeometryType::Line:
             {
                 newPrimitiveStrategy = LineManipulationStrategy::Create();
                 CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
@@ -223,7 +223,7 @@ void CurveVectorManipulationStrategy::ChangeGeometryType
                     tmpPlacementStrategy->AddKeyPoint(lastPrimitiveKeyPoints.front());
                 break;
             }
-            case GeometryType::Arc:
+            case DefaultNewGeometryType::Arc:
             {
                 newPrimitiveStrategy = ArcManipulationStrategy::Create();
                 CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
@@ -242,5 +242,5 @@ void CurveVectorManipulationStrategy::ChangeGeometryType
         m_primitiveStrategies[m_primitiveStrategies.size() - 1] = newPrimitiveStrategy;
         }
 
-    m_geometryType = newGeometryType;
+    m_defaultNewGeometryType = newGeometryType;
     }
