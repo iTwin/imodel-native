@@ -4,11 +4,15 @@
 
     <!-- Bind my own PublicAPI and VendorAPI into BuildContext. Note that this part does not cause any sub-part PublicAPIs to be bound. Also deliver my notices. -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="ECDb.prewire.mke">
+        <SubPart PartName="StandardSchemasV3" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <PublicAPI Domain="ECDb" />
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
+                ECSchemas/ECDb/*.ecschema.xml
+            </Files>
         </Bindings>
     </Part>
-
+    
     <Part Name="ECDb">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ECDbLibrary" />
@@ -24,7 +28,6 @@
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="geomlibs" />
         <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="StandardSchemasV3" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLiteEC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>
@@ -40,6 +43,8 @@
             <Directory SourceName="Dox/Files/ECDb" SubPartDirectory="Dox/Files/ECDb"/>
         </Bindings>
     </Part>
+
+    
 
     <Part Name="ECDbPrepareDocGeneration" DeferType="BuildDocs">
         <SubPart PartName="PublishedApi" />

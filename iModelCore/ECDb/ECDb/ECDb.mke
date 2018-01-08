@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/ECDb.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -459,23 +459,6 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
 # We support shared or static linking.
 %include $(sharedMki)linkLibrary.mki
 
-#----------------------------------------------------------------------
-# Deploy ECSchemas clients can use/import if they want
-#----------------------------------------------------------------------
-$(BuildContext)ECSchemas/ECDb/ECDbFileInfo.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbFileInfo.02.00.00.ecschema.xml
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMap.02.00.00.ecschema.xml
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)ECSchemas/ECDb/ECDbMeta.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbMeta.01.00.00.ecschema.xml
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbSchemaPolicies.01.00.00.ecschema.xml
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)ECSchemas/ECDb/ECDbChange.01.00.00.ecschema.xml : $(_MakeFilePath)ECSchemas/ECDbChange.01.00.00.ecschema.xml
-    $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------
 # Deploy open source legal notices
