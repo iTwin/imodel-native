@@ -477,7 +477,7 @@
         <SubPart PartName="RasterPublicAPI"             PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
         <SubPart PartName="PointCloudPublicAPI"         PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
         <SubPart PartName="ThreeMxPublicAPI"            PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling"/>
-        <SubPart PartName="ECDbLibrary"                 PartFile="ECDb"                 Repository="ECDb"/>
+        <SubPart PartName="PublicAPI"                   PartFile="ECDb"                 Repository="ECDb"/>
         <SubPart PartName="ECObjectsSchema"             PartFile="iModelSchemaEditor"   Repository="iModelSchemaEditor"/>
         <SubPart PartName="GridsSchema"                 PartFile="Grids"                Repository="DgnDomains-Grids" />
         <SubPart PartName="ConstraintModelSchema"       PartFile="ConstraintSystem"     Repository="DgnDomains-ConstraintSystem" />
