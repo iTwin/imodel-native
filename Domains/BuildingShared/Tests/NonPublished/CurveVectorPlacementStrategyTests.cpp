@@ -85,3 +85,33 @@ TEST_F(CurveVectorPlacementStrategyTests, IsComplete_Finish_WithArcs)
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_FALSE(sut->Finish().IsValid());
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, CreateLines)
+    {
+    CurveVectorPlacementStrategyPtr sut = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateLine({0,0,0}, {2,0,0})});
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, {ICurvePrimitive::CreateLine({0,0,0}, {2,0,0}),
+                                                     ICurvePrimitive::CreateLine({2,0,0},{2,2,0})});
+
+    sut->ChangeGeometryType(GeometryType::Line);
+
+    ASSERT_FALSE(sut->Finish().IsValid());
+    
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_FALSE(sut->Finish().IsValid());
+    
+    sut->AddKeyPoint({2,0,0});
+    CurveVectorPtr cv1 = sut->Finish();
+    ASSERT_TRUE(cv1.IsValid());
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1));
+
+    sut->AddKeyPoint({2,2,0});
+    CurveVectorPtr cv2 = sut->Finish();
+    ASSERT_TRUE(cv2.IsValid());
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2));
+    }

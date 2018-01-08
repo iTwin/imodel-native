@@ -16,10 +16,15 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
     {
+    DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
+
     private:
-        LineManipulationStrategyPtr m_manipulationStrategy = LineManipulationStrategy::Create();
+        LineManipulationStrategyPtr m_manipulationStrategy;
         
     protected:
+        LinePlacementStrategy() : T_Super(), m_manipulationStrategy(LineManipulationStrategy::Create()) {}
+        LinePlacementStrategy(LineManipulationStrategyR manipulationStrategy);
+
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
         virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
         LineManipulationStrategyCR GetLineManipulationStrategy() const { return *m_manipulationStrategy; }
@@ -36,12 +41,14 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrate
 
     protected:
         LinePointsPlacementStrategy() : T_Super() {};
+        LinePointsPlacementStrategy(LineManipulationStrategyR manipulationStrategy) : T_Super(manipulationStrategy) {}
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
     public:
-        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
+        static LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
+        static LinePointsPlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy) { return new LinePointsPlacementStrategy(manipulationStrategy); }
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlacementStrategy

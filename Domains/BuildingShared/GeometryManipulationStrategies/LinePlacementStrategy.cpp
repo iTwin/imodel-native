@@ -12,6 +12,19 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 const Utf8CP LinePlacementStrategy::prop_Length = "Length";
 const Utf8CP LinePlacementStrategy::prop_Angle = "Angle";
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePlacementStrategy::LinePlacementStrategy
+(
+    LineManipulationStrategyR manipulationStrategy
+) 
+    : T_Super()
+    , m_manipulationStrategy(&manipulationStrategy)
+    {
+    BeAssert(m_manipulationStrategy.IsValid());
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // LinePointsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
