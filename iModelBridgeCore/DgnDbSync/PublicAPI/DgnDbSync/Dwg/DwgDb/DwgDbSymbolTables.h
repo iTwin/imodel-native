@@ -82,13 +82,32 @@ public:
     DwgDbSymbolTableIterator () : m_symbolTableIterator(nullptr) {}
 #endif  // DWGTOOLKIT_
 
+public:
     DWGDB_EXPORT ~DwgDbSymbolTableIterator ();
 
+    //! Check if the iterator is valid
     DWGDB_EXPORT bool                   IsValid () const { return nullptr != m_symbolTableIterator; }
+    //! Set the iterator at begining of the table entries
     DWGDB_EXPORT void                   Start () { if (nullptr != m_symbolTableIterator) m_symbolTableIterator->start(); }
+    //! Move the iterator to next table entry
     DWGDB_EXPORT void                   Step () { if (nullptr != m_symbolTableIterator) m_symbolTableIterator->step(); }
+    //! Check if the iterator has reach the last table entry
+    //! @return     True, has reached end of the table; false, otherwise
     DWGDB_EXPORT bool                   Done () const { return nullptr != m_symbolTableIterator ? m_symbolTableIterator->done() : true; }
+    //! @return     The object ID of current table entry
     DWGDB_EXPORT DwgDbObjectId          GetRecordId () const;
+    //! Include or exclude hidden layers in the iterator.
+    //! @note   Valid only for layer tables, and using RealDWG toolkit.  Default to skip hidden layers.
+    //! param[in] skip  True to exclude hidden layers from the layer table iterator(default); false to include hidden layers.
+    DWGDB_EXPORT void   SetSkipHiddenLayers (bool skip);
+    //! Are hidden layers excluded in the layer table iterator?
+    DWGDB_EXPORT bool   GetSkipHiddenLayers () const;
+    //! Include or exclude reconciled layers in the iterator.
+    //! @note   Valid only for layer tables, and using RealDWG toolkit.  Default to skip reconciled layers.
+    //! param[in] skip  True to exclude reconciled layers from the layer table iterator(default); false to include hidden layers.
+    DWGDB_EXPORT void   SetSkipReconciledLayers (bool skip);
+    //! Are reconciled layers excluded in the layer table iterator?
+    DWGDB_EXPORT bool   GetSkipReconciledLayers () const;
     };  // DwgDbSymbolTableIterator
 
 /*=================================================================================**//**
@@ -111,6 +130,7 @@ public:
     DwgDbBlockChildIterator () : m_blockChildIterator(nullptr) {}
 #endif  // DWGTOOLKIT_
     
+public:
     DWGDB_EXPORT ~DwgDbBlockChildIterator ();
 
     DWGDB_EXPORT bool                   IsValid () const { return nullptr != m_blockChildIterator; }
@@ -125,9 +145,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSymbolTableRecord : public DWGDB_EXTENDCLASS(SymbolTableRecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(SymbolTableRecord)
 
-public:
     DWGDB_EXPORT DwgString              GetName () const;
     };  // DwgDbSymbolTableRecord
 DWGDB_DEFINE_OBJECTPTR (SymbolTableRecord)
@@ -137,9 +157,9 @@ DWGDB_DEFINE_OBJECTPTR (SymbolTableRecord)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSymbolTable : public DWGDB_EXTENDCLASS(SymbolTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(SymbolTable)
 
-public:
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     DWGDB_EXPORT DwgDbStatus                GetByName (DwgDbObjectIdR outId, WStringCR name, bool getErased = false) const;
     };  // DwgDbSymbolTable
@@ -150,9 +170,9 @@ DWGDB_DEFINE_OBJECTPTR (SymbolTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbBlockTableRecord : public DWGDB_EXTENDCLASS(BlockTableRecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(BlockTableRecord)
 
-public:
     DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT DwgString                  GetComments () const;
     DWGDB_EXPORT bool                       IsLayout () const;
@@ -179,9 +199,9 @@ DWGDB_DEFINE_OBJECTPTR (BlockTableRecord)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbBlockTable : public DWGDB_EXTENDCLASS(BlockTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(BlockTable)
 
-public:
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     DWGDB_EXPORT DwgDbObjectId              GetModelspaceId () const;
     DWGDB_EXPORT DwgDbObjectId              GetPaperspaceId () const;
@@ -193,15 +213,17 @@ DWGDB_DEFINE_OBJECTPTR (BlockTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbLayerTableRecord : public DWGDB_EXTENDCLASS(LayerTableRecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(LayerTableRecord)
 
-public:
     DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT DwgString                  GetDescription () const;
     DWGDB_EXPORT bool                       IsOff () const;
     DWGDB_EXPORT bool                       IsFrozen () const;
     DWGDB_EXPORT bool                       IsLocked () const;
     DWGDB_EXPORT bool                       IsPlottable () const;
+    DWGDB_EXPORT bool                       IsHidden () const;
+    DWGDB_EXPORT bool                       IsReconciled () const;
     DWGDB_EXPORT DwgDbObjectId              GetLinetypeId () const;
     DWGDB_EXPORT DwgDbObjectId              GetLinetypeId (bool& isOverridden, DwgDbObjectIdCR viewportId) const;
     DWGDB_EXPORT DwgDbObjectId              GetMaterialId () const;
@@ -220,9 +242,9 @@ DWGDB_DEFINE_OBJECTPTR (LayerTableRecord)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbLayerTable : public DWGDB_EXTENDCLASS(LayerTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(LayerTable)
 
-public:
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     };  // DwgDbLayerTable
 DWGDB_DEFINE_OBJECTPTR (LayerTable)
@@ -232,9 +254,9 @@ DWGDB_DEFINE_OBJECTPTR (LayerTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbViewportTableRecord : public DWGDB_EXTENDCLASS(ViewportTableRecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(ViewportTableRecord)
 
-public:
     DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT bool                       IsGridEnabled () const;
     DWGDB_EXPORT bool                       IsUcsIconEnabled () const;
@@ -268,6 +290,8 @@ public:
     DWGDB_EXPORT bool                       IsSnapEnabled () const;
     DWGDB_EXPORT bool                       IsIsometricSnapEnabled () const;
     DWGDB_EXPORT int16_t                    GetGridMajor () const;
+    DWGDB_EXPORT double                     GetBrightness () const;
+    DWGDB_EXPORT DwgCmColor                 GetAmbientLightColor () const;
     };  // DwgDbViewportTableRecord
 DWGDB_DEFINE_OBJECTPTR (ViewportTableRecord)
 
@@ -276,9 +300,9 @@ DWGDB_DEFINE_OBJECTPTR (ViewportTableRecord)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbViewportTable : public DWGDB_EXTENDCLASS(ViewportTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(ViewportTable)
 
-public:
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     };  // DwgDbViewportTable
 DWGDB_DEFINE_OBJECTPTR (ViewportTable)
@@ -288,9 +312,9 @@ DWGDB_DEFINE_OBJECTPTR (ViewportTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbTextStyleTableRecord : public DWGDB_EXTENDCLASS(TextStyleTableRecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(TextStyleTableRecord)
 
-public:
     DWGDB_EXPORT DwgDbStatus                GetFontInfo (DwgFontInfoR info) const;
     DWGDB_EXPORT WString                    GetFileName () const;
     DWGDB_EXPORT WString                    GetBigFontFileName () const;
@@ -309,9 +333,9 @@ DWGDB_DEFINE_OBJECTPTR (TextStyleTableRecord)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbTextStyleTable : public DWGDB_EXTENDCLASS(TextStyleTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(TextStyleTable)
 
-public:
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     };  // DwgDbTextStyleTable
 DWGDB_DEFINE_OBJECTPTR (TextStyleTable)
@@ -321,9 +345,9 @@ DWGDB_DEFINE_OBJECTPTR (TextStyleTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbLinetypeTableRecord : public DWGDB_EXTENDCLASS(LinetypeTableRecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(LinetypeTableRecord)
 
-public:
     DWGDB_EXPORT DwgString                  GetName () const;
     DWGDB_EXPORT DwgDbStatus                GetComments (DwgStringR comments) const;
     DWGDB_EXPORT uint32_t                   GetNumberOfDashes () const;
@@ -349,9 +373,9 @@ DWGDB_DEFINE_OBJECTPTR (LinetypeTableRecord)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbLinetypeTable : public DWGDB_EXTENDCLASS(LinetypeTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(LinetypeTable)
 
-public:
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     };  // DwgDbLineTypeTable
 DWGDB_DEFINE_OBJECTPTR (LinetypeTable)
@@ -361,9 +385,9 @@ DWGDB_DEFINE_OBJECTPTR (LinetypeTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbRegAppTableRecord : public DWGDB_EXTENDCLASS(RegAppTableRecord)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(RegAppTableRecord)
 
-public:
     DWGDB_EXPORT DwgString                  GetName () const;
     };  // DwgDbRegAppTableRecord
 DWGDB_DEFINE_OBJECTPTR (RegAppTableRecord)
@@ -373,9 +397,9 @@ DWGDB_DEFINE_OBJECTPTR (RegAppTableRecord)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbRegAppTable : public DWGDB_EXTENDCLASS(RegAppTable)
     {
+public:
     DWGDB_DECLARE_COMMON_MEMBERS(RegAppTable)
 
-public:
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     };  // DwgDbRegAppTable
 DWGDB_DEFINE_OBJECTPTR (RegAppTable)

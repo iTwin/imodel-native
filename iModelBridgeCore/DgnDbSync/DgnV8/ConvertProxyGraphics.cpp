@@ -84,12 +84,12 @@ DgnCategoryId Converter::GetExtractionCategoryId(V8NamedViewType vt)
         case V8NamedViewType::Detail:       catName = CATEGORY_NAME_Detail;    break;
         }
 
-    DefinitionModelR dictionary = GetDgnDb().GetDictionaryModel();
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(dictionary, catName));
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(*definitionModel, catName));
     if (categoryId.IsValid())
         return categoryId;
 
-    categoryId = GetOrCreateDrawingCategoryId(dictionary, catName);
+    categoryId = GetOrCreateDrawingCategoryId(*definitionModel, catName);
     GetOrCreateSubCategoryId(categoryId, SUBCATEGORY_NAME_Cut);
     GetOrCreateSubCategoryId(categoryId, SUBCATEGORY_NAME_InsideForward);
     GetOrCreateSubCategoryId(categoryId, SUBCATEGORY_NAME_InsideBackward);
@@ -146,7 +146,7 @@ void Converter::_TurnOnExtractionCategories(CategorySelectorR selector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategoryId Converter::_GetExtractionSubCategoryId(DgnCategoryId categoryId, DgnV8Api::ClipVolumePass pass, DgnV8Api::ProxyGraphicsType gtype)
     {
-    if (DgnV8Api::ClipVolumePass::None == pass || categoryId == DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(GetDgnDb().GetDictionaryModel(), CATEGORY_NAME_ExtractedGraphics)))
+    if (DgnV8Api::ClipVolumePass::None == pass || categoryId == DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(*GetJobDefinitionModel(), CATEGORY_NAME_ExtractedGraphics)))
         return DgnCategory::GetDefaultSubCategoryId(categoryId);
 
     // *** WIP_CONVERT_CVE -- subcategory based on proxy graphics type??

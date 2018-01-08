@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include "ECConversion.h"
-#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
-#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
-
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 using namespace BeSQLite::EC;
@@ -663,7 +659,14 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
                 context.ReportIssue(Converter::IssueSeverity::Warning, "BISIfication required changing relationship strength of ECRelationshipClass '%s' from '%s' to '%s'.",
                                     inputClass.GetFullName(), oldStrengthStr, newStrengthStr);
 
-                inputClass.SetStrength(newStrength);
+                if (ECObjectsStatus::Success != inputClass.SetStrength(newStrength))
+                    {
+                    if (inputClass.HasBaseClasses())
+                        {
+                        inputClass.RemoveBaseClasses();
+                        inputClass.SetStrength(newStrength);
+                        }
+                    }
                 }
 
             if (inputClass.GetStrengthDirection() != baseClass->GetStrengthDirection())
@@ -693,7 +696,7 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
 
     // If there is no BisCore base class, then ECDb reports this error: It violates against the 'No additional link tables' policy which means that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema BisCore
     // The solution is: The only way it can be converted to a Logical FK relationship is to add a navigation property to this relationship on Target side. Navigation property is prerequisite for EndTable relationship.
-    if (inputClass.GetBaseClasses().size() == 0 && 0 == inputClass.GetPropertyCount(false))
+    if (inputClass.GetBaseClasses().size() == 0)
         {
         // 1:N->nav prop on target side
         // N:1->nav prop on source side
@@ -723,6 +726,14 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(SchemaConversionCont
                     }
                 }
             }
+
+        // In this case, the relationship cannot have any properties on it.
+        bvector<Utf8CP> propertyNames;
+        for (BECN::ECPropertyP prop : inputClass.GetProperties(false))
+            propertyNames.push_back(prop->GetName().c_str());
+
+        for (Utf8CP propName : propertyNames)
+            inputClass.RemoveProperty(propName);
         }
 
     for (BECN::ECClassP childClass : inputClass.GetDerivedClasses())
@@ -790,12 +801,18 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         Utf8String msg;
         msg.Sprintf("ECRelationshipClass '%s' contains 'AnyClass' as a constraint.  AnyClass is no longer supported and will be replaced with '%s.'",
                     relClass.GetFullName(), defaultConstraintClass->GetName().c_str());
-        context.ReportIssue(Converter::IssueSeverity::Warning, msg.c_str());
+        context.ReportIssue(Converter::IssueSeverity::Info, msg.c_str());
         }
     
     if (0 == constraint.GetConstraintClasses().size())
         {
-        if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
+        if (relClass.HasBaseClasses())
+            {
+            ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
+            ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
+            constraint.AddClass(*(baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP()));
+            }
+        else if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
             {
             relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
             constraint.AddClass(*defaultConstraintClass);
@@ -951,23 +968,6 @@ BentleyStatus BisClassConverter::FinalizeConversion(SchemaConversionContext& con
             }
         }
 
-    Utf8String fileName(context.GetDgnDb().GetFileName().GetFileNameWithoutExtension().c_str());
-    for (auto perSchema = aspectClassNames.begin(); perSchema != aspectClassNames.end(); perSchema++)
-        {
-        Utf8PrintfString aspectSchemaName("%s specific", perSchema->first.c_str());
-        Utf8PrintfString relation("BisCore,%s", perSchema->first.c_str());
-        PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(fileName, 1, 0, true, aspectSchemaName, relation, "", false);
-        ContentModifierP modifier = new ContentModifier("BisCore", "Element");
-        ruleset->AddPresentationRule(*modifier);
-        for (auto aspectClass : perSchema->second)
-            {
-            Utf8PrintfString fullName("%s:%s", perSchema->first.c_str(), aspectClass.c_str());
-            modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "BisCore:ElementOwnsMultiAspects", fullName, "", RelationshipMeaning::SameInstance));
-            }
-        RuleSetEmbedder embedder(context.GetDgnDb());
-        embedder.Embed(*ruleset);
-        }
-
     return BSISUCCESS;
     }
 
@@ -1080,7 +1080,8 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
         auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName](Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
         if (found != reservedNames.end())
             {
-            ecClass.RenameConflictProperty(prop, true);
+            ECN::ECPropertyP renamedProperty = nullptr;
+            ecClass.RenameConflictProperty(prop, true, renamedProperty);
             }
         BECN::ECClassCP structType = nullptr;
 
@@ -1661,4 +1662,6 @@ BentleyStatus BisClassConverter::ECClassRemovalContext::FixClassHierarchies()
     return BSISUCCESS;
     }
 
+#if defined(NEEDSWORK_PERFORMANCE)
+#endif
 END_DGNDBSYNC_DGNV8_NAMESPACE

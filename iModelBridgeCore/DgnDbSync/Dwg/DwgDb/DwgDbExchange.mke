@@ -196,6 +196,7 @@ LINKER_LIBRARIES    + $(ToolkitLibs)acpal$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acISMobj$(RealDwgSuffix)$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acgex$(RealDwgSuffix)$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acSceneOE$(libext)
 
 %endif  // OpenDwg or RealDwg
 

@@ -91,8 +91,12 @@ static bool isImodelExt(BeFileNameCR fn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge)
     {
-    BeFileName fwkAssets = Desktop::FileSystem::GetExecutableDir();
-    fwkAssets.AppendToPath(L"Assets");
+    BeFileName fwkAssets = bridge._GetParams ().GetAssetsDir (); 
+    if (fwkAssets.empty ())
+        {
+        fwkAssets = Desktop::FileSystem::GetExecutableDir ();
+        fwkAssets.AppendToPath (L"Assets");
+        }
 
     BeFileName fwkDb3 = fwkAssets;
     fwkDb3.AppendToPath(L"sqlang");
@@ -539,13 +543,13 @@ static void unSupportedFwkArg(WCharCP arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iModelBridge::Params& bparams, int iArg, int argc, WCharCP argv[])
     {
-    if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o="))
+    if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o=") || argv[iArg] == wcsstr(argv[iArg], L"-o"))
         {
         bparams.m_briefcaseName.SetName(iModelBridge::GetArgValueW(argv[iArg]));
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
-    if (argv[iArg] == wcsstr(argv[iArg], L"--input=") || argv[iArg] == wcsstr(argv[iArg], L"-i="))
+    if (argv[iArg] == wcsstr(argv[iArg], L"--input=") || argv[iArg] == wcsstr(argv[iArg], L"-i=") || argv[iArg] == wcsstr(argv[iArg], L"-i"))
         {
         BeFileName::FixPathName (bparams.m_inputFileName, iModelBridge::GetArgValueW(argv[iArg]).c_str());
         return BeFileName::IsDirectory(bparams.m_inputFileName.c_str())? iModelBridge::CmdLineArgStatus::Error: iModelBridge::CmdLineArgStatus::Success;
@@ -883,7 +887,7 @@ void iModelBridgeSacAdapter::PrintCommandLineUsage(iModelBridge& bridge, int arg
     {
     fwprintf(stderr,
 L"Usage: %ls -i|--input= -o|--output= [OPTIONS...]\n"
-L"--input=                    (required)  A directory or wildcard specfication for the tile files. May appear multiple times.\n"
+L"--input=                    (required)  Input root filename.\n"
 L"--output=                   (required)  Output directory\n"
 L"OPTIONS:\n"
 L"--input-gcs=gcsspec         (optional)  Specifies the GCS of the input DGN root model. Ignored if DGN root model already has a GCS. gcsspec must be in JSON format.\n"

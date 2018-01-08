@@ -281,11 +281,11 @@ TEST_F(DimensionTests, NotetoSheet)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 2, 3);
 
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 5);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 5);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 3);
 
         auto drawingele = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
         ASSERT_TRUE(drawingele.IsValid());

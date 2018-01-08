@@ -5,6 +5,6 @@
         <ECCustomAttributes>
             <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
-    </ECRelationshipClass>>
+    </ECRelationshipClass>
 </ECSchema>
 

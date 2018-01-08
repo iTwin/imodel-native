@@ -70,7 +70,7 @@ private:
     void    CreateSyncInfoIfAbsent ();
 };  // DwgBridge
 
-END_DGNDBSYNC_DGNV8_NAMESPACE
+END_DGNDBSYNC_DWG_NAMESPACE
 
 
 // Supply DwgBridge to and register it for iModelBridge Framework

@@ -45,6 +45,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_DGN
 
 static bmap<BeFileName, CPLSpawnedProcess*> s_affinityCalculators;
+static bset<BeFileName> s_badAffinityCalculators;
 static ProfileVersion s_schemaVer(1,0,0,0);
 static BeSQLite::PropertySpec s_schemaVerPropSpec("SchemaVersion", "be_iModelBridgeFwk", BeSQLite::PropertySpec::Mode::Normal, BeSQLite::PropertySpec::Compress::No);
 
@@ -173,8 +174,11 @@ BentleyStatus iModelBridgeRegistry::QueryBridgeAssignedToDocument(BeFileNameR li
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CPLSpawnedProcess* findOrStartAffinityCalculator(BeFileNameCR affinityLibraryPath)
+static CPLSpawnedProcess* findOrStartAffinityCalculator(BeFileNameCR affinityLibraryPath, bool forceNew)
     {
+    if (forceNew)
+        s_affinityCalculators.erase(affinityLibraryPath);
+
     auto iFound = s_affinityCalculators.find(affinityLibraryPath);
     if (iFound != s_affinityCalculators.end())
         return iFound->second;
@@ -209,15 +213,8 @@ static void killAllAffinityCalculators()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeRegistry::ComputeBridgeAffinityToDocument(iModelBridgeWithAffinity& affinity, BeFileNameCR affinityLibraryPath, BeFileNameCR filePath)
+BentleyStatus callAffinityFunc(Utf8String& line0, Utf8String& line1, CPLSpawnedProcess* calc, BeFileNameCR filePath, BeFileNameCR affinityLibraryPath)
     {
-    auto calc = findOrStartAffinityCalculator(affinityLibraryPath);
-    if (nullptr == calc)
-        {
-        LOG.errorv(L"%ls - not found or could not be executed", affinityLibraryPath.c_str());
-        return BSIERROR;
-        }
-
     Utf8String filePathU(filePath);
     filePathU.AddQuotes();
     filePathU.append("\n");
@@ -230,7 +227,6 @@ BentleyStatus iModelBridgeRegistry::ComputeBridgeAffinityToDocument(iModelBridge
     auto responseHandle = CPLSpawnAsyncGetInputFileHandle(calc);
 
     // I expect exactly two lines of text: [0]affinity (integer) [1]bridge name (string)
-    Utf8String line0, line1;
     if ((BSISUCCESS != CPLPipeReadLine(line0, responseHandle))
      || (BSISUCCESS != CPLPipeReadLine(line1, responseHandle)))
         {
@@ -238,7 +234,46 @@ BentleyStatus iModelBridgeRegistry::ComputeBridgeAffinityToDocument(iModelBridge
         return BSIERROR;
         }
 
-    int v;
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeRegistry::ComputeBridgeAffinityToDocument(iModelBridgeWithAffinity& affinity, BeFileNameCR affinityLibraryPath, BeFileNameCR filePath)
+    {
+    auto calc = findOrStartAffinityCalculator(affinityLibraryPath, false);
+    if (nullptr == calc)
+        {
+        LOG.errorv(L"%ls - not found or could not be executed", affinityLibraryPath.c_str());
+        return BSIERROR;
+        }
+
+    Utf8String line0, line1;
+    if (BSISUCCESS != callAffinityFunc(line0, line1, calc, filePath, affinityLibraryPath))
+        {
+        if (s_badAffinityCalculators.find(affinityLibraryPath) != s_badAffinityCalculators.end())
+            {
+            return BSIERROR;
+            }
+
+        LOG.errorv(L"%ls - Attempting to restart", affinityLibraryPath.c_str());
+        auto calc = findOrStartAffinityCalculator(affinityLibraryPath, false);
+        if (nullptr == calc)
+            {
+            LOG.errorv(L"%ls - Restart failed", affinityLibraryPath.c_str());
+            s_badAffinityCalculators.insert(affinityLibraryPath);
+            return BSIERROR;
+            }
+
+        if (BSISUCCESS != callAffinityFunc(line0, line1, calc, filePath, affinityLibraryPath))
+            {
+            s_badAffinityCalculators.insert(affinityLibraryPath);
+            return BSIERROR;
+            }
+        }
+
+    int v = 0;
     if (1 != sscanf(line0.c_str(), "%d", &v))
         {
         LOG.errorv(L"%ls - \"%ls\" is an invalid affinity value?!", affinityLibraryPath.c_str(), WString(line0.c_str(), true).c_str());
@@ -279,13 +314,13 @@ BentleyStatus iModelBridgeRegistry::SearchForBridgeToAssignToDocument(BeFileName
 
         LOG.tracev(L"%ls -> (%ls,%d)", affinityLibraryPath.c_str(), thisBridge.m_bridgeRegSubKey.c_str(), (int)thisBridge.m_affinity);
 
-        if (thisBridge.m_affinity > bestBridge.m_affinity)
+        if (!thisBridge.m_bridgeRegSubKey.empty() && thisBridge.m_affinity > bestBridge.m_affinity)
             bestBridge = thisBridge;
         }
 
     if ((bestBridge.m_bridgeRegSubKey.empty()) || (bestBridge.m_affinity == iModelBridgeAffinityLevel::None))
         {
-        LOG.infov(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
+        LOG.warningv(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
         return BSIERROR;
         }
 
@@ -320,6 +355,17 @@ bool iModelBridgeRegistry::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t cons
     findBridgeForDoc->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     findBridgeForDoc->BindText(2, Utf8String(bridgeRegSubKey), Statement::MakeCopy::Yes);
     return BE_SQLITE_ROW == findBridgeForDoc->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeRegistry::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
+    {
+    auto stmt = m_stateDb.GetCachedStatement("SELECT a.SourceFile FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge) AND (b.Name=?)");
+    stmt->BindText(1, Utf8String(bridgeRegSubKey), Statement::MakeCopy::Yes);
+    while (BE_SQLITE_ROW == stmt->Step())
+        fns.push_back(BeFileName(stmt->GetValueText(0), true));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -618,7 +664,7 @@ int iModelBridgeRegistry::ComputeAffinityMain(int argc, WCharCP argv[])
         filePath.RemoveQuotes();
         
         WChar registryName[MAX_PATH] = {0};
-        iModelBridgeAffinityLevel affinity;
+        iModelBridgeAffinityLevel affinity = iModelBridgeAffinityLevel::None;
         getAffinity(registryName, MAX_PATH, affinity, affinityLibraryPath.c_str(), filePath.c_str());
         fprintf(stdout, "%d\n%s\n", (int) affinity, Utf8String(registryName).c_str());
         fflush(stdout);
@@ -728,12 +774,37 @@ int iModelBridgeRegistry::AssignCmdLineArgs::ParseCommandLine(int argc, WCharCP 
             continue;
             }
 
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-logging-config-file="))
+            {
+            m_loggingConfigFileName.SetName(getArgValueW(argv[iArg]));
+            continue;
+            }
+
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized assign argument\n", argv[iArg]);
         return BSIERROR;
         }
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void initLoggingForAssignMain(BeFileNameCR loggingConfigFileName)
+    {
+    if (!loggingConfigFileName.empty() && loggingConfigFileName.DoesPathExist())
+        {
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, loggingConfigFileName);
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        return;
+        }
+
+    fprintf(stderr, "Logging.config.xml not specified. Activating default logging using console provider.\n");
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeRegistry", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridge", NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(L"iModelBridgeFwk", NativeLogging::LOG_TRACE);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,6 +824,8 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
         fwprintf(stderr, L"syntax: %ls --server-repository=<reponame> --fwk-staging-dir=<dirname>\n", argv[0]);
         return -1;
         }
+
+    initLoggingForAssignMain(args.m_loggingConfigFileName);
 
     auto dbname = MakeDbName(args.m_stagingDir, args.m_repositoryName);
     Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);

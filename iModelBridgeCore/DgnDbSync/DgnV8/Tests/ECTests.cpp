@@ -388,48 +388,6 @@ void ECConversionTests::VerifyECXAttributes(BentleyApi::Dgn::DgnElementCPtr bime
         ASSERT_TRUE(checkValue.GetIGeometry().IsValid());
         }
       }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECConversionTests, ConversionRuleTest)
-    {
-    LineUpFiles(L"SupplementalSchemaWithCARule.ibim", L"Test3d.dgn", false);
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr schema;
-
-    BentleyApi::BeFileName filepath;
-    BentleyApi::BeTest::GetHost().GetDocumentsRoot(filepath);
-    filepath.AppendToPath(L"TestData");
-    filepath.AppendToPath(L"Schemas");
-    filepath.AppendToPath(L"AutoPlantPDW_CustomAttributes.08.11.ecschema.xml");
-
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlFile(schema, filepath.GetName(), *schemaContext));
-    V8FileEditor v8Editor;
-    v8Editor.Open(m_v8FileName);
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8Editor.m_file)));
-    v8Editor.Save();
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    //Verify Schema, classes and Properties have been converted. 
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("AutoPlantPDW_CustomAttributes");
-    ASSERT_TRUE(NULL != ecSchema);
-
-    BentleyApi::ECN::ECClassCP ecClass = ecSchema->GetClassCP("AP_3D_AttributeProperties");
-    ASSERT_TRUE(NULL != ecClass);
-    ASSERT_EQ(1, ecClass->GetPropertyCount());
-    ASSERT_TRUE(ecClass->IsCustomAttributeClass());
-    ASSERT_FALSE(ecClass->IsStructClass());
-
-    ecClass = ecSchema->GetClassCP("AP_3D_ClassProperties");
-    ASSERT_TRUE(NULL != ecClass);
-    ASSERT_EQ(2, ecClass->GetPropertyCount());
-    ASSERT_TRUE(ecClass->IsCustomAttributeClass());
-    ASSERT_FALSE(ecClass->IsStructClass());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                   10/15
@@ -446,6 +404,11 @@ TEST_F(ECConversionTests, VerifyLimitsForArrayPropertyAfterConversion)
     v8editor.Open(m_v8FileName);
 
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"TestClass");
     v8editor.Save();
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
@@ -594,6 +557,11 @@ TEST_F(ECConversionTests, UpdateWithChangedSchema)
     v8editor.Open(m_v8FileName);
 
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"TestClass");
     v8editor.Save();
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
@@ -623,6 +591,11 @@ TEST_F(ECConversionTests, UpdateWithChangedSchema_VersionUpdate)
     v8editor.Open(m_v8FileName);
 
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"TestClass");
     v8editor.Save();
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
@@ -686,6 +659,11 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingOldSchemas)
     v8editor.Open(m_v8FileName);
 
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, refSchema->GetName().c_str(), L"Foo");
     v8editor.Save();
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -772,6 +750,11 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
     v8editor.Open(m_v8FileName);
 
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, refSchema->GetName().c_str(), L"Foo");
     v8editor.Save();
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -1149,7 +1132,7 @@ TEST_F(ECConversionTests, CellWithInstance)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            06/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpec)
+TEST_F(ECConversionTests, ImportInstanceWithReadOnlyCalculatedSpec)
     {
     LineUpFiles(L"Calculated.ibim", L"Test3d.dgn", false);
 
@@ -1162,7 +1145,7 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpec)
         "    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
         "        <ECProperty propertyName=\"MyString\" typeName=\"string\" />"
         "        <ECProperty propertyName=\"MyNum\" typeName=\"int\" />"
-        "        <ECProperty propertyName=\"MyCalc\" typeName=\"string\" >"
+        "        <ECProperty propertyName=\"MyCalc\" typeName=\"string\" readOnly=\"True\">"
         "            <ECCustomAttributes>"
         "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.13\">"
         "                    <ECExpression>this.MyString &amp; \"-\" &amp; this.MyNum</ECExpression>"
@@ -1810,14 +1793,29 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
     else
         ASSERT_TRUE(false) << "Error opening csv file";
 
+    //Creating a csv for Failing Views
+    BentleyApi::BeFileName FailingCsv = csvPath;
+    FailingCsv.AppendToPath(L"FailingViews").AppendA(".csv");
+
+    if (FailingCsv.DoesPathExist())
+        ASSERT_EQ(0, remove(FailingCsv.GetNameUtf8().c_str())) << "Error deleting file.";
+
+    //Writing results in csv 
+    FILE *failingViews;
+    failingViews = fopen(FailingCsv.GetNameUtf8().c_str(), "a");
+    if (failingViews != NULL)
+        {
+        fprintf(failingViews, "FileName , Failing View Name\n");
+        }
+    else
+        ASSERT_TRUE(false) << "Error opening csv file";
+
     BentleyApi::BeSQLite::DbResult sqlPrepareStatus;
     BentleyApi::Bstdcxx::bvector<BentleyApi::Utf8String> FailingViews;
 
     while (filesIterator.GetNextFileName(dbName) != ERROR)
         {
         printf("\n\n\nibim Name: %s\n\n\n", dbName.GetNameUtf8().c_str());
-
-        bool Filestatus = false;
 
         DgnDbPtr dgnProj = OpenExistingDgnDb(dbName, Db::OpenMode::Readonly);
         EXPECT_TRUE(dgnProj->IsDbOpen());
@@ -1833,12 +1831,13 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
             sqlPrepareStatus = stmt.Prepare(*dgnProj, sql.c_str());
             EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, sqlPrepareStatus) << "ECClassView " << stmt.GetValueText(0) << " has invalid DDL: " << dgnProj->GetLastError().c_str() << " in DgnDb : " << dbName.c_str();
 
-            if (sqlPrepareStatus == BE_SQLITE_OK)
-                Filestatus = true;
-            else
-                FailingViews.push_back(stmt.GetValueText(0));
-            Filestatus = false;
+            if (sqlPrepareStatus != BE_SQLITE_OK)
+                {
+                FailingViews.push_back(statement.GetValueText(0));
+                fprintf(failingViews, "%ls ,%s\n", dbName.GetFileNameAndExtension().c_str(), statement.GetValueText(0));
+                }
             }
+
         statement.Finalize();
         dgnProj->CloseDb();
 
@@ -1849,6 +1848,7 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
         }
 
     fclose(f);
+    fclose(failingViews);
     }
 
 /*---------------------------------------------------------------------------------**//**

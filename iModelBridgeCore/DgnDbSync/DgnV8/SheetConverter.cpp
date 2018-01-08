@@ -59,11 +59,13 @@ ViewDefinitionPtr SheetViewFactory::_MakeView(Converter& converter, ViewDefiniti
         return nullptr;
 
     DgnDbR db = converter.GetDgnDb();
-    DefinitionModelR dictionary = db.GetDictionaryModel();
+    DefinitionModelPtr definitionModel = converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
 
-    parms.m_categories->AddCategory(converter.GetOrCreateDrawingCategoryId(dictionary, CATEGORY_NAME_Attachments));
+    parms.m_categories->AddCategory(converter.GetOrCreateDrawingCategoryId(*definitionModel, CATEGORY_NAME_Attachments));
 
-    SheetViewDefinitionPtr view = new SheetViewDefinition(dictionary, parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());
+    SheetViewDefinitionPtr view = new SheetViewDefinition(*definitionModel, parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());
 
     parms.Apply(*view);
 

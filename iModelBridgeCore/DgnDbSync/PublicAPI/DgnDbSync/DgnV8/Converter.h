@@ -392,13 +392,7 @@ struct ViewFactory
         DVec3d m_extents;
         RotMatrix m_rot;
         Transform m_trans;
-        ViewDefinitionParams(Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d) : m_name(n), m_modelMapping(m), m_viewInfo(vi)
-            {
-            auto& db = m_modelMapping.GetDgnModel().GetDgnDb();
-            DefinitionModelR dictionary = db.GetDictionaryModel();
-            m_dstyle = !is3d ? (DisplayStyleP) new DisplayStyle2d(dictionary, m_name.c_str()) : new DisplayStyle3d(dictionary, m_name.c_str());
-            m_categories = new CategorySelector(dictionary, m_name.c_str());
-            }
+        ViewDefinitionParams(Converter* c, Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d);
 
         void Apply(ViewDefinitionR) const;
         DgnModel& GetDgnModel() const {return m_modelMapping.GetDgnModel();}
@@ -814,6 +808,9 @@ struct Converter
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
         L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
         L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
+        L10N_STRING(SchemaLockFailed)           // =="SchemaLockFailed"==
+        L10N_STRING(CouldNotAcquireLocksOrCodes) // =="CouldNotAcquireLocksOrCodes"==
+        L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
 
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -858,7 +855,6 @@ struct Converter
         L10N_STRING(V8StyleNone) // =="V8 Default Style"==
         L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
         L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
-        L10N_STRING(RepositoryLinksPartitionName) // =="Repository Links"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues
@@ -969,6 +965,8 @@ protected:
     ElementConverter*   m_elementConverter = nullptr;
     ElementAspectConverter* m_elementAspectConverter;
     bvector<IFinishConversion*> m_finishers;
+    bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
+    DgnModelId          m_jobDefinitionModelId;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1124,6 +1122,7 @@ public:
 
     void ValidateJob();
 
+    DefinitionModelPtr GetJobDefinitionModel();
     //! @}
 
     //! @name DgnDb properties
@@ -1800,7 +1799,7 @@ public:
 
     //! @name  Tags
     //! @{
-    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files);
+    DGNDBSYNC_EXPORT virtual void _ConvertDgnV8Tags(bvector<DgnV8FileP> const& v8Files, bvector<DgnV8ModelP> const& uniqueModels);
     static WCharCP GetV8TagSetDefinitionSchemaName() {return L"V8TagSetDefinitions";}
     //! @}
 
@@ -2168,7 +2167,7 @@ protected:
     void DetectRootTransformChange();
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
-    void MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
+    BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2425,6 +2424,8 @@ protected:
 
     //! @name  ECRelationships
     //! @{
+    BentleyStatus DropElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList);
+    BentleyStatus RecreateElementRefersToElementsIndices(bmap<Utf8String, Utf8String>& indexDdlList);
     void ConvertNamedGroupsAndECRelationships();
     BentleyStatus ConvertECRelationships();
     BentleyStatus ConvertNamedGroupsRelationships();
@@ -2470,6 +2471,8 @@ protected:
     void ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8ModelRefR, TransformCR);
     //! @private
     void UpdateCalculatedProperties();
+    //! @private
+    void CreatePresentationRules();
 
     void FindSpatialV8Models(DgnV8ModelRefR rootModelRef, bool haveFoundSpatialRoot = false);
     void FindV8DrawingsAndSheets();
@@ -2482,7 +2485,7 @@ public:
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
 
-    DGNDBSYNC_EXPORT void MakeSchemaChanges();
+    DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.
@@ -2572,7 +2575,7 @@ public:
     DGNDBSYNC_EXPORT void ConvertRootModel();
     DGNDBSYNC_EXPORT void ConvertTile(BeFileNameCR);
     DGNDBSYNC_EXPORT void FinishedConversion() {_FinishConversion(); _OnConversionComplete();}
-    DGNDBSYNC_EXPORT void MakeSchemaChanges();
+    DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
 
 };
 
@@ -3037,6 +3040,28 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
+struct SchemaRemapper : ECN::IECSchemaRemapper
+    {
+    private:
+        typedef bmap<Utf8String, Utf8String> T_propertyNameMappings;
+        typedef bmap<Utf8String, T_propertyNameMappings> T_ClassPropertiesMap;
+        Converter& m_converter;
+        mutable ECN::ECSchemaPtr m_convSchema;
+        bool m_remapAsAspect;
+        mutable T_ClassPropertiesMap m_renamedClassProperties;
+
+        virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
+        virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
+
+    public:
+        explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false) {}
+        ~SchemaRemapper() {}
+        void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 struct ElementConverter
     {
     private:
@@ -3046,28 +3071,6 @@ struct ElementConverter
 
     protected:
         ECN::IECInstancePtr Transform(ECObjectsV8::IECInstance const& v8Instance, ECN::ECClassCR dgnDbClass, bool transformAsAspect = false) const;
-        //---------------------------------------------------------------------------------------
-        // @bsiclass                                   Carole.MacDonald            01/2016
-        //---------------+---------------+---------------+---------------+---------------+-------
-        struct SchemaRemapper : ECN::IECSchemaRemapper
-            {
-            private:
-                typedef bmap<Utf8String, Utf8String> T_propertyNameMappings;
-                typedef bmap<Utf8String, T_propertyNameMappings> T_ClassPropertiesMap;
-                Converter& m_converter;
-                mutable ECN::ECSchemaPtr m_convSchema;
-                bool m_remapAsAspect;
-                mutable T_ClassPropertiesMap m_renamedClassProperties;
-
-                virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
-                virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
-
-            public:
-                explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false) {}
-                ~SchemaRemapper() {}
-                void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
-            };
-
         struct UnitResolver : ECN::ECInstanceReadContext::IUnitResolver
             {
             private:

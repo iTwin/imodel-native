@@ -73,7 +73,7 @@ Also see @ref ANCHOR_BridgeConfig "bridge-specific configuration".
 
 - @ref ANCHOR_TrackingDocuments "Track source document GUIDs".
 
-- Relate all models created from document to a RepositoryLink that captures the document's properties. See @ref ANCHOR_PartitionOriginatesFromRepository "PartitionOriginatesFromRepository".
+- Relate all models created from document to a RepositoryLink that captures the document's properties. See @ref ANCHOR_ElementHasLinks "ElementHasLinks".
 
 - Track all document content, scoped to document. See @ref ANCHOR_TypicalBridgeConversionLogic "typical bridge conversion logic" and @ref ANCHOR_ScopeItemsToDocuments "scope items to documents".
 
@@ -306,11 +306,11 @@ Utf8String ToyTileBridge::ComputeJobSubjectName()
 An iModelBridge is responsible for storing provenance data that relates elements in the iModel to information in the source documents.
 Currently, provenance for model elements is required. Provenance for other kinds of elements is optional.
 
-@anchor ANCHOR_PartitionOriginatesFromRepository
-<h3>PartitionOriginatesFromRepository</h3>
+@anchor ANCHOR_ElementHasLinks
+<h3>ElementHasLinks</h3>
 A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
-Specifically, each bridge must create a PartitionOriginatesFromRepository ECRelationship from the InformationPartitionElement element that represents the model
-to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship.
+Specifically, each bridge must create a ElementHasLinks ECRelationship from the InformationContentElement element that represents the model
+to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertElementHasLinksRelationship.
 
 When you create a physical partition model, link it to the RepositoryLink that corresponds to the source document. For example:
 
@@ -335,7 +335,7 @@ PhysicalModelPtr ToyTileBridge::CreatePhysicalModel(SubjectCR parentSubject, Utf
     PhysicalModelPtr model = PhysicalModel::Create(*partition);
 ...
     // IMODELBRIDGE PROVENANCE REQUIREMENT: Relate this model to the source document
-    InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDbR(), model->GetModeledElementId(), repositoryLinkId);
+    InsertElementHasLinksRelationship(GetDgnDbR(), model->GetModeledElementId(), repositoryLinkId);
 
     return model;
     }
@@ -462,6 +462,7 @@ struct iModelBridge
         bool m_isCreatingNewDb = false;
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
+        bool m_doDetectDeletedModelsAndElements =  true;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
         bvector<BeFileName> m_drawingAndSheetFiles;
@@ -573,6 +574,8 @@ struct iModelBridge
         TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
         void SetJobSubjectId(DgnElementId eid) {m_jobSubjectId = eid;}  //!< @private called by framework
         DgnElementId GetJobSubjectId() const {return m_jobSubjectId;} //!< Identifies the job Subject element
+        bool DoDetectDeletedModelsAndElements() const {return m_doDetectDeletedModelsAndElements;}
+        void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
 
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
@@ -723,7 +726,7 @@ public:
     //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
     //! The bridge may generate a schema dynamically, based on the content of the source files. Or, in the case of an update, the bridge can upgrade or change a previously generated schema. 
     //! @return non-zero error status if the bridge cannot make the schema changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas.
+    //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas. The bridge *must* return a non-zero error status if LockSchemas fails.
     //! @note The bridge should *not* convert elements or models in this function.
     virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
 
@@ -802,9 +805,6 @@ public:
     BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const {return GetParamsCR().QueryDocumentGuid(localFileName);}
 
     // @private
-    IMODEL_BRIDGE_EXPORT static LinkModelPtr GetRepositoryLinkModel(DgnDbR db, bool createIfNecessary = true);
-
-    // @private
     //! Make a RepositoryLink Element that refers to a specified source file. 
     //! This function will attempt to set the properties of the RepositoryLink element from the DMS document properties of the source file. 
     //! This function will call Params::IDocumentPropertiesAccessor to get the document properties. If found, 
@@ -820,21 +820,21 @@ public:
 
     // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
-                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, LinkModelR lmodel);
+                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel);
     // @private
     IMODEL_BRIDGE_EXPORT static SHA1 ComputeRepositoryLinkHash(RepositoryLinkCR);
 
     //! Utility to create an instance of an ECRelationship (for non-Navigation relationships).
     IMODEL_BRIDGE_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);
 
-    //! Create a "PartitionOriginatesFromRepository" relationship between a partition model and a RepositoryLink element.
+    //! Create a "ElementHasLinks" relationship between a partition model and a RepositoryLink element.
     //! @param db               The briefcase.
     //! @param informationPartitionElementId  The element that represents the partition model.
     //! @param repoLinkElementId The RepositoryLinkElement
     //! @return non-zero status if the relationship instance could not be inserted in the briefcase.
-    static DgnDbStatus InsertPartitionOriginatesFromRepositoryRelationship(DgnDbR db, DgnElementId informationPartitionElementId, DgnElementId repoLinkElementId)
+    static DgnDbStatus InsertElementHasLinksRelationship(DgnDbR db, DgnElementId informationPartitionElementId, DgnElementId repoLinkElementId)
         {
-        return InsertLinkTableRelationship(db, BIS_REL_PartitionOriginatesFromRepository, informationPartitionElementId, repoLinkElementId);
+        return InsertLinkTableRelationship(db, BIS_REL_ElementHasLinks, informationPartitionElementId, repoLinkElementId);
         }
 
     //! @}
@@ -849,7 +849,10 @@ public:
     IMODEL_BRIDGE_EXPORT void ReportIssue(WStringCR);
 
     //! Write a message to the issues file. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
-    IMODEL_BRIDGE_EXPORT void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+    void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+
+    //! Compute the filename of the "issues" file.
+    IMODEL_BRIDGE_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
 
     //! @}
 
@@ -912,5 +915,6 @@ END_BENTLEY_DGN_NAMESPACE
 extern "C"
     {
     typedef BentleyApi::Dgn::iModelBridge* T_iModelBridge_getInstance(wchar_t const* regSubKey);
+    typedef BentleyApi::BentleyStatus T_iModelBridge_releaseInstance(BentleyApi::Dgn::iModelBridge* bridgeInstance);
     };
 

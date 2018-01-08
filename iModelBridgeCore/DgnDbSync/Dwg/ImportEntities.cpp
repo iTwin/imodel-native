@@ -3092,7 +3092,7 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     if (!entityIter.IsValid())
         return  BSIERROR;
 
-    ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, m_rootTransform, DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, this->GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelSpace);
     if (!modelMap.IsValid())
         {
         this->ReportError (IssueCategory::UnexpectedData(), Issue::Error(), "cannot find the default target model!");
@@ -3174,7 +3174,7 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
 
     ElementImportInputs     inputs (*modelMap.GetModel());
     inputs.SetClassId (this->_GetElementType(*modelspace.get()));
-    inputs.SetTransform (m_rootTransform);
+    inputs.SetTransform (this->GetRootTransform());
     inputs.SetSpatialFilter (nullptr);
     inputs.SetModelMapping (modelMap);
 
@@ -3207,9 +3207,6 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     if (resetPDSIZE)
         m_dwgdb->SetPDSIZE (currentPDSIZE);
         
-    // free memory
-    m_dgndb->Memory().PurgeUntil(1024 * 1024);
-    
     return BSISUCCESS;
     }
 
@@ -3301,6 +3298,8 @@ BentleyStatus   DwgImporter::_ImportXReference (DwgDbBlockReferenceCR xrefInsert
 
     However, xref instances may not all be seen in the block section, therefore there is 
     a chance that this xref insert could be new and a model will need to be created.
+    It gets trickier if the root transform has been changed from iModelBridge as we have
+    to invert the current root transform in order to find the model from the syncInfo.
     -----------------------------------------------------------------------------------*/
     DwgDbObjectId               xrefblockId = xrefInsert.GetBlockTableRecordId ();
     DwgDbBlockTableRecordPtr    xrefBlock(xrefblockId, DwgDbOpenMode::ForRead);
@@ -3334,13 +3333,51 @@ BentleyStatus   DwgImporter::_ImportXReference (DwgDbBlockReferenceCR xrefInsert
     Transform   xtrans = inputs.GetTransform ();
     this->CompoundModelTransformBy (xtrans, xrefInsert);
     
+    /*-----------------------------------------------------------------------------------
+    We take 3 steps in order to catch potential missing xRef inserts in model dicovery phase
+    and also to take account of possible change of root transformation:
+
+    Step 1 - try to look the model up in the cached model list only - an xref insert not 
+    found in the list is a potential missing xref instance.
+    -----------------------------------------------------------------------------------*/
     DgnModelP               model = nullptr;
-    ResolvedModelMapping    modelMap = this->GetOrCreateModelFromBlock (*xrefBlock.get(), xtrans, &xrefInsert, m_currentXref.GetDatabaseP());
+    ResolvedModelMapping    modelMap= this->FindModel (xrefInsert.GetObjectId(), xtrans, DwgSyncInfo::ModelSourceType::XRefAttachment);
     if (!modelMap.IsValid() || nullptr == (model = modelMap.GetModel()))
         {
-        this->ReportError (IssueCategory::UnexpectedData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*xrefBlock).c_str());
-        m_currentXref = savedCurrentXref;
-        return  BSIERROR;
+        // Step2 - decide on if we need to look it up in syncInfo using old or new transform:
+        RootTransformInfo const&    rootTransInfo = this->GetRootTransformInfo ();
+        bool    searchByOldTransform = this->IsUpdating() && rootTransInfo.HasChanged ();
+        // the change of the root transform has no impact on paperspace:
+        if (searchByOldTransform && this->IsXrefInsertedInPaperspace(xrefInsert.GetObjectId()))
+            searchByOldTransform = false;
+
+        Transform   searchTrans;
+        if (searchByOldTransform)
+            {
+            Transform   fromNewToOld = rootTransInfo.GetChangeTransformFromNewToOld ();
+            searchTrans.InitProduct (fromNewToOld, xtrans);
+            }
+        else
+            {
+            // new import or no change in root transform - search by current xref transform:
+            searchTrans = xtrans;
+            }
+
+        // Step 3 - second try finding the model using the desired transform, create new one if not found:
+        modelMap = this->GetOrCreateModelFromBlock (*xrefBlock.get(), searchTrans, &xrefInsert, m_currentXref.GetDatabaseP());
+        if (!modelMap.IsValid() || nullptr == (model = modelMap.GetModel()))
+            {
+            this->ReportError (IssueCategory::UnexpectedData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*xrefBlock).c_str());
+            m_currentXref = savedCurrentXref;
+            return  BSIERROR;
+            }
+
+        if (searchByOldTransform)
+            {
+            // update model map with the new transform
+            modelMap.SetTransform (xtrans);
+            modelMap.GetMapping().Update (this->GetDgnDb());
+            }
         }
 
     // and or update the model in current as well as the loaded xref cache:

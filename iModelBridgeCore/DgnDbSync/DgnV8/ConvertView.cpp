@@ -98,7 +98,7 @@ void Converter::CreateModelSet(DgnModelIdSet& selection, DgnModel const& rootMod
     AddAttachmentsToSelection(selection, v8RootModel, trans);
     }
 
-static Render::GraphicParams::LinePixels toLinePixels(int styleNo)
+static Render::LinePixels toLinePixels(int styleNo)
     {
     static uint32_t s_linePixels[] = {
         0,     // 0
@@ -110,7 +110,7 @@ static Render::GraphicParams::LinePixels toLinePixels(int styleNo)
         0xf888f888,     // 6
         0xff18ff18      // 7
         };
-    return (styleNo>=0 && styleNo<_countof(s_linePixels)) ? (Render::GraphicParams::LinePixels) s_linePixels[styleNo] : Render::GraphicParams::LinePixels::Invalid;
+    return (styleNo>=0 && styleNo<_countof(s_linePixels)) ? (Render::LinePixels) s_linePixels[styleNo] : Render::LinePixels::Invalid;
     }
 
 static ColorDef toColorDef(Bentley::RgbFactor const& val) {return ColorDef(((RgbFactor const&)val).ToIntColor());}
@@ -225,14 +225,14 @@ void Converter::ConvertDisplayStyle(DisplayStyleR style, DgnV8Api::DisplayStyle 
         hlParams.m_hidden.m_width = overrides.m_hiddenEdgeWeight==0xffff ? hlParams.m_visible.m_width : overrides.m_hiddenEdgeWeight + 1;
 
     if (overrides.m_flags.m_visibleEdgeStyle)
-        hlParams.m_visible.m_pattern = Render::GraphicParams::LinePixels::Solid;
+        hlParams.m_visible.m_pattern = Render::LinePixels::Solid;
     else
-        hlParams.m_visible.m_pattern = Render::GraphicParams::LinePixels::Invalid;
+        hlParams.m_visible.m_pattern = Render::LinePixels::Invalid;
 
     if (overrides.m_flags.m_hiddenEdgeStyle)
-        hlParams.m_hidden.m_pattern = 0 == v8flags.m_hiddenEdgeLineStyle ? Render::GraphicParams::LinePixels::HiddenLine : toLinePixels(v8flags.m_hiddenEdgeLineStyle);
+        hlParams.m_hidden.m_pattern = 0 == v8flags.m_hiddenEdgeLineStyle ? Render::LinePixels::HiddenLine : toLinePixels(v8flags.m_hiddenEdgeLineStyle);
     else
-        hlParams.m_hidden.m_pattern = Render::GraphicParams::LinePixels::Solid;
+        hlParams.m_hidden.m_pattern = Render::LinePixels::Solid;
 
     if (overrides.m_flags.m_hLineTransparency)
         hlParams.m_transparencyThreshold = overrides.m_hLineTransparencyThreshold;
@@ -318,8 +318,11 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
         return nullptr;
 
     DgnDbR db = converter.GetDgnDb();
-    DefinitionModelR dictionary = db.GetDictionaryModel();
-    ModelSelectorPtr models = new ModelSelector(dictionary, parms.m_name.c_str());
+    DefinitionModelPtr definitionModel = converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
+    ModelSelectorPtr models = new ModelSelector(*definitionModel, parms.m_name.c_str());
     converter.CreateModelSet(models->GetModelsR(), parms.GetDgnModel(), parms.GetV8Model(), parms.m_trans);
 
     double toMeters = converter.ComputeUnitsScaleFactor(parms.GetV8Model());
@@ -351,7 +354,7 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
         camera.SetEyePoint(DPoint3d::FromScale((DPoint3dCR)v8camera.m_position, toMeters));
         }
 
-    ViewDefinitionPtr view = new SpatialViewDefinition(dictionary, parms.m_name, *parms.m_categories, *dstyle3d, *models, cameraP);
+    ViewDefinitionPtr view = new SpatialViewDefinition(*definitionModel, parms.m_name, *parms.m_categories, *dstyle3d, *models, cameraP);
 
     // Carry over the simple stuff like view geometry and description
     parms.Apply(*view);
@@ -368,13 +371,24 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
             {
             m_spatialConverter.ConvertV8PointCloudViewSettings(*spatialVC, parms.m_viewInfo);
             spatialVC->StoreState();
-            auto val = spatialVC->GetViewDefinition().GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloud);
+            auto val = spatialVC->GetViewDefinitionR().GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloud);
             if (!val.isNull())
                 view->GetDisplayStyle().SetStyle(VIEW_SETTING_PointCloud, val);
             }
         }
 
     return view;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ViewFactory::ViewDefinitionParams::ViewDefinitionParams(Converter* c, Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d) : m_name(n), m_modelMapping(m), m_viewInfo(vi)
+    {
+    auto& db = m_modelMapping.GetDgnModel().GetDgnDb();
+    DefinitionModelPtr definitionModel = c->GetJobDefinitionModel();
+    m_dstyle = !is3d ? (DisplayStyleP) new DisplayStyle2d(*definitionModel, m_name.c_str()) : new DisplayStyle3d(*definitionModel, m_name.c_str());
+    m_categories = new CategorySelector(*definitionModel, m_name.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -534,9 +548,13 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     {
     Utf8String name = _GetNamePrefix().append(_ComputeViewName(defaultName, viewInfo));
 
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return BSIERROR;
+
     if (IsUpdating())
         {
-        auto viewId = ViewDefinition::QueryViewId(GetDgnDb().GetDictionaryModel(), name);
+        auto viewId = ViewDefinition::QueryViewId(*definitionModel, name);
         if (viewId.IsValid())
             {
             // *** WIP_UPDATER: check that per-attachment level definitions and visibility are unchanged
@@ -571,16 +589,15 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         return BSIERROR;
 
     // Get a unique name
-    DefinitionModelR dictionary = GetDgnDb().GetDictionaryModel();
     Utf8String suffix;
     Utf8String baseName(name);
-    for (int i=0; ViewDefinition::QueryViewId(dictionary, name).IsValid();)
+    for (int i=0; ViewDefinition::QueryViewId(*definitionModel, name).IsValid();)
         {
         name = RemapViewName(baseName, *v8Model->GetDgnFileP(), suffix);
         suffix.Sprintf("-%d", ++i);
         }
 
-    ViewFactory::ViewDefinitionParams parms(name, modelMapping, viewInfo, viewFactory._Is3d());
+    ViewFactory::ViewDefinitionParams parms(this, name, modelMapping, viewInfo, viewFactory._Is3d());
     parms.m_description = defaultDescription;
     parms.m_trans = trans;
 
@@ -594,13 +611,13 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     if (v8displayStyle)
         {
         Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());   
-        auto existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(dictionary, styleName)));
+        auto existingStyle = m_dgndb->Elements().Get<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
         if (existingStyle.IsValid() && (existingStyle->Is3d() == parms.m_dstyle->Is3d())) // only share display styles if the same dimension (V8 doesn't care)
             parms.m_dstyle = existingStyle->MakeCopy<DisplayStyle>();
         else
             {
             if (!existingStyle.IsValid())
-                parms.m_dstyle->SetCode(DisplayStyle::CreateCode(dictionary, styleName));
+                parms.m_dstyle->SetCode(DisplayStyle::CreateCode(*definitionModel, styleName));
             ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
             }
         }

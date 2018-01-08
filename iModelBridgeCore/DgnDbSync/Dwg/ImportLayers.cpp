@@ -251,6 +251,10 @@ BentleyStatus   DwgImporter::_ImportLayerSection ()
     if (!iter.IsValid())
         return  BSIERROR;
 
+    // include hidden and reconciled layers
+    iter.SetSkipHiddenLayers (false);
+    iter.SetSkipReconciledLayers (false);
+
     this->SetStepName (ProgressMessage::STEP_IMPORTING_LAYERS());
 
     uint32_t    count = 0;

@@ -701,7 +701,7 @@ ViewDefinitionPtr DrawingViewFactory::_MakeView(Converter& converter, ViewDefini
 
     converter._TurnOnExtractionCategories(*parms.m_categories);
 
-    DrawingViewDefinitionPtr view = new DrawingViewDefinition(db.GetDictionaryModel(), parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition(*converter.GetJobDefinitionModel(), parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());
 
     parms.Apply(*view);
 
@@ -761,7 +761,12 @@ void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tb
     auto refTrans = ComputeAttachmentTransform(transformToParent, v8DgnAttachment);
 
     SyncInfo::V8ModelMapping refSyncInfoMapping;
-    GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans);
+    if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans))
+        {
+        BeAssert(false);
+        LOG.infov("DrawingRegisterModelToBeMerged %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
+        return;
+        }
 
     ResolvedModelMapping mergedModelMapping(targetBimModel, *attachedV8model, refSyncInfoMapping, &v8DgnAttachment);
 

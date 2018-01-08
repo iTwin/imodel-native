@@ -781,7 +781,7 @@ bool iModelBridgeWithSyncInfoBase::DetectSpatialDataTransformChange(TransformR n
     if (change.GetChangeType() == iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed)
         {
         Json::Value json;
-        json.From(change.GetSyncInfoRecord().GetSourceState().GetHash());
+        json = json.From(change.GetSyncInfoRecord().GetSourceState().GetHash());
         JsonUtils::TransformFromJson(oldTrans, json);
         return true;
         }

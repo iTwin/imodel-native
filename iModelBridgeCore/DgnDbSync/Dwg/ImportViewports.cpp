@@ -39,6 +39,9 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportTableRecor
     m_isUcsIconOn = viewportRecord.IsUcsIconEnabled ();
     m_backgroundId = viewportRecord.GetBackground ();
     m_visualStyleId = viewportRecord.GetVisualStyle ();
+    m_isDefaultLightingOn = viewportRecord.IsDefaultLightingOn ();
+    m_brightness = viewportRecord.GetBrightness ();
+    m_ambientLightColor = viewportRecord.GetAmbientLightColor ();
     m_customScale = 1.0;
     m_backgroundColor = ColorDef::Black ();
     m_isPrivate = false;
@@ -74,6 +77,9 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
     m_visualStyleId = viewportEntity.GetVisualStyle ();
     m_customScale = viewportEntity.GetCustomScale ();
     m_backgroundColor = ColorDef::White ();
+    m_isDefaultLightingOn = viewportEntity.IsDefaultLightingOn ();
+    m_brightness = viewportEntity.GetBrightness ();
+    m_ambientLightColor = viewportEntity.GetAmbientLightColor ();
     m_isPrivate = false;
     m_transform = importer.GetRootTransform ();
     m_inputViewport = DwgDbObject::Cast (&viewportEntity);
@@ -95,7 +101,7 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
 
         m_height = viewportEntity.GetViewHeight ();
         m_width = m_height * aspectRatio;
-       }
+        }
 
     this->TransformDataToBim ();
     }
@@ -119,11 +125,11 @@ bool            ViewportFactory::ComposeLayoutTransform (TransformR trans, DwgDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ViewportFactory::TransformDataToBim ()
     {
-    m_transform.Multiply (m_center);
+    m_transform.MultiplyMatrixOnly (m_center);
     m_center.z = 0.0;
 
     m_transform.Multiply (m_target);
-    m_transform.Multiply (m_viewDirection);
+    m_transform.MultiplyMatrixOnly (m_viewDirection);
 
     double      toMeters = 1.0;
     m_transform.IsRigidScale (toMeters);
@@ -163,14 +169,19 @@ void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnV
         if (focalLength < 0.25)
             focalLength = 0.25;
 
+        /*-------------------------------------------------------------------------------
+        Calculation of perspective view delta in MicroStation had 35*focalLength/lensLength,
+        where focalLength was in UOR's and lensLength in unconverted DWG units. Here all of
+        the view parameters have been converted to meters.
+        -------------------------------------------------------------------------------*/
         if (aspectRatio > 1.0)
             {
-            delta.x = 35.0 * focalLength / m_lensLength;
+            delta.x = 0.9 * focalLength / m_lensLength;
             delta.y = delta.x / aspectRatio;
             }
         else
             {
-            delta.y = 35.0 * focalLength / m_lensLength;
+            delta.y = 0.9 * focalLength / m_lensLength;
             delta.x = delta.y * aspectRatio;
             }
 
@@ -342,8 +353,10 @@ void            ViewportFactory::ComputeSpatialDisplayStyle (DisplayStyle3dR dis
     {
     ViewFlags   viewFlags;
     DwgHelper::SetViewFlags (viewFlags, m_isGridOn, m_isUcsIconOn, m_backgroundId.IsValid(), true, m_isFrontClipped, m_isBackClipped, m_importer.GetDwgDb());
-
     DwgHelper::UpdateViewFlagsFromVisualStyle (viewFlags, m_visualStyleId);
+
+    // only when default lighting is turned off, the source lights become effective:
+    viewFlags.SetShowSourceLights (!m_isDefaultLightingOn);
 
     displayStyle.SetViewFlags (viewFlags);
 
@@ -353,6 +366,19 @@ void            ViewportFactory::ComputeSpatialDisplayStyle (DisplayStyle3dR dis
     enviromentDisplay.m_skybox.m_enabled = false;
 
     displayStyle.SetBackgroundColor (m_backgroundColor);
+
+    // set ambient light
+    Lighting::Parameters    light;
+    if (m_brightness > 0.0)
+        {
+        light.SetType (Lighting::LightType::Ambient);
+        light.SetIntensity (m_brightness);
+        light.SetColor (ColorDef(m_ambientLightColor.GetRGB()));
+        displayStyle.SetSceneLight (light);
+        }
+
+    // set scene brightness
+    displayStyle.SetSceneBrightness (m_brightness);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -683,7 +709,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
 
     // get the modelspace model:
     DgnModelP   rootModel = nullptr;
-    ResolvedModelMapping    modelMap = importer.FindModel (importer.GetModelSpaceId(), importer.GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    ResolvedModelMapping    modelMap = importer.GetRootModel ();
     if (!modelMap.IsValid() || (rootModel = modelMap.GetModel()) == nullptr)
         {
         BeAssert(false && L"failed retrieving modelspace model!");
@@ -814,7 +840,7 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::SaveViewDefinition (ViewControllerR viewController)
     {
-    auto& viewDef = viewController.GetViewDefinition ();
+    auto& viewDef = viewController.GetViewDefinitionR();
 
     viewDef.GetCategorySelector().Update ();
     viewDef.GetDisplayStyle().Update ();
@@ -833,7 +859,7 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecord
         return BSIERROR;
         }
     DgnModelP   rootModel = nullptr;
-    ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, m_rootTransform, DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    ResolvedModelMapping    modelMap = this->FindModel (this->GetModelSpaceId(), this->GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelSpace);
     if (!modelMap.IsValid() || (rootModel = modelMap.GetModel()) == nullptr)
         {
         BeAssert(false && L"root model has not been imported yet!");
@@ -980,9 +1006,6 @@ void            DwgImporter::_PostProcessViewports ()
                 m_paperspaceXrefs.push_back (DwgXRefInPaperspace(blockId, paperspaceId, modelId));
             }
         }
-
-    // Initialize the graphics subsystem (LoadViewController will hist nullptr==s_renderQueue otherwise!):
-    DgnViewLib::GetHost().GetViewManager().Startup ();
     
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (*m_dwgdb);
 
@@ -1030,7 +1053,7 @@ void            DwgImporter::_PostProcessViewports ()
                     numFrozenLayers = frozenLayers.size ();
                 }
 
-            auto& categorySelector = viewController->GetViewDefinition().GetCategorySelector ();
+            auto& categorySelector = viewController->GetViewDefinitionR().GetCategorySelector ();
             for (ElementIteratorEntry entry : DrawingCategory::MakeIterator(*m_dgndb))
                 {
                 DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();

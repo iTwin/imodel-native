@@ -141,6 +141,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
         //! Load the bridge library and resolve its T_iModelBridge_getInstance function.
         T_iModelBridge_getInstance* LoadBridge();
+
+        T_iModelBridge_releaseInstance* ReleaseBridge();
         };
 
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
@@ -151,7 +153,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_repositoryName;                //!< A repository in the iModelHub project
         Http::Credentials m_credentials;            //!< User credentials
         WebServices::UrlProvider::Environment m_environment; //!< Connect environment
-        uint8_t m_maxRetryCount = 2;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
+        uint8_t m_maxRetryCount = 3;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString> m_bargs;
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself that pertain to the iModelHub, and return a vector of pointers to the remaining
@@ -219,7 +221,7 @@ protected:
     BentleyStatus Briefcase_AcquireExclusiveLocks();
     BentleyStatus Briefcase_PullAndMerge();
     BentleyStatus Briefcase_PullMergePush(Utf8CP);
-    BentleyStatus Briefcase_ReleaseSharedLocks();
+    BentleyStatus Briefcase_ReleaseAllPublicLocks();
     //! @}
 
     BentleyStatus ParseDocProps();
@@ -228,6 +230,7 @@ protected:
     int RunExclusive(int argc, WCharCP argv[]);
     int UpdateExistingBim();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
+    BentleyStatus ReleaseBridge();
     BentleyStatus LoadBridge();
     BentleyStatus InitBridge();
     int ProcessSchemaChange();
@@ -250,8 +253,13 @@ public:
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
 
     //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT void ReportIssue(WStringCR);
+    //! @private
+    void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
+    //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
-
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetiModelHubFXForTesting(iModelHubFX&);
     //! @private

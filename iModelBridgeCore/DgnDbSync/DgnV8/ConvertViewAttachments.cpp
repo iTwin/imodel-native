@@ -341,7 +341,7 @@ void Converter::SheetsCreateViewAttachment(ElementConversionResults& results,
     if (refClip.HasClips() && refClip.HasViewletClips())
         clipVector = ConvertClip(refClip.CalculateClip(nullptr), &v8SheetModelMapping.GetTransform());
 
-    DgnCategoryId attachmentCategoryId = GetOrCreateDrawingCategoryId(GetDgnDb().GetDictionaryModel(), CATEGORY_NAME_Attachments);
+    DgnCategoryId attachmentCategoryId = GetOrCreateDrawingCategoryId(*GetJobDefinitionModel(), CATEGORY_NAME_Attachments);
 
     auto viewAttachment = new Sheet::ViewAttachment(GetDgnDb(), sheetModel.GetModelId(), attachedViewId, attachmentCategoryId, placement);
     viewAttachment->SetDisplayPriority(attachedView->IsSpatialView() ? updateSeq * 10 : 0);

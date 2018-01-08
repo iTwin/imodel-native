@@ -44,7 +44,8 @@ DwgStringR  DwgString::operator             = (DwgStringCR str) { this->Assign(s
 DwgString::DwgString (WCharCP chars)        { this->Assign(chars); }
 DwgString::~DwgString ()                    { ; }
 
-uint32_t    DwgCmColor::GetRGB () const         { return static_cast<uint32_t>(T_Super::color()); }
+uint32_t    DwgCmColor::GetMRGB () const        { return static_cast<uint32_t>(T_Super::color()); }
+uint32_t    DwgCmColor::GetRGB () const         { return static_cast<uint32_t>(T_Super::color() & 0x00FFFFFF); }
 int16_t     DwgCmColor::GetIndex () const       { return static_cast<int16_t>(T_Super::colorIndex()); }
 Byte        DwgCmColor::GetRed () const         { return static_cast<Byte>(T_Super::red()); }
 Byte        DwgCmColor::GetGreen () const       { return static_cast<Byte>(T_Super::green()); }
@@ -53,7 +54,11 @@ bool        DwgCmColor::IsByLayer () const      { return T_Super::isByLayer(); }
 bool        DwgCmColor::IsByBlock () const      { return T_Super::isByBlock(); }
 bool        DwgCmColor::IsByACI () const        { return T_Super::isByACI(); }
 bool        DwgCmColor::IsByColor () const      { return T_Super::isByColor(); }
+bool        DwgCmColor::IsForeground () const   { return T_Super::isForeground(); }
+bool        DwgCmColor::IsNone () const         { return T_Super::isNone(); }
 DwgCmColor::~DwgCmColor ()                      { ; }
+DwgCmEntityColor DwgCmColor::GetEntityColor () const { return static_cast<DwgCmEntityColor>(T_Super::entityColor()); }
+DwgCmEntityColor::Method DwgCmColor::GetColorMethod () const { return static_cast<DwgCmEntityColor::Method>(T_Super::colorMethod()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -69,7 +74,9 @@ DwgDbStatus DwgCmColor::SetColorIndex (uint16_t color)
     }
 
 uint32_t    DwgCmEntityColor::GetRGBFromIndex (uint16_t index) { return static_cast<uint32_t>(DWGCM_Type(EntityColor)::lookUpRGB(static_cast<uint8_t>(index))); }
-uint32_t    DwgCmEntityColor::GetRGB () const     { return static_cast<uint32_t>(T_Super::color()); }
+uint32_t    DwgCmEntityColor::GetMRGB () const    { return static_cast<uint32_t>(T_Super::color()); }
+// Teigha does not seem to have implemented OdCmEntityColor::trueColor - return OdCmEntityColor::color wwith the high bits removed!!
+uint32_t    DwgCmEntityColor::GetRGB () const     { return static_cast<uint32_t>(DWGDB_CALLSDKMETHOD(T_Super::color() & 0x00FFFFFF,T_Super::trueColor())); }
 int16_t     DwgCmEntityColor::GetIndex () const   { return static_cast<int16_t>(T_Super::colorIndex()); }
 Byte        DwgCmEntityColor::GetRed () const     { return static_cast<Byte>(T_Super::red()); }
 Byte        DwgCmEntityColor::GetGreen () const   { return static_cast<Byte>(T_Super::green()); }
@@ -78,7 +85,10 @@ bool        DwgCmEntityColor::IsByLayer () const  { return T_Super::isByLayer();
 bool        DwgCmEntityColor::IsByBlock () const  { return T_Super::isByBlock(); }
 bool        DwgCmEntityColor::IsByACI () const    { return T_Super::isByACI(); }
 bool        DwgCmEntityColor::IsByColor () const  { return T_Super::isByColor(); }
+bool        DwgCmEntityColor::IsForeground () const { return T_Super::isForeground(); }
+bool        DwgCmEntityColor::IsNone () const     { return T_Super::isNone(); }
 DwgCmEntityColor::~DwgCmEntityColor ()            { ; }
+DwgCmEntityColor::Method DwgCmEntityColor::GetColorMethod () const { return static_cast<DwgCmEntityColor::Method>(T_Super::colorMethod()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16

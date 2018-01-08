@@ -54,7 +54,7 @@ void LevelTests::TestLevelConversion(size_t numGeometricModelsExpected, size_t n
     ASSERT_EQ(numGeometricModelsExpected, CountGeometricModels(*db));
 
     DgnCategoryIdSet categories = SpatialCategory::MakeIterator(*db).BuildIdSet<DgnCategoryId>();
-    DgnCategoryId uncategorizedId = SpatialCategory::QueryCategoryId(db->GetDictionaryModel(), "Uncategorized");
+    DgnCategoryId uncategorizedId = SpatialCategory::QueryCategoryId(*GetJobDefinitionModel(*db), "Uncategorized");
     ASSERT_EQ(expectUncategorized , categories.Contains(uncategorizedId));
     ASSERT_EQ(nCategoriesExpected, categories.size());
 

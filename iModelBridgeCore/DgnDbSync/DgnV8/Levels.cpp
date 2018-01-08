@@ -211,8 +211,11 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
     dbCategoryName.insert(0, _GetNamePrefix().c_str());
     DgnDbTable::ReplaceInvalidCharacters(dbCategoryName, DgnCategory::GetIllegalCharacters(), '_');
 
-    DefinitionModelR dictionary = GetDgnDb().GetDictionaryModel();
-    DgnCode categoryCode = is3d ? SpatialCategory::CreateCode(dictionary, dbCategoryName.c_str()) : DrawingCategory::CreateCode(dictionary, dbCategoryName.c_str());
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return DgnCategoryId();
+
+    DgnCode categoryCode = is3d ? SpatialCategory::CreateCode(*definitionModel, dbCategoryName.c_str()) : DrawingCategory::CreateCode(*definitionModel, dbCategoryName.c_str());
     DgnCategoryId dbCategoryId = DgnCategory::QueryCategoryId(GetDgnDb(), categoryCode);
     if (dbCategoryId.IsValid())
         {
@@ -233,12 +236,12 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
         DgnCategoryCPtr newCategory;
         if (is3d)
             {
-            SpatialCategory category(dictionary, dbCategoryName, DgnCategory::Rank::User, Utf8String(level->GetDescription()));
+            SpatialCategory category(*definitionModel, dbCategoryName, DgnCategory::Rank::User, Utf8String(level->GetDescription()));
             newCategory = category.Insert(appear, &result);
             }
         else
             {
-            DrawingCategory category(dictionary, dbCategoryName, DgnCategory::Rank::User, Utf8String(level->GetDescription()));
+            DrawingCategory category(*definitionModel, dbCategoryName, DgnCategory::Rank::User, Utf8String(level->GetDescription()));
             newCategory = category.Insert(appear, &result);
             }
 
@@ -547,13 +550,19 @@ void Converter::AddAllSpatialCategories(DgnCategoryIdSet& categories)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::InitUncategorizedCategory()
     {
-    DefinitionModelR dictionary = m_dgndb->GetDictionaryModel();
-    m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId(dictionary, CATEGORY_NAME_Uncategorized);
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId(*definitionModel, CATEGORY_NAME_Uncategorized);
 
     if (m_uncategorizedCategoryId.IsValid())
         return;
 
-    SpatialCategory category(dictionary, CATEGORY_NAME_Uncategorized, DgnCategory::Rank::Application);
+    SpatialCategory category(*definitionModel, CATEGORY_NAME_Uncategorized, DgnCategory::Rank::Application);
     if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
         {
         BeAssert(false);
@@ -567,13 +576,19 @@ void Converter::InitUncategorizedCategory()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::InitUncategorizedDrawingCategory()
     {
-    DefinitionModelR dictionary = m_dgndb->GetDictionaryModel();
-    m_uncategorizedDrawingCategoryId = DrawingCategory::QueryCategoryId(dictionary, CATEGORY_NAME_Uncategorized);
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_uncategorizedDrawingCategoryId = DrawingCategory::QueryCategoryId(*definitionModel, CATEGORY_NAME_Uncategorized);
 
     if (m_uncategorizedDrawingCategoryId.IsValid())
         return;
 
-    DrawingCategory category(dictionary, CATEGORY_NAME_Uncategorized, DgnCategory::Rank::Application);
+    DrawingCategory category(*definitionModel, CATEGORY_NAME_Uncategorized, DgnCategory::Rank::Application);
     if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
         {
         BeAssert(false);

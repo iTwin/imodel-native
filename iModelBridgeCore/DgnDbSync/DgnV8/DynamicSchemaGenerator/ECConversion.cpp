@@ -9,12 +9,16 @@
 #include "ECConversion.h"
 #include "ECDiff.h"
 #include <regex>
+#include <ECObjects/StandardCustomAttributeHelper.h>
+#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
+#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 #define TEMPTABLE_ATTACH(name) "temp." name
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 using namespace BeSQLite::EC;
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -486,6 +490,129 @@ bool V8ElementSecondaryECClassInfo::TryFind(DgnDbR db, DgnV8EhCR el, ECClassName
     }
 
 //****************************************************************************************
+// ElementToAspectMapping
+//****************************************************************************************
+#define ELEMENT_TO_ASPECT_MAPPING_TABLE SYNCINFO_TABLE("ElementClassToAspectClass")
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ElementClassToAspectClassMapping::CreateTable(DgnDbR db)
+    {
+    if (db.TableExists(SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE)))
+        return BSISUCCESS;
+    if (BE_SQLITE_OK != db.ExecuteSql("CREATE TABLE " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " (ElementClassId INTEGER NOT NULL, ElementSchemaName TEXT NOT NULL, ElementClassName TEXT NOT NULL, AspectClassId INTEGER NOT NULL, AspectSchemaName TEXT NOT NULL, AspectClassName TEXT NOT NULL)"))
+        return BSIERROR;
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementClassIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementClassId)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "AspectClassIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(AspectClassId)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "AspectSchemaNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(AspectSchemaName)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementSchemaNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementSchemaName)");
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) "ElementClassNameIdx ON " ELEMENT_TO_ASPECT_MAPPING_TABLE "(ElementClassName)");
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ElementClassToAspectClassMapping::TryFind(DgnDbR db, DgnClassId elementId, ECN::ECClassId aspectId)
+    {
+    CachedStatementPtr stmt = nullptr;
+    auto stat = db.GetCachedStatement(stmt, "SELECT ElementSchemaName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE ElementClassId = ? AND AspectClassId=?");
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Could not retrieve cached statement for ElementClassToAspectClassMapping::Find.");
+        return false;
+        }
+
+    stmt->BindId(1, elementId);
+    stmt->BindId(2, aspectId);
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return false;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ElementClassToAspectClassMapping::Insert(DgnDbR db, DgnClassId elementId, Utf8CP elementSchemaName, Utf8CP elementClassName, ECN::ECClassId aspectId, Utf8CP aspectSchemaName, Utf8CP aspectClassName)
+    {
+    if (ElementClassToAspectClassMapping::TryFind(db, elementId, aspectId))
+        return BSISUCCESS;
+
+    CachedStatementPtr stmt = nullptr;
+    auto stat = db.GetCachedStatement(stmt, "INSERT INTO " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " (ElementClassId, ElementSchemaName, ElementClassName, AspectClassId, AspectSchemaName, AspectClassName) VALUES (?, ?, ?, ?, ?, ?)");
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Could not retrieve cached statement for ElementClassToAspectClassMapping::Insert");
+        return BSIERROR;
+        }
+
+    stmt->BindId(1, elementId);
+    stmt->BindText(2, elementSchemaName, Statement::MakeCopy::No);
+    stmt->BindText(3, elementClassName, Statement::MakeCopy::No);
+    stmt->BindId(4, aspectId);
+    stmt->BindText(5, aspectSchemaName, Statement::MakeCopy::No);
+    stmt->BindText(6, aspectClassName, Statement::MakeCopy::No);
+    stat = stmt->Step();
+
+    return stat == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void ElementClassToAspectClassMapping::CreatePresentationRules(DgnDbR db)
+    {
+    Statement stmt;
+    stmt.Prepare(db, "SELECT DISTINCT AspectSchemaName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE));
+    Utf8String fileName(db.GetFileName().GetFileNameWithoutExtension().c_str());
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP aspectSchemaName(stmt.GetValueText(0));
+        bvector<Utf8String> targets;
+        {
+            CachedStatementPtr stmt2 = nullptr;
+            auto stat = db.GetCachedStatement(stmt2, "SELECT DISTINCT ElementSchemaName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE AspectSchemaName = ?");
+            stmt2->BindText(1, aspectSchemaName, Statement::MakeCopy::No);
+            targets.push_back(Utf8String(aspectSchemaName));
+            while (stmt2->Step() == BE_SQLITE_ROW)
+                {
+                targets.push_back(stmt2->GetValueText(0));
+                }
+        }
+        Utf8String supported = BeStringUtilities::Join(targets, ",");
+        Utf8PrintfString purpose("%s specific", aspectSchemaName);
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(fileName, 1, 0, true, purpose, supported, "", false);
+        {
+            CachedStatementPtr stmt3 = nullptr;
+            auto stat = db.GetCachedStatement(stmt3, "SELECT DISTINCT ElementSchemaName, ElementClassName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE AspectSchemaName = ?");
+            stmt3->BindText(1, aspectSchemaName, Statement::MakeCopy::No);
+            while (stmt3->Step() == BE_SQLITE_ROW)
+                {
+                Utf8CP elementSchemaName = stmt3->GetValueText(0);
+                Utf8CP elementClassName = stmt3->GetValueText(1);
+                ContentModifierP modifier = new ContentModifier(elementSchemaName, elementClassName);
+                ruleset->AddPresentationRule(*modifier);
+                CachedStatementPtr stmt4 = nullptr;
+                db.GetCachedStatement(stmt4, "SELECT DISTINCT AspectClassName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE ElementSchemaName = ? AND ElementClassName = ? AND AspectSchemaName = ?");
+                stmt4->BindText(1, elementSchemaName, Statement::MakeCopy::No);
+                stmt4->BindText(2, elementClassName, Statement::MakeCopy::No);
+                stmt4->BindText(3, aspectSchemaName, Statement::MakeCopy::No);
+                while (stmt4->Step() == BE_SQLITE_ROW)
+                    {
+                    Utf8PrintfString fullName("%s:%s", aspectSchemaName, stmt4->GetValueText(0));
+                    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "BisCore:ElementOwnsMultiAspects", fullName, "", RelationshipMeaning::SameInstance));
+                    }
+                }
+
+        }
+        RuleSetEmbedder embedder(db);
+        embedder.Embed(*ruleset);
+        }
+    }
+
+//****************************************************************************************
 // V8ECSchemaXmlInfo
 //****************************************************************************************
 #define V8ECSCHEMAXML_TABLE "V8ECSchemaXml"
@@ -889,7 +1016,8 @@ DynamicSchemaGenerator::SchemaConversionScope::~SchemaConversionScope()
     if (!m_succeeded)
         {
         m_converter.SetEcConversionFailed();
-        m_converter.ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Error(), "Failed to transform the v8 ECSchemas to a BIS based ECSchema. Therefore EC content is not converted. See logs for details. Please try to adjust the v8 ECSchemas.");
+        if (!m_converter.m_ecConversionFailedDueToLockingError)
+            m_converter.ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Error(), "Failed to transform the v8 ECSchemas to a BIS based ECSchema. Therefore EC content is not converted. See logs for details. Please try to adjust the v8 ECSchemas.");
         }
     }
 
@@ -937,6 +1065,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
         BeFile outFile;
         outFile.Create(outPath.GetName());
         Utf8String xmlString(schemaXml);
+        xmlString.ReplaceAll("UTF-16", "utf-8");
         outFile.Write(nullptr, xmlString.c_str(), static_cast<uint32_t>(xmlString.size()));
 #endif
 
@@ -949,7 +1078,138 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          return BSIERROR;
          }
 
-    return SupplementV8ECSchemas();
+     if (BentleyApi::SUCCESS != SupplementV8ECSchemas())
+         return BSIERROR;
+
+     bvector<BECN::ECSchemaP> schemas;
+     m_schemaReadContext->GetCache().GetSchemas(schemas);
+     bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group", 
+         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
+     bool needsFlattening = false;
+     // It is possible that a schema will refer to one of the above schemas that needs flattening.  In such a situation, the reference needs to be updated to the flattened ref.  There is no
+     // easy way to replace a referenced schema.  Therefore, if one of the schemas in the set needs to be flattened, we just flatten everything which automatically updates the references.
+     for (BECN::ECSchemaP schema : schemas)
+         {
+         Utf8CP schemaName = schema->GetName().c_str();
+         auto found = std::find_if(schemasWithMultiInheritance.begin(), schemasWithMultiInheritance.end(), [schemaName] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(schemaName, reserved) == 0; });
+         if (found != schemasWithMultiInheritance.end())
+             {
+             needsFlattening = true;
+             break;
+             }
+         else if (schema->GetName().StartsWithI("ECXA_"))
+             {
+             needsFlattening = true;
+             break;
+             }
+         }
+
+     if (needsFlattening)
+         {
+         bvector<BECN::ECSchemaP> schemasCopy;
+         for (BECN::ECSchemaP schema : schemas)
+             schemasCopy.push_back(schema);
+
+         for (BECN::ECSchemaP schema : schemasCopy)
+             if (BSISUCCESS != FlattenSchemas(schema))
+                return BSIERROR;
+         }
+
+     schemas.clear();
+     m_schemaReadContext->GetCache().GetSchemas(schemas);
+
+//#define EXPORT_FLATTENEDECSCHEMAS 1
+#ifdef EXPORT_FLATTENEDECSCHEMAS
+     if (m_flattenedRefs.size() > 0)
+         {
+         BeFileName bimFileName = GetDgnDb().GetFileName();
+         BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
+         if (!outFolder.DoesPathExist())
+             BeFileName::CreateNewDirectory(outFolder.GetName());
+
+         for (const auto& sourceSchema : schemas)
+             {
+             WString fileName;
+             fileName.AssignUtf8(sourceSchema->GetFullSchemaName().c_str());
+             fileName.append(L".ecschema.xml");
+
+             BeFileName outPath(outFolder);
+             outPath.AppendToPath(fileName.c_str());
+
+             if (outPath.DoesPathExist())
+                 outPath.BeDeleteFile();
+
+             sourceSchema->WriteToXmlFile(outPath.GetName());
+
+             }
+         }
+#endif
+
+     for (BECN::ECSchemaP schema : schemas)
+         {
+         if (schema->IsSupplementalSchema())
+             continue;
+         if (!ECN::ECSchemaConverter::Convert(*schema, false))
+             {
+             Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
+             ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+             return BentleyApi::BSIERROR;
+             }
+         }
+
+     return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void DynamicSchemaGenerator::SwizzleOpenPlantSupplementals(bvector<BECN::ECSchemaPtr>& tmpSupplementals, BECN::ECSchemaP primarySchema, bvector<BECN::ECSchemaP> supplementalSchemas)
+    {
+    bool foundSupplemental = false;
+    bvector<BECN::ECSchemaP> baseSupplementals;
+    Utf8PrintfString suppName("%s_Supplemental", primarySchema->GetName().c_str());
+    suppName.ReplaceAll("_3D", "");
+    for (BECN::ECSchemaP supp : supplementalSchemas)
+        {
+        if (supp->GetName().StartsWithIAscii(suppName.c_str()))
+            baseSupplementals.push_back(supp);
+        }
+    for (BECN::ECSchemaP supp : baseSupplementals)
+        {
+        BECN::ECSchemaPtr op3d;
+        if (BECN::ECObjectsStatus::Success != supp->CopySchema(op3d))
+            {
+            Utf8String error;
+            error.Sprintf("Failed to create an %s copy of the base supplemental schema '%s'; Supplemental information will be unavailable. See log file for details.", primarySchema->GetName().c_str(), (supp->GetName()).c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
+            }
+
+        Utf8String oldName(op3d->GetName().c_str());
+        oldName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
+        op3d->SetName(oldName);
+        BECN::SupplementalSchemaMetaDataPtr metaData;
+        if (!BECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *op3d))
+            {
+            Utf8String error;
+            error.Sprintf("Failed to get supplemental metadata from supplemental schema '%s'; Supplemental information will be unavailable. See log file for details.", Utf8String(supp->GetName()).c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
+            }
+        BECN::IECInstancePtr instance = metaData->CreateCustomAttribute();
+        op3d->RemoveCustomAttribute("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
+        Utf8String newName(metaData->GetPrimarySchemaName());
+        newName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
+        BECN::SupplementalSchemaMetaDataPtr newMetaData = BECN::SupplementalSchemaMetaData::Create(newName.c_str(), metaData->GetPrimarySchemaReadVersion(), metaData->GetPrimarySchemaWriteVersion(),
+                                                                                                    metaData->GetPrimarySchemaMinorVersion(), metaData->GetSupplementalSchemaPrecedence(), metaData->GetSupplementalSchemaPurpose().c_str());
+        if (!ECN::ECSchema::IsSchemaReferenced(*op3d, instance->GetClass().GetSchema()))
+            {
+            BECN::ECClassP nonConstClass = const_cast<BECN::ECClassP>(&instance->GetClass());
+            op3d->AddReferencedSchema(nonConstClass->GetSchemaR());
+            }
+        BECN::SupplementalSchemaMetaData::SetMetadata(*op3d, *newMetaData);
+        tmpSupplementals.push_back(op3d);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1009,13 +1269,22 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
             supplementalSchemas.push_back(supplementalSchema.get ());
             }
         }
-    // _AddSupplementalSchemas(supplementalSchemas, *m_schemaReadContext);
+
+    bvector<BECN::ECSchemaPtr> tmpSupplementals;
     for (BECN::ECSchemaP primarySchema : primarySchemas)
         {
         if (primarySchema->IsSupplemented())
             {
             BeAssert(false && "V8 primary schemas are not expected to be supplemented already when deserialized from XML.");
             continue;
+            }
+
+        // Later versions of OP3D don't use a separate units schema for supplementation.  Instead, they share the OpenPlant version.  
+        if (primarySchema->GetName().EqualsIAscii("OpenPlant_3D") || primarySchema->GetName().EqualsIAscii("OpenPlant_PID"))
+            {
+            SwizzleOpenPlantSupplementals(tmpSupplementals, primarySchema, supplementalSchemas);
+            for (BECN::ECSchemaPtr supp : tmpSupplementals)
+                supplementalSchemas.push_back(supp.get());
             }
 
         BECN::SupplementedSchemaBuilder builder;
@@ -1025,12 +1294,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
             error.Sprintf("Failed to supplement ECSchema '%s'. See log file for details.", Utf8String(primarySchema->GetName ()).c_str());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
-            }
-        if (!ECN::ECSchemaConverter::Convert(*primarySchema, false))
-            {
-            Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", primarySchema->GetFullSchemaName().c_str());
-            ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-            return BentleyApi::BSIERROR;
             }
         }
 
@@ -1050,6 +1313,706 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::SupplementV8ECSchemas()
             }
         }
     return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAttributeContainerR targetContainer, ECN::IECCustomAttributeContainerCR sourceContainer)
+    {
+    for (ECN::IECInstancePtr instance : sourceContainer.GetCustomAttributes(true))
+        {
+        if (instance->GetClass().GetName().Equals("CalculatedECPropertySpecification") && instance->GetClass().GetSchema().GetName().Equals("Bentley_Standard_CustomAttributes"))
+            continue;
+
+        ECN::ECSchemaPtr flatCustomAttributeSchema = m_flattenedRefs[instance->GetClass().GetSchema().GetName()];
+        if (!flatCustomAttributeSchema.IsValid())
+            {
+            Utf8String error;
+            error.Sprintf("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
+            }
+        ECN::IECInstancePtr copiedCA = instance->CreateCopyThroughSerialization(*flatCustomAttributeSchema);
+        if (!copiedCA.IsValid())
+            {
+            Utf8String error;
+            error.Sprintf("Failed to copy custom attribute '%s'. Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
+            }
+        if (!ECN::ECSchema::IsSchemaReferenced(*targetContainer.GetContainerSchema(), *flatCustomAttributeSchema))
+            targetContainer.GetContainerSchema()->AddReferencedSchema(*flatCustomAttributeSchema);
+
+        targetContainer.SetCustomAttribute(*copiedCA);
+        }
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::CopyFlatConstraint(ECN::ECRelationshipConstraintR toRelationshipConstraint, ECN::ECRelationshipConstraintCR fromRelationshipConstraint)
+    {
+    if (fromRelationshipConstraint.IsRoleLabelDefined() && ECN::ECObjectsStatus::Success != toRelationshipConstraint.SetRoleLabel(fromRelationshipConstraint.GetInvariantRoleLabel().c_str()))
+        return BSIERROR;
+    if (ECN::ECObjectsStatus::Success != toRelationshipConstraint.SetMultiplicity(fromRelationshipConstraint.GetMultiplicity()))
+        return BSIERROR;
+    if (ECN::ECObjectsStatus::Success != toRelationshipConstraint.SetIsPolymorphic(fromRelationshipConstraint.GetIsPolymorphic()))
+        return BSIERROR;
+
+    ECN::ECSchemaP destSchema = const_cast<ECN::ECSchemaP>(&(toRelationshipConstraint.GetRelationshipClass().GetSchema()));
+
+    for (auto constraintClass : fromRelationshipConstraint.GetConstraintClasses())
+        {
+        if (fromRelationshipConstraint.GetRelationshipClass().GetSchema().GetSchemaKey() != constraintClass->GetSchema().GetSchemaKey())
+            {
+            ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[constraintClass->GetSchema().GetName()];
+            if (ECN::ECObjectsStatus::Success != toRelationshipConstraint.AddClass(*flatBaseSchema->GetClassP(constraintClass->GetName().c_str())->GetEntityClassCP()))
+                return BSIERROR;
+            }
+        else
+            {
+            ECN::ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+            if (nullptr == destConstraintClass)
+                {
+                // All classes should already have been created
+                return BSIERROR;
+                }
+            if (ECN::ECObjectsStatus::Success != toRelationshipConstraint.AddClass(*destConstraintClass->GetEntityClassCP()))
+                return BSIERROR;
+            }
+        }
+    CopyFlatCustomAttributes(toRelationshipConstraint, fromRelationshipConstraint);
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::CreateFlatClass(ECN::ECClassP& targetClass, ECN::ECSchemaP flatSchema, ECN::ECClassCP sourceClass)
+    {
+    ECN::ECRelationshipClassCP sourceAsRelationshipClass = sourceClass->GetRelationshipClassCP();
+    ECN::ECStructClassCP sourceAsStructClass = sourceClass->GetStructClassCP();
+    ECN::ECCustomAttributeClassCP sourceAsCAClass = sourceClass->GetCustomAttributeClassCP();
+    if (nullptr != sourceAsRelationshipClass)
+        {
+        ECN::ECRelationshipClassP newRelationshipClass;
+        if (ECN::ECObjectsStatus::Success != flatSchema->CreateRelationshipClass(newRelationshipClass, sourceClass->GetName()))
+            return BSIERROR;
+        newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
+        newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
+
+        CopyFlatConstraint(newRelationshipClass->GetSource(), sourceAsRelationshipClass->GetSource());
+        CopyFlatConstraint(newRelationshipClass->GetTarget(), sourceAsRelationshipClass->GetTarget());
+        targetClass = newRelationshipClass;
+        }
+    else if (nullptr != sourceAsStructClass)
+        {
+        ECN::ECStructClassP newStructClass;
+        if (ECN::ECObjectsStatus::Success != flatSchema->CreateStructClass(newStructClass, sourceClass->GetName()))
+            return BSIERROR;
+        targetClass = newStructClass;
+        }
+    else if (nullptr != sourceAsCAClass)
+        {
+        ECN::ECCustomAttributeClassP newCAClass;
+        if (ECN::ECObjectsStatus::Success != flatSchema->CreateCustomAttributeClass(newCAClass, sourceClass->GetName()))
+            return BSIERROR;
+        newCAClass->SetContainerType(sourceAsCAClass->GetContainerType());
+        targetClass = newCAClass;
+        }
+    else
+        {
+        ECN::ECEntityClassP newEntityClass;
+        if (ECN::ECObjectsStatus::Success != flatSchema->CreateEntityClass(newEntityClass, sourceClass->GetName()))
+            return BSIERROR;
+        targetClass = newEntityClass;
+        }
+
+    if (sourceClass->GetIsDisplayLabelDefined())
+        targetClass->SetDisplayLabel(sourceClass->GetInvariantDisplayLabel());
+    targetClass->SetDescription(sourceClass->GetInvariantDescription());
+    targetClass->SetClassModifier(sourceClass->GetClassModifier());
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::CopyFlatClass(ECN::ECClassP& targetClass, ECN::ECSchemaP flatSchema, ECN::ECClassCP sourceClass)
+    {
+    if (BSISUCCESS != CreateFlatClass(targetClass, flatSchema, sourceClass))
+        return BSIERROR;
+
+    for (ECN::ECPropertyCP sourceProperty : sourceClass->GetProperties(true))
+        {
+        if (BSISUCCESS != CopyFlattenedProperty(targetClass, sourceProperty))
+            return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::CopyFlattenedProperty(ECN::ECClassP targetClass, ECN::ECPropertyCP sourceProperty)
+    {
+    // Only copy properties either directly on the same class or on a base class that was dropped.  Don't copy properties from base classes that are still set
+    if (0 != strcmp(targetClass->GetFullName(), sourceProperty->GetClass().GetFullName()))
+        {
+        ECN::ECClassP targetPropertyClass = nullptr;
+        ECN::ECSchemaPtr flatSchema = m_flattenedRefs[sourceProperty->GetClass().GetSchema().GetName()];
+        if (!flatSchema.IsValid())
+            {
+            if (Utf8String(sourceProperty->GetClass().GetSchema().GetName()).StartsWithIAscii("SP3D"))
+                targetPropertyClass = targetClass->GetSchemaR().GetClassP(sourceProperty->GetClass().GetName().c_str());
+            else
+                return BSIERROR;
+            }
+        else
+            targetPropertyClass = flatSchema->GetClassP(sourceProperty->GetClass().GetName().c_str());
+        if (targetClass->Is(targetPropertyClass))
+            return BSISUCCESS;
+        }
+
+    ECN::ECPropertyP destProperty = nullptr;
+    if (sourceProperty->GetIsPrimitive())
+        {
+        ECN::PrimitiveECPropertyP destPrimitive;
+        ECN::PrimitiveECPropertyCP sourcePrimitive = sourceProperty->GetAsPrimitiveProperty();
+        ECN::ECEnumerationCP enumeration = sourcePrimitive->GetEnumeration();
+        if (nullptr != enumeration)
+            {
+            if (enumeration->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+                {
+                ECN::ECEnumerationP destEnum = targetClass->GetSchemaR().GetEnumerationP(enumeration->GetName().c_str());
+                if (nullptr == destEnum)
+                    {
+                    auto status = targetClass->GetSchemaR().CopyEnumeration(destEnum, *enumeration);
+                    if (ECN::ECObjectsStatus::Success != status && ECN::ECObjectsStatus::NamedItemAlreadyExists != status)
+                        return BSIERROR;
+                    }
+                targetClass->CreateEnumerationProperty(destPrimitive, sourceProperty->GetName(), *destEnum);
+                }
+            else
+                {
+                ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[enumeration->GetSchema().GetName()];
+                targetClass->CreateEnumerationProperty(destPrimitive, sourceProperty->GetName(), *flatBaseSchema->GetEnumerationP(enumeration->GetName().c_str()));
+                }
+            }
+        else
+            targetClass->CreatePrimitiveProperty(destPrimitive, sourceProperty->GetName(), sourcePrimitive->GetType());
+
+        if (sourcePrimitive->IsMinimumValueDefined())
+            {
+            ECN::ECValue valueToCopy;
+            sourcePrimitive->GetMinimumValue(valueToCopy);
+            destPrimitive->SetMinimumValue(valueToCopy);
+            }
+
+        if (sourcePrimitive->IsMaximumValueDefined())
+            {
+            ECN::ECValue valueToCopy;
+            sourcePrimitive->GetMaximumValue(valueToCopy);
+            destPrimitive->SetMaximumValue(valueToCopy);
+            }
+
+        if (sourcePrimitive->IsMinimumLengthDefined())
+            destPrimitive->SetMinimumLength(sourcePrimitive->GetMinimumLength());
+        if (sourcePrimitive->IsMaximumLengthDefined())
+            destPrimitive->SetMaximumLength(sourcePrimitive->GetMaximumLength());
+
+        if (sourcePrimitive->IsExtendedTypeDefinedLocally())
+            destPrimitive->SetExtendedTypeName(sourcePrimitive->GetExtendedTypeName().c_str());
+        destProperty = destPrimitive;
+        }
+    else if (sourceProperty->GetIsStructArray())
+        {
+        ECN::StructArrayECPropertyP destArray;
+        ECN::StructArrayECPropertyCP sourceArray = sourceProperty->GetAsStructArrayProperty();
+        ECN::ECStructClassCR structElementType = sourceArray->GetStructElementType();
+        if (structElementType.GetSchema().GetSchemaKey() == targetClass->GetSchema().GetSchemaKey())
+            {
+            ECN::ECClassP destClass = targetClass->GetSchemaR().GetClassP(structElementType.GetName().c_str());
+            if (nullptr == destClass)
+                {
+                auto status = CopyFlatClass(destClass, &(targetClass->GetSchemaR()), &structElementType);
+                if (BSISUCCESS != status)
+                    return BSIERROR;
+                }
+            targetClass->CreateStructArrayProperty(destArray, sourceProperty->GetName(), *destClass->GetStructClassCP());
+            }
+        else
+            {
+            ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[structElementType.GetSchema().GetName()];
+            targetClass->CreateStructArrayProperty(destArray, sourceProperty->GetName(), *flatBaseSchema->GetClassP(structElementType.GetName().c_str())->GetStructClassP());
+            }
+
+        destArray->SetMaxOccurs(sourceArray->GetStoredMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsPrimitiveArray())
+        {
+        ECN::PrimitiveArrayECPropertyP destArray;
+        ECN::PrimitiveArrayECPropertyCP sourceArray = sourceProperty->GetAsPrimitiveArrayProperty();
+        ECN::ECEnumerationCP enumeration = sourceArray->GetEnumeration();
+        if (nullptr != enumeration)
+            {
+            if (enumeration->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+                {
+                ECN::ECEnumerationP destEnum = targetClass->GetSchemaR().GetEnumerationP(enumeration->GetName().c_str());
+                if (nullptr == destEnum)
+                    {
+                    auto status = targetClass->GetSchemaR().CopyEnumeration(destEnum, *enumeration);
+                    if (ECN::ECObjectsStatus::Success != status && ECN::ECObjectsStatus::NamedItemAlreadyExists != status)
+                        return BSIERROR;
+                    }
+                targetClass->CreatePrimitiveArrayProperty(destArray, sourceProperty->GetName(), *destEnum);
+                }
+            else
+                {
+                ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[enumeration->GetSchema().GetName()];
+                targetClass->CreatePrimitiveArrayProperty(destArray, sourceProperty->GetName(), *flatBaseSchema->GetEnumerationP(enumeration->GetName().c_str()));
+                }
+            }
+        else
+            targetClass->CreatePrimitiveArrayProperty(destArray, sourceProperty->GetName(), sourceArray->GetPrimitiveElementType());
+
+        if (sourceArray->IsMinimumValueDefined())
+            {
+            ECN::ECValue valueToCopy;
+            sourceArray->GetMinimumValue(valueToCopy);
+            destArray->SetMinimumValue(valueToCopy);
+            }
+
+        if (sourceArray->IsMaximumValueDefined())
+            {
+            ECN::ECValue valueToCopy;
+            sourceArray->GetMaximumValue(valueToCopy);
+            destArray->SetMaximumValue(valueToCopy);
+            }
+
+        if (sourceArray->IsMinimumLengthDefined())
+            destArray->SetMinimumLength(sourceArray->GetMinimumLength());
+        if (sourceArray->IsMaximumLengthDefined())
+            destArray->SetMaximumLength(sourceArray->GetMaximumLength());
+
+        if (sourceArray->IsExtendedTypeDefinedLocally())
+            destArray->SetExtendedTypeName(sourceArray->GetExtendedTypeName().c_str());
+
+        destArray->SetMaxOccurs(sourceArray->GetStoredMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsStruct())
+        {
+        ECN::StructECPropertyP destStruct;
+        ECN::StructECPropertyCP sourceStruct = sourceProperty->GetAsStructProperty();
+        ECN::ECStructClassCR sourceType = sourceStruct->GetType();
+        if (sourceType.GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            ECN::ECClassP destClass = targetClass->GetSchemaR().GetClassP(sourceType.GetName().c_str());
+            if (nullptr == destClass)
+                {
+                auto status = CopyFlatClass(destClass, &(targetClass->GetSchemaR()), &sourceType);
+                if (BSISUCCESS != status)
+                    return BSIERROR;
+                }
+            targetClass->CreateStructProperty(destStruct, sourceProperty->GetName(), *destClass->GetStructClassP());
+            }
+        else
+            {
+            ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceType.GetSchema().GetName()];
+            if (!ECN::ECSchema::IsSchemaReferenced(targetClass->GetSchema(), *flatBaseSchema))
+                targetClass->GetSchemaR().AddReferencedSchema(*flatBaseSchema);
+            targetClass->CreateStructProperty(destStruct, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceType.GetName().c_str())->GetStructClassP());
+            }
+        destProperty = destStruct;
+        }
+    else if (sourceProperty->GetIsNavigation())
+        {
+        ECN::NavigationECPropertyP destNav;
+        ECN::NavigationECPropertyCP sourceNav = sourceProperty->GetAsNavigationProperty();
+
+        ECN::ECRelationshipClassCP sourceRelClass = sourceNav->GetRelationshipClass();
+        if (sourceRelClass->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            ECN::ECClassP destClass = targetClass->GetSchemaR().GetClassP(sourceRelClass->GetName().c_str());
+            if (nullptr == destClass)
+                {
+                auto status = CopyFlatClass(destClass, &(targetClass->GetSchemaR()), sourceRelClass);
+                if (BSISUCCESS != status)
+                    return BSIERROR;
+                }
+            targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *destClass->GetRelationshipClassCP(), sourceNav->GetDirection(), false);
+            }
+        else
+            {
+            ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceRelClass->GetSchema().GetName()];
+            targetClass->GetEntityClassP()->CreateNavigationProperty(destNav, sourceProperty->GetName(), *flatBaseSchema->GetClassP(sourceRelClass->GetName().c_str())->GetRelationshipClassP(), sourceNav->GetDirection(), false);
+            }
+        destProperty = destNav;
+        }
+
+    destProperty->SetDescription(sourceProperty->GetInvariantDescription());
+    if (sourceProperty->GetIsDisplayLabelDefined())
+        destProperty->SetDisplayLabel(sourceProperty->GetInvariantDisplayLabel());
+    destProperty->SetIsReadOnly(sourceProperty->IsReadOnlyFlagSet());
+    destProperty->SetPriority(sourceProperty->GetPriority());
+
+    if (sourceProperty->IsCategoryDefinedLocally())
+        {
+        ECN::PropertyCategoryCP sourcePropCategory = sourceProperty->GetCategory();
+        if (sourcePropCategory->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            ECN::PropertyCategoryP destPropCategory = targetClass->GetSchemaR().GetPropertyCategoryP(sourcePropCategory->GetName().c_str());
+            if (nullptr == destPropCategory)
+                {
+                auto status = targetClass->GetSchemaR().CopyPropertyCategory(destPropCategory, *sourcePropCategory);
+                if (ECN::ECObjectsStatus::Success != status && ECN::ECObjectsStatus::NamedItemAlreadyExists != status)
+                    return BSIERROR;
+                }
+            destProperty->SetCategory(destPropCategory);
+            }
+        else
+            {
+            ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourcePropCategory->GetSchema().GetName()];
+            destProperty->SetCategory(flatBaseSchema->GetPropertyCategoryP(sourcePropCategory->GetName().c_str()));
+            }
+        }
+
+    if (sourceProperty->IsKindOfQuantityDefinedLocally())
+        {
+        ECN::KindOfQuantityCP sourceKoq = sourceProperty->GetKindOfQuantity();
+        if (sourceKoq->GetSchema().GetSchemaKey() == sourceProperty->GetClass().GetSchema().GetSchemaKey())
+            {
+            ECN::KindOfQuantityP destKoq = targetClass->GetSchemaR().GetKindOfQuantityP(sourceKoq->GetName().c_str());
+            if (nullptr == destKoq)
+                {
+                auto status = targetClass->GetSchemaR().CopyKindOfQuantity(destKoq, *sourceKoq);
+                if (ECN::ECObjectsStatus::Success != status && ECN::ECObjectsStatus::NamedItemAlreadyExists != status)
+                    return BSIERROR;
+                }
+            destProperty->SetKindOfQuantity(destKoq);
+            }
+        else
+            {
+            ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceKoq->GetSchema().GetName()];
+            destProperty->SetKindOfQuantity(flatBaseSchema->GetKindOfQuantityP(sourceKoq->GetName().c_str()));
+            }
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void verifyDerivedClassesNotAbstract(ECN::ECClassP ecClass)
+    {
+    for (ECN::ECClassP derivedClass : ecClass->GetDerivedClasses())
+        {
+        if (ECN::ECClassModifier::Abstract == derivedClass->GetClassModifier())
+            derivedClass->SetClassModifier(ECN::ECClassModifier::None);
+        verifyDerivedClassesNotAbstract(derivedClass);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void verifyBaseClassAbstract(ECN::ECClassP ecClass)
+    {
+    // There are cases out there where a base class is non-abstract and has instances, yet a derived class (generally in another schema) is set to abstract.  Therefore, instead of setting
+    // the base classes Abstract, the derived class must be set as non-abstract
+    for (ECN::ECClassP baseClass : ecClass->GetBaseClasses())
+        {
+        if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(baseClass->GetSchema()))
+            continue;
+        if (ECN::ECClassModifier::Abstract != baseClass->GetClassModifier() && ECN::ECClassModifier::Abstract == ecClass->GetClassModifier())
+            {
+            ecClass->SetClassModifier(ECN::ECClassModifier::None);
+            verifyDerivedClassesNotAbstract(ecClass);
+            }
+        verifyBaseClassAbstract(baseClass);
+        }
+    }
+
+// Create the pseudo polymorphic hierarchy by keeping track of any derived class that was lost.
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void addDroppedDerivedClass(ECN::ECClassP baseClass, ECN::ECClassP derivedClass)
+    {
+    ECN::IECInstancePtr droppedInstance = baseClass->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldDerivedClasses");
+    if (!droppedInstance.IsValid())
+        droppedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("OldDerivedClasses");
+    if (!droppedInstance.IsValid())
+        {
+        LOG.warningv("Failed to create 'OldDerivedClasses' custom attribute for ECClass '%s'", baseClass->GetFullName());
+        return;
+        }
+    ECN::ECValue v;
+    droppedInstance->GetValue(v, "Classes");
+    Utf8String classes("");
+    if (!v.IsNull())
+        classes = Utf8String(v.GetUtf8CP()).append(";");
+
+    classes.append(derivedClass->GetFullName());
+
+    v.SetUtf8CP(classes.c_str());
+    if (ECN::ECObjectsStatus::Success != droppedInstance->SetValue("Classes", v))
+        {
+        LOG.warningv("Failed to create 'OldDerivedClasses' custom attribute for the ECClass '%s' with 'Classes' set to '%s'.", baseClass->GetFullName(), classes.c_str());
+        return;
+        }
+
+    if (!ECN::ECSchema::IsSchemaReferenced(baseClass->GetSchemaR(), droppedInstance->GetClass().GetSchema()))
+        {
+        ECN::ECClassP nonConstClass = const_cast<ECN::ECClassP>(&droppedInstance->GetClass());
+        if (ECN::ECObjectsStatus::Success != baseClass->GetSchemaR().AddReferencedSchema(nonConstClass->GetSchemaR()))
+            {
+            LOG.warningv("Failed to add %s as a referenced schema to %s.", droppedInstance->GetClass().GetSchema().GetName().c_str(), baseClass->GetSchemaR().GetName().c_str());
+            LOG.warningv("Failed to add 'OldDerivedClasses' custom attribute to ECClass '%s'.", baseClass->GetFullName());
+            return;
+            }
+        }
+
+    if (ECN::ECObjectsStatus::Success != baseClass->SetCustomAttribute(*droppedInstance))
+        {
+        LOG.warningv("Failed to add 'OldDerivedClasses' custom attribute, with 'PropertyMapping' set to '%s', to ECClass '%s'.", classes.c_str(), baseClass->GetFullName());
+        return;
+        }
+
+    LOG.debugv("Successfully added OldDerivedClasses custom attribute to ECClass '%s'", baseClass->GetFullName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
+    {
+    bvector<BECN::ECSchemaP> schemas;
+    ecSchema->FindAllSchemasInGraph(schemas, true);
+
+
+    for (ECN::ECSchemaP sourceSchema : schemas)
+        {
+        if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*sourceSchema))
+            {
+            m_flattenedRefs[sourceSchema->GetName()] = sourceSchema;
+            continue;
+            }
+
+        if (m_flattenedRefs.find(sourceSchema->GetName()) != m_flattenedRefs.end())
+            continue;
+
+        ECN::ECSchemaPtr flatSchema;
+        ECN::ECSchema::CreateSchema(flatSchema, sourceSchema->GetName(), sourceSchema->GetAlias(), sourceSchema->GetVersionRead(), sourceSchema->GetVersionWrite(), sourceSchema->GetVersionMinor(), sourceSchema->GetECVersion());
+        m_flattenedRefs[flatSchema->GetName()] = flatSchema.get();
+        flatSchema->SetOriginalECXmlVersion(2, 0);
+
+        ECN::ECSchemaReferenceListCR referencedSchemas = sourceSchema->GetReferencedSchemas();
+        for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+            {
+            ECN::ECSchemaPtr flatRefSchema = m_flattenedRefs[it->second->GetName()];
+            flatSchema->AddReferencedSchema(*flatRefSchema);
+            }
+
+        CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
+
+        bvector<ECN::ECClassCP> relationshipClasses;
+        for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
+            {
+            ECN::ECClassP targetClass = nullptr;
+            if (sourceClass->IsRelationshipClass())
+                {
+                relationshipClasses.push_back(sourceClass);
+                continue;
+                }
+            CreateFlatClass(targetClass, flatSchema.get(), sourceClass);
+            }
+
+        // Need to make sure that all constraint classes are already created
+        for (ECN::ECClassCP sourceClass : relationshipClasses)
+            {
+            ECN::ECClassP targetClass = nullptr;
+            CreateFlatClass(targetClass, flatSchema.get(), sourceClass);
+            }
+
+        ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
+        if (flattenedInstance.IsValid())
+            {
+            if (!ECN::ECSchema::IsSchemaReferenced(flattenedInstance->GetClass().GetSchema(), *flatSchema))
+                {
+                ECN::ECClassCR constClass = flattenedInstance->GetClass();
+                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&constClass);
+                flatSchema->AddReferencedSchema(nonConst->GetSchemaR());
+                }
+            flatSchema->SetCustomAttribute(*flattenedInstance);
+            }
+
+        for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
+            {
+            ECN::ECClassP targetClass = flatSchema->GetClassP(sourceClass->GetName().c_str());
+
+            const ECN::ECBaseClassesList& baseClasses = sourceClass->GetBaseClasses();
+            int totalBaseClasses = 0;
+            int baseClassesFromSchema = 0;
+            for (ECN::ECClassP sourceBaseClass : baseClasses)
+                {
+                totalBaseClasses++;
+                if (sourceBaseClass->GetSchema().GetName().EqualsIAscii(sourceClass->GetSchema().GetName().c_str()))
+                    baseClassesFromSchema++;
+                }
+
+            if (totalBaseClasses == 1)
+                {
+                for (ECN::ECClassP sourceBaseClass : baseClasses)
+                    {
+                    ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceBaseClass->GetSchema().GetName()];
+                    if (!flatBaseSchema.IsValid())
+                        return BSIERROR;
+                    targetClass->AddBaseClass(*flatBaseSchema->GetClassCP(sourceBaseClass->GetName().c_str()), false, false, false);
+                    }
+                }
+            else if (baseClassesFromSchema < 2)
+                {
+                for (ECN::ECClassP sourceBaseClass : baseClasses)
+                    {
+                    if (sourceBaseClass->GetSchema().GetName().EqualsIAscii(sourceClass->GetSchema().GetName().c_str()))
+                        {
+                        targetClass->AddBaseClass(*flatSchema->GetClassCP(sourceBaseClass->GetName().c_str()), false, false, false);
+                        }
+                    else
+                        {
+                        ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceBaseClass->GetSchema().GetName()];
+                        if (!flatBaseSchema.IsValid())
+                            continue;
+                        ECN::ECClassP flatBase = flatBaseSchema->GetClassP(sourceBaseClass->GetName().c_str());
+                        addDroppedDerivedClass(flatBase, targetClass);
+                        }
+                    }
+                }
+            else if (totalBaseClasses > 1)
+                {
+                for (ECN::ECClassP baseClass : baseClasses)
+                    {
+                    ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[baseClass->GetSchema().GetName()];
+                    if (!flatBaseSchema.IsValid())
+                        continue;
+                    ECN::ECClassP flatBase = flatBaseSchema->GetClassP(baseClass->GetName().c_str());
+                    addDroppedDerivedClass(flatBase, targetClass);
+                    }
+                }
+            if (targetClass->GetClassModifier() == ECN::ECClassModifier::Abstract)
+                verifyBaseClassAbstract(targetClass);
+            }
+
+        // This needs to happen after all of the baseclasses have been set.
+        for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
+            {
+            ECN::ECClassP targetClass = flatSchema->GetClassP(sourceClass->GetName().c_str());
+            for (ECN::ECPropertyCP sourceProperty : sourceClass->GetProperties(true))
+                {
+                if (BSISUCCESS != CopyFlattenedProperty(targetClass, sourceProperty))
+                    return BSIERROR;
+                }
+            }
+        // This needs to happen after we have copied all of the properties for all of the classes as the custom attributes could be defined locally
+        for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
+            {
+            ECN::ECClassP targetClass = flatSchema->GetClassP(sourceClass->GetName().c_str());
+            CopyFlatCustomAttributes(*targetClass, *sourceClass);
+            for (ECN::ECPropertyCP sourceProperty : sourceClass->GetProperties(true))
+                {
+                ECN::ECPropertyP targetProperty = targetClass->GetPropertyP(sourceProperty->GetName().c_str());
+                CopyFlatCustomAttributes(*targetProperty, *sourceProperty);
+                }
+            }
+        }
+
+    for (ECN::ECSchemaP sourceSchema : schemas)
+        {
+        Utf8String sourceSchemaName(sourceSchema->GetName().c_str());
+        m_schemaReadContext->GetCache().DropSchema(sourceSchema->GetSchemaKey());
+        m_schemaReadContext->AddSchema(*m_flattenedRefs[sourceSchemaName]);
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject)
+    {
+    bool wasFlattened = false;
+    for (BECN::ECClassP ecClass : schema->GetClasses())
+        {
+        BECN::ECEntityClassP entityClass = ecClass->GetEntityClassP();
+        // Classes derived from BaseObject can have multiple BaseInterface-derived base classes, but only one BaseObject base class
+        // Classes derived from BaseInterface can only have one base class
+        if (nullptr == entityClass)
+            continue;
+        if (!ecClass->Is(baseInterface) && !ecClass->Is(baseObject))
+            continue;
+        else if (ecClass->HasBaseClasses())
+            {
+            bool isInterface = ecClass->Is(baseInterface) && !ecClass->Is(baseObject);
+            int baseClassCounter = 0;
+            bvector<ECN::ECClassP> toRemove;
+            for (auto& baseClass : ecClass->GetBaseClasses())
+                {
+                ECN::ECEntityClassCP asEntity = baseClass->GetEntityClassCP();
+                if (nullptr == asEntity)
+                    continue;
+                else if (!isInterface && !asEntity->Is(baseObject))
+                    continue;
+                baseClassCounter++;
+                if (baseClassCounter > 1)
+                    toRemove.push_back(baseClass);
+                }
+            for (auto& baseClass : toRemove)
+                {
+                ecClass->RemoveBaseClass(*baseClass);
+                addDroppedDerivedClass(baseClass, ecClass);
+                for (ECN::ECPropertyCP sourceProperty : baseClass->GetProperties(true))
+                    {
+                    if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(sourceProperty->GetClass().GetSchema()))
+                        continue;
+
+                    if (nullptr != ecClass->GetPropertyP(sourceProperty->GetName().c_str(), true))
+                        continue;
+                    if (BSISUCCESS != CopyFlattenedProperty(ecClass, sourceProperty))
+                        return;
+                    }
+                wasFlattened = true;
+                }
+            }
+
+        if (ecClass->GetClassModifier() == ECN::ECClassModifier::Abstract)
+            verifyBaseClassAbstract(ecClass);
+        }
+
+    if (wasFlattened)
+        {
+        ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
+        if (flattenedInstance.IsValid())
+            {
+            if (!ECN::ECSchema::IsSchemaReferenced(flattenedInstance->GetClass().GetSchema(), *schema))
+                {
+                ECN::ECClassCR constClass = flattenedInstance->GetClass();
+                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&constClass);
+                schema->AddReferencedSchema(nonConst->GetSchemaR());
+                }
+            schema->SetCustomAttribute(*flattenedInstance);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1110,6 +2073,28 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandl
     return BentleyApi::SUCCESS;
     }
 
+static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
+    "BaseElementSchema",
+    "BentleyDesignLinksPersistence",
+    "BentleyDesignLinksPresetnation",
+    "BentleyDrawingLinksPersistence",
+    "DetailSymbolExtender",
+    "DgnComponentSchema",
+    "DgnContentRelationshipSchema",
+    "DgnCustomAttributes",
+    "DgnElementSchema",
+    "DgnFileSchema",
+    "DgnindexQueryschema",
+    "DgnLevelSchema",
+    "DgnModelSchema",
+    "DgnPointCloudSchema",
+    "DgnTextStyleObjSchema",
+    "DgnVisualizationObjSchema",
+    "ExtendedElementSchema",
+    "MstnPropertyFormatter",
+    "Ustn_ElementParams",
+    "DTMElement_TemplateExtender_Schema"
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
@@ -1124,11 +2109,16 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         auto& ecClass = ecClassInfo.first;
         bool isPrimary = ecClassInfo.second;
         
+        Utf8String v8SchemaName(ecClass.m_schemaName.c_str());
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        if (found != s_dgnV8DeliveredSchemas.end())
+            continue;
+
         // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
         if (isPrimary && ecClass.m_schemaName.Equals(Converter::GetV8TagSetDefinitionSchemaName()))
             isPrimary = false;
         
-        ECClassName v8ClassName(Utf8String(ecClass.m_schemaName.c_str()).c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
+        ECClassName v8ClassName(v8SchemaName.c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
         ECN::SchemaKey conversionKey(Utf8String(v8ClassName.GetSchemaName()).append("_DgnDbSync").c_str(), 1, 0);
         ECN::ECSchemaPtr conversionSchema = m_syncReadContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
         bool namedGroupOwnsMembers = false;
@@ -1142,6 +2132,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
             return BSIERROR;
+        m_hasECContent = true;
         }
 
     return BentleyApi::SUCCESS;
@@ -1159,6 +2150,22 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
 
     bset<BECN::ECClassP> rootClasses;
     bset<BECN::ECRelationshipClassP> relationshipClasses;
+
+    // SP3D schemas can have multi-inheritance in addition to the mixins.  We need to remove any subsequent base classes
+    for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
+        {
+        BECN::ECSchemaP schema = kvpair.second;
+        if (schema->GetName().StartsWithIAscii("SP3D"))
+            {
+            BisClassConverter::SchemaConversionContext::MixinContext* mixinContext = context.GetMixinContext(*schema);
+            if (mixinContext == nullptr)
+                continue;
+
+            BECN::ECClassCP baseInterface = mixinContext->first;
+            BECN::ECClassCP baseObject = mixinContext->second;
+            ProcessSP3DSchema(schema, baseInterface, baseObject);
+            }
+        }
 
     for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
         {
@@ -1363,14 +2370,78 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
 
-    if (SchemaStatus::Success != GetDgnDb().ImportV8LegacySchemas(constSchemas))
+    auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
+    if (SchemaStatus::Success != importStatus)
         {
+        //By design ECDb must not do transaction management itself. A failed schema import can have changed the dgndb though. 
+        //So we must abandon these changes.
+        //(Cannot use Savepoints, as the change tracker might be enabled)
+        GetDgnDb().AbandonChanges();
+        m_ecConversionFailedDueToLockingError = (SchemaStatus::SchemaLockFailed == importStatus);
+        auto cat = Converter::IssueCategory::Briefcase();
+        auto issue = (SchemaStatus::SchemaLockFailed == importStatus)           ? Converter::Issue::SchemaLockFailed():
+                     (SchemaStatus::CouldNotAcquireLocksOrCodes == importStatus)? Converter::Issue::CouldNotAcquireLocksOrCodes():
+                                                                                  Converter::Issue::ImportTargetECSchemas();
+        ReportError(cat, issue, "");        // NB! This is NOT a fatal error! This should NOT abort the converter!
         return BentleyApi::ERROR;
         }
 
     m_anyImported = true;
 
+    if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+        {
+        StopWatch timer(true);
+        ValidateSchemas(constSchemas);
+        ConverterLogging::LogPerformance(timer, "Convert Schemas> Validate V8 ECSchemas");
+        }
     return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void DynamicSchemaGenerator::ValidateSchemas(bvector<BECN::ECSchemaCP>& importedSchemas)
+    {
+
+    for (BECN::ECSchemaCP importedSchema : importedSchemas)
+        {
+        bmap<Utf8String, ECObjectsV8::ECSchemaPtr>::const_iterator it = m_v8Schemas.find(importedSchema->GetName());
+        if (it == m_v8Schemas.end())
+            continue;
+
+        SchemaRemapper mapper(m_converter);
+
+        for (auto& v8class : it->second->GetClasses())
+            {
+            ECObjectsV8::ECRelationshipClassCP relClass = v8class->GetRelationshipClassCP();
+            if (nullptr != relClass)
+                continue;
+            BentleyApi::ECN::ECClassCP ecClass = importedSchema->GetClassCP(Utf8String(v8class->GetName().c_str()).c_str());
+            if (nullptr == ecClass)
+                {
+                Utf8PrintfString aspectName("%s%s", Utf8String(v8class->GetName().c_str()).c_str(), BIS_CLASS_ElementAspect);
+                ecClass = importedSchema->GetClassCP(aspectName.c_str());
+                if (nullptr == ecClass)
+                    {
+                    LOG.warningv("Unable to find entity class %s in imported schema", Utf8String(v8class->GetFullName()).c_str());
+                    continue;
+                    }
+                }
+            for (auto& v8prop : v8class->GetProperties(true))
+                {
+                BentleyApi::ECN::ECPropertyP prop = ecClass->GetPropertyP(v8prop->GetName().c_str());
+                if (nullptr == prop)
+                    {
+                    Utf8String v8PropName(v8prop->GetName().c_str());
+                    if (mapper.ResolvePropertyName(v8PropName, *ecClass))
+                        prop = ecClass->GetPropertyP(v8PropName);
+                    if (nullptr == prop)
+                        LOG.warningv("Schema Validation: Failed to find %s:%s", Utf8String(v8class->GetFullName()).c_str(), v8PropName.c_str());
+                    }
+                }
+            }
+
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1404,10 +2475,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
         ECObjectsV8::SchemaKey& schemaKey = v8SchemaInfo.GetSchemaKeyR();
         if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
             LOG.tracev(L"Schema %ls - File: %ls - Location: %ls - %ls - Provider: %ls", schemaKey.GetFullSchemaName().c_str(),
-            v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
-            v8SchemaInfo.GetLocation(),
-            v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
-            v8SchemaInfo.GetProviderName());
+                       v8SchemaInfo.GetDgnFile().GetFileName().c_str(),
+                       v8SchemaInfo.GetLocation(),
+                       v8SchemaInfo.IsStoredSchema() ? L"Stored" : L"External",
+                       v8SchemaInfo.GetProviderName());
 
         //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
 
@@ -1431,6 +2502,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
             schemaKey.m_checkSum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
 
             isDynamicSchema = IsDynamicSchema(schemaName, schemaXml);
+
+            // If we're validating schemas, then we need to retrieve the actual V8 schema
+            if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+                {
+                if (m_v8Schemas.find(schemaName.c_str()) == m_v8Schemas.end())
+                    {
+                    ECObjectsV8::ECSchemaPtr v8Schema = dgnv8EC.LocateSchemaInDgnFile(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact, true);
+                    if (v8Schema.IsValid())
+                        m_v8Schemas[schemaName.c_str()] = v8Schema;
+                    }
+                }
             }
         else
             {
@@ -1440,7 +2522,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
             //TBD: DgnECManager doesn't seem to allow to just return the schema xml (Is this possible somehow?)
             //So we need to get the ECSchema and then serialize it to a string.
             //(we need the string anyways as this is the only way to marshal the schema from v8 to Graphite)
-            auto externalSchema = dgnv8EC.LocateExternalSchema(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact);
+            auto externalSchema = dgnv8EC.LocateExternalSchema(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_LatestCompatible);
             if (externalSchema == nullptr)
                 {
                 Utf8PrintfString error("Could not locate external v8 ECSchema %s.  Instances of classes from this schema will not be converted.", schemaName.c_str());
@@ -1456,81 +2538,133 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
                 ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::Message(), nullptr, error.c_str());
                 continue;
                 }
-            }
-
-        BECN::SchemaKey existingSchemaKey;
-        SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
-        if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
-            {
-            //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
-            //and also check whether the existing one and the new one are compatible.
-
-            if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
+            if (BSIERROR == ProcessReferenceSchemasFromExternal(*externalSchema, v8Model))
+                return BSIERROR;
+            if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
                 {
-                if (!isDynamicSchema)
+                if (m_v8Schemas.find(schemaName.c_str()) == m_v8Schemas.end())
                     {
-                    Utf8String error;
-                    error.Sprintf("Dynamic ECSchema %s already found in the V8 file. Copy in model %s is not dynamic and therefore ignored.",
-                                  schemaName.c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
-                    ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                    continue;
+                    m_v8Schemas[schemaName.c_str()] = externalSchema;
                     }
-                }
-            else
-                {
-                if (isDynamicSchema)
+                ECObjectsV8::ECSchemaReferenceListCR referencedSchemas = externalSchema->GetReferencedSchemas();
+                for (ECObjectsV8::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
                     {
-                    Utf8String error;
-                    error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
-                                  Utf8String(existingSchemaKey.GetFullSchemaName()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
-                    ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                    continue;
-                    }
-
-                const int majorDiff = existingSchemaKey.GetVersionRead() - schemaKey.GetVersionMajor();
-                const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
-                const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
-
-                if (existingToNewVersionDiff >= 0)
-                    {
-                    if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
+                    if (m_v8Schemas.find(Utf8String(it->second->GetName().c_str())) == m_v8Schemas.end())
                         {
-                        Utf8String error;
-                        error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
-                                      existingSchemaKey.GetFullSchemaName().c_str(), existingSchemaKey.m_checkSum,
-                                      Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
-                        ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                        m_v8Schemas[Utf8String(it->second->GetName().c_str())] = it->second;
                         }
-                    else
-                        continue;
                     }
                 }
             }
 
-        ECN::ECSchemaId schemaId;
-        if (BE_SQLITE_OK != GetSyncInfo().InsertECSchema(schemaId, *v8Model.GetDgnFileP(),
-                                                 schemaName.c_str(),
-                                                 schemaKey.GetVersionMajor(),
-                                                 schemaKey.GetVersionMinor(),
-                                                 isDynamicSchema,
-                                                 schemaKey.m_checkSum))
-            {
-            BeAssert(false && "Failed to insert ECSchema sync info");
+        if (BSIERROR == ProcessSchemaXml(schemaKey, schemaXml.c_str(), isDynamicSchema, v8Model))
             return BSIERROR;
-            }
-
-        BeAssert(schemaId.IsValid());
-
-        if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(GetDgnDb(), schemaId, schemaXml.c_str()))
-            {
-            BeAssert(false && "Could not insert foreign schema xml");
-            return BSIERROR;
-            }
-
-        m_skipECContent = false;
         }
+    m_skipECContent = false;
 
     return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObjectsV8::ECSchemaCR schema, DgnV8ModelR v8Model)
+    {
+
+    ECObjectsV8::ECSchemaReferenceListCR referencedSchemas = schema.GetReferencedSchemas();
+    for (ECObjectsV8::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        ECObjectsV8::ECSchemaPtr refSchema = it->second;
+        Bentley::Utf8String refSchemaXml;
+        if (ECObjectsV8::SCHEMA_WRITE_STATUS_Success != refSchema->WriteToXmlString(refSchemaXml))
+            {
+            Utf8PrintfString error("Could not serialize externally referenced v8 ECSchema %s.  Instances of classes from this schema will not be converted.", refSchema->GetName().c_str());
+            ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::Message(), nullptr, error.c_str());
+            return BSIERROR;
+            }
+        if (BSISUCCESS != ProcessSchemaXml(refSchema->GetSchemaKey(), refSchemaXml.c_str(), IsDynamicSchema(*refSchema), v8Model))
+            return BSIERROR;
+        ProcessReferenceSchemasFromExternal(*refSchema, v8Model);
+        }
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
+    {
+    Bentley::Utf8String schemaName(schemaKey.GetName());
+    BECN::SchemaKey existingSchemaKey;
+    SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
+        {
+        //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
+        //and also check whether the existing one and the new one are compatible.
+
+        if (existingMappingType == SyncInfo::ECSchemaMappingType::Dynamic)
+            {
+            if (!isDynamicSchema)
+                {
+                Utf8String error;
+                error.Sprintf("Dynamic ECSchema %s already found in the V8 file. Copy in model %s is not dynamic and therefore ignored.",
+                              schemaName.c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
+                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                return BSISUCCESS;
+                }
+            }
+        else
+            {
+            if (isDynamicSchema)
+                {
+                Utf8String error;
+                error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
+                              Utf8String(existingSchemaKey.GetFullSchemaName()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
+                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                return BSISUCCESS;
+                }
+
+            const int majorDiff = existingSchemaKey.GetVersionRead() - schemaKey.GetVersionMajor();
+            const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
+            const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
+
+            if (existingToNewVersionDiff >= 0)
+                {
+                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
+                    {
+                    Utf8String error;
+                    error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
+                                  existingSchemaKey.GetFullSchemaName().c_str(), existingSchemaKey.m_checkSum,
+                                  Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
+                    ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                    }
+                else
+                    return BSISUCCESS;
+                }
+            }
+        }
+
+    ECN::ECSchemaId schemaId;
+    if (BE_SQLITE_OK != GetSyncInfo().InsertECSchema(schemaId, *v8Model.GetDgnFileP(),
+                                                     schemaName.c_str(),
+                                                     schemaKey.GetVersionMajor(),
+                                                     schemaKey.GetVersionMinor(),
+                                                     isDynamicSchema,
+                                                     schemaKey.m_checkSum))
+        {
+        BeAssert(false && "Failed to insert ECSchema sync info");
+        return BSIERROR;
+        }
+
+    BeAssert(schemaId.IsValid());
+
+    if (BE_SQLITE_OK != V8ECSchemaXmlInfo::Insert(GetDgnDb(), schemaId, schemaXml))
+        {
+        BeAssert(false && "Could not insert foreign schema xml");
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1569,6 +2703,53 @@ bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR sche
         schemaName.EqualsI("CivilSchema_iModel") ||
         schemaName.EqualsI("BuildingDataGroup");
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2017
+//---------------+---------------+---------------+--------------c-+---------------+-------
+//BentleyStatus Converter::LastResortSchemaImport()
+//    {
+//    // Schema Import failed.  Therefore, start over and this time just turn everything into an ElementAspect instead
+//    InitializeECSchemaConversion();
+//    BentleyApi::ECN::ConversionCustomAttributeHelper::Reset();
+//    V8NamedGroupInfo::Reset();
+
+//    ConsolidateV8ECSchemas();
+
+//    BisClassConverter::SchemaConversionContext context(*this, *m_schemaReadContext, *m_syncReadContext, m_config.GetOptionValueBool("AutoDetectMixinParams", true));
+//    for (bpair<Utf8String, BECN::ECSchemaP> const& kvpair : context.GetSchemas())
+//        {
+//        BECN::ECSchemaP schema = kvpair.second;
+//        //only interested in the domain schemas, so skip standard, system and supp schemas
+//        if (context.ExcludeSchemaFromBisification(*schema))
+//            continue;
+
+//        bvector<BECN::ECClassP> relationships;
+//        for (BECN::ECClassP v8Class : schema->GetClasses())
+//            {
+//            ECClassName v8ClassName(*v8Class);
+
+//            BisConversionRule existingRule;
+//            BECN::ECClassId existingV8ClassId;
+//            bool hasSecondary;
+//            const bool alreadyExists = V8ECClassInfo::TryFind(existingV8ClassId, existingRule, context.GetDgnDb(), v8ClassName, hasSecondary);
+
+//            if (v8Class->IsRelationshipClass())
+//                relationships.push_back(v8Class);
+//            else if (BSISUCCESS != V8ECClassInfo::Update(*this, existingV8ClassId, BisConversionRule::ToAspectOnly))
+//                return BSIERROR;
+//            }
+//        for (BECN::ECClassP rel : relationships)
+//            schema->DeleteClass(*rel);
+//        }
+//    if (BentleyApi::SUCCESS != ConvertToBisBasedECSchemas())
+//        return BSIERROR;
+
+//    if (BentleyApi::SUCCESS != ImportTargetECSchemas())
+//        return BSIERROR;
+
+//    return BSISUCCESS;
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2014
@@ -1662,6 +2843,12 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             continue;
             }
 
+        // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
+        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(Utf8String(v8SchemaInfo.GetSchemaName())))
+            {
+            m_needReimportSchemas = true;
+            continue;
+            }
         Bentley::Utf8String schemaXml;
         uint32_t checksum = -1;
         if (v8SchemaInfo.IsStoredSchema())
@@ -1772,6 +2959,12 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Analyze V8 EC content");
 
+    if (!m_hasECContent)
+        {
+        scope.SetSucceeded();
+        return;
+        }
+
     SetStepName(Converter::ProgressMessage::STEP_IMPORT_SCHEMAS());
 
     timer.Start();
@@ -1784,7 +2977,10 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
     timer.Start();
 
     if (BentleyApi::SUCCESS != ImportTargetECSchemas())
-        return;
+        {
+        // if (BentleyApi::SUCCESS != LastResortSchemaImport())
+            return;
+        }
 
     ReportProgress();
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Import ECSchemas");
@@ -1855,7 +3051,7 @@ void SpatialConverterBase::CreateProvenanceTables()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrder, bvector<DgnV8ModelP> const& modelsInOrder)
+BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrder, bvector<DgnV8ModelP> const& modelsInOrder)
     {
     // NB: This function is called at initialization time as part of a schema-changes-only revision.
     //      *** DO NOT CONVERT MODELS OR ELEMENTS. ***
@@ -1883,12 +3079,12 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         if (true)
             {
             StopWatch timer(true);
-            _ConvertDgnV8Tags(filesInOrder);
+            _ConvertDgnV8Tags(filesInOrder, modelsInOrder);
             ConverterLogging::LogPerformance(timer, "Convert Dgn V8Tags");
             }
 
         if (WasAborted())
-            return;
+            return BSIERROR;
 
         // *******
         // WARNING: GenerateSchemas calls Db::AbandonChanges if import fails! Make sure you commit your work before calling GenerateSchemas!
@@ -1898,10 +3094,13 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         gen.GenerateSchemas(filesInOrder, modelsInOrder);
 
         m_skipECContent = gen.GetEcConversionFailed();
+
+        if (gen.DidEcConversionFailDueToLockingError())
+            return BSIERROR;    // This is a re-try-able failure, not a fatal error that should stop the conversion
         }
 
     if (WasAborted())
-        return;
+        return BSIERROR;
 
     GetDgnDb().SaveChanges();
 
@@ -1909,7 +3108,7 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
     importHandlerExtensionsSchema(*this);
 
     if (WasAborted())
-        return;
+        return BSIERROR;
 
     GetDgnDb().SaveChanges();
 
@@ -1922,7 +3121,7 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         }
 
     if (WasAborted())
-        return;
+        return BSIERROR;
 
     GetDgnDb().SaveChanges();
 
@@ -1937,12 +3136,13 @@ void SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& filesInOrd
         }
 
     GetDgnDb().SaveChanges();
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::MakeSchemaChanges()
+BentleyStatus RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
@@ -1953,15 +3153,17 @@ void RootModelConverter::MakeSchemaChanges()
     auto cmp = [&](DgnV8ModelP a, DgnV8ModelP b) { return IsLessInMappingOrder(a,b); };
     std::sort(modelsInFMOrder.begin(), modelsInFMOrder.end(), cmp);
 
-    T_Super::MakeSchemaChanges(m_v8Files, modelsInFMOrder);
+    auto status = T_Super::MakeSchemaChanges(m_v8Files, modelsInFMOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TiledFileConverter::MakeSchemaChanges()
+BentleyStatus TiledFileConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
@@ -1973,9 +3175,11 @@ void TiledFileConverter::MakeSchemaChanges()
 
     GetV8FileSyncInfoId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 
-    T_Super::MakeSchemaChanges(filesInOrder, modelsInOrder);
+    auto status = T_Super::MakeSchemaChanges(filesInOrder, modelsInOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
+
+    return status;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

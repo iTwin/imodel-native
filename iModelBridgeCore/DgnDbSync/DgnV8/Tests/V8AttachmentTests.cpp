@@ -337,10 +337,10 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
     countModels(*db, 0, 4);
 
     // Should have 1 of each of these elements:
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
-    countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
+    countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
 
     BentleyApi::Bstdcxx::bvector<DgnModelId>idlist;
     idlist = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();

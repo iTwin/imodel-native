@@ -27,7 +27,7 @@ private:
     iModelBridge::Params& _GetParams() override {return m_params;}
     CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]);
     BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
-    BentleyStatus _MakeSchemaChanges() {m_converter->MakeSchemaChanges(); return m_converter->WasAborted()? BSIERROR: BSISUCCESS;}
+    BentleyStatus _MakeSchemaChanges() {return ((BSISUCCESS != m_converter->MakeSchemaChanges()) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;}
     BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     Dgn::SubjectCPtr _InitializeJob() override;
     BentleyStatus _OnOpenBim(DgnDbR db) override;
@@ -107,6 +107,7 @@ BentleyStatus TiledConverterApp::_OnOpenBim(DgnDbR db)
     {
     m_converter.reset(new TiledFileConverter(m_params));
     m_converter->SetDgnDb(db);
+    CreateSyncInfoIfNecessary();
     return m_converter->AttachSyncInfo();
     }
 

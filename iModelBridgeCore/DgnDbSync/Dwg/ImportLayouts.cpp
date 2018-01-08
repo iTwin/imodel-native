@@ -167,9 +167,6 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     if (resetPDSIZE)
         m_dwgdb->SetPDSIZE (currentPDSIZE);
 
-    // free memory
-    m_dgndb->Memory().PurgeUntil(1024 * 1024);
-
     return  BSISUCCESS;
     }
 
@@ -200,7 +197,7 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
         // get the model ID
         DwgDbObjectId   modelId = entry.GetModelInstanceId ();
         // skip all models expcept for paperspaces:
-        if (modelspaceId == modelId || entry.GetMapping().GetSourceType() != DwgSyncInfo::ModelSourceType::ModelOrPaperSpace)
+        if (modelspaceId == modelId || entry.GetMapping().GetSourceType() != DwgSyncInfo::ModelSourceType::PaperSpace)
             continue;
 
         DwgDbBlockTableRecordPtr    block(modelId, DwgDbOpenMode::ForRead);

@@ -38,6 +38,12 @@ void UpdaterChangeDetector::_Prepare (DwgImporter& importer)
     {
     m_byIdIter   = new DwgSyncInfo::ByDwgObjectIdIter (importer.GetDgnDb());
     m_byHashIter = new DwgSyncInfo::ByHashIter (importer.GetDgnDb());
+
+#ifdef DEBUG_CHECKENTITY
+    DwgSyncInfo::ElementIterator  all(importer.GetDgnDb(), nullptr);
+    for (auto el = all.begin(); el != all.end(); ++el)
+        LOG_ENTITY.debugv("Seen elementId=%lld, entityId=%lld[%x], syncModelId=%d", el.GetElementId(), el.GetDwgObjectId(), el.GetDwgObjectId(), el.GetDwgModelSyncInfoId().GetValue());
+#endif  // DEBUG_CHECKENTITY
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,8 +215,9 @@ bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, Dwg
 
 #ifdef DEBUG_CHECKENTITY
     uint64_t    entityId = obj.GetObjectId().ToUInt64 ();
+    DwgString   name = obj.GetDxfName ();
     DwgSyncInfo::DwgModelSyncInfoId modelSyncId = modelMap.GetModelSyncInfoId ();
-    LOG_ENTITY.debugv ("checking entity: %lld[%llx] in model %lld[%s]", entityId, entityId, modelSyncId.GetValue(), inputs.GetModelMapping().GetMapping().GetDwgName().c_str());
+    LOG_ENTITY.debugv ("checking entity[%ls]: %lld[%llx] in model %lld[%s]", name.c_str(), entityId, entityId, modelSyncId.GetValue(), modelMap.GetMapping().GetDwgName().c_str());
 #endif
 
     DwgSyncInfo::ElementIterator*       iter = nullptr;
@@ -265,6 +272,14 @@ bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, Dwg
             }
         }
 #endif
+
+    /*-----------------------------------------------------------------------------------
+    If the root transform has been changed, we need to update all elements, even those in 
+    a papserspace.  A paperspace element is not impacted by the root transform change, but
+    we have to record it as a seen element so it won't get deleted at the end.
+    -----------------------------------------------------------------------------------*/
+    if (importer.HasRootTransformChanged() && results.GetChangeType() == ChangeType::None)
+        results.SetChangeType (ChangeType::Update);
 
     // if new & old don't match, we will have to either import anew or update it:
     return (results.GetChangeType() != ChangeType::None);
@@ -418,6 +433,10 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
     LOG_MODEL.debugv ("Testing model from syncInfo %lld, InstanceId=%lld[%llx], %s", modelMap.GetModelSyncInfoId().GetValue(), dwgId, dwgId, modelMap.GetMapping().GetDwgName().c_str());
 #endif
 
+    // update all models if the root transformation has been changed - even in paperspaces, to prevent models to be deleted:
+    if (importer.HasRootTransformChanged())
+        return  false;
+
     // if the model is new, do not skip it:
     DwgSyncInfo::DwgModelSyncInfoId entryId = modelMap.GetModelSyncInfoId ();
     if (m_newlyDiscoveredModels.find(entryId) != m_newlyDiscoveredModels.end())
@@ -476,7 +495,8 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncI
                 continue;   // we skipped this DWG model, so we don't expect to see it in m_dwgModelsSeen
 
             // not found, delete this model
-            LOG.tracev("Delete model %lld", wasModel.GetModelId().GetValue());
+            Utf8CP  name = wasModel.GetDwgName ();
+            LOG.tracev("Delete model %lld [%s]", wasModel.GetModelId().GetValue(), nullptr == name ? "no name" : name);
             auto model = importer.GetDgnDb().Models().GetModel(wasModel.GetModelId());
             model->Delete();
             importer.GetSyncInfo().DeleteModel (wasModel.GetDwgModelSyncInfoId());
@@ -484,8 +504,7 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncI
             // Note that DetectDeletedElements will take care of detecting and deleting the elements that were in the DWG model.
             }
         }
-
-    m_dwgModelsSeen.clear();
+    // do not clear m_dwgModelsSeen until _DetectDeletedModelsEnd is called!
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,6 +551,7 @@ void UpdaterChangeDetector::_DetectDeletedElements (DwgImporter& importer, DwgSy
         //    DgnV8ElementProvenance::Delete (previouslyConvertedElementId, importer.GetDgnDb());
         //importer._OnElementConverted (elementInSyncInfo.GetElementId(), nullptr, importer::ChangeOperation::Delete);
         }
+    // Let _DetectDeletedElementsEnd clear m_elementsSeen!
     }
 
 /*---------------------------------------------------------------------------------**//**

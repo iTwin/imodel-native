@@ -65,7 +65,7 @@ public:
 
     //! Compute new name
     //! @param[out] newName The new name, if successful
-    //! @param[in] baseFilename The file that is being imported
+    //! @param[in] baseFileName The file that is being imported
     //! @return non-zero error status if no new name could be computed. In case of error, \a newName is not modified.
     BentleyStatus ComputeNewName(Utf8StringR newName, BeFileNameCR baseFileName) const;
 
@@ -101,9 +101,10 @@ public:
     void            SetModelInstanceId (DwgDbObjectIdCR id) { m_dwgModelInstanceId=id; }
     DgnModelP       GetModel () { return m_model; }
     void            SetModel (DgnModelP model) { m_model=model; }
-    DwgSyncInfo::DwgModelMapping GetMapping () const { return m_mapping; }
+    DwgSyncInfo::DwgModelMapping const& GetMapping () const { return m_mapping; }
     void            SetMapping (DwgSyncInfo::DwgModelMapping const& m) { m_mapping=m; }
-    Transform       GetTransform () const { return  m_mapping.GetTransform(); }
+    TransformCR     GetTransform () const { return m_mapping.GetTransform(); }
+    void            SetTransform (TransformCR t) { return m_mapping.SetTransform(t); }
     DwgSyncInfo::DwgModelSyncInfoId GetModelSyncInfoId () const { return m_mapping.GetDwgModelSyncInfoId(); }
 };  // ResolvedModelMapping
 typedef bmultiset<ResolvedModelMapping>     T_DwgModelMapping;
@@ -188,12 +189,13 @@ struct IDwgChangeDetector
     typedef std::function<bool(DwgSyncInfo::ElementIterator::Entry const&, DwgImporter& converter)> T_DwgSyncInfoElementFilter;
 
     //! Called by a DwgImporter to detect if a DWG object is changed or new.
-    //! @param[out] prov    Information about the element that can be used to decide how or if to update it in the bim and how to record the change in syncinfo
-    //! @param[in] obj      A DWG object
-    //! @param[in] model    Mapping info for the DWG model that contains this DWG object
+    //! @param[out] results The information about what the change detector has found
+    //! @param[in] importer An instance of the DwgImporter
+    //! @param[in] id       The object ID of the DWG entity to check
+    //! @param[in] map      Mapping info for the DWG model that contains this DWG object
     //! @param[in] filter   Optional. Chooses among existing elements in DwgSyncInfo
     //! @return true if the element is new or has changed.
-    virtual bool _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter* f = nullptr) = 0;
+    virtual bool _IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR id, ResolvedModelMapping const& map, T_DwgSyncInfoElementFilter* filter = nullptr) = 0;
     //! @}
 
     //! @name Recording DWG content seen (so that we can deduce deletes)
@@ -205,11 +207,14 @@ struct IDwgChangeDetector
 
     //! Called when a DWG model is discovered. This callback should be invoked during the model-discovery phase,
     //! before the elements in the specified model are converted.
-    virtual void _OnModelSeen (DwgImporter&, ResolvedModelMapping const&) = 0;
+    //! @param[in] importer An instance of the DwgImporter
+    //! @param[in] map      Mapping info for the DWG model
+    virtual void _OnModelSeen (DwgImporter& importer, ResolvedModelMapping const& map) = 0;
     //! Called when a DWG model is first mapped into the BIM.
-    //! @param rmm The DWG model and the DgnModel to which it is mapped
-    //! @param attachment If the DWG model is a root model, this will be nullptr. Otherwise, this will be the attachment that was used to reach the DWG model.
-    virtual void _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xRef) = 0;
+    //! @param[in] importer An instance of the DwgImporter
+    //! @param[in] map      The DWG model and the DgnModel to which it is mapped
+    //! @param[in] xRef     The xref attachment if the DWG model is a root model, this will be nullptr. Otherwise, this would be the attachment that was used to reach the DWG model.
+    virtual void _OnModelInserted (DwgImporter& importer, ResolvedModelMapping const& map, DwgDbDatabaseCP xRef) = 0;
 
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
@@ -239,6 +244,7 @@ struct DwgImporter
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
     friend class DwgViewportExt;
+    friend class DwgLightExt;
 
 public:
     static WCharCP GetRegistrySubKey() {return L"DwgBridge";}
@@ -524,13 +530,16 @@ public:
         };  // DwgXRefHolder
     typedef bvector<DwgXRefHolder>    T_LoadedXRefFiles;
 
-    //! Aa xRef-DgnModel mapping per instance for paperspace
+    //! An xRef-DgnModel mapping per instance for paperspace
     struct DwgXRefInPaperspace
         {
         DwgDbObjectId       m_xrefInsertId;
         DwgDbObjectId       m_paperspaceId;
         DgnModelId          m_dgnModelId;
         explicit DwgXRefInPaperspace (DwgDbObjectId xrefId, DwgDbObjectId layoutId, DgnModelId modelId) : m_xrefInsertId(xrefId), m_paperspaceId(layoutId), m_dgnModelId(modelId) {}
+        DwgDbObjectIdCR GetXrefInsertId () const { return m_xrefInsertId; }
+        DwgDbObjectIdCR GetPaperSpaceId () const { return m_paperspaceId; }
+        DgnModelId GetPaperSpaceModelId () const { return m_dgnModelId; }
         };
     typedef bvector<DwgXRefInPaperspace>    T_DwgXRefsInPaperspaces;
     typedef bpair<DgnViewId,DwgDbObjectId>  T_PaperspaceView;
@@ -667,6 +676,33 @@ public:
         };  // ConstantAttrdefs
     typedef bvector<ConstantBlockAttrdefs>              T_ConstantBlockAttrdefList;
 
+    //! Information about the root model transformation.
+    struct RootTransformInfo
+        {
+    private:
+        Transform   m_rootTransform;        // the effective root model transform
+        Transform   m_jobTransform;         // the spatial model transform initiated from iModelBridge
+        Transform   m_changeTransform;      // the delta transform from old to new root model
+        bool        m_changed;              // tells us if the root transform has been changed from last import
+    public:
+        RootTransformInfo () : m_changed(false) { m_rootTransform.InitIdentity(); m_changeTransform.InitIdentity(); m_jobTransform.InitIdentity(); }
+        //! @return True the root transform has been changed from last import when updating; false otherwise;
+        bool    HasChanged() const { return m_changed; }
+        void    SetHasChanged(bool changed) { m_changed = changed; }
+        //! @return The current root model transform: compounded with the spatial transform from iModelBridge for modelspace, and inverted for paperspaces.
+        TransformCR GetRootTransform () const { return m_rootTransform; }
+        TransformR  GetRootTransformR () { return m_rootTransform; }
+        void    SetRootTransform (TransformCR t) { m_rootTransform = t; }
+        //! @return The delta transform that changes the root transform from old to new - valid only if HasChanged returns true.
+        TransformCR GetChangeTransformFromOldToNew () const { return m_changeTransform; }
+        Transform   GetChangeTransformFromNewToOld () const { return m_changeTransform.ValidatedInverse().Value(); }
+        //! @param t The delta transform that changes the root transform from old to new.
+        void    SetChangeTransformFromOldToNew (TransformCR t) { m_changeTransform = t; }
+        //! @return The spatial model transform initiated for current import job from iModelBridge.
+        TransformCR GetJobTransform () const { return m_jobTransform; }
+        void    SetJobTransform (TransformCR t) { m_jobTransform = t; }
+        };  // RootTransformInfo
+
     //! The status of attempting to create a new ImportJob
     enum class ImportJobCreateStatus
         {
@@ -735,7 +771,7 @@ public:
     //! A problem in the conversion process
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
         L10N_STRING(CannotCreateChangesFile)     // =="Cannot create changes file"==
-        L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will used for display."==
+        L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will be used for display."==
         L10N_STRING(CannotOpenModelspace)        // =="Cannot open modelspace for file [%s]"==
         L10N_STRING(CannotUseStableIds)          // =="Cannot use DgnElementIds for this kind of file"==
         L10N_STRING(CantCreateModel)             // =="Cannot create model [%s]"==
@@ -876,7 +912,7 @@ protected:
     ResolvedImportJob           m_importJob;
     SubjectCPtr                 m_spatialParentSubject;
     BeFileName                  m_rootFileName;
-    Transform                   m_rootTransform;
+    RootTransformInfo           m_rootTransformInfo;
     DwgDbObjectId               m_modelspaceId;
     DwgDbObjectId               m_currentspaceId;
     T_DwgModelMapping           m_dwgModelMap;
@@ -884,7 +920,7 @@ protected:
     bool                        m_isProcessingDwgModelMap;
     StandardUnit                m_modelspaceUnits;
     bool                        m_wasAborted;
-    Options                     m_options;
+    Options&                    m_options;
     GeometryOptions             m_currentGeometryOptions;
     DwgSyncInfo                 m_syncInfo;
     T_DwgChangeDetectorPtr      m_changeDetector;
@@ -941,6 +977,8 @@ private:
     void                    CheckSameRootModelAndUnits ();
     void                    ComputeDefaultImportJobName (Utf8StringCR rootModelName);
     Utf8String              GetImportJobNamePrefix () const { return ""; }
+    ResolvedModelMapping    FindRootModelFromImportJob ();
+    bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
 
     static void             RegisterProtocalExtensions ();
 
@@ -953,6 +991,7 @@ protected:
     BeFileNameCR                        GetRootDwgFileName () const { return m_rootFileName; }
     DGNDBSYNC_EXPORT  virtual void      _SetChangeDetector (bool updating);
     virtual IDwgChangeDetector&         _GetChangeDetector () { return *m_changeDetector; }
+    virtual bool                        _HaveChangeDetector () { return nullptr != m_changeDetector; }
     DGNDBSYNC_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
 
     //! @name The ImportJob
@@ -983,11 +1022,13 @@ protected:
     // Modelspace and xRef blocks as Physical Models, layout blocks as sheet models
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportDwgModels ();
     DGNDBSYNC_EXPORT virtual void       _SetModelUnits (GeometricModel::Formatter& displayInfo, DwgDbBlockTableRecordCR block);
-    // get or create a new DgnModel from a model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
+    //! Get a DgnModel from the syncInfo for updating, or create a new DgnModel for importing, from a DWG model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
     ResolvedModelMapping                GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
-    ResolvedModelMapping                GetOrCreateRootModel ();
+    //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
+    ResolvedModelMapping                GetOrCreateRootModel (bool updating);
+    ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
     ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
-    //! find DgnModel from DWG model cache
+    //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
     ResolvedModelMapping                FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
     Utf8String                          RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
     DGNDBSYNC_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, Utf8CP suffix = nullptr);
@@ -1090,7 +1131,8 @@ protected:
     DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
 
 public:
-    DGNDBSYNC_EXPORT DwgImporter (Options const& options);
+    //! An app must hold and pass in the reference of a DwgImporter::Options, which may be changed after a DwgImporter is created.
+    DGNDBSYNC_EXPORT DwgImporter (Options& options);
     DGNDBSYNC_EXPORT ~DwgImporter ();
 
     DGNDBSYNC_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr, DwgSyncInfo::ImportJob::Type = DwgSyncInfo::ImportJob::Type::RootModels);
@@ -1106,7 +1148,13 @@ public:
     DGNDBSYNC_EXPORT void               SetFallbackFontPathForShape (BeFileNameCR filename);
     bool                                GetFallbackFontPathForText (BeFileNameR outName, DgnFontType type) const;
     DGNDBSYNC_EXPORT void               SetFallbackFontPathForText (BeFileNameCR inName, DgnFontType fontType);
-    TransformCR                         GetRootTransform () const { return m_rootTransform; }
+    //! @return The root transform information.
+    DGNDBSYNC_EXPORT RootTransformInfo const& GetRootTransformInfo () const { return m_rootTransformInfo; }
+    //! @return True, if the root transform has been changed from previous import; false, otherwise.
+    //! @note This happens when iModelBridge changes its spatial transformation for the same import job.
+    DGNDBSYNC_EXPORT bool               HasRootTransformChanged () const { return m_rootTransformInfo.HasChanged(); }
+    //! @return Current root transform.
+    TransformCR                         GetRootTransform () const { return m_rootTransformInfo.GetRootTransform(); }
     DGNDBSYNC_EXPORT double             GetScaleToMeters () const;
     DwgDbObjectId                       GetCurrentViewportId () { return m_currentGeometryOptions.GetViewportId(); }
     DwgDbObjectIdCR                     GetCurrentSpaceId () const { return m_currentspaceId; }

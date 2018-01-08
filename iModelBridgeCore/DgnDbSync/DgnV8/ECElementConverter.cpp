@@ -6,10 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
-#include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
-#include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
-
-USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 using namespace BeSQLite::EC;
@@ -117,12 +113,12 @@ Utf8String ElementConverter::ToInstanceLabel(ECObjectsV8::IECInstance const& v8I
     }
 
 //****************************************************************************************
-// ElementConverter::SchemaRemapper
+// SchemaRemapper
 //****************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
-bool ElementConverter::SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::ECSchemaCR ecSchema) const
+bool SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::ECSchemaCR ecSchema) const
     {
     BisConversionRule conversionRule;
     bool hasSecondary;
@@ -144,7 +140,7 @@ bool ElementConverter::SchemaRemapper::_ResolveClassName(Utf8StringR serializedC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const
+bool SchemaRemapper::_ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const
     {
     if (!m_convSchema.IsValid())
         {
@@ -186,11 +182,13 @@ bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializ
         else
             properties = mappedClassIter->second;
 
-        T_propertyNameMappings::iterator mappedPropertiesIterator = properties.find(serializedPropertyName);
-        if (mappedPropertiesIterator != properties.end())
+        for (T_propertyNameMappings::iterator mappedPropertiesIterator = properties.begin(); mappedPropertiesIterator != properties.end(); ++mappedPropertiesIterator)
             {
-            serializedPropertyName = mappedPropertiesIterator->second;
-            return true;
+            if (mappedPropertiesIterator->first.EqualsIAscii(serializedPropertyName.c_str()))
+                {
+                serializedPropertyName = mappedPropertiesIterator->second;
+                return true;
+                }
             }
         }
 

@@ -1014,7 +1014,6 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
 
         modeledElementId = partition->GetElementId();
 
-        iModelBridge::InsertPartitionOriginatesFromRepositoryRelationship(GetDgnDb(), partition->GetElementId(), GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
         }
     else
         {
@@ -1022,6 +1021,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "Unhandled model type");
         return DgnModelId();
         }
+    iModelBridge::InsertElementHasLinksRelationship(GetDgnDb(), modeledElementId, GetRepositoryLinkFromAppData(*v8Model.GetDgnFileP()));
 
     DgnModelPtr model = handler->Create(DgnModel::CreateParams(*m_dgndb, classId, modeledElementId, nullptr));
     if (!model.IsValid())
@@ -1439,7 +1439,7 @@ static void dumpElement(DgnElementCR el)
 static void dumpPartitionRepositoryLink(DgnElementCR el)
     {
     BeSQLite::EC::ECSqlStatement stmt;
-    stmt.Prepare(el.GetDgnDb(), "SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_PartitionOriginatesFromRepository) " WHERE SourceECInstanceId=?");
+    stmt.Prepare(el.GetDgnDb(), "SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE SourceECInstanceId=?");
     stmt.BindId(1, el.GetElementId());
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -1505,17 +1505,20 @@ void Converter::_OnConversionComplete()
     else
         OnUpdateComplete();
 
+    if (!m_config.GetInstanceFilename().empty() && m_config.GetOptionValueBool("EmbedConfigFile", false))
+        {
+        BeSQLite::DbResult result;
+        m_dgndb->EmbeddedFiles().Import(Utf8String(m_config.GetInstanceFilename().GetFileNameWithoutExtension().c_str()).c_str(), m_config.GetInstanceFilename().GetNameUtf8().c_str(), "xml");
+    }
+
 #ifdef WIP_DUMP
     dumpParentAndChildren(*GetDgnDb().Elements().GetRootSubject(), 0);
 #endif
-
-    if (DgnDbApi::PSolidKernelManager::IsSessionStarted())
-        DgnDbApi::PSolidKernelManager::StopSession(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
++---------------+---------s------+---------------+---------------+---------------+------*/
 void Converter::CopyExpirationDate(DgnV8FileR dgnfile)
     {
     DgnV8Api::DgnFileLicense lic;
@@ -1606,6 +1609,7 @@ void Converter::OnCreateComplete()
         GetDgnDb().SaveProperty(DgnViewProperty::DefaultView(), &m_defaultViewId, sizeof(m_defaultViewId));
     // else
     //  ensureAUserView
+
 
     GenerateThumbnails();
     GetDgnDb().SaveSettings();
@@ -1817,6 +1821,35 @@ BentleyStatus Converter::InitSheetListModel()
 
     m_sheetListModelId = sheetListModel->GetModelId();
     return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DefinitionModelPtr Converter::GetJobDefinitionModel()
+    {
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    SubjectCR job = GetJobSubject();
+    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(job, partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    DefinitionPartitionPtr ed = DefinitionPartition::Create(job, partitionName.c_str());
+    DefinitionPartitionCPtr partition = ed->InsertT<DefinitionPartition>();
+    if (!partition.IsValid())
+        return DefinitionModelPtr();
+
+    DefinitionModelPtr defModel = DefinitionModel::CreateAndInsert(*partition);
+    if (!defModel.IsValid())
+        return DefinitionModelPtr();
+
+    m_jobDefinitionModelId = defModel->GetModelId();
+    return defModel;
     }
 
 static const Utf8CP s_codeSpecName = "DgnV8"; // TBD: One CodeSpec per V8 file?
@@ -2368,6 +2401,10 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
             }
 
         ECInstanceInfo::Insert(GetDgnDb(), fileId, v8SecondaryInstanceMapping.first, BeSQLite::EC::ECInstanceKey(aspect.GetClass().GetId(), aspectId), false);
+
+        // need to record which element class each aspect is associated with.
+        ElementClassToAspectClassMapping::Insert(GetDgnDb(), element.GetElementClassId(), element.GetElementClass()->GetSchema().GetName().c_str(), element.GetElementClass()->GetName().c_str(),
+                                                 aspect.GetClass().GetId(), aspect.GetClass().GetSchema().GetName().c_str(), aspect.GetClass().GetName().c_str());
         }
 
     for (ElementConversionResults& child : results.m_childElements)
@@ -2410,7 +2447,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
         {
         BeAssert((DgnDbStatus::LockNotHeld != stat) && "Failed to get or retain necessary locks");
         BeAssert(false);
-        ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*results.m_element).c_str());
+        ReportIssue(IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*results.m_element).c_str());
         return stat;
         }
 

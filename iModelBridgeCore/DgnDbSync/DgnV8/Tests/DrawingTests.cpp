@@ -94,10 +94,10 @@ TEST_F(DrawingTests, Basic3dAttachment)
         countModels(*db, 1, 3); // expect 1 drawing model and 3 physical models (including Streets and Satellite models)
 
         // There should be 1 spatial (orthographic) view
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
 
         // The PhysicalPartition should lead to the converted 3D model, which contains a line.
         auto physical = db->Elements().Get<PhysicalPartition>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_PhysicalPartition)));
@@ -168,11 +168,11 @@ TEST_F(DrawingTests, Basic3dAttachment)
         countModels(*db, 2, 3); // expect 2 2d models and 3 physical models (including Streets and Satellite models)
 
         // There should be 2 spatial views (1 converted and 1 generated as explained above) and 1 generated DrawingViewDefinition
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
 
         // There should be 1 sheet with 2 attachments, one to a generated view of the drawing and the other to a generated view of the 3D model
         auto sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
@@ -211,11 +211,11 @@ TEST_F(DrawingTests, Basic3dAttachment)
         countModels(*db, 2, 3); // still expect 2 2d models and and 3 physical model (including Streets and Satellite models)
 
         // There should still be 2 spatial views (1 converted and 1 generated as explained above) and 1 generated DrawingViewDefinition
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
 
         auto physical = db->Elements().Get<PhysicalPartition>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_PhysicalPartition)));
         ASSERT_TRUE(physical.IsValid());
@@ -230,6 +230,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         ASSERT_TRUE(sheetModel.IsValid());
         countElements(*sheetModel, 2);
         countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 2);
+        ASSERT_TRUE(ILinkElementBase<RepositoryLink>::ElementHasLinks(*db, sheet->GetElementId()));
         }
     
     DoUpdate(m_dgnDbFileName, m_v8FileName);
@@ -284,11 +285,11 @@ TEST_F(DrawingTests, Sheet_SheetAttachment)
         countModels(*db, 5, 3); // expect 1 drawing model and 3 physical models (including Streets and Satellite models)
 
         // There should be 1 spatial (orthographic) view and 3 generated DrawingViewDefinition
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
 
         auto drawing = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
         ASSERT_TRUE(drawing.IsValid());
@@ -370,11 +371,11 @@ TEST_F(DrawingTests, SheetProperties)
         countModels(*db, 2, 3); // expect 1 sheet model and 3 physical models (including Streets and Satellite models)
 
         // There should be 1 spatial (orthographic) view 
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
 
         Sheet::ElementCPtr sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
         ASSERT_TRUE(sheet.IsValid());
@@ -467,11 +468,11 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 3, 3); 
 
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
 
         Sheet::ElementCPtr sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
         ASSERT_TRUE(sheet.IsValid());
@@ -621,11 +622,11 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 5, 3); 
 
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 5);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 6);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 11);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 6);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 5);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 5);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 6);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 11);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 6);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 5);
 
         auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
         ASSERT_TRUE(ele1.IsValid());
@@ -688,10 +689,10 @@ TEST_F(DrawingTests, Attach3dmodeltoSheet)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 1, 3);
 
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
 
         // The PhysicalPartition should lead to the converted 3D model, which contains a line.
         auto physical = db->Elements().Get<PhysicalPartition>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_PhysicalPartition)));
@@ -773,11 +774,11 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 3, 3);
         db->Schemas().CreateClassViewsInDb();
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 3);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 3);
 
         // The PhysicalPartition should lead to the converted 3D model, which contains a line.
         auto physical = db->Elements().Get<PhysicalPartition>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_PhysicalPartition)));
@@ -847,10 +848,10 @@ TEST_F(DrawingTests, AttachDwg)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 3, 4); 
 
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 4);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 0);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 6);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 0);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 6);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 4);
         // 2 sheets from DWG file and 1 sheet that we created in dgn fle
         auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
         ASSERT_TRUE(ele1.IsValid());
@@ -931,10 +932,10 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 1, 3);
 
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
 
         // The PhysicalPartition should lead to the converted 3D model, which contains a line.
         auto physical = db->Elements().Get<PhysicalPartition>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_PhysicalPartition)));
@@ -1037,9 +1038,9 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
        {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 4, 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
 
         ASSERT_EQ(4, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
         ASSERT_EQ(4, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
@@ -1140,9 +1141,9 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         countModels(*db, 3, 2);// 2 drawing and 1 sheet
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 4);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
-        countElementsInModelByClass(db->GetDictionaryModel(), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 4);
         ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
         ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
 

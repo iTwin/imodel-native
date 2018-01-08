@@ -314,6 +314,16 @@ END_DWGDB_NAMESPACE
             return  DwgDbStatus::Success;                                               \
             }
 
+#define DWGDB_ENTITY_DEFINE_GETGRIPPOINTS(_classSuffix_)                                \
+        DwgDbStatus DwgDb##_classSuffix_##::GetGripPoints(DPoint3dArrayR points, DwgDbIntArrayP snapModes, DwgDbIntArrayP geomIds) const    \
+            {                                                                           \
+            OdGePoint3dArray    odPoints;                                               \
+            OdResult status = T_Super::getGripPoints (odPoints);                        \
+            if (OdResult::eOk == status)                                                \
+                Util::GetPointArray(points, odPoints);                                  \
+            return  ToDwgDbStatus(status);                                              \
+            }
+
 #elif DWGTOOLKIT_RealDwg
 
 
@@ -413,6 +423,29 @@ END_DWGDB_NAMESPACE
             return static_cast<DwgDbStatus>(es);                                            \
             }
 
+#define DWGDB_ENTITY_DEFINE_GETGRIPPOINTS(_classSuffix_)                                    \
+        DwgDbStatus DwgDb##_classSuffix_##::GetGripPoints(DPoint3dArrayR points, DwgDbIntArrayP snapModes, DwgDbIntArrayP geomIds) const    \
+            {                                                                               \
+            AcGePoint3dArray    acPoints;                                                   \
+            AcDbIntArray        acModes, acGeomIds;                                         \
+            Acad::ErrorStatus status=T_Super::getGripPoints(acPoints, acModes, acGeomIds);  \
+            if (Acad::eOk == status)                                                        \
+                {                                                                           \
+                if (nullptr != snapModes)                                                   \
+                    {                                                                       \
+                    for (int i = 0; i < acModes.length(); i++)                              \
+                        snapModes->push_back (acModes.at(i));                               \
+                    }                                                                       \
+                if (nullptr != geomIds)                                                     \
+                    {                                                                       \
+                    for (int i = 0; i < acGeomIds.length(); i++)                            \
+                        geomIds->push_back (acGeomIds.at(i));                               \
+                    }                                                                       \
+                Util::GetPointArray(points, acPoints);                                      \
+                }                                                                           \
+            return  ToDwgDbStatus(status);                                                  \
+            }
+
 #endif  // DWGTOOLKIT_
 
 
@@ -466,6 +499,18 @@ END_DWGDB_NAMESPACE
     DwgDbStatus DwgDb##_classSuffix_##Ptr::AcquireObject(DwgDb##_classSuffix_## *& obj) { return this->_AcquireObject(obj); }   \
     DwgDbStatus DwgDb##_classSuffix_##Ptr::CloseObject() { return this->_CloseObject(); }
         
+#define DWGDB_ENTITY_DEFINE_GETRANGE(_classSuffix_)                                     \
+    DwgDbStatus DwgDb##_classSuffix_##::GetRange (DRange3dR range) const                \
+        {                                                                               \
+        DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents) extents;                               \
+        DwgDbStatus status = ToDwgDbStatus (T_Super::getGeomExtents(extents));          \
+        if (DwgDbStatus::Success == status)                                             \
+            range = Util::DRange3dFrom (extents);                                       \
+        else                                                                            \
+            range.Init ();                                                              \
+        return  status;                                                                 \
+        }
+
 
 #define DWGDB_DEFINE_SMARTPTR_MEMBERS(_classSuffix_)                                    \
             DWGDB_DEFINE_SMARTPTR_OPENOBJECT_CONSTRUCTOR(##_classSuffix_##)             \
@@ -487,14 +532,36 @@ END_DWGDB_NAMESPACE
     DWGDB_DEFINE_GETXDATA_MEMBER(##_classSuffix_##)                                                                                                                             \
     DWGRX_DEFINE_RX_MEMBER(Db##_classSuffix_##)
 
-// define common methods for DbEntity derivitives:
+// define common methods for DbObject derivitives requiring psuedo-database
     // define psuedo-database entities
     // implement SmartPtr interfaces & define their non-virtual counterparts
     // define common DbObject methods (above)
-#define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
+#define DWGDB_OBJECT_DEFINE_MEMBERS2(_classSuffix_)                                                                                                                             \
     DWGDB_PSEUDO_DEFINE_MEMBERS(_classSuffix_)                      \
     DWGDB_DEFINE_SMARTPTR_MEMBERS(_classSuffix_)                    \
     DWGDB_OBJECT_DEFINE_MEMBERS(_classSuffix_)
+
+// define common methods for DbEntity derivitives:
+#define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
+    DWGDB_OBJECT_DEFINE_MEMBERS2(_classSuffix_)                     \
+    DWGDB_ENTITY_DEFINE_GETGRIPPOINTS(_classSuffix_)                \
+    DWGDB_ENTITY_DEFINE_GETRANGE(_classSuffix_)                     \
+    uint16_t            DwgDb##_classSuffix_##::GetColorIndex () const { return static_cast<uint16_t>(T_Super::colorIndex()); }            \
+    DwgCmColor          DwgDb##_classSuffix_##::GetColor () const { return static_cast<DwgCmColor>(T_Super::color()); }                    \
+    DwgCmEntityColor    DwgDb##_classSuffix_##::GetEntityColor () const { return static_cast<DwgCmEntityColor>(T_Super::entityColor()); }  \
+    DwgDbObjectId       DwgDb##_classSuffix_##::GetLayerId () const { return T_Super::layerId(); }                                         \
+    DwgDbObjectId       DwgDb##_classSuffix_##::GetLinetypeId () const { return T_Super::linetypeId(); }                                   \
+    double              DwgDb##_classSuffix_##::GetLinetypeScale () const { return T_Super::linetypeScale(); }                             \
+    DwgDbLineWeight     DwgDb##_classSuffix_##::GetLineweight () const { return DWGDB_UPWARDCAST(LineWeight)(T_Super::lineWeight()); }     \
+    DwgDbObjectId       DwgDb##_classSuffix_##::GetMaterialId () const { return T_Super::materialId(); }                                   \
+    DwgTransparency     DwgDb##_classSuffix_##::GetTransparency () const { return T_Super::transparency(); }                               \
+    DwgDbVisibility     DwgDb##_classSuffix_##::GetVisibility () const { return static_cast<DwgDbVisibility>(T_Super::visibility()); }     \
+    void                DwgDb##_classSuffix_##::List () const { T_Super::list(); }                                                         \
+    DwgGiDrawablePtr    DwgDb##_classSuffix_##::GetDrawable () { return new DwgGiDrawable(T_Super::drawable()); }                          \
+    bool                DwgDb##_classSuffix_##::CanCastShadows () const { return T_Super::castShadows(); }                                       \
+    bool                DwgDb##_classSuffix_##::CanReceiveShadows () const { return T_Super::receiveShadows(); }                                 \
+    bool                DwgDb##_classSuffix_##::IsPlanar () const { return T_Super::isPlanar(); }                                                \
+    void DwgDb##_classSuffix_##::GetEcs(TransformR ecs) const { DWGGE_Type(Matrix3d) m; DWGDB_CALLSDKMETHOD(m=T_Super::getEcs(), T_Super::getEcs(m)); return Util::GetTransform(ecs, m); }
 
 
 void    RegisterDwgDbObjectExtensions (bool beforeValidation);

@@ -530,7 +530,17 @@
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="PSet_Application_Technip_settings" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="PSet_Application_Tekla_Assembly" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application_Tekla_Bolt" isDomainClass="True">
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>

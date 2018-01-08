@@ -165,6 +165,53 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgBinaryData)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          11/15
 +===============+===============+===============+===============+===============+======*/
+class DwgCmEntityColor : public DWGROOTCLASS_EXTEND(CmEntityColor)
+    {
+    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(CmEntityColor))
+    DWGROOTCLASS_ADD_CONSTRUCTORS (CmEntityColor)
+
+    enum Method
+        {
+        ByLayer     = 0xC0,
+        ByBlock,
+        ByColor,
+        ByACI,
+        ByPen,
+        Foreground,
+        LayerOff,
+        //! RealDWG has this as LayerFrozen(nonsense) and OpenDWG overrides it as ByDgnIndex.
+        ByDgnIndex,
+        None
+        };  // Method
+
+    DWGDB_EXPORT ~DwgCmEntityColor ();
+
+    //! @return An interger with the high byte to be the color method, and the low bytes to be RGB values.
+    DWGDB_EXPORT uint32_t   GetMRGB () const;
+    //! @return An interger containing only the RGB bytes.
+    DWGDB_EXPORT uint32_t   GetRGB () const;
+    //! @return The ACI vallue.
+    DWGDB_EXPORT int16_t    GetIndex () const;
+    DWGDB_EXPORT Byte       GetRed () const;
+    DWGDB_EXPORT Byte       GetGreen () const;
+    DWGDB_EXPORT Byte       GetBlue () const;
+    DWGDB_EXPORT bool       IsByLayer () const;
+    DWGDB_EXPORT bool       IsByBlock () const;
+    DWGDB_EXPORT bool       IsByACI () const;
+    DWGDB_EXPORT bool       IsByColor () const;
+    DWGDB_EXPORT bool       IsForeground () const;
+    DWGDB_EXPORT bool       IsNone () const;
+    //! Get the color method
+    DWGDB_EXPORT Method     GetColorMethod () const;
+
+    DWGDB_EXPORT DwgDbStatus        SetColorIndex (uint16_t color);
+    static DWGDB_EXPORT uint32_t    GetRGBFromIndex (uint16_t color);
+    };
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgCmEntityColor)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          11/15
++===============+===============+===============+===============+===============+======*/
 class DwgCmColor : public DWGROOTCLASS_EXTEND(CmColor)
     {
     DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(CmColor))
@@ -172,7 +219,11 @@ class DwgCmColor : public DWGROOTCLASS_EXTEND(CmColor)
 
     DWGDB_EXPORT ~DwgCmColor ();
 
+    //! @return An interger with the high byte to be the color method, and the low bytes to be RGB values.
+    DWGDB_EXPORT uint32_t   GetMRGB () const;
+    //! @return An interger containing only the RGB bytes.
     DWGDB_EXPORT uint32_t   GetRGB () const;
+    //! @return The ACI vallue.
     DWGDB_EXPORT int16_t    GetIndex () const;
     DWGDB_EXPORT Byte       GetRed () const;
     DWGDB_EXPORT Byte       GetGreen () const;
@@ -181,35 +232,17 @@ class DwgCmColor : public DWGROOTCLASS_EXTEND(CmColor)
     DWGDB_EXPORT bool       IsByBlock () const;
     DWGDB_EXPORT bool       IsByACI () const;
     DWGDB_EXPORT bool       IsByColor () const;
+    DWGDB_EXPORT bool       IsForeground () const;
+    DWGDB_EXPORT bool       IsNone () const;
 
+    //! Get ACI value
     DWGDB_EXPORT DwgDbStatus        SetColorIndex (uint16_t color);
+    //! Get this DwgCmColor as a DwgEntityColor
+    DWGDB_EXPORT DwgCmEntityColor   GetEntityColor () const;
+    //! Get the color method
+    DWGDB_EXPORT DwgCmEntityColor::Method GetColorMethod () const;
     };
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgCmColor)
-
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          11/15
-+===============+===============+===============+===============+===============+======*/
-class DwgCmEntityColor : public DWGROOTCLASS_EXTEND(CmEntityColor)
-    {
-    DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(CmEntityColor))
-    DWGROOTCLASS_ADD_CONSTRUCTORS (CmEntityColor)
-
-    DWGDB_EXPORT ~DwgCmEntityColor ();
-
-    DWGDB_EXPORT uint32_t   GetRGB () const;
-    DWGDB_EXPORT int16_t    GetIndex () const;
-    DWGDB_EXPORT Byte       GetRed () const;
-    DWGDB_EXPORT Byte       GetGreen () const;
-    DWGDB_EXPORT Byte       GetBlue () const;
-    DWGDB_EXPORT bool       IsByLayer () const;
-    DWGDB_EXPORT bool       IsByBlock () const;
-    DWGDB_EXPORT bool       IsByACI () const;
-    DWGDB_EXPORT bool       IsByColor () const;
-
-    DWGDB_EXPORT DwgDbStatus        SetColorIndex (uint16_t color);
-    static DWGDB_EXPORT uint32_t    GetRGBFromIndex (uint16_t color);
-    };
-DEFINE_NO_NAMESPACE_TYPEDEFS (DwgCmEntityColor)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          11/15
