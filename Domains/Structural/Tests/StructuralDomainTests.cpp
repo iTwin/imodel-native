@@ -339,7 +339,7 @@ TEST_F(StructuralDomainTestFixture, ColumnClassTests)
     ASSERT_TRUE(queriedElement.IsValid());
     }
 
-#define CURVEMEMBER_CODE_VALUE       "CURVEMEMBER-001"
+/*#define CURVEMEMBER_CODE_VALUE       "CURVEMEMBER-001"
 
 TEST_F(StructuralDomainTestFixture, CurveMemberClassTests)
     {
@@ -360,7 +360,7 @@ TEST_F(StructuralDomainTestFixture, CurveMemberClassTests)
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, CURVEMEMBER_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
-    }
+    }*/
 
 #define FOUNDATIONMEMBER_CODE_VALUE       "FOUNDATIONMEMBER-001"
 
@@ -490,7 +490,7 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberFootingClassTests)
     //so test finished for now
     }
 
-#define SURFACEMEMBER_CODE_VALUE       "SURFACEMEMBER-001"
+/*#define SURFACEMEMBER_CODE_VALUE       "SURFACEMEMBER-001"
 
 TEST_F(StructuralDomainTestFixture, SurfaceMemberClassTests)
     {
@@ -511,7 +511,7 @@ TEST_F(StructuralDomainTestFixture, SurfaceMemberClassTests)
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, SURFACEMEMBER_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
-    }
+    }*/
 
 #define STRUCTURALSUBTRACTION_CODE_VALUE       "STRUCTURALSUBTRACTION-001"
 TEST_F(StructuralDomainTestFixture, StructuralSubtractionClassTests)
@@ -720,5 +720,48 @@ TEST_F(StructuralDomainTestFixture, PileTest)
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, PILE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+#define PILE_CODE_VALUE2       "PILE-002"
+TEST_F(StructuralDomainTestFixture, PileMixinTest)
+{
+    DgnDbPtr db = OpenDgnDb();
+    Dgn::DgnDbStatus status;
+
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralPhysicalModelCPtr physicalModel = Structural::StructuralDomainUtilities::GetStructuralPhysicalModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(physicalModel.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, PILE_CODE_VALUE2);
+    PilePtr pile = Pile::Create(physicalModel);
+    status = pile->SetCode(code);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    ASSERT_TRUE(pile->IsCurveMember());
+    ASSERT_FALSE(pile->IsSurfaceMember());
+
+
+    /*ECN::ECPropertyIterable props = pile->GetElementClass()->GetProperties();
+
+    for (auto i = props.begin(); i != props.end(); ++i)
+        {
+        ECN::ECPropertyP pr = *i;
+
+        long a = 15;
+        }
+
+
+    int test = 45;
+    status = pile->SetPropertyValue("www", test);*/
+
+
+    pile->Insert(&status);
+
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, PILE_CODE_VALUE2);
     ASSERT_TRUE(queriedElement.IsValid());
     }

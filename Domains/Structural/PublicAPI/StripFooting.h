@@ -11,7 +11,6 @@
 #include "FoundationMember.h"
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
-
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 //=======================================================================================

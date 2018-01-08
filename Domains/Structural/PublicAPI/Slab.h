@@ -8,18 +8,17 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "SurfaceMember.h"
+#include "StructuralMember.h"
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
-
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 //=======================================================================================
 //! Slab
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Slab : SurfaceMember
+struct EXPORT_VTABLE_ATTRIBUTE Slab : StructuralMember
     {
-    DGNELEMENT_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Slab, SurfaceMember);
+    DGNELEMENT_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Slab, StructuralMember);
     
     friend struct SlabHandler;
 
@@ -36,9 +35,9 @@ public:
 //=======================================================================================
 //! The ElementHandler for SlabHandler
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SlabHandler : SurfaceMemberHandler
+struct EXPORT_VTABLE_ATTRIBUTE SlabHandler : StructuralMemberHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Slab, Slab, SlabHandler, SurfaceMemberHandler, STRUCTURAL_DOMAIN_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Slab, Slab, SlabHandler, StructuralMemberHandler, STRUCTURAL_DOMAIN_EXPORT)
     };
 
 END_BENTLEY_STRUCTURAL_NAMESPACE

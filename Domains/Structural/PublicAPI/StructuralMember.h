@@ -33,6 +33,8 @@ public:
     STRUCTURAL_DOMAIN_EXPORT static StructuralMemberPtr Create(Structural::StructuralPhysicalModelCPtr model);
     STRUCTURAL_DOMAIN_EXPORT StructuralMemberCPtr Insert(Dgn::DgnDbStatus* insertStatus = nullptr);
     STRUCTURAL_DOMAIN_EXPORT StructuralMemberCPtr Update(Dgn::DgnDbStatus* updateStatus = nullptr);
+    STRUCTURAL_DOMAIN_EXPORT bool IsCurveMember();
+    STRUCTURAL_DOMAIN_EXPORT bool IsSurfaceMember();
     };
 
 //=======================================================================================

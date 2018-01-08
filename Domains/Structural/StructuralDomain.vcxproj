@@ -26,14 +26,15 @@
     <Xml Include="StructuralDomains.Partfile.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="StructuralPhysical.ecschema.xml" />
+    <Xml Include="StructuralPhysical.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Beam.cpp" />
     <ClCompile Include="Brace.cpp" />
     <ClCompile Include="Column.cpp" />
     <ClCompile Include="ConcreteMaterialProperties.cpp" />
-    <ClCompile Include="CurveMember.cpp" />
     <ClCompile Include="FoundationMember.cpp" />
     <ClCompile Include="MaterialProperties.cpp" />
     <ClCompile Include="Pile.cpp" />
@@ -49,7 +50,6 @@
     <ClCompile Include="StructuralPhysicalDomain.cpp" />
     <ClCompile Include="StructuralPhysicalModel.cpp" />
     <ClCompile Include="StructuralSubtraction.cpp" />
-    <ClCompile Include="SurfaceMember.cpp" />
     <ClCompile Include="Wall.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -57,7 +57,6 @@
     <ClInclude Include="PublicAPI\Brace.h" />
     <ClInclude Include="PublicAPI\Column.h" />
     <ClInclude Include="PublicAPI\ConcreteMaterialProperties.h" />
-    <ClInclude Include="PublicAPI\CurveMember.h" />
     <ClInclude Include="PublicAPI\FoundationMember.h" />
     <ClInclude Include="PublicAPI\MaterialProperties.h" />
     <ClInclude Include="PublicAPI\Pile.h" />
@@ -76,7 +75,6 @@
     <ClInclude Include="PublicAPI\StructuralPhysicalDomain.h" />
     <ClInclude Include="PublicAPI\StructuralPhysicalModel.h" />
     <ClInclude Include="PublicAPI\StructuralSubtraction.h" />
-    <ClInclude Include="PublicAPI\SurfaceMember.h" />
     <ClInclude Include="PublicAPI\Wall.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

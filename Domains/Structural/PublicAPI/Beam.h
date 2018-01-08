@@ -8,18 +8,17 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "CurveMember.h"
+#include "StructuralMember.h"
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
-
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 //=======================================================================================
 //! Beam
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Beam : CurveMember
+struct EXPORT_VTABLE_ATTRIBUTE Beam : StructuralMember
     {
-    DGNELEMENT_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Beam, CurveMember);
+    DGNELEMENT_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Beam, StructuralMember);
     
     friend struct BeamHandler;
 
@@ -36,9 +35,9 @@ public:
 //=======================================================================================
 //! The ElementHandler for BeamHandler
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE BeamHandler : CurveMemberHandler
+struct EXPORT_VTABLE_ATTRIBUTE BeamHandler : StructuralMemberHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Beam, Beam, BeamHandler, CurveMemberHandler, STRUCTURAL_DOMAIN_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Beam, Beam, BeamHandler, StructuralMemberHandler, STRUCTURAL_DOMAIN_EXPORT)
     };
 
 END_BENTLEY_STRUCTURAL_NAMESPACE

@@ -61,10 +61,8 @@
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralMember "StructuralMember"
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralSubtraction "StructuralSubtraction"
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralAddition "StructuralAddition"
-#define STRUCTURAL_PHYSICAL_CLASS_SurfaceMember "SurfaceMember"
 #define STRUCTURAL_PHYSICAL_CLASS_Slab "Slab"
 #define STRUCTURAL_PHYSICAL_CLASS_Wall "Wall"
-#define STRUCTURAL_PHYSICAL_CLASS_CurveMember "CurveMember"
 #define STRUCTURAL_PHYSICAL_CLASS_Beam "Beam"
 #define STRUCTURAL_PHYSICAL_CLASS_Column "Column"
 #define STRUCTURAL_PHYSICAL_CLASS_Brace "Brace"
@@ -76,7 +74,8 @@
 #define STRUCTURAL_PHYSICAL_CLASS_SteelMaterialProperties       "SteelMaterialProperties"
 #define STRUCTURAL_PHYSICAL_CLASS_Pile "Pile"
 #define STRUCTURAL_PHYSICAL_CLASS_PileCap "PileCap"
-
+#define STRUCTURAL_PHYSICAL_CLASS_ICURVE_MEMBER "ICurveMember"
+#define STRUCTURAL_PHYSICAL_CLASS_ISURFACE_MEMBER "ISurfaceMember"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects

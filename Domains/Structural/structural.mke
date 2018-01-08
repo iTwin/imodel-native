@@ -61,12 +61,10 @@ $(o)StructuralDomainUtilities$(oext) : $(StructBase)StructuralDomainUtilities.cp
     $(StructBasePublicAPI)StructuralPhysicalDomain.h \
     $(StructBasePublicAPI)StructuralElement.h \
     $(StructBasePublicAPI)StructuralMember.h \
-    $(StructBasePublicAPI)SurfaceMember.h \
     $(StructBasePublicAPI)StructuralAddition.h \
     $(StructBasePublicAPI)StructuralSubtraction.h \
     $(StructBasePublicAPI)Slab.h \
     $(StructBasePublicAPI)Wall.h \
-    $(StructBasePublicAPI)CurveMember.h \
     $(StructBasePublicAPI)Beam.h \
     $(StructBasePublicAPI)Brace.h \
     $(StructBasePublicAPI)Column.h \
@@ -116,17 +114,9 @@ $(o)StructuralSubtraction$(oext) : $(StructBase)StructuralSubtraction.cpp \
     $(StructBasePublicAPI)StructuralPhysicalDefinitions.h \
     $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
 
-$(o)SurfaceMember$(oext) : $(StructBase)SurfaceMember.cpp \
-    ${MultiCompileDepends} \
-    $(StructBasePublicAPI)SurfaceMember.h \
-    $(StructBasePublicAPI)StructuralMember.h \
-    $(StructBasePublicAPI)StructuralElement.h \
-    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
-
 $(o)Slab$(oext) : $(StructBase)Slab.cpp \
     ${MultiCompileDepends} \
     $(StructBasePublicAPI)Slab.h \
-    $(StructBasePublicAPI)SurfaceMember.h \
     $(StructBasePublicAPI)StructuralMember.h \
     $(StructBasePublicAPI)StructuralElement.h \
     $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
@@ -134,22 +124,13 @@ $(o)Slab$(oext) : $(StructBase)Slab.cpp \
 $(o)Wall$(oext) : $(StructBase)Wall.cpp \
     ${MultiCompileDepends} \
     $(StructBasePublicAPI)Wall.h \
-    $(StructBasePublicAPI)SurfaceMember.h \
     $(StructBasePublicAPI)StructuralMember.h \
     $(StructBasePublicAPI)StructuralElement.h \
     $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 
 
-$(o)CurveMember$(oext) : $(StructBase)CurveMember.cpp \
-    ${MultiCompileDepends} \
-    $(StructBasePublicAPI)CurveMember.h \
-    $(StructBasePublicAPI)StructuralMember.h \
-    $(StructBasePublicAPI)StructuralElement.h \
-    $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
-
 $(o)Beam$(oext) : $(StructBase)Beam.cpp \
     ${MultiCompileDepends} \
     $(StructBasePublicAPI)Beam.h \
-    $(StructBasePublicAPI)CurveMember.h \
     $(StructBasePublicAPI)StructuralMember.h \
     $(StructBasePublicAPI)StructuralElement.h \
     $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
@@ -157,7 +138,6 @@ $(o)Beam$(oext) : $(StructBase)Beam.cpp \
 $(o)Column$(oext) : $(StructBase)Column.cpp \
     ${MultiCompileDepends} \
     $(StructBasePublicAPI)Column.h \
-    $(StructBasePublicAPI)CurveMember.h \
     $(StructBasePublicAPI)StructuralMember.h \
     $(StructBasePublicAPI)StructuralElement.h \
     $(StructBasePublicAPI)StructuralPhysicalDefinitions.h
@@ -165,7 +145,6 @@ $(o)Column$(oext) : $(StructBase)Column.cpp \
 $(o)Brace$(oext) : $(StructBase)Brace.cpp \
     ${MultiCompileDepends} \
     $(StructBasePublicAPI)Brace.h \
-    $(StructBasePublicAPI)CurveMember.h \
     $(StructBasePublicAPI)StructuralMember.h \
     $(StructBasePublicAPI)StructuralElement.h \
     $(StructBasePublicAPI)StructuralPhysicalDefinitions.h 

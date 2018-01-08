@@ -9,19 +9,18 @@
 
 //__PUBLISH_SECTION_START__
 
-#include "SurfaceMember.h"
+#include "StructuralMember.h"
 #include "StructuralDomainApi.h"
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
-
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
 //=======================================================================================
 //! Wall
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Wall : SurfaceMember
+struct EXPORT_VTABLE_ATTRIBUTE Wall : StructuralMember
     {
-    DGNELEMENT_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Wall, SurfaceMember);
+    DGNELEMENT_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Wall, StructuralMember);
     
     friend struct WallHandler;
 
@@ -41,9 +40,9 @@ public:
 //=======================================================================================
 //! The ElementHandler for WallHandler
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE WallHandler : SurfaceMemberHandler
+struct EXPORT_VTABLE_ATTRIBUTE WallHandler : StructuralMemberHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Wall, Wall, WallHandler, SurfaceMemberHandler, STRUCTURAL_DOMAIN_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(STRUCTURAL_PHYSICAL_CLASS_Wall, Wall, WallHandler, StructuralMemberHandler, STRUCTURAL_DOMAIN_EXPORT)
     };
 
 END_BENTLEY_STRUCTURAL_NAMESPACE

@@ -65,9 +65,6 @@
     <ClCompile Include="Brace.cpp">
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
-    <ClCompile Include="CurveMember.cpp">
-      <Filter>StructuralPhysical</Filter>
-    </ClCompile>
     <ClCompile Include="FoundationMember.cpp">
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
@@ -93,9 +90,6 @@
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
     <ClCompile Include="Column.cpp">
-      <Filter>StructuralPhysical</Filter>
-    </ClCompile>
-    <ClCompile Include="SurfaceMember.cpp">
       <Filter>StructuralPhysical</Filter>
     </ClCompile>
     <ClCompile Include="ConcreteMaterialProperties.cpp">
@@ -128,9 +122,6 @@
       <Filter>PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ConcreteMaterialProperties.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\CurveMember.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\FoundationMember.h">
@@ -176,9 +167,6 @@
       <Filter>PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\StructuralSubtraction.h">
-      <Filter>PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\SurfaceMember.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\Wall.h">

@@ -19,12 +19,7 @@ StructuralPhysicalDomain::StructuralPhysicalDomain() : DgnDomain(BENTLEY_STRUCTU
     RegisterHandler(StructuralPhysicalModelHandler::GetHandler());
     RegisterHandler(StructuralElementHandler::GetHandler());
     RegisterHandler(StructuralMemberHandler::GetHandler());
-    RegisterHandler(SurfaceMemberHandler::GetHandler());
-    // TODO: register handlers once they are created
-    
-    
     RegisterHandler(SlabHandler::GetHandler());
-    RegisterHandler(CurveMemberHandler::GetHandler());
     RegisterHandler(BeamHandler::GetHandler());
     RegisterHandler(ColumnHandler::GetHandler());
     RegisterHandler(BraceHandler::GetHandler());
