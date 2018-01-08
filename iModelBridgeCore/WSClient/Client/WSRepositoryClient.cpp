@@ -440,19 +440,22 @@ WSRepository WSRepositoryClient::ParseRepositoryUrl(Utf8StringCR url, Utf8String
     return repository;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String WSRepositoryClient::UrlDecode(Utf8String url)
     {
     Utf8String percentReplace("-PeRCenT_");
-    // First replace the percent sign so that it is not used in decoding, as it is a value in this encoder, not an escape symbol.
+    // First replace the percent sign so that it is not used in decoding, as it is a value in this encoder, not an escape symbol.
     url.ReplaceAll("%", percentReplace.c_str());
     url.ReplaceAll("~25", percentReplace.c_str());
-    // Then use % instead of ~ for the real decoding algorithm.
+    // Then use % instead of ~ for the real decoding algorithm.
     url.ReplaceAll("~", "%");
     // URL decode
-    auto decodedUrl = HttpClient::UnescapeString(url);
-    // Restore the values that failed to decode, i.e. where % was not used.
+    auto decodedUrl = BeUri::UnescapeString(url);
+    // Restore the values that failed to decode, i.e. where % was not used.
     decodedUrl.ReplaceAll("%", "~");
-    // Restore the backed up percent signs.
+    // Restore the backed up percent signs.
     decodedUrl.ReplaceAll(percentReplace.c_str(), "%");
 
     return decodedUrl;

@@ -129,7 +129,7 @@ Utf8String WebApiV1::GetUrl(Utf8StringCR service, Utf8StringCR params, Utf8Strin
         "%s/%sDataSources/%s/%s",
         m_configuration->GetServerUrl().c_str(),
         CreateWebApiVersionPart(webApiVersion).c_str(),
-        HttpClient::EscapeString(m_configuration->GetRepositoryId()).c_str(),
+        BeUri::EscapeString(m_configuration->GetRepositoryId()).c_str(),
         service.c_str()
         );
 
