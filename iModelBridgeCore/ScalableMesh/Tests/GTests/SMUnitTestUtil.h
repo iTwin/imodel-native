@@ -12,9 +12,15 @@
 #include <DgnPlatform/DgnPlatform.h>
 
 #include <Bentley/BeFileName.h>
+#include <json/json.h>
 
 #ifndef SM_DATA_PATH
 #define SM_DATA_PATH L"SMData"
+#define SM_LISTING_FILE_NAME L"list.txt"
+#endif
+
+#ifndef SM_DISPLAY_QUERY_TEST_CASES
+#define SM_DISPLAY_QUERY_TEST_CASES L"displayQueryTestCases.txt"
 #endif
 
 //#define VANCOUVER_API
@@ -32,6 +38,8 @@ using namespace Bentley::GeoCoordinates;
 
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/ScalableMeshLib.h>
+//#include <ScalableMesh/IScalableMeshProgress.h>
+//#include <iostream>
 
 namespace ScalableMeshGTestUtil
     {
@@ -46,11 +54,20 @@ namespace ScalableMeshGTestUtil
     enum class SMMeshType
         {
         TYPE_3SM,
-        TYPE_3DTILES,
+        TYPE_3DTILES_TILESET,
+        TYPE_3DTILES_B3DM,
         TYPE_UNKNOWN
         };
-
+    
     bvector<BeFileName> GetFiles(BeFileName dataPath);
+
+    size_t GetFileCount(BeFileName dataPath);
+
+    Json::Value GetGroundTruthJsonFile(BeFileName dataPath);
+
+	bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>> GetListOfValues(BeFileName listingFile);
+
+    bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>>   GetListOfDisplayQueryValues(BeFileName listingFile);
     
     SMMeshType GetFileType(BeFileName file);
 
@@ -87,4 +104,15 @@ namespace ScalableMeshGTestUtil
         };
 
     bool InitScalableMesh();
+
+    //struct TestProgressListener : ScalableMesh::IScalableMeshProgressListener
+    //    {
+    //    virtual void CheckContinueOnProgress(ScalableMesh::IScalableMeshProgress* progress) const override
+    //        {
+    //        auto progress_percent = progress->GetProgress() * 100;
+    //        std::cout << "\r" << progress_percent <<"%";
+    //        if (progress_percent >= 100) std::cout << std::endl;
+    //        };
+    //    };
+
     }

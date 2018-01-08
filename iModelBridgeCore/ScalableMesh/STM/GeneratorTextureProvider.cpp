@@ -85,7 +85,7 @@ StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData
     pMosaicP->Add(rasterList);
     rasterList.clear();
     delete cluster;
-    auto provider = new MosaicTextureProvider(pMosaicP.GetPtr());
+    auto provider = new MosaicTextureProvider(pMosaicP);
     StatusInt status = provider->GetTextureForArea(texData, width, height, area);
     pMosaicP = 0;
     BeFileName::EmptyDirectory(m_dir.c_str());

@@ -121,7 +121,10 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
                                                 int                                                                queryId) const override;        
 
         virtual BentleyStatus _GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
-                                               int                                                                queryId) const override;
+                                                int                                                                queryId) const override;
+
+        virtual BentleyStatus _GetRequiredTextureTiles(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::SMRasterTile>& rasterTiles,
+                                                       int                    queryId) const override;
 
         virtual BentleyStatus _StopQuery(int queryId) override; 
 

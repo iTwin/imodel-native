@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -150,6 +150,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         SMNodeGroupPtr m_CesiumGroup;
 
+		IClipDefinitionDataProviderPtr m_clipProvider;
+
     protected : 
 
 
@@ -228,12 +230,22 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
 
         virtual void CancelPreloadData() override;
+        
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
+
+        virtual bool IsTextureAvailable() override;        
 
         virtual bool IsTextureAvailable() override;        
 
         virtual void Register(const uint64_t& smID) override;
 
         virtual void Unregister(const uint64_t& smID) override;
+
+		virtual bool DoesClipFileExist() const override;
+
+		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
+
+		virtual void WriteClipDataToProjectFilePath() override;
         
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
                 
@@ -302,6 +314,10 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         void SetDataSourceExtension(const std::wstring& extension);
 
+        void SetTransform(const Transform& transform);
+
+        void SetGltfUpAxis(UpAxis gltfUpAxis);
+
         void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
 
         DPoint3d* GetPoints();
@@ -329,6 +345,9 @@ struct StreamingDataBlock : public bvector<uint8_t>
         std::wstring m_extension = L".bin";
         condition_variable m_pDataBlockCV;
         mutex m_pDataBlockMutex;
+        Transform m_transform;
+        UpAxis m_gltfUpAxis;
+
 
     private:
         struct Cesium3DTilesData : Cesium3DTilesBase
@@ -354,7 +373,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
 
-        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, bool isPublishing = false, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
         
         virtual ~SMStreamingNodeDataStore();
 

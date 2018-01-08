@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -18,6 +18,7 @@
 #include <ScalableMesh/IScalableMeshEdit.h>
 #include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMeshInfo.h>
+#include <ScalableMesh/IScalableMeshClippingOptions.h>
 
 #undef static_assert
 
@@ -209,6 +210,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr, BENTLEY_NAMESPACE_NAME::Dgn::ClipVectorPtr clips = nullptr, uint64_t coverageId = (uint64_t)-1) const = 0;
 
+        virtual int                                 _SaveAs(const WString& destination, ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr) = 0;
+
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const = 0;
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
@@ -258,6 +261,8 @@ struct IScalableMesh abstract:  IRefCounted
 
 		virtual void                              _CompactExtraFiles() = 0;
 
+		virtual void                              _WriteExtraFiles() = 0;
+
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) = 0;
 
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
@@ -285,6 +290,8 @@ struct IScalableMesh abstract:  IRefCounted
         virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const = 0;
         
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) = 0;
+
+		virtual IScalableMeshClippingOptions&      _EditClippingOptions() = 0;
 
         virtual IScalableMeshPtr                   _GetTerrainSM() =0 ;
 
@@ -452,11 +459,15 @@ struct IScalableMesh abstract:  IRefCounted
 
 		BENTLEY_SM_EXPORT void                   CompactExtraFiles();
 
+		BENTLEY_SM_EXPORT void                   WriteExtraFiles();
+
         BENTLEY_SM_EXPORT void                   GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes);
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
         BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, BENTLEY_NAMESPACE_NAME::Dgn::ClipVectorPtr clips = nullptr) const;
+
+        BENTLEY_SM_EXPORT int                    SaveAs(const WString& destination, ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr);
 
         BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 
@@ -473,6 +484,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   GetCoverageName(Utf8String& name, uint64_t id) const;
 
         BENTLEY_SM_EXPORT BentleyStatus          DeleteCoverage(uint64_t id);
+
+		BENTLEY_SM_EXPORT IScalableMeshClippingOptions&      EditClippingOptions();
 
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
 

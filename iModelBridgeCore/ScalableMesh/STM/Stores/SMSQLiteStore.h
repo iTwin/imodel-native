@@ -17,6 +17,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         SMIndexMasterHeader<EXTENT> m_masterHeader;
         std::mutex                  m_preloadMutex;
 
+		IClipDefinitionDataProviderPtr m_clipProvider;
+
 
     public : 
     
@@ -46,7 +48,15 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         
         virtual void CancelPreloadData() override;
 
+        virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
+
         virtual bool IsTextureAvailable() override;
+
+		virtual bool DoesClipFileExist() const override;
+
+		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
+
+		virtual void WriteClipDataToProjectFilePath() override;
                                
         virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        
 

@@ -569,6 +569,7 @@ BentleyStatus                      ScalableMeshGroup::_DeleteCoverage(uint64_t i
     return SUCCESS;
     }
 
+
 void ScalableMeshGroup::_SetGroupSelectionFromPoint(DPoint3d firstPoint)
 {
     for (size_t i = 0; i < m_members.size(); ++i)

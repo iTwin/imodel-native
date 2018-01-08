@@ -109,6 +109,9 @@
         <ProductDirectory   Name="ECSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory   Name="ECServicesManagedAssemblies"  Deliver="true" Path="Dlls"/>
         <ProductDirectory   Name="BentleyDesktopClientApi_Native"  Deliver="true" Path="Dlls"/>	
+        <ProductDirectory   Name="GeoTiffAssemblies" Path="Dlls"/>
+        <ProductDirectory   Name="TbbAssemblies" Path="Dlls"/>
+        <ProductDirectory   Name="CesiumApps" Path="Dlls"/>
         <ProductDirectory   Name="ecobjectsnativeassemblies"                Path="Dlls"                              />
         <ProductDirectory   Name="ecschemas"                                Path="Dlls"                              />
         <ProductDirectory   Name="DGNIndexerECSchemas"                      Path="Dlls"                              />
@@ -193,6 +196,7 @@
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
         <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
+        <SubPart PartName="ScalableMesh-Tested" PartFile="ScalableMeshCoreUnitTests" Repository="ScalableMesh"/>
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModelDgnDb" Repository="TerrainModel" />     
         <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <SubPart PartName="PublishedApi"   PartFile="geomlibs"    Repository="GeomLibs"/>
@@ -263,7 +267,7 @@
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
-<ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
+        <ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
         <!--<ProductDirectory Name="http" Path="Dlls" Deliver="true"/>-->
         <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="DgnClientFxJavaScript"        Path="Dlls" Deliver="true"/>

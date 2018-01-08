@@ -136,7 +136,19 @@ void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt SMNodeGroup::SaveTilesetToCache(Json::Value & tileset, const uint64_t& priorityNodeID, bool generateIDs)
     {
-    assert(tileset.isMember("root"));
+    assert(tileset.isMember("asset") && tileset.isMember("root"));
+
+    if (tileset["asset"].isMember("gltfUpAxis"))
+        {
+        auto gltfUpAxis = tileset["asset"]["gltfUpAxis"].asString();
+        if (gltfUpAxis == "Z") m_upAxis = UpAxis::Z;
+        else if (gltfUpAxis == "Y") m_upAxis = UpAxis::Y;
+        else if (gltfUpAxis == "X") m_upAxis = UpAxis::X;
+        else
+            {
+            BeAssert(false); // Unknown up axis for gltf
+            }
+        }
     if (generateIDs)
         {
         auto& currentSMHeader = m_tilesetRootNode["SMHeader"];
@@ -405,7 +417,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                 return ERROR;
                 }
 
-            bool mustGenerateIDs = !tileset["root"].isMember("SMHeader") && tileset["root"]["SMHeader"].isMember("id");
+            bool mustGenerateIDs = !(tileset["root"].isMember("SMHeader") && tileset["root"]["SMHeader"].isMember("id"));
             if (SUCCESS != this->SaveTilesetToCache(tileset, priorityNodeID, mustGenerateIDs))
                 {
                 m_isLoading = false;
@@ -523,33 +535,6 @@ void SMNodeGroup::LoadGroupParallel()
         group->m_groupCV.notify_all();
         });
     thread.detach();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Richard.Bois     03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SMNodeGroup::GetWKTString(Utf8String & wkt)
-    {
-    assert(m_tilesetRootNode.isMember("root"));
-    auto const& root = m_tilesetRootNode["root"];
-    if (!root.isMember("SMHeader")) return false;
-    auto const& smHeader = root["SMHeader"];
-    if (!smHeader.isMember("GCS")) return false;
-    wkt = Utf8String(smHeader["GCS"].asCString());
-    //ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wkt, wkt);
-    //BaseGCS::WktFlavor  wktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
-    //
-    //bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
-    //
-    //assert(result);
-    //
-    //SMStatus gcsCreateStatus;
-    //GCS gcs(GetGCSFactory().Create(wkt.c_str(), wktFlavor, gcsCreateStatus));
-    //
-    //if (SMStatus::S_SUCCESS != gcsCreateStatus)
-    //    return false;
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1262,8 +1262,8 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
     if (geometryData.size() > 0)
         {
-        node->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create(PointOp<POINT>::GetX(geometryData[0]), PointOp<POINT>::GetY(geometryData[0]), PointOp<POINT>::GetZ(geometryData[0]),
-                                                                      PointOp<POINT>::GetX(geometryData[0]), PointOp<POINT>::GetY(geometryData[0]), PointOp<POINT>::GetZ(geometryData[0]));
+        node->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(node->m_nodeHeader.m_contentExtent, ExtentOp<EXTENT>::Create(PointOp<POINT>::GetX(geometryData[0]), PointOp<POINT>::GetY(geometryData[0]), PointOp<POINT>::GetZ(geometryData[0]),
+                                                                      PointOp<POINT>::GetX(geometryData[0]), PointOp<POINT>::GetY(geometryData[0]), PointOp<POINT>::GetZ(geometryData[0])));
         for (auto& pt: geometryData)
             node->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(node->m_nodeHeader.m_contentExtent, SpatialOp<POINT, POINT, EXTENT>::GetExtent(pt));
         }

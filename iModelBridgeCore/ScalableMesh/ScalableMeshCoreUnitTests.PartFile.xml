@@ -28,6 +28,7 @@
 
   <ProductDirectoryList ListName="ScalableMeshUnitTests">
     <ProductDirectory   Name="ScalableMeshUnitTests" Deliver="true" Path="Dlls"/>
+    <ProductDirectory   Name="ScalableMesh_DataFiles" Deliver="true" Path="Dlls"/>
     <ProductDirectory   Name="ScalableMesh_Data" Deliver="true" Path="Dlls/SMData"/>
     <ProductDirectory   Name="GeoTiffAssemblies"  Deliver="true" Path="Dlls"/>
     <ProductDirectory   Name="TMSchemas"  Deliver="true" Path="Dlls"/>

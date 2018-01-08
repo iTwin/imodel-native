@@ -34,9 +34,12 @@ struct ScalableMeshTextureInfo : public RefCounted<IScalableMeshTextureInfo>
         SMTextureType m_textureType;
         bool          m_isUsingBingMap;
         bool          m_isTextureAvailable;
+        WString       m_bingMapType;
       
         
     protected : 
+
+        virtual WString       _GetBingMapsType() const override;
 
         virtual SMTextureType _GetTextureType() const override;
 
@@ -51,7 +54,7 @@ struct ScalableMeshTextureInfo : public RefCounted<IScalableMeshTextureInfo>
         void*   operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
         void    operator delete [](void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
 
-        ScalableMeshTextureInfo(SMTextureType textureType, bool isUsingBingMap, bool isTextureAvailable);
+        ScalableMeshTextureInfo(SMTextureType textureType, bool isUsingBingMap, bool isTextureAvailable, const WString& bingMapType);
         
         static Byte* GetBingMapLogo(DPoint2d& bingMapLogoSize);
         

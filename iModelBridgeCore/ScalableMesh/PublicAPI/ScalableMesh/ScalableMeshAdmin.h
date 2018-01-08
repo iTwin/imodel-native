@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshAdmin.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,6 +46,11 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
         virtual bool _CanImportPODfile() const
             {
             return false;
+            }
+
+        virtual bool _ProvideImageppAuthentication() const
+            {
+            return true;
             }
 
         virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator () 

@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshRDSProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,8 @@ protected:
     virtual Utf8String _GetRDSURLAddress();
 
     virtual Utf8String _GetToken();
+
+    virtual Utf8String _GetRootDocument();
 
 public:
 
