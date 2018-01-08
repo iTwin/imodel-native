@@ -22,28 +22,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-//=======================================================================================
-// RefCounted wrapper around ECDb
-//! @bsiclass
-//=======================================================================================
-struct JsECDb : RefCounted<BeSQLite::EC::ECDb>
-{
-    DEFINE_T_SUPER(BeSQLite::EC::ECDb)
-  private:
-    mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
-    void _OnDbClose() override;
-
-  public:
-    JsECDb();
-
-    //! Gets a cached and prepared ECSqlStatement
-    BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
-};
-
-typedef RefCountedPtr<JsECDb> JsECDbPtr;
-typedef JsECDb &JsECDbR;
-typedef JsECDb const &JsECDbCR;
-
 struct AddonUtils
 {
     BE_JSON_NAME(rootSubject)
@@ -103,14 +81,8 @@ struct AddonUtils
     static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
     static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
-    static BeSQLite::DbResult InsertInstance(Utf8StringR insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
-    static BeSQLite::DbResult UpdateInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
-    static BeSQLite::DbResult ReadInstance(JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
-    static BeSQLite::DbResult DeleteInstance(JsECDbR ecdb, JsonValueCR instanceKey);
-    static BeSQLite::DbResult ContainsInstance(bool &containsInstance, JsECDbR ecdb, JsonValueCR instanceKey);
     static BeSQLite::DbResult ExecuteQuery(JsonValueR results, BeSQLite::EC::ECSqlStatement &stmt, JsonValueCR bindings);
-    static BeSQLite::DbResult ExecuteStatement(Utf8StringR instanceId, BeSQLite::EC::ECSqlStatement &stmt, bool isInsertStmt, JsonValueCR bindings);
-    static Utf8String GetLastEcdbIssue();
+    static Utf8StringCR GetLastECDbIssue();
     static BeSQLite::DbResult GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath);
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
     static DgnPlatformLib::Host::RepositoryAdmin& GetRepositoryAdmin();

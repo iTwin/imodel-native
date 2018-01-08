@@ -392,6 +392,9 @@ declare class NodeAddonECDb {
      */
     closeDb(): void;
 
+    /** Dispose of the native ECDb object. */
+    dispose(): void;
+
      /** Save changes to ecdb
      * @param changesetName The name of the operation that generated these changes. If transaction tracking is enabled.
      * @return non-zero error status if operation failed.

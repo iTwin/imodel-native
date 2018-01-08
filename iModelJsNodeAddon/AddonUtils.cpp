@@ -10,7 +10,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
-static Utf8String s_lastEcdbIssue;
+static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
 static AddonUtils::T_AssertHandler s_assertHandler;
 
@@ -21,7 +21,7 @@ BEGIN_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
     {
-    void _OnIssueReported(BentleyApi::Utf8CP message) const override {s_lastEcdbIssue = message;}
+    void _OnIssueReported(BentleyApi::Utf8CP message) const override { s_lastECDbIssue = message;}
     };
 
 static ECDbIssueListener s_listener;
@@ -81,29 +81,6 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-JsECDb::JsECDb() : m_ecsqlCache(50, "ECDb")
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-void JsECDb::_OnDbClose()
-    {
-    m_ecsqlCache.Empty();
-    T_Super::_OnDbClose();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-CachedECSqlStatementPtr JsECDb::GetPreparedECSqlStatement(Utf8CP ecsql) const
-    {
-    return m_ecsqlCache.GetPreparedStatement(*this, ecsql, nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
 void AddonUtils::InitLogging()
     {
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
@@ -158,10 +135,10 @@ void AddonUtils::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHand
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-Utf8String AddonUtils::GetLastEcdbIssue() 
+Utf8StringCR AddonUtils::GetLastECDbIssue()
     {
     // It's up to the caller to serialize access to this.
-    return s_lastEcdbIssue;
+    return s_lastECDbIssue;
     }
 
 //---------------------------------------------------------------------------------------
@@ -564,25 +541,6 @@ BeSQLite::DbResult AddonUtils::ExecuteQuery(JsonValueR results, ECSqlStatement& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-BeSQLite::DbResult AddonUtils::ExecuteStatement(Utf8StringR instanceId, ECSqlStatement& stmt, bool isInsertStmt, JsonValueCR bindings)
-    {
-    if (SUCCESS != JsonBinder::BindValues(stmt, bindings))
-        return BE_SQLITE_ERROR;
-
-    ECInstanceKey instanceKey;
-    DbResult result = isInsertStmt ? stmt.Step(instanceKey) : stmt.Step();
-    if (BE_SQLITE_DONE != result)
-        return result;
-
-    if (isInsertStmt)
-        instanceId = instanceKey.GetInstanceId().ToString(ECInstanceId::UseHex::Yes);
-
-    return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
 DbResult AddonUtils::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
     {
     if (!pathname.DoesPathExist())
@@ -686,113 +644,3 @@ ECInstanceId AddonUtils::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR json
     return instanceId;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-DbResult AddonUtils::InsertInstance(Utf8StringR insertedId, ECDbCR ecdb, JsonValueCR jsonInstance)
-    {
-    ECClassCP ecClass = GetClassFromInstance(ecdb, jsonInstance);
-    if (!ecClass)
-        return BE_SQLITE_ERROR;
-
-    JsonInserter inserter(ecdb, *ecClass, nullptr);
-    ECInstanceKey instanceKey;
-    DbResult result = inserter.Insert(instanceKey, jsonInstance);
-    if (result != BE_SQLITE_OK)
-        return result;
-
-    insertedId = BeInt64Id(instanceKey.GetInstanceId().GetValueUnchecked()).ToHexStr();
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-DbResult AddonUtils::UpdateInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
-    {
-    ECClassCP ecClass = GetClassFromInstance(ecdb, jsonInstance);
-    if (!ecClass)
-        return BE_SQLITE_ERROR;
-
-    ECInstanceId instanceId = GetInstanceIdFromInstance(ecdb, jsonInstance);
-    if (!instanceId.IsValid())
-        return BE_SQLITE_ERROR;
-
-    JsonUpdater updater(ecdb, *ecClass, nullptr, JsonUpdater::Options(JsonUpdater::SystemPropertiesOption::Ignore, JsonUpdater::ReadonlyPropertiesOption::Fail));
-    return updater.Update(instanceId, jsonInstance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-DbResult AddonUtils::ReadInstance(JsonValueR jsonInstance, ECDbCR ecdb, JsonValueCR instanceKey)
-    {
-    ECClassCP ecClass = GetClassFromInstance(ecdb, instanceKey);
-    if (!ecClass)
-        return BE_SQLITE_ERROR;
-
-    ECInstanceId instanceId = GetInstanceIdFromInstance(ecdb, instanceKey);
-    if (!instanceId.IsValid())
-        return BE_SQLITE_ERROR;
-
-    JsonReader reader(ecdb, *ecClass, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
-    if (!reader.IsValid())
-        return BE_SQLITE_ERROR;
-
-    if (SUCCESS != reader.Read(jsonInstance, instanceId))
-        return BE_SQLITE_ERROR;
-
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-DbResult AddonUtils::DeleteInstance(JsECDbR ecdb, JsonValueCR instanceKey)
-    {
-    ECClassCP ecClass = GetClassFromInstance(ecdb, instanceKey);
-    if (!ecClass)
-        return BE_SQLITE_ERROR;
-
-    ECInstanceId instanceId = GetInstanceIdFromInstance(ecdb, instanceKey);
-    if (!instanceId.IsValid())
-        return BE_SQLITE_ERROR;
-
-    Utf8PrintfString ecsql("DELETE FROM ONLY %s WHERE ECInstanceId=?", ecClass->GetECSqlName().c_str());
-    CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(ecsql.c_str());
-    if (!stmt.IsValid())
-        return BE_SQLITE_ERROR;
-
-    stmt->BindId(1, instanceId);
-
-    return stmt->Step();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-DbResult AddonUtils::ContainsInstance(bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey)
-    {
-    ECClassCP ecClass = GetClassFromInstance(ecdb, instanceKey);
-    if (!ecClass)
-        return BE_SQLITE_ERROR;
-
-    ECInstanceId instanceId = GetInstanceIdFromInstance(ecdb, instanceKey);
-    if (!instanceId.IsValid())
-        return BE_SQLITE_ERROR;
-
-    Utf8PrintfString ecsql("SELECT NULL FROM %s WHERE ECInstanceId=?", ecClass->GetECSqlName().c_str());
-    CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(ecsql.c_str());
-    if (!stmt.IsValid())
-        return BE_SQLITE_ERROR;
-
-    stmt->BindId(1, instanceId);
-
-    DbResult result = stmt->Step();
-
-    if (result != BE_SQLITE_ROW && result != BE_SQLITE_DONE)
-        return result;
-
-    containsInstance = (result == BE_SQLITE_ROW);
-    return BE_SQLITE_OK;
-    }
