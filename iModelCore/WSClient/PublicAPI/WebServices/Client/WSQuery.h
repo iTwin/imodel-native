@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSQuery.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,12 +80,16 @@ struct WSQuery
         //! Unknown string values (for example ones that are entered by user) need to be escaped using EscapeValue().
         WSCLIENT_EXPORT WSQuery& SetFilter(Utf8StringCR filter);
 
-        //! Add $filter $id+in+[...]
-        //! @param[out] idsInOut - ids to create filter from. Will remove ids that were added.
-        //! Will only use ids that are compatible with current query (by schema and classes).
-        //! @param[out] idsAddedOut - [optional] return objects that were used for filter.
+        //! Add $filter $id+in+[...] using input ObjectIds that match query schema and classes.
+        //! Already existing non-empty filter will be joined with AND operator.
+        //! @param[out] idsInOut - attempt to use ObjectIds for filter.
+        //!     Will pop ids from queue and add them to filter as long as their schema and class matches query.
+        //!     Will stop adding when incompatible ObjectId is found.
+        //!     Unused ObjectIds will be returned via same parameter.
+        //!     Caller should check resulting ObjectIds and handle any leftovers - by creating additional queries, returning error, etc.
+        //! @param[out] idsAddedOut - [optional] return ObjectIds that were used for filter.
         //! @param[in] maxIdsInFilter - maximum count of ids in filter. Defaults to 100, reasonable server/client load. If set to 0 - max ids count is unlimited
-        //! @param[in] maxFilterLength - maximum lenght of filter. Servers usually limit maximum URL length to 2K. If set to 0 - max length is unlimited
+        //! @param[in] maxFilterLength - maximum length of filter. Servers usually limit maximum URL length to 2K. If set to 0 - max length is unlimited
         WSCLIENT_EXPORT WSQuery& AddFilterIdsIn
             (
             std::deque<ObjectId>& idsInOut,
