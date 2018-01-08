@@ -9,6 +9,8 @@
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointLengthAnglePlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsLengthPlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsAnglePlacementStrategy)
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -80,4 +82,64 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlace
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void          SetWorkingPlane(DPlane3d const & plane) { return _SetWorkingPlane(plane); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPlane3d      GetWorkingPlane() const { return _GetWorkingPlane(); }
     };
+
+struct EXPORT_VTABLE_ATTRIBUTE LinePointsLengthPlacementStrategy : LinePlacementStrategy
+    {
+    DEFINE_T_SUPER(LinePlacementStrategy);
+
+    private:
+        double m_length = 0;
+        DVec3d m_direction;
+
+    protected:
+        LinePointsLengthPlacementStrategy() : T_Super() {}
+
+        virtual void _SetProperty(Utf8CP key, const double & value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
+
+        void _SetLength(double const & length);
+        double _GetLength() const;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
+
+        BentleyStatus AdjustEndPoint();
+    public:
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsLengthPlacementStrategyPtr Create() { return new LinePointsLengthPlacementStrategy(); }
+    };
+
+struct EXPORT_VTABLE_ATTRIBUTE LinePointsAnglePlacementStrategy : LinePlacementStrategy
+    {
+    DEFINE_T_SUPER(LinePlacementStrategy);
+
+    private:
+        double m_angle = 0;
+        DPlane3d m_workingPlane;
+
+    protected:
+        LinePointsAnglePlacementStrategy(DPlane3d plane) : T_Super(), m_workingPlane(plane) {}
+
+        virtual void _SetProperty(Utf8CP key, const double & value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
+
+        void _SetAngle(double const & angle);
+        double _GetAngle() const;
+
+        virtual void _SetWorkingPlane(DPlane3d const & plane);
+        virtual DPlane3d _GetWorkingPlane() const { return m_workingPlane; }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
+
+        BentleyStatus AdjustEndPoint();
+    public:
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsAnglePlacementStrategyPtr Create(DPlane3d plane) { return new LinePointsAnglePlacementStrategy(plane); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void          SetWorkingPlane(DPlane3d const & plane) { return _SetWorkingPlane(plane); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPlane3d      GetWorkingPlane() const { return _GetWorkingPlane(); }
+    };
+
+
 END_BUILDING_SHARED_NAMESPACE

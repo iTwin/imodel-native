@@ -211,4 +211,265 @@ double LinePointLengthAnglePlacementStrategy::_GetAngle() const
     return m_angle;
     }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// LinePointsLengthPlacementStrategy
+/////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsLengthPlacementStrategy::_SetLength(double const & length)
+    {
+    m_length = length;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+double LinePointsLengthPlacementStrategy::_GetLength() const
+    {
+    return m_length;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsLengthPlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
+    {
+    if (_GetKeyPoints().size() < 2)
+        T_Super::_AddKeyPoint(newKeyPoint);
+
+    bvector<DPoint3d> points = _GetKeyPoints();
+    if (2 == points.size())
+        m_direction = DVec3d::FromStartEnd(points[0], points[1]);
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsLengthPlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
+    {
+    if ((!IsDynamicKeyPointSet() && _GetKeyPoints().size() < 2) ||
+        (IsDynamicKeyPointSet() && _GetKeyPoints().size() <= 2))
+        T_Super::_AddDynamicKeyPoint(newDynamicKeyPoint);
+
+    bvector<DPoint3d> points = _GetKeyPoints();
+    if (2 == points.size())
+        m_direction = DVec3d::FromStartEnd(points[0], points[1]);
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsLengthPlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
+    {
+    if (newDynamicKeyPoints.size() <= 2 - _GetKeyPoints().size())
+        T_Super::_AddDynamicKeyPoints(newDynamicKeyPoints);
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
+    {
+    bvector<DPoint3d> points = _GetKeyPoints();
+    
+    if (points.size() < 2)
+        return BentleyStatus::SUCCESS; // Noting to do
+
+    DPoint3d startPoint = points[0];
+    DPoint3d endPoint;
+    
+    DVec3d direction = m_direction;
+    direction.ScaleToLength(m_length);
+
+    endPoint = startPoint;
+    endPoint.Add(direction);
+
+    if (!IsDynamicKeyPointSet())
+        GetLineManipulationStrategyR().ReplaceKeyPoint(endPoint, 1);
+    else
+        {
+        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyR().GetAcceptedKeyPoints().size();
+        if (1 == dynamicCount)
+            {
+            T_Super::_AddDynamicKeyPoint(endPoint);
+            }
+        else if (2 == dynamicCount)
+            {
+            T_Super::_AddDynamicKeyPoints({ startPoint, endPoint });
+            }
+        else
+            {
+            BeAssert(false && "In dynamics there must be either 1 or 2 dynamic key points");
+            return BentleyStatus::ERROR;
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & value)
+    {
+    if (0 == strcmp(prop_Length, key))
+        _SetLength(value);
+    
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LinePointsLengthPlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
+    {
+    if (0 == strcmp(prop_Length, key))
+        value = _GetLength();
+    else
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// LinePointsAnglePlacementStrategy
+/////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & value)
+    {
+    if (0 == strcmp(prop_Angle, key))
+        _SetAngle(value);
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LinePointsAnglePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
+    {
+    if (0 == strcmp(prop_Angle, key))
+        value = _GetAngle();
+    else
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsAnglePlacementStrategy::_SetAngle(double const & angle)
+    {
+    m_angle = angle;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+double LinePointsAnglePlacementStrategy::_GetAngle() const
+    {
+    return m_angle;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsAnglePlacementStrategy::_SetWorkingPlane(DPlane3d const & plane)
+    {
+    m_workingPlane = plane;
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsAnglePlacementStrategy::_AddKeyPoint(DPoint3dCR newKeyPoint)
+    {
+    if (_GetKeyPoints().size() < 2)
+        T_Super::_AddKeyPoint(newKeyPoint);
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsAnglePlacementStrategy::_AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint)
+    {
+    if ((!IsDynamicKeyPointSet() && _GetKeyPoints().size() < 2) ||
+        (IsDynamicKeyPointSet() && _GetKeyPoints().size() <= 2))
+        T_Super::_AddDynamicKeyPoint(newDynamicKeyPoint);
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LinePointsAnglePlacementStrategy::_AddDynamicKeyPoints(bvector<DPoint3d> const & newDynamicKeyPoints)
+    {
+    if (newDynamicKeyPoints.size() <= 2 - _GetKeyPoints().size())
+        T_Super::_AddDynamicKeyPoints(newDynamicKeyPoints);
+
+    AdjustEndPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
+    {
+    bvector<DPoint3d> points = _GetKeyPoints();
+
+    if (2 != points.size())
+        return BentleyStatus::SUCCESS;
+
+    DPoint3d startPoint = points.front();
+    DPoint3d endPoint = points.back();
+
+    double length = startPoint.Distance(endPoint);
+
+    DVec3d lineVec = DVec3d::From(length, 0, 0);
+    lineVec.RotateXY(m_angle);
+
+    if (BentleyStatus::ERROR == GeometryUtils::TransformVectorOnPlane(lineVec, lineVec, m_workingPlane))
+        return BentleyStatus::ERROR;
+
+    endPoint = startPoint;
+    endPoint.Add(lineVec);
+
+    if (!IsDynamicKeyPointSet())
+        GetLineManipulationStrategyR().ReplaceKeyPoint(endPoint, 1);
+    else
+        {
+        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyR().GetAcceptedKeyPoints().size();
+        if (1 == dynamicCount)
+            {
+            T_Super::_AddDynamicKeyPoint(endPoint);
+            }
+        else if (2 == dynamicCount)
+            {
+            T_Super::_AddDynamicKeyPoints({ startPoint, endPoint });
+            }
+        else
+            {
+            BeAssert(false && "In dynamics there must be either 1 or 2 dynamic key points");
+            return BentleyStatus::ERROR;
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
 END_BUILDING_SHARED_NAMESPACE
