@@ -40,9 +40,9 @@
 
     <Part Name="imodeljswinx64-exe" BentleyBuildMakeFile="apps/winx64/imodeljswinx64-exe.mke">
         <SubPart PartName="iModelJs" />
-        <SubPart PartName="iModelJsNodeAddonLib-Mobile-WinX64-Experiment" Repository="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" />
+        <SubPart PartName="iModelJsNodeAddonLib-Mobile" Repository="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/imodeljswinx64(exeext)</Files>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/imodeljswinx64$(exeext)</Files>
         </Bindings>
     </Part>
 

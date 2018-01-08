@@ -41,7 +41,7 @@ EXE_LOPT1           = -entry:wmainCRTStartup
 
 LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)iModelJs$(libext)
-LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)iModelJsNodeAddon$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)imodeljs-addon-iModelJs$(libext)
 
 %endif
 
