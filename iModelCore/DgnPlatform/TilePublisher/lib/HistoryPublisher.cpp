@@ -2,12 +2,11 @@
 |
 |     $Source: TilePublisher/lib/HistoryPublisher.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TilePublisher/CesiumPublisher.h>
 #include <VersionCompare/VersionCompare.h>
-#include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
 #include "Constants.h"
 
@@ -85,93 +84,6 @@ struct ServiceLocalState : public IJsonLocalState
     };
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ServiceLocalState* getLocalState()
-    {
-    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
-    ServiceLocalState* s_localState = new ServiceLocalState;
-    return s_localState;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static WebServices::ClientInfoPtr getClientInfo()
-    {
-    static Utf8CP s_productId = "1654"; // Navigator Desktop
-    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
-    static WebServices::ClientInfoPtr s_clientInfo = WebServices::ClientInfoPtr(
-        new WebServices::ClientInfo("Bentley-Test", BeVersion(1, 0), "{41FE7A91-A984-432D-ABCF-9B860A8D5360}", "TestDeviceId", "TestSystem", s_productId));
-    return s_clientInfo;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ClientPtr   doSignIn(PublisherParams const& params)
-    {
-    Credentials                 credentials;
-    WebServices::UrlProvider::Environment   urlEnvironment = WebServices::UrlProvider::Environment::Qa;
-
-
-    if (params.GetEnvironment().StartsWithI("Dev"))
-        urlEnvironment =  urlEnvironment = WebServices::UrlProvider::Environment::Dev;
-    else if (0 == params.GetEnvironment().CompareToI("Release"))
-        urlEnvironment = WebServices::UrlProvider::Environment::Release;
-
-
-    credentials.SetUsername(params.GetUser());
-    credentials.SetPassword(params.GetPassword());
-
-    Http::HttpClient::Initialize(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    iModel::Hub::ClientHelper::Initialize(getClientInfo(), getLocalState());
-    UrlProvider::Initialize(urlEnvironment, UrlProvider::DefaultTimeout, getLocalState());
-
-    Tasks::AsyncError error;
-    return iModel::Hub::ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr  acquireTemporaryBriefcase(BeFileNameR tempDbName, ClientPtr client, Utf8StringCR projectName, Utf8StringCR repositoryName)
-    {
-    BeFileName      tempPath;
-    BentleyStatus   status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPath, L"TempBriefcase");
-
-    BeAssert(SUCCESS == status && "Cannot get temporary directory");
-    tempDbName.BuildName(nullptr, tempPath.c_str(), WString(repositoryName.c_str(), false).c_str(), L".ibim");
-
-#ifdef NOTNOW_BRIEFCASE_IS_ROLLED_BACK
-    DgnDbPtr    existingBriefcase = DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    if (existingBriefcase.IsValid())
-        return existingBriefcase;
-#endif
-
-    WebServices::WSError wserror;
-    auto projectId = iModel::Hub::ClientHelper::GetInstance()->QueryProjectId(&wserror, projectName);
-
-    Utf8String      repositoryNameNoSpaces = repositoryName;
-
-    repositoryNameNoSpaces.ReplaceAll(" ", "%20");
-    auto getIModelResult = client->GetiModelByName(projectId, repositoryNameNoSpaces)->GetResult();
-
-    if (!getIModelResult.IsSuccess())
-        return nullptr;
-
-    if (BeFileName::DoesPathExist(tempDbName.c_str()))
-        BeFileName::BeDeleteFile(tempDbName.c_str());
-
-    auto acquireBriefcaseResult = client->AcquireBriefcase(*getIModelResult.GetValue(), tempDbName)->GetResult();
-
-    if (!acquireBriefcaseResult.IsSuccess())
-        return nullptr;
-
-    return DgnDb::OpenDgnDb(nullptr, tempDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2017
@@ -313,7 +225,7 @@ DgnModelIdSet   GetElementModelIds(DgnElementIdSet const& elementIds)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status Initialize()
     {
-    m_client = doSignIn(m_params);
+    m_client = m_params.GetClient();    
 
     if (!m_client.IsValid())
         return TilesetPublisher::Status::CantConnectToIModelHub;
@@ -326,10 +238,7 @@ TilesetPublisher::Status Initialize()
         }
     else
         {
-        if (!m_params.GetInputFileName().empty())
-            m_tempDb = copyToTemporaryBriefcase(m_tempDbName, m_params.GetInputFileName());
-        else
-            m_tempDb = acquireTemporaryBriefcase (m_tempDbName, m_client, m_params.GetProject(), m_params.GetRepository());
+        m_tempDb = copyToTemporaryBriefcase(m_tempDbName, m_params.GetInputFileName());
 
         if (!m_tempDb.IsValid())
             return TilesetPublisher::Status::CantAcquireBriefcase;
