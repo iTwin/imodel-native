@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbCommon.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -378,6 +378,7 @@ enum class DwgDbStatus
     InvalidInput,
     FilerError,
     NotSupported,
+    UrlCacheError,
     };
 #define ToDwgDbStatus(status)   static_cast<DwgDbStatus> (##status)
 

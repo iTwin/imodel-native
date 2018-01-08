@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportRaster.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -150,6 +150,22 @@ bool            DwgRasterImageExt::CopyRasterToDgnDbFolder (BeFileNameCR rasterF
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgRasterImageExt::GetUrlCacheFile (DwgStringR checkPath)
+    {
+#ifdef BENTLEY_WIN32
+    if (::PathIsURLW(checkPath.c_str()))
+        {
+        WString localPath;
+        if (DwgImportHost::GetHost().GetCachedLocalFile(localPath, WString(checkPath.c_str())))
+            checkPath.Assign (localPath.c_str());
+        }
+#endif 
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
@@ -169,6 +185,8 @@ BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& cont
     if (DwgDbStatus::Success != m_dwgRaster->GetFileName(rasterPath, &activePath))
         return  BSIERROR;
  
+    this->GetUrlCacheFile (rasterPath);
+
     // see if there exists the model:
     ResolvedModelMapping modelMap;
     this->GetExistingModel (modelMap);

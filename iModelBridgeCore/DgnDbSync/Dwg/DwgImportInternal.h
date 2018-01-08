@@ -10,6 +10,7 @@
 // only include this before including OpenDWG stuff - RealDWG has an MFC dependency:
 #if defined(BENTLEY_WIN32) && defined(DWGTOOLKIT_OpenDwg)
 #include    <Windows.h>                 // LOGFONTW etc
+#include    <Shlwapi.h>                 // PathIsURL
 #endif
 
 #include <Bentley/Bentley.h>
