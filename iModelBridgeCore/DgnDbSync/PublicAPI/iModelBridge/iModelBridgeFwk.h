@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeFwk.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -229,6 +229,7 @@ protected:
     WString GetMutexName();
     int RunExclusive(int argc, WCharCP argv[]);
     int UpdateExistingBim();
+    Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
     BentleyStatus ReleaseBridge();
     BentleyStatus LoadBridge();
