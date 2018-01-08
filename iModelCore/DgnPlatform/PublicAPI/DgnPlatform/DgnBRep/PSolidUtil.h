@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnBRep/PSolidUtil.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -369,7 +369,6 @@ struct  MainThreadMark : RefCountedBase
     {
     private:
     BeThreadLocalStorage*       m_previousLocalStorage;
-    PK_ERROR_frustrum_t         m_previousErrorFrustum;
 
     public:
     DGNPLATFORM_EXPORT MainThreadMark ();

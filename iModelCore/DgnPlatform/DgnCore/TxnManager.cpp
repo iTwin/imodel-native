@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TxnManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -860,9 +860,13 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
     DbResult result = changeStream.ToChangeSet(changeSet, reverse);
     BeAssert(result == BE_SQLITE_OK);
 
-    result = ApplyChanges(changeSet, reverse ? TxnAction::Reverse : TxnAction::Reinstate, false);
-    if (result != BE_SQLITE_OK)
-        return RevisionStatus::ApplyError;
+    if (changeSet.IsValid())
+        {
+        // Note: Change Set can be empty if it contains only schema changes
+        result = ApplyChanges(changeSet, reverse ? TxnAction::Reverse : TxnAction::Reinstate, false);
+        if (result != BE_SQLITE_OK)
+            return RevisionStatus::ApplyError;
+        }
 
     RevisionStatus status;
     RevisionManagerR revMgr = m_dgndb.Revisions();
@@ -882,7 +886,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
             }
         }
 
-    if (status != RevisionStatus::Success)
+    if (status != RevisionStatus::Success && changeSet.IsValid())
         {
         // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
         // appropriately revert their in-memory state.

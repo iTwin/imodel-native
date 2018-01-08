@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BimConsole/ECSqlCommand.cpp $
+|     $Source: iModelConsole/ECSqlCommand.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Nullable.h>
 #include "Command.h"
-#include "BimConsole.h"
+#include "iModelConsole.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -37,14 +37,14 @@ void ECSqlCommand::_Run(Session& session, Utf8StringCR args) const
     if (!status.IsSuccess())
         {
         if (session.GetIssues().HasIssue())
-            BimConsole::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
+            IModelConsole::WriteErrorLine("Failed to prepare ECSQL statement. %s", session.GetIssues().GetIssue());
         else
-            BimConsole::WriteErrorLine("Failed to prepare ECSQL statement.");
+            IModelConsole::WriteErrorLine("Failed to prepare ECSQL statement.");
 
         return;
         }
 
-    BimConsole::WriteLine();
+    IModelConsole::WriteLine();
 
     if (ecsql.StartsWithIAscii("select") || ecsql.StartsWithIAscii("values"))
         ExecuteSelect(session, stmt);
@@ -78,9 +78,9 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
             header.append("|");
         }
 
-    BimConsole::WriteLine(header.c_str());
+    IModelConsole::WriteLine(header.c_str());
     Utf8String line(header.size(), '-');
-    BimConsole::WriteLine(line.c_str());
+    IModelConsole::WriteLine(line.c_str());
 
     while (BE_SQLITE_ROW == statement.Step())
         {
@@ -101,7 +101,7 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
                 rowString.append("|");
             }
 
-        BimConsole::WriteLine(rowString.c_str());
+        IModelConsole::WriteLine(rowString.c_str());
         }
     }
 
@@ -114,14 +114,14 @@ void ECSqlCommand::ExecuteInsert(Session& session, ECSqlStatement& statement) co
     if (BE_SQLITE_DONE != statement.Step(generatedECInstanceKey))
         {
         if (session.GetIssues().HasIssue())
-            BimConsole::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
+            IModelConsole::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
         else
-            BimConsole::WriteErrorLine("Failed to execute ECSQL statement.");
+            IModelConsole::WriteErrorLine("Failed to execute ECSQL statement.");
 
         return;
         }
 
-    BimConsole::WriteLine("New row inserted [ECInstanceId %s].", generatedECInstanceKey.GetInstanceId().ToString().c_str());
+    IModelConsole::WriteLine("New row inserted [Id %s].", IModelConsole::FormatId(generatedECInstanceKey.GetInstanceId()).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -132,9 +132,9 @@ void ECSqlCommand::ExecuteUpdateOrDelete(Session& session, ECSqlStatement& state
     if (BE_SQLITE_DONE != statement.Step())
         {
         if (session.GetIssues().HasIssue())
-            BimConsole::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
+            IModelConsole::WriteErrorLine("Failed to execute ECSQL statement. %s", session.GetIssues().GetIssue());
         else
-            BimConsole::WriteErrorLine("Failed to execute ECSQL statement.");
+            IModelConsole::WriteErrorLine("Failed to execute ECSQL statement.");
 
         return;
         }
@@ -239,7 +239,11 @@ Utf8String ECSqlCommand::ValueToString(IECSqlValue const& value)
         if (navProp->IsMultiple())
             return "{...}";
 
-        return StructToString(value);
+        ECClassId relClassId;
+        BeInt64Id navId = value.GetNavigation(&relClassId);
+        Utf8String str;
+        str.Sprintf("{Id:%s,RelECClassId:%s}", IModelConsole::FormatId(navId).c_str(), relClassId.IsValid() ? IModelConsole::FormatId(relClassId).c_str() : "-");
+        return str;
         }
 
     BeAssert(false);
@@ -311,7 +315,11 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
             }
             case ECN::PRIMITIVETYPE_Long:
             {
-            out.Sprintf("%" PRId64, value.GetInt64());
+            if (value.GetColumnInfo().IsSystemProperty())
+                out.append(IModelConsole::FormatId(value.GetId<BeInt64Id>()));
+            else
+                out.Sprintf("%" PRId64, value.GetInt64());
+
             break;
             }
             case ECN::PRIMITIVETYPE_Point2d:

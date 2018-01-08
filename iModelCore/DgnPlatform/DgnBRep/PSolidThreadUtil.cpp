@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidThreadUtil.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -190,13 +190,6 @@ PSolidThreadUtil::MainThreadMark::MainThreadMark()
     {
     if (nullptr == (m_previousLocalStorage = s_threadLocalParasolidHandlerStorage))
         s_threadLocalParasolidHandlerStorage = new BeThreadLocalStorage;
-
-    PK_THREAD_ask_error_cbs(&m_previousErrorFrustum);
-
-    PK_ERROR_frustrum_t     errorFrustum;
-
-    errorFrustum.handler_fn = threadedParasolidErrorHandler;
-    PK_THREAD_register_error_cbs(errorFrustum);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -206,8 +199,6 @@ PSolidThreadUtil::MainThreadMark::~MainThreadMark()
     { 
     if (nullptr == m_previousLocalStorage) 
         DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
-
-    PK_THREAD_register_error_cbs (m_previousErrorFrustum);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -216,6 +207,11 @@ PSolidThreadUtil::MainThreadMark::~MainThreadMark()
 PSolidThreadUtil::WorkerThreadOuterMark::WorkerThreadOuterMark()
     {
     PSolidThreadLocalStorage::Initialize();
+
+    PK_ERROR_frustrum_t     errorFrustum;
+
+    errorFrustum.handler_fn = threadedParasolidErrorHandler;
+    PK_THREAD_register_error_cbs(errorFrustum);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -224,8 +220,12 @@ PSolidThreadUtil::WorkerThreadOuterMark::WorkerThreadOuterMark()
 PSolidThreadUtil::WorkerThreadOuterMark::~WorkerThreadOuterMark()
     {
     PSolidThreadLocalStorage::Clear();
-    }
 
+    PK_ERROR_frustrum_t     errorFrustum;
+
+    errorFrustum.handler_fn = nullptr;
+    PK_THREAD_register_error_cbs(errorFrustum);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/2017
@@ -242,7 +242,6 @@ PK_PARTITION_t  PSolidThreadUtil::GetThreadPartition()
 
     return storage->GetPartition(); 
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2017
