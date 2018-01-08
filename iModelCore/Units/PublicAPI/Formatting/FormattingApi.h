@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Formatting/FormattingApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -169,6 +169,7 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableDecimalPercisions();
     UNITS_EXPORT static UIList GetAvailableFractionalPercisions();
     UNITS_EXPORT static UIList GetAvailableSignOption();
+    UNITS_EXPORT static UIList GetAvailablePresentationTypes();
     };
 
 

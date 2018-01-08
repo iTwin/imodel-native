@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/FormatUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -69,6 +69,23 @@ UIList UIUtils::GetAvailableSignOption()
     signOptions.AddListEntry(UIListEntry((int)ShowSignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str(), FormatConstant::FPN_SignAlways().c_str()));
     signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str(), FormatConstant::FPN_NegativeParenths().c_str()));
     return signOptions;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailablePresentationTypes()
+    {
+    UIList presentationTypes;
+
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Decimal, UNITSL10N_GETSTRING(PresentationType_Decimal).c_str(), Utils::PresentationTypeName(PresentationType::Decimal).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Fractional, UNITSL10N_GETSTRING(PresentationType_Fractional).c_str(), Utils::PresentationTypeName(PresentationType::Fractional).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Scientific, UNITSL10N_GETSTRING(PresentationType_Scientific).c_str(), Utils::PresentationTypeName(PresentationType::Scientific).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::ScientificNorm, UNITSL10N_GETSTRING(PresentationType_ScientificNorm).c_str(), Utils::PresentationTypeName(PresentationType::ScientificNorm).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Stop100, UNITSL10N_GETSTRING(PresentationType_Stop100).c_str(), Utils::PresentationTypeName(PresentationType::Stop100).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Stop1000, UNITSL10N_GETSTRING(PresentationType_Stop1000).c_str(), Utils::PresentationTypeName(PresentationType::Stop1000).c_str()));
+
+    return presentationTypes;
     }
 
 //===================================================
