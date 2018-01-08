@@ -45,6 +45,8 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
 
         void _SetOrder(int order) { m_order = order; }
         int _GetOrder() const { return m_order; }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return Create(m_order); };
     public:
         static SplineControlPointsManipulationStrategyPtr Create(int order) { return new SplineControlPointsManipulationStrategy(order); }
 
@@ -70,12 +72,14 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { BeAssert(false && "Not implemented"); return nullptr; }
 
         void _SetStartTangent(DVec3d startTangent) { m_startTangent = startTangent; }
-        void _RemovetStartTangent() { m_startTangent.Zero(); }
+        void _RemoveStartTangent() { m_startTangent.Zero(); }
         DVec3d _GetStartTangent() const { return m_startTangent; }
 
         void _SetEndTangent(DVec3d endTangent) { m_endTangent = endTangent; }
-        void _RemovetEndTangent() { m_endTangent.Zero(); }
+        void _RemoveEndTangent() { m_endTangent.Zero(); }
         DVec3d _GetEndTangent() const { return m_endTangent; }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return Create(); };
 
     public:
         static SplineThroughPointsManipulationStrategyPtr Create() { return new SplineThroughPointsManipulationStrategy(); }
