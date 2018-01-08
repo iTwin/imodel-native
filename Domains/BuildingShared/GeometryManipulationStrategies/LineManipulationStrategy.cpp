@@ -50,3 +50,19 @@ bool LineManipulationStrategy::_CanAcceptMorePoints() const
     {
     return !_IsComplete();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitiveManipulationStrategyPtr LineManipulationStrategy::_Clone() const
+    {
+    return Create();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr LineManipulationStrategy::_CreateDefaultPlacementStrategy()
+    {
+    return LinePointsPlacementStrategy::Create(*this);
+    }

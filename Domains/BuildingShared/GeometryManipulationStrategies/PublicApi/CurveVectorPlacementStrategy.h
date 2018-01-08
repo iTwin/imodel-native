@@ -33,6 +33,8 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;
 
         static CurveVectorPlacementStrategyPtr Create() { return new CurveVectorPlacementStrategy(); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
     };
 
 END_BUILDING_SHARED_NAMESPACE

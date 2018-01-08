@@ -21,6 +21,7 @@ struct GeometryManipulationStrategyTests : public BuildingSharedTestFixtureBase
             virtual bool _CanAcceptMorePoints() const override { return true; }
             virtual ICurvePrimitivePtr _FinishPrimitive() const override { return nullptr; }
             virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { return nullptr; }
+            virtual CurvePrimitiveManipulationStrategyPtr _Clone() const override { return nullptr; }
         };
     };
 

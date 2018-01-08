@@ -366,3 +366,11 @@ DPoint3d CurvePrimitiveManipulationStrategy::GetFirstKeyPoint() const
     {
     return _GetFirstKeyPoint();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitiveManipulationStrategyPtr CurvePrimitiveManipulationStrategy::Clone() const
+    {
+    return _Clone();
+    }

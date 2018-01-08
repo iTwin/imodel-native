@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
-#define DEFAULT_MANIPULATION_STRATEGY ArcManipulationStrategy::Create()
+#define DEFAULT_MANIPULATION_STRATEGY LineManipulationStrategy::Create()
 
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -143,7 +143,26 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyF
         placementStrategy = m_primitiveStrategies.back()->CreateDefaultPlacementStrategy();
     else
         {
-        CurvePrimitiveManipulationStrategyPtr manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
+        CurvePrimitiveManipulationStrategyPtr manipulationStrategy;
+
+        switch (m_defaultNewGeometryType)
+            {
+            case DefaultNewGeometryType::Arc:
+                manipulationStrategy = ArcManipulationStrategy::Create();
+                break;
+            case DefaultNewGeometryType::Line:
+                manipulationStrategy = LineManipulationStrategy::Create();
+                break;
+            default:
+                if (m_primitiveStrategies.empty())
+                    manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
+                else
+                    manipulationStrategy = m_primitiveStrategies.back()->Clone();
+                break;
+            }
+
+        BeAssert(manipulationStrategy.IsValid());
+
         placementStrategy = manipulationStrategy->CreateDefaultPlacementStrategy();
         if (!m_primitiveStrategies.empty())
             {
@@ -177,4 +196,51 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
 )
     {
     GetStrategyForAppend()->AddKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
+(
+    DefaultNewGeometryType newGeometryType
+)
+    {
+    if (m_defaultNewGeometryType == newGeometryType)
+        return;
+
+    if (!m_primitiveStrategies.empty() && !m_primitiveStrategies.back()->IsComplete())
+        {
+        bvector<DPoint3d> const& lastPrimitiveKeyPoints = m_primitiveStrategies.back()->GetKeyPoints();
+        CurvePrimitiveManipulationStrategyPtr newPrimitiveStrategy;
+        switch (newGeometryType)
+            {
+            case DefaultNewGeometryType::Line:
+            {
+                newPrimitiveStrategy = LineManipulationStrategy::Create();
+                CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
+                if (!lastPrimitiveKeyPoints.empty())
+                    tmpPlacementStrategy->AddKeyPoint(lastPrimitiveKeyPoints.front());
+                break;
+            }
+            case DefaultNewGeometryType::Arc:
+            {
+                newPrimitiveStrategy = ArcManipulationStrategy::Create();
+                CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
+                for (int i = 0; i < 2; ++i)
+                    {
+                    if (lastPrimitiveKeyPoints.size() - 1 < i)
+                        break;
+                    tmpPlacementStrategy->AddKeyPoint(lastPrimitiveKeyPoints[i]);
+                    }
+                break;
+            }
+            default:
+                return;
+            }
+
+        m_primitiveStrategies[m_primitiveStrategies.size() - 1] = newPrimitiveStrategy;
+        }
+
+    m_defaultNewGeometryType = newGeometryType;
     }

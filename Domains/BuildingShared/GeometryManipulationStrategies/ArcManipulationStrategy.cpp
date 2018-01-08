@@ -173,3 +173,11 @@ DPoint3d ArcManipulationStrategy::_GetFirstKeyPoint() const
 
     return DPoint3d();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitiveManipulationStrategyPtr ArcManipulationStrategy::_Clone() const
+    {
+    return Create();
+    }

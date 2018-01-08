@@ -363,3 +363,11 @@ bool EllipseManipulationStrategy::_CanAcceptMorePoints() const
     {
     return !_IsComplete();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitiveManipulationStrategyPtr EllipseManipulationStrategy::_Clone() const
+    {
+    return Create();
+    }
