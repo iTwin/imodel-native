@@ -163,7 +163,7 @@ LINKER_LIBRARIES    + $(ToolkitLibs)TD_Ge$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gi$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gs$(libext)
 LINKER_LIBRARIES    + $(ToolkitLibs)TD_ExamplesCommon$(libext)
-LINKER_LIBRARIES    + crypt32$(libext) + Urlmon$(libext)
+LINKER_LIBRARIES    + crypt32$(libext) Urlmon$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_SpatialIndex$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_AcisBuilder$(libext)
