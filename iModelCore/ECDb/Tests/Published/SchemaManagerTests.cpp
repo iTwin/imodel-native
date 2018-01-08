@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/SchemaManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -102,7 +102,8 @@ TEST_F(SchemaManagerTests, ImportDifferentInMemorySchemaVersions)
 
     importSchema(m_ecdb, ECVersion::V2_0, false);
     importSchema(m_ecdb, ECVersion::V3_0, false);
-    importSchema(m_ecdb, ECVersion::V3_1, true);
+    importSchema(m_ecdb, ECVersion::V3_1, false);
+    importSchema(m_ecdb, ECVersion::V3_2, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -552,11 +553,11 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
 
     ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
         "<?xml version='1.0' encoding='utf-8' ?>"
-        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
-        "    <ECEnumeration typeName='Animal' displayLabel='Animal' backingTypeName='string' isStrict='True'>"
-        "        <ECEnumerator value='Dog' />"
-        "        <ECEnumerator value='Cat'/>"
+        "    <ECEnumeration typeName='Animal' displayLabel='Animal' backingTypeName='int' isStrict='True'>"
+        "        <ECEnumerator name='Dog' value='1' />"
+        "        <ECEnumerator name='Cat' value='2' />"
         "    </ECEnumeration>"
         "    <ECEntityClass typeName='SpatialElement' displayLabel='Spatial Element'>"
         "        <ECProperty propertyName='Pet' typeName='Animal' displayLabel='Pet Type' />"
@@ -631,9 +632,9 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
     ASSERT_EQ(2, (int) animalEnum->GetEnumeratorCount());
     for (ECEnumerator const* enumValue : animalEnum->GetEnumerators())
         {
-        if (enumValue->GetString().EqualsIAscii("Dog"))
+        if (enumValue->GetName().EqualsIAscii("Dog"))
             ASSERT_STRCASEEQ("Dog", enumValue->GetDisplayLabel().c_str());
-        else if (enumValue->GetString().EqualsIAscii("Cat"))
+        else if (enumValue->GetName().EqualsIAscii("Cat"))
             ASSERT_STRCASEEQ("Cat", enumValue->GetDisplayLabel().c_str());
         else
             FAIL();

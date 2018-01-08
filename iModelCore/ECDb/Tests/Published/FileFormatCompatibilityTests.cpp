@@ -943,6 +943,111 @@ TEST_F(FileFormatCompatibilityTests, PrimitiveDataTypeFormat)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, PreEC32Enums)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("PreEC32Enums.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="IntEnumNoDisplayLabel" backingTypeName="int" >
+                    <ECEnumerator value="0" />
+                    <ECEnumerator value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="IntEnumWithDisplayLabel" backingTypeName="int" >
+                    <ECEnumerator value="0" displayLabel="Turn On"/>
+                    <ECEnumerator value="1" displayLabel="Turn Off"/>
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumNoDisplayLabel" backingTypeName="string" >
+                    <ECEnumerator value="On" />
+                    <ECEnumerator value="Off" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumWithDisplayLabel" backingTypeName="string" >
+                    <ECEnumerator value="On" displayLabel="Turn On" />
+                    <ECEnumerator value="Off" displayLabel="Turn Off" />
+                </ECEnumeration>
+        </ECSchema>)xml")));
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT e.Name,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON e.SchemaId=s.Id WHERE s.Name='TestSchema' ORDER BY e.Name"));
+    
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"IntEnumNoDisplayLabel0","IntValue":0},{"Name":"IntEnumNoDisplayLabel1","IntValue":1}])json"), JsonValue(stmt.GetValueText(1)));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"Turn__x0020__On", "IntValue":0, "DisplayLabel":"Turn On"},{"Name":"Turn__x0020__Off", "IntValue":1, "DisplayLabel":"Turn Off"}])json"), JsonValue(stmt.GetValueText(1)));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"StringEnumNoDisplayLabelOn", "StringValue":"On"},{"Name":"StringEnumNoDisplayLabelOff","StringValue":"Off"}])json"), JsonValue(stmt.GetValueText(1)));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"Turn__x0020__On", "StringValue":"On", "DisplayLabel":"Turn On"},{"Name":"Turn__x0020__Off", "StringValue":"Off", "DisplayLabel":"Turn Off"}])json"), JsonValue(stmt.GetValueText(1)));
+    stmt.Finalize();
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnumNoDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("IntEnumNoDisplayLabel0", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_STREQ("IntEnumNoDisplayLabel1", enumValue->GetName().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnumWithDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Turn__x0020__On", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn On", enumValue->GetDisplayLabel().c_str());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Turn__x0020__Off", enumValue->GetName().c_str());
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn Off", enumValue->GetDisplayLabel().c_str());
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnumNoDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("StringEnumNoDisplayLabelOn", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("StringEnumNoDisplayLabelOff", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnumWithDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Turn__x0020__On", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn On", enumValue->GetDisplayLabel().c_str());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Turn__x0020__Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn Off", enumValue->GetDisplayLabel().c_str());
+    }
+
+    }
+
+//---------------------------------------------------------------------------------------
 //* quick check whether schema import works for benchmark schemas.
 //* Use this test to create a new benchmark file
 // @bsiclass                                     Krischan.Eberle                  10/17
@@ -1082,30 +1187,18 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
             Json::Value const& upgradedEnumValueJson = upgradedEnumValuesJson[i];
             ASSERT_TRUE(upgradedEnumValueJson.isMember("Name"));
             Utf8CP actualName = upgradedEnumValueJson["Name"].asCString();
-            if (benchmarkEnumValueJson.isMember("DisplayLabel"))
-                {
-                Utf8CP benchmarkDisplayLabel = benchmarkEnumValueJson["DisplayLabel"].asCString();
-                if (ECNameValidation::IsValidName(benchmarkDisplayLabel))
-                    {
-                    EXPECT_FALSE(upgradedEnumValueJson.isMember("DisplayLabel"));
-                    EXPECT_STREQ(benchmarkDisplayLabel, actualName);
-                    }
-                else
-                    {
-                    EXPECT_TRUE(upgradedEnumValueJson.isMember("DisplayLabel"));
-                    EXPECT_STREQ(ECNameValidation::EncodeToValidName(benchmarkDisplayLabel).c_str(), actualName);
-                    }
-                continue;
-                }
 
-            //no display label
-            Utf8String expectedName;
-            if (benchmarkEnumValueJson.isMember("IntValue"))
-                expectedName.Sprintf("%s_%d", enumName, benchmarkEnumValueJson["IntValue"].asInt());
+            if (benchmarkEnumValueJson.isMember("StringValue"))
+                EXPECT_STREQ(benchmarkEnumValueJson["StringValue"].asCString(), actualName);
+            else if (benchmarkEnumValueJson.isMember("DisplayLabel"))
+                EXPECT_STREQ(ECNameValidation::EncodeToValidName(benchmarkEnumValueJson["DisplayLabel"].asCString()).c_str(), actualName);
+            else if (benchmarkEnumValueJson.isMember("IntValue"))
+                EXPECT_STREQ(Utf8PrintfString("%s%d", enumName, (int) benchmarkEnumValueJson["IntValue"].asInt()).c_str(), actualName);
             else
-                expectedName.Sprintf("%s_%s", enumName, benchmarkEnumValueJson["StringValue"].asCString());
+                FAIL();
 
-            EXPECT_STREQ(expectedName.c_str(), actualName);
+            EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel"));
+            EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString());
             }
         }
     ASSERT_EQ(BE_SQLITE_DONE, upgradedEnumsStmt.Step());

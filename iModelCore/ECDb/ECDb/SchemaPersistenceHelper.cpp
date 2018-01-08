@@ -416,13 +416,13 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
             return ERROR;
             }
 
-        if (!enumValue->GetInvariantDisplayLabel().empty())
+        
+        if (enumValue->GetIsDisplayLabelDefined())
             {
-            Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();
+            Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();;
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel,
                                     rapidjson::Value(displayLabel.c_str(), (rapidjson::SizeType) displayLabel.size(), jsonAllocator).Move(),
                                     jsonAllocator);
-
             }
 
         if (!enumValue->GetInvariantDescription().empty())

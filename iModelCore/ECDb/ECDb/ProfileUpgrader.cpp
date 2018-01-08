@@ -41,38 +41,20 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         // now upgrade the enum values json
         for (Json::Value& enumValueJson : enumValuesJson)
             {
-            if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel))
-                {
-                Utf8CP displayLabel = enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel].asCString();
-                const bool displayLabelIsValidName = ECNameValidation::IsValidName(displayLabel);
-                Utf8String name;
-                if (displayLabelIsValidName)
-                    name.assign(displayLabel);
-                else
-                    name = ECNameValidation::EncodeToValidName(displayLabel);
-
-                enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = name;
-
-                if (displayLabelIsValidName)
-                    enumValueJson.removeMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel);
-
-                continue;
-                }
-
-            //no display label
             Utf8String name;
-            if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_IntValue))
-                name.Sprintf("%s_%d", enumName, enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue].asInt());
-            else if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_StringValue))
-                name.Sprintf("%s_%s", enumName, enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue].asCString());
+            if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_StringValue))
+                name.assign(enumValueJson[ECDBMETA_PROP_ECEnumerator_StringValue].asCString());
+            else if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel))
+                name.assign(enumValueJson[ECDBMETA_PROP_ECEnumerator_DisplayLabel].asCString());
+            else if (enumValueJson.isMember(ECDBMETA_PROP_ECEnumerator_IntValue))
+                name.Sprintf("%s%d", enumName, (int) enumValueJson[ECDBMETA_PROP_ECEnumerator_IntValue].asInt());
             else
                 {
                 BeAssert(false);
                 return BE_SQLITE_ERROR_ProfileUpgradeFailed;
                 }
 
-            BeAssert(ECNameValidation::IsValidName(name.c_str()));
-            enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = name;
+            enumValueJson[ECDBMETA_PROP_ECEnumerator_Name] = ECNameValidation::EncodeToValidName(name);
             }
         }
 
