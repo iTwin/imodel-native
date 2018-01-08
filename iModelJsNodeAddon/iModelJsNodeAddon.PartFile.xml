@@ -55,11 +55,11 @@
       
   -->
 
-  <Part Name="iModelJsNodeAddonLib-Mobile-WinX64-Experiment" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
+  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" PartFile="iModelJs" Repository="iModelJs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
+      <Files ProductDirectoryName="iModelJsNode_node_module" >
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
