@@ -33,6 +33,9 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointLengthAnglePlacementStrateg
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsLengthPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsAnglePlacementStrategy)
 
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ElementManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ElementPlacementStrategy)
+
 BEGIN_BUILDING_SHARED_NAMESPACE
 enum class LinePlacementStrategyType;
 enum class ArcPlacementStrategyType;
@@ -56,3 +59,6 @@ END_BUILDING_SHARED_NAMESPACE
 #include "ArcCenterStartPlacementStrategy.h"
 #include "ArcStartMidEndPlacementStrategy.h"
 #include "ArcStartEndMidPlacementStrategy.h"
+
+#include "ElementManipulationStrategy.h"
+#include "ElementPlacementStrategy.h"

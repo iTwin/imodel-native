@@ -35,7 +35,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         bool IsLastStrategyReadyForPop() const;
 
     protected:
-        CurveVectorManipulationStrategy();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorManipulationStrategy();
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const;
 
@@ -66,9 +66,9 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
 
-        void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
 
-        void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
         void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
     };
 
