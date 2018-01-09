@@ -1016,7 +1016,7 @@ void FormattingTestFixture::FormattingTraitsTest()
 
     TraitJsonKeyMap* map;
     Json::Value val;
-    FormatTraits traits = FormatTraits::DefaultZeroes;
+    FormatTraits traits = FormatTraits::DefaultTraits;
     for(int i =0; i < vec.size(); i++)
         {
          map = &vec[i];
@@ -1029,7 +1029,7 @@ void FormattingTestFixture::FormattingTraitsTest()
          EXPECT_STREQ (neg[i].c_str(), val.ToString().c_str());
          //LOG.infov("Bit %s drop: %s", map->GetKey(), val.ToString().c_str());      
          val.clear();
-         traits = FormatTraits::DefaultZeroes;
+         traits = FormatTraits::DefaultTraits;
         }
     }
 //----------------------------------------------------------------------------------------

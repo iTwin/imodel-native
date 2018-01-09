@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Formatting/FormattingEnum.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -148,7 +148,7 @@ enum class PresentationType
 
 enum class FormatTraits : int
     {
-    DefaultZeroes = 0,
+    DefaultTraits = 0,
     LeadingZeroes = 0x1,
     TrailingZeroes = 0x2,
     KeepDecimalPoint = 0x4,
@@ -461,7 +461,7 @@ struct FormatConstant
         static Utf8String FPN_Stop100() { return "Stop100"; }
         static Utf8String FPN_Stop1000() { return "Stop1000"; }
         static Utf8String FPN_Binary() { return "Binary"; }
-        static Utf8String FPN_DefaultZeroes() { return "DefaultZeroes"; }
+        static Utf8String FPN_DefaultTraits() { return "DefaultTraits"; }
         static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
         static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
         static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }

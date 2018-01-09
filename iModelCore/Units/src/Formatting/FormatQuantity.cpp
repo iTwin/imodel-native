@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/FormatQuantity.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -565,7 +565,7 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
         }
 
     fmt.SetDecimalPrecision(DecimalPrecision::Precision0);
-    fmt.SetFormatTraits(FormatTraits::DefaultZeroes);
+    fmt.SetFormatTraits(FormatTraits::DefaultTraits);
     Utf8String top = fmt.FormatDouble(m_negative ? -m_topValue : m_topValue);
     top.append(space);
     top.append(topName);

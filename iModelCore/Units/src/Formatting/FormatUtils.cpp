@@ -872,7 +872,7 @@ int Utils::IndexOf(Utf8Char c, Utf8CP text)
  //----------------------------------------------------------------------------------------
   void FractionalNumeric::FormTextParts(bool reduce)
      {
-     NumericFormatSpec fmt =  NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultZeroes, 0);
+     NumericFormatSpec fmt =  NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatTraits::DefaultTraits, 0);
      size_t numer = m_numerator;
      size_t denom = m_denominator;
      if (reduce && m_gcf > 1)
