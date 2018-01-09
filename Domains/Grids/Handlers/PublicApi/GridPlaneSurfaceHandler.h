@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Handlers/PublicApi/GridPlaneSurfaceHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,29 +13,25 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct GridPlanarSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridPlanarSurface, GridPlanarSurface, GridPlanarSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
-};
 
-struct PlanCartesianGridSurfaceHandler : GridPlanarSurfaceHandler
+struct PlanCartesianGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_PlanCartesianGridSurface, PlanCartesianGridSurface, PlanCartesianGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_PlanCartesianGridSurface, PlanCartesianGridSurface, PlanCartesianGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct PlanRadialGridSurfaceHandler : GridPlanarSurfaceHandler
+struct PlanRadialGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_PlanRadialGridSurface, PlanRadialGridSurface, PlanRadialGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_PlanRadialGridSurface, PlanRadialGridSurface, PlanRadialGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct ElevationGridSurfaceHandler : GridPlanarSurfaceHandler
+struct ElevationGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_ElevationGridSurface, ElevationGridSurface, ElevationGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_ElevationGridSurface, ElevationGridSurface, ElevationGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct SketchLineGridSurfaceHandler : GridPlanarSurfaceHandler
+struct SketchLineGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_SketchLineGridSurface, SketchLineGridSurface, SketchLineGridSurfaceHandler, GridPlanarSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_SketchLineGridSurface, SketchLineGridSurface, SketchLineGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 END_GRIDS_NAMESPACE

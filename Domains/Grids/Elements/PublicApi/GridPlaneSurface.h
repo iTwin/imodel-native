@@ -21,7 +21,6 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridPlanarSurface : GridSurface, ConstraintModel::IConstrainable
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridPlanarSurface, GridSurface);
     DEFINE_T_SUPER(GridSurface);
 
 private:
@@ -43,30 +42,6 @@ public:
     GRIDELEMENTS_EXPORT virtual bool StretchGeomIdToPlane (int geomId, DPlane3dR targetPlane) override;
 
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface, GRIDELEMENTS_EXPORT)
-
-    //---------------------------------------------------------------------------------------
-    // Creation
-    //---------------------------------------------------------------------------------------
-    //! Creates a gridplane surface
-    //! @param[in]  model           model for the grid surface
-    //! @param[in]  surfaceVector   surface geometry
-    //! @return                     gridplane surface
-    //! Note: Only planar curve vectors pass as valid geometry
-    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, CurveVectorPtr surfaceVector);
-
-    //! Creates a gridplane surface
-    //! @param[in]  model           model for the grid surface
-    //! @param[in]  surface         surface geometry
-    //! @return                     gridplane surface
-    //! @Note: Only solid primitives from DgnExtrusionDetails with LineString, PointString or Line as base curve pass as valid geometry
-    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, ISolidPrimitivePtr  surface);
-
-    //! Creates a gridplane surface
-    //! @param[in]  model           model for the grid surface
-    //! @param[in]  extDetail       surface geometry
-    //! @return                     gridplane surface
-    //! Note: Only DgnExtrusionDetails with LineString, PointString or Line as base curve pass as valid geometry
-    GRIDELEMENTS_EXPORT static  GridPlanarSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, DgnExtrusionDetail  extDetail);
 
     //---------------------------------------------------------------------------------------
     // Getters and setters
@@ -436,8 +411,31 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchLineGridSurface : PlanGridPlanarSurface
 
         GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
 
+        GRIDELEMENTS_EXPORT BentleyStatus     ApplyTransform(Transform trans);
+
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+
+        //! gets the plane of this gridplanesurface
+        //! @return     plane of this gridplanesurface
+        GRIDELEMENTS_EXPORT virtual DPlane3d _GetPlane() const override;
+
+        //! Rotates grid by given angle in radians
+        //! @param[in] theta            angle in radians
+        GRIDELEMENTS_EXPORT virtual BentleyStatus _RotateXY(double theta) override;
+
+        //! Rotates grid around point by given angle in radians
+        //! @param[in] point            point to rotate around
+        //! @param[in] theta            angle in radians
+        GRIDELEMENTS_EXPORT virtual BentleyStatus _RotateXY(DPoint3d point, double theta) override;
+
+        //! Translates gridsurface by given vector
+        //! @param[in] translation   vector to translate by
+        GRIDELEMENTS_EXPORT virtual BentleyStatus _TranslateXY(DVec2d translation) override;
+
+        //! Translates gridsurface by given vector
+        //! @param[in] translation   vector to translate by
+        GRIDELEMENTS_EXPORT virtual BentleyStatus _Translate(DVec3d translation) override;
 
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchLineGridSurface, GRIDELEMENTS_EXPORT)

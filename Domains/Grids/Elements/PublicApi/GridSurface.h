@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridSurface.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,12 +66,40 @@ protected:
 
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
 
+    //! Rotates grid by given angle in radians
+    //! @param[in] theta            angle in radians
+    GRIDELEMENTS_EXPORT virtual BentleyStatus _RotateXY(double theta);
+
+    //! Rotates grid around point by given angle in radians
+    //! @param[in] point            point to rotate around
+    //! @param[in] theta            angle in radians
+    GRIDELEMENTS_EXPORT virtual BentleyStatus _RotateXY(DPoint3d point, double theta);
+
+    //! Translates gridsurface by given vector
+    //! @param[in] translation   vector to translate by
+    GRIDELEMENTS_EXPORT virtual BentleyStatus _TranslateXY(DVec2d translation);
+
+    //! Translates gridsurface by given vector
+    //! @param[in] translation   vector to translate by
+    GRIDELEMENTS_EXPORT virtual BentleyStatus _Translate(DVec3d translation);
+
     virtual BentleyStatus   _SetGeometry(ISolidPrimitivePtr surface);
     virtual bool            _ValidateGeometry(ISolidPrimitivePtr surface) const { return false; };
     
     static GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModelAxisClassId (Dgn::SpatialLocationModelCR model, GridAxisCR axis, Dgn::DgnClassId classId);
 
 protected:
+
+    //! Sets geometry for this grid surface
+    //! @param[in]  surface     new geometry for the surface
+    //! @returns BentleyStatus::SUCCESS if geometry is valid for the surface and there has been no error in setting surface geometry
+    //! For specifications of geometry validation see derived grid surface elements' creation documentation
+    GRIDELEMENTS_EXPORT BentleyStatus SetGeometry(ISolidPrimitivePtr surface);
+
+    //! Changes grid surface's base curve. For specifications of base curve see derived elements' creation documentation
+    //! @param[in] base         new base curve
+    //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's base curve
+    GRIDELEMENTS_EXPORT BentleyStatus SetBaseCurve(CurveVectorPtr base);
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSurface, GRIDELEMENTS_EXPORT)
@@ -81,44 +109,20 @@ public:
     //---------------------------------------------------------------------------------------
     //! Rotates grid by given angle in radians
     //! @param[in] theta            angle in radians
-    GRIDELEMENTS_EXPORT void RotateXY(double theta);
+    GRIDELEMENTS_EXPORT BentleyStatus RotateXY(double theta) { return _RotateXY(theta); };
 
     //! Rotates grid around point by given angle in radians
     //! @param[in] point            point to rotate around
     //! @param[in] theta            angle in radians
-    GRIDELEMENTS_EXPORT void RotateXY(DPoint3d point, double theta);
+    GRIDELEMENTS_EXPORT BentleyStatus RotateXY(DPoint3d point, double theta) { return _RotateXY(point, theta); };
 
-    //! Translates grid to given point
-    //! @param[in] target   point to move
-    GRIDELEMENTS_EXPORT void MoveToPoint(DPoint3d target);
-
-    //! Translates grid to given point
+    //! Translates gridsurface by given vector
     //! @param[in] translation   vector to translate by
-    GRIDELEMENTS_EXPORT void TranslateXY(DVec3d translation);
+    GRIDELEMENTS_EXPORT BentleyStatus TranslateXY(DVec2d translation) { return _TranslateXY(translation); };
 
-    //! Translates grid to given point
+    //! Translates gridsurface by given vector
     //! @param[in] translation   vector to translate by
-    GRIDELEMENTS_EXPORT void Translate(DVec3d translation);
-
-    //! Shrinks or expands grid surface by height
-    //! @param[in] height   new height
-    //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's height
-    GRIDELEMENTS_EXPORT BentleyStatus SetHeight(double height);
-
-    //! Changes grid surface's bottom elevation
-    //! @param[in] elevation    new elevation
-    GRIDELEMENTS_EXPORT void SetElevation(double elevation);
-
-    //! Changes grid surface's base curve. For specifications of base curve see derived elements' creation documentation
-    //! @param[in] base         new base curve
-    //! @return BentleyStatus::SUCCESS if there was no error in changing grid surface's base curve
-    GRIDELEMENTS_EXPORT BentleyStatus SetBaseCurve(CurveVectorPtr base);
-
-    //! Sets geometry for this grid surface
-    //! @param[in]  surface     new geometry for the surface
-    //! @returns BentleyStatus::SUCCESS if geometry is valid for the surface and there has been no error in setting surface geometry
-    //! For specifications of geometry validation see derived grid surface elements' creation documentation
-    GRIDELEMENTS_EXPORT BentleyStatus SetGeometry(ISolidPrimitivePtr surface);
+    GRIDELEMENTS_EXPORT BentleyStatus Translate(DVec3d translation) { return _Translate(translation); };
 
     //---------------------------------------------------------------------------------------
     // Setters and getters

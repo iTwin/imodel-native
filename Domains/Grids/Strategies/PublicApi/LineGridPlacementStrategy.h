@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Strategies/PublicApi/LineGridPlacementStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,7 @@ struct LineGridPlacementStrategy : SketchGridPlacementStrategy
     DEFINE_T_SUPER(SketchGridPlacementStrategy);
 
     private:
-        Grids::GridPlanarSurfacePtr m_surface;
+        Grids::SketchLineGridSurfacePtr m_surface;
 
         BentleyStatus GetEndPoints(DPoint3dR start, DPoint3dR end);
 

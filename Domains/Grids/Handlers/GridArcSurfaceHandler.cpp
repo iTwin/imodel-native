@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Handlers/GridArcSurfaceHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,6 @@
 
 USING_NAMESPACE_GRIDS
 
-HANDLER_DEFINE_MEMBERS(GridArcSurfaceHandler)
 HANDLER_DEFINE_MEMBERS(SketchArcGridSurfaceHandler)
 HANDLER_DEFINE_MEMBERS(PlanCircumferentialGridSurfaceHandler)
 

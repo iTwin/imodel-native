@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridSplineSurface.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,6 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridSplineSurface : GridSurface
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridSplineSurface, GridSurface);
     DEFINE_T_SUPER (GridSurface);
 
 protected:
@@ -36,19 +35,6 @@ public:
     //---------------------------------------------------------------------------------------
     // Creation
     //---------------------------------------------------------------------------------------
-    //! Creates a gridarc surface
-    //! @param[in]  model           model for the grid surface
-    //! @param[in]  surface       surface geometry
-    //! @return                     gridarc surface
-    //! Note: Only SolidPrimitives from DgnExtrusionDetail geometry with BSpline or InterpolationCurve passes as valid geometry
-    GRIDELEMENTS_EXPORT static GridSplineSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, ISolidPrimitivePtr surface);
-
-    //! Creates a gridarc surface
-    //! @param[in]  model           model for the grid surface
-    //! @param[in]  extDetail       surface geometry
-    //! @return                     gridarc surface
-    //! Note: Only DgnExtrusionDetail geometry with BSpline or InterpolationCurve passes as valid geometry
-    GRIDELEMENTS_EXPORT static GridSplineSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, DgnExtrusionDetail extDetail);
 };
 
 //=======================================================================================
@@ -122,11 +108,22 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchSplineGridSurface : PlanGridSplineSurface
     private:
         BE_PROP_NAME (Spline2d)
 
-
     protected:
         explicit GRIDELEMENTS_EXPORT SketchSplineGridSurface (CreateParams const& params);
         friend struct SketchSplineGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
+
+        //! Called when an element is about to be inserted into the DgnDb.
+        //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+
+        //! Called when this element is about to be replace its original element in the DgnDb.
+        //! @param [in] original the original state of this element.
+        //! Subclasses may override this method to control whether their instances are updated.
+        //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchSplineGridSurface, GRIDELEMENTS_EXPORT)

@@ -138,11 +138,8 @@
       <ECProperty propertyName="Length" displayLabel="Length" typeName="double" readOnly="true" kindOfQuantity="Length"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridPlanarSurface" description="A planar grid surface element.">
+    <ECEntityClass typeName="GridPlanarSurface" modifier="Abstract" description="A planar grid surface element.">
       <BaseClass>GridSurface</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="ElevationGridSurface" description="A planar 2d grid surface with elevation.">
@@ -161,18 +158,12 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridArcSurface" description="A grid surface that is parallel to extruded arc.">
+    <ECEntityClass typeName="GridArcSurface" modifier="Abstract" description="A grid surface that is parallel to extruded arc.">
       <BaseClass>GridSurface</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridSplineSurface" description="A grid surface that is parallel to extruded spline.">
+    <ECEntityClass typeName="GridSplineSurface" modifier="Abstract" description="A grid surface that is parallel to extruded spline.">
       <BaseClass>GridSurface</BaseClass>
-      <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
-      </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="Grid" modifier="Abstract"  description="A grid is a collection of gridsurfaces.">

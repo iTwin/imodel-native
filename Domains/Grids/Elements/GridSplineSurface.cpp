@@ -8,8 +8,9 @@
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (GridSplineSurface)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGridSplineSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridSplineSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanGridSplineSurface)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(SketchSplineGridSurface)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -50,36 +51,6 @@ bool GridSplineSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
         return false;
 
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridSplineSurfacePtr                 GridSplineSurface::Create 
-(
-Dgn::SpatialLocationModelCR model,
-GridAxisCR gridAxis,
-ISolidPrimitivePtr  surface
-)
-    {
-    GridSplineSurfacePtr gridSurface = new GridSplineSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
-    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
-        return nullptr;
-
-    return gridSurface;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-GridSplineSurfacePtr GridSplineSurface::Create
-(
-Dgn::SpatialLocationModelCR model, 
-GridAxisCR gridAxis,
-DgnExtrusionDetail extDetail
-)
-    {
-    return GridSplineSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 
 //--------------------------------------------------------------------------------------
@@ -153,24 +124,16 @@ CreateParams const& params
     {
     SketchSplineGridSurfacePtr surface = new SketchSplineGridSurface (params);
 
-    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
-        return nullptr;
-    
     return surface;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus                SketchSplineGridSurface::_OnUpdate
+Dgn::DgnDbStatus                SketchSplineGridSurface::RecomputeGeometryStream
 (
-Dgn::DgnElementCR original
 )
     {
-    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
-    if (Dgn::DgnDbStatus::Success != status)
-        return status;
-
     double height = GetEndElevation() - GetStartElevation();
 
     if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
@@ -188,8 +151,44 @@ Dgn::DgnElementCR original
     DgnExtrusionDetail detail = DgnExtrusionDetail(newBase->Clone(translation), up, false);
     ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
 
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+    SetPlacement(Placement3d()); //set the start local coordinates
     SetGeometry(geometry);
-    return status;
+    Transform gridTrans = grid->GetPlacementTransform();
+    Placement3d thisPlacement(GetPlacement());
+    thisPlacement.TryApplyTransform(gridTrans);
+
+    SetPlacement(thisPlacement);
+    return Dgn::DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchSplineGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnUpdate(original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchSplineGridSurface::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**

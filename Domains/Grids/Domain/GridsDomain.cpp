@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Domain/GridsDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Grids/Domain/GridsDomain.h>
@@ -27,15 +27,12 @@ DOMAIN_DEFINE_MEMBERS(GridsDomain)
 //---------------------------------------------------------------------------------------
 GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     {
-    RegisterHandler(GridArcSurfaceHandler::GetHandler ());
     RegisterHandler(PlanCircumferentialGridSurfaceHandler::GetHandler());
-    RegisterHandler(GridPlanarSurfaceHandler::GetHandler ());
     RegisterHandler(ElevationGridSurfaceHandler::GetHandler ());
     RegisterHandler(SketchLineGridSurfaceHandler::GetHandler ());
     RegisterHandler(SketchArcGridSurfaceHandler::GetHandler());
     RegisterHandler(PlanCartesianGridSurfaceHandler::GetHandler ());
     RegisterHandler(PlanRadialGridSurfaceHandler::GetHandler());
-    RegisterHandler(GridSplineSurfaceHandler::GetHandler ());
     RegisterHandler(SketchSplineGridSurfaceHandler::GetHandler());
 
     RegisterHandler(OrthogonalGridHandler::GetHandler ());

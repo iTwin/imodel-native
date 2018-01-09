@@ -54,37 +54,6 @@ bool GridArcSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridArcSurfacePtr                 GridArcSurface::Create 
-(
-Dgn::SpatialLocationModelCR model,
-GridAxisCR gridAxis,
-ISolidPrimitivePtr  surface
-)
-    {
-    GridArcSurfacePtr gridSurface =  new GridArcSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
-    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
-        return nullptr;
-
-    return gridSurface;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-GridArcSurfacePtr GridArcSurface::Create
-(
-Dgn::SpatialLocationModelCR model, 
-GridAxisCR gridAxis,
-DgnExtrusionDetail extDetail
-)
-    {
-    return GridArcSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
-    }
-
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  10/2017
 //---------------+---------------+---------------+---------------+---------------+------
@@ -154,9 +123,6 @@ CreateParams const& params
 )
     {
     SketchArcGridSurfacePtr surface = new SketchArcGridSurface (params);
-
-    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
-        return nullptr;
     
     return surface;
     }
@@ -164,22 +130,20 @@ CreateParams const& params
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus                SketchArcGridSurface::_OnUpdate
+Dgn::DgnDbStatus                SketchArcGridSurface::RecomputeGeometryStream
 (
-Dgn::DgnElementCR original
 )
     {
-    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
-    if (Dgn::DgnDbStatus::Success != status)
-        return status;
-
     double height = GetEndElevation() - GetStartElevation();
 
     if (DoubleOps::AlmostEqualFraction(height, 0.0))    //should have a height
         return Dgn::DgnDbStatus::ValidationFailed;
 
     DEllipse3d arc;
-    if (BentleyStatus::SUCCESS != GetBaseArc(arc)) 
+    if (BentleyStatus::SUCCESS != GetBaseArc(arc))
+        return Dgn::DgnDbStatus::ValidationFailed;
+
+    if (arc.IsNearZeroRadius()) //if the radius is zero - arc not valid
         return Dgn::DgnDbStatus::ValidationFailed;
 
     ICurvePrimitivePtr arcPrimitive = ICurvePrimitive::CreateArc(arc);
@@ -191,8 +155,45 @@ Dgn::DgnElementCR original
     DgnExtrusionDetail detail = DgnExtrusionDetail(newBase->Clone(translation), up, false);
     ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
 
+
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+    SetPlacement(Placement3d()); //set the start local coordinates
     SetGeometry(geometry);
-    return status;
+    Transform gridTrans = grid->GetPlacementTransform();
+    Placement3d thisPlacement(GetPlacement());
+    thisPlacement.TryApplyTransform(gridTrans);
+
+    SetPlacement(thisPlacement);
+    return Dgn::DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchArcGridSurface::_OnUpdate
+(
+Dgn::DgnElementCR original
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnUpdate(original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus                SketchArcGridSurface::_OnInsert
+(
+)
+    {
+    Dgn::DgnDbStatus status = RecomputeGeometryStream();
+    if (Dgn::DgnDbStatus::Success != status)
+        return status;
+
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,9 +204,6 @@ void                            SketchArcGridSurface::SetBaseArc
 DEllipse3d arc
 )
     {
-    if (arc.IsNearZeroRadius()) //if the radius is zero - arc not valid
-        return;
-
     ICurvePrimitivePtr arcPrimitive = ICurvePrimitive::CreateArc (arc);
     IGeometryPtr geometryPtr = IGeometry::Create (arcPrimitive);
 

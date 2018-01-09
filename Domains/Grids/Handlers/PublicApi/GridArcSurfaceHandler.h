@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Handlers/PublicApi/GridArcSurfaceHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,19 +13,14 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-struct GridArcSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GridArcSurface, GridArcSurface, GridArcSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
-};
-
-struct SketchArcGridSurfaceHandler : GridArcSurfaceHandler
+struct SketchArcGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SketchArcGridSurface, SketchArcGridSurface, SketchArcGridSurfaceHandler, GridArcSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SketchArcGridSurface, SketchArcGridSurface, SketchArcGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
-struct PlanCircumferentialGridSurfaceHandler : GridArcSurfaceHandler
+struct PlanCircumferentialGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_PlanCircumferentialGridSurface, PlanCircumferentialGridSurface, PlanCircumferentialGridSurfaceHandler, GridArcSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_PlanCircumferentialGridSurface, PlanCircumferentialGridSurface, PlanCircumferentialGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 END_GRIDS_NAMESPACE

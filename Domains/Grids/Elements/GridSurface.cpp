@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/GridSurface.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -147,80 +147,46 @@ DgnClassId classId
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-void GridSurface::RotateXY(double theta)
+BentleyStatus GridSurface::_RotateXY(double theta)
     {
     Placement3d placement = GetPlacement();
     GeometryUtils::RotatePlacementXY(placement, theta);
     SetPlacement(placement);
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-void GridSurface::RotateXY(DPoint3d point, double theta)
+BentleyStatus GridSurface::_RotateXY(DPoint3d point, double theta)
     {
     Placement3d placement = GetPlacement();
     GeometryUtils::RotatePlacementAroundPointXY(placement, point, theta);
     SetPlacement(placement);
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-void GridSurface::MoveToPoint(DPoint3d target)
+BentleyStatus GridSurface::_TranslateXY(DVec2d translation)
     {
     Placement3d placement = GetPlacement();
-    placement.SetOrigin(target);
+    DVec3d vec3d = DVec3d::From(translation.x, translation.y, 0.0);
+    GeometryUtils::TranslatePlacementXY(placement, vec3d);
     SetPlacement(placement);
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-void GridSurface::TranslateXY(DVec3d translation)
-    {
-    Placement3d placement = GetPlacement();
-    GeometryUtils::TranslatePlacementXY(placement, translation);
-    SetPlacement(placement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-void GridSurface::Translate(DVec3d translation)
+BentleyStatus GridSurface::_Translate(DVec3d translation)
     {
     Placement3d placement = GetPlacement();
     GeometryUtils::TranslatePlacement(placement, translation);
     SetPlacement(placement);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  12/17
-//---------------------------------------------------------------------------------------
-BentleyStatus GridSurface::SetHeight(double height)
-    {
-    CurveVectorPtr baseCurve = GetSurfaceVector();
-    if (baseCurve.IsNull())
-        return BentleyStatus::ERROR;
-
-    DVec3d up = DVec3d::From(0, 0, height);
-    DgnExtrusionDetail detail = DgnExtrusionDetail(baseCurve, up, false);
-    ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
-    if (geometry.IsNull())
-        return BentleyStatus::ERROR;
-    
-    return SetGeometry(geometry);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  12/17
-//---------------------------------------------------------------------------------------
-void GridSurface::SetElevation(double elevation)
-    {
-    DPoint3d origin = GetPlacement().GetOrigin();
-    DVec3d translation = DVec3d::From(0, 0, elevation - origin.z);
-
-    Translate(translation);
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

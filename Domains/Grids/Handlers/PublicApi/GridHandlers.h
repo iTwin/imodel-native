@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Handlers/PublicApi/GridHandlers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,14 +38,9 @@ struct GeneralGridAxisHandler : Dgn::dgn_ElementHandler::Definition
     ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_GeneralGridAxis, GeneralGridAxis, GeneralGridAxisHandler, Dgn::dgn_ElementHandler::Definition, GRIDHANDLERS_EXPORT)
     };
 
-struct GridSplineSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct SketchSplineGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_GridSplineSurface, GridSplineSurface, GridSplineSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
-    };
-
-struct SketchSplineGridSurfaceHandler : GridArcSurfaceHandler
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SketchSplineGridSurface, SketchSplineGridSurface, SketchSplineGridSurfaceHandler, GridSplineSurfaceHandler, GRIDHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(GRIDS_CLASS_SketchSplineGridSurface, SketchSplineGridSurface, SketchSplineGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)
     };
 
 END_GRIDS_NAMESPACE

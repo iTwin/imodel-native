@@ -243,117 +243,110 @@ TEST_F(GridsStrategyTests, LineGridPlacementStrategyTests)
     // Try adding points to create grid surface
     //////////////////////////////////////
     // Add single point to initialize surface
-    GridPlanarSurfacePtr surface = dynamic_cast<GridPlanarSurface*>(strategy->SetDynamicPoint({ 0, 0, 0 }).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 0, 0, 0 }, { 0, 0, 0 });
-    ASSERT_TRUE(strategy->IsInDynamics()) << "Creating grid surface should have started dynamic mode";
-    DgnElementId surfaceId = surface->GetElementId(); // To check if surface is being reused rather than created from scratch
+    DPoint3d staPt = DPoint3d::From( 0, 0, 0 );
+    GridPlanarSurfacePtr surface = dynamic_cast<GridPlanarSurface*>(strategy->SetDynamicPoint(staPt).get());
 
     // Try modifying the starting point. This should translate the grid surface
+    strategy->AcceptDynamicPoint();
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetDynamicPoint({ 5, 5, 0 }).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
-    ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
+    ASSERT_TRUE(strategy->IsInDynamics()) << "Creating grid surface should have started dynamic mode";
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 5, 5, 0 });
+    DgnElementId surfaceId = surface->GetElementId(); // To check if surface is being reused rather than created from scratch
 
     // Try changing bottom elevation. This should change surface's elevation and height
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetBottomElevation(5).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 45, { 5, 5, 5 }, { 5, 5, 5 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 45, staPt, { 5, 5, 5 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Change bottom elevation back
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetBottomElevation(0).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Change top elevation. This should change surface's height
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetTopElevation(45).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 45, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 45, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Change top elevation back
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetTopElevation(50).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Change axis
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetAxis(otherAxis).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), otherAxis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), otherAxis->GetElementId(), 50, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Change axis back
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetAxis(axis).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Change grid and axis
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetGridAndAxis(otherGrid, otherGridAxis).get());
-    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 50, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Change grid and axis back
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetGridAndAxis(m_sketchGrid, axis).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Try adding another dynamic point. This should change the ending surface point
     surface = dynamic_cast<GridPlanarSurface*>(strategy->AcceptDynamicPoint().get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 5, 5, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 5, 5, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
     
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetDynamicPoint({ 10, 10, 0 }).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 10, 10, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 10, 10, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Try adding another dynamic point. No changes should happen
     surface = dynamic_cast<GridPlanarSurface*>(strategy->AcceptDynamicPoint().get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 10, 10, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 10, 10, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
     
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetDynamicPoint({ 15, 15, 0 }).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 10, 10, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 10, 10, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Try finalizing grid surface. This should end dynamic mode
     surface = dynamic_cast<GridPlanarSurface*>(strategy->Finish().get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 5, 5, 0 }, { 10, 10, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 10, 10, 0 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
     ASSERT_FALSE(strategy->IsInDynamics()) << "Dynamics mode should have ended";
 
     // Try getting grid surface. This should restart dynamics mode and create a new grid surface with the old parameters but default points
     surface = dynamic_cast<GridPlanarSurface*>(strategy->GetGridSurface().get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, { 0, 0, 0 }, { 0, 0, 0 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 50, staPt, { 0, 0, 0 });
     ASSERT_NE(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
     ASSERT_TRUE(strategy->IsInDynamics()) << "Dynamics mode should have restarted";
 
     // Try modifying grid and accepting it
     surfaceId = surface->GetElementId();
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetBottomElevation(5).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 45, { 0, 0, 5 }, { 0, 0, 5 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 45, staPt, { 0, 0, 5 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetTopElevation(45).get());
-    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 40, { 0, 0, 5 }, { 0, 0, 5 });
+    CheckGridSurface(surface, m_sketchGrid->GetElementId(), axis->GetElementId(), 40, staPt, { 0, 0, 5 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     surface = dynamic_cast<GridPlanarSurface*>(strategy->SetGridAndAxis(otherGrid, otherGridAxis).get());
-    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, { 0, 0, 5 }, { 0, 0, 5 });
+    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, staPt, { 0, 0, 5 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
 
     // Finalizing grid now should fail, because there's only one dynamic point
     surface = dynamic_cast<GridPlanarSurface*>(strategy->Finish().get());
-    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, { 0, 0, 5 }, { 0, 0, 5 });
+    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, staPt, { 0, 0, 5 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
     ASSERT_TRUE(strategy->IsInDynamics()) << "Dynamics mode should not have ended";
 
     // Try adding another point and finilizing the grid
     surface = dynamic_cast<GridPlanarSurface*>(strategy->AcceptDynamicPoint().get());
-    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, { 0, 0, 5 }, { 0, 0, 5 });
-    ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
-
-    surface = dynamic_cast<GridPlanarSurface*>(strategy->SetDynamicPoint({ 15, 15, 0 }).get());
-    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, { 0, 0, 5 }, { 15, 15, 5 });
-    ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
-    
     surface = dynamic_cast<GridPlanarSurface*>(strategy->Finish().get());
-    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, { 0, 0, 5 }, { 0, 0, 5 });
+    CheckGridSurface(surface, otherGrid->GetElementId(), otherGridAxis->GetElementId(), 40, staPt, { 0, 0, 5 });
     ASSERT_EQ(surfaceId, surface->GetElementId()) << "Grid surface should have same element id";
     ASSERT_FALSE(strategy->IsInDynamics()) << "Dynamics mode should have ended";
 

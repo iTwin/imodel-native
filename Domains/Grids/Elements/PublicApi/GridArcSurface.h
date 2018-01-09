@@ -22,7 +22,7 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridArcSurface : GridSurface
 {
-    DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_GridArcSurface, GridSurface);
+    DEFINE_T_SUPER(GridSurface);
 
 protected:
     explicit GRIDELEMENTS_EXPORT GridArcSurface (CreateParams const& params);
@@ -34,23 +34,6 @@ protected:
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridArcSurface, GRIDELEMENTS_EXPORT)
-
-    //---------------------------------------------------------------------------------------
-    // Creation
-    //---------------------------------------------------------------------------------------
-    //! Creates a gridarc surface
-    //! @param[in]  model           model for the grid surface
-    //! @param[in]  extDetail       surface geometry
-    //! @return                     gridarc surface
-    //! Note: Only solid primitives with DgnExtrusionDetails with arcs as base curves pass as valid geometry
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, ISolidPrimitivePtr surface);
-
-    //! Creates a gridarc surface
-    //! @param[in]  model           model for the grid surface
-    //! @param[in]  extDetail       surface geometry
-    //! @return                     gridarc surface
-    //! Note: Only DgnExtrusionDetails with arcs as base curves pass as valid geometry
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, DgnExtrusionDetail extDetail);
 };
 
 
@@ -227,6 +210,18 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchArcGridSurface : PlanGridArcSurface
         explicit GRIDELEMENTS_EXPORT SketchArcGridSurface (CreateParams const& params);
         friend struct SketchArcGridSurfaceHandler;
 
+        GRIDELEMENTS_EXPORT  Dgn::DgnDbStatus RecomputeGeometryStream();
+
+        //! Called when an element is about to be inserted into the DgnDb.
+        //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+
+        //! Called when this element is about to be replace its original element in the DgnDb.
+        //! @param [in] original the original state of this element.
+        //! Subclasses may override this method to control whether their instances are updated.
+        //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+        //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (SketchArcGridSurface, GRIDELEMENTS_EXPORT)

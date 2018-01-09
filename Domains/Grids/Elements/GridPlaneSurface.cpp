@@ -70,42 +70,6 @@ bool GridPlanarSurface::_ValidateGeometry(ISolidPrimitivePtr surface) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridPlanarSurfacePtr             GridPlanarSurface::Create 
-(
-Dgn::SpatialLocationModelCR model,
-GridAxisCR gridAxis,
-CurveVectorPtr  surfaceVector
-)
-    {
-    GridPlanarSurfacePtr surface = new GridPlanarSurface(CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surfaceVector);
-
-    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
-        return nullptr;
-    
-    return surface;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Haroldas.Vitunskas              03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-GridPlanarSurfacePtr             GridPlanarSurface::Create 
-(
-Dgn::SpatialLocationModelCR model,
-GridAxisCR gridAxis,
-ISolidPrimitivePtr surface
-)
-    {
-    GridPlanarSurfacePtr gridSurface = new GridPlanarSurface (CreateParamsFromModelAxisClassId (model, gridAxis, QueryClassId(model.GetDgnDb())), surface);
-
-    if (gridSurface.IsNull() || DgnDbStatus::Success != gridSurface->_Validate())
-        return nullptr;
-
-    return gridSurface;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPlane3d                        GridPlanarSurface::_GetPlane
@@ -186,8 +150,8 @@ CurveVectorR newShape
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                            GridPlanarSurface::GetGeomIdPlane 
 (
-    int geomId, 
-    DPlane3dR planeOut
+int geomId, 
+DPlane3dR planeOut
 ) const
     {
     if (geomId != 0 && geomId != 1)
@@ -208,19 +172,6 @@ bool                            GridPlanarSurface::StretchGeomIdToPlane
     {
     BeAssert(!"Not yet implemented");
     return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
-//---------------------------------------------------------------------------------------
-GridPlanarSurfacePtr GridPlanarSurface::Create
-(
-Dgn::SpatialLocationModelCR model,
-GridAxisCR gridAxis, 
-DgnExtrusionDetail extDetail
-)
-    {
-    return GridPlanarSurface::Create(model, gridAxis, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 
 //--------------------------------------------------------------------------------------
@@ -795,11 +746,34 @@ CreateParams const& params
 )
     {
     SketchLineGridSurfacePtr surface = new SketchLineGridSurface (params);
-
-    if (surface.IsNull() || DgnDbStatus::Success != surface->_Validate())
-        return nullptr;
     
     return surface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DPlane3d                        SketchLineGridSurface::_GetPlane
+(
+) const
+    {
+    GeometryCollection geomData = *ToGeometrySource ();
+
+    DPoint2d staPt, endPt;
+    DPoint3d startPoint, endPoint;
+    DVec3d zVec = DVec3d::From(0.0, 0.0, 1.0);
+    endPoint.z = startPoint.z = 0.0;
+    if (BentleyStatus::SUCCESS != GetBaseLine(staPt, endPt))
+        return DPlane3d();
+
+    startPoint.x = staPt.x;
+    startPoint.y = staPt.y;
+    endPoint.x = endPt.x;
+    endPoint.y = endPt.y;
+
+    DPoint3d zPoint = DPoint3d::FromSumOf(startPoint, zVec);
+
+    return DPlane3d::From3Points (startPoint, endPoint, zPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -820,6 +794,10 @@ Dgn::DgnDbStatus                SketchLineGridSurface::RecomputeGeometryStream
     if (BentleyStatus::SUCCESS != GetBaseLine(staPt, endPt))
         return Dgn::DgnDbStatus::ValidationFailed;
 
+    double length = staPt.Distance(endPt);
+    if (DoubleOps::AlmostEqualFraction(length, 0.0))    //should have a length
+        return Dgn::DgnDbStatus::ValidationFailed;
+
     startPoint.x = staPt.x;
     startPoint.y = staPt.y;
     endPoint.x = endPt.x;
@@ -833,7 +811,14 @@ Dgn::DgnDbStatus                SketchLineGridSurface::RecomputeGeometryStream
     DgnExtrusionDetail detail = DgnExtrusionDetail(newBase->Clone(translation), up, false);
     ISolidPrimitivePtr geometry = ISolidPrimitive::CreateDgnExtrusion(detail);
 
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+    SetPlacement(Placement3d()); //set the start local coordinates
     SetGeometry(geometry);
+    Transform gridTrans = grid->GetPlacementTransform();
+    Placement3d thisPlacement(GetPlacement());
+    thisPlacement.TryApplyTransform(gridTrans);
+
+    SetPlacement(thisPlacement);
     return Dgn::DgnDbStatus::Success;
     }
 
@@ -865,6 +850,87 @@ Dgn::DgnDbStatus                SketchLineGridSurface::_OnInsert
 
     return T_Super::_OnInsert();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     01/18
+//---------------------------------------------------------------------------------------
+BentleyStatus SketchLineGridSurface::ApplyTransform(Transform trans)
+    {
+    DPoint2d staPt, endPt;
+    DPoint3d startPoint, endPoint;
+    DVec3d zVec = DVec3d::From(0.0, 0.0, 1.0);
+    endPoint.z = startPoint.z = 0.0;
+    if (BentleyStatus::SUCCESS != GetBaseLine(staPt, endPt))
+        return BentleyStatus::ERROR;
+
+    startPoint.x = staPt.x;
+    startPoint.y = staPt.y;
+    endPoint.x = endPt.x;
+    endPoint.y = endPt.y;
+
+    startPoint = DPoint3d::FromProduct(trans, startPoint);
+    endPoint = DPoint3d::FromProduct(trans, endPoint);
+
+    staPt.x = startPoint.x;
+    staPt.y = startPoint.y;
+    endPt.x = endPoint.x;
+    endPt.y = endPoint.y;
+
+    SetBaseLine(staPt, endPt);
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     01/18
+//---------------------------------------------------------------------------------------
+BentleyStatus SketchLineGridSurface::_RotateXY(double theta)
+    {
+    //Create rotation matrix
+    RotMatrix rotationMatrix = RotMatrix::FromAxisAndRotationAngle(2, theta);
+
+    Transform localTransformation = Transform::FromIdentity();
+    localTransformation.SetMatrix(rotationMatrix);
+    //transform
+    return ApplyTransform(localTransformation);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     01/18
+//---------------------------------------------------------------------------------------
+BentleyStatus SketchLineGridSurface::_RotateXY(DPoint3d point, double theta)
+    {
+    //Create rotation matrix
+    RotMatrix rotationMatrix = RotMatrix::FromAxisAndRotationAngle(2, theta);
+    Transform localTransformation = Transform::FromMatrixAndFixedPoint(rotationMatrix, point);
+
+    return ApplyTransform(localTransformation);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     01/18
+//---------------------------------------------------------------------------------------
+BentleyStatus SketchLineGridSurface::_TranslateXY(DVec2d translation)
+    {
+    Placement3d placement = GetPlacement();
+    DVec3d vec3d = DVec3d::From(translation.x, translation.y, 0.0);
+    return ApplyTransform(Transform::From(vec3d));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     01/18
+//---------------------------------------------------------------------------------------
+BentleyStatus SketchLineGridSurface::_Translate(DVec3d translation)
+    {
+    double zChange = translation.z;
+    if (!DoubleOps::AlmostEqualFraction(zChange, 0.0))
+        {
+        SetStartElevation(GetStartElevation() + zChange);
+        SetEndElevation(GetEndElevation() + zChange);
+        }
+    translation.z = 0.0;
+    return ApplyTransform(Transform::From(translation));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

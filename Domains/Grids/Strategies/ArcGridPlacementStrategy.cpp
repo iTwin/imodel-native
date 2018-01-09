@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Strategies/ArcGridPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -47,12 +47,8 @@ Grids::GridSurfacePtr CSEArcGridPlacementStrategy::_CreateAndInsertGridSurface()
     if (BentleyStatus::ERROR == GetArcPoints(center, start, end))
         return nullptr;
 
-    CurveVectorPtr baseShape = CurveVector::Create(GeometryUtils::CreateArc(center, start, end, m_ccw));
-    if (baseShape.IsNull())
-        return nullptr;
-    
-    DgnExtrusionDetail shape = DgnExtrusionDetail(baseShape, DVec3d::From(0, 0, GetHeight()), false);
-    GridArcSurfacePtr surface = GridArcSurface::Create(*GetGrid()->GetSurfacesModel(), *GetAxis(), shape);
+    SketchArcGridSurface::CreateParams params(*GetGrid()->GetSurfacesModel(), *GetAxis(), center.z, center.z + GetHeight(), GeometryUtils::CreateDEllipse3dArc(center, start, end, m_ccw));
+    GridArcSurfacePtr surface = SketchArcGridSurface::Create(params);
     if (surface->Insert().IsValid())
         return surface;
 
@@ -71,6 +67,7 @@ BentleyStatus CSEArcGridPlacementStrategy::_UpdateGridSurface()
     if (GetAxis()->GetElementId() != m_surface->GetAxisId())
         m_surface->SetAxisId(GetAxis()->GetElementId());
 
+    m_surface->SetStartElevation(GetElevation());
     // Correct grid's height
     double actualHeight;
     if (BentleyStatus::SUCCESS != m_surface->TryGetHeight(actualHeight))
@@ -78,13 +75,8 @@ BentleyStatus CSEArcGridPlacementStrategy::_UpdateGridSurface()
 
     if (actualHeight != GetHeight())
         {
-        if (BentleyStatus::SUCCESS != m_surface->SetHeight(GetHeight()))
-            return BentleyStatus::ERROR;
+        m_surface->SetEndElevation(GetHeight() + m_surface->GetStartElevation());
         }
-
-    // Correct grid's elevation
-    if (m_surface->GetPlacement().GetOrigin().z != GetElevation())
-        m_surface->SetElevation(GetElevation());
 
     if (m_surface->Update().IsValid())
         return BentleyStatus::SUCCESS;
@@ -104,12 +96,7 @@ BentleyStatus CSEArcGridPlacementStrategy::_UpdateByKeyPoints()
     if (BentleyStatus::ERROR == GetArcPoints(center, start, end))
         return BentleyStatus::ERROR;
 
-    CurveVectorPtr baseShape = CurveVector::Create(GeometryUtils::CreateArc(center, start, end, m_ccw));
-    if (baseShape.IsNull())
-        return BentleyStatus::ERROR;
-
-    if (BentleyStatus::ERROR == m_surface->SetBaseCurve(baseShape))
-        return BentleyStatus::ERROR;
+    m_surface->SetBaseArc(GeometryUtils::CreateDEllipse3dArc(center, start, end, m_ccw));
 
     if (m_surface->Update().IsValid())
         return BentleyStatus::SUCCESS;
@@ -130,7 +117,7 @@ Grids::GridSurfacePtr CSEArcGridPlacementStrategy::_GetGridSurface()
 //---------------------------------------------------------------------------------------
 void CSEArcGridPlacementStrategy::_SetGridSurface(Grids::GridSurfacePtr surface)
     {
-    m_surface = dynamic_cast<GridArcSurface*>(surface.get());
+    m_surface = dynamic_cast<SketchArcGridSurface*>(surface.get());
     }
 
 //---------------------------------------------------------------------------------------

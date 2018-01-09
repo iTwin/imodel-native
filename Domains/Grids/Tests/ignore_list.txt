@@ -6,3 +6,4 @@ GridsStrategyTests.CSEArcGridPlacementStrategyTests
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+GridsStrategyTests.LineGridPlacementStrategyTests

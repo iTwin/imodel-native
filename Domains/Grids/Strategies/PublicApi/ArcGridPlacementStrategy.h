@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Strategies/PublicApi/ArcGridPlacementStrategy.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ struct CSEArcGridPlacementStrategy : SketchGridPlacementStrategy
     DEFINE_T_SUPER(SketchGridPlacementStrategy);
 
     private:
-        Grids::GridArcSurfacePtr m_surface;
+        Grids::SketchArcGridSurfacePtr m_surface;
         bool m_ccw = true;
 
         BentleyStatus GetArcPoints(DPoint3dR center, DPoint3dR start, DPoint3dR end);

@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Strategies/LineGridPlacementStrategy.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -54,9 +54,10 @@ Grids::GridSurfacePtr LineGridPlacementStrategy::_CreateAndInsertGridSurface()
     DPoint3d startPoint, endPoint;
     if (BentleyStatus::ERROR == GetEndPoints(startPoint, endPoint))
         return nullptr;
-    
-    DgnExtrusionDetail shape = GeometryUtils::CreatePlaneExtrusionDetail(startPoint, endPoint, GetHeight());
-    GridPlanarSurfacePtr surface = GridPlanarSurface::Create(*GetGrid()->GetSurfacesModel(), *GetAxis(), shape);
+
+    SketchLineGridSurface::CreateParams params(*GetGrid()->GetSurfacesModel(), *GetAxis(), startPoint.z, startPoint.z+GetHeight(), DPoint2d::From(startPoint.x, startPoint.y), DPoint2d::From(endPoint.x, endPoint.y));
+
+    GridPlanarSurfacePtr surface = SketchLineGridSurface::Create(params);
     if (surface->Insert().IsValid())
         return surface;
 
@@ -75,20 +76,18 @@ BentleyStatus LineGridPlacementStrategy::_UpdateGridSurface()
     if (GetAxis()->GetElementId() != m_surface->GetAxisId())
         m_surface->SetAxisId(GetAxis()->GetElementId());
 
+    m_surface->SetStartElevation(GetElevation());
+
     // Correct grid's height
     double actualHeight;
     if (BentleyStatus::SUCCESS != m_surface->TryGetHeight(actualHeight))
         return BentleyStatus::ERROR;
-    
+
     if (actualHeight != GetHeight())
         {
-        if (BentleyStatus::SUCCESS != m_surface->SetHeight(GetHeight()))
-            return BentleyStatus::ERROR;
+        m_surface->SetEndElevation(GetHeight() + m_surface->GetStartElevation());
         }
 
-    // Correct grid's elevation
-    if (m_surface->GetPlacement().GetOrigin().z != GetElevation())
-        m_surface->SetElevation(GetElevation());
 
     if (m_surface->Update().IsValid())
         return BentleyStatus::SUCCESS;
@@ -112,8 +111,7 @@ BentleyStatus LineGridPlacementStrategy::_UpdateByKeyPoints()
     if (newBase.IsNull())
         return BentleyStatus::ERROR;
 
-    if (BentleyStatus::ERROR == m_surface->SetBaseCurve(newBase))
-        return BentleyStatus::ERROR;
+    m_surface->SetBaseLine(DPoint2d::From(startPoint.x, startPoint.y), DPoint2d::From(endPoint.x, endPoint.y));
 
     if (m_surface->Update().IsValid())
         return BentleyStatus::SUCCESS;
@@ -134,7 +132,7 @@ Grids::GridSurfacePtr LineGridPlacementStrategy::_GetGridSurface()
 //---------------------------------------------------------------------------------------
 void LineGridPlacementStrategy::_SetGridSurface(Grids::GridSurfacePtr surface)
     {
-    m_surface = dynamic_cast<GridPlanarSurface*>(surface.get());
+    m_surface = dynamic_cast<SketchLineGridSurface*>(surface.get());
     }
 
 //---------------------------------------------------------------------------------------
