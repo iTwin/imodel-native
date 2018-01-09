@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAPyramidRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -544,6 +544,47 @@ void HRAPyramidRaster::SetLookAheadImpl(const HVEShape& pi_rShape,
     GetSubImage(ResIndex)->SetLookAhead(*pShape, pi_ConsumerID, pi_Async);
     }
 
+
+//-----------------------------------------------------------------------------
+// Public
+// Return the raster tile ID list for the given shape.
+//-----------------------------------------------------------------------------
+void HRAPyramidRaster::GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo,
+                                           const HVEShape&          pi_rShape)
+    {    
+    unsigned short ResIndex;
+    
+    // find the best resolution for the coord sys of the extent
+    double Resolution = FindTheBestResolution(pi_rShape.GetCoordSys());
+
+    // if the resolution is bigger than the first one use the first one
+    if (HDOUBLE_GREATER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[0].m_PhysicalImageResolution))
+        {
+        ResIndex = 0;
+        }
+    else
+        {
+        // find at what index is that resolution
+        ResIndex = (unsigned short)m_pSubImageList.BufSize - 1;   // last res of the pyramid
+        bool   ResFound = false;
+        for (unsigned short Res = 0; (!ResFound) && (Res < m_pSubImageList.BufSize - 1); Res++)
+            {
+            // if the res is between the current res and the next, use that res
+            if (HDOUBLE_SMALLER_OR_EQUAL_EPSILON(Resolution, m_pSubImageList.pData[Res].m_PhysicalImageResolution) &&
+                HDOUBLE_GREATER_EPSILON(Resolution, m_pSubImageList.pData[Res + 1].m_PhysicalImageResolution))
+                {
+                ResIndex = Res;
+                ResFound = true;
+                }
+            }
+        }        
+
+    // Bring the extent to the found resolution's coord sys
+    HFCPtr<HVEShape> pShape(new HVEShape(pi_rShape));
+    pShape->ChangeCoordSys(GetSubImage(ResIndex)->GetPhysicalCoordSys());
+
+    GetSubImage(ResIndex)->GetRasterTileIDList(po_rTileIdListInfo, *pShape);
+    }
 
 //-----------------------------------------------------------------------------
 // public

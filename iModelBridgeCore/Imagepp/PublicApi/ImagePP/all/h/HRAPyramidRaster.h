@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRAPyramidRaster.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRAPyramidRaster
@@ -165,6 +165,10 @@ public:
                                      uint32_t        pi_ConsumerID,
                                      bool           pi_Async,
                                      int32_t           pi_ResIndex = -1);
+
+
+    virtual void    GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo, 
+                                        const HVEShape&          pi_rShape);
 
     // Message Handler...
     bool           NotifyContentChanged (const HMGMessage& pi_rMessage);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRATiledRaster.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -517,6 +517,41 @@ void HRATiledRaster::SetLookAhead(const HVEShape& pi_rShape,
     }
 
 
+//-----------------------------------------------------------------------------
+// Public
+// Pass the request to the source
+//-----------------------------------------------------------------------------
+void HRATiledRaster::GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo,
+                                         const HVEShape&          pi_rShape)
+    {
+    HPRECONDITION(HasLookAhead());
+
+    // Bring the shape to the found resolution's coord sys
+    HFCPtr<HVEShape> pShape(new HVEShape(pi_rShape));
+    pShape->ChangeCoordSys(GetPhysicalCoordSys());
+
+    HVETileIDIterator TileIterator(m_pTileDescriptor, pShape);    
+    uint64_t Index = TileIterator.GetFirstTileIndex();
+    HASSERT_X64(GetID() - HRSObjectStore::ID_TiledRaster <= ULONG_MAX);
+    uint32_t Resolution = (uint32_t)(GetID() - HRSObjectStore::ID_TiledRaster);
+    HFCMonitor Monitor(m_TileMapKey);
+    TileMapItr Itr;
+
+    TileIdListInfo tileidListInfo; 
+
+    while (Index != HGFTileIDDescriptor::INDEX_NOT_FOUND)
+        {                    
+        tileidListInfo.m_tileIDList.push_back(m_pTileDescriptor->ComputeIDFromIndex(Index, Resolution));
+        Index = TileIterator.GetNextTileIndex();
+        }
+
+    if (tileidListInfo.m_tileIDList.size() > 0)
+        {
+        tileidListInfo.m_raster = this;
+        }    
+
+    po_rTileIdListInfo.push_back(tileidListInfo);
+    }
 
 //-----------------------------------------------------------------------------
 // Notification for palette change
