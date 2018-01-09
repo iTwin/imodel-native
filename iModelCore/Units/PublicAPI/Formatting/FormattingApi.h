@@ -170,8 +170,11 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableFractionalPercisions();
     UNITS_EXPORT static UIList GetAvailableSignOption();
     UNITS_EXPORT static UIList GetAvailablePresentationTypes();
+    UNITS_EXPORT static UIList GetAvailableDecimalSeparators();
+    UNITS_EXPORT static UIList GetAvailableThousandSeparators();
+    UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
+    UNITS_EXPORT static UIList GetAvailableTraits();
     };
-
 
 struct FactorPower
     {
