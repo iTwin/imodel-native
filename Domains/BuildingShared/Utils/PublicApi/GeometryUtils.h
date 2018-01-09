@@ -157,7 +157,21 @@ public:
     //! @param[in]  start   start point of arc
     //! @param[in]  end     end point of arc
     //! @param[in]  ccw     direction of arc sweep. true for counter clock wise, false for clockwise
+    BUILDINGSHAREDUTILS_EXPORT static DEllipse3d CreateDEllipse3dArc(DPoint3d center, DPoint3d start, DPoint3d end, bool ccw);
+
+    //! Creates an arc by center, start point, end point and rotation direction
+    //! @param[in]  center  center point of arc
+    //! @param[in]  start   start point of arc
+    //! @param[in]  end     end point of arc
+    //! @param[in]  ccw     direction of arc sweep. true for counter clock wise, false for clockwise
     BUILDINGSHAREDUTILS_EXPORT static ICurvePrimitivePtr CreateArc(DPoint3d center, DPoint3d start, DPoint3d end, bool ccw);
+
+    //! Creates extrusion detail for arc with center point (0,0,0)
+    //! @param[in] radius   radius of arc from center
+    //! @param[in] angle    arc angle
+    //! @param[in] height   height of arc
+    //! @return             formed arc extrusion detail
+    BUILDINGSHAREDUTILS_EXPORT static DEllipse3d         CreateArc(double radius, double baseAngle, double extendLength = 0);
 
     //! Creates extrusion detail as a plane {(0,0,0), (length,0,0), (0,0,height)}
     //! @param[in] length   length of plane
@@ -179,9 +193,16 @@ public:
     //! @return             formed arc extrusion detail
     BUILDINGSHAREDUTILS_EXPORT static DgnExtrusionDetail CreateArcExtrusionDetail(double radius, double baseAngle, double height, double extendLength = 0);
 
+    //! Creates curveprimitive for spline with given poles and order
+    //! @param[in] poles    points for spline
+    //! @param[in] order    order of spline
+    //! @return             formed spline primitive
+    BUILDINGSHAREDUTILS_EXPORT static ICurvePrimitivePtr CreateSplinePrimitive(bvector<DPoint3d> poles, int order = SPLINE_ORDER);
+
     //! Creates extrusion detail for spline with given poles and height
     //! @param[in] poles    points for spline
     //! @param[in] height   height of spline
+    //! @param[in] order    order of spline
     //! @return             formed spline extrusion detail
     BUILDINGSHAREDUTILS_EXPORT static DgnExtrusionDetail CreateSplineExtrusionDetail(bvector<DPoint3d> poles, double height, int order = SPLINE_ORDER);
 

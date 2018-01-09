@@ -1037,9 +1037,9 @@ void GeometryUtils::AddRotatedVectorToPoint(DPoint3dR point, DVec3d axis, double
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  03/17
+// @bsimethod                                    Jonas.Valiunas                     01/18
 //---------------------------------------------------------------------------------------
-ICurvePrimitivePtr GeometryUtils::CreateArc(DPoint3d center, DPoint3d start, DPoint3d end, bool ccw)
+DEllipse3d GeometryUtils::CreateDEllipse3dArc(DPoint3d center, DPoint3d start, DPoint3d end, bool ccw)
     {
     DEllipse3d arc = DEllipse3d::FromArcCenterStartEnd(center, start, end);
 
@@ -1052,7 +1052,15 @@ ICurvePrimitivePtr GeometryUtils::CreateArc(DPoint3d center, DPoint3d start, DPo
         if (arc.IsCCWSweepXY())
             arc.SetStartEnd(start, end, false);
 
-    return ICurvePrimitive::CreateArc(arc);
+    return arc;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  03/17
+//---------------------------------------------------------------------------------------
+ICurvePrimitivePtr GeometryUtils::CreateArc(DPoint3d center, DPoint3d start, DPoint3d end, bool ccw)
+    {
+    return ICurvePrimitive::CreateArc(CreateDEllipse3dArc(center,start,end,ccw));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1082,6 +1090,26 @@ DgnExtrusionDetail GeometryUtils::CreatePlaneExtrusionDetail(DPoint3d startPoint
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                     01/18
+//---------------------------------------------------------------------------------------
+DEllipse3d GeometryUtils::CreateArc(double radius, double baseAngle, double extendLength)
+    {
+    double extendAngle = extendLength / radius;
+    if (baseAngle > 2 * (msGeomConst_pi - extendAngle))
+        extendAngle = (2 * msGeomConst_pi - baseAngle) / 3; //Do not allow arc overlapping
+
+    DPoint3d center = DPoint3d::FromZero();
+
+    DPoint3d start = center;
+    GeometryUtils::AddRotatedVectorToPoint(start, DVec3d::FromStartEnd(center, DPoint3d::From(radius, 0.0)), (baseAngle + extendAngle));
+
+    DPoint3d end = center;
+    GeometryUtils::AddRotatedVectorToPoint(end, DVec3d::FromStartEnd(center, DPoint3d::From(radius, 0.0)), -extendAngle);
+
+    return CreateDEllipse3dArc(center, start, end, false);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
 DgnExtrusionDetail GeometryUtils::CreateArcExtrusionDetail(double radius, double baseAngle, double height, double extendLength)
@@ -1106,9 +1134,9 @@ DgnExtrusionDetail GeometryUtils::CreateArcExtrusionDetail(double radius, double
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  06/17
+// @bsimethod                                    Jonas.Valiunas                     01/18
 //---------------------------------------------------------------------------------------
-DgnExtrusionDetail GeometryUtils::CreateSplineExtrusionDetail(bvector<DPoint3d> poles, double height, int baseOrder)
+ICurvePrimitivePtr GeometryUtils::CreateSplinePrimitive(bvector<DPoint3d> poles, int baseOrder)
     {
     bvector<double> weights;
     for (DPoint3d pole : poles)
@@ -1121,8 +1149,15 @@ DgnExtrusionDetail GeometryUtils::CreateSplineExtrusionDetail(bvector<DPoint3d> 
         knots.push_back(i);
 
     MSBsplineCurvePtr bspline = MSBsplineCurve::CreateFromPolesAndOrder(poles, &weights, &knots, order, false, false);
-    ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateBsplineCurve(bspline);
-    CurveVectorPtr base = CurveVector::Create(curvePrimitive);
+    return ICurvePrimitive::CreateBsplineCurve(bspline);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+DgnExtrusionDetail GeometryUtils::CreateSplineExtrusionDetail(bvector<DPoint3d> poles, double height, int baseOrder)
+    {
+    CurveVectorPtr base = CurveVector::Create(CreateSplinePrimitive(poles, baseOrder));
 
     DVec3d extrusionUp = DVec3d::From(0.0, 0.0, height);
 
