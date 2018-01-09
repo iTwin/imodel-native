@@ -880,6 +880,12 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return Napi::Number::New(Env(), (int)AddonUtils::BriefcaseManagerEndBulkOperation(GetDgnDb()));
         }
 
+	Napi::Value UpdateProjectExtents(const Napi::CallbackInfo& info)
+	{
+		REQUIRE_ARGUMENT_STRING(0, newExtentsJson)
+		return Napi::Number::New(Env(), (int)AddonUtils::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
+	}
+
 	// ========================================================================================
 	// Test method handler
 	// Note: This is where the developer may specify, given an ID from JS, what function should
@@ -949,6 +955,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::GetECClassMetaData),
             InstanceMethod("getCachedBriefcaseInfos", &NodeAddonDgnDb::GetCachedBriefcaseInfos),
             InstanceMethod("getIModelProps", &NodeAddonDgnDb::GetIModelProps),
+			InstanceMethod("updateProjectExtents", &NodeAddonDgnDb::UpdateProjectExtents),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForCodeSpec", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForCodeSpec),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),

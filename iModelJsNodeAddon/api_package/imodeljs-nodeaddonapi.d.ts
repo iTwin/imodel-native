@@ -261,6 +261,12 @@ declare class NodeAddonDgnDb {
   deleteModel(modelIdJson: string): IModelStatus;
 
   /**
+   * Update the imodel project extents.
+   * @param newExtentsJson The new project extents in stringified JSON format
+   */
+  updateProjectExtents(newExtentsJson: string): void;
+
+  /**
    * Format an element's properties, suitable for display to the user.
    * @param id The element's Id, in stringified JSON format
    * @param on success, the result property of the returned object will be the object's properties, in stringified JSON format.
