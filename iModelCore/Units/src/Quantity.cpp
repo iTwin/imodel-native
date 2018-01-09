@@ -9,6 +9,32 @@
 #include "UnitsPCH.h"
 #include <complex>      // for std::abs
 
+BEGIN_BENTLEY_UNITS_NAMESPACE
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              David Fox-Rabinovitz     12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+    static double absMax(double a, double b)
+    {
+    a = fabs(a);
+    b = fabs(b);
+    double diff = a - b;
+    double max = (diff >= 0.0) ? a : b;
+    return max;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                              David Fox-Rabinovitz     12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static double relDiff(double a, double b)
+    {
+    double max = absMax(a, b);
+    double diff = fabs(a - b);
+    if (max > 1.0e-12 && diff > 1.0e-12)
+        return diff / max;
+    return 0.0;
+    }
+END_BENTLEY_UNITS_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_UNITS
 
 /*--------------------------------------------------------------------------------**//**
@@ -178,30 +204,6 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
 
     bool ae = almost_equal(temp, rhs.m_magnitude, m_tolerance);
     return ae; //almost_equal(temp, rhs.m_magnitude, m_tolerance);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              David Fox-Rabinovitz     12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-double Quantity::absMax(double a, double b)
-    {
-    a = fabs(a);
-    b = fabs(b);
-    double diff = a - b;
-    double max = (diff >= 0.0) ? a : b;
-    return max;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              David Fox-Rabinovitz     12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-double Quantity::relDiff(double a, double b)
-    {
-    double max = absMax(a, b);
-    double diff = fabs(a - b);
-    if (max > 1.0e-12 && diff > 1.0e-12)
-        return diff / max;
-    return 0.0;
     }
 
 /*--------------------------------------------------------------------------------**//**

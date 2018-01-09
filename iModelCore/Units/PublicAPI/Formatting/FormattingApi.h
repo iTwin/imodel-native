@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Formatting/FormattingApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -713,8 +713,8 @@ struct FormatUnitSet
 
     public:
         UNITS_EXPORT void Init();
-        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}
-        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData=false);
+        UNITS_EXPORT FormatUnitSet() :m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemDetail()) {}
+        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
         FormatUnitSet(FormatUnitSetCR other)
             {
@@ -757,18 +757,19 @@ struct FormatUnitSet
         FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
         Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
         Utf8String GetUnitName() const { return m_unitName; };
-        UNITS_EXPORT Utf8String ToText(bool useAlias=true) const;
+        UNITS_EXPORT Utf8String ToText(bool useAlias = true) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
         NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
         UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty) const;
         UNITS_EXPORT bool IsUnitComparable(Utf8CP unitName) const;
 
-        UNITS_EXPORT Json::Value ToJson(bool useAlias=true, bool verbose = false) const;
+        UNITS_EXPORT Json::Value ToJson(bool useAlias = true, bool verbose = false) const;
         UNITS_EXPORT Json::Value ToJsonVerbose(bool useAlias = true) const;
-        UNITS_EXPORT Utf8String ToJsonString(bool useAlias=true, bool verbose = false) const;
+        UNITS_EXPORT Utf8String ToJsonString(bool useAlias = true, bool verbose = false) const;
 
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias) const;
         UNITS_EXPORT BEU::UnitCP ResetUnit();
+        UNITS_EXPORT BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
         UNITS_EXPORT void LoadJsonData(Json::Value jval);
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start);

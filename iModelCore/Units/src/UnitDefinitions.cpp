@@ -1,8 +1,8 @@
-/*--------------------------------------------------------------------------------------+
+﻿/*--------------------------------------------------------------------------------------+
 |
 |     $Source: src/UnitDefinitions.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,7 @@ USING_NAMESPACE_BENTLEY_UNITS
 
 void AddLengths(UnitRegistry& reg)
     {
+    UnitCP un;
     reg.AddUnit(LENGTH, METRIC, "MM", "[MILLI]*M");
     reg.AddUnit(LENGTH, METRIC, "CM", "[CENTI]*M");
     reg.AddUnit(LENGTH, METRIC, "DM", "[DECI]*M");
@@ -24,8 +25,20 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, USCUSTOM, "MICROINCH", "[MICRO]*IN");
     reg.AddUnit(LENGTH, USCUSTOM, "MILLIFOOT", "[MILLI]*FT");
 
-    reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
-    reg.AddUnit(LENGTH, USCUSTOM, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    un = reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://physics.nist.gov/cuu/pdf/sp811.pdf, Appendix B.
+    un->AddSynonym("\"");
+    un->AddSynonym("INCH");
+    un->AddSynonym(u8"\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC");  // дюйм
+    un->AddSynonym(u8"\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xBE");  // дюйма
+    un->AddSynonym(u8"\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xBE\xD0\xB2"); // дюймов
+    un = reg.AddUnit(LENGTH, USCUSTOM, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
+    un->AddSynonym("\'");
+    un->AddSynonym("feet");
+    un->AddSynonym("foot");
+    un->AddSynonym(u8"\xD1\x84\xD1\x83\xD1\x82");  // фут
+    un->AddSynonym(u8"\xD1\x84\xD1\x83\xD1\x82\xD0\xBE"); // фута
+    un->AddSynonym(u8"\xD1\x84\xD1\x83\xD1\x82\xD0\xBE\xD0\xB2");  // футов
+
     reg.AddUnit(LENGTH, USCUSTOM, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, USCUSTOM, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
     reg.AddUnit(LENGTH, USCUSTOM, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
@@ -99,10 +112,9 @@ void AddTime(UnitRegistry& reg)
 
 void AddTemperature(UnitRegistry& reg)
     {
-    reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15);
-    reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32);
-    reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0);
-
+    reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 273.15)->AddSynonym(u8"\xC2\xB0\x43");
+    reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0 / 9.0, -32)->AddSynonym(u8"\xC2\xB0\x46");
+    reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0 / 9.0)->AddSynonym(u8"\xC2\xB0\x52");
     //reg.AddUnit(TEMPERATURE, USCUSTOM, "ROMER", "CELSIUS", 40.0 / 21.0, -7.5);
     }
 
@@ -193,9 +205,16 @@ void AddAcceleration(UnitRegistry& reg)
 
 void AddPlaneAngle(UnitRegistry& reg)
     {
-    reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0 / 180.0);
-    reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
-    reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);
+    UnitCP un;
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0 / 180.0);
+    un->AddSynonym("^");
+    un->AddSynonym(u8"\xC2\xB0");
+    un->AddSynonym(u8"\xB0");
+
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0 / 60.0);
+    un->AddSynonym("'");
+    un = reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0 / 3600.0);
+    un->AddSynonym("\"");
     reg.AddUnit(ANGLE, METRIC, "ARC_QUADRANT", "[PI/2]*RAD");
     reg.AddUnit(ANGLE, METRIC, "GRAD", "[PI]*RAD", 1.0 / 200.0);
     reg.AddUnit(ANGLE, METRIC, "REVOLUTION", "[2PI]*RAD");
@@ -870,18 +889,21 @@ void AddApparentPower(UnitRegistry& reg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UnitRegistry::AddDefaultUnits()
     {
+    UnitCP un;
     UnitRegistry& reg = UnitRegistry::Instance();
-    reg.AddUnitForBasePhenomenon("M", BasePhenomena::Length);
+    reg.AddUnitForBasePhenomenon("M", BasePhenomena::Length)->AddSynonym("METER");
     reg.AddUnitForBasePhenomenon("KG", BasePhenomena::Mass);
-    reg.AddUnitForBasePhenomenon("S", BasePhenomena::Time);
-    reg.AddUnitForBasePhenomenon("K", BasePhenomena::Temperature);
-
+    reg.AddUnitForBasePhenomenon("S", BasePhenomena::Time)->AddSynonym("SEC");
+    un = reg.AddUnitForBasePhenomenon("K", BasePhenomena::Temperature);
+    un->AddSynonym(u8"\xC2\xB0\x4B");
+    un->AddSynonym("KELVIN");
     reg.AddUnitForBasePhenomenon("DELTA_KELVIN", BasePhenomena::TemperatureChange);
 
     reg.AddUnitForBasePhenomenon("A", BasePhenomena::ElectricCurrent);
     reg.AddUnitForBasePhenomenon("MOL", BasePhenomena::Mole); // Where mol is the SI gram mol or gmol.
     reg.AddUnitForBasePhenomenon("CD", BasePhenomena::Luminosity);
-    reg.AddUnitForBasePhenomenon("RAD", BasePhenomena::PlaneAngle);
+    reg.AddUnitForBasePhenomenon("RAD", BasePhenomena::PlaneAngle)->AddSynonym("RADIAN");
+
     reg.AddUnitForBasePhenomenon("STERAD", BasePhenomena::SolidAngle);
     reg.AddUnitForBasePhenomenon("US$", BasePhenomena::Finance);
     reg.AddUnitForBasePhenomenon("PERSON", BasePhenomena::Capita);

@@ -2,7 +2,7 @@
 |
 |     $Source: src/Formatting/FormatParsing.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
@@ -1802,22 +1802,31 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
             m_name = Utf8String(buf + 1);
         else
             m_name = Utf8String(buf);
-        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_name.c_str());
-        if (nullptr == m_unit && nullptr != refUnit)  // last attempt to resolve the unit name
+
+        m_unit = nullptr;
+        if(nullptr != refUnit)  // before looking into the registry we can try to find Unit in the Phenomenon
             {
             BEU::PhenomenonCP ph = refUnit->GetPhenomenon();
-            Utf8CP un = nullptr;
-            if (nullptr != ph)
-                {
-                if (ph->IsLength())
-                    un = FormatConstant::SpecialLengthSymbol(m_name);
-                else if (ph->IsAngle())
-                    un = FormatConstant::SpecialAngleSymbol(m_name);
-                }
-            if (nullptr != un)
-                m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(un);
+            m_unit = ph->LookupUnit(m_name.c_str());
             }
-        }
+        if(nullptr == m_unit)
+            m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(m_name.c_str());
+
+        //if (nullptr == m_unit && nullptr != refUnit)  // last attempt to resolve the unit name
+        //    {
+        //    BEU::PhenomenonCP ph = refUnit->GetPhenomenon();
+        //    Utf8CP un = nullptr;
+        //    if (nullptr != ph)
+        //        {
+        //        if (ph->IsLength())
+        //            un = FormatConstant::SpecialLengthSymbol(m_name);
+        //        else if (ph->IsAngle())
+        //            un = FormatConstant::SpecialAngleSymbol(m_name);
+        //        }
+        //    if (nullptr != un)
+        //        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(un);
+        //    }
+         }
     }
 POP_MSVC_IGNORE
 

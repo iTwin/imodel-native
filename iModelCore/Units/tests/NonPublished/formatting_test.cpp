@@ -409,7 +409,7 @@ TEST(FormattingTest, Json)
     FormattingTestFixture::UnitSynonymMapTest(u8"{\"synonym\":\"фут\", \"unitName\" : \"FT\"}");
     LOG.info("============ UnitSynonymMapTest(end) ==================\n");
 
-    bvector<BEU::UnitSynonymMap> mapV;
+    /*bvector<BEU::UnitSynonymMap> mapV;
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "feet");
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", "foot");
     BEU::UnitSynonymMap::AugmentUnitSynonymVector(mapV, "FT", u8"фут");
@@ -426,7 +426,7 @@ TEST(FormattingTest, Json)
     BEU::UnitRegistry::Instance().LoadSynonyms(mapJ);
     Json::Value allSyn = BEU::UnitRegistry::Instance().SynonymsToJson();
     Utf8String synS = allSyn.ToString();
-    LOG.infov("AllSynonyms %s", synS.c_str());
+    LOG.infov("AllSynonyms %s", synS.c_str());*/
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
@@ -466,10 +466,33 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("3  1/5 FT", 0, "MM", "real");
     FormattingTestFixture::ParseToQuantity("3  1/5 FT", 0, "IN", "real");
 
+
+    FormattingTestFixture::VerifyQuantity("-23.45E-03_M", "MM", "real", -23.45, "MM");
+    FormattingTestFixture::VerifyQuantity("30 1/2 IN", "FT", "real", 2.541667, "FT");
+    FormattingTestFixture::VerifyQuantity("30 1/2",    "IN", "real", 30.5, "IN");
+    FormattingTestFixture::VerifyQuantity("3 FT 6 IN", "FT", "real", 3.5, "FT");
+    FormattingTestFixture::VerifyQuantity("3 FT 6 IN", "IN", "real", 42.0, "IN");
+    FormattingTestFixture::VerifyQuantity("3 FT 6 IN", "CM", "real", 106.68, "CM");
+    FormattingTestFixture::VerifyQuantity("3 1/2 FT", "CM", "real", 106.68, "CM");
+    FormattingTestFixture::VerifyQuantity("3 1/2FT", "CM", "real",  1.0668, "M");
+    FormattingTestFixture::VerifyQuantity("3 1/2_FT", "M", "real",  1.0668, "M");
+    FormattingTestFixture::VerifyQuantity("2/3_FT", "IN", "real", 8.0, "IN");
+    FormattingTestFixture::VerifyQuantity("3_FT 1/2IN", "IN", "real", 36.5, "IN");
+    FormattingTestFixture::VerifyQuantity(u8"135°11'30 1/4\" ", "ARC_DEG", "real", 135.191736, "ARC_DEG");
+    FormattingTestFixture::VerifyQuantity(u8"135°11'30 1/4\" ", "ARC_DEG", "real", 2.359541, "RAD");
+    FormattingTestFixture::VerifyQuantity("5' 0\"", "FT", "real", 5.0, "FT");
+    FormattingTestFixture::VerifyQuantity("0' 3\"", "FT", "real", 0.25, "FT");
+    FormattingTestFixture::VerifyQuantity("3 HR 13 MIN 7 S", "MIN", "real", 193.116667, "MIN");
+    FormattingTestFixture::VerifyQuantity("3 HR 13 MIN 7 S", "MIN", "real", 11587.0, "SEC");
+
+    
     FormattingTestFixture::VerifyQuantity("135:23:11", "ARC_DEG", "dms8", 135.386389, "ARC_DEG");
+    FormattingTestFixture::VerifyQuantity("135::", "ARC_DEG", "dms8", 135.0, "ARC_DEG");
+    FormattingTestFixture::VerifyQuantity("135:30:", "ARC_DEG", "dms8", 135.5, "ARC_DEG");
     FormattingTestFixture::VerifyQuantity("5:6", "IN", "fi8", 1.6764, "M");
     FormattingTestFixture::VerifyQuantity("5:6", "IN", "fi8", 5.5, "FT");
     FormattingTestFixture::VerifyQuantity("5:", "IN", "fi8", 152.4, "CM");
+    FormattingTestFixture::VerifyQuantity(":6", "IN", "fi8", 15.24, "CM");
     FormattingTestFixture::VerifyQuantity("3:13:7", "S", "hms", 11587.0, "S");
     FormattingTestFixture::VerifyQuantity("3:13:7", "S", "hms", 193.116667, "MIN");
     FormattingTestFixture::VerifyQuantity("3 1/5 FT", "IN", "real", 975.36, "MM");
@@ -480,6 +503,10 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::VerifyQuantity("3/23", "M", "real", 130.4348, "MM");
     FormattingTestFixture::VerifyQuantity("13/113", "M", "real", 115.044, "MM");
     FormattingTestFixture::VerifyQuantity("13/113", "M", "real", 0.37744, "FT");
+
+    FormattingTestFixture::VerifyQuantity(u8"1 3/13 дюйма", "IN", "real", 1.2307692, "IN");
+    FormattingTestFixture::VerifyQuantity(u8"3 фута 4 дюйма", "IN", "real", 40.0, "IN");
+    FormattingTestFixture::VerifyQuantity(u8"1 фут 1 дюйм", "IN", "real", 13.0, "IN");
 
     LOG.info("============= Equivalence of quantity test (end) \n=================");
 
@@ -548,8 +575,21 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ShowSignature("12::5", 212);
     FormattingTestFixture::ShowSignature("12::", 213);
 
-
+    LOG.info("============= Hex Unicodes =================");
+    FormattingTestFixture::ShowHexDump(u8"°K", 10, u8"°K");
+    FormattingTestFixture::ShowHexDump(u8"°C", 10, u8"°C");
+    FormattingTestFixture::ShowHexDump(u8"°F", 10, u8"°F");
+    FormattingTestFixture::ShowHexDump(u8"°R", 10, u8"°R");
     FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
+    FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30, u8"135°11'30-1/4\" S");
+    FormattingTestFixture::ShowHexDump(u8"дюйм",   20, u8"дюйм");  
+    FormattingTestFixture::ShowHexDump(u8"дюйма",  20, u8"дюйма");
+    FormattingTestFixture::ShowHexDump(u8"дюймов", 20, u8"дюймов");
+    FormattingTestFixture::ShowHexDump(u8"фут",   20, u8"фут");
+    FormattingTestFixture::ShowHexDump(u8"фута",  20, u8"фута");
+    FormattingTestFixture::ShowHexDump(u8"футов", 20, u8"футов");
+    FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
+
     FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
     //FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
     //   012345678912345678901234567901234
@@ -975,9 +1015,9 @@ TEST(FormattingTest, Simple)
     
     }
 
-    /*---------------------------------------------------------------------------------**//**
-                                                                                          * @bsimethod                            David.Fox-Rabinovitz                      01/17
-                                                                                          +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, LargeNumbers)
     {
     LOG.info("\n=============== Testing Large Numbers ==================");
@@ -1092,6 +1132,17 @@ TEST(FormattingTest, DictionaryValidation)
         LOG.infov("%s", serT.c_str());
         }
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FormattingTest, PhenomenaTest)
+    {
+
+    LOG.infov("\n================  Phenomena Test ===========================");
+    FormattingTestFixture::ShowKnownPhenomena();
+    LOG.infov("================  Phenomena Test (end) ===========================\n");
 
     LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }
