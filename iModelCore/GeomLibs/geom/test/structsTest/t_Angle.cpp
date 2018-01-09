@@ -73,25 +73,9 @@ TEST(Printf,Pound)
         printf (" (.17g %.17g) (#.17g %#.17g)\n", a, a);
     }
 
+#define N2( x ) ((x)*(x))               // pow( ) is a performance issue
+#define N3( x ) ((x)*(x)*(x))           // pow( ) is a performance issue
 
-#ifdef abc
-int aecAlg_computeTangentFromLength( ALGspi *spi, double partialArcLength, double *tangentLength )
-{
-
-            if( PRACTICALLY_EQUAL( fabs( spi->ent_r ), OR_INFINITY ) )
-                aecAlg_computeCzechTangentFromLength( fabs( spi->ext_r ), spi->xs, partialArcLength, tangentLength );
-            else if( PRACTICALLY_EQUAL( fabs( spi->ext_r ), OR_INFINITY ) )
-                aecAlg_computeCzechTangentFromLength( fabs( spi->ent_r ), spi->xs, partialArcLength, tangentLength );
-            else
-            {
-                if( spi->bs.off > 0.0 )
-                    aecAlg_computeCzechTangentFromLength( fabs( spi->ent_r ), fabs( spi->ext_r ), spi->bs.off, partialArcLength, tangentLength );
-                else
-                    aecAlg_computeCzechTangentFromLength( fabs( spi->ent_r ), fabs( spi->ext_r ), spi->es.off, partialArcLength, tangentLength );
-            }
-        }
-}
-#endif
 // newton iteration to find x so that     x + gamma * x^5 - target = 0
 ValidatedDouble RunGamma5Newton (double target, double gamma)
     {
@@ -122,29 +106,19 @@ ValidatedDouble RunGamma5Newton (double target, double gamma)
         }
     return ValidatedDouble (x, false);
     }
-bool check1 (double x0, double x1)
-    {
-    static double s_tol0 = 1.0e-10;
-    static double s_tol1 = 1.0e-4;
-    double dx = fabs (x0 - x1);
-    if (dx < s_tol0)
-        return true;
-    if (dx < s_tol1)
-        return true;
-    return false;
-    }
-#define LENGTH_TOLERANCE 1.e-6
+
+#define LENGTH_TOLERANCE           0.00000001
+#define RADIUS_TOLERANCE           0.000000001
+#define CENTER_TO_CENTER_TOLERANCE 0.000000001
 #define LIKE_SIGNS(a,b) (a * b > 0.0)
-// from cubicParabola.cpp
-// This produces the same result as DistanceAlongToX
-int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo, double &X )
+static int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo, double *X )
 {
     int cycles = 0, idx;
     double lamda, gamma, x[ 3 ], xo[ 3 ], dif[ 3 ];
 
     lamda = asin( Lp / ( 2.0 * R ) );
     gamma = 1.0 / cos( lamda );
-    double gammaX = 1.0 / ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ));
+
     x[ 0 ] = 0.0;
     xo[ 0 ] = x[ 0 ] + pow( gamma, 2 ) * pow( x[ 0 ], 5 ) / ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
     dif[ 0 ] = xo[ 0 ] - Xo;
@@ -152,15 +126,11 @@ int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo, double
     x[ 2 ] = Lp;
     xo[ 2 ] = x[ 2 ] + pow( gamma, 2 ) * pow( x[ 2 ], 5 ) / ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
     dif[ 2 ] = xo[ 2 ] - Xo;
-    // bisection !!!
-    double gammaP2gammaX = gamma * gamma * gammaX;
-    double X1 = RunGamma5Newton (Xo, gammaP2gammaX);
+
     while( ( fabs( xo[ 0 ] - xo[ 2 ] ) > LENGTH_TOLERANCE ) && ( ++cycles < 100 ) )
     {
         x[ 1 ] = .5 * ( x[ 0 ] + x[ 2 ] );
-        double xP5 = x[1] * x[1] * x[1] * x[1] * x[1];
-        //xo[ 1 ] = x[ 1 ] + pow( gamma, 2 ) * pow( x[ 1 ], 5 ) * gammaX;/// ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
-        xo[ 1 ] = x[ 1 ] + gammaP2gammaX * xP5;// pow( gamma, 2 ) * pow( x[ 1 ], 5 ) * gammaX;/// ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
+        xo[ 1 ] = x[ 1 ] + pow( gamma, 2 ) * pow( x[ 1 ], 5 ) / ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
         dif[ 1 ] = xo[ 1 ] - Xo;
 
         if( LIKE_SIGNS( dif[ 0 ], dif[ 2 ] ) )
@@ -172,200 +142,50 @@ int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo, double
         x[ idx ] = x[ 1 ];
         xo[ idx ] = xo[ 1 ];
     }
-    X = .5 * ( x[ 0 ] + x[ 2 ] );
-    double fraction = DoubleOps::InverseInterpolate (dif[0], 0.0, dif[2]);
-    double X2 = DoubleOps::Interpolate (x[0], fraction, x[2]);
-    check1 (X2,X1);
-    check1 (X, X1);
+
+    *X = .5 * ( x[ 0 ] + x[ 2 ] );
 
     return( SUCCESS );
 }
 
-#define N2( x ) ((x)*(x))               // pow( ) is a performance issue
-#define N3( x ) ((x)*(x)*(x))           // pow( ) is a performance issue
-typedef ValidatedValue <struct CzechSpiral> ValidatedCzechSpiral ;
-// EDL 01/18
-// spiral always starts from orgin, zero curvature=0, bearing=0, i.e. moving along x axis.
-// s=distance along spiral.
-// czech and NSW both have              s = x + gamma*x^5
-//   where gamma is determined in a unique (convoluted? incomprehensible? brilliant?) way.
-// 
-struct CzechSpiral {
-    double m_spiralLength;
-    double m_curvature1;
-    double m_radius1;
-    double m_x1;        // project endpoint to tangent line.
-    double m_gammaX;
-    double m_gammaY;
-private: CzechSpiral (double curvature1, double spiralLength, double x1, double gammaX, double gammaY)
-    : m_spiralLength (spiralLength), m_curvature1 (curvature1), m_x1 (x1), m_gammaX (gammaX), m_gammaY(gammaY), m_radius1 (1.0 / curvature1)
-    {
-    }
-public:
-static ValidatedCzechSpiral CreateCurvatureLength (double curvature1, double spiralLength)
-    {
-    static double m_gammaXA;
-    static double m_gammaXB;
-    static double m_gammaXC;
-
-    double xesav;
-    double lamdax;
-    double lamda;
-    double thet;
-    double t3;
-    double gamma1;
-    double rbar = 2.0 / curvature1;
-    //double re = 1.0 / ke;
-    double x1 = spiralLength;
-    xesav = 0;
-    double gamma0 = 0;
-    while (fabs(x1 - xesav) > 0.000001)
-        {
-        xesav = x1;
-        thet = x1 * curvature1 / 2.;
-        lamdax = asin ( thet );         // anglular coordinate of (x1,0) in the rbar circle
-        lamda = 1. / cos( lamdax );     // secant (lambdax).   Could rewrite as lamd^2 = rbar^2/ (rbar^2-x1^2)
-        t3 = lamda * lamda * N2(curvature1) / 40.;// sec^2 / (40 ke)= sec^2 / (10 rbar^2)=1/ (10 (rbar cos)^2
-        gamma0 = t3;
-        gamma1 = 1.0 / (10.0 * (rbar * rbar - x1 * x1));
-        x1 = spiralLength - ( gamma0 * N3(x1) );
-        }
-    thet = x1 * curvature1 / 2.;
-    lamdax = asin ( thet );
-    lamda = 1. / cos( lamdax );
-    t3 = lamda * lamda * N2(curvature1) / 40;
-    double gammaX = t3 / ( N2(x1) );
-    double gammaY = 1.0 / (10.0 * (rbar * rbar - x1 * x1));
-
-    double R1 = 1.0 / curvature1;
-    m_gammaXA = 1.0 / ( 40.0 * pow( curvature1, 2 ) * pow( spiralLength, 2 ));
-    m_gammaXB = m_gammaXA * x1 * x1 / (R1 * R1);
-    m_gammaXC = m_gammaXA * (R1 * R1) / (x1 * x1);
-    return ValidatedCzechSpiral (CzechSpiral (curvature1, spiralLength, x1, gammaX, gammaY), true);
-    }
-
-
-ValidatedDouble DistanceAlongToX
-(
-double targetDistanceAlong     //!< [in] distance along true curve
-)
-    {
-    double xAlg;
-    aecAlg_computeCzechTangentFromLength( m_radius1, m_spiralLength, targetDistanceAlong, xAlg);
-    auto x = RunGamma5Newton (targetDistanceAlong, m_gammaX);
-    check1 (xAlg, x);
-    return ValidatedDouble (x);
-    }
-
-
-void aecAlg_computeCzechLoFromRLp(
-double distanceAlong,
-double &lo,     // unknown -- called quark by caller in cubicParabola.cpp
-double &lamda,  // lambda constant
-double &gamma   // gamma constant
-)
+static int aecAlg_computeCzechLoFromRLp( double R, double lp, double *lo, double *lamda, double *gamma )
 {
-    double R = 1.0 / m_curvature1;
-    double spiralLength = m_spiralLength;
-    double lp = distanceAlong;
-    lamda = asin( lp / ( 2. * R ) );
-    gamma = 1.0 / cos( lamda );
-    lo = lp + gamma * gamma * ( ( lp * lp * lp ) / ( 40. * R * R ) );
+    *lamda = asin( lp / ( 2. * R ) );
+    *gamma = 1. / cos( *lamda );
+    *lo = lp + *gamma * *gamma * ( ( lp * lp * lp ) / ( 40. * R * R ) );
+
+    return( SUCCESS );
 }
 
-void DistanceAlongToXYTR (double distanceAlong, double &x, double &y, double &t, double &r)
+void DistanceAlongToXYTR (double R, double spiralLength, double pseudoLength, double partialLength, double &x, double &y, double &t, double &r, double &directCurvature)
     {
     double signage = 1.0;
     double quark, lambda, gamma;
-    aecAlg_computeCzechTangentFromLength( m_radius1, m_spiralLength, distanceAlong, x);
+    double totalTangent;
+    aecAlg_computeCzechTangentFromLength( R, spiralLength, pseudoLength, &totalTangent);
+    aecAlg_computeCzechLoFromRLp (R, totalTangent, &quark, &lambda, &gamma);
+    aecAlg_computeCzechTangentFromLength( R, spiralLength, partialLength, &x);
+    static int select = 1;
+    double u = x;
+    if (select == 1)
+        u = partialLength;
+    double xxx = u * u * u;
+    double a = gamma / (6.0 * R * totalTangent);
+//    y = gamma * xxx / (6.0 * R * totalTangent);
+    y = a * xxx;
 
-    aecAlg_computeCzechLoFromRLp (distanceAlong, quark, lambda, gamma);
-    double xxx = x * x * x;
-    y = gamma * xxx / (6.0 * m_radius1 * m_x1);
-    double xFraction = x / m_x1;
+    // direct radius of curvature.
+    // y = a * xxx
+    double dydx = 3.0 * a * u * u;
+    double ddydxdx = 6.0 * a * u;
+    double q = 1.0 + ddydxdx * ddydxdx;
+    directCurvature = ddydxdx / sqrt (q * q * q);
+
+    double xFraction = x / totalTangent;
     t = atan (tan (lambda) * xFraction * xFraction);
-    r = 1.0 / (signage * x / (m_radius1 * m_x1));
+    r = 1.0 / (signage * x / (R * totalTangent));
 
     }
-
-static bool check (double x, double y, double targetDistance)
-    {
-    bool b = x < targetDistance && sqrt (x * x + y * y) < targetDistance;
-    return b;
-    }
-ValidatedDVec3d DistanceAlongToDerivatives (double distanceAlong)
-    {
-    // D = distanceAlong = x + m_gammaX * x^5
-    // dD = (1 + 5 m_gammaX x^4) dx
-    // dx/dD = 1/(...)
-    // dy/dD = sqrt (1 - (dx/dD)^2);
-    double x = DistanceAlongToX (distanceAlong);
-    double xx = x * x;
-    double h = 1.0 + 5.0 * xx * xx;
-    double ddx = 1.0 / h;
-    double ddy = sqrt (1.0 - ddx * ddx);
-    double yTest = m_gammaY * x * x * x;    // inferred y formula?
-    check (x, yTest, distanceAlong);
-    return ValidatedDVec3d(DVec3d::From (ddx, distanceAlong > 0 ? ddy : -ddy));
-    }
-};
-#define N2( x ) ((x)*(x))               // pow( ) is a performance issue
-#define N3( x ) ((x)*(x)*(x))           // pow( ) is a performance issue
-int newton_raphson_czechsc
-(
-double ke,  // end curvature.  (implied straight at start)
-double lz,  // distance along curve
-double le,  // distance at end
-double& xz, // computed x at this distance
-double& xe  // comptued x at end
-)
-    {
-    int sts = SUCCESS;
-
-    double x;
-    double xsav;
-    double xesav;
-    double lamdax;
-    double lamda;
-    double gamma0;
-    double fx;
-    double fdashx;
-    double thet;
-    double t3;
-    double gamma1;
-    double rbar = 2.0 / ke;
-    //double re = 1.0 / ke;
-    xe = le;
-    xesav = 0;
-    while (fabs(xe - xesav) > 0.000001)
-        {
-        xesav = xe;
-        thet = xe * ke / 2.;
-        lamdax = asin ( thet );         // anglular coordinate of (xe,0) in the rbar circle
-        lamda = 1. / cos( lamdax );     // secant (lambdax).   Could rewrite as lamd^2 = rbar^2/ (rbar^2-xe^2)
-        t3 = lamda * lamda * N2(ke) / 40.;// sec^2 / (40 ke)= sec^2 / (10 rbar^2)=1/ (10 (rbar cos)^2
-        gamma0 = t3;
-        gamma1 = 1.0 / (10.0 * (rbar * rbar - xe * xe));
-        xe = le - ( gamma0 * N3(xe) );
-        }
-    thet = xe * ke / 2.;
-    lamdax = asin ( thet );
-    lamda = 1. / cos( lamdax );
-    t3 = lamda * lamda * N2(ke) / 40;;
-    gamma0 = t3 / ( N2(xe) );
-    x = lz;
-    xsav = 0;
-    while (fabs(x - xsav) > 0.000001 )
-        {
-        xsav = x;
-        fx = gamma0 * N3(x) * N2(x) + x - lz;
-        fdashx = 5 * gamma0 * N3(x) * x + 1.;
-        x = x - (fx / fdashx);
-        }
-    xz = x;
-    return( sts );
-    }
-
 
 
 /*-------------------------------------------------------------------------+
@@ -445,7 +265,9 @@ double& xe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CzechSpiral,NewtonStep)
     {
-    static double s_uorsPerMeter = 10000.0;
+    static double s_uorsPerMeter = 1.0; //10000.0;
+    static double s_smallCurvature = 1.0e-14;
+    double flagHeight = 0.5 * s_uorsPerMeter;
     // simulate uor computations:
     //    convert metric sizes to uors
     //    use the Check:: transform to scale back to meters for output to dgnjs file
@@ -454,42 +276,43 @@ TEST(CzechSpiral,NewtonStep)
     auto transform1 = Transform::From (RotMatrix::FromScale (1.0 / s_uorsPerMeter), DPoint3d::From (0,0,0));
     Check::SetTransform (transform1);
     double spiralLength = 100 * s_uorsPerMeter;
-    double distanceStep = spiralLength / 16.0; //5.0 * s_uorsPerMeter;
     double yShift = 0.0;
-    for (double radiusMeters : bvector<double> {1000, 400, 200})
+    bvector<double> radiusMeters {1000, 400, 200 };
+    bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
+    bvector<double> edgeCount {15, 25, 35};
+    for (size_t i = 0; i < radiusMeters.size (); i++)
         {
-        double radius1 = radiusMeters * s_uorsPerMeter;
+        double radius1 = radiusMeters[i] * s_uorsPerMeter;
+        double pseudoLength = pseudoLengthMeters[i] * s_uorsPerMeter;
+        double distanceStep = spiralLength / edgeCount[i];
         double curvature1 = 1.0 / radius1;
         double averageRadius = 2.0 * radius1;
         double averageCircleRadians = spiralLength / averageRadius;
-        yShift += 10.0 * s_uorsPerMeter;
-        double xe, x;
-        double df = 1.0/32;
+        double directCurvature = 0;
         bvector<DPoint3d>xy;
-        CzechSpiral spiral = CzechSpiral::CreateCurvatureLength (curvature1, spiralLength).Value ();
-        ValidatedDVec3d tangent;
-        UsageSums xDiffs;
         double xB = 0, yB = 0, tB = 0, rB = 0;
-        for (double distanceAlong = 0.0; distanceAlong <= spiralLength; distanceAlong += distanceStep)
+
+        for (double distanceAlong = 0.0; distanceAlong <= spiralLength * 1.007; distanceAlong += distanceStep)
             {
-            newton_raphson_czechsc (curvature1, distanceAlong, spiralLength, x, xe);
-            double xA = spiral.DistanceAlongToX (distanceAlong);
-            xDiffs.Accumulate (x-xA);
-            tangent = spiral.DistanceAlongToDerivatives (distanceAlong);
-            spiral.DistanceAlongToXYTR (distanceAlong, xB, yB, tB, rB);
-            xy.push_back (DPoint3d::From (xB, yB + yShift));
+            DistanceAlongToXYTR (radius1, spiralLength, pseudoLength, distanceAlong, xB, yB, tB, rB, directCurvature);
+            xy.push_back (DPoint3d::From (distanceAlong, yB + yShift));
             }
-        GEOMAPI_PRINTF(" Max difference x-xA %12.3le\n", xDiffs.Max ());
-        GEOMAPI_PRINTF(" final x,y,t,r %20.15le %20.15le   %le %le\n", xB, yB, tB, rB);
+        GEOMAPI_PRINTF(" final x,y,t,r %20.15le %20.15le   %le %le  r1 %le\n", xB, yB, tB, rB, directCurvature < s_smallCurvature ? 0.0 : 1.0 / directCurvature);
         auto last = xy.back ();
+        auto xyFlag = xy.back () + DVec3d::From (0, flagHeight);
+        xy.push_back (xyFlag);
         Check::SaveTransformed (xy);
+
         Check::SaveTransformed (DSegment3d::From (0,yShift,0, last.x, yShift,0));
+#ifdef saveArc
         auto arc = DEllipse3d::From (
                 0, yShift + averageRadius, 0,
                 0, -averageRadius, 0,
                 averageRadius, 0, 0,
                 0.0, averageCircleRadians);
         Check::SaveTransformed (arc);
+#endif
+        yShift += 50.0 * s_uorsPerMeter;
         }
     Check::ClearGeometry ("CzechSpiral.NewtonStep");
     Check::SetTransform (transform0);
