@@ -1,0 +1,43 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/BisSchemasValidation/ValidateSchemas.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+# This file is used to setup the schema validator with desired directory targets
+# 
+# Required Macros:
+#    SCHEMA_VALIDATOR_EXE_DIRECTORY    - the directory where schemavalidator.exe exists
+#    SCHEMAS_DIRECTORY                 - directories containing schemas to validate seperated by semicolon
+#
+# Optional Macros:
+#    SCHEMAS_REFERENCE_DIRECTORY       - directories containing reference schemas seperated by semicolon
+#    LOG_DIRECTORY                     - directory to save validation logs
+#    SHAREPOINT_SCRIPT_LOCATION        - directory containing script to update SharePoint validation list
+#    SHAREPOINT_SITE_URL               - full URL of SharePoint site
+#    SHAREPOINT_LIST_NAME              - name of the list in SharePoint to update 
+#-------------------------------------------------------------------------------------
+SrcDir = $(_MakeFilePath)
+
+%if !defined (SCHEMA_VALIDATOR_EXE_DIRECTORY)
+  %error SCHEMA_VALIDATOR_EXE_DIRECTORY is not set
+%endif
+
+%if !defined (SCHEMAS_DIRECTORY)
+  %error SCHEMAS_DIRECTORY is not set
+%endif
+
+# (Using -r and -o with undefined macros is handled safely in the python script)
+always:
+    python $(SrcDir)SchemaValidationRunner.py $(SCHEMA_VALIDATOR_EXE_DIRECTORY) $(SCHEMAS_DIRECTORY) -r $(SCHEMAS_REFERENCE_DIRECTORY) -o $(LOG_DIRECTORY)
+
+%if defined (SHAREPOINT_SCRIPT_LOCATION)
+    always:
+        python $(SHAREPOINT_SCRIPT_LOCATION)sharepoint_wrapper.py $(LOG_DIRECTORY)/Validation_results.csv $(SHAREPOINT_SITE_URL) $(SHAREPOINT_LIST_NAME)
+%endif
+
+always:
+    python $(SrcDir)SchemaValidationReporter.py $(LOG_DIRECTORY)/schema_report.log

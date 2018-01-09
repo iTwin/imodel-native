@@ -135,6 +135,9 @@
     <None Include="ecobjects.mke" />
     <None Include="ECObjectsCompileOpts.mki" />
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\ECObjects.PartFile.xml" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

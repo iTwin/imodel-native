@@ -2,7 +2,7 @@
 |
 |     $Source: tools/SchemaValidator/SchemaValidator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
@@ -80,12 +80,8 @@ static int ValidateLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, 
 static int ValidateSchema(ConversionOptions& options, BeFileName& inputFile, ECSchemaReadContextR context)
     {
     s_logger->infov(L"Reading schema '%ls'", inputFile.GetName());
-    ECSchemaPtr schema;
 
-    Utf8String fullName(inputFile.GetFileNameAndExtension());
-
-    schema = ECSchema::LocateSchema(inputFile.c_str(), context);
-
+    ECSchemaPtr schema = ECSchema::LocateSchema(inputFile.c_str(), context);
     if (!schema.IsValid())
         {
         s_logger->errorv(L"Failed to read schema '%ls'", inputFile.GetName());
