@@ -88,6 +88,70 @@ UIList UIUtils::GetAvailablePresentationTypes()
     return presentationTypes;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableDecimalSeparators()
+    {
+    UIList decimalSeparators;
+
+    decimalSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(DecimalSeparator_Comma).c_str(), ","));
+    decimalSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(DecimalSeparator_Point).c_str(), "."));
+
+    return decimalSeparators;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableThousandSeparators()
+    {
+    UIList thousandSeparators;
+
+    thousandSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(ThousandSeparator_Comma).c_str(), ","));
+    thousandSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(ThousandSeparator_Point).c_str(), "."));
+
+    return thousandSeparators;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableUnitLabelSeparators()
+    {
+    UIList unitLabelSeparators;
+
+    unitLabelSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(UnitLabelSeparator_None).c_str(), ""));
+    unitLabelSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(UnitLabelSeparator_Space).c_str(), " "));
+
+    return unitLabelSeparators;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  01/2018
+//---------------------------------------------------------------------------------------
+UIList UIUtils::GetAvailableTraits()
+    {
+    UIList traits;
+
+    traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_Use1000Separator()));
+    traits.AddListEntry(UIListEntry((int)FormatTraits::AppendUnitName, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_AppendUnitName()));
+
+   // TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_LeadZeroes(), FormatTraits::LeadingZeroes, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_Use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, &ref, verbose);
+   // TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
+
+    return traits;
+    }
+
 //===================================================
 //
 // FormatConstant Methods

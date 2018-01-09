@@ -132,10 +132,20 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
     L10N_STRING(PresentationType_ScientificNorm)                         // =="Normalized Scientific"==
     L10N_STRING(PresentationType_Stop100)                                // =="Stationing (Imperial)"==
     L10N_STRING(PresentationType_Stop1000)                               // =="Stationing (Metric)"==
+    
+    L10N_STRING(DecimalSeparator_Comma)                                 // =="Comma"==
+    L10N_STRING(DecimalSeparator_Point)                                 // =="Point"==
+
+    L10N_STRING(ThousandSeparator_Comma)                                // =="Comma"==
+    L10N_STRING(ThousandSeparator_Point)                                // =="Point"==
+
+    L10N_STRING(UnitLabelSeparator_None)                                // =="None"==
+    L10N_STRING(UnitLabelSeparator_Space)                               // =="Space"==
+
+    L10N_STRING(FormatTraits_Use1000Separator)                          // =="Use Thousands Separator"==
+    L10N_STRING(FormatTraits_AppendUnitName)                            // =="Append Unit Name"==
 
 BENTLEY_TRANSLATABLE_STRINGS_END
-
-//m_displayLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(stringId.c_str()));
 
 #define UNITSL10N_GETSTRING(K)  BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), UnitsL10N::K())
 
