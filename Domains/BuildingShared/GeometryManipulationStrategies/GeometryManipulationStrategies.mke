@@ -63,6 +63,10 @@ $(o)ElementManipulationStrategy$(oext) : $(_MakeFilePath)ElementManipulationStra
 
 $(o)ElementPlacementStrategy$(oext) : $(_MakeFilePath)ElementPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementPlacementStrategy.h
 
+$(o)LineStringManipulationStrategy$(oext) : $(_MakeFilePath)LineStringManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringManipulationStrategy.h
+
+$(o)LineStringPlacementStrategy$(oext) : $(_MakeFilePath)LineStringPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringPlacementStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

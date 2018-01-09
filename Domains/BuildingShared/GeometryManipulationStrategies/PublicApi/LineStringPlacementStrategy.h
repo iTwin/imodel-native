@@ -1,0 +1,40 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: GeometryManipulationStrategies/PublicApi/LineStringPlacementStrategy.h $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+BEGIN_BUILDING_SHARED_NAMESPACE
+
+enum class LineStringPlacementStrategyType
+    {
+    Points = 0,
+    MetesAndBounds
+    };
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               01/2018
+//=======================================================================================
+struct LineStringPlacementStrategy : public CurvePrimitivePlacementStrategy
+    {
+    DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
+
+    private:
+        LineStringManipulationStrategyPtr m_manipulationStrategy;
+
+    protected:
+        LineStringPlacementStrategy() : T_Super(), m_manipulationStrategy(LineStringManipulationStrategy::Create()) {}
+
+        virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        LineStringManipulationStrategyCR GetLineStringManipulationStrategy() const { return *m_manipulationStrategy; }
+        LineStringManipulationStrategyR GetLineStringManipulationStrategyR() { return *m_manipulationStrategy; }
+
+    public:
+        static LineStringPlacementStrategyPtr Create(LineStringPlacementStrategyType strategyType);
+    };
+
+END_BUILDING_SHARED_NAMESPACE

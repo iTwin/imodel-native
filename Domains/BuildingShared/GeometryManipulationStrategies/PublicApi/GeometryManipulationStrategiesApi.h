@@ -16,6 +16,7 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurvePrimitiveManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurveVectorManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ChildCurveVectorManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineStringManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryPlacementStrategy)
@@ -33,6 +34,7 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointLengthAnglePlacementStrateg
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineMetesAndBoundsPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsLengthPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsAnglePlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineStringPlacementStrategy)
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ElementManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ElementPlacementStrategy)
@@ -40,6 +42,7 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ElementPlacementStrategy)
 BEGIN_BUILDING_SHARED_NAMESPACE
 enum class LinePlacementStrategyType;
 enum class ArcPlacementStrategyType;
+enum class LineStringPlacementStrategyType;
 END_BUILDING_SHARED_NAMESPACE
 
 #include "GeometryManipulationStrategyBase.h"
@@ -48,6 +51,7 @@ END_BUILDING_SHARED_NAMESPACE
 #include "CurveVectorManipulationStrategy.h"
 #include "ChildCurveVectorManipulationStrategy.h"
 #include "LineManipulationStrategy.h"
+#include "LineStringManipulationStrategy.h"
 #include "EllipseManipulationStrategy.h"
 #include "ArcManipulationStrategy.h"
 #include "GeometryPlacementStrategy.h"
@@ -55,6 +59,7 @@ END_BUILDING_SHARED_NAMESPACE
 #include "CurvePrimitivePlacementStrategy.h"
 #include "ChildCurveVectorPlacementStrategy.h"
 #include "LinePlacementStrategy.h"
+#include "LineStringPlacementStrategy.h"
 #include "ArcPlacementStrategy.h"
 #include "ArcStartCenterPlacementStrategy.h"
 #include "ArcCenterStartPlacementStrategy.h"
