@@ -173,7 +173,7 @@ bool convertStrategyName(ECValueR strategy, IECInstanceCR classMap, Utf8StringR 
 ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
     {
     ECClassP ecClass = dynamic_cast<ECClassP> (&container);
-    if (instance.GetClass().GetSchema().GetVersionWrite() > 1)
+    if (instance.GetClass().GetSchema().GetVersionRead() > 1)
         {
         LOG.infov("Found ECDbMap:ClassMap custom attribute from schema version greater than 1.0.  Skipping because we're only trying to convert ClassMap custom attributes from ECDbMap 1.0");
         return ECObjectsStatus::Success;
