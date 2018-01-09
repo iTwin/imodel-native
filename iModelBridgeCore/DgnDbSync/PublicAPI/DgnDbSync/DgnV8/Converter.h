@@ -1066,6 +1066,8 @@ public:
     //! @see GetV8FileSyncInfoId for a short-cut method
     DGNDBSYNC_EXPORT static SyncInfo::V8FileSyncInfoId GetV8FileSyncInfoIdFromAppData(DgnV8FileCR);
 
+    DGNDBSYNC_EXPORT static void DiscardV8FileSyncInfoAppData(DgnV8FileR);
+
     //! Short cut method that first calls GetV8FileSyncInfoIdFromAppData to see if the file's SyncInfoId is already cached. 
     //! If not, this function calls _GetV8FileIntoSyncInfo .
     SyncInfo::V8FileSyncInfoId GetV8FileSyncInfoId(DgnV8FileR);
@@ -2485,6 +2487,7 @@ public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
+    DGNDBSYNC_EXPORT  ~RootModelConverter();
 
     DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
 

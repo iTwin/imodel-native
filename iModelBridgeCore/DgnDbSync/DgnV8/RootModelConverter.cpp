@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RootModelConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -1009,6 +1009,22 @@ RootModelConverter::RootModelConverter(RootModelSpatialParams& params)
     {
     // We do the Config map lookup here and save the result to this variable.
     m_considerNormal2dModelsSpatial = (GetConfig().GetOptionValueBool("Consider2dModelsSpatial", false) || m_params.GetConsiderNormal2dModelsSpatial());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RootModelConverter::~RootModelConverter()
+    {
+    for (auto file : m_v8Files)
+        {
+        // TFS#803958 - Don't leave stale appdata on the files. That is mainly a problem in the case where a new
+        //              RootModelConverter will be created to process the same set of DgnFiles that were already processed
+        //              (at least partially) earlier in the same session. The second instance of the converter needs to run
+        //              the FindSpatialV8Models logic, which must populate the m_v8Files vector. It won't do that if the
+        //              files all have appdata saying that the converter already knows about them.
+        DiscardV8FileSyncInfoAppData(*file);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -123,6 +123,14 @@ struct V8FileSyncInfoIdAppData : DgnV8Api::DgnFileAppData
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::DiscardV8FileSyncInfoAppData(DgnV8FileR file)
+    {
+    file.DropAppData(V8FileSyncInfoIdAppData::GetKey());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::V8FileSyncInfoId Converter::GetV8FileSyncInfoIdFromAppData(DgnV8FileCR file)
     {
     auto appdata = (V8FileSyncInfoIdAppData*)((DgnV8FileR)file).FindAppData(V8FileSyncInfoIdAppData::GetKey());
