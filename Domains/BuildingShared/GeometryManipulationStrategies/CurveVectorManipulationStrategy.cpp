@@ -12,6 +12,16 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
+    : T_Super()
+    , m_defaultNewGeometryType(DefaultNewGeometryType::Line)
+    , m_defaultLinePlacementStrategyType(LinePlacementStrategyType::Points)
+    , m_defaultArcPlacementStrategyType(ArcPlacementStrategyType::StartMidEnd)
+    {}
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr CurveVectorManipulationStrategy::_Finish() const
@@ -243,4 +253,32 @@ void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
         }
 
     m_defaultNewGeometryType = newGeometryType;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
+(
+    LinePlacementStrategyType newPlacementStrategyType
+)
+    {
+    if (m_defaultLinePlacementStrategyType == newPlacementStrategyType)
+        return;
+
+    m_defaultLinePlacementStrategyType = newPlacementStrategyType;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
+(
+    ArcPlacementStrategyType newPlacementStrategyType
+)
+    {
+    if (m_defaultArcPlacementStrategyType == newPlacementStrategyType)
+        return;
+
+    m_defaultArcPlacementStrategyType = newPlacementStrategyType;
     }

@@ -9,6 +9,14 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
+enum class ArcPlacementStrategyType
+    {
+    CenterStart = 0,
+    StartCenter,
+    StartMidEnd,
+    StartEndMid
+    };
+
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
@@ -31,6 +39,9 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Normal;
+
+        static ArcPlacementStrategyPtr Create(ArcPlacementStrategyType strategyType);
+        static ArcPlacementStrategyPtr Create(ArcPlacementStrategyType strategyType, ArcManipulationStrategyR manipulationStrategy);
     };
 
 END_BUILDING_SHARED_NAMESPACE

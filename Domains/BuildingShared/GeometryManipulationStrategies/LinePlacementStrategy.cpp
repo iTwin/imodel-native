@@ -25,6 +25,47 @@ LinePlacementStrategy::LinePlacementStrategy
     BeAssert(m_manipulationStrategy.IsValid());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePlacementStrategyPtr LinePlacementStrategy::Create
+(
+    LinePlacementStrategyType strategyType
+)
+    {
+    switch (strategyType)
+        {
+        case LinePlacementStrategyType::Points :
+            return LinePointsPlacementStrategy::Create();
+        case LinePlacementStrategyType::PointsAngle :
+            return LinePointsAnglePlacementStrategy::Create(DPlane3d::FromOriginAndNormal({0,0,0}, DVec3d::From(0, 0, 1))); // default plane...
+        case LinePlacementStrategyType::PointsLength :
+            return LinePointsLengthPlacementStrategy::Create();
+        case LinePlacementStrategyType::PointLengthAngle :
+            return LinePointLengthAnglePlacementStrategy::Create(DPlane3d::FromOriginAndNormal({0,0,0}, DVec3d::From(0, 0, 1))); // default plane...
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePlacementStrategyPtr LinePlacementStrategy::Create
+(
+    LinePlacementStrategyType strategyType,
+    LineManipulationStrategyR manipulationStrategy
+)
+    {
+    LinePlacementStrategyPtr placementStrategy = Create(strategyType);
+    if (placementStrategy.IsNull())
+        return nullptr;
+
+    placementStrategy->m_manipulationStrategy = &manipulationStrategy;
+    return placementStrategy;
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // LinePointsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -374,3 +374,14 @@ CurvePrimitiveManipulationStrategyPtr CurvePrimitiveManipulationStrategy::Clone(
     {
     return _Clone();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLinePlacementStrategy
+(
+    LinePlacementStrategyType strategyType
+)
+    {
+    return _CreateLinePlacementStrategy(strategyType);
+    }

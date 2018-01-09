@@ -34,7 +34,10 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
+        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType) override;
+
 
         virtual void _OnKeyPointsChanged() override;
 

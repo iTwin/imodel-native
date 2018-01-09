@@ -7,12 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsPlacementStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointLengthAnglePlacementStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsLengthPlacementStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsAnglePlacementStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
+
+enum class LinePlacementStrategyType
+    {
+    Points = 0,
+    PointLengthAngle,
+    PointsLength,
+    PointsAngle
+    };
 
 struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
     {
@@ -33,6 +36,9 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Length;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Angle;
+
+        static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType);
+        static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType, LineManipulationStrategyR manipulationStrategy);
     };
 
 struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrategy

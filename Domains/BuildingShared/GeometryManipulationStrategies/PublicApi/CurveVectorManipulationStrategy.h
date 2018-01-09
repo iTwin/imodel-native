@@ -25,13 +25,17 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
     private:
         bvector<CurvePrimitiveManipulationStrategyPtr> m_primitiveStrategies;
+        
         DefaultNewGeometryType m_defaultNewGeometryType;
+
+        LinePlacementStrategyType m_defaultLinePlacementStrategyType;
+        ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
 
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
 
     protected:
-        CurveVectorManipulationStrategy() : T_Super(), m_defaultNewGeometryType(DefaultNewGeometryType::Line) {}
+        CurveVectorManipulationStrategy();
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const;
 
@@ -63,6 +67,9 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
 
         void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
+
+        void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
+        void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
     };
 
 END_BUILDING_SHARED_NAMESPACE

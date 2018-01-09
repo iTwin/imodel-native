@@ -45,3 +45,25 @@ void CurveVectorPlacementStrategy::ChangeDefaultNewGeometryType
     {
     m_manipulationStrategy->ChangeDefaultNewGeometryType(newGeometryType);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
+(
+    LinePlacementStrategyType newPlacementStrategyType
+)
+    {
+    m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
+(
+    ArcPlacementStrategyType newPlacementStrategyType
+)
+    {
+    m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
+    }
