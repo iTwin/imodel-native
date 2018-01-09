@@ -21,27 +21,12 @@
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="STRESS_BASE" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="STRESS_RUN_POINT" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
     <ECClass typeName="STRESS_ANCHOR" isDomainClass="True">
         <ECCustomAttributes>
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="STRESS_IMPOSED_DISPLACEMENT" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="STRESS_BEND_NEAR_POINT" isDomainClass="True">
+    <ECClass typeName="STRESS_BASE" isDomainClass="True">
         <ECCustomAttributes>
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
@@ -51,32 +36,7 @@
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="STRESS_SPRING_SUPPORT" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="STRESS_GUIDE_SUPPORT" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="STRESS_VSTOP_SUPPORT" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="STRESS_VALVE_POINT" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="STRESS_REDUCER_POINT" isDomainClass="True">
-        <ECCustomAttributes>
-            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="STRESS_TEE_POINT" isDomainClass="True">
+    <ECClass typeName="STRESS_BEND_NEAR_POINT" isDomainClass="True">
         <ECCustomAttributes>
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
@@ -91,7 +51,62 @@
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="STRESS_FLEXIBLE_POINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="STRESS_FORCE" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_GUIDE_SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_IMPOSED_DISPLACEMENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_LINESTOP_SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_REDUCER_POINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_RUN_POINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_SPRING_SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_TEE_POINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_VALVE_POINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_VSTOP_SUPPORT" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRESS_WEIGHT" isDomainClass="True">
         <ECCustomAttributes>
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
