@@ -69,6 +69,7 @@
 #define GRIDS_CODESPEC_CODE(categoryName)                     GRIDS_SCHEMA_NAME "::" categoryName
 
 #define GRIDS_REL_GridSurfaceCreatesGridCurve                   "GridSurfaceCreatesGridCurve"
+#define GRIDS_REL_GridDrivesGridSurface                         "GridDrivesGridSurface"
 #define GRIDS_REL_GridHasAxes                                   "GridHasAxes"
 #define GRIDS_REL_GridAxisContainsGridSurfaces                  "GridAxisContainsGridSurfaces"
 

@@ -31,7 +31,9 @@ CreateParams const& params
 ) : T_Super(params) 
     {
     if (params.m_classId.IsValid()) // elements created via handler have no classid.
-        SetAxisId (params.m_gridAxisId);
+        {
+        SetAxisId(params.m_gridAxisId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,6 +258,8 @@ DgnDbStatus      GridSurface::_OnInsert
 )
     {
     DgnDbStatus status = T_Super::_OnInsert ();
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+    GridDrivesGridSurfaceHandler::Insert(GetDgnDb(), *grid, *this);
     if (status == DgnDbStatus::Success)
         {
         return _Validate ();

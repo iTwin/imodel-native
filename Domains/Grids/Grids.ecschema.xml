@@ -25,6 +25,19 @@
       </Target>
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="GridDrivesGridSurface" strength="referencing">
+      <BaseClass>bis:ElementDrivesElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00"/>
+      </ECCustomAttributes>
+      <Source cardinality="(1,1)" polymorphic="true">
+        <Class class="Grid"/>
+      </Source>
+      <Target cardinality="(0,N)" polymorphic="true">
+        <Class class="GridSurface"/>
+      </Target>
+    </ECRelationshipClass>
+  
     <ECRelationshipClass typeName="GridSurfaceCreatesGridCurve" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>

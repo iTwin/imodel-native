@@ -168,54 +168,6 @@ Utf8CP  Grid::GetName() const
     return GetCode().GetValueUtf8CP();
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Jonas.Valiunas                  10/2017
-//---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnDbStatus      Grid::_Validate
-(
-) const
-    {
-    return Dgn::DgnDbStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Jonas.Valiunas                  10/2017
-//---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnDbStatus      Grid::_OnInsert
-(
-)
-    {
-    Dgn::DgnDbStatus status = T_Super::_OnInsert ();
-    if (status == Dgn::DgnDbStatus::Success)
-        {
-        return _Validate ();
-        }
-    return status;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Jonas.Valiunas                  10/2017
-//---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnDbStatus      Grid::_OnUpdate
-(
-    Dgn::DgnElementCR original
-)
-    {
-    Dgn::DgnDbStatus status = T_Super::_OnUpdate(original);
-    if (status == Dgn::DgnDbStatus::Success)
-        {
-        return _Validate ();
-        }
-
-    /*if (_NeedsUpdateSurfacesOnPlacementChange() &&
-        !GetPlacement().GetTransform().IsEqual(original.ToGeometrySource3d()->GetPlacement().GetTransform(), PLACEMENT_TOLERANCE, PLACEMENT_TOLERANCE))
-        {
-        m_needsUpdateSurfacesOnFinished = true;
-        }*/
-
-    return status;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
@@ -256,28 +208,6 @@ Dgn::DgnModelCR targetModel
         }
 
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void                            Grid::_OnUpdateFinished
-(
-) const
-    {
-    if (_NeedsUpdateSurfacesOnPlacementChange())
-        {
-        Dgn::DgnDbR db = GetDgnDb();
-        for (DgnElementId gridSurfaceId : MakeIterator().BuildIdList<DgnElementId>())
-            {
-            GridSurfacePtr surface = db.Elements().GetForEdit<GridSurface>(gridSurfaceId);
-            _OnUpdatingSurface(*surface);
-            if (RepositoryStatus::Success != BuildingLocks_LockElementForOperation(*surface, BeSQLite::DbOpcode::Update, "update GridSurface"))
-                BeAssert(!"failed to acquire lock for element update");
-            surface->Update();
-            }
-        }
-    T_Super::_OnUpdateFinished();
     }
 
 /*---------------------------------------------------------------------------------**//**

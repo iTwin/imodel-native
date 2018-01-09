@@ -67,30 +67,7 @@ protected:
 
     static  GRIDELEMENTS_EXPORT CreateParams        CreateParamsFromModel (Dgn::DgnModelCR model, Dgn::DgnClassId classId);
 
-    //! Called when an element is about to be inserted or updated in the DgnDb.
-    //! @return DgnDbStatus::Success to allow the operation, otherwise it will fail with the returned status.
-    //! @note If you override this method, you @em must call T_Super::_Validate, forwarding its status.
-    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _Validate () const;
-
-    //! Called when an element is about to be inserted into the DgnDb.
-    //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
-    //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
-    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert () override;
-
-    //! Called when this element is about to be replace its original element in the DgnDb.
-    //! @param [in] original the original state of this element.
-    //! Subclasses may override this method to control whether their instances are updated.
-    //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
-    //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
-    GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElementCR original) override;
-
-    GRIDELEMENTS_EXPORT void _OnUpdateFinished() const override;
-
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnDelete() const override;
-
-    GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const = 0;
-
-    GRIDELEMENTS_EXPORT virtual bool    _NeedsUpdateSurfacesOnPlacementChange() const { return true; }
 
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (Grid, GRIDELEMENTS_EXPORT)
@@ -187,7 +164,6 @@ protected:
     //! @param[in]          params  params for creation
     explicit GRIDELEMENTS_EXPORT PlanGrid (CreateParams const& params);
 
-    GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const override {};
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid, GRIDELEMENTS_EXPORT)
 
@@ -253,8 +229,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         BE_PROP_NAME(DefaultElevationIncrement)
         BE_PROP_NAME(DefaultSurface2d)
     protected:
-
-        GRIDELEMENTS_EXPORT virtual void    _OnUpdatingSurface(GridSurfaceR surface) const override {};
 
         static  BentleyStatus           ValidateSurfaces (bvector<CurveVectorPtr> const& surfaces);
 

@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: Grids/Elements/GridElements.mke $
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 AppName = GridElements
 CCompPDBName = $(AppName)
@@ -64,6 +64,8 @@ $(o)GridArc$(oext) : $(_MakeFilePath)GridArc.cpp ${MultiCompileDepends} $(_MakeF
 $(o)GridAxis$(oext) : $(_MakeFilePath)GridAxis.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridAxis.h
 
 $(o)GridSurfaceCreatesGridCurveHandler$(oext) : $(_MakeFilePath)GridSurfaceCreatesGridCurveHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurfaceCreatesGridCurveHandler.h
+
+$(o)GridDrivesGridSurfaceHandler$(oext) : $(_MakeFilePath)GridDrivesGridSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridDrivesGridSurfaceHandler.h
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

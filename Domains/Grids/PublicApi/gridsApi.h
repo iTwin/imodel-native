@@ -24,6 +24,7 @@
 #include "Elements/GridSpline.h"
 #include "Elements/GridPlaneSurface.h"
 #include "Elements/GridSurfaceCreatesGridCurveHandler.h"
+#include "Elements/GridDrivesGridSurfaceHandler.h"
 #include "Handlers/GridArcSurfaceHandler.h"
 #include "Handlers/GridPlaneSurfaceHandler.h"
 #include "Handlers/IntersectionCurveHandlers.h"
