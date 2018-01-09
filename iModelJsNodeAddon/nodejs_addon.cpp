@@ -33,11 +33,9 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define PROPERTY_ATTRIBUTES static_cast<napi_property_attributes>(napi_enumerable | napi_configurable)
 
-#define RETURN_IF_HAD_EXCEPTION if (Env().IsExceptionPending()) return;
-#define RETURN_IF_HAD_EXCEPTION_SYNC if (Env().IsExceptionPending()) return Env().Undefined();
+#define RETURN_IF_HAD_EXCEPTION if (Env().IsExceptionPending()) return Env().Undefined();
 
-#define REQUIRE_DB_TO_BE_OPEN      if (!m_addondb->IsOpen()) {m_status = DgnDbStatus::NotOpen; return;}
-#define REQUIRE_DB_TO_BE_OPEN_SYNC if (!IsOpen()) return CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen);
+#define REQUIRE_DB_TO_BE_OPEN if (!IsOpen()) return CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen);
 
 #define REQUIRE_ARGUMENT_ANY_OBJ(i, var)\
     if (info.Length() <= (i)) {\
@@ -93,10 +91,6 @@ USING_NAMESPACE_BENTLEY_EC
     else {\
         Napi::TypeError::New(Env(), "Argument " #i " must be string or undefined").ThrowAsJavaScriptException();\
     }
-
-#ifdef WIP_NAPI
-static Napi::Env* s_env;
-#endif
 
 //=======================================================================================
 //! @bsiclass
@@ -171,7 +165,7 @@ public:
     Napi::Value CreateDb(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, dbName);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
         DbResult status = AddonUtils::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
         return Napi::Number::New(Env(), (int)status);
         }
@@ -180,7 +174,7 @@ public:
         {
         REQUIRE_ARGUMENT_STRING(0, dbName);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         DbResult status = AddonUtils::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode)mode);
         return Napi::Number::New(Env(), (int) status);
@@ -202,7 +196,7 @@ public:
     Napi::Value SaveChanges(const Napi::CallbackInfo& info)
         {            
         OPTIONAL_ARGUMENT_STRING(0, changeSetName);        
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
         DbResult status = GetECDb().SaveChanges(changeSetName.empty() ? nullptr : changeSetName.c_str());
         return Napi::Number::New(Env(), (int) status);
         }
@@ -216,7 +210,7 @@ public:
     Napi::Value ImportSchema(const Napi::CallbackInfo& info)
         {  
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);          
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
         DbResult status = AddonUtils::ImportSchema(GetECDb(), BeFileName(schemaPathName.c_str(), true));
         return Napi::Number::New(Env(), (int) status);  
         }
@@ -412,225 +406,71 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     bool IsOpen() const {return m_dgndb.IsValid();}
 
-    //=======================================================================================
-    //! @bsiclass
-    //=======================================================================================
-    template<typename STATUSTYPE>
-    struct DgnDbWorkerBase : Napi::AsyncWorker
-        {
-        NodeAddonDgnDb* m_addondb;// input
-        STATUSTYPE m_status;    // output
-
-        DgnDbWorkerBase(NodeAddonDgnDb* adb, Napi::Function cb) : Napi::AsyncWorker(adb->Value(), cb), m_addondb(adb), m_status((STATUSTYPE)0) {}
-
-        DgnDbR GetDgnDb() { return *m_addondb->m_dgndb; }
-
-        void OnOK() override
-            {
-            if (Env().IsExceptionPending())
-                {
-                printf ("got here\n");
-                return;
-                }
-
-            if (_HadError())
-                Callback().MakeCallback(Receiver().Value(), {NodeUtils::CreateErrorObject0(m_status, _GetErrorDescription(), Env())});
-            else
-                Callback().MakeCallback(Receiver().Value(), {Env().Undefined(), _GetSuccessValue()});
-            }
-
-        void OnError(const Napi::Error& e) override
-            {
-            auto msg = e.Message();
-            auto dgnErrMsg = _GetErrorDescription();
-            if (dgnErrMsg)
-                msg.append(dgnErrMsg);
-            Callback().MakeCallback(Receiver().Value(), {NodeUtils::CreateErrorObject0(m_status, msg.c_str(), Env())});
-            }
-
-        virtual Utf8CP _GetErrorDescription() {return nullptr;}
-        virtual Napi::Value _GetSuccessValue() = 0;
-        virtual bool _HadError() {return (STATUSTYPE)0 != m_status;}
-
-        };
-
-    //=======================================================================================
-    //  Opens a DgnDb
-    //! @bsiclass
-    //=======================================================================================
-    struct OpenDgnDbWorker : DgnDbWorkerBase<DbResult>
-        {
-        BeFileName m_dbname;    // input
-        DgnDb::OpenMode m_mode; // input
-
-        OpenDgnDbWorker(NodeAddonDgnDb* db, Napi::Function cb, BeFileName dbname, DgnDb::OpenMode mode) : DgnDbWorkerBase(db, cb), m_dbname(dbname), m_mode(mode) {}
-
-        void Execute() override
-            {
-            m_status = AddonUtils::OpenDgnDb(m_addondb->m_dgndb, m_dbname, m_mode);
-            if (m_status == BE_SQLITE_OK)
-                m_addondb->SetupPresentationManager();
-            }
-
-        void OnOK() override
-            {
-            Callback().MakeCallback(Receiver().Value(), {Napi::Number::New(Env(), (int)m_status)}); // just return the status value, since there is other "success" value.
-            }
-
-        Napi::Value _GetSuccessValue() override {return Env().Undefined();}
-        };
-
-    void StartOpenDgnDb(const Napi::CallbackInfo& info)
+    Napi::Value OpenDgnDb(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, dbname);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
-        REQUIRE_ARGUMENT_FUNCTION(2, callback);
         RETURN_IF_HAD_EXCEPTION
-        auto work = new OpenDgnDbWorker(this, callback, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
-        work->Queue();
-        }
-
-    Napi::Value OpenDgnDbSync(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, dbname);
-        REQUIRE_ARGUMENT_INTEGER(1, mode);
-        RETURN_IF_HAD_EXCEPTION_SYNC
         auto status = AddonUtils::OpenDgnDb(m_dgndb, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        if (BE_SQLITE_OK == status)
+            SetupPresentationManager();
+
         return Napi::Number::New(Env(), (int)status);
         }
 
-    //=======================================================================================
-    // Returns ECClass metadata
-    //! @bsiclass
-    //=======================================================================================
-    struct GetECClassMetaData : DgnDbWorkerBase<DgnDbStatus>
+    Napi::Value GetECClassMetaData(const Napi::CallbackInfo& info)
         {
-        Utf8String m_ecSchema;       // input
-        Utf8String m_ecClass;        // input
-        Json::Value m_metaDataJson;  // ouput
-
-        GetECClassMetaData(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR s, Utf8StringCR c) : DgnDbWorkerBase(db, cb), m_ecSchema(s), m_ecClass(c), m_metaDataJson(Json::objectValue) {}
-
-        void Execute() override
-            {
-            REQUIRE_DB_TO_BE_OPEN
-            m_status = AddonUtils::GetECClassMetaData(m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str());
-            }
-
-        Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_metaDataJson.ToString().c_str());}
-        };
-
-    void StartGetECClassMetaData(const Napi::CallbackInfo& info)
-        {
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, s);
         REQUIRE_ARGUMENT_STRING(1, c);
-        REQUIRE_ARGUMENT_FUNCTION(2, callback);
         RETURN_IF_HAD_EXCEPTION
-        auto work = new GetECClassMetaData(this, callback, s, c);
-        work->Queue();
-        }
-
-    Napi::Value GetECClassMetaDataSync(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        REQUIRE_ARGUMENT_STRING(0, s);
-        REQUIRE_ARGUMENT_STRING(1, c);
-        RETURN_IF_HAD_EXCEPTION_SYNC
         Json::Value metaDataJson;
         auto status = AddonUtils::GetECClassMetaData(metaDataJson, GetDgnDb(), s.c_str(), c.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
         }
 
-    //=======================================================================================
-    // Get the properties for a DgnElement
-    //! @bsiclass
-    //=======================================================================================
-    struct GetElementWorker : DgnDbWorkerBase<DgnDbStatus>
+    Napi::Value GetElement(const Napi::CallbackInfo& info)
         {
-        Json::Value m_opts;         // input
-        Json::Value m_elementJson;  // ouput
-
-        GetElementWorker(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR inOpts) :
-            DgnDbWorkerBase(db, cb),
-            m_opts(Json::Value::From(inOpts))
-            {}
-
-        void Execute() override
-            {
-            REQUIRE_DB_TO_BE_OPEN
-            m_status = AddonUtils::GetElement(m_elementJson, GetDgnDb(), m_opts);
-            }
-
-        Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_elementJson.ToString().c_str());}
-        };
-
-    void StartGetElementWorker(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, opts);
-        REQUIRE_ARGUMENT_FUNCTION(1, callback);
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, optsJsonStr);
         RETURN_IF_HAD_EXCEPTION
-        auto work = new GetElementWorker(this, callback, opts);
-        work->Queue();
+        Json::Value opts = Json::Value::From(optsJsonStr);
+        Json::Value elementJson;  // ouput
+        auto status = AddonUtils::GetElement(elementJson, GetDgnDb(), opts);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), elementJson.ToString().c_str()));
         }
 
-    //=======================================================================================
-    // Get the properties for a DgnModel
-    //! @bsiclass
-    //=======================================================================================
-    struct GetModelWorker : DgnDbWorkerBase<DgnDbStatus>
+    Napi::Value GetModel(const Napi::CallbackInfo& info)
         {
-        Json::Value m_opts;       // input
-        Json::Value m_modelJson;  // ouput
-
-        GetModelWorker(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR inOpts) : DgnDbWorkerBase(db, cb), m_opts(Json::Value::From(inOpts)) {}
-
-        void Execute() override
-            {
-            REQUIRE_DB_TO_BE_OPEN
-            m_status = AddonUtils::GetModel(m_modelJson, GetDgnDb(), m_opts);
-            }
-
-        Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_modelJson.ToString().c_str());}
-        };
-
-    void StartGetModelWorker(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, opts);
-        REQUIRE_ARGUMENT_FUNCTION(1, callback);
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, optsJsonStr);
         RETURN_IF_HAD_EXCEPTION
-        auto work = new GetModelWorker(this, callback, opts);
-        work->Queue();
+        Json::Value opts = Json::Value::From(optsJsonStr);
+        Json::Value modelJson;;  // ouput
+        auto status = AddonUtils::GetModel(modelJson, GetDgnDb(), opts);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), modelJson.ToString().c_str()));
         }
 
-    //=======================================================================================
-    //  Sets up a briefcase and opens it
-    //! @bsiclass
-    //=======================================================================================
-    Napi::Value OpenBriefcaseSync(const Napi::CallbackInfo& info)
+    Napi::Value OpenBriefcase(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, briefcaseToken);
         REQUIRE_ARGUMENT_STRING(1, changeSetTokens);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value jsonBriefcaseToken = Json::Value::From(briefcaseToken);
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
 
         DbResult result = AddonUtils::OpenBriefcase(m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens);
-        Napi::Object ret;
         if (BE_SQLITE_OK == result)
             SetupPresentationManager();
 
         return Napi::Number::New(Env(), (int)result);
         }
 
-    //=======================================================================================
-    //  Get cached imodel briefcases
-    //! @bsiclass
-    //=======================================================================================
-    Napi::Value GetCachedBriefcaseInfosSync(const Napi::CallbackInfo& info)
+    Napi::Value GetCachedBriefcaseInfos(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, cachePath);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value cachedBriefcaseInfos;
         BeFileName cacheFile(cachePath.c_str(), true);
@@ -638,29 +478,21 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return CreateBentleyReturnObject(result, Napi::String::New(Env(), cachedBriefcaseInfos.ToString().c_str()));
         }
 
-    //=======================================================================================
-    //  Get the properties of the iModel
-    //! @bsiclass
-    //=======================================================================================
     Napi::Value GetIModelProps(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value props;
         AddonUtils::GetIModelProps(props, *m_dgndb);
         return Napi::String::New(Env(), props.ToString().c_str());
         }
 
-    //=======================================================================================
-    // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value InsertElementSync(const Napi::CallbackInfo& info)
+    Napi::Value InsertElement(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         Json::Value elemIdJsonObj;
@@ -668,44 +500,32 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
         }
 
-    //=======================================================================================
-    // update an existing element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value UpdateElementSync(const Napi::CallbackInfo& info)
+    Napi::Value UpdateElement(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         auto status = AddonUtils::UpdateElement(GetDgnDb(), elemProps);
         return Napi::Number::New(Env(), (int)status);
         }
 
-    //=======================================================================================
-    // delete an existing element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value DeleteElementSync(const Napi::CallbackInfo& info)
+    Napi::Value DeleteElement(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         auto status = AddonUtils::DeleteElement(GetDgnDb(), elemIdStr);
         return Napi::Number::New(Env(), (int)status);
         }
 
-    //=======================================================================================
-    // insert a new LinkTableRelationship -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value InsertLinkTableRelationshipSync(const Napi::CallbackInfo& info)
+    Napi::Value InsertLinkTableRelationship(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, propsJsonStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value props = Json::Value::From(propsJsonStr);
         Json::Value idJsonObj;
@@ -713,43 +533,31 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), idJsonObj.asCString()));
         }
 
-    //=======================================================================================
-    // update an existing LinkTableRelationship -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value UpdateLinkTableRelationshipSync(const Napi::CallbackInfo& info)
+    Napi::Value UpdateLinkTableRelationship(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, propsJsonStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value props = Json::Value::From(propsJsonStr);
         auto status = AddonUtils::UpdateLinkTableRelationship(GetDgnDb(), props);
         return Napi::Number::New(Env(), (int)status);
         }
 
-    //=======================================================================================
-    // delete an existing LinkTableRelationship -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value DeleteLinkTableRelationshipSync(const Napi::CallbackInfo& info)
+    Napi::Value DeleteLinkTableRelationship(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, propsJsonStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value props = Json::Value::From(propsJsonStr);
         auto status = AddonUtils::DeleteLinkTableRelationship(GetDgnDb(), props);
         return Napi::Number::New(Env(), (int)status);
         }
 
-    //=======================================================================================
-    // insert a new element -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value InsertCodeSpecSync(const Napi::CallbackInfo& info)
+    Napi::Value InsertCodeSpec(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, name);
         REQUIRE_ARGUMENT_INTEGER(1, specType);
         REQUIRE_ARGUMENT_INTEGER(2, scopeReq);
@@ -764,22 +572,18 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             Napi::TypeError::New(Env(), "Argument 2 must be a CodeScopeSpec.ScopeRequirement").ThrowAsJavaScriptException();
             }
         
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Utf8String idStr;
         DgnDbStatus status = AddonUtils::InsertCodeSpec(idStr, GetDgnDb(), name, (CodeScopeSpec::Type)specType, (CodeScopeSpec::ScopeRequirement)scopeReq);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), idStr.c_str()));
         }
 
-    //=======================================================================================
-    // insert a new Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value InsertModelSync(const Napi::CallbackInfo& info)
+    Napi::Value InsertModel(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         Json::Value elemIdJsonObj;
@@ -787,175 +591,75 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
         }
 
-    //=======================================================================================
-    // update an existing Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value UpdateModelSync(const Napi::CallbackInfo& info)
+    Napi::Value UpdateModel(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, elemPropsJsonStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         auto status = AddonUtils::UpdateModel(GetDgnDb(), elemProps);
         return Napi::Number::New(Env(), (int)status);
         }
 
-    //=======================================================================================
-    // delete an existing Model -- MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
-    Napi::Value DeleteModelSync(const Napi::CallbackInfo& info)
+    Napi::Value DeleteModel(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         auto status = AddonUtils::DeleteModel(GetDgnDb(), elemIdStr);
         return Napi::Number::New(Env(), (int)status);
         }
 
-    //=======================================================================================
-    // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
-    // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
-    // Properties are identified by DisplayLabel, not name.
-    // The property values are formatted according to formatting CAs.
-    // The returned properties also include the properties of related instances as specified by RelatedItemsDisplaySpecification custom attributes in the ECSchemas.
-    //! @bsiclass
-    //=======================================================================================
-    struct GetElementPropertiesForDisplayWorker : DgnDbWorkerBase<DgnDbStatus>
+    Napi::Value GetElementPropertiesForDisplay(const Napi::CallbackInfo& info)
         {
-        Utf8String m_elementIdStr;
-        Utf8String m_exportedJson;
-        GetElementPropertiesForDisplayWorker(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR id) : DgnDbWorkerBase(db, cb), m_elementIdStr(id) {}
-
-        void Execute() override
-            {
-            REQUIRE_DB_TO_BE_OPEN;
-
-            if (Env().IsExceptionPending())
-                printf ("got here\n");
-
-            ECInstanceId elemId(ECInstanceId::FromString(m_elementIdStr.c_str()).GetValueUnchecked());
-            if (!elemId.IsValid())
-                {
-                m_status = DgnDbStatus::BadElement;
-                return;
-                }
-
-            CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId FROM biscore.Element WHERE ECInstanceId = ?");
-            if (!stmt.IsValid())
-                {
-                m_status = DgnDbStatus::SQLiteError;
-                return;
-                }
-
-            stmt->BindId(1, elemId);
-            if (stmt->Step() != BE_SQLITE_ROW)
-                {
-                m_status = DgnDbStatus::SQLiteError;
-                return;
-                }
-
-            ECClassId ecclassId = stmt->GetValueId<ECClassId>(0);
-            ECInstanceNodeKeyPtr nodeKey = ECInstanceNodeKey::Create(ecclassId, elemId);
-            NavNodeKeyList keyList;
-            keyList.push_back(nodeKey);
-            INavNodeKeysContainerCPtr selectedNodeKeys = NavNodeKeyListContainer::Create(keyList);
-            SelectionInfo selection ("iModelJS", false, *selectedNodeKeys);
-            RulesDrivenECPresentationManager::ContentOptions options ("Items");
-            if ( m_addondb->m_presentationManager == nullptr)
-                {
-                m_status = DgnDbStatus::BadArg;
-                return;                
-                }
-            ContentDescriptorCPtr descriptor = m_addondb->m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson()).get();
-            if (descriptor.IsNull())
-                {
-                m_status = DgnDbStatus::BadArg;
-                return;
-                }
-            PageOptions pageOptions;
-            pageOptions.SetPageStart(0);
-            pageOptions.SetPageSize(0);
-            ContentCPtr content = m_addondb->m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson()).get();
-            if (content.IsNull())
-                {
-                m_status = DgnDbStatus::BadArg;
-                return;
-                }
-
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            content->AsJson().Accept(writer);
-            m_exportedJson = buffer.GetString();
-            }
-
-        Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_exportedJson.c_str());}
-        };
-
-    void StartGetElementPropertiesForDisplayWorker(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, id);
-        REQUIRE_ARGUMENT_FUNCTION(1, callback);
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, elementIdStr);
         RETURN_IF_HAD_EXCEPTION
-        auto work = new GetElementPropertiesForDisplayWorker(this, callback, id);
-        work->Queue();
-        }
 
-    //=======================================================================================
-    //  Execute a query and return all rows, if any
-    //! @bsiclass
-    //=======================================================================================
-    struct ExecuteQueryWorker : DgnDbWorkerBase<DbResult>
-        {
-        Utf8String m_ecsql; // input
-        Json::Value m_bindings; // input
-        Json::Value m_rowsJson;  // output
+        Utf8String exportedJson;
 
-        ExecuteQueryWorker(NodeAddonDgnDb* db, Napi::Function cb, Utf8StringCR ecsql, Utf8StringCR strBindings) : DgnDbWorkerBase(db, cb), m_ecsql(ecsql), m_rowsJson(Json::arrayValue),
-            m_bindings(strBindings.empty() ? Json::nullValue : Json::Value::From(strBindings)) {}
+        ECInstanceId elemId(ECInstanceId::FromString(elementIdStr.c_str()).GetValueUnchecked());
+        if (!elemId.IsValid())
+            return CreateBentleyReturnErrorObject(DgnDbStatus::BadElement);
 
-        void Execute() override
-            {
-            DgnDbR dgndb = GetDgnDb();
-            BeSqliteDbMutexHolder serializeAccess(dgndb); // hold mutex, so that we have a chance to get last ECDb error message
+        CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId FROM biscore.Element WHERE ECInstanceId = ?");
+        if (!stmt.IsValid())
+            return CreateBentleyReturnErrorObject(DgnDbStatus::SQLiteError);
 
-            CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(m_ecsql.c_str());
-            if (!stmt.IsValid())
-                {
-                m_status = BE_SQLITE_ERROR;
-                return;
-                }
+        stmt->BindId(1, elemId);
+        if (stmt->Step() != BE_SQLITE_ROW)
+            return CreateBentleyReturnErrorObject(DgnDbStatus::SQLiteError);
 
-            m_status = AddonUtils::ExecuteQuery(m_rowsJson, *stmt, m_bindings);
-            }
+        ECClassId ecclassId = stmt->GetValueId<ECClassId>(0);
+        ECInstanceNodeKeyPtr nodeKey = ECInstanceNodeKey::Create(ecclassId, elemId);
+        NavNodeKeyList keyList;
+        keyList.push_back(nodeKey);
+        INavNodeKeysContainerCPtr selectedNodeKeys = NavNodeKeyListContainer::Create(keyList);
+        SelectionInfo selection ("iModelJS", false, *selectedNodeKeys);
+        RulesDrivenECPresentationManager::ContentOptions options ("Items");
+        if ( m_presentationManager == nullptr)
+            return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
+        
+        ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, selection, options.GetJson()).get();
+        if (descriptor.IsNull())
+            return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
-        Napi::Value _GetSuccessValue() override {return Napi::String::New(Env(), m_rowsJson.ToString().c_str());}
+        PageOptions pageOptions;
+        pageOptions.SetPageStart(0);
+        pageOptions.SetPageSize(0);
+        ContentCPtr content = m_presentationManager->GetContent(GetDgnDb(), *descriptor, selection, pageOptions, options.GetJson()).get();
+        if (content.IsNull())
+            return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
-        bool _HadError() override
-            {
-            switch(m_status)
-                {
-                case BE_SQLITE_OK:
-                case BE_SQLITE_ROW:
-                case BE_SQLITE_DONE:
-                    return false;
-                }
-            return true;
-            }
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        content->AsJson().Accept(writer);
+        exportedJson = buffer.GetString();
+
+        return CreateBentleyReturnSuccessObject(Napi::String::New(Env(), exportedJson.c_str()));
         };
-
-    void StartExecuteQueryWorker(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, ecsql);
-        REQUIRE_ARGUMENT_STRING(1, strBindings);
-        REQUIRE_ARGUMENT_FUNCTION(2, callback);
-        RETURN_IF_HAD_EXCEPTION
-        auto work = new ExecuteQueryWorker(this, callback, ecsql, strBindings);
-        work->Queue();
-        }
 
     //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
     void AddRef() { this->Ref(); }
@@ -966,17 +670,17 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
     Napi::Value SaveChanges(const Napi::CallbackInfo& info)
         {
         OPTIONAL_ARGUMENT_STRING(0, description);
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
         auto stat = GetDgnDb().SaveChanges(description);
         return Napi::Number::New(Env(), (int)stat);
         }
 
     Napi::Value ImportSchema(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, schemaPathnameStrObj);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
         BeFileName schemaPathname(schemaPathnameStrObj.c_str(), true);
         auto stat = AddonUtils::ImportSchemaDgnDb(GetDgnDb(), schemaPathname);
         return Napi::Number::New(Env(), (int)stat);
@@ -989,59 +693,44 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         m_dgndb = nullptr;
         }
 
-    //=======================================================================================
-    // MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
     Napi::Value CreateChangeCache(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changeCachePathStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
         DbResult stat = GetDgnDb().CreateChangeCache(changeCacheECDb->GetECDb(), changeCachePath);
         return Napi::Number::New(Env(), (int) stat);
         }
 
-    //=======================================================================================
-    // MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD
-    //! @bsimethod
-    //=======================================================================================
     Napi::Value AttachChangeCache(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, changeCachePathStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
         DbResult stat = GetDgnDb().AttachChangeCache(changeCachePath);
         return Napi::Number::New(Env(), (int) stat);
         }
 
-    //=======================================================================================
-    //! @bsimethod
-    //=======================================================================================
     Napi::Value IsChangeCacheAttached(const Napi::CallbackInfo&)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
 
         bool isAttached = GetDgnDb().IsChangeCacheAttached();
         return Napi::Boolean::New(Env(), isAttached);
         }
 
-    //=======================================================================================
-    // MUST ALWAYS BE SYNCHRONOUS - MUST ALWAYS BE RUN IN MAIN THREAD because it writes to disk
-    //! @bsimethod
-    //=======================================================================================
     Napi::Value ExtractChangeSummary(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         struct AddonChangeSet : BeSQLite::ChangeSet
             {
@@ -1072,9 +761,9 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     Napi::Value SetBriefcaseId(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_INTEGER(0, idvalue);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
 
         BeFileName name(m_dgndb->GetFileName());
 
@@ -1090,33 +779,33 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     Napi::Value GetBriefcaseId(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
         auto bid = m_dgndb->GetBriefcaseId();
         return Napi::Number::New(Env(), bid.GetValue());
         }
 
     Napi::Value GetParentChangeSetId(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
         Utf8String parentRevId = m_dgndb->Revisions().GetParentRevisionId();
         return Napi::String::New(Env(), parentRevId.c_str());
         }
 
     Napi::Value GetDbGuid(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
         BeGuid beGuid = m_dgndb->GetDbGuid();
         return Napi::String::New(Env(), beGuid.ToString().c_str());
         }
 
     Napi::Value SetDbGuid(const Napi::CallbackInfo& info)
         {
-        REQUIRE_DB_TO_BE_OPEN_SYNC
+        REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, guidStr);
-        RETURN_IF_HAD_EXCEPTION_SYNC
+        RETURN_IF_HAD_EXCEPTION
         BeGuid guid;
         guid.FromString(guidStr.c_str());
         m_dgndb->ChangeDbGuid(guid);
@@ -1198,10 +887,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 	// ========================================================================================
 	Napi::Value ExecuteTestById(const Napi::CallbackInfo& info)
 		{
-		REQUIRE_DB_TO_BE_OPEN_SYNC
+		REQUIRE_DB_TO_BE_OPEN
 		REQUIRE_ARGUMENT_INTEGER(0, testId);
 		REQUIRE_ARGUMENT_STRING(1, params);
-		RETURN_IF_HAD_EXCEPTION_SYNC
+		RETURN_IF_HAD_EXCEPTION
 
 		switch (testId)
 			{
@@ -1229,8 +918,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonDgnDb", {
-            InstanceMethod("openDgnDb", &NodeAddonDgnDb::StartOpenDgnDb),
-            InstanceMethod("openDgnDbSync", &NodeAddonDgnDb::OpenDgnDbSync),
+            InstanceMethod("openDgnDb", &NodeAddonDgnDb::OpenDgnDb),
             InstanceMethod("closeDgnDb", &NodeAddonDgnDb::CloseDgnDb),
             InstanceMethod("createChangeCache", &NodeAddonDgnDb::CreateChangeCache),
             InstanceMethod("attachChangeCache", &NodeAddonDgnDb::AttachChangeCache),
@@ -1241,26 +929,25 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
             InstanceMethod("getParentChangeSetId", &NodeAddonDgnDb::GetParentChangeSetId),
             InstanceMethod("getDbGuid", &NodeAddonDgnDb::GetDbGuid),
             InstanceMethod("setDbGuid", &NodeAddonDgnDb::SetDbGuid),
-            InstanceMethod("openBriefcaseSync", &NodeAddonDgnDb::OpenBriefcaseSync),
+            InstanceMethod("openBriefcase", &NodeAddonDgnDb::OpenBriefcase),
             InstanceMethod("saveChanges", &NodeAddonDgnDb::SaveChanges),
             InstanceMethod("importSchema", &NodeAddonDgnDb::ImportSchema),
-            InstanceMethod("getElement", &NodeAddonDgnDb::StartGetElementWorker),
-            InstanceMethod("getModel", &NodeAddonDgnDb::StartGetModelWorker),
-            InstanceMethod("insertElementSync", &NodeAddonDgnDb::InsertElementSync),
-            InstanceMethod("updateElementSync", &NodeAddonDgnDb::UpdateElementSync),
-            InstanceMethod("deleteElementSync", &NodeAddonDgnDb::DeleteElementSync),
-            InstanceMethod("insertModelSync", &NodeAddonDgnDb::InsertModelSync),
-            InstanceMethod("updateModelSync", &NodeAddonDgnDb::UpdateModelSync),
-            InstanceMethod("deleteModelSync", &NodeAddonDgnDb::DeleteModelSync),
-            InstanceMethod("insertCodeSpecSync", &NodeAddonDgnDb::InsertCodeSpecSync),
-            InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::StartGetElementPropertiesForDisplayWorker),
-            InstanceMethod("insertLinkTableRelationshipSync", &NodeAddonDgnDb::InsertLinkTableRelationshipSync),
-            InstanceMethod("updateLinkTableRelationshipSync", &NodeAddonDgnDb::UpdateLinkTableRelationshipSync),
-            InstanceMethod("deleteLinkTableRelationshipSync", &NodeAddonDgnDb::DeleteLinkTableRelationshipSync),
-            InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::StartGetECClassMetaData),
-            InstanceMethod("getECClassMetaDataSync", &NodeAddonDgnDb::GetECClassMetaDataSync),
-            InstanceMethod("executeQuery", &NodeAddonDgnDb::StartExecuteQueryWorker),
-            InstanceMethod("getCachedBriefcaseInfosSync", &NodeAddonDgnDb::GetCachedBriefcaseInfosSync),
+            InstanceMethod("getElement", &NodeAddonDgnDb::GetElement),
+            InstanceMethod("getModel", &NodeAddonDgnDb::GetModel),
+            InstanceMethod("insertElement", &NodeAddonDgnDb::InsertElement),
+            InstanceMethod("updateElement", &NodeAddonDgnDb::UpdateElement),
+            InstanceMethod("deleteElement", &NodeAddonDgnDb::DeleteElement),
+            InstanceMethod("insertModel", &NodeAddonDgnDb::InsertModel),
+            InstanceMethod("updateModel", &NodeAddonDgnDb::UpdateModel),
+            InstanceMethod("deleteModel", &NodeAddonDgnDb::DeleteModel),
+            InstanceMethod("insertCodeSpec", &NodeAddonDgnDb::InsertCodeSpec),
+            InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::GetElementPropertiesForDisplay),
+            InstanceMethod("insertLinkTableRelationship", &NodeAddonDgnDb::InsertLinkTableRelationship),
+            InstanceMethod("updateLinkTableRelationship", &NodeAddonDgnDb::UpdateLinkTableRelationship),
+            InstanceMethod("deleteLinkTableRelationship", &NodeAddonDgnDb::DeleteLinkTableRelationship),
+            InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::GetECClassMetaData),
+            InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::GetECClassMetaData),
+            InstanceMethod("getCachedBriefcaseInfos", &NodeAddonDgnDb::GetCachedBriefcaseInfos),
             InstanceMethod("getIModelProps", &NodeAddonDgnDb::GetIModelProps),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForCodeSpec", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForCodeSpec),

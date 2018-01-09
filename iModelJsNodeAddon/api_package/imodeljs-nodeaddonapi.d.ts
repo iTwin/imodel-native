@@ -85,7 +85,7 @@ declare class NodeAddonDgnDb {
    * Get information on all briefcases cached on disk
    * @param cachePath Path to the root of the disk cache
    */
-  getCachedBriefcaseInfosSync(cachePath: string): ErrorStatusOrResult<DbResult, string>;
+  getCachedBriefcaseInfos(cachePath: string): ErrorStatusOrResult<DbResult, string>;
 
   /** Get the IModelProps of this iModel. */
   getIModelProps(): string;
@@ -94,17 +94,9 @@ declare class NodeAddonDgnDb {
    * Open a local iModel.
    * @param dbname The full path to the iModel in the local file system
    * @param mode The open mode
-   * @param callback Invoked when the operation completes. The only argument is a status code indicating success or failure.
-   */
-  openDgnDb(dbname: string, mode: OpenMode, callback: IModelJsNodeAddonStatusOnlyCallback<DbResult>): void;
-
-  /**
-   * Open a local iModel.
-   * @param dbname The full path to the iModel in the local file system
-   * @param mode The open mode
    * @return non-zero error status if operation failed.
    */
-  openDgnDbSync(dbname: string, mode: OpenMode): DbResult;
+  openDgnDb(dbname: string, mode: OpenMode): DbResult;
 
   /** Close this iModel. */
   closeDgnDb(): void;
@@ -160,7 +152,7 @@ declare class NodeAddonDgnDb {
    * @param briefcaseToken TBD
    * @param changeSetTokens TBD
    */
-  openBriefcaseSync(briefcaseToken: string, changeSetTokens: string): DbResult;
+  openBriefcase(briefcaseToken: string, changeSetTokens: string): DbResult;
 
   /** 
    * Save any pending changes to this iModel.  
@@ -185,127 +177,103 @@ declare class NodeAddonDgnDb {
   /**
    * Get an element's properties
    * @param opts Identifies the element
-   * @param  callback Invoked when the operation completes. The 'result' argument is the element's properties in stringified JSON format.
+   * @param In case of success, the result property of the returned object will be the element's properties in stringified JSON format.
    */
-  getElement(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
+  getElement(opts: string): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Get the properties of a Model
    * @param opts Identifies the model
-   * @param  callback Invoked when the operation completes. The 'result' argument is the model's properties in stringified JSON format.
+   * @param In case of success, the result property of the returned object will be the model's properties in stringified JSON format.
    */
-  getModel(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void
+  getModel(opts: string): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Insert an element.
    * @param elemProps The element's properties, in stringified JSON format.
-   * @return non-zero error status if the operation failed.
+   * @return In case of success, the result property of the returned object will be the element's ID (as a hex string)
    */
-  insertElementSync(elemProps: string): ErrorStatusOrResult<IModelStatus, string>;
+  insertElement(elemProps: string): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Update an element.
    * @param elemProps The element's properties, in stringified JSON format.
    * @return non-zero error status if the operation failed.
    */
-  updateElementSync(elemProps: string): IModelStatus;
+  updateElement(elemProps: string): IModelStatus;
 
   /**
    * Delete an element from this iModel.
    * @param elemIdJson The element's Id, in stringified JSON format
    * @return non-zero error status if the operation failed.
    */
-  deleteElementSync(elemIdJson: string): IModelStatus;
-
-  /**
-   * Get an linkTableRelationship's properties
-   * @param opts Identifies the LinkTableRelationship
-   * @param  callback Invoked when the operation completes. The 'result' argument is the LinkTableRelationship's properties in stringified JSON format.
-    WIP May not be needed
-  getLinkTableRelationship(opts: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
-   */
+  deleteElement(elemIdJson: string): IModelStatus;
 
   /**
    * Insert a LinkTableRelationship.
    * @param props The linkTableRelationship's properties, in stringified JSON format.
-   * @return an error or the ID of the new LinkTableRelationship instance (as a hex string)
+   * @return In case of success, the result property of the returned object will be the ID of the new LinkTableRelationship instance (as a hex string)
    */
-  insertLinkTableRelationshipSync(props: string): ErrorStatusOrResult<DbResult, string>;
+  insertLinkTableRelationship(props: string): ErrorStatusOrResult<DbResult, string>;
 
   /**
    * Update a LinkTableRelationship.
    * @param props The LinkTableRelationship's properties, in stringified JSON format.
    * @return non-zero error status if the operation failed.
    */
-  updateLinkTableRelationshipSync(props: string): DbResult;
+  updateLinkTableRelationship(props: string): DbResult;
 
   /**
    * Delete a LinkTableRelationship.
    * @param props The LinkTableRelationship's properties, in stringified JSON format. Only classFullName and id are required.
    * @return non-zero error status if the operation failed.
    */
-  deleteLinkTableRelationshipSync(props: string): DbResult;
+  deleteLinkTableRelationship(props: string): DbResult;
 
   /**
    * Insert a new CodeSpec
    * @param name name of the CodeSpec
    * @param specType must be one of CodeScopeSpec::Type
    * @param scopeReq must be one of CodeScopeSpec::ScopeRequirement
-   * @return an error or the ID of the new CodeSpec (as a hex string)
+   * @return In case of success, the result property of the returned object will be the ID of the new CodeSpec instance (as a hex string)
    */
-  insertCodeSpecSync(name: string, specType: number, scopeReq: number): ErrorStatusOrResult<IModelStatus, string>;
+  insertCodeSpec(name: string, specType: number, scopeReq: number): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Insert a model.
    * @param modelProps The model's properties, in stringified JSON format.
-   * @return non-zero error status if the operation failed.
+   * @return In case of success, the result property of the returned object will be the ID of the new Model (as a hex string)
    */
-  insertModelSync(modelProps: string): ErrorStatusOrResult<IModelStatus, string>;
+  insertModel(modelProps: string): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Update a model.
    * @param modelProps The model's properties, in stringified JSON format.
    * @return non-zero error status if the operation failed.
    */
-  updateModelSync(modelProps: string): IModelStatus;
+  updateModel(modelProps: string): IModelStatus;
 
   /**
    * Delete a model.
    * @param modelIdJson The model's Id, in stringified JSON format
    * @return non-zero error status if the operation failed.
    */
-  deleteModelSync(modelIdJson: string): IModelStatus;
+  deleteModel(modelIdJson: string): IModelStatus;
 
   /**
    * Format an element's properties, suitable for display to the user.
    * @param id The element's Id, in stringified JSON format
-   * @param callback Invoked when the operation completes. The 'result' argument is an object containing the object's properties, in stringified JSON format.
+   * @param on success, the result property of the returned object will be the object's properties, in stringified JSON format.
    */
-  getElementPropertiesForDisplay(id: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
+  getElementPropertiesForDisplay(id: string): ErrorStatusOrResult<IModelStatus, string>;
 
   /**
    * Get information about an ECClass
    * @param schema The name of the ECSchema
    * @param className The name of the ECClass
-   * @param callback Invoked when the operation completes. The 'result' argument is an object containing the properties of the class, in stringified JSON format.
+   * @param on success, the result property of the returned object will be an object containing the properties of the class, in stringified JSON format.
    */
-  getECClassMetaData(schema: string, className: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<IModelStatus>, string>): void;
-
- /**
-   * Get information about an ECClass
-   * @param schema The name of the ECSchema
-   * @param className The name of the ECClass
-   * @return An object containing the properties of the class, in stringified JSON format.
-   */
-  getECClassMetaDataSync(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
-
-  /**
-   * Execute a statement repeatedly until all rows are found.
-   * @param ecsql The ECSql statement to execute
-   * @param bindings The bindings to the statement. Pass null if there are no bindings.
-   * @param callback Invoked when the operation completes. The 'result' argument is an array or rows in stringified JSON format.
-   */
-  executeQuery(ecsql: string, bindings: string, callback: IModelJsNodeAddonCallback<StatusCodeWithMessage<DbResult>, string>): void;
+  getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
 
     /**
     * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
