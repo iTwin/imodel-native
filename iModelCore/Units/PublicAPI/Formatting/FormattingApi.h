@@ -169,6 +169,7 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableDecimalPercisions();
     UNITS_EXPORT static UIList GetAvailableFractionalPercisions();
     UNITS_EXPORT static UIList GetAvailableSignOption();
+    UNITS_EXPORT static UIList GetAvailablePresentationTypes();
     };
 
 
