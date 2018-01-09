@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECSchemaValidatorTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -43,7 +43,7 @@ Utf8CP newStandardSchemaNames[] =
 void CheckStandardAsReference(ECSchemaPtr schema, Utf8CP schemaName, ECSchemaReadContextPtr context, bool shouldPassValidation, Utf8CP message)
     {
     SchemaKey refKey = SchemaKey(schemaName, 1, 0);
-    ECSchemaPtr refSchema = context->LocateSchema(refKey, SchemaMatchType::Latest);
+    ECSchemaPtr refSchema = context->LocateSchema(refKey, SchemaMatchType::LatestWriteCompatible);
     ASSERT_TRUE(refSchema.IsValid());
     schema->AddReferencedSchema(*refSchema.get());
     EXPECT_TRUE(shouldPassValidation == ECSchemaValidator::Validate(*schema)) << message;
