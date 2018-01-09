@@ -99,7 +99,7 @@ IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  f
 #ifdef VANCOUVER_API
     if (fileName.IsUrl() || (!BeFileName::DoesPathExist(fileName.c_str()) && !canCreateFile(filePath)))
 #else
-    if (fileName.IsUrl() || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
+    if (IsUrl(fileName) || (!fileName.DoesPathExist() && !canCreateFile(filePath)))
 #endif	
 	    {
 		status = BSIERROR;
@@ -892,7 +892,7 @@ StatusInt IScalableMeshSourceCreator::Impl::GetLocalSourceTextureProvider(ITextu
     {
         WString path;
 
-        assert(BeFileName::IsUrl(source->GetPath().c_str()) == false);
+        assert(IsUrl(source->GetPath().c_str()) == false);
                 
         path = WString(L"file://") + source->GetPath();
         
@@ -979,7 +979,7 @@ StatusInt IScalableMeshSourceCreator::Impl::GetTextureProvider(ITextureProviderP
     {
         WString path;
 
-        if (BeFileName::IsUrl(source->GetPath().c_str()))
+        if (IsUrl(source->GetPath().c_str()))
         {
             containtStreamingSource = true;
             assert(filteredSources.size() == 1); //Currently only support one streaming source (BingMap).

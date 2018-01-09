@@ -67,8 +67,11 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
                 {
                 localFilePath.append(path);
                 }
-            
+#ifdef VANCOUVER_API            
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(localFilePath), TRUE);
+#else
+			pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(Utf8String(localFilePath)), TRUE);
+#endif
             }
 
         pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);

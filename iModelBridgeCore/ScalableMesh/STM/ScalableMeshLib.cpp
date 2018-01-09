@@ -27,12 +27,11 @@
 #include <ImagePP/all/h/HFCCallbacks.h>
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
+#include <DgnPlatform\DgnPlatformLib.h>
 
-#ifdef VANCOUVER_API
-#include    <CCApi\CCPublic.h>
-#else
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
-#endif
+
+#include <CCApi\CCPublic.h>
+#include <curl\curl.h>
 
 
 #ifndef VANCOUVER_API
@@ -344,7 +343,7 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
     if (pAuth != nullptr)
         {
-
+		if (nullptr == pAuth || !pAuth->GetServer().ContainsI("bing"))
             return false;
 
         WString key = L"";
@@ -355,8 +354,11 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
         if (m_bingKey.IsValid() && !m_bingKey.IsExpired())
             key.AssignUtf8(m_bingKey.GetKey().c_str());
-
+#ifdef VANCOUVER_API
         pAuth->SetPassword(key);
+#else
+		pAuth->SetPassword(Utf8String(key));
+#endif
         return !key.empty();
         }
 
@@ -369,15 +371,22 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
         ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
         if (!proxyInfo.m_serverUrl.empty())
             {
+#ifdef VANCOUVER_API
             pProxyAuth->SetUser(WString(proxyInfo.m_user.c_str(), true));
             pProxyAuth->SetPassword(WString(proxyInfo.m_password.c_str(), true));
             pProxyAuth->SetServer(WString(proxyInfo.m_serverUrl.c_str(), true));
+#else
+			pProxyAuth->SetUser(proxyInfo.m_user);
+            pProxyAuth->SetPassword(proxyInfo.m_password);
+            pProxyAuth->SetServer(proxyInfo.m_serverUrl);
+#endif
             return true;
             }
 
         return false;
         }
 
+	HFCCertificateAutoritiesAuthentication* pCertAutorityAuth = dynamic_cast<HFCCertificateAutoritiesAuthentication*>(pio_Authentication);
 
     if (pCertAutorityAuth != nullptr)
         {
@@ -389,7 +398,11 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
         if (!pemFileName.empty())
             {
-            pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
+#ifdef VANCOUVER_API
+			pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
+#else	
+			pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
+#endif
             return true;
             }
 
@@ -448,13 +461,23 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     for (bvector<ObjEntry>::iterator itr = m_hostObj.begin(); itr != m_hostObj.end(); ++itr)
         {
         IHostObject* pValue(itr->GetValue());
+#ifdef VANCOUVER_API
         TERMINATE_HOST_OBJECT(pValue, onProgramExit);
+#else
+		ON_HOST_TERMINATE(pValue, onProgramExit);
+#endif
         }
 
     m_hostObj.clear();
     m_hostVar.clear();
 
+
+#ifdef VANCOUVER_API
     TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);
+#else
+	ON_HOST_TERMINATE(m_scalableTerrainModelAdmin, onProgramExit);
+#endif
+
     delete m_smPaths;
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
@@ -548,11 +571,9 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
 #else
-
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     tempDir = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempDir.IsEmpty());
-
 #endif
 
     BeSQLiteLib::Initialize(tempDir);

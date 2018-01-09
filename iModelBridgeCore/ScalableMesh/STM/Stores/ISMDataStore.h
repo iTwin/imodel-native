@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -26,9 +26,7 @@ need be.
 #include <ImagePP\all\h\HPMDataStore.h>
 
 #include "..\Edits\DifferenceSet.h"
-#ifndef VANCOUVER_API
-#include <TilePublisher\MeshTile.h>
-#endif
+
 #include <ScalableMesh/IClipDefinitionDataProvider.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.

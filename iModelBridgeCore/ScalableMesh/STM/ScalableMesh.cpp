@@ -1936,7 +1936,12 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
             {
             const IDTMSource& source = *sourceIt;
             if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
-                {                
+                {  
+#ifdef VANCOUVER_API
+				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(source.GetPath()));
+#else
+				HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(Utf8String(source.GetPath())));
+#endif
 
                 if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
                     {                    
@@ -1950,6 +1955,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetTextureInfo(IScalableM
             } 
         }
 
+	textureInfo = IScalableMeshTextureInfoPtr(new ScalableMeshTextureInfo(m_scmIndexPtr->IsTextured(), isUsingBingMap, m_scmIndexPtr->GetDataStore()->IsTextureAvailable(), bingMapType));
 
     return SUCCESS;
     }

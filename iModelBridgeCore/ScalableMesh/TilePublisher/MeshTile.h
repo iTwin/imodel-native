@@ -14,6 +14,8 @@
 #include <map> // NB: Because bmap doesn't support move semantics...
 #include <ScalableMesh\GeoCoords\GCS.h>
 
+#ifdef VANCOUVER_API
+
 namespace BENTLEY_NAMESPACE_NAME
     {
     //=======================================================================================
@@ -103,6 +105,8 @@ namespace BENTLEY_NAMESPACE_NAME
                 }
         };
     }
+
+#endif
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -644,7 +648,11 @@ public:
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved);
     //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
+#ifdef VANCOUVER_API
+	static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
+#else
+    static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions);
+#endif
 //#endif
     };
 

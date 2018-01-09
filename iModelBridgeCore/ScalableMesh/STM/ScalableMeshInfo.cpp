@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -48,6 +48,9 @@ class BingMapLogoRetriever
                 return false;
 
 #ifndef VANCOUVER_API
+
+			assert(!"BINGMAP : NOT YET DONE ON BIM02");
+#if 0 
             ImageUtilities::RgbImageInfo info;
             BeFile pngFile;
 
@@ -65,7 +68,7 @@ class BingMapLogoRetriever
 
             size.x = info.width;
             size.y = info.height;
-
+#endif
             return true;
 #else       
 

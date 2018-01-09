@@ -250,7 +250,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
 		assert(!"Imagepp needs update on bim02");
-        //uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
+        uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
         m_preloadMutex.lock();
         m_raster->SetLookAhead(shape, consumerID);
         m_preloadMutex.unlock();
