@@ -237,7 +237,7 @@
       <ECProperty propertyName="EndElevation" displayLabel="EndElevation" typeName="double" kindOfQuantity="Length"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PlanGridPlanarSurface" description="A planar plangrid surface element.">
+    <ECEntityClass typeName="PlanGridPlanarSurface" modifier="Abstract" description="A planar plangrid surface element.">
       <BaseClass>GridPlanarSurface</BaseClass>
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
@@ -270,7 +270,7 @@
       <ECProperty propertyName="Line2d" displayLabel="Line2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PlanGridArcSurface" description="An arc plangrid surface element.">
+    <ECEntityClass typeName="PlanGridArcSurface" modifier="Abstract" description="An arc plangrid surface element.">
       <BaseClass>GridArcSurface</BaseClass>
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
@@ -293,7 +293,7 @@
       <ECProperty propertyName="Arc2d" displayLabel="Arc2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
   
-    <ECEntityClass typeName="PlanGridSplineSurface" description="An arc plangrid surface element.">
+    <ECEntityClass typeName="PlanGridSplineSurface" modifier="Abstract" description="An arc plangrid surface element.">
       <BaseClass>GridSplineSurface</BaseClass>
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
