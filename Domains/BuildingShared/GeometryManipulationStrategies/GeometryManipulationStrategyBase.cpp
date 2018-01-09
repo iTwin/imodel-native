@@ -24,6 +24,8 @@ SET_TRYGET_PROPERTY_IMPL(DVec3d)
 SET_TRYGET_PROPERTY_IMPL(DgnElementId)
 SET_TRYGET_PROPERTY_IMPL(DgnElement)
 SET_TRYGET_PROPERTY_IMPL(Utf8String)
+SET_TRYGET_PROPERTY_IMPL(bvector<double>)
+SET_TRYGET_PROPERTY_IMPL(bvector<Utf8String>)
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017

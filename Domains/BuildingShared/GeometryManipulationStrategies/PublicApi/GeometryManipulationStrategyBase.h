@@ -47,6 +47,8 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElementId)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Utf8String)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(bvector<double>)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(bvector<Utf8String>)
 
         virtual bvector<DPoint3d> _GetKeyPoints() const = 0;
 
@@ -63,6 +65,8 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         GMS_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElementId)
         GMS_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_SET_TRYGET_PROPERTY_TYPE(Utf8String)
+        GMS_SET_TRYGET_PROPERTY_TYPE(bvector<double>)
+        GMS_SET_TRYGET_PROPERTY_TYPE(bvector<Utf8String>)
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;
 

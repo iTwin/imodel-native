@@ -11,6 +11,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 const Utf8CP LinePlacementStrategy::prop_Length = "Length";
 const Utf8CP LinePlacementStrategy::prop_Angle = "Angle";
+const Utf8CP LineMetesAndBoundsPlacementStrategy::prop_DirectionString = "DirectionString";
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
@@ -211,9 +212,9 @@ void LinePointLengthAnglePlacementStrategy::_SetWorkingPlane(DPlane3d const & pl
 void LinePointLengthAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
     if (0 == strcmp(LinePlacementStrategy::prop_Length, key))
-        _SetLength(value);
+        SetLength(value);
     else if (0 == strcmp(LinePlacementStrategy::prop_Angle, key))
-        _SetAngle(value);
+        SetAngle(value);
 
     UpdateEndPoint();
     }
@@ -224,9 +225,9 @@ void LinePointLengthAnglePlacementStrategy::_SetProperty(Utf8CP key, const doubl
 BentleyStatus LinePointLengthAnglePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
     if (0 == strcmp(LinePlacementStrategy::prop_Length, key))
-        value = _GetLength();
+        value = GetLength();
     else if (0 == strcmp(LinePlacementStrategy::prop_Angle, key))
-        value = _GetAngle();
+        value = GetAngle();
     else
         return BentleyStatus::ERROR;
 
@@ -236,7 +237,7 @@ BentleyStatus LinePointLengthAnglePlacementStrategy::_TryGetProperty(Utf8CP key,
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void LinePointLengthAnglePlacementStrategy::_SetLength(double const & length)
+void LinePointLengthAnglePlacementStrategy::SetLength(double const & length)
     {
     m_length = length;
     }
@@ -244,7 +245,7 @@ void LinePointLengthAnglePlacementStrategy::_SetLength(double const & length)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-double LinePointLengthAnglePlacementStrategy::_GetLength() const
+double LinePointLengthAnglePlacementStrategy::GetLength() const
     {
     return m_length;
     }
@@ -252,7 +253,7 @@ double LinePointLengthAnglePlacementStrategy::_GetLength() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void LinePointLengthAnglePlacementStrategy::_SetAngle(double const & angle)
+void LinePointLengthAnglePlacementStrategy::SetAngle(double const & angle)
     {
     m_angle = angle;
     }
@@ -260,7 +261,7 @@ void LinePointLengthAnglePlacementStrategy::_SetAngle(double const & angle)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-double LinePointLengthAnglePlacementStrategy::_GetAngle() const
+double LinePointLengthAnglePlacementStrategy::GetAngle() const
     {
     return m_angle;
     }
@@ -271,7 +272,7 @@ double LinePointLengthAnglePlacementStrategy::_GetAngle() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void LinePointsLengthPlacementStrategy::_SetLength(double const & length)
+void LinePointsLengthPlacementStrategy::SetLength(double const & length)
     {
     m_length = length;
     }
@@ -279,7 +280,7 @@ void LinePointsLengthPlacementStrategy::_SetLength(double const & length)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-double LinePointsLengthPlacementStrategy::_GetLength() const
+double LinePointsLengthPlacementStrategy::GetLength() const
     {
     return m_length;
     }
@@ -374,7 +375,7 @@ BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
 void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
     if (0 == strcmp(prop_Length, key))
-        _SetLength(value);
+        SetLength(value);
     
     AdjustEndPoint();
     }
@@ -385,7 +386,7 @@ void LinePointsLengthPlacementStrategy::_SetProperty(Utf8CP key, const double & 
 BentleyStatus LinePointsLengthPlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
     if (0 == strcmp(prop_Length, key))
-        value = _GetLength();
+        value = GetLength();
     else
         return BentleyStatus::ERROR;
 
@@ -401,7 +402,7 @@ BentleyStatus LinePointsLengthPlacementStrategy::_TryGetProperty(Utf8CP key, dou
 void LinePointsAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & value)
     {
     if (0 == strcmp(prop_Angle, key))
-        _SetAngle(value);
+        SetAngle(value);
 
     AdjustEndPoint();
     }
@@ -412,7 +413,7 @@ void LinePointsAnglePlacementStrategy::_SetProperty(Utf8CP key, const double & v
 BentleyStatus LinePointsAnglePlacementStrategy::_TryGetProperty(Utf8CP key, double & value) const
     {
     if (0 == strcmp(prop_Angle, key))
-        value = _GetAngle();
+        value = GetAngle();
     else
         return BentleyStatus::ERROR;
 
@@ -422,7 +423,7 @@ BentleyStatus LinePointsAnglePlacementStrategy::_TryGetProperty(Utf8CP key, doub
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void LinePointsAnglePlacementStrategy::_SetAngle(double const & angle)
+void LinePointsAnglePlacementStrategy::SetAngle(double const & angle)
     {
     m_angle = angle;
     }
@@ -430,7 +431,7 @@ void LinePointsAnglePlacementStrategy::_SetAngle(double const & angle)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-double LinePointsAnglePlacementStrategy::_GetAngle() const
+double LinePointsAnglePlacementStrategy::GetAngle() const
     {
     return m_angle;
     }
@@ -524,6 +525,70 @@ BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
         }
 
     return BentleyStatus::SUCCESS;
+    }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// LineMetesAndBoundsPlacementStrategy
+/////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LineMetesAndBoundsPlacementStrategy::_SetProperty
+(
+    Utf8CP key, 
+    double const& value
+)
+    {
+    if (0 == strcmp(key, LinePlacementStrategy::prop_Angle))
+        {
+        DVec3d direction = DVec3d::From(1, 0, 0);
+        direction.RotateXY(value);
+        UnitConverter::DirectionToMeetsAndBoundsString(m_directionString, direction);
+        }
+
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LineMetesAndBoundsPlacementStrategy::_SetProperty
+(
+    Utf8CP key, 
+    Utf8String const& value
+)
+    {
+    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_DirectionString))
+        {
+        m_directionString = value;
+
+        double angle;
+        UnitConverter::MeetsAndBoundsStringToDouble(angle, m_directionString.c_str());
+        _SetProperty(LinePlacementStrategy::prop_Angle, angle);
+        }
+
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LineMetesAndBoundsPlacementStrategy::_TryGetProperty
+(
+    Utf8CP key, 
+    Utf8String& value
+) const
+    {
+    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_DirectionString))
+        {
+        if (m_directionString.length() == 0)
+            return BentleyStatus::ERROR;
+
+        value = m_directionString;
+        return BentleyStatus::SUCCESS;
+        }
+
+    return T_Super::_TryGetProperty(key, value);
     }
 
 END_BUILDING_SHARED_NAMESPACE
