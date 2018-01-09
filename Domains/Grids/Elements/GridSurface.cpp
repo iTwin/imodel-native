@@ -258,12 +258,16 @@ DgnDbStatus      GridSurface::_OnInsert
 )
     {
     DgnDbStatus status = T_Super::_OnInsert ();
+    if (status != DgnDbStatus::Success)
+        return status;
+
+    status = _Validate ();
+
+    if (status != DgnDbStatus::Success)
+        return status;
+
     GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
     GridDrivesGridSurfaceHandler::Insert(GetDgnDb(), *grid, *this);
-    if (status == DgnDbStatus::Success)
-        {
-        return _Validate ();
-        }
     return status;
     }
 

@@ -53,6 +53,7 @@ GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
 
 
     RegisterHandler(GridSurfaceCreatesGridCurveHandler::GetHandler ());
+    RegisterHandler(GridDrivesGridSurfaceHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
