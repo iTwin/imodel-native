@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManagerImpl.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -500,6 +500,7 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
             }
         GetLocaters().UnregisterLocater(*iter->second);
         m_embeddedRuleSetLocaters.erase(iter);
+        m_contentCache->ClearCache(evt.GetConnection());
         }
     }
 

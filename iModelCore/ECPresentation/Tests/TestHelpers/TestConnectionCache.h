@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/TestConnectionCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,7 @@ struct TestConnection : RefCounted<IConnection>
     ECDbR _GetDb() const override {return m_db;}
     bool _IsOpen() const override {return m_db.IsDbOpen();}
     bool _IsReadOnly() const override {return m_db.IsReadonly();}
-    TestConnection(ECDbR db) : m_db(db), m_id(Utf8PrintfString("ConnectionId:%s", BeGuid(true).ToString().c_str())) {}
+    TestConnection(ECDbR db) : m_db(db), m_id(Utf8PrintfString("ConnectionId:%" PRIu64, (uint64_t)&db)) {}
     };
 
 /*=================================================================================**//**
