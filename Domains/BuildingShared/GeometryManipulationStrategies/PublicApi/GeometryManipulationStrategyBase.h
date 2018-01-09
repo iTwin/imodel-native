@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryManipulationStrategyBase)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 #define GMS_V_SET_PROPERTY_TYPE(value_type) \
@@ -50,10 +48,13 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Utf8String)
 
-        virtual bvector<DPoint3d> const& _GetKeyPoints() const = 0;
+        virtual bvector<DPoint3d> _GetKeyPoints() const = 0;
 
         virtual bool _IsDynamicKeyPointSet() const = 0;
         virtual void _ResetDynamicKeyPoint() = 0;
+
+        virtual bool _IsComplete() const = 0;
+        virtual bool _CanAcceptMorePoints() const = 0;
 
     public:
         GMS_SET_TRYGET_PROPERTY_TYPE(int)
@@ -63,10 +64,13 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         GMS_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_SET_TRYGET_PROPERTY_TYPE(Utf8String)
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> const& GetKeyPoints() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsDynamicKeyPointSet() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ResetDynamicKeyPoint();
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsComplete() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool CanAcceptMorePoints() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

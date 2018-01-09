@@ -28,7 +28,7 @@ SET_TRYGET_PROPERTY_IMPL(Utf8String)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> const& GeometryManipulationStrategyBase::GetKeyPoints() const
+bvector<DPoint3d> GeometryManipulationStrategyBase::GetKeyPoints() const
     {
     return _GetKeyPoints();
     }
@@ -47,4 +47,20 @@ bool GeometryManipulationStrategyBase::IsDynamicKeyPointSet() const
 void GeometryManipulationStrategyBase::ResetDynamicKeyPoint()
     {
     _ResetDynamicKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryManipulationStrategyBase::IsComplete() const
+    {
+    return _IsComplete();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryManipulationStrategyBase::CanAcceptMorePoints() const
+    {
+    return _CanAcceptMorePoints();
     }

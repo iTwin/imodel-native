@@ -22,10 +22,11 @@ ArcManipulationStrategy::ArcManipulationStrategy()
 
 #define KEY_POINT_ACCESSOR_IMPL(name, index) \
     bool ArcManipulationStrategy::Is##name##Set() const {return !GetKeyPoints()[index].AlmostEqual(INVALID_POINT);} \
-    DPoint3dCR ArcManipulationStrategy::Get##name() const {BeAssert(Is##name##Set()); return GetKeyPoints()[index];} \
+    DPoint3d ArcManipulationStrategy::Get##name() const {BeAssert(Is##name##Set()); return GetKeyPoints()[index];} \
     void ArcManipulationStrategy::Set##name(DPoint3dCR newValue) {ReplaceKeyPoint(newValue, index);} \
     void ArcManipulationStrategy::Reset##name() {ReplaceKeyPoint(INVALID_POINT, index);} \
-    void ArcManipulationStrategy::SetDynamic##name(DPoint3dCR newValue) {UpdateDynamicKeyPoint(newValue, index);}
+    void ArcManipulationStrategy::SetDynamic##name(DPoint3dCR newValue) {UpdateDynamicKeyPoint(newValue, index);} \
+    bool ArcManipulationStrategy::Is##name##Dynamic() const {return !GetAcceptedKeyPoints()[index].AlmostEqual(GetKeyPoints()[index]);}
 
 KEY_POINT_ACCESSOR_IMPL(Start, s_startIndex)
 KEY_POINT_ACCESSOR_IMPL(Center, s_centerIndex)
@@ -52,7 +53,7 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
         if (startEndCenterInLine)
             {
             DVec3d normal;
-            if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
+            if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal, normal))
                 return nullptr;
 
             double centerEndMagnitude = centerEnd.Magnitude();
@@ -99,4 +100,84 @@ void ArcManipulationStrategy::_OnKeyPointsChanged()
         DEllipse3d tmpArc = DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd());
         UpdateSweep(GetStart(), tmpArc.center, GetEnd());
         }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcManipulationStrategy::_IsComplete() const
+    {
+    return IsStartSet() && !IsStartDynamic() && IsEndSet() && !IsEndDynamic() &&
+        ((IsMidSet() && !IsMidDynamic()) || (IsCenterSet() && !IsCenterDynamic()));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr ArcManipulationStrategy::_CreateDefaultPlacementStrategy()
+    {
+    return ArcStartMidEndPlacementStrategy::Create(this);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcManipulationStrategy::_IsEmpty() const
+    {
+    return !IsStartSet() && !IsMidSet() && !IsCenterSet() && !IsEndSet();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcManipulationStrategy::_IsSingleKeyPointLeft() const
+    {
+    int validPointCounter = 0;
+
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    for (DPoint3dCR keyPoint : keyPoints)
+        {
+        if (!keyPoint.AlmostEqual(INVALID_POINT))
+            ++validPointCounter;
+        }
+
+    return validPointCounter == 1;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d ArcManipulationStrategy::_GetLastKeyPoint() const
+    {
+    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
+    for (auto rit = keyPoints.rbegin(); keyPoints.rend() != rit; ++rit)
+        {
+        if (!rit->AlmostEqual(INVALID_POINT))
+            return *rit;
+        }
+
+    return DPoint3d();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d ArcManipulationStrategy::_GetFirstKeyPoint() const
+    {
+    bvector <DPoint3d> const& keyPoints = GetKeyPoints();
+    for (auto it = keyPoints.begin(); keyPoints.end() != it; ++it)
+        {
+        if (!it->AlmostEqual(INVALID_POINT))
+            return *it;
+        }
+
+    return DPoint3d();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitiveManipulationStrategyPtr ArcManipulationStrategy::_Clone() const
+    {
+    return Create();
     }

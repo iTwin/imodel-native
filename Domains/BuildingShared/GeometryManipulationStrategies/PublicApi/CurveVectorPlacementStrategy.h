@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurveVectorPlacementStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -18,14 +16,25 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
     {
     DEFINE_T_SUPER(GeometryPlacementStrategy)
 
+    private:
+        CurveVectorManipulationStrategyPtr m_manipulationStrategy;
+
     protected:
-        CurveVectorPlacementStrategy() 
-            : T_Super() {}
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPlacementStrategy();
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurveVectorPtr _Finish() const;
 
+        virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
+        CurveVectorManipulationStrategyCR GetCurveVectorManipulationStrategy() const { return *m_manipulationStrategy; }
+        CurveVectorManipulationStrategyR GetCurveVectorManipulationStrategyR() { return *m_manipulationStrategy; }
+
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;
+
+        static CurveVectorPlacementStrategyPtr Create() { return new CurveVectorPlacementStrategy(); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
     };
 
 END_BUILDING_SHARED_NAMESPACE

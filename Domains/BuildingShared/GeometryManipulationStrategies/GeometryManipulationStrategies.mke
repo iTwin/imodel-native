@@ -31,6 +31,8 @@ $(o)CurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)CurveVectorManipula
 
 $(o)CurvePrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)CurvePrimitiveManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitiveManipulationStrategy.h
 
+$(o)ChildCurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)ChildCurveVectorManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ChildCurveVectorManipulationStrategy.h
+
 $(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
 
 $(o)LinePlacementStrategy$(oext)    : $(_MakeFilePath)LinePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LinePlacementStrategy.h
@@ -45,6 +47,8 @@ $(o)CurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)CurveVectorPlacementSt
 
 $(o)CurvePrimitivePlacementStrategy$(oext) : $(_MakeFilePath)CurvePrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitivePlacementStrategy.h
 
+$(o)ChildCurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)ChildCurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ChildCurveVectorPlacementStrategy.h
+
 $(o)ArcPlacementStrategy$(oext) : $(_MakeFilePath)ArcPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcPlacementStrategy.h
 
 $(o)ArcStartCenterPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartCenterPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartCenterPlacementStrategy.h
@@ -54,6 +58,8 @@ $(o)ArcCenterStartPlacementStrategy$(oext) : $(_MakeFilePath)ArcCenterStartPlace
 $(o)ArcStartMidEndPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartMidEndPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartMidEndPlacementStrategy.h
 
 $(o)ArcStartEndMidPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartEndMidPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartEndMidPlacementStrategy.h
+
+$(o)SplineManipulationStrategy$(oext) : $(_MakeFilePath)SplineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplineManipulationStrategy.h
 
 
 %include MultiCppCompileGo.mki

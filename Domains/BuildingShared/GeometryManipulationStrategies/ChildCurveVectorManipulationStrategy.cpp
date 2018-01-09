@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: GeometryManipulationStrategies/LineManipulationStrategy.cpp $
+|     $Source: GeometryManipulationStrategies/ChildCurveVectorManipulationStrategy.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,59 +10,46 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                12/2017
+// @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-ICurvePrimitivePtr LineManipulationStrategy::_FinishPrimitive() const
+ChildCurveVectorManipulationStrategy::ChildCurveVectorManipulationStrategy()
+    : T_Super()
+    , m_cvManipulationStrategy(CurveVectorManipulationStrategy::Create())
     {
-    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
-    if (keyPoints.size() < 2)
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ICurvePrimitivePtr ChildCurveVectorManipulationStrategy::_FinishPrimitive() const
+    {
+    CurveVectorPtr child = m_cvManipulationStrategy->Finish();
+    if (child.IsNull())
         return nullptr;
 
-    return ICurvePrimitive::CreateLine(keyPoints[0], keyPoints[1]);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                12/2017
-//---------------+---------------+---------------+---------------+---------------+------
-void LineManipulationStrategy::_AppendKeyPoint
-(
-    DPoint3dCR newKeyPoint
-)
-    {
-    bvector<DPoint3d> const& keyPoints = GetKeyPoints();
-    if ((IsDynamicKeyPointSet() && keyPoints.size() <= 2) ||
-        (!IsDynamicKeyPointSet() && keyPoints.size() < 2))
-        T_Super::_AppendKeyPoint(newKeyPoint);
+    return ICurvePrimitive::CreateChildCurveVector(child);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bool LineManipulationStrategy::_IsComplete() const 
+bool ChildCurveVectorManipulationStrategy::_IsComplete() const 
     {
-    return GetAcceptedKeyPoints().size() == 2;
+    return m_cvManipulationStrategy->IsComplete();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bool LineManipulationStrategy::_CanAcceptMorePoints() const 
+bool ChildCurveVectorManipulationStrategy::_CanAcceptMorePoints() const 
     {
-    return !_IsComplete();
+    return m_cvManipulationStrategy->CanAcceptMorePoints();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-CurvePrimitiveManipulationStrategyPtr LineManipulationStrategy::_Clone() const
+CurvePrimitiveManipulationStrategyPtr ChildCurveVectorManipulationStrategy::_Clone() const
     {
     return Create();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-CurvePrimitivePlacementStrategyPtr LineManipulationStrategy::_CreateDefaultPlacementStrategy()
-    {
-    return LinePointsPlacementStrategy::Create(*this);
     }
