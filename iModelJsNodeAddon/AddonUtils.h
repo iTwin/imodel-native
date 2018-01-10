@@ -61,7 +61,7 @@ struct AddonUtils
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
-    static BeSQLite::DbResult OpenBriefcase(DgnDbPtr &db, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens);
+    static BeSQLite::DbResult OpenBriefcase(DgnDbPtr &db, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens, SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions);
     static void CloseDgnDb(DgnDbR dgndb);
     static DgnDbStatus GetECClassMetaData(JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     static DgnDbStatus GetElement(JsonValueR results, DgnDbR db, Json::Value const &inOpts);

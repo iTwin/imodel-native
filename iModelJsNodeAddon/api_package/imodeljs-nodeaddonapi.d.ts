@@ -159,8 +159,9 @@ declare class NodeAddonDgnDb {
    * TBD
    * @param briefcaseToken TBD
    * @param changeSetTokens TBD
+   * @param revisionUpgradeOptions TBD
    */
-  openBriefcaseSync(briefcaseToken: string, changeSetTokens: string): DbResult;
+  openBriefcaseSync(briefcaseToken: string, changeSetTokens: string, revisionUpgradeOptions?:number): DbResult;
 
   /** 
    * Save any pending changes to this iModel.  

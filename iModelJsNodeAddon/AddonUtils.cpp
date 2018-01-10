@@ -186,7 +186,7 @@ DbResult AddonUtils::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb:
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens)
+DbResult AddonUtils::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, JsonValueCR changeSetTokens, SchemaUpgradeOptions::RevisionUpgradeOptions revisionUpgradeOptions)
     {
     PRECONDITION(!briefcaseToken.isNull() && briefcaseToken.isObject(), BE_SQLITE_ERROR);
     PRECONDITION(briefcaseToken.isMember("pathname") && briefcaseToken.isMember("briefcaseId") && briefcaseToken.isMember("openMode"), BE_SQLITE_ERROR);
@@ -249,7 +249,7 @@ DbResult AddonUtils::OpenBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken, 
     db->CloseDb();
     db = nullptr;
 
-    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions, revisionUpgradeOptions);
     db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
     if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
         return result;

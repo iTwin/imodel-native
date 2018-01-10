@@ -610,12 +610,14 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, briefcaseToken);
         REQUIRE_ARGUMENT_STRING(1, changeSetTokens);
+        OPTIONAL_ARGUMENT_INTEGER(2, revisionUpgradeOptions, (int)SchemaUpgradeOptions::RevisionUpgradeOptions::Merge);
+        
         RETURN_IF_HAD_EXCEPTION_SYNC
 
         Json::Value jsonBriefcaseToken = Json::Value::From(briefcaseToken);
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
 
-        DbResult result = AddonUtils::OpenBriefcase(m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens);
+        DbResult result = AddonUtils::OpenBriefcase(m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens, (SchemaUpgradeOptions::RevisionUpgradeOptions)revisionUpgradeOptions);
         Napi::Object ret;
         if (BE_SQLITE_OK == result)
             SetupPresentationManager();
