@@ -3259,7 +3259,7 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         m_tryOpen = true;
         }
     
-    if (m_smPtr.IsValid())
+    if (m_smPtr.IsValid() && !m_smPtr->IsCesium3DTiles())
         {
         Json::Value publishingMetadata;
         publishingMetadata["name"] = "SMMasterHeader";
