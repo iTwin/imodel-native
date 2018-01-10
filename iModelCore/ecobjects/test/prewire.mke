@@ -13,5 +13,5 @@ $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
 # Hack so we can test conversion of ECDbMap 1.0 -> 2.0 mapping attributes
-$(BuildContext)ECSchemas/Standard/ECDbMap.02.00.00.ecschema.xml : $(baseDir)ECDBMap_Test.02.00.00.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml : $(baseDir)ECDBMap_Test.02.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)

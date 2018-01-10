@@ -83,8 +83,8 @@
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECObjects" SubPartDirectory="UnitTests/ECObjects">Delivery/UnitTests/ignore_list.txt</Files>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Standard" SubPartDirectory="ECSchemas/Standard">
-                ECSchemas/Standard/*.*.*.ecschema.xml
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
+                ECSchemas/ECDb/*.*.*.ecschema.xml
             </Files>
         </Bindings>
     </Part>

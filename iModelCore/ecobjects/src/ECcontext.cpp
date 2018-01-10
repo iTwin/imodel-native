@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECcontext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -78,6 +78,10 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
         m_locaters.push_back(locator.get());
         m_searchPathLocatersCount++;
         m_ownedLocators.push_back(locator);
+        }
+    else
+        {
+        LOG.warning("ECSchemaReadContext - Failed to get standard schema paths.  Use ECSchemaReadContext::Initialize with the path to the Assets directory so standard schemas can be successfully located.");
         }
 
     if (createConversionContext)

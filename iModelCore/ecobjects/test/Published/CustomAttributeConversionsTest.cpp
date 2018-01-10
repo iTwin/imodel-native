@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include <Bentley/BeTest.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -3269,7 +3270,17 @@ void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Ut
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    ECSchemaConverter::Convert(*schema); // We do not fail schema conversion if class map CAs fail to convert
+    BeFileName ecdbSchemaDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaDir);
+    ecdbSchemaDir.AppendToPath(L"ECSchemas");
+    ecdbSchemaDir.AppendToPath(L"ECDb");
+    context->AddSchemaPath(ecdbSchemaDir);
+
+    CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
+    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter(*context);
+    schemaConverter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConverter);
+
+    schemaConverter->Convert(*schema); // Converter doesn't return an error when it hits a mapping strategy it doesn't understand
     IECInstancePtr classMapCA = schema->GetClassCP("C")->GetCustomAttribute("ClassMap");
     ASSERT_EQ(expectSuccess, classMapCA.IsValid());
     if (expectSuccess)

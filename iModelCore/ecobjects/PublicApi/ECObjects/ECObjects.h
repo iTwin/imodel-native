@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,6 +90,7 @@ EC_TYPEDEFS (CustomAttributeDeserializerManager);
 EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);
 EC_TYPEDEFS(ECSchemaConverter);
+EC_TYPEDEFS(CustomECSchemaConverter);
 EC_TYPEDEFS(IECCustomAttributeConverter);
 EC_TYPEDEFS(ECSchemaValidator);
 EC_TYPEDEFS(IECSchemaValidator);
