@@ -42,6 +42,9 @@ ICurvePrimitivePtr SplineControlPointsManipulationStrategy::_FinishPrimitive() c
         knots.push_back(i);
 
     MSBsplineCurvePtr bspline = MSBsplineCurve::CreateFromPolesAndOrder(poles, &weights, &knots, order, false, false);
+    if (bspline.IsNull())
+        return nullptr;
+
     return ICurvePrimitive::CreateBsplineCurve(bspline);
     }
 
@@ -62,6 +65,9 @@ ICurvePrimitivePtr SplineThroughPointsManipulationStrategy::_FinishPrimitive() c
         return nullptr;
 
     DVec3d tangents[2] = { m_startTangent, m_endTangent };
+
+    for (DVec3d & tangent : tangents)
+        tangent.Normalize();
 
     if (SUCCESS != curve->InitFromPointsAndEndTangents(poles, false, 0.0, tangents, false, false, false, false))
         return nullptr;

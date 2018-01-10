@@ -7,10 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsPlacementStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointLengthAnglePlacementStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsLengthPlacementStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsAnglePlacementStrategy)
+
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -47,8 +44,8 @@ struct LinePointsPlacementStrategy : LinePlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
     public:
-        static LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
-        static LinePointsPlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy) { return new LinePointsPlacementStrategy(manipulationStrategy); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy) { return new LinePointsPlacementStrategy(manipulationStrategy); }
     };
 
 struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy

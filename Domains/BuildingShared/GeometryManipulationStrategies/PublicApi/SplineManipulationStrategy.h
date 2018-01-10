@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineManipulationStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineControlPointsManipulationStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineThroughPointsManipulationStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -86,7 +82,7 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
 
         void SetStartTangent(DVec3d startTangent) { _SetStartTangent(startTangent); }
         void RemoveStartTangent() { _RemoveStartTangent(); }
-        DVec3d GetStartTangent() const { _GetStartTangent(); }
+        DVec3d GetStartTangent() const { return _GetStartTangent(); }
 
         void SetEndTangent(DVec3d endTangent) { _SetEndTangent(endTangent); }
         void RemoveEndTangent() { _RemoveEndTangent(); }
