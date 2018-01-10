@@ -19,6 +19,7 @@ CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
     , m_defaultNewGeometryType(DefaultNewGeometryType::Line)
     , m_defaultLinePlacementStrategyType(LinePlacementStrategyType::Points)
     , m_defaultArcPlacementStrategyType(ArcPlacementStrategyType::StartMidEnd)
+    , m_defaultLineStringPlacementStrategyType(LineStringPlacementStrategyType::Points)
     {}
 
 //--------------------------------------------------------------------------------------
@@ -163,6 +164,9 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyF
             case DefaultNewGeometryType::Line:
                 manipulationStrategy = LineManipulationStrategy::Create();
                 break;
+            case DefaultNewGeometryType::LineString:
+                manipulationStrategy = LineStringManipulationStrategy::Create();
+                break;
             default:
                 if (m_primitiveStrategies.empty())
                     manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
@@ -245,6 +249,11 @@ void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
                     }
                 break;
             }
+            case DefaultNewGeometryType::LineString:
+            {
+                newPrimitiveStrategy = LineStringManipulationStrategy::Create();
+                break;
+            }
             default:
                 return;
             }
@@ -281,4 +290,18 @@ void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
         return;
 
     m_defaultArcPlacementStrategyType = newPlacementStrategyType;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
+(
+    LineStringPlacementStrategyType newPlacementStrategyType
+)
+    {
+    if (m_defaultLineStringPlacementStrategyType == newPlacementStrategyType)
+        return;
+
+    m_defaultLineStringPlacementStrategyType = newPlacementStrategyType;
     }

@@ -13,6 +13,7 @@ enum class DefaultNewGeometryType
     {
     Default = 0,
     Line,
+    LineString,
     Arc
     };
 
@@ -30,6 +31,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         LinePlacementStrategyType m_defaultLinePlacementStrategyType;
         ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
+        LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
 
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
@@ -71,6 +73,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
         void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
+        void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
     };
 
 END_BUILDING_SHARED_NAMESPACE

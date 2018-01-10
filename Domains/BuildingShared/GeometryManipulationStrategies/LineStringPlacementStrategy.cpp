@@ -29,3 +29,20 @@ LineStringPlacementStrategyPtr LineStringPlacementStrategy::Create
             return nullptr;
         }
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineStringPlacementStrategyPtr LineStringPlacementStrategy::Create
+(
+    LineStringPlacementStrategyType strategyType, 
+    LineStringManipulationStrategyR manipulationStrategy
+)
+    {
+    LineStringPlacementStrategyPtr placementStrategy = Create(strategyType);
+    if (placementStrategy.IsNull())
+        return nullptr;
+
+    placementStrategy->m_manipulationStrategy = &manipulationStrategy;
+    return placementStrategy;
+    }

@@ -42,5 +42,5 @@ bool LineStringManipulationStrategy::_IsComplete() const
 //---------------+---------------+---------------+---------------+---------------+------
 CurvePrimitivePlacementStrategyPtr LineStringManipulationStrategy::_CreateDefaultPlacementStrategy()
     {
-    return LineStringPlacementStrategy::Create(LineStringPlacementStrategyType::Points);
+    return LineStringPlacementStrategy::Create(LineStringPlacementStrategyType::Points, *this);
     }
