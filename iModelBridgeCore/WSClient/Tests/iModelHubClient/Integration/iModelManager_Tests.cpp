@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/iModelManager_Tests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
@@ -86,10 +86,25 @@ enum CodeState : uint8_t
     };
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
+//@bsimethod                                     Benas.Kikutis             01/2018
 //---------------------------------------------------------------------------------------
-CodeLockSetTaskPtr QueryCodesLocksById(Briefcase& briefcase, bool byBriefcaseId, DgnCodeSet& codes, LockableIdSet& ids)
+CodeLockSetTaskPtr QueryCodesById(Briefcase& briefcase, bool byBriefcaseId, DgnCodeSet& codes)
     {
+    LockableIdSet lockIds;
+
+    if (byBriefcaseId)
+        return briefcase.GetiModelConnection().QueryCodesLocksById(codes, lockIds, briefcase.GetBriefcaseId());
+
+    return briefcase.GetiModelConnection().QueryCodesLocksById(codes, lockIds);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+CodeLockSetTaskPtr QueryLocksById(Briefcase& briefcase, bool byBriefcaseId, LockableIdSet& ids)
+    {
+    DgnCodeSet codes;
+
     if (byBriefcaseId)
         return briefcase.GetiModelConnection().QueryCodesLocksById(codes, ids, briefcase.GetBriefcaseId());
 
@@ -101,8 +116,7 @@ CodeLockSetTaskPtr QueryCodesLocksById(Briefcase& briefcase, bool byBriefcaseId,
 //---------------------------------------------------------------------------------------
 void ExpectLocksCountById (Briefcase& briefcase, int expectedCount, bool byBriefcaseId, LockableIdSet& ids)
     {
-    DgnCodeSet codes;
-    auto result = QueryCodesLocksById(briefcase, byBriefcaseId, codes, ids)->GetResult();
+    auto result = QueryLocksById(briefcase, byBriefcaseId, ids)->GetResult();
 
     EXPECT_SUCCESS(result);
 
@@ -269,8 +283,7 @@ void ExpectCodesCount(Briefcase& briefcase, int expectedCount)
 //---------------------------------------------------------------------------------------
 void ExpectCodesCountById(Briefcase& briefcase, int expectedCount, bool byBriefcaseId, DgnCodeSet& codes)
     {
-    LockableIdSet ids;
-    auto result = QueryCodesLocksById(briefcase, byBriefcaseId, codes, ids)->GetResult();
+    auto result = QueryCodesById(briefcase, byBriefcaseId, codes)->GetResult();
 
     EXPECT_SUCCESS(result);
     auto actualCount = result.GetValue().GetCodes().size();
@@ -759,6 +772,10 @@ TEST_F (iModelManagerTests, QueryLocksTest)
     ExpectLocksCountById (*briefcase1, 2, true,  LockableId (*model1), LockableId (*model2), LockableId (model1->GetDgnDb ()));
     ExpectLocksCountById (*briefcase1, 3, false, LockableId (*model1), LockableId (model1->GetDgnDb ()));
     ExpectLocksCountById (*briefcase1, 4, false, LockableId (*model1), LockableId (*model2), LockableId (model1->GetDgnDb ()));
+
+    //Query empty array of locks
+    LockableIdSet ids;
+    ExpectLocksCountById(*briefcase1, 0, false, ids);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2019,14 +2036,14 @@ TEST_F(iModelManagerTests, PushAndRelinquishCodesLocks)
     ExpectCodeState(CreateCodeUsed     (partition1_4->GetCode(), changeSet5), imodelManager1);
     ExpectLocksCount(*briefcase1, 0);
 
-    LockableIdSet locks;
+    LockableIdSet lockIds;
     codes.clear();
     codes.insert (partition1_1->GetCode());
     codes.insert (partition1_2->GetCode());
     codes.insert (partition1_4->GetCode());
     codes.insert (partition2_1->GetCode());
     codes.insert (partition2_2->GetCode());
-    auto result = briefcase1->GetiModelConnection ().QueryCodesLocksById (codes, locks)->GetResult ();
+    auto result = briefcase1->GetiModelConnection ().QueryCodesLocksById (codes, lockIds)->GetResult ();
     EXPECT_SUCCESS(result);
 
     //Check if we can reserve reserved and discarded codes without changeSet.
@@ -2577,11 +2594,11 @@ TEST_F(iModelManagerTests, CodeIdsTest)
     auto response = db1.BriefcaseManager().ReserveCodes(codeSet, IBriefcaseManager::ResponseOptions::CodeState);
     EXPECT_EQ(RepositoryStatus::Success, response.Result());
 
-    LockableIdSet locks; 
+    LockableIdSet lockIds;
     DgnCodeSet codes;
     codes.insert(code1);
     codes.insert(code2);
-    auto result = briefcase1->GetiModelConnection().QueryCodesLocksById(codes, locks)->GetResult();
+    auto result = briefcase1->GetiModelConnection().QueryCodesLocksById(codes, lockIds)->GetResult();
     EXPECT_SUCCESS(result);
 
     auto codeStatesIterator = result.GetValue().GetCodes().begin();
@@ -2592,6 +2609,10 @@ TEST_F(iModelManagerTests, CodeIdsTest)
     // Check if scope requirements were properly parsed
     EXPECT_EQ(code1.GetScopeString(), code1Result.GetScopeString());
     EXPECT_EQ(code2.GetScopeString(), code2Result.GetScopeString());
+
+    //Query empty array of codes
+    DgnCodeSet emptyCodes;
+    ExpectCodesCountById(*briefcase1, 0, false, emptyCodes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2762,3 +2783,22 @@ TEST_F(iModelManagerTests, GetChangeSetsRelatedToVersions)
     EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(1)->GetId());
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis           01/2018
+//---------------------------------------------------------------------------------------
+TEST_F(iModelManagerTests, DownloadChangeSetFileExpectError)
+    {
+    auto briefcase = AcquireBriefcase();
+    auto briefcaseInfo = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue();
+
+    //push some ChangeSets for Versions
+    CreateModel("Model1", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    auto changeSet1 = PushPendingChanges(*briefcase);
+
+    //Try to download empty set of ChangeSets
+    bvector<Utf8String> changeSets;
+    auto result = briefcase->GetiModelConnection().DownloadChangeSets(changeSets)->GetResult();
+    auto errId = result.GetError().GetId();
+    EXPECT_EQ(Error::Id::QueryIdsNotSpecified, errId);
+    }

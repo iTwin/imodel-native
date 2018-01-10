@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/iModelConnection.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/iModelConnection.h>
@@ -933,13 +933,13 @@ ICancellationTokenPtr cancellationToken
     bset<StatusTaskPtr> tasks;
     CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
 
-    if (nullptr != codes)
+    if (nullptr != codes && 0 < codes->size())
         {
         auto task = QueryCodesInternal(*codes, briefcaseId, finalValue, cancellationToken);
         tasks.insert(task);
         }
 
-    if (nullptr != locks)
+    if (nullptr != locks && 0 < locks->size())
         {
         auto task = QueryLocksInternal(*locks, briefcaseId, finalValue, cancellationToken);
         tasks.insert(task);
@@ -1027,6 +1027,8 @@ CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    BeAssert(0 == codes.size() && "Query Ids in empty array is not supported.");
+
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Code);
 
     std::deque<ObjectId> queryIds;
@@ -1104,6 +1106,8 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Lock);
+
+    BeAssert(0 == locks.size() && "Query Ids in empty array is not supported.");
 
     std::deque<ObjectId> queryIds;
     for (auto& lock : locks)
@@ -2189,8 +2193,11 @@ ICancellationTokenPtr                  cancellationToken
 ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& changeSetIds, Http::Request::ProgressCallbackCR callback, 
                                                        ICancellationTokenPtr cancellationToken) const
     {
+    if (0 == changeSetIds.size())
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::QueryIdsNotSpecified));
+    
     auto query = CreateChangeSetsByIdQuery(changeSetIds);
-
+    
     Utf8String selectString;
     selectString.Sprintf("%s,%s,%s,%s", ServerSchema::Property::Id, ServerSchema::Property::Index, ServerSchema::Property::ParentId, 
                          ServerSchema::Property::SeedFileId);
@@ -2244,6 +2251,8 @@ WSQuery iModelConnection::CreateChangeSetsByIdQuery
 std::deque<ObjectId>& changeSetIds
 ) const
     {
+    BeAssert(0 == changeSetIds.size() && "Query Ids in empty array is not supported.");
+
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
     query.AddFilterIdsIn(changeSetIds, nullptr, 0, 0);
     return query;
