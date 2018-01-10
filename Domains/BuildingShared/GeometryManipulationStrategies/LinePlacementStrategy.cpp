@@ -11,7 +11,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 
 const Utf8CP LinePlacementStrategy::prop_Length = "Length";
 const Utf8CP LinePlacementStrategy::prop_Angle = "Angle";
-const Utf8CP LineMetesAndBoundsPlacementStrategy::prop_DirectionString = "DirectionString";
+const Utf8CP LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds = "MetesAndBounds";
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
@@ -536,35 +536,21 @@ BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
 void LineMetesAndBoundsPlacementStrategy::_SetProperty
 (
     Utf8CP key, 
-    double const& value
+    GeometryManipulationStrategyProperty const& value
 )
     {
-    if (0 == strcmp(key, LinePlacementStrategy::prop_Angle))
+    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds))
         {
-        DVec3d direction = DVec3d::From(1, 0, 0);
-        direction.RotateXY(value);
-        UnitConverter::DirectionToMeetsAndBoundsString(m_directionString, direction);
-        }
+        MetesAndBounds const* mab = dynamic_cast<MetesAndBounds const*>(&value);
+        if (nullptr != mab && !mab->GetValue().empty())
+            {
+            bpair<Utf8String, double> metesAndBounds = mab->GetValue().front();
 
-    T_Super::_SetProperty(key, value);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void LineMetesAndBoundsPlacementStrategy::_SetProperty
-(
-    Utf8CP key, 
-    Utf8String const& value
-)
-    {
-    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_DirectionString))
-        {
-        m_directionString = value;
-
-        double angle;
-        UnitConverter::MeetsAndBoundsStringToDouble(angle, m_directionString.c_str());
-        _SetProperty(LinePlacementStrategy::prop_Angle, angle);
+            double angle;
+            UnitConverter::MeetsAndBoundsStringToDouble(angle, metesAndBounds.first.c_str());
+            T_Super::_SetProperty(LinePlacementStrategy::prop_Angle, angle);
+            T_Super::_SetProperty(LinePlacementStrategy::prop_Length, metesAndBounds.second);
+            }
         }
 
     T_Super::_SetProperty(key, value);
@@ -576,15 +562,26 @@ void LineMetesAndBoundsPlacementStrategy::_SetProperty
 BentleyStatus LineMetesAndBoundsPlacementStrategy::_TryGetProperty
 (
     Utf8CP key, 
-    Utf8String& value
+    GeometryManipulationStrategyProperty& value
 ) const
     {
-    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_DirectionString))
+    if (0 == strcmp(key, LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds))
         {
-        if (m_directionString.length() == 0)
+        double length;
+        if (BentleyStatus::SUCCESS != T_Super::_TryGetProperty(LinePlacementStrategy::prop_Length, length))
             return BentleyStatus::ERROR;
 
-        value = m_directionString;
+        double angle;
+        if (BentleyStatus::SUCCESS != T_Super::_TryGetProperty(LinePlacementStrategy::prop_Angle, angle))
+            return BentleyStatus::ERROR;
+
+        DVec3d direction = DVec3d::From(1, 0, 0);
+        direction.RotateXY(angle);
+        Utf8String directionString;
+        UnitConverter::DirectionToMeetsAndBoundsString(directionString, direction);
+
+        bpair<Utf8String, double> metesAndBounds {{directionString}, {length}};
+        value = MetesAndBounds({metesAndBounds});
         return BentleyStatus::SUCCESS;
         }
 

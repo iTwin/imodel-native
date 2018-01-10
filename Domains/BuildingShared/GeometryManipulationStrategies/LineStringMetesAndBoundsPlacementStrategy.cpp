@@ -168,8 +168,8 @@ void LineStringMetesAndBoundsPlacementStrategy::_AddKeyPoint
             continue;
 
         LineMetesAndBoundsPlacementStrategyPtr lineStrategy = LineMetesAndBoundsPlacementStrategy::Create(m_workingPlane);
-        lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_DirectionString, *directionsIter);
-        lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_Length, *lengthsIter);
+        bpair<Utf8String, double> metesAndBounds {*directionsIter, *lengthsIter};
+        lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds({metesAndBounds}));
         lineStrategy->AddKeyPoint(keyPoints.back());
 
         bvector<DPoint3d> lineKeyPoints = lineStrategy->GetKeyPoints();

@@ -27,6 +27,7 @@ SET_TRYGET_PROPERTY_IMPL(DgnElement)
 SET_TRYGET_PROPERTY_IMPL(Utf8String)
 SET_TRYGET_PROPERTY_IMPL(bvector<double>)
 SET_TRYGET_PROPERTY_IMPL(bvector<Utf8String>)
+SET_TRYGET_PROPERTY_IMPL(GeometryManipulationStrategyProperty)
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017

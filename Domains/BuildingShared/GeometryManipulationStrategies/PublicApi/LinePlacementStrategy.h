@@ -101,6 +101,25 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlace
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               01/2018
 //=======================================================================================
+struct MetesAndBounds : GeometryManipulationStrategyProperty
+    {
+    DEFINE_T_SUPER(GeometryManipulationStrategyProperty)
+
+    private:
+        bvector<bpair<Utf8String, double>> m_value;
+
+    public:
+        MetesAndBounds(bvector<bpair<Utf8String, double>> const& value)
+            : T_Super()
+            , m_value(value)
+            {}
+
+        bvector<bpair<Utf8String, double>> const& GetValue() const { return m_value; }
+    };
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               01/2018
+//=======================================================================================
 struct LineMetesAndBoundsPlacementStrategy : public LinePointLengthAnglePlacementStrategy
     {
     DEFINE_T_SUPER(LinePointLengthAnglePlacementStrategy)
@@ -111,13 +130,11 @@ struct LineMetesAndBoundsPlacementStrategy : public LinePointLengthAnglePlacemen
     protected:
         LineMetesAndBoundsPlacementStrategy(DPlane3d plane) : T_Super(plane), m_directionString("") {}
 
-        virtual void _SetProperty(Utf8CP key, double const& value) override;
-
-        virtual void _SetProperty(Utf8CP key, Utf8String const& value) override;
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, Utf8String& value) const override;
+        virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
 
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_DirectionString;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_MetesAndBounds;
 
         static LineMetesAndBoundsPlacementStrategyPtr Create(DPlane3d const& plane) { return new LineMetesAndBoundsPlacementStrategy(plane); }
     };

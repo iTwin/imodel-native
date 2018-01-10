@@ -30,6 +30,16 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     GMS_TRYGET_PROPERTY_TYPE(value_type)
 
 //=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               01/2018
+//=======================================================================================
+struct GeometryManipulationStrategyProperty
+    {
+    protected:
+        GeometryManipulationStrategyProperty() {}
+        virtual ~GeometryManipulationStrategyProperty() {}
+    };
+
+//=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
 struct GeometryManipulationStrategyBase : RefCountedBase
@@ -50,6 +60,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Utf8String)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(bvector<double>)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(bvector<Utf8String>)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(GeometryManipulationStrategyProperty)
 
         virtual bvector<DPoint3d> _GetKeyPoints() const = 0;
 
@@ -69,6 +80,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         GMS_SET_TRYGET_PROPERTY_TYPE(Utf8String)
         GMS_SET_TRYGET_PROPERTY_TYPE(bvector<double>)
         GMS_SET_TRYGET_PROPERTY_TYPE(bvector<Utf8String>)
+        GMS_SET_TRYGET_PROPERTY_TYPE(GeometryManipulationStrategyProperty)
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;
 

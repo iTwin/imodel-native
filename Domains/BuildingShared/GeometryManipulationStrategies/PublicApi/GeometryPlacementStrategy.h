@@ -48,6 +48,7 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GMS_PROPERTY_OVERRIDE(Utf8String)
         GMS_PROPERTY_OVERRIDE(bvector<double>)
         GMS_PROPERTY_OVERRIDE(bvector<Utf8String>)
+        GMS_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategyCR GetManipulationStrategy() const;
