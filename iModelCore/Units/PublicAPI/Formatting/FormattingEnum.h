@@ -148,17 +148,17 @@ enum class PresentationType
 
 enum class FormatTraits : int
     {
-    DefaultTraits = 0,
-    LeadingZeroes = 0x1,
-    TrailingZeroes = 0x2,
-    KeepDecimalPoint = 0x4,
-    KeepSingleZero = 0x8,
-    ExponentZero = 0x10,
-    ZeroEmpty = 0x20,
-    Use1000Separator = 0x40,
-    ApplyRounding = 0x80,
+    DefaultTraits = 0,        // No special traits. This value is being used only for initializing 
+    LeadingZeroes = 0x1,      // indicates that one or more insignificant zeroes are to be added in front of digital expression
+    TrailingZeroes = 0x2,     // indicates that one or more insignificant zeroes are to be added after the last digit of the fraction
+    KeepDecimalPoint = 0x4,   // indicates that the decimal point is required when the fraction os zero
+    KeepSingleZero = 0x8,     // indicates that the fractional part of the number is required when the fraction is zero
+    ExponentZero = 0x10,      // indicates that the exponent value must be prepended by zero
+    ZeroEmpty = 0x20,         // indicates that zero value should be presented by an empty string
+    Use1000Separator = 0x40,  // indicates that thousands in the integer part of the number should be separated by a special char (. or,)
+    ApplyRounding = 0x80,     // indicates that the rounding factor should be used
     FractionDash = 0x100,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph
+    UseFractSymbol = 0x200,    // indicates that a limited set of fractional values can be presented by a single glyph(1/2, 3/4...etc)
     AppendUnitName = 0x400     // indicates that the numeric expression can be followed by the unit name
     };
 
