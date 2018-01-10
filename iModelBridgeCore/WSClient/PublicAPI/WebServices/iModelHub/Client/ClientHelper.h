@@ -42,8 +42,9 @@ private:
         : m_clientInfo(clientInfo), m_localState(ls), m_customHandler(customHandler){}
 public:
     //! Create or update the singleton instance.
-    //! @param clientInfo   Client information.
-    //! @param ls           Local storage.
+    //! @param clientInfo       Client information.
+    //! @param ls               Local storage.
+    //! @param customHandler    Custom HTTP handler.
     //! @return the singleton instance.
     IMODELHUBCLIENT_EXPORT static ClientHelper* Initialize(ClientInfoPtr clientInfo, IJsonLocalState* ls = nullptr, IHttpHandlerPtr customHandler = nullptr);
 
