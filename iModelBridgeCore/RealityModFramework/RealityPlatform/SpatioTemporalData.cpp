@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/SpatioTemporalData.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,15 +33,12 @@ SpatialEntityDatasetPtr SpatialEntityDataset::CreateFromJson(Utf8CP data)
         return dataset;
 
     // Required informations to get.
-    Utf8String identifier;
-    Utf8String name;
-    Utf8String resolutionStr;
     Utf8String footprintStr;
     Utf8String classification;
 
     DateTime date;
-    double resolution;
-    bvector<GeoPoint2d> footprint;
+
+    SpatialEntityPtr sePtr;
 
     // Loop through all data and get required informations.
     for (const auto& instance : root["instances"])
@@ -51,75 +48,99 @@ SpatialEntityDatasetPtr SpatialEntityDataset::CreateFromJson(Utf8CP data)
 
         const Json::Value properties = instance["properties"];
 
-        // Id
-        (properties.isMember("Id") && !properties["Id"].isNull()) ? identifier = properties["Id"].asString() : identifier = "";
-            
+        sePtr = SpatialEntity::Create();
+
+        if (properties.isMember("Id") && !properties["Id"].isNull())
+            sePtr->SetIdentifier(Utf8CP(properties["Id"].asString().c_str()));
+
         // Name
-        (properties.isMember("Name") && !properties["Name"].isNull()) ? name = properties["Name"].asString() : name = "";
+        if (properties.isMember("Name") && !properties["Name"].isNull())
+            sePtr->SetName(Utf8CP(properties["Name"].asString().c_str()));
 
-        // Date
-        date = DateTime();
-        if (properties.isMember("Date") && !properties["Date"].isNull())
-            DateTime::FromString(date, properties["Date"].asCString());            
+        // Dataset
+        if (properties.isMember("Dataset") && !properties["Dataset"].isNull())
+            sePtr->SetDataset(Utf8CP(properties["Dataset"].asString().c_str()));
 
-        // Resolution
-        resolution = DBL_MAX/1000.0;
-        if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())
-            {
-            resolutionStr = properties["ResolutionInMeters"].asString();
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(resolutionStr.c_str(), "x", tokens);
-            BeAssert(2 == tokens.size());
-            if (2 == tokens.size()) 
-                {
-                // Convert to double.
-                double resX = strtod(tokens[0].c_str(), NULL);
-                double resY = strtod(tokens[1].c_str(), NULL);
+        // Description
+        if (properties.isMember("Description") && !properties["Description"].isNull())
+            sePtr->SetDescription(Utf8CP(properties["Description"].asString().c_str()));
 
-                resolution = sqrt(resX * resY);
-                }
-            }
-
-        // Footprint
-        footprint = bvector<GeoPoint2d>();
-        if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
-            {
-            // Convert Utf8String to GeoPoint2d vector. 
-            // The string should look like this:
-            // "{ \"points\" : [[-122.0,35.9],[-122.0,37.0],[-120.9,37.0],[-120.9,35.9],[-122.0,35.9]], \"coordinate_system\" : \"4326\" }"
-            footprintStr = properties["Footprint"].asString();
-            
-            // Extract points.
-            footprintStr = footprintStr.substr(footprintStr.find_first_of("["), footprintStr.find_last_of("]") - footprintStr.find_first_of("["));
-            size_t delimiterPos = 0;
-            while (Utf8String::npos != (delimiterPos = footprintStr.find("[")))
-                footprintStr.erase(delimiterPos, 1);
-            while (Utf8String::npos != (delimiterPos = footprintStr.find("]")))
-                footprintStr.erase(delimiterPos, 1);
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(footprintStr.c_str(), ",", tokens);
-            BeAssert(10 == tokens.size()); // 5 points making the box (first point == last point).  
-
-            // Convert to double.
-            for (size_t i = 0; i < tokens.size(); i += 2)
-                {
-                GeoPoint2d pt;
-                pt.longitude = strtod(tokens[i].c_str(), NULL);
-                pt.latitude = strtod(tokens[i + 1].c_str(), NULL);
-
-                footprint.push_back(pt);
-                }
-            }
+        // DataType
+        if (properties.isMember("DataSourceType") && !properties["DataSourceType"].isNull())
+            sePtr->SetDataType(Utf8CP(properties["DataSourceType"].asString().c_str()));
+        else if (properties.isMember("Type") && !properties["Type"].isNull())
+            sePtr->SetDataType(Utf8CP(properties["Type"].asString().c_str()));
 
         // Classification
-        (properties.isMember("Classification") && !properties["Classification"].isNull()) ? classification = properties["Classification"].asString() : classification = "";
+        if (properties.isMember("Classification") && !properties["Classification"].isNull())
+            classification = properties["Classification"].asString();
+        else 
+            classification = "";
+        sePtr->SetClassificationByTag(classification.c_str());
 
+        // Thumbnail URL
+        if (properties.isMember("ThumbnailURL") && !properties["ThumbnailURL"].isNull())
+            sePtr->SetThumbnailURL(Utf8CP(properties["ThumbnailURL"].asString().c_str()));
 
+        // MetadataURL
+        if (properties.isMember("MetadataURL") && !properties["MetadataURL"].isNull())
+            {
+            if (sePtr->GetMetadataCP() == NULL)
+                {
+                SpatialEntityMetadataPtr metadata = SpatialEntityMetadata::Create();
+                sePtr->SetMetadata(metadata.get());
+                }
+
+            sePtr->GetMetadataP()->SetMetadataUrl(Utf8CP(properties["MetadataURL"].asString().c_str()));
+            }
+
+        if (properties.isMember("AccuracyInMeters") && !properties["AccuracyInMeters"].isNull())
+            sePtr->SetAccuracy(Utf8CP(properties["AccuracyInMeters"].asString().c_str()));
+
+        // Provider
+        if (properties.isMember("DataProvider") && !properties["DataProvider"].isNull())
+            sePtr->SetProvider(Utf8CP(properties["DataProvider"].asString().c_str()));
+
+        // ProviderName
+        if (properties.isMember("DataProviderName") && !properties["DataProviderName"].isNull())
+            sePtr->SetProviderName(Utf8CP(properties["DataProviderName"].asString().c_str()));
+
+        // Visibility
+        if (properties.isMember("Visibility") && !properties["Visibility"].isNull())
+            sePtr->SetVisibilityByTag(Utf8CP(properties["Visibility"].asString().c_str()));
+
+        // Date
+        if (properties.isMember("Date") && !properties["Date"].isNull())
+            {
+            DateTime::FromString(date, properties["Date"].asCString());
+            sePtr->SetDate(date);
+            }
+        else if (properties.isMember("CreatedTimestamp") && !properties["CreatedTimestamp"].isNull())
+            {
+            DateTime::FromString(date, properties["CreatedTimestamp"].asCString());
+            sePtr->SetDate(date);
+            }
+
+        //// Approximate file size
+        if (properties.isMember("FileSize") && !properties["FileSize"].isNull())
+            sePtr->SetApproximateFileSize(std::stoi(properties["FileSize"].asString().c_str()));
+        else if (properties.isMember("Size") && !properties["Size"].isNull())
+            sePtr->SetApproximateFileSize(properties["Size"].asInt());
+
+        // Resolution
+        if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())
+            sePtr->SetResolution(Utf8CP(properties["ResolutionInMeters"].asString().c_str()));
+
+        // Footprint
+        bvector<GeoPoint2d> footprint = bvector<GeoPoint2d>();
+        if (properties.isMember("Footprint") && !properties["Footprint"].isNull())
+            sePtr->SetFootprintString(properties["Footprint"].asString().c_str());
+        
         // Add data to corresponding group.
         if (classification.EqualsI("Imagery"))
-            dataset->m_imageryGroup.push_back(SpatialEntity::Create(identifier, date, resolutionStr, footprint, name)); //, properties));
+            dataset->m_imageryGroup.push_back(sePtr);
         else if (classification.EqualsI("Terrain"))
-            dataset->m_terrainGroup.push_back(SpatialEntity::Create(identifier, date, resolutionStr, footprint, name)); //, properties));
+            dataset->m_terrainGroup.push_back(sePtr);
         }
 
     return dataset;

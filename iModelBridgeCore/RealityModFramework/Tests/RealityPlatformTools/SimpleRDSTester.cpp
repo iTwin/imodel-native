@@ -75,6 +75,19 @@ TEST_F(SimpleRDSFixture, BuddiTest)
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  01/2018
 //=====================================================================================
+/*TEST_F(SimpleRDSFixture, RDSRequestManagerTest)
+    {
+    RDSRequestManager::Setup("");
+
+    ASSERT_TRUE(!RealityDataService::GetServerName().empty());
+    ASSERT_TRUE(!RealityDataService::GetWSGProtocol().empty());
+    ASSERT_EQ(RealityDataService::GetRepoName(), "S3MXECPlugin--Server");
+    ASSERT_EQ(RealityDataService::GetSchemaName(), "S3MX");
+    }*/
+
+//=====================================================================================
+//! @bsimethod                                  Spencer.Mason                  01/2018
+//=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedNavNodeTest)
     {
     Utf8String schema = "schema"; 

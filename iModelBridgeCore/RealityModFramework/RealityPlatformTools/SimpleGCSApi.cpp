@@ -63,7 +63,7 @@ void GCSRequestManager::Setup(Utf8String serverUrl)
 
     RawServerResponse versionResponse = RawServerResponse();
     Utf8String version = server.GetVersion(versionResponse);
-    if (versionResponse.responseCode > 399)
+    if (versionResponse.responseCode > 399 || version.empty())
         {
         ReportError("cannot reach server");
         return;

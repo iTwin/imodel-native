@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/SpatialEntity.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -218,7 +218,7 @@ public:
     //! A formated string that contains a list of keywords applicable to the data.
     //! Keywords must be semi-colon separated but can contain space.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetKeywords() const;
-    REALITYDATAPLATFORM_EXPORT void SetKeywords(Utf8CP termOfUse);
+    REALITYDATAPLATFORM_EXPORT void SetKeywords(Utf8CP keywords);
 
     //! Get/Set
     //! A string key indicating the format of the metadata referenced by the MetadataURL.

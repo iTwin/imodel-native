@@ -745,6 +745,14 @@
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CrawlerLib" SourceName="Delivery/UnitTests/Objects/CrawlerLib"/>
         </Bindings>
     </Part>
+    
+    <Part Name="SpatioTemporalSelectorTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=SpatioTemporalSelector">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="SpatioTemporalSelector"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="SpatioTemporalSelector" SourceName="Delivery/UnitTests/Objects/SpatioTemporalSelector"/>
+        </Bindings>
+    </Part>
 
     <!-- Define a test collection product -->
     <Part Name="Tests">
@@ -752,6 +760,7 @@
         <SubPart PartName="RealityPlatformToolsUnitTests"/>
         <SubPart PartName="RealityAdminUnitTests"/>
         <SubPart PartName="CrawlerLibUnitTests"/>
+        <SubPart PartName="SpatioTemporalSelectorTests"/>
     </Part>
 
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
