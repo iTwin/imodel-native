@@ -13,6 +13,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct ECEnumerationTest : ECTestFixture {};
+struct ECEnumeratorTest : ECTestFixture {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Caleb.Shafer                          06/2017
@@ -241,64 +242,6 @@ TEST_F(ECEnumerationTest, ExpectSuccessWhenRoundtripEnumerationUsingString)
     EXPECT_STREQ("string", propertyEnumeration->GetTypeName().c_str());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Victor.Cushman                          12/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, TestEnumeratorSetInteger)
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    ASSERT_TRUE(schema.IsValid());
-
-    ECEnumerationP intEnumeration;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(intEnumeration, "IntegerTestEnumeration", PrimitiveType::PRIMITIVETYPE_Integer));
-    ASSERT_TRUE(intEnumeration != nullptr);
-    ECEnumeratorP intEnumerator0;
-    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intEnumerator0, "Enumerator0", 3));
-    ECEnumeratorP intEnumerator1;
-    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intEnumerator1, "Enumerator1", 4));
-
-    EXPECT_EQ(ECObjectsStatus::Success, intEnumerator1->SetInteger(5)) << "Setting a type-matched enumerator to a unique value should succeed.";
-    EXPECT_NE(ECObjectsStatus::Success, intEnumerator1->SetInteger(intEnumerator0->GetInteger())) << "Setting a type-matched enumerator to a non-unique value should fail.";
-
-    ECEnumerationP strEnumeration;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(strEnumeration, "StringTestEnumeration", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_TRUE(strEnumeration != nullptr);
-    ECEnumeratorP strEnumerator;
-    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator, "StringEnumerator", "foo"));
-
-    EXPECT_NE(ECObjectsStatus::Success, strEnumerator->SetInteger(9)) << "Setting a type-mismatched enumerator should fail.";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Victor.Cushman                          12/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECEnumerationTest, TestEnumeratorSetString)
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    ASSERT_TRUE(schema.IsValid());
-
-    ECEnumerationP strEnumeration;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(strEnumeration, "StringTestEnumeration", PrimitiveType::PRIMITIVETYPE_String));
-    ASSERT_TRUE(strEnumeration != nullptr);
-    ECEnumeratorP strEnumerator0;
-    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator0, "Enumerator0", "foo"));
-    ECEnumeratorP strEnumerator1;
-    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator1, "Enumerator1", "bar"));
-
-    EXPECT_EQ(ECObjectsStatus::Success, strEnumerator1->SetString("baz")) << "Setting a type-matched enumerator to a unique value should succeed.";
-    EXPECT_NE(ECObjectsStatus::Success, strEnumerator1->SetString(strEnumerator0->GetString().c_str())) << "Setting a type-matched enumerator to a non-unique value should fail.";
-
-    ECEnumerationP intEnumeration;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(intEnumeration, "IntegerTestEnumeration", PrimitiveType::PRIMITIVETYPE_Integer));
-    ASSERT_TRUE(intEnumeration != nullptr);
-    ECEnumeratorP intInumerator;
-    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intInumerator, "IntegerEnumerator", 3));
-
-    EXPECT_NE(ECObjectsStatus::Success, intInumerator->SetString("qux")) << "Setting a type-mismatched enumerator should fail.";
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -431,6 +374,84 @@ TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          12/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumeratorTest, TestEnumeratorSetString)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationP strEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(strEnumeration, "StringTestEnumeration", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_TRUE(strEnumeration != nullptr);
+    ECEnumeratorP strEnumerator0;
+    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator0, "Enumerator0", "foo"));
+    ECEnumeratorP strEnumerator1;
+    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator1, "Enumerator1", "bar"));
+
+    EXPECT_EQ(ECObjectsStatus::Success, strEnumerator1->SetString("baz")) << "Setting a type-matched enumerator to a unique value should succeed.";
+    EXPECT_NE(ECObjectsStatus::Success, strEnumerator1->SetString(strEnumerator0->GetString().c_str())) << "Setting a type-matched enumerator to a non-unique value should fail.";
+
+    ECEnumerationP intEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(intEnumeration, "IntegerTestEnumeration", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(intEnumeration != nullptr);
+    ECEnumeratorP intInumerator;
+    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intInumerator, "IntegerEnumerator", 3));
+
+    EXPECT_NE(ECObjectsStatus::Success, intInumerator->SetString("qux")) << "Setting a type-mismatched enumerator should fail.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          12/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumeratorTest, TestEnumeratorSetInteger)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECEnumerationP intEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(intEnumeration, "IntegerTestEnumeration", PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(intEnumeration != nullptr);
+    ECEnumeratorP intEnumerator0;
+    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intEnumerator0, "Enumerator0", 3));
+    ECEnumeratorP intEnumerator1;
+    ASSERT_EQ(ECObjectsStatus::Success, intEnumeration->CreateEnumerator(intEnumerator1, "Enumerator1", 4));
+
+    EXPECT_EQ(ECObjectsStatus::Success, intEnumerator1->SetInteger(5)) << "Setting a type-matched enumerator to a unique value should succeed.";
+    EXPECT_NE(ECObjectsStatus::Success, intEnumerator1->SetInteger(intEnumerator0->GetInteger())) << "Setting a type-matched enumerator to a non-unique value should fail.";
+
+    ECEnumerationP strEnumeration;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(strEnumeration, "StringTestEnumeration", PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_TRUE(strEnumeration != nullptr);
+    ECEnumeratorP strEnumerator;
+    ASSERT_EQ(ECObjectsStatus::Success, strEnumeration->CreateEnumerator(strEnumerator, "StringEnumerator", "foo"));
+
+    EXPECT_NE(ECObjectsStatus::Success, strEnumerator->SetInteger(9)) << "Setting a type-mismatched enumerator should fail.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumeratorTest, DetermineEnumeratorName)
+    {
+    Utf8String enumerationName("TestEnumeration");
+    // String enumerator
+    {
+    Utf8String enumeratorValueA("TestEnumeratorValueA");
+    Utf8CP enumeratorValueB = "TestEnumeratorValueB";
+    EXPECT_EQ("TestEnumeratorValueA", ECEnumerator::DetermineName(enumerationName, enumeratorValueA.c_str(), nullptr));
+    EXPECT_EQ("TestEnumeratorValueB", ECEnumerator::DetermineName(enumerationName, enumeratorValueB, nullptr));
+    }
+    // Integer enumerator
+    {
+    int32_t enumeratorValue = 42;
+    EXPECT_EQ("TestEnumeration42", ECEnumerator::DetermineName(enumerationName, nullptr, &enumeratorValue));
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

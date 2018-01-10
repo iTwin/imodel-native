@@ -278,19 +278,10 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
         }
     else
         {
-        // For schema versions less than ECVersion::V3_2 the enumerator name attribute required as of ECVersion::V3_2 is constructed from:
-        // (1) The enumerator display label if the enumerator display label exists for the enumeration.
-        // (2) <enumeration name> + <enumerator value> if the enumerator display label does not exist for the enumeration.
-        if (enumeratorHasDisplayLabel)
-            enumeratorName = ECNameValidation::EncodeToValidName(enumeratorDisplayLabel);
-        else
-            {
-            if (PrimitiveType::PRIMITIVETYPE_Integer == primitiveType)
-                enumeratorName.Sprintf("%s%" PRId32, enumeration->GetName().c_str(), enumeratorValueInteger);
-            else if (PrimitiveType::PRIMITIVETYPE_String == primitiveType)
-                enumeratorName = enumeration->GetName() + enumeratorValueString;
-            enumeratorName = ECNameValidation::EncodeToValidName(enumeratorName);
-            }
+        if (PrimitiveType::PRIMITIVETYPE_Integer == primitiveType)
+            enumeratorName = ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &enumeratorValueInteger);
+        else if (PrimitiveType::PRIMITIVETYPE_String == primitiveType)
+            enumeratorName = ECEnumerator::DetermineName(enumeration->GetName(), enumeratorValueString.c_str(), nullptr);
         }
 
     ECEnumeratorP enumerator = nullptr;
@@ -548,6 +539,21 @@ ECObjectsStatus ECEnumerator::SetString(Utf8CP string)
 
     m_stringValue = string;
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                 01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String ECEnumerator::DetermineName(Utf8StringCR enumerationName, Utf8CP enumeratorValueString, int32_t const* enumeratorValueInteger)
+    {
+    Utf8String name;
+    if (nullptr != enumeratorValueString)
+        name.assign(enumeratorValueString);
+    else if (nullptr != enumeratorValueInteger)
+        name.Sprintf("%s%" PRId32, enumerationName.c_str(), *enumeratorValueInteger);
+    else
+        BeAssert(false && "All enumerator value pointers were set to nullptr.");
+    return ECNameValidation::EncodeToValidName(name);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
