@@ -168,7 +168,7 @@ public:
 
 
     virtual void    GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo, 
-                                        const HVEShape&          pi_rShape);
+                                        const HVEShape&          pi_rShape) override;
 
     // Message Handler...
     bool           NotifyContentChanged (const HMGMessage& pi_rMessage);
