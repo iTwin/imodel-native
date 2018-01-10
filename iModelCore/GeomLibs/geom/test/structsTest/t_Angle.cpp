@@ -76,25 +76,26 @@ TEST(Printf,Pound)
 #define N2( x ) ((x)*(x))               // pow( ) is a performance issue
 #define N3( x ) ((x)*(x)*(x))           // pow( ) is a performance issue
 
-// newton iteration to find x so that     x + gamma * x^5 - target = 0
-ValidatedDouble RunGamma5Newton (double target, double gamma)
+// newton iteration to find x so that     f (x,a) ~= target
+template<typename T>
+ValidatedDouble RunNewton (double target, bool (*function)(double x, T &a, double &f, double &dfdx), T a)
     {
     double x = target;
     double dx = 10000.0;
     uint32_t iterations = 0;
     uint32_t numConverged = 0;
-    static double s_absTol = 0.000001;
+    static double s_absTol = 1.0e-10;
+    static double s_relTol = 1.0e-10;
+    double tolerance = s_absTol + s_relTol * fabs (target);
     while (iterations < 10)
         {
-        double x2 = x * x;
-        double x4 = x2 * x2;
-        double fx = gamma * x4 * x + x - target;
-        double fdashx = 5.0 * gamma * x4 + 1.0;
-        if (fdashx == 0.0)
+        double f, dfdx;
+        if (!function (x, a, f, dfdx)
+            || dfdx == 0.0)
             return ValidatedDouble (x, false);
-        dx = fx / fdashx;
+        dx = (f - target) / dfdx;
         x = x - dx;
-        if (fabs (dx) < s_absTol)
+        if (fabs (dx) < tolerance)
             {
             numConverged++;
             if (numConverged >= 2)
@@ -107,18 +108,48 @@ ValidatedDouble RunGamma5Newton (double target, double gamma)
     return ValidatedDouble (x, false);
     }
 
+bool cb_XPlusGamma5X (double x, double &gamma, double &f, double &dfdx)
+    {
+    double x2 = x * x;
+    double x4 = x2 * x2;
+    f = x * (1.0 + gamma * x4);
+    dfdx = 1.0 + 5.0 * gamma * x4;
+    return true;
+    }
+struct CubicSpiralVirtuals {
+virtual bool evaluateProjectedCoordinate
+(
+double xIn,
+double &x,      //
+double &y,
+double &t,
+double &r,
+double &directCurvature
+) = 0;
+};
+
+struct CzechCubicSpiral : CubicSpiralVirtuals {
 #define LENGTH_TOLERANCE           0.00000001
 #define RADIUS_TOLERANCE           0.000000001
 #define CENTER_TO_CENTER_TOLERANCE 0.000000001
 #define LIKE_SIGNS(a,b) (a * b > 0.0)
 static int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo, double *X )
-{
+    {
     int cycles = 0, idx;
     double lamda, gamma, x[ 3 ], xo[ 3 ], dif[ 3 ];
 
     lamda = asin( Lp / ( 2.0 * R ) );
     gamma = 1.0 / cos( lamda );
+    double gamma1 = gamma * gamma / (40.0 * R * R * Lp * Lp);
+    static int s_select = 1;
+    if (s_select == 1)
+        {
+        *X = RunNewton (Xo, cb_XPlusGamma5X, gamma1);
+        return SUCCESS;
+        }
 
+    // classic binary search.
+    // for input Xo=0, this does produces the middle of an interval with its left at origin -- does NOT return the obvious 0.0!
     x[ 0 ] = 0.0;
     xo[ 0 ] = x[ 0 ] + pow( gamma, 2 ) * pow( x[ 0 ], 5 ) / ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
     dif[ 0 ] = xo[ 0 ] - Xo;
@@ -126,7 +157,7 @@ static int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo,
     x[ 2 ] = Lp;
     xo[ 2 ] = x[ 2 ] + pow( gamma, 2 ) * pow( x[ 2 ], 5 ) / ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
     dif[ 2 ] = xo[ 2 ] - Xo;
-
+    
     while( ( fabs( xo[ 0 ] - xo[ 2 ] ) > LENGTH_TOLERANCE ) && ( ++cycles < 100 ) )
     {
         x[ 1 ] = .5 * ( x[ 0 ] + x[ 2 ] );
@@ -144,20 +175,19 @@ static int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo,
     }
 
     *X = .5 * ( x[ 0 ] + x[ 2 ] );
-
     return( SUCCESS );
-}
+    }
 
 static int aecAlg_computeCzechLoFromRLp( double R, double lp, double *lo, double *lamda, double *gamma )
-{
+    {
     *lamda = asin( lp / ( 2. * R ) );
     *gamma = 1. / cos( *lamda );
     *lo = lp + *gamma * *gamma * ( ( lp * lp * lp ) / ( 40. * R * R ) );
 
     return( SUCCESS );
-}
+    }
 
-void DistanceAlongToXYTR (double R, double spiralLength, double pseudoLength, double partialLength, double &x, double &y, double &t, double &r, double &directCurvature)
+static void DistanceAlongToXYTR (double R, double spiralLength, double pseudoLength, double partialLength, double &x, double &y, double &t, double &r, double &directCurvature)
     {
     double signage = 1.0;
     double quark, lambda, gamma;
@@ -183,10 +213,81 @@ void DistanceAlongToXYTR (double R, double spiralLength, double pseudoLength, do
 
     double xFraction = x / totalTangent;
     t = atan (tan (lambda) * xFraction * xFraction);
-    r = 1.0 / (signage * x / (R * totalTangent));
+    if (x == 0.0)
+        r = 0.0;
+    else
+        r = 1.0 / (signage * x / (R * totalTangent));
+    }
+// INSTANCE SECTION
+double m_R;     // exit radius
+double m_spiralArcLength;  // length along true spiral
+double m_projectedLength;   // length along axis
 
+CzechCubicSpiral (double endRadius, double projectedLength, double arcLength) :
+    m_R (endRadius), m_spiralArcLength (arcLength), m_projectedLength (projectedLength)
+    {
+    }
+bool evaluateProjectedCoordinate (
+double xIn,
+double &x,      //
+double &y,
+double &t,
+double &r,
+double &directCurvature
+) override
+    {
+    DistanceAlongToXYTR (m_R, m_projectedLength, m_spiralArcLength, xIn, x, y, t, r, directCurvature);
+    return true;
+    }
+};
+
+struct NSWCubicSpiral : CubicSpiralVirtuals {
+// INSTANCE SECTION
+double m_R;     // exit radius
+double m_spiralArcLength;  // length along true spiral
+double m_projectedLength;   // length along axis
+// This is the APPROXIMATE mapping from "distance along the curve" back to the x axis
+double DistanceAlongToX (double s)
+    {
+    return s * (1.0 - s*s*s*s / (40.0 * m_R * m_R * m_spiralArcLength * m_spiralArcLength));
+    }
+double SToY (double s)
+    {
+    return s * s * s / (6.0 * m_R * m_spiralArcLength);
+    }
+double XTodYdx (double x)
+    {
+    return x * x / (2.0 * m_R * m_spiralArcLength);
+    }
+double SToR (double s)
+    {
+    double curvature0 = 0.0;
+    double curvature1 = 1.0 / (m_R);
+    double curvatureX = DoubleOps::Interpolate (curvature0, s / m_spiralArcLength, curvature1);
+    return curvatureX == 0.0 ? 0.0 : 1.0 / curvatureX;
+    }
+NSWCubicSpiral (double endRadius, double arcLength) :
+    m_R (endRadius), m_spiralArcLength (arcLength)
+    {
+    m_projectedLength = DistanceAlongToX (arcLength);
     }
 
+bool evaluateProjectedCoordinate (
+double s,
+double &x,      //
+double &y,
+double &t,
+double &r,
+double &directCurvature
+) override
+    {
+    x = DistanceAlongToX (s);
+    y = SToY (s);
+    t = s * s / ( 2.0 * m_R * m_spiralArcLength);
+    r = SToR (s);    // should that go through gamma correction for fraction?
+    return true;
+    }
+};
 
 /*-------------------------------------------------------------------------+
 |                                                                          |
@@ -267,7 +368,7 @@ TEST(CzechSpiral,NewtonStep)
     {
     static double s_uorsPerMeter = 1.0; //10000.0;
     static double s_smallCurvature = 1.0e-14;
-    double flagHeight = 0.5 * s_uorsPerMeter;
+    double flagHeight = 2.0 * s_uorsPerMeter;
     // simulate uor computations:
     //    convert metric sizes to uors
     //    use the Check:: transform to scale back to meters for output to dgnjs file
@@ -280,30 +381,42 @@ TEST(CzechSpiral,NewtonStep)
     bvector<double> radiusMeters {1000, 400, 200 };
     bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
     bvector<double> edgeCount {15, 25, 35};
-    for (size_t i = 0; i < radiusMeters.size (); i++)
+    for (int select : {0,1})
         {
-        double radius1 = radiusMeters[i] * s_uorsPerMeter;
-        double pseudoLength = pseudoLengthMeters[i] * s_uorsPerMeter;
-        double distanceStep = spiralLength / edgeCount[i];
-        double curvature1 = 1.0 / radius1;
-        double averageRadius = 2.0 * radius1;
-        double averageCircleRadians = spiralLength / averageRadius;
-        double directCurvature = 0;
-        bvector<DPoint3d>xy;
-        double xB = 0, yB = 0, tB = 0, rB = 0;
-
-        for (double distanceAlong = 0.0; distanceAlong <= spiralLength * 1.007; distanceAlong += distanceStep)
+        yShift = 0.0;
+        for (size_t i = 0; i < radiusMeters.size (); i++)
             {
-            DistanceAlongToXYTR (radius1, spiralLength, pseudoLength, distanceAlong, xB, yB, tB, rB, directCurvature);
-            xy.push_back (DPoint3d::From (distanceAlong, yB + yShift));
-            }
-        GEOMAPI_PRINTF(" final x,y,t,r %20.15le %20.15le   %le %le  r1 %le\n", xB, yB, tB, rB, directCurvature < s_smallCurvature ? 0.0 : 1.0 / directCurvature);
-        auto last = xy.back ();
-        auto xyFlag = xy.back () + DVec3d::From (0, flagHeight);
-        xy.push_back (xyFlag);
-        Check::SaveTransformed (xy);
+            double radius1 = radiusMeters[i] * s_uorsPerMeter;
+            double pseudoLength = pseudoLengthMeters[i] * s_uorsPerMeter;
+            CubicSpiralVirtuals *spiral = nullptr;
+            if (select == 1)
+                spiral = new NSWCubicSpiral (radius1, spiralLength);
+            else
+                spiral = new CzechCubicSpiral (radius1, spiralLength, pseudoLength);
 
-        Check::SaveTransformed (DSegment3d::From (0,yShift,0, last.x, yShift,0));
+            double distanceStep = spiralLength / edgeCount[i];
+            double curvature1 = 1.0 / radius1;
+            double averageRadius = 2.0 * radius1;
+            double averageCircleRadians = spiralLength / averageRadius;
+            double directCurvature = 0;
+            bvector<DPoint3d>xy;
+            double xB = 0, yB = 0, tB = 0, rB = 0;
+
+            for (double distanceAlong = 0.0; distanceAlong <= spiralLength * 1.007; distanceAlong += distanceStep)
+                {
+                //double xB1, yB1, tB1, rB1, directCurvature1;
+                //spiral->DistanceAlongToXYTR (radius1, spiralLength, pseudoLength, distanceAlong, xB1, yB1, tB1, rB1, directCurvature1);
+                spiral->evaluateProjectedCoordinate (distanceAlong, xB, yB, tB, rB, directCurvature);
+                xy.push_back (DPoint3d::From (
+                    select == 0 ? distanceAlong : xB, yB + yShift));
+                }
+            GEOMAPI_PRINTF(" final x,y,t,r %20.15le %20.15le   %le %le  r1 %le\n", xB, yB, tB, rB, directCurvature < s_smallCurvature ? 0.0 : 1.0 / directCurvature);
+            auto last = xy.back ();
+            auto xyFlag = xy.back () + DVec3d::From (flagHeight * select, flagHeight);
+            xy.push_back (xyFlag);
+            Check::SaveTransformed (xy);
+    
+            Check::SaveTransformed (DSegment3d::From (0,yShift,0, last.x, yShift,0));
 #ifdef saveArc
         auto arc = DEllipse3d::From (
                 0, yShift + averageRadius, 0,
@@ -312,7 +425,8 @@ TEST(CzechSpiral,NewtonStep)
                 0.0, averageCircleRadians);
         Check::SaveTransformed (arc);
 #endif
-        yShift += 50.0 * s_uorsPerMeter;
+            yShift += 50.0 * s_uorsPerMeter;
+            }
         }
     Check::ClearGeometry ("CzechSpiral.NewtonStep");
     Check::SetTransform (transform0);
