@@ -271,30 +271,42 @@ Json::Value TestUtils::ViewStateLookAt(Utf8String params) {
 
 Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 	Json::Value props(Json::Value::From(params));
-	if (!props.isMember("geom") || !props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray())
+	if (!props.isMember("geom") || \
+		!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() || \
+		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray())
 		return Json::Value();
 
-	// Set up the original geometry to test against de-serialized geometry`
+	// Set up the original geometry to test against de-serialized geometry
 	DEllipse3d origCurve;
 	origCurve.InitFromVectors(DPoint3d::From(1, 2, 3), DVec3d::From(0, 0, 2), DVec3d::From(0, 3, 0), 0, Angle::TwoPi());
+	
 	CurveVectorPtr origCurveVect = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_ParityRegion);
 	CurveVectorPtr loop1 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(DEllipse3d::FromScaledRotMatrix(DPoint3d::From(-5, 0, 0), RotMatrix::FromRowValues(2, 0, 0, 0, 2, 0, 0, 0, 1), 1, 1, 0, Angle::TwoPi())));
 	CurveVectorPtr loop2 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(DEllipse3d::FromScaledRotMatrix(DPoint3d::From(-5, 0, 0), RotMatrix::FromRowValues(1, 0, 0, 0, 1, 0, 0, 0, 1), 1, 1, 0, Angle::TwoPi())));
 	origCurveVect->Add(loop1);
 	origCurveVect->Add(loop2);
+	
 	ISolidPrimitivePtr origSolid = ISolidPrimitive::CreateDgnCone(DgnConeDetail::DgnConeDetail(DPoint3d::From(0, 0.34, 0), DPoint3d::From(0, 0, 1030.0), DVec3d::From(-1, 0, 0), DVec3d::From(-0, -0.9999999455179609, -0.00033009706939427836), 1.5, 1.5, true));
-	bvector<DPoint3d> pointArr;
+	
+	bvector<DPoint3d> bSurfacePts;
 	int numSurfacePts = props["numSurfacePts"].asInt();
 	Json::Value surfacePts = props["bsurfacePts"];
-	for (int i = 0; i < numSurfacePts; i++) {
-		pointArr.push_back(DPoint3d::From(surfacePts[i][0].asInt(), surfacePts[i][1].asInt(), surfacePts[i][2].asInt()));
-	}
+	for (int i = 0; i < numSurfacePts; i++)
+		bSurfacePts.push_back(DPoint3d::From(surfacePts[i][0].asDouble(), surfacePts[i][1].asDouble(), surfacePts[i][2].asDouble()));
 	MSBsplineSurfacePtr origSurface = MSBsplineSurface::CreatePtr();
-	origSurface->InitFromPointsAndOrder(3, 4, 4, 6, &pointArr[0]);
-	IFacetOptionsPtr options = IFacetOptions::Create();
-	IPolyfaceConstructionPtr faceBuilder = IPolyfaceConstruction::Create(*options);
-	faceBuilder->AddSolidPrimitive(*origSolid);
-	PolyfaceHeaderPtr origPolyface = faceBuilder->GetClientMeshPtr();
+	origSurface->InitFromPointsAndOrder(3, 4, 4, 6, &bSurfacePts[0]);
+	
+	int numPolyPts = props["numPolyPts"].asInt();
+	Json::Value polyPts = props["polyPts"];
+	PolyfaceHeaderPtr origPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+	for (int i = 0; i < numPolyPts; i++)
+		origPolyface->Point().push_back(DPoint3d::From(polyPts[i][0].asDouble(), polyPts[i][1].asDouble(), polyPts[i][2].asDouble()));
+	for (int i = 1; i < numPolyPts - 1; i++) {
+		origPolyface->PointIndex().push_back(i);
+		origPolyface->PointIndex().push_back(i + 1);
+		origPolyface->PointIndex().push_back(i + 2);
+		origPolyface->PointIndex().push_back(0);
+	}
 
 
 	// Get bytebuffer
@@ -347,10 +359,17 @@ Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 		case 5:		// Polyface
 		{
 			PolyfaceHeaderPtr polyface = geom->GetAsPolyfaceHeader();
-			/*
-			if (!polyface->IsSameStructureAndGeometry(*origPolyface, 0))
-				return "{}";
-			*/
+			DPoint3dCP nativePoints = origPolyface->GetPointCP();
+			DPoint3dCP jsPoints = polyface->GetPointCP();
+			for (size_t i = 0; i < numPolyPts; i++)
+				if (!nativePoints[i].IsEqual(jsPoints[i]))
+					return Json::Value();
+			size_t numIndexes = origPolyface->GetPointIndexCount();
+			int32_t const* nativeIndexes = origPolyface->GetPointIndexCP();
+			int32_t const* jsIndexes = polyface->GetPointIndexCP();
+			for (size_t i = 0; i < numIndexes; i++)
+				if (nativeIndexes[i] != jsIndexes[i])
+					return Json::Value();
 			break;
 		}
 		default:
@@ -368,7 +387,8 @@ Json::Value TestUtils::DeserializeGeometryStream(Utf8String params) {
 
 Json::Value TestUtils::BuildKnownGeometryStream(Utf8String params) {
 	Json::Value props(Json::Value::From(params));
-	if (!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray())
+	if (!props.isMember("bsurfacePts") || !props.isMember("numSurfacePts") || !props["bsurfacePts"].isArray() || \
+		!props.isMember("polyPts") || !props.isMember("numPolyPts") || !props["polyPts"].isArray())
 		return Json::Value();
 
 	// Set up the geometry to insert into the geometry stream
@@ -388,10 +408,18 @@ Json::Value TestUtils::BuildKnownGeometryStream(Utf8String params) {
 	}
 	MSBsplineSurfacePtr origSurface = MSBsplineSurface::CreatePtr();
 	origSurface->InitFromPointsAndOrder(3, 4, 4, 6, &pointArr[0]);
-	IFacetOptionsPtr options = IFacetOptions::Create();
-	IPolyfaceConstructionPtr faceBuilder = IPolyfaceConstruction::Create(*options);
-	faceBuilder->AddSolidPrimitive(*origSolid);
-	PolyfaceHeaderPtr origPolyface = faceBuilder->GetClientMeshPtr();
+	
+	int numPolyPts = props["numPolyPts"].asInt();
+	Json::Value polyPts = props["polyPts"];
+	PolyfaceHeaderPtr origPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
+	for (int i = 0; i < numPolyPts; i++)
+		origPolyface->Point().push_back(DPoint3d::From(polyPts[i][0].asDouble(), polyPts[i][1].asDouble(), polyPts[i][2].asDouble()));
+	for (int i = 1; i < numPolyPts - 1; i++) {
+		origPolyface->PointIndex().push_back(i);
+		origPolyface->PointIndex().push_back(i + 1);
+		origPolyface->PointIndex().push_back(i + 2);
+		origPolyface->PointIndex().push_back(0);
+	}
 
 	// Set up the GeometryBuilder
 	BeSQLite::DbResult status;
