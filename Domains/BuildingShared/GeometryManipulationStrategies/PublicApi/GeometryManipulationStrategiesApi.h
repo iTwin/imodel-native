@@ -35,6 +35,8 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineMetesAndBoundsPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsLengthPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsAnglePlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineStringPlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineStringPointsPlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineStringMetesAndBoundsPlacementStrategy)
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ElementManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ElementPlacementStrategy)
@@ -60,6 +62,8 @@ END_BUILDING_SHARED_NAMESPACE
 #include "ChildCurveVectorPlacementStrategy.h"
 #include "LinePlacementStrategy.h"
 #include "LineStringPlacementStrategy.h"
+#include "LineStringPointsPlacementStrategy.h"
+#include "LineStringMetesAndBoundsPlacementStrategy.h"
 #include "ArcPlacementStrategy.h"
 #include "ArcStartCenterPlacementStrategy.h"
 #include "ArcCenterStartPlacementStrategy.h"

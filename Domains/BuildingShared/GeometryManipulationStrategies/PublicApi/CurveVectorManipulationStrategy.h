@@ -56,6 +56,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _ResetDynamicKeyPoint() override;
 
         virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
+        virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _PopKeyPoint() override;

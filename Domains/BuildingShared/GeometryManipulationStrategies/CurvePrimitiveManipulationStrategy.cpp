@@ -29,6 +29,18 @@ void CurvePrimitiveManipulationStrategy::_AppendKeyPoint
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveManipulationStrategy::_AppendKeyPoints
+(
+    bvector<DPoint3d> const& newKeyPoints
+)
+    {
+    for (DPoint3dCR keyPoint : newKeyPoints)
+        _AppendKeyPoint(keyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 void CurvePrimitiveManipulationStrategy::_InsertKeyPoint

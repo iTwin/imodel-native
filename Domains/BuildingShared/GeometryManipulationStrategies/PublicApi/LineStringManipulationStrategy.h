@@ -20,14 +20,14 @@ struct LineStringManipulationStrategy : public CurvePrimitiveManipulationStrateg
         LineStringManipulationStrategy() : T_Super() {}
 
     protected:
-        virtual ICurvePrimitivePtr _FinishPrimitive() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
-        CurvePrimitiveManipulationStrategyPtr _Clone() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 
-        virtual bool _IsComplete() const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override { return true; }
 
-        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
 
     public:
         static LineStringManipulationStrategyPtr Create() { return new LineStringManipulationStrategy(); }

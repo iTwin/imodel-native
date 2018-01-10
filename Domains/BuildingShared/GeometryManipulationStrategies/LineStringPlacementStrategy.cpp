@@ -20,8 +20,7 @@ LineStringPlacementStrategyPtr LineStringPlacementStrategy::Create
     switch (strategyType)
         {
         case LineStringPlacementStrategyType::Points:
-            BeAssert(false && "Not implemented");
-            return nullptr;
+            return LineStringPointsPlacementStrategy::Create();
         case LineStringPlacementStrategyType::MetesAndBounds:
             BeAssert(false && "Not implemented");
             return nullptr;

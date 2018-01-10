@@ -67,6 +67,8 @@ $(o)LineStringManipulationStrategy$(oext) : $(_MakeFilePath)LineStringManipulati
 
 $(o)LineStringPlacementStrategy$(oext) : $(_MakeFilePath)LineStringPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringPlacementStrategy.h
 
+$(o)LineStringMetesAndBoundsPlacementStrategy$(oext) : $(_MakeFilePath)LineStringMetesAndBoundsPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringMetesAndBoundsPlacementStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
