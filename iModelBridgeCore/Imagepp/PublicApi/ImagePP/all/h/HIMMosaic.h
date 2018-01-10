@@ -169,7 +169,7 @@ public:
                                  bool           pi_Async = false) override;
 
     virtual void   GetRasterTileIDList(bvector<TileIdListInfo>& po_rTileIdListInfo,
-        const HVEShape&          pi_rShape);
+        const HVEShape&          pi_rShape) override;
 
     //:> Message Handlers
     bool NotifyEffectiveShapeChanged (const HMGMessage& pi_rMessage);
