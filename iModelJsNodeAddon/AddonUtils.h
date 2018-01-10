@@ -76,12 +76,12 @@ struct AddonUtils
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);
     static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const &inOpts);
+	static DgnDbStatus UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents);
 
     static BeSQLite::DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
     static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
-    static BeSQLite::DbResult ExecuteQuery(JsonValueR results, BeSQLite::EC::ECSqlStatement &stmt, JsonValueCR bindings);
     static Utf8StringCR GetLastECDbIssue();
     static BeSQLite::DbResult GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath);
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);

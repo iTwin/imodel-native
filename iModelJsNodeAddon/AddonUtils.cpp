@@ -520,27 +520,6 @@ BentleyStatus AddonUtils::JsonBinder::BindValues(ECSqlStatement& stmt, JsonValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-BeSQLite::DbResult AddonUtils::ExecuteQuery(JsonValueR results, ECSqlStatement& stmt, JsonValueCR bindings)
-    {
-    if (!bindings.isNull() && SUCCESS != JsonBinder::BindValues(stmt, bindings))
-        return BE_SQLITE_ERROR;
-
-    DbResult result;
-    results = Json::arrayValue;
-
-    while (BE_SQLITE_ROW == (result = stmt.Step()))
-        {
-        Json::Value row(Json::objectValue);
-        AddonUtils::GetRowAsJson(row, stmt);
-        results.append(row);
-        }
-
-    return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
 DbResult AddonUtils::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
     {
     if (!pathname.DoesPathExist())

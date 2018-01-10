@@ -287,6 +287,21 @@ DgnDbStatus AddonUtils::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Nate.Rex                        01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AddonUtils::UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents)
+	{
+#ifdef UNDEFINED_IDENTIFIER
+	auto& geolocation = dgndb.GeoLocation();
+	AxisAlignedBox3d extents;
+	extents.FromJson(newExtents);
+	geolocation.SetProjectExtents(extents);
+	return DgnDbStatus::Success;	// Is there a failure case here?
+#endif
+	return DgnDbStatus::BadRequest;
+	}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus AddonUtils::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)

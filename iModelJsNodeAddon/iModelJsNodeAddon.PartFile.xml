@@ -56,6 +56,7 @@
   -->
 
   <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_AS_IMODELJS_LIBRARY=1" >
+    <!-- Get the node-addon-api implementation from iModelJs, not from node! -->
     <SubPart PartName="iModelJs" PartFile="iModelJs" Repository="iModelJs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
@@ -68,7 +69,7 @@
   </Part>
   
   <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
-    <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
@@ -82,7 +83,7 @@
 
   <!-- NB: Keep this version number consistent with nodejs:node-gyp-electron -->
   <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
-    <SubPart PartName="electron-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api" />
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
@@ -96,7 +97,7 @@
   </Part>
 
   <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
-    <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
@@ -109,7 +110,7 @@
   </Part>
 
   <Part Name="iModelJsNodeAddonLib-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
-    <SubPart PartName="node-addon-api" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8_9">
