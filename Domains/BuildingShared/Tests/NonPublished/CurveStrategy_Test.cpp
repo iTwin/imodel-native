@@ -386,13 +386,13 @@ TEST_F(CurveStrategyTests, LinePointsAngleTests)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
+TEST_F(CurveStrategyTests, SplineThroughPointsStrategyTests)
     {
     SplineThroughPointsPlacementStrategyPtr strategy = SplineThroughPointsPlacementStrategy::Create();
     ASSERT_TRUE(strategy.IsValid()) << "strategy creation should not fail";
 
     // Check initial strategy state
-    DVec3d startTangent = DVec3d::From(0, 0, 0), endTangent = DVec3d::From(0, 0, 0);
+    DVec3d startTangent = DVec3d::From(1, 0, 0), endTangent = DVec3d::From(1, 0, 0);
     ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
     ASSERT_TRUE(endTangent.AlmostEqual(strategy->GetEndTangent())) << "End tangent is incorrect";
 
@@ -422,12 +422,14 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
 
     startTangent = DVec3d::From(1, 2, 3);
     strategy->SetStartTangent(startTangent);
+    startTangent.Normalize();
     ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
 
     expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, startTangent);
     CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
     endTangent = DVec3d::From(3, 2, 1);
+    endTangent.Normalize();
     strategy->SetEndTangent(endTangent);
     ASSERT_TRUE(endTangent.AlmostEqual(strategy->GetEndTangent())) << "End tangent is incorrect";
 
@@ -435,6 +437,7 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     CompareCurves(expectedCurve, strategy->FinishPrimitive());
 
     startTangent.Zero();
+    startTangent.Normalize();
     strategy->RemoveStartTangent();
     ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
 
@@ -467,7 +470,7 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CurveStrategyTests, SplineThroughPointsStrategyTests)
+TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     {
     int order = 3;
 

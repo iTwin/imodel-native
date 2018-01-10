@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
-#include "PublicApi\SplineManipulationStrategy.h"
 
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -66,11 +65,26 @@ ICurvePrimitivePtr SplineThroughPointsManipulationStrategy::_FinishPrimitive() c
 
     DVec3d tangents[2] = { m_startTangent, m_endTangent };
 
-    for (DVec3d & tangent : tangents)
-        tangent.Normalize();
-
     if (SUCCESS != curve->InitFromPointsAndEndTangents(poles, false, 0.0, tangents, false, false, false, false))
         return nullptr;
 
     return ICurvePrimitive::CreateInterpolationCurveSwapFromSource(*curve);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SplineThroughPointsManipulationStrategy::SetStartTangent(DVec3d startTangent) 
+    {
+    startTangent.Normalize();
+    _SetStartTangent(startTangent); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SplineThroughPointsManipulationStrategy::SetEndTangent(DVec3d endTangent) 
+    { 
+    endTangent.Normalize();
+    _SetEndTangent(endTangent); 
     }
