@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DgnV8Font.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define NOMINMAX
@@ -1276,6 +1276,224 @@ DgnFontCP Converter::_TryResolveFont(DgnFontCP requestedFont)
         return nullptr;
     
     return foundWorkspaceFont->second.get();
+    }
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Vern.Francisco     01/2018
+//!
+//! This function is a clone of the Converter methods to support the LigthWeightConverter
+//!
+//---------------------------------------------------------------------------------------
+void LightWeightConverter::_EnsureWorkspaceFontsAreLoaded()
+    {
+    if (m_hasLoadedWorkspaceFonts)
+        return;
+
+    m_hasLoadedWorkspaceFonts = true;
+
+    Utf8String fontSearchPathStr; 
+
+    static BeFileName s_appRoot;
+    if (s_appRoot.empty())
+        {
+        WChar moduleFileName[MAX_PATH];
+        ::GetModuleFileNameW(nullptr, moduleFileName, _countof(moduleFileName));
+        s_appRoot = BeFileName(BeFileName::DevAndDir, moduleFileName);
+        }
+
+    WString workspacePaths;
+    Bentley::WString paths;
+
+    DgnV8Api::DgnPlatformLib::GetHost().GetFontAdmin()._GetRscFontPaths(paths);
+    if (!paths.empty())
+        {
+        if (!workspacePaths.empty())
+            workspacePaths += L";";
+
+        workspacePaths += paths.c_str();
+        }
+
+    DgnV8Api::DgnPlatformLib::GetHost().GetFontAdmin()._GetShxFontPaths(paths);
+    if (!paths.empty())
+        {
+        if (!workspacePaths.empty())
+            workspacePaths += L";";
+
+        workspacePaths += paths.c_str();
+        }
+
+    DgnV8Api::DgnPlatformLib::GetHost().GetFontAdmin()._GetTrueTypeFontPaths(paths);
+    if (!paths.empty())
+        {
+        if (!workspacePaths.empty())
+            workspacePaths += L";";
+
+        workspacePaths += paths.c_str();
+        }
+
+    BeFileName fontSearchPathStrW(workspacePaths.c_str());
+
+    bvector<WString> allFontSearchPaths;
+    BeStringUtilities::Split(fontSearchPathStrW.c_str(), L";", nullptr, allFontSearchPaths);
+
+    // Beneficial to de-dup, but order is important...
+    bvector<WString> fontSearchPaths;
+    for (WStringCR pathW : allFontSearchPaths)
+        {
+        if (fontSearchPaths.end() == std::find(fontSearchPaths.begin(), fontSearchPaths.end(), pathW))
+            fontSearchPaths.push_back(pathW);
+        }
+
+    // Since multiple TrueType files may be required for a single font, separate them and embed them as one unit so multiple files can be considered at once.
+    bvector<BeFileName> trueTypePaths;
+
+    for (WStringCR pathW : fontSearchPaths)
+        {
+        BeFileName path(pathW);
+        if (path.IsDirectory())
+            path.AppendToPath(L"*.*");
+
+        BeFileListIterator pathIter(path.c_str(), false);
+        BeFileName nextPath;
+        while (SUCCESS == pathIter.GetNextFileName(nextPath))
+            {
+            WString extension = nextPath.GetExtension();
+            extension.ToLower();
+            if (extension.Equals(L"ttf") || extension.Equals(L"ttc") || extension.Equals(L"otf") || extension.Equals(L"otc"))
+                {
+                trueTypePaths.push_back(nextPath);
+                continue;
+                }
+
+            loadFontFile(m_workspaceFonts, nextPath);
+            }
+        }
+
+    if (!trueTypePaths.empty())
+        loadTrueTypeFontFiles(m_workspaceFonts, trueTypePaths);
+
+    loadOSFonts(m_workspaceFonts);
+    }
+	
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Vern.Francisco     01/2018
+//!
+//! This function is a clone of the Converter methods to support the LigthWeightConverter
+//!
+//---------------------------------------------------------------------------------------
+void LightWeightConverter::_EmbedFonts()
+    {
+    // By default, embed any used fonts.
+    // The converter can only reasonably care about embedding workspace fonts... otherwise anything in the DB is outside its scope.
+    DgnFonts::DbFontMapDirect::Iterator allFonts = m_dgndb->Fonts().DbFontMap().MakeIterator();
+    for (DgnFonts::DbFontMapDirect::Iterator::Entry const& fontEntry : allFonts)
+        {
+        // Do NOT use a DgnFont object from the DB... the DB is self-contained, and if asked for a font pre-embedding, it will give you a DgnFont object with unresolved data.
+        // Use the type and name to look up a workspace font and embed it. When a DB-based font attempts to resolve later, it will find this embedded data by type and name.
+        T_WorkspaceFonts::const_iterator foundWorkspaceFont = m_workspaceFonts.find(T_WorkspaceFontKey(fontEntry.GetType(), fontEntry.GetName()));
+        if (m_workspaceFonts.end() == foundWorkspaceFont)
+            continue;
+
+        if (SUCCESS != DgnFontPersistence::Db::Embed(m_dgndb->Fonts().DbFaceData(), *foundWorkspaceFont->second))
+            {
+//            ReportIssueV(Converter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int) fontEntry.GetType(), fontEntry.GetName());
+            }
+        }
+    }
+
+	
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Vern.Francisco     01/2018
+//!
+//! This function is a clone of the Converter methods to support the LigthWeightConverter
+//!
+//---------------------------------------------------------------------------------------
+DgnFont const* LightWeightConverter::_ImportV8Font(DgnV8Api::DgnFont const& v8Font)
+    {
+    _EnsureWorkspaceFontsAreLoaded();
+
+    T_WorkspaceFonts::const_iterator foundWorkspaceFont = m_workspaceFonts.find(T_WorkspaceFontKey(v8FontTypeToDb(v8Font.GetType()), Utf8String(v8Font.GetName().c_str())));
+    if (m_workspaceFonts.end() != foundWorkspaceFont)
+        return foundWorkspaceFont->second.get();
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Vern.Francisco     01/2018
+//!
+//! This function is a clone of the Converter methods to support the LigthWeightConverter
+//!
+//---------------------------------------------------------------------------------------
+DgnFont const& LightWeightConverter::_RemapV8Font(DgnV8Api::DgnFile& v8File, uint32_t v8FontId)
+    {
+    // Did we already remap it?
+    T_FontRemapKey remapKey(&v8File, v8FontId);
+    T_FontRemap::const_iterator foundRemap = m_fontRemap.find(remapKey);
+    if (m_fontRemap.end() != foundRemap)
+        return *foundRemap->second;
+
+    // Was it embedded in the DgnV8 file? Even though fonts can be embedded in the structure storage, DgnV8 itself knows nothing about them, hence we need to interject.
+    // Note that I believe we only need this interjection for RSC fonts because DgnV8 can't even help us look up RSC fonts by name; other font types exist in DgnV8's map, so we can at least find them through normal means via type/name.
+    _EnsureWorkspaceFontsAreLoaded();
+    T_V8EmbeddedRscFontMap::const_iterator foundEmbeddedFont = m_v8EmbeddedRscFontMap.find(v8FontId);
+    if (m_v8EmbeddedRscFontMap.end() != foundEmbeddedFont)
+        return *(foundEmbeddedFont->second);
+
+    // Otherwise need to create a mapping.
+    // In both DgnV8 and DgnDb, fonts are unique by type and name. Note that multiple entries can exist in our remap for the same DgnDb font because it may have different IDs among the DgnV8 files.
+    DgnV8Api::DgnFont const* v8Font = v8File.GetDgnFontMapP()->GetFontP(v8FontId);
+    DgnFontCP dbFont = nullptr;
+
+    // Corrupt DgnV8 font ID? Note that nullptr means no entry; not whether it's missing or not.
+    if (nullptr == v8Font)
+        {
+        // DgnV8 reserves font ID ranges for types; remap to the nearest last resort font.
+        if (v8FontId <= DgnV8Api::MAX_USTN_NUMBER)
+            dbFont = &T_HOST.GetFontAdmin().GetLastResortRscFont();
+        else if (v8FontId <= DgnV8Api::MAX_SHX_NUMBER)
+            dbFont = &T_HOST.GetFontAdmin().GetLastResortShxFont();
+        else
+            dbFont = &T_HOST.GetFontAdmin().GetLastResortTrueTypeFont();
+        }
+    else
+        {
+        DgnFontType dbFontType = v8FontTypeToDb(v8Font->GetType());
+        Utf8String dbFontName(v8Font->GetName().c_str());
+
+        // See if our DB already knows of a font by that type and name.
+        dbFont = m_dgndb->Fonts().FindFontByTypeAndName(dbFontType, dbFontName.c_str());
+
+        // Otherwise need to find it in the search paths and import it.
+        if (nullptr == dbFont)
+            {
+            dbFont = _ImportV8Font(*v8Font);
+
+            // Converter wasn't configured to find the font? I suppose we should bring across the type and name and make a missing font...
+            //  even though for all intents and purposes it will only ever be serviced by a last resort font.
+            if (nullptr == dbFont)
+                {
+                DgnFontPtr missingFont = DgnFontPersistence::Missing::CreateMissingFont(dbFontType, dbFontName.c_str());
+                m_workspaceFonts[T_WorkspaceFontKey(missingFont->GetType(), missingFont->GetName())] = missingFont;
+                dbFont = missingFont.get();
+                }
+            }
+        }
+
+    m_fontRemap[remapKey] = const_cast<DgnFont*>(dbFont);
+
+    BeAssert(nullptr != dbFont);
+    return *dbFont;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

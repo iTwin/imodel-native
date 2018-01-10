@@ -58,6 +58,9 @@
     <ClInclude Include="DgnV8\SheetAttachmentViewHelper.h">
       <Filter>DgnV8</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbSync\DgnV8\LightWeightConverter.h">
+      <Filter>PublicAPI\DgnV8</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h">
@@ -160,6 +163,9 @@
       <Filter>DgnV8</Filter>
     </ClCompile>
     <ClCompile Include="DgnV8\ThreeMxConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\LightWeightConverter.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
   </ItemGroup>

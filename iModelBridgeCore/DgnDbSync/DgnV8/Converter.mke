@@ -2,7 +2,7 @@
 #
 #     $Source: DgnV8/Converter.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -75,6 +75,8 @@ $(o)Thumbnails$(oext):  $(baseDir)Thumbnails.cpp $(DgnDbSyncDepends) ${MultiComp
 $(o)ImportConfig$(oext):  $(baseDir)ImportConfig/ImportConfig.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)Converter$(oext):  $(baseDir)Converter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)LightWeightConverter$(oext):  $(baseDir)LightWeightConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)SheetConverter$(oext):  $(baseDir)SheetConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
