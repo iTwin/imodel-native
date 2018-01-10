@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnViewport.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -1137,6 +1137,9 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     m_viewController = &viewController;
     viewController._OnAttachedToViewport(*this);
     BeAssert(this == m_viewController->m_vp);
+
+    if (!IsActive())
+        return;
 
     SetupFromViewController();
     SaveViewUndo();
