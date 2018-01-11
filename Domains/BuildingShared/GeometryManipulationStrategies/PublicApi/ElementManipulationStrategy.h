@@ -9,6 +9,10 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
+#define ELEM_PROPERTY_OVERRIDE(value_type) \
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, value_type const& value) override; \
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) const override;
+
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               01/2018
 //=======================================================================================
@@ -29,6 +33,7 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
@@ -38,6 +43,17 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         virtual GeometryManipulationStrategyR _GetGeometryManipulationStrategyR() = 0;
 
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) const = 0;
+
+        ELEM_PROPERTY_OVERRIDE(int)
+        ELEM_PROPERTY_OVERRIDE(double)
+        ELEM_PROPERTY_OVERRIDE(DVec3d)
+        ELEM_PROPERTY_OVERRIDE(DPlane3d)
+        ELEM_PROPERTY_OVERRIDE(Dgn::DgnElementId)
+        ELEM_PROPERTY_OVERRIDE(Dgn::DgnElement)
+        ELEM_PROPERTY_OVERRIDE(Utf8String)
+        ELEM_PROPERTY_OVERRIDE(bvector<double>)
+        ELEM_PROPERTY_OVERRIDE(bvector<Utf8String>)
+        ELEM_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
         Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model) const;

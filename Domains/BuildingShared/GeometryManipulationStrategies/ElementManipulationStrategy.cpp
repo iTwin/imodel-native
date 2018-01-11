@@ -129,6 +129,17 @@ void ElementManipulationStrategy::_AppendKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
+void ElementManipulationStrategy::_AppendKeyPoints
+(
+    bvector<DPoint3d> const& newKeyPoints
+)
+    {
+    _GetGeometryManipulationStrategyR().AppendKeyPoints(newKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
 void ElementManipulationStrategy::_InsertKeyPoint
 (
     DPoint3dCR newKeyPoint, 
@@ -168,3 +179,24 @@ void ElementManipulationStrategy::_RemoveKeyPoint
     {
     _GetGeometryManipulationStrategyR().RemoveKeyPoint(index);
     }
+
+#define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
+    void ElementManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
+        { \
+        _GetGeometryManipulationStrategyR().SetProperty(key, value); \
+        } \
+    BentleyStatus ElementManipulationStrategy::_TryGetProperty(Utf8CP key, value_type& value) const \
+        { \
+        return _GetGeometryManipulationStrategy().TryGetProperty(key, value); \
+        }
+
+GMS_PROPERTY_OVERRIDE_IMPL(int)
+GMS_PROPERTY_OVERRIDE_IMPL(double)
+GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
+GMS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElement)
+GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)
+GMS_PROPERTY_OVERRIDE_IMPL(bvector<double>)
+GMS_PROPERTY_OVERRIDE_IMPL(bvector<Utf8String>)
+GMS_PROPERTY_OVERRIDE_IMPL(GeometryManipulationStrategyProperty)

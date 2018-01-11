@@ -89,7 +89,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
         void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
-        void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
     };
 
 END_BUILDING_SHARED_NAMESPACE
