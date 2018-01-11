@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileTree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -1259,6 +1259,31 @@ void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d bisectRange2d(DRange3dCR range, bool takeLow)
+    {
+    DVec3d diag = range.DiagonalVector();
+    DRange3d subRange = range;
+
+    double bisect;
+    double* replace;
+    if (diag.x > diag.y)
+        {
+        bisect = (range.low.x + range.high.x) / 2.0;
+        replace = takeLow ? &subRange.high.x : &subRange.low.x;
+        }
+    else
+        {
+        bisect = (range.low.y + range.high.y) / 2.0;
+        replace = takeLow ? &subRange.high.y : &subRange.low.y;
+        }
+
+    *replace = bisect;
+    return subRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DRange3d bisectRange(DRange3dCR range, bool takeLow)
@@ -1291,15 +1316,26 @@ static DRange3d bisectRange(DRange3dCR range, bool takeLow)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d OctTree::Tile::ComputeChildRange(OctTree::Tile& child) const
+DRange3d OctTree::Tile::ComputeChildRange(OctTree::Tile& child, bool is2d) const
     {
     // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
     TileTree::OctTree::TileId relativeId = child.GetRelativeTileId();
     BeAssert(2 > relativeId.m_i && 2 > relativeId.m_j && 2 > relativeId.m_k);
 
-    DRange3d range = bisectRange(GetRange(), 0 == relativeId.m_i);
-    range = bisectRange(range, 0 == relativeId.m_j);
-    range = bisectRange(range, 0 == relativeId.m_k);
+    // We should never subdivide along z for 2d tiles...Ideally we would use a quad-tree for those
+    DRange3d range;
+    if (is2d)
+      {
+      range = bisectRange2d(GetRange(), 0 == relativeId.m_i);
+      range = bisectRange2d(range, 0 == relativeId.m_j);
+      range = bisectRange2d(range, 0 == relativeId.m_k);
+      }
+    else
+      {
+      range = bisectRange(GetRange(), 0 == relativeId.m_i);
+      range = bisectRange(range, 0 == relativeId.m_j);
+      range = bisectRange(range, 0 == relativeId.m_k);
+      }
 
     return range;
     }
