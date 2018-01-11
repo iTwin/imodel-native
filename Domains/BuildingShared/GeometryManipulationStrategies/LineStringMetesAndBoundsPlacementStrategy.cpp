@@ -10,8 +10,7 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 const Utf8CP LineStringMetesAndBoundsPlacementStrategy::prop_WorkingPlane = "WorkingPlane";
-const Utf8CP LineStringMetesAndBoundsPlacementStrategy::prop_DirectionStrings = "DirectionStrings";
-const Utf8CP LineStringMetesAndBoundsPlacementStrategy::prop_Lengths = "Lengths";
+const Utf8CP LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds = "MetesAndBounds";
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
@@ -63,12 +62,16 @@ BentleyStatus LineStringMetesAndBoundsPlacementStrategy::_TryGetProperty
 void LineStringMetesAndBoundsPlacementStrategy::_SetProperty
 (
     Utf8CP key, 
-    bvector<Utf8String> const& value
+    GeometryManipulationStrategyProperty const& value
 )
     {
-    if (0 == strcmp(key, prop_DirectionStrings))
+    if (0 == strcmp(key, prop_MetesAndBounds))
         {
-        m_directionStrings = value;
+        MetesAndBounds const* mab = dynamic_cast<MetesAndBounds const*>(&value);
+        if (nullptr != mab)
+            {
+            m_metesAndBounds = *mab;
+            }
         }
 
     T_Super::_SetProperty(key, value);
@@ -80,47 +83,12 @@ void LineStringMetesAndBoundsPlacementStrategy::_SetProperty
 BentleyStatus LineStringMetesAndBoundsPlacementStrategy::_TryGetProperty
 (
     Utf8CP key, 
-    bvector<Utf8String>& value
+    GeometryManipulationStrategyProperty& value
 ) const
     {
-    if (0 == strcmp(key, prop_DirectionStrings))
+    if (0 == strcmp(key, prop_MetesAndBounds))
         {
-        value = m_directionStrings;
-        return BentleyStatus::SUCCESS;
-        }
-
-    return T_Super::_TryGetProperty(key, value);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void LineStringMetesAndBoundsPlacementStrategy::_SetProperty
-(
-    Utf8CP key, 
-    bvector<double> const& value
-)
-    {
-    if (0 == strcmp(key, prop_Lengths))
-        {
-        m_lengths = value;
-        }
-
-    T_Super::_SetProperty(key, value);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus LineStringMetesAndBoundsPlacementStrategy::_TryGetProperty
-(
-    Utf8CP key, 
-    bvector<double>& value
-) const
-    {
-    if (0 == strcmp(key, prop_Lengths))
-        {
-        value = m_lengths;
+        value = m_metesAndBounds;
         return BentleyStatus::SUCCESS;
         }
 
@@ -154,27 +122,20 @@ void LineStringMetesAndBoundsPlacementStrategy::_AddKeyPoint
     if (_IsComplete())
         return;
 
-    if (m_directionStrings.empty() || m_lengths.empty() || m_directionStrings.size() != m_lengths.size())
-        return;
-
     bvector<DPoint3d> keyPoints = {newKeyPoint};
 
-    auto directionsIter = m_directionStrings.begin();
-    auto lengthsIter = m_lengths.begin();
-    for (; m_directionStrings.end() != directionsIter && m_lengths.end() != lengthsIter;
-         ++directionsIter, ++lengthsIter)
+    for (MetesAndBounds::ValuePair const& directionLengthPair : m_metesAndBounds.GetValue())
         {
-        if (DoubleOps::AlmostEqual(*lengthsIter, 0))
+        if (DoubleOps::AlmostEqual(directionLengthPair.second, 0))
             continue;
 
         LineMetesAndBoundsPlacementStrategyPtr lineStrategy = LineMetesAndBoundsPlacementStrategy::Create(m_workingPlane);
-        bpair<Utf8String, double> metesAndBounds {*directionsIter, *lengthsIter};
-        lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds({metesAndBounds}));
+        lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directionLengthPair));
         lineStrategy->AddKeyPoint(keyPoints.back());
 
         bvector<DPoint3d> lineKeyPoints = lineStrategy->GetKeyPoints();
         if (lineKeyPoints.size() != 2 || lineKeyPoints.front().AlmostEqual(lineKeyPoints.back()))
-            return;
+            break;
 
         keyPoints.push_back(lineKeyPoints.back());
         }

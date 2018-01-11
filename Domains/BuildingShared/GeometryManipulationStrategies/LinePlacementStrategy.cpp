@@ -580,12 +580,31 @@ BentleyStatus LineMetesAndBoundsPlacementStrategy::_TryGetProperty
         Utf8String directionString;
         UnitConverter::DirectionToMeetsAndBoundsString(directionString, direction);
 
-        bpair<Utf8String, double> metesAndBounds {{directionString}, {length}};
-        value = MetesAndBounds({metesAndBounds});
+        value = MetesAndBounds(directionString.c_str(), length);
         return BentleyStatus::SUCCESS;
         }
 
     return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+MetesAndBounds::MetesAndBounds
+(
+    bvector<Utf8String> directionStrings, 
+    bvector<double> lengths
+)
+    {
+    BeAssert(directionStrings.size() == lengths.size());
+
+    auto directionsIter = directionStrings.begin();
+    auto lengthsIter = lengths.begin();
+    for (; directionStrings.end() != directionsIter && lengths.end() != lengthsIter
+         ; ++directionsIter, ++lengthsIter)
+        {
+        m_value.push_back(ValuePair(*directionsIter, *lengthsIter));
+        }
     }
 
 END_BUILDING_SHARED_NAMESPACE

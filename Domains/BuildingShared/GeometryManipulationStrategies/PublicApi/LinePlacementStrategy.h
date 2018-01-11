@@ -103,18 +103,31 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlace
 //=======================================================================================
 struct MetesAndBounds : GeometryManipulationStrategyProperty
     {
+    typedef bpair<Utf8String, double> ValuePair;
     DEFINE_T_SUPER(GeometryManipulationStrategyProperty)
 
     private:
-        bvector<bpair<Utf8String, double>> m_value;
+        bvector<ValuePair> m_value;
 
     public:
-        MetesAndBounds(bvector<bpair<Utf8String, double>> const& value)
+        MetesAndBounds()
+            : T_Super()
+            {}
+        MetesAndBounds(Utf8CP directionString, double length)
+            : T_Super()
+            , m_value({ValuePair(directionString, length)})
+            {}
+        MetesAndBounds(ValuePair const& value)
+            : T_Super()
+            , m_value({value})
+            {}
+        MetesAndBounds(bvector<ValuePair> const& value)
             : T_Super()
             , m_value(value)
             {}
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT MetesAndBounds(bvector<Utf8String> directionStrings, bvector<double> lengths);
 
-        bvector<bpair<Utf8String, double>> const& GetValue() const { return m_value; }
+        bvector<ValuePair> const& GetValue() const { return m_value; }
     };
 
 //=======================================================================================

@@ -19,8 +19,7 @@ struct LineStringMetesAndBoundsPlacementStrategy : public LineStringPlacementStr
     private:
         DPlane3d m_workingPlane;
 
-        bvector<Utf8String> m_directionStrings;
-        bvector<double> m_lengths;
+        MetesAndBounds m_metesAndBounds;
 
     private:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LineStringMetesAndBoundsPlacementStrategy();
@@ -34,18 +33,14 @@ struct LineStringMetesAndBoundsPlacementStrategy : public LineStringPlacementStr
         virtual void _SetProperty(Utf8CP key, DPlane3dCR value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, DPlane3dR value) const override;
 
-        virtual void _SetProperty(Utf8CP key, bvector<Utf8String> const& value) override;
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, bvector<Utf8String>& value) const override;
-
-        virtual void _SetProperty(Utf8CP key, bvector<double> const& value) override;
-        virtual BentleyStatus _TryGetProperty(Utf8CP key, bvector<double>& value) const override;
+        virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
 
     public:
         static LineStringMetesAndBoundsPlacementStrategyPtr Create() { return new LineStringMetesAndBoundsPlacementStrategy(); }
 
         static const Utf8CP prop_WorkingPlane;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_DirectionStrings;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Lengths;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_MetesAndBounds;
     };
 
 END_BUILDING_SHARED_NAMESPACE

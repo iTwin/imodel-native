@@ -72,8 +72,7 @@ TEST_F(LineStringMetesAndBoundsPlacementStrategyTests, CreatesPrimitiveLineStrin
     lengths[0] = DSegment3d::From({0,0,0}, {2,2,0}).Length();
     lengths[1] = DSegment3d::From({2,2,0}, {0,2,0}).Length();
 
-    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_DirectionStrings, directions);
-    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_Lengths, lengths);
+    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directions, lengths));
     sut->AddKeyPoint({0,0,0});
     ICurvePrimitivePtr cp = sut->FinishPrimitive();
     ASSERT_TRUE(cp.IsValid());
