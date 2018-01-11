@@ -114,15 +114,13 @@ bool LineStringMetesAndBoundsPlacementStrategy::_CanAcceptMorePoints() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void LineStringMetesAndBoundsPlacementStrategy::_AddKeyPoint
-(
-    DPoint3dCR newKeyPoint
-)
+bvector<DPoint3d> LineStringMetesAndBoundsPlacementStrategy::CalculateKeyPoints() const
     {
-    if (_IsComplete())
-        return;
+    bvector<DPoint3d> const& keyPoints = _GetKeyPoints();
+    if (keyPoints.empty())
+        return bvector<DPoint3d>();
 
-    bvector<DPoint3d> keyPoints = {newKeyPoint};
+    bvector<DPoint3d> newKeyPoints;
 
     for (MetesAndBounds::ValuePair const& directionLengthPair : m_metesAndBounds.GetValue())
         {
@@ -131,14 +129,47 @@ void LineStringMetesAndBoundsPlacementStrategy::_AddKeyPoint
 
         LineMetesAndBoundsPlacementStrategyPtr lineStrategy = LineMetesAndBoundsPlacementStrategy::Create(m_workingPlane);
         lineStrategy->SetProperty(LineMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directionLengthPair));
-        lineStrategy->AddKeyPoint(keyPoints.back());
+        lineStrategy->AddKeyPoint(newKeyPoints.empty() ? keyPoints.front() : newKeyPoints.back());
 
         bvector<DPoint3d> lineKeyPoints = lineStrategy->GetKeyPoints();
         if (lineKeyPoints.size() != 2 || lineKeyPoints.front().AlmostEqual(lineKeyPoints.back()))
             break;
 
-        keyPoints.push_back(lineKeyPoints.back());
+        newKeyPoints.push_back(lineKeyPoints.back());
         }
 
-    GetLineStringManipulationStrategyR().AppendKeyPoints(keyPoints);
+    return newKeyPoints;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LineStringMetesAndBoundsPlacementStrategy::_AddKeyPoint
+(
+    DPoint3dCR newKeyPoint
+)
+    {
+    if (_IsComplete())
+        return;
+
+    GetLineStringManipulationStrategyR().AppendKeyPoint(newKeyPoint);
+    GetLineStringManipulationStrategyR().AppendKeyPoints(CalculateKeyPoints());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LineStringMetesAndBoundsPlacementStrategy::_OnPropertySet
+(
+    Utf8CP key
+)
+    {
+    if (0 == strcmp(key, prop_MetesAndBounds) && !GetLineStringManipulationStrategy().IsEmpty())
+        {
+        DPoint3d start = GetLineStringManipulationStrategy().GetFirstKeyPoint();
+        _PopKeyPoint();
+        _AddKeyPoint(start);
+        }
+
+    T_Super::_OnPropertySet(key);
     }

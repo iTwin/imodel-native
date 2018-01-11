@@ -22,8 +22,7 @@ LineStringPlacementStrategyPtr LineStringPlacementStrategy::Create
         case LineStringPlacementStrategyType::Points:
             return LineStringPointsPlacementStrategy::Create();
         case LineStringPlacementStrategyType::MetesAndBounds:
-            BeAssert(false && "Not implemented");
-            return nullptr;
+            return LineStringMetesAndBoundsPlacementStrategy::Create();
         default:
             BeAssert(false);
             return nullptr;

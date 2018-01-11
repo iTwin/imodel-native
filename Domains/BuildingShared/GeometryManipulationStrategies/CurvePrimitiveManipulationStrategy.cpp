@@ -397,3 +397,25 @@ LinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLinePlacement
     {
     return _CreateLinePlacementStrategy(strategyType);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateArcPlacementStrategy
+(
+    ArcPlacementStrategyType strategyType
+)
+    {
+    return _CreateArcPlacementStrategy(strategyType);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineStringPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLineStringPlacementStrategy
+(
+    LineStringPlacementStrategyType strategyType
+)
+    {
+    return _CreateLineStringPlacementStrategy(strategyType);
+    }

@@ -146,12 +146,33 @@ void CurveVectorManipulationStrategy::_PopKeyPoint()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetPlacementStrategy
+(
+    CurvePrimitiveManipulationStrategyR manipulationStrategy
+) const
+    {
+    switch (m_defaultNewGeometryType)
+        {
+        case DefaultNewGeometryType::Arc:
+            return manipulationStrategy.CreateArcPlacementStrategy(m_defaultArcPlacementStrategyType);
+        case DefaultNewGeometryType::Line:
+            return manipulationStrategy.CreateLinePlacementStrategy(m_defaultLinePlacementStrategyType);
+        case DefaultNewGeometryType::LineString:
+            return manipulationStrategy.CreateLineStringPlacementStrategy(m_defaultLineStringPlacementStrategyType);
+        default:
+            return manipulationStrategy.CreateDefaultPlacementStrategy();
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
 CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyForAppend()
     {
     CurvePrimitivePlacementStrategyPtr placementStrategy;
 
     if (!m_primitiveStrategies.empty() && m_primitiveStrategies.back()->CanAcceptMorePoints())
-        placementStrategy = m_primitiveStrategies.back()->CreateDefaultPlacementStrategy();
+        placementStrategy = GetPlacementStrategy(*m_primitiveStrategies.back());
     else
         {
         CurvePrimitiveManipulationStrategyPtr manipulationStrategy;
@@ -176,8 +197,8 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyF
             }
 
         BeAssert(manipulationStrategy.IsValid());
+        placementStrategy = GetPlacementStrategy(*manipulationStrategy);
 
-        placementStrategy = manipulationStrategy->CreateDefaultPlacementStrategy();
         if (!m_primitiveStrategies.empty())
             {
             bvector<DPoint3d> lastStrategyAcceptedKeyPoints = m_primitiveStrategies.back()->GetAcceptedKeyPoints();
@@ -305,3 +326,26 @@ void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
 
     m_defaultLineStringPlacementStrategyType = newPlacementStrategyType;
     }
+
+#define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
+    void CurveVectorManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
+        { \
+        GetStrategyForAppend()->SetProperty(key, value); \
+        } \
+    BentleyStatus CurveVectorManipulationStrategy::_TryGetProperty(Utf8CP key, value_type& value) const \
+        { \
+        if(m_primitiveStrategies.empty()) \
+            return BentleyStatus::ERROR; \
+        return m_primitiveStrategies.back()->TryGetProperty(key, value); \
+        }
+
+GMS_PROPERTY_OVERRIDE_IMPL(int)
+GMS_PROPERTY_OVERRIDE_IMPL(double)
+GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
+GMS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElement)
+GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)
+GMS_PROPERTY_OVERRIDE_IMPL(bvector<double>)
+GMS_PROPERTY_OVERRIDE_IMPL(bvector<Utf8String>)
+GMS_PROPERTY_OVERRIDE_IMPL(GeometryManipulationStrategyProperty)

@@ -51,6 +51,8 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         friend struct GeometryPlacementStrategy;
 
     protected:
+        virtual void _OnPropertySet(Utf8CP key) {}
+
         GMS_V_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(double)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(DVec3d)

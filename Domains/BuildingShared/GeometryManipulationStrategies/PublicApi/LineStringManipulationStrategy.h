@@ -28,6 +28,7 @@ struct LineStringManipulationStrategy : public CurvePrimitiveManipulationStrateg
         virtual bool _CanAcceptMorePoints() const override { return true; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual LineStringPlacementStrategyPtr _CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType) override;
 
     public:
         static LineStringManipulationStrategyPtr Create() { return new LineStringManipulationStrategy(); }

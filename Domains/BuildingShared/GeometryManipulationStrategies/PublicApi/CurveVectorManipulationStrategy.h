@@ -17,6 +17,10 @@ enum class DefaultNewGeometryType
     Arc
     };
 
+#define CV_PROPERTY_OVERRIDE(value_type) \
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, value_type const& value) override; \
+    GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) const override;
+
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
@@ -33,6 +37,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
         LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
 
+        CurvePrimitivePlacementStrategyPtr GetPlacementStrategy(CurvePrimitiveManipulationStrategyR manipulationStrategy) const;
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
 
@@ -63,6 +68,17 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _PopKeyPoint() override;
         virtual void _RemoveKeyPoint(size_t index) override { BeAssert(false && "Not implemented"); }
+
+        CV_PROPERTY_OVERRIDE(int)
+        CV_PROPERTY_OVERRIDE(double)
+        CV_PROPERTY_OVERRIDE(DVec3d)
+        CV_PROPERTY_OVERRIDE(DPlane3d)
+        CV_PROPERTY_OVERRIDE(Dgn::DgnElementId)
+        CV_PROPERTY_OVERRIDE(Dgn::DgnElement)
+        CV_PROPERTY_OVERRIDE(Utf8String)
+        CV_PROPERTY_OVERRIDE(bvector<double>)
+        CV_PROPERTY_OVERRIDE(bvector<Utf8String>)
+        CV_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;

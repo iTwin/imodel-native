@@ -24,6 +24,8 @@ struct LineStringMetesAndBoundsPlacementStrategy : public LineStringPlacementStr
     private:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LineStringMetesAndBoundsPlacementStrategy();
 
+        bvector<DPoint3d> CalculateKeyPoints() const;
+
     protected:
         virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
 
@@ -35,6 +37,8 @@ struct LineStringMetesAndBoundsPlacementStrategy : public LineStringPlacementStr
 
         virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
+
+        virtual void _OnPropertySet(Utf8CP key) override;
 
     public:
         static LineStringMetesAndBoundsPlacementStrategyPtr Create() { return new LineStringMetesAndBoundsPlacementStrategy(); }

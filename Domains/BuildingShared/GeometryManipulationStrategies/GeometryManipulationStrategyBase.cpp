@@ -11,7 +11,11 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING_SHARED
 
 #define SET_PROPERTY_IMPL(value_type) \
-    void GeometryManipulationStrategyBase::SetProperty(Utf8CP key, value_type const& value) { _SetProperty(key, value); }
+    void GeometryManipulationStrategyBase::SetProperty(Utf8CP key, value_type const& value) \
+        { \
+        _SetProperty(key, value); \
+        _OnPropertySet(key); \
+        }
 #define TRY_GET_PROPERTY_IMPL(value_type) \
     BentleyStatus GeometryManipulationStrategyBase::TryGetProperty(Utf8CP key, value_type& value) const { return _TryGetProperty(key, value); }
 #define SET_TRYGET_PROPERTY_IMPL(value_type) \
