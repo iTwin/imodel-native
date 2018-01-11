@@ -186,7 +186,7 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     EXPECT_EQ(3, count);
     // 7 fonts, but 1 comes from an AEC object which is not known on PRG or firebug boxes:
     count = db->Fonts().DbFontMap().MakeIterator().QueryCount ();
-    EXPECT_EQ(6, count);
+    EXPECT_LE(6, count);
     // 13 linestyles
     count = 0;
     auto& lscache = db->LineStyles().GetCache ();
