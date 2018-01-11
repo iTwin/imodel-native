@@ -1027,7 +1027,7 @@ CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    BeAssert(0 == codes.size() && "Query Ids in empty array is not supported.");
+    BeAssert(0 != codes.size() && "Query Ids in empty array is not supported.");
 
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Code);
 
@@ -1107,7 +1107,7 @@ ICancellationTokenPtr cancellationToken
     {
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Lock);
 
-    BeAssert(0 == locks.size() && "Query Ids in empty array is not supported.");
+    BeAssert(0 != locks.size() && "Query Ids in empty array is not supported.");
 
     std::deque<ObjectId> queryIds;
     for (auto& lock : locks)
@@ -2251,7 +2251,7 @@ WSQuery iModelConnection::CreateChangeSetsByIdQuery
 std::deque<ObjectId>& changeSetIds
 ) const
     {
-    BeAssert(0 == changeSetIds.size() && "Query Ids in empty array is not supported.");
+    BeAssert(0 != changeSetIds.size() && "Query Ids in empty array is not supported.");
 
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
     query.AddFilterIdsIn(changeSetIds, nullptr, 0, 0);
