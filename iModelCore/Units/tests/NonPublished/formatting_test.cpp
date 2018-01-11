@@ -1143,6 +1143,10 @@ TEST(FormattingTest, PhenomenaTest)
     LOG.infov("\n================  Phenomena Test ===========================");
     FormattingTestFixture::ShowKnownPhenomena();
     LOG.infov("================  Phenomena Test (end) ===========================\n");
+    
+    LOG.infov("\n================  Synonyms Test ===========================");
+    FormattingTestFixture::ShowSynonyms();
+    LOG.infov("================  Synonyms Test (end) ===========================\n");
 
     LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }

@@ -1284,7 +1284,36 @@ void FormattingTestFixture::ShowKnownPhenomena()
         }
     }
 
+void FormattingTestFixture::ShowSynonyms()
+    {
+    bvector<BEU::UnitCP> allUnits;
+    bvector<Utf8CP> synonyms;
+    WString wsyn;
+    BEU::UnitRegistry::Instance().AllUnits(allUnits);
+    for (BEU::UnitCP* un = allUnits.begin(); un != allUnits.end();un++)
+        {
+        if ((*un)->GetSynonymList(synonyms) > 0)
+            {
+            LOG.infov("Unit %s synonyms:", (*un)->GetName());
+            for (size_t i = 0; i < synonyms.size(); i++)
+                {
+                wsyn = WString(synonyms[i], true);
+                LOG.infov(L"%02d %ls", i+1, wsyn);
+                }
+            }
+        }
+    }
+
 END_BENTLEY_FORMATTEST_NAMESPACE
+
+//WString wJson(jval.ToString().c_str(), true);
+//WString wBool(FormatConstant::BoolText(ident), true);
+////WChar outStr[258];
+////memset(outStr, 0, sizeof(outStr));
+////BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+////LOG.infov(L"FormattedMapString: %ls", outStr);
+//LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+
 
 //FormattingTestFixture::
 //EXPECT_STREQ ("{\"TrailZeroes\":\"true\"}", val.ToString().c_str());

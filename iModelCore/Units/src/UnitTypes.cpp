@@ -380,6 +380,20 @@ void Unit::AddSynonym(Utf8CP synonym) const
         ph->AddSynonym(un, synonym);
     }
 
+size_t Unit::GetSynonymList(bvector<Utf8CP>& synonyms) const
+    {
+    synonyms.clear();
+    if (nullptr == m_phenomenon)
+        return 0;
+    T_UnitSynonymVector* synV = m_phenomenon->GetSynonymVector();
+    for (UnitSynonymMap* up = synV->begin(); up != synV->end(); up++)
+        {
+        if(this == up->GetUnit())
+         synonyms.push_back(up->GetSynonym());
+        }
+    return synonyms.size();
+    }
+
 Utf8String Phenomenon::GetPhenomenonSignature() const
     {
     Expression phenomenonExpression = Evaluate();
