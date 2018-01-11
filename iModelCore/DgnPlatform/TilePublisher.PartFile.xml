@@ -55,6 +55,7 @@
         <SubPart PartName="Raster"              PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"      Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="RealityPlatform"     PartFile="RealityModFramework"  Repository="RealityModFramework"/>
+        <SubPart PartName="iModelHubClient"     PartFile="WSClient"             Repository="WSClient" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
         </Bindings>

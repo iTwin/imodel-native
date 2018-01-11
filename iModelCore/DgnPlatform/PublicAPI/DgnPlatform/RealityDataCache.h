@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RealityDataCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,6 +49,8 @@ protected:
     WorkerPtr m_worker;
     BentleyApi::BeConditionVariable m_cv;
     BeSQLite::Db m_db;
+
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; } // seen data set containing > 5000 models, each has a TileTree::Root that wants a ptr to cache
 
     //! Create the table to hold entries in this Cache
     virtual BentleyStatus _Prepare() const = 0;

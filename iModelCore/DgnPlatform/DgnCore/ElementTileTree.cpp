@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementTileTree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -419,12 +419,13 @@ public:
 
     RootR GetRoot() const { return m_root; }
     System& GetRenderSystemR() const { BeAssert(nullptr != m_loadContext.GetRenderSystem()); return *m_loadContext.GetRenderSystem(); }
+    bool Is3d() const { return m_root.Is3d(); }
 
     double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any bits of geometry with range smaller than roughly half a pixel...
-        auto diag = range.low.DistanceSquared(range.high);
+        auto diag = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
         return diag < m_minRangeDiagonalSquared && 0.0 < diag; // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
         }
 
@@ -480,7 +481,8 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
-    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::Scene(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    : GeometryListBuilder(context.GetRenderSystemR(), CreateParams::Scene(context.GetDgnDb())), m_context(context),
+    m_rangeDiagonalSquared(context.Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high))
     {
     // for TileSubGraphic...
     SetCheckGlyphBoxes(true);
@@ -501,7 +503,7 @@ void TileBuilder::ReInitialize(DgnElementId elemId, double rangeDiagonalSquared,
 void TileBuilder::ReInitialize(DRange3dCR range)
     {
     GeometryListBuilder::ReInitialize(Transform::FromIdentity());
-    m_rangeDiagonalSquared = range.low.DistanceSquared(range.high);
+    m_rangeDiagonalSquared = m_context.Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -677,7 +679,14 @@ private:
         else if (!entry.m_range.IntersectsWith(m_range))
             return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
 
-        double sizeSq = Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d) ? 0.0 : entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
+        double sizeSq;
+        if (Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d))
+            sizeSq = 0.0;
+        else if (m_is2d)
+            sizeSq = entry.m_range.m_low.DistanceSquaredXY(entry.m_range.m_high);
+        else
+            sizeSq = entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
+
         if (0.0 == sizeSq || sizeSq >= m_minRangeDiagonalSquared)
             Insert(sizeSq, entry.m_id);
         else
@@ -1441,7 +1450,7 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
     // Only cache geometry which occupies a significant portion of the model's range, since it will appear in many tiles
     constexpr double rangeRatio = 0.25;
     DRange3d range = ComputeRange();
-    double diag = range.low.DistanceSquared(range.high);
+    double diag = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
     if (0.0 == diag)
         return false;
 
@@ -1494,7 +1503,7 @@ bool Root::GetCachedGeometry(GeometryList& geometry, DgnElementId elementId, dou
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::RemoveCachedGeometry(DRange3dCR range, DgnElementId id)
     {
-    double rangeDiagSq = range.low.DistanceSquared(range.high);
+    double rangeDiagSq = Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
     if (WantCacheGeometry(rangeDiagSq))
         {
         BeMutexHolder lock(m_mutex);
@@ -1605,7 +1614,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     : T_Super(octRoot, id, parent, false), m_displayable(displayable)
     {
     if (nullptr != parent)
-        m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this));
+        m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this, octRoot.Is2d()));
     else
         m_range.Extend(*range);
 
@@ -1631,7 +1640,8 @@ Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::InitTolerance()
     {
-    m_tolerance = m_range.DiagonalDistance() / (s_minToleranceRatio * m_zoomFactor);
+    double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
+    m_tolerance = diagDist / (s_minToleranceRatio * m_zoomFactor);
     m_isLeaf = false;
     }
 
@@ -1676,7 +1686,7 @@ bool Tile::_IsInvalidated(TileTree::DirtyRangesCR dirty) const
     minRangeDiagonalSquared *= minRangeDiagonalSquared;
     for (DRange3dCR range : dirty)
         {
-        double diagSq = range.low.DistanceSquared(range.high);
+        double diagSq = GetElementRoot().Is3d() ? range.low.DistanceSquared(range.high) : range.low.DistanceSquaredXY(range.high);
         if (diagSq >= minRangeDiagonalSquared || diagSq == 0.0) // ###TODO_ELEMENT_TILE: Dumb single-point primitives...
             return true;
         }
@@ -1962,7 +1972,7 @@ void MeshGenerator::AddMeshes(GeometryList const& geometries, bool doRangeTest)
 void MeshGenerator::AddMeshes(GeometryR geom, bool doRangeTest)
     {
     DRange3dCR geomRange = geom.GetTileRange();
-    double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
+    double rangePixels = (m_tile.GetElementRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
     if (rangePixels < s_minRangeBoxSize && 0.0 < geomRange.DiagonalDistance()) // ###TODO_ELEMENT_TILE: single point primitives have an empty range...
         return;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
@@ -1986,7 +1996,7 @@ void MeshGenerator::AddMeshes(GeomPartR part, bvector<GeometryCP> const& instanc
     // All instances will have the same facet options and range size...
     GeometryCP first = *iter;
     DRange3dCR geomRange = first->GetTileRange();
-    double rangePixels = geomRange.DiagonalDistance() / m_tolerance;
+    double rangePixels = (m_tile.GetElementRoot().Is3d() ? geomRange.DiagonalDistance() : geomRange.DiagonalDistanceXY()) / m_tolerance;
     if (rangePixels < s_minRangeBoxSize)
         return;
 

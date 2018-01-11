@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -818,7 +818,7 @@ protected:
     Render::GraphicPtr  m_graphic;
 
     Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
-    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child) const;
+    DGNPLATFORM_EXPORT DRange3d ComputeChildRange(OctTree::Tile& child, bool is2d=false) const;
 
 public:
     virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
