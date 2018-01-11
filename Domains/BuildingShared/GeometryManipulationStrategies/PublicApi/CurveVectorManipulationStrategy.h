@@ -13,7 +13,9 @@ enum class DefaultNewGeometryType
     {
     Default = 0,
     Line,
-    Arc
+    Arc,
+    Spline,
+    InterpolationCurve
     };
 
 //=======================================================================================
@@ -27,9 +29,12 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         bvector<CurvePrimitiveManipulationStrategyPtr> m_primitiveStrategies;
         DefaultNewGeometryType m_defaultNewGeometryType;
 
+        CurvePrimitivePlacementStrategyPtr ResetCurrentManipulationStrategy();
+
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
 
+        friend struct CurveVectorPlacementStrategy;
     protected:
         CurveVectorManipulationStrategy() : T_Super(), m_defaultNewGeometryType(DefaultNewGeometryType::Line) {}
 
@@ -39,6 +44,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override { return true; }
+
+        virtual bool _IsContinious() const override { return false; }
 
         virtual bool _IsDynamicKeyPointSet() const override;
         virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
@@ -63,6 +70,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
 
         void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
+
+        bool FinishContiniousPrimitive();
     };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -64,3 +64,11 @@ bool GeometryManipulationStrategyBase::CanAcceptMorePoints() const
     {
     return _CanAcceptMorePoints();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool GeometryManipulationStrategyBase::IsContinious() const
+    {
+    return _IsContinious();
+    }

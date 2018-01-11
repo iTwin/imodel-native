@@ -45,3 +45,11 @@ void CurveVectorPlacementStrategy::ChangeDefaultNewGeometryType
     {
     m_manipulationStrategy->ChangeDefaultNewGeometryType(newGeometryType);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurveVectorPlacementStrategy::FinishContiniousPrimitive()
+    {
+    return m_manipulationStrategy->FinishContiniousPrimitive();
+    }

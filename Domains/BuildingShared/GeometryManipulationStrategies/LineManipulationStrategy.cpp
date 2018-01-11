@@ -52,6 +52,14 @@ bool LineManipulationStrategy::_CanAcceptMorePoints() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool LineManipulationStrategy::_IsContinious() const
+    {
+    return false;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 CurvePrimitiveManipulationStrategyPtr LineManipulationStrategy::_Clone() const

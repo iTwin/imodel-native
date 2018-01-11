@@ -39,6 +39,8 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override;
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override;
+
         GMS_PROPERTY_OVERRIDE(int)
         GMS_PROPERTY_OVERRIDE(double)
         GMS_PROPERTY_OVERRIDE(DVec3d)

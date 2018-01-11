@@ -56,6 +56,8 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         virtual bool _IsComplete() const = 0;
         virtual bool _CanAcceptMorePoints() const = 0;
 
+        virtual bool _IsContinious() const = 0;
+
     public:
         GMS_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_SET_TRYGET_PROPERTY_TYPE(double)
@@ -71,6 +73,8 @@ struct GeometryManipulationStrategyBase : RefCountedBase
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsComplete() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool CanAcceptMorePoints() const;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool IsContinious() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE
