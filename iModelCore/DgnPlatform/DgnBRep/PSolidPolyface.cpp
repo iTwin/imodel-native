@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
-#include <MTG/MTGApi.h>
+#include <Mtg/MtgApi.h>
 
 static int s_debug = 0;
 

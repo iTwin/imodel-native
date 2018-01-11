@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SubjectViewController.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -109,7 +109,7 @@ void SubjectViewController::ResetDynamicTransform(DgnElementId const& subjectId,
 void SubjectViewController::ApplyDynamicTransform(DgnElementId const& subjectId, DgnModelIdSet const& modelIds, TransformCP incrementalTransform)
     {
     Transform displayTransform = m_transformCache.find(subjectId) != m_transformCache.end() ? m_transformCache[subjectId] : Transform::FromIdentity();
-    displayTransform = Transform::FromProduct(displayTransform, *incrementalTransform);
+    displayTransform = Transform::FromProduct(*incrementalTransform, displayTransform);
     BeAssert(nullptr != m_vp);
     for (auto const& modelId : modelIds)
         applyToTileTree(*m_vp, modelId, [&](TileTree::Root& tree) { tree.SetDisplayTransform(&displayTransform); });
