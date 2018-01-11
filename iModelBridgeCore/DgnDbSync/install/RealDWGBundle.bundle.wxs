@@ -15,7 +15,7 @@
         <WixVariable Id="WixMbaPrereqLicenseUrl" Value="Nothing.rtf" />
         
         <Chain ParallelCache="yes">
-            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="no"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="Real DWG Converter">
+            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModelBridge for Autodesk(R) DWG(TM)">
                 <MsiProperty Name="INSTALLDIR" Value="[InstallDirectory]"/>
                 <MsiProperty Name="PACKAGE_HOMEROOT" Value="[ConfigurationDirectory]"/>
                 <MsiProperty Name="FROMLAUNCHSETUP" Value="1"/>
