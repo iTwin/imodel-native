@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformErrors.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,6 +175,7 @@ enum class RevisionStatus : int
     ReverseOrReinstateSchemaChangesOnOpen, //! Cannot reverse or reinstate changes in a previously opened DgnDb. Do the operation when the file is opened. 
     CannotMergeIntoReadonly, //! Cannot merge changes into a Readonly DgnDb.
     CannotMergeIntoMaster, //! Cannot merge changes into a Master DgnDb.
+    CannotMergeIntoReversed, //! Cannot merge changes into a DgnDb that has reversed revisions.
     };
 
 //=======================================================================================

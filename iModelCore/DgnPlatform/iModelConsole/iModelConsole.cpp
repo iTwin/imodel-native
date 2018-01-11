@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BimConsole/BimConsole.cpp $
+|     $Source: iModelConsole/iModelConsole.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "BimConsole.h"
+#include "iModelConsole.h"
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -21,7 +21,7 @@ bool Session::IsFileLoaded(bool printMessageIfFalse) const
     const bool isOpen = m_file != nullptr && m_file->IsOpen();
 
     if (!isOpen && printMessageIfFalse)
-        BimConsole::WriteErrorLine("No file loaded.");
+        IModelConsole::WriteErrorLine("No file loaded.");
 
     return isOpen;
     }
@@ -36,7 +36,7 @@ bool Session::IsECDbFileLoaded(bool printMessageIfFalse) const
 
     const bool isECDbFile = m_file->GetECDbHandle() != nullptr;
     if (!isECDbFile && printMessageIfFalse)
-        BimConsole::WriteErrorLine("Command requires BIM or ECDb, but currently opened file is only a BeSQLite file.");
+        IModelConsole::WriteErrorLine("Command requires iModel or ECDb, but currently opened file is only a BeSQLite file.");
 
     return isECDbFile;
     }
@@ -65,8 +65,8 @@ Utf8CP SessionFile::TypeToString(Type type)
     {
     switch (type)
         {
-            case Type::Bim:
-                return "BIM";
+            case Type::IModel:
+                return "iModel";
             case Type::ECDb:
                 return "ECDb";
             case Type::BeSQLite:
@@ -84,7 +84,7 @@ Utf8CP SessionFile::TypeToString(Type type)
 bool SessionFile::EnableTracking(bool enable)
     {
     if (m_changeTracker == nullptr)
-        m_changeTracker = std::make_unique<BimConsoleChangeTracker>(GetHandleR());
+        m_changeTracker = std::make_unique<IModelConsoleChangeTracker>(GetHandleR());
 
     return m_changeTracker->EnableTracking(enable);
     }
@@ -97,7 +97,7 @@ bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetHandle(), "SELECT Namespace, StrData FROM be_Prop WHERE Name='SchemaVersion'"))
         {
-        BimConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
+        IModelConsole::WriteErrorLine("Could not execute SQL to retrieve profile versions.");
         return false;
         }
 
@@ -118,8 +118,8 @@ bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& 
             }
         else if (BeStringUtilities::StricmpAscii(profileNamespace, "dgn_Db") == 0)
             {
-            profileInfo.m_type = ProfileInfo::Type::DgnDb;
-            profileInfo.m_name.assign("DgnDb");
+            profileInfo.m_type = ProfileInfo::Type::IModel;
+            profileInfo.m_name.assign("iModel");
             }
         else
             {
@@ -135,16 +135,16 @@ bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& 
     return !profileInfos.empty();
     }
 
-//******************** BimConsole ***********************
+//******************** IModelConsole ***********************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::Setup()
+void IModelConsole::Setup()
     {
     WriteLine(" --------------------------------------------------------------------------- ");
-    WriteLine(" BimConsole v1.0");
-    WriteLine(" Copyright (c) Bentley Systems 2017. All rights reserved. www.Bentley.com.");
+    WriteLine(" iModelConsole v1.0");
+    WriteLine(" Copyright (c) Bentley Systems 2018. All rights reserved. www.Bentley.com.");
     WriteLine(" ----------------------------------------------------------------------------");
     WriteLine();
     WriteLine("    .help for help, .exit to exit program");
@@ -185,9 +185,9 @@ void BimConsole::Setup()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-int BimConsole::Run(int argc, WCharCP argv[])
+int IModelConsole::Run(int argc, WCharCP argv[])
     {
-    //Initialize BimConsole and Print out banner 
+    //Initialize iModelConsole and print out banner 
     Setup();
 
     if (argc > 1)
@@ -195,7 +195,7 @@ int BimConsole::Run(int argc, WCharCP argv[])
         Command const* openCommand = GetCommand(".open");
         BeAssert(openCommand != nullptr);
         Utf8String argsUnparsed;
-        //ignore first arg as it is the path to the bimconsole exe
+        //ignore first arg as it is the path to the iModelConsole exe
         for (size_t i = 1; i < (size_t) argc; i++)
             {
             if (i > 1)
@@ -213,7 +213,7 @@ int BimConsole::Run(int argc, WCharCP argv[])
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-int BimConsole::WaitForUserInput()
+int IModelConsole::WaitForUserInput()
     {
     Utf8String cmd;
 
@@ -229,10 +229,10 @@ int BimConsole::WaitForUserInput()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.eberle     09/2013
+// @bsimethod                                                  Krischan.Eberle     09/2013
 //---------------------------------------------------------------------------------------
 //static
-void BimConsole::RunCommand(Utf8StringCR cmd)
+void IModelConsole::RunCommand(Utf8StringCR cmd)
     {
     bool isECSqlCommand = cmd[0] != COMMAND_PREFIX;
 
@@ -279,7 +279,7 @@ void BimConsole::RunCommand(Utf8StringCR cmd)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-bool BimConsole::ReadLine(Utf8StringR cmd)
+bool IModelConsole::ReadLine(Utf8StringR cmd)
     {
     WritePrompt();
     cmd.clear();
@@ -304,7 +304,7 @@ bool BimConsole::ReadLine(Utf8StringR cmd)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2013
 //---------------------------------------------------------------------------------------
-Command const* BimConsole::GetCommand(Utf8StringCR commandName) const
+Command const* IModelConsole::GetCommand(Utf8StringCR commandName) const
     {
     auto it = m_commands.find(commandName);
     if (it == m_commands.end())
@@ -318,7 +318,7 @@ Command const* BimConsole::GetCommand(Utf8StringCR commandName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    07/2016
 //---------------------------------------------------------------------------------------
-BeSQLite::L10N::SqlangFiles BimConsole::_SupplySqlangFiles()
+BeSQLite::L10N::SqlangFiles IModelConsole::_SupplySqlangFiles()
     {
     BeFileName defaultSqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     defaultSqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
@@ -329,17 +329,8 @@ BeSQLite::L10N::SqlangFiles BimConsole::_SupplySqlangFiles()
 // @bsimethod                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
 //static
-size_t BimConsole::FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar)
+size_t IModelConsole::FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar)
     {
-#ifdef COMMENT_OUT_UNUSED_VARIABLE
-    auto postProcessToken = [&token] (WStringR tokenW, size_t currentIndex)
-        {
-        tokenW.Trim();
-        token.Assign(tokenW.c_str());
-        return currentIndex + 1;
-        };
-#endif
-
     enum class State
         {
         IsDelimiter,
@@ -425,22 +416,22 @@ size_t BimConsole::FindNextToken(Utf8String& token, WStringCR inputString, size_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-FILE* BimConsole::GetIn() { return stdin; }
+FILE* IModelConsole::GetIn() { return stdin; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-FILE* BimConsole::GetOut() { return stdout; }
+FILE* IModelConsole::GetOut() { return stdout; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-FILE* BimConsole::GetErr() { return stderr; }
+FILE* IModelConsole::GetErr() { return stderr; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::Write(Utf8CP format, ...)
+void IModelConsole::Write(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -451,7 +442,7 @@ void BimConsole::Write(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::WriteLine(Utf8CP format, ...)
+void IModelConsole::WriteLine(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -463,15 +454,12 @@ void BimConsole::WriteLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::WriteLine()
-    {
-    Write("%s", "\r\n");
-    }
+void IModelConsole::WriteLine() { Write("%s", "\r\n"); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::WriteError(Utf8CP format, ...)
+void IModelConsole::WriteError(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -482,7 +470,7 @@ void BimConsole::WriteError(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::WriteErrorLine(Utf8CP format, ...)
+void IModelConsole::WriteErrorLine(Utf8CP format, ...)
     {
     va_list args;
     va_start(args, format);
@@ -494,8 +482,5 @@ void BimConsole::WriteErrorLine(Utf8CP format, ...)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
-void BimConsole::Write(FILE* stream, Utf8CP format, va_list args)
-    {
-    vfprintf(stream, format, args);
-    }
+void IModelConsole::Write(FILE* stream, Utf8CP format, va_list args) { vfprintf(stream, format, args); }
 

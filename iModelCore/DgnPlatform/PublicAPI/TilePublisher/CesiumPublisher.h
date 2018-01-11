@@ -9,6 +9,8 @@
 //__PUBLISH_SECTION_START__
 
 #include <TilePublisher/TilePublisher.h>
+#include <WebServices/iModelHub/Client/Client.h>
+
 
 #define USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM using namespace BentleyApi::Dgn::TilePublish::Cesium;
 
@@ -62,13 +64,9 @@ protected:
     PublisherContext::GlobeMode     m_globeMode = PublisherContext::GlobeMode::FromDisplayStyle;
     BeFileName                      m_bimiumDistDir;
 
-    // History (WIP) requires IModel Hub connection.
     HistoryMode                     m_historyMode = HistoryMode::OmitHistory;
-    Utf8String                      m_userName;
-    Utf8String                      m_password;
-    Utf8String                      m_environment;
-    Utf8String                      m_project = "iModelHubTest";
-    Utf8String                      m_repository;
+    iModel::Hub::ClientPtr          m_client;       // Required only for history publisher.
+
 
     TILEPUBLISHER_EXPORT DgnViewId GetDefaultViewId(DgnDbR db) const;
     TILEPUBLISHER_EXPORT DgnModelPtr GetDefaultModel(DgnDbR db, DgnViewId defaultViewId) const;
@@ -103,13 +101,9 @@ public:
     TILEPUBLISHER_EXPORT DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db) const;
     TILEPUBLISHER_EXPORT Json::Value GetViewerOptions () const;
     TILEPUBLISHER_EXPORT UnitSystem GetUnitSystem(DgnDbR db, DgnViewId defaultViewId) const;
+    iModel::Hub::ClientPtr GetClient() const { return m_client; }
+    void SetClient(iModel::Hub::ClientPtr& client) { m_client = client; }
 
-    // For History publishing...
-    Utf8StringCR GetUser() const { return m_userName; }
-    Utf8StringCR GetPassword() const { return m_password; }
-    Utf8StringCR GetEnvironment() const { return m_environment; }
-    Utf8StringCR GetProject() const { return m_project; }
-    Utf8StringCR GetRepository() const { return m_repository; }
 
 };
 

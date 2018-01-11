@@ -36,14 +36,18 @@
 
     <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
     <Part Name="PsolidShim">
-        <SubPart PartName="PsolidShimWindowsDesktop"/>
-        <SubPart PartName="PsolidShimIos"/>
+        <SubPart PartName="PsolidShim_iOSArm64"/>
+        <SubPart PartName="PsolidShim_x64"/>
+        <SubPart PartName="PsolidShim_LinuxX64"/>
     </Part>
-    <Part Name="PsolidShimWindowsDesktop" OnlyPlatforms="x64">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_0_226"/>
+    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64" WipPartEnable="ParasolidIos">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
     </Part>
-    <Part Name="PsolidShimIos" OnlyPlatforms="iOSARM64,iOSx64" WipPartEnable="ParasolidIos">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_ios_30_0_270"/>
+    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64" WipPartEnable="ParasolidLinux">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_LinuxX64"/>
+    </Part>
+    <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_x64"/>
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
@@ -536,31 +540,35 @@
     <!-- ******************* "NoView" Tests - all tests up through DgnPlatform ********************* -->
     <!-- ******************************************************************************************* -->
 
-    <Part Name="DgnPlatformNoViewTested">
+    <Part Name="DgnPlatformNoViewTested" PrgOutputDir="DgnClientSdk">
       <RequiredRepository>DgnDbTestingScripts</RequiredRepository><!--To Automate Unit Testing on Linux-->
-		
-	  <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
-      <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
+                
+      <!-- Cannot include because they depend on DgnView
+      <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      -->
+      
+      <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      <SubProduct ProductName="BimConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
+      <SubProduct ProductName="iModelConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
       
       <!-- This can't be active because Sam doesn't want iModelJsNodeAddon merged between bim0200 and bim0200dev. -->
       <!-- <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" Repository="iModelJsNodeAddon" /> -->
       
       <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
       <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        -->
+      -->
       <SubPart PartName="NoView-Gtest-RunAggregator-Linux" LibType="Static" />
       <SubPart PartName="NoView-Gtest-RunAggregator-MacOS" LibType="Static" />
       <SubPart PartName="NoView-Gtest-RunAggregator-Windows" LibType="Dynamic" />
+
+      <!-- Cannot include because they depend on DgnView
       <SubPart PartName="RunToyTileCreator-Linux" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
       <SubPart PartName="RunToyTileCreator-MacOS" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
       <SubPart PartName="RunToyTileCreator-Windows" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Dynamic"/>
-	 
+      -->
     </Part>
-	
 
     <Part Name="NoView-Gtest-RunAggregator-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
       <SubPart PartName="NoView-Gtest-RunAggregator"/>
@@ -582,13 +590,15 @@
         <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest" /> -->
         <!-- <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest" /> -->
         <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunGtest" />
+        <!-- Cannot include because they depend on DgnView
         <SubPart Repository="DgnDbSync"             PartFile="iModelBridge"     PartName="RunGtest" />
+        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest" />
+        -->
         <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest" /> -->
         <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunGtest" />
         <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest" />
         <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RunGtest" />
         <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest" />
-        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest" />
         <SubPart Repository="DgnDomains-RealityModeling" PartFile="RealityModeling" PartName="RunGtest" />
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
         <!-- <SubPart Repository="DgnDbSync"             PartFile="DgnDbSync"        PartName="RunDgnV8ConverterTests" /> -->
@@ -598,40 +608,40 @@
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <!-- // BimConsole                                                           // -->
+    <!-- // iModelConsole                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Product Name="BimConsole">
-        <SubPart PartName="BimConsoleExe-Windows" LibType="Dynamic" />
-        <SubPart PartName="BimConsoleExe-Linux" LibType="Static" />
-         <SubPart PartName="BimConsoleExe-MacOS" LibType="Static" />
-        <Directories DirectoryListName="BimConsoleDirList" />
+    <Product Name="iModelConsole">
+        <SubPart PartName="iModelConsoleExe-Windows" LibType="Dynamic" />
+        <SubPart PartName="iModelConsoleExe-Linux" LibType="Static" />
+         <SubPart PartName="iModelConsoleExe-MacOS" LibType="Static" />
+        <Directories DirectoryListName="iModelConsoleDirList" />
     </Product>
 
-    <Part Name="BimConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="BimConsoleExe" />
+    <Part Name="iModelConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="iModelConsoleExe" />
     </Part>
     
-    <Part Name="BimConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
-        <SubPart PartName="BimConsoleExe" />
+    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" />
     </Part>
 
-    <Part Name="BimConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
-        <SubPart PartName="BimConsoleExe" />
+    <Part Name="iModelConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" />
     </Part>
 
-    <Part Name="BimConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="BimConsole/BimConsole.mke" >
+    <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
         <SubPart PartName="DgnPlatformLib"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
-                Delivery/BimConsole$(exeext)
+                Delivery/iModelConsole$(exeext)
                 Delivery/logging.config.xml
             </Files>
         </Bindings>
     </Part>
 
-    <ProductDirectoryList ListName="BimConsoleDirList" >
+    <ProductDirectoryList ListName="iModelConsoleDirList" >
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
         <ProductDirectory Name="ApplicationRoot"                Path="" LibType="Static" />
         <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
