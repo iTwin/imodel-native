@@ -43,6 +43,38 @@ void ComparePoints(bvector<DPoint3d> lhs, bvector<DPoint3d> rhs)
         }
     }
 
+ICurvePrimitivePtr CreateSpline(bvector<DPoint3d> poles, int order)
+    {
+    bvector<double> weights;
+    for (DPoint3d point : poles)
+        weights.push_back(1.0);
+
+    order = poles.size() < order ? poles.size() : order; // order can't be higher than poles size
+
+    bvector<double> knots;
+    for (int i = 0; i < order + poles.size(); ++i)
+        knots.push_back(i);
+
+    MSBsplineCurvePtr bspline = MSBsplineCurve::CreateFromPolesAndOrder(poles, &weights, &knots, order, false, false);
+    return ICurvePrimitive::CreateBsplineCurve(bspline);
+    }
+
+ICurvePrimitivePtr CreateInterpolationCurve(bvector<DPoint3d> poles, DVec3d startTangent = DVec3d::From(0, 0, 0), DVec3d endTangent = DVec3d::From(0, 0, 0))
+    {
+    MSInterpolationCurvePtr curve = MSInterpolationCurve::CreatePtr();
+    if (curve.IsNull())
+        return nullptr;
+
+    DVec3d tangents[2] = { startTangent, endTangent };
+
+    for (DVec3d & tangent : tangents)
+        tangent.Normalize();
+
+    if (SUCCESS != curve->InitFromPointsAndEndTangents(poles, false, 0.0, tangents, false, false, false, false))
+        return nullptr;
+
+    return ICurvePrimitive::CreateInterpolationCurveSwapFromSource(*curve);
+    }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              12/2017
 //---------------+---------------+---------------+---------------+---------------+------
@@ -349,4 +381,166 @@ TEST_F(CurveStrategyTests, LinePointsAngleTests)
     createdCurve = strategy->FinishPrimitive();
     expected = ICurvePrimitive::CreateLine({ 1, 2, 3 }, { 1, 3, 2 });
     CompareCurves(createdCurve, expected);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveStrategyTests, SplineThroughPointsStrategyTests)
+    {
+    SplineThroughPointsPlacementStrategyPtr strategy = SplineThroughPointsPlacementStrategy::Create();
+    ASSERT_TRUE(strategy.IsValid()) << "strategy creation should not fail";
+
+    // Check initial strategy state
+    DVec3d startTangent = DVec3d::From(1, 0, 0), endTangent = DVec3d::From(1, 0, 0);
+    ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
+    ASSERT_TRUE(endTangent.AlmostEqual(strategy->GetEndTangent())) << "End tangent is incorrect";
+
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should have no points";
+    ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+
+    // Try adding points
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ComparePoints({ {0, 0, 0} }, strategy->GetKeyPoints());
+    ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+
+    strategy->AddKeyPoint({ 1, 0, 0 });
+    ComparePoints({ {0, 0, 0}, {1, 0, 0} }, strategy->GetKeyPoints());
+
+    ICurvePrimitivePtr expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 } });
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddKeyPoint({ 0, 1, 0 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 }, {0, 1, 0} }, strategy->GetKeyPoints());
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 } });
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddKeyPoint({ 2, 5, 6 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 }, {2, 5, 6} }, strategy->GetKeyPoints());
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } });
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    startTangent = DVec3d::From(1, 2, 3);
+    strategy->SetStartTangent(startTangent);
+    startTangent.Normalize();
+    ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
+
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, startTangent);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    endTangent = DVec3d::From(3, 2, 1);
+    endTangent.Normalize();
+    strategy->SetEndTangent(endTangent);
+    ASSERT_TRUE(endTangent.AlmostEqual(strategy->GetEndTangent())) << "End tangent is incorrect";
+
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, startTangent, endTangent);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    startTangent.Zero();
+    startTangent.Normalize();
+    strategy->RemoveStartTangent();
+    ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
+
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, startTangent, endTangent);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy = SplineThroughPointsPlacementStrategy::Create();
+    ASSERT_TRUE(strategy.IsValid()) << "strategy creation should not fail";
+
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ComparePoints({ { 0, 0, 0 } }, strategy->GetKeyPoints());
+    ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+
+    strategy->AddKeyPoint({ 1, 0, 0 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 } });
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddDynamicKeyPoint({ 1, 2, 3 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 2, 3 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 2, 3 } });
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddDynamicKeyPoint({ 5, 6, 7 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } });
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
+    {
+    int order = 3;
+
+    SplineControlPointsPlacementStrategyPtr strategy = SplineControlPointsPlacementStrategy::Create(order);
+    ASSERT_TRUE(strategy.IsValid()) << "strategy creation should not fail";
+
+    // Check initial strategy state
+    int actualOrder;
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order, actualOrder)) << "Getting order should not fail";
+    ASSERT_EQ(order, actualOrder) << "Incorrect strategy order";
+
+    ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Strategy should have no points";
+    ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+
+    // Try adding points
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ComparePoints({ { 0, 0, 0 } }, strategy->GetKeyPoints());
+    ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+
+    strategy->AddKeyPoint({ 1, 0, 0 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 } }, strategy->GetKeyPoints());
+
+    ICurvePrimitivePtr expectedCurve = CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 } }, order);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddKeyPoint({ 0, 1, 0 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 } }, order);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddKeyPoint({ 2, 5, 6 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, order);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    order = 4;
+    strategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, order);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order, actualOrder)) << "Getting order should not fail";
+    ASSERT_EQ(order, actualOrder) << "Incorrect strategy order";
+
+    expectedCurve = CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 0, 1, 0 },{ 2, 5, 6 } }, order);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    order = 0;
+    strategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, order);
+    ASSERT_EQ(BentleyStatus::SUCCESS, strategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order, actualOrder)) << "Getting order should not fail";
+    ASSERT_EQ(order, actualOrder) << "Incorrect strategy order";
+
+    ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with invalid order";
+
+    order = 3;
+    strategy = SplineControlPointsPlacementStrategy::Create(order);
+    ASSERT_TRUE(strategy.IsValid()) << "strategy creation should not fail";
+
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ComparePoints({ { 0, 0, 0 } }, strategy->GetKeyPoints());
+    ASSERT_TRUE(strategy->FinishPrimitive().IsNull()) << "No curve should be created with 0 points";
+
+    strategy->AddKeyPoint({ 1, 0, 0 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 } }, order);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddDynamicKeyPoint({ 1, 2, 3 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 2, 3 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 1, 2, 3 } }, order);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
+
+    strategy->AddDynamicKeyPoint({ 5, 6, 7 });
+    ComparePoints({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } }, strategy->GetKeyPoints());
+    expectedCurve = CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } }, order);
+    CompareCurves(expectedCurve, strategy->FinishPrimitive());
     }

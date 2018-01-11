@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 enum class LinePlacementStrategyType
@@ -41,7 +42,7 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
         static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType, LineManipulationStrategyR manipulationStrategy);
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrategy
+struct LinePointsPlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 
@@ -53,11 +54,11 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsPlacementStrategy : LinePlacementStrate
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
     public:
-        static LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
-        static LinePointsPlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy) { return new LinePointsPlacementStrategy(manipulationStrategy); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create() { return new LinePointsPlacementStrategy(); }
+        static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsPlacementStrategyPtr Create(LineManipulationStrategyR manipulationStrategy) { return new LinePointsPlacementStrategy(manipulationStrategy); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
+struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 
@@ -152,7 +153,7 @@ struct LineMetesAndBoundsPlacementStrategy : public LinePointLengthAnglePlacemen
         static LineMetesAndBoundsPlacementStrategyPtr Create(DPlane3d const& plane) { return new LineMetesAndBoundsPlacementStrategy(plane); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointsLengthPlacementStrategy : LinePlacementStrategy
+struct LinePointsLengthPlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 
@@ -178,7 +179,7 @@ struct EXPORT_VTABLE_ATTRIBUTE LinePointsLengthPlacementStrategy : LinePlacement
         static GEOMETRYMANIPULATIONSTRATEGIES_EXPORT LinePointsLengthPlacementStrategyPtr Create() { return new LinePointsLengthPlacementStrategy(); }
     };
 
-struct EXPORT_VTABLE_ATTRIBUTE LinePointsAnglePlacementStrategy : LinePlacementStrategy
+struct LinePointsAnglePlacementStrategy : LinePlacementStrategy
     {
     DEFINE_T_SUPER(LinePlacementStrategy);
 

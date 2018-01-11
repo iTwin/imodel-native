@@ -59,13 +59,17 @@ $(o)ArcStartMidEndPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartMidEndPlace
 
 $(o)ArcStartEndMidPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartEndMidPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartEndMidPlacementStrategy.h
 
-$(o)ElementManipulationStrategy$(oext) : $(_MakeFilePath)ElementManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementManipulationStrategy.h
+$(o)SplineManipulationStrategy$(oext) : $(_MakeFilePath)SplineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplineManipulationStrategy.h
 
 $(o)ElementPlacementStrategy$(oext) : $(_MakeFilePath)ElementPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementPlacementStrategy.h
 
 $(o)LineStringManipulationStrategy$(oext) : $(_MakeFilePath)LineStringManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringManipulationStrategy.h
 
 $(o)LineStringPlacementStrategy$(oext) : $(_MakeFilePath)LineStringPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringPlacementStrategy.h
+
+$(o)SplinePlacementStrategy$(oext) : $(_MakeFilePath)SplinePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplinePlacementStrategy.h
+
+$(o)ElementManipulationStrategy$(oext) : $(_MakeFilePath)ElementManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementManipulationStrategy.h
 
 $(o)LineStringMetesAndBoundsPlacementStrategy$(oext) : $(_MakeFilePath)LineStringMetesAndBoundsPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringMetesAndBoundsPlacementStrategy.h
 

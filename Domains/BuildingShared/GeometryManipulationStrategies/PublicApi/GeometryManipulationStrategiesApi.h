@@ -29,6 +29,13 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcCenterStartPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcStartMidEndPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ArcStartEndMidPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplinePlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineControlPointsPlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineThroughPointsPlacementStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineControlPointsManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineThroughPointsManipulationStrategy)
+
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointsPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LinePointLengthAnglePlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(LineMetesAndBoundsPlacementStrategy)
@@ -53,6 +60,7 @@ END_BUILDING_SHARED_NAMESPACE
 #include "CurveVectorManipulationStrategy.h"
 #include "ChildCurveVectorManipulationStrategy.h"
 #include "LineManipulationStrategy.h"
+#include "SplineManipulationStrategy.h"
 #include "LineStringManipulationStrategy.h"
 #include "EllipseManipulationStrategy.h"
 #include "ArcManipulationStrategy.h"
@@ -61,6 +69,7 @@ END_BUILDING_SHARED_NAMESPACE
 #include "CurvePrimitivePlacementStrategy.h"
 #include "ChildCurveVectorPlacementStrategy.h"
 #include "LinePlacementStrategy.h"
+#include "SplinePlacementStrategy.h"
 #include "LineStringPlacementStrategy.h"
 #include "LineStringPointsPlacementStrategy.h"
 #include "LineStringMetesAndBoundsPlacementStrategy.h"
