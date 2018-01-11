@@ -417,7 +417,7 @@ void RevisionComparison::Controller::_OnViewOpened (DgnViewportR vp)
     if (viewFlags.GetRenderMode() != Render::RenderMode::SmoothShade)
         viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
 
-    viewFlags.SetShowVisibleEdges(true);
+    viewFlags.SetShowVisibleEdges(false);
     viewFlags.SetShowPatterns(false);
     viewFlags.SetShowGrid(false);
     viewFlags.SetShowClipVolume(false);
