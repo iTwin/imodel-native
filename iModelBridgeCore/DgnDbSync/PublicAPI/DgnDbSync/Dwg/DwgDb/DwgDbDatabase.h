@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbDatabase.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -112,7 +112,8 @@ public:
     };  // DwgDbDatabase
 
 /*=================================================================================**//**
-* DwgDbDatabasePtr is a true refcounted pointer(unlike other DwgDb ptr's due to RealDWG limitation)!
+This is a true refcounted pointer, unlike other DwgDb ptr's which are inherited from the toolkits
+therefore are limited in case of RealDWG.
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
 class DwgDbDatabasePtr

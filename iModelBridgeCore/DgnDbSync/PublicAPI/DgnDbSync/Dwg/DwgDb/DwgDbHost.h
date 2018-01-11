@@ -58,9 +58,9 @@ public:
     };  // IDwgDbProgressMeter
 
 /*=================================================================================**//**
-//! This interface is a gate way to/from toolkit's host, and consists of only an essential 
-//! subset of the toolkit.  Most of the other stuff is handled in DwgDb layer thus shielded from
-//! the app which does not have to deal with toolkit specific issues/requirements.
+This interface is a gate way to/from toolkit's host, and consists of only an essential 
+subset of the toolkit.  Most of the other stuff is handled in DwgDb layer thus shielded from
+the app which does not have to deal with toolkit specific issues/requirements.
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
 struct IDwgDbHost : NonCopyableClass

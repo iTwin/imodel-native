@@ -558,7 +558,7 @@ public:
     };  // IPointsFilter
 
 /*=================================================================================**//**
-*! This class is currently only supported for RealDWG.
+* This class is currently only supported for RealDWG.
 * @bsiclass                                                     Don.Fu          06/16
 +===============+===============+===============+===============+===============+======*/
 class DwgDbPointCloudEx : public DWGDB_EXTENDCLASS(PointCloudEx)

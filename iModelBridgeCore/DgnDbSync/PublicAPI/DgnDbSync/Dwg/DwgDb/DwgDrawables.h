@@ -203,12 +203,12 @@ public:
     };  // DwgGiClipBoundary
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiClipBoundary)
 
-/*-------------------------------------------------------------------------------------------*/
-//! We have choosen encapsulating, instead of extending, below gradient fill classes based on
-//! the facts that only RealDWG has these classes and some of its public contructors exposes 
-//! arguments such as AcArray<AcCmColor> which cause unresolved link errors in an end app that 
+//=======================================================================================
+//! These classes encapsulate, as opposed to extending to, the toolkit's Gi fill classes based on
+//! the facts that only RealDWG has these classes and some of its public contructors expose
+//! arguments such as AcArray<AcCmColor> which cause unresolved link errors in an app that 
 //! includes this header file. 
-/*-------------------------------------------------------------------------------------------*/
+//=======================================================================================
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
@@ -725,11 +725,11 @@ public:
 typedef RefCountedPtr<DwgGiDrawable>    DwgGiDrawablePtr;
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiDrawable)
 
-/*=================================================================================**//**
+//=======================================================================================
 //! Each of these metheds should be implemented such that they can be called from the toolkit
 //! when DwgDbEntity::Draw is called.
 //! @see IDwgDrawParameters
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 struct IDwgDrawGeometry
     {
 public:
@@ -761,12 +761,13 @@ public:
     };  // IDwgDrawGeometry
 DEFINE_NO_NAMESPACE_TYPEDEFS (IDwgDrawGeometry)
 
-/*=================================================================================**//**
+//=======================================================================================
 //! Implement these methods such that prior to a graphical component of an entity is drawn,
-//! these methods may be called from the toolkit to set the symbology etc for the component.
-//! Therefore it is used and controlled by the toolkit and is a per component operation.
-//! @see DwgDrawGeometry
-+===============+===============+===============+===============+===============+======*/
+//! these methods may be called from the toolkit to set the symbology and other entity traits
+//! for the component which is about to be drawn. It is used and controlled by the toolkit 
+//! and is a per component operation.
+//! @see IDwgDrawGeometry
+//=======================================================================================
 struct IDwgDrawParameters
     {
     virtual DwgCmEntityColorCR  _GetColor () const = 0;
@@ -794,11 +795,11 @@ struct IDwgDrawParameters
     };  // IDwgDrawParameters
 DEFINE_NO_NAMESPACE_TYPEDEFS (IDwgDrawParameters)
 
-/*=================================================================================**//**
+//=======================================================================================
 //! Options to control a toolkit on how to draw an entity when DwgDbEntity::Draw is called.
 //! These options may come from viewports or user prefs, and therefore are per viewport or per file.
-//! @see DwgDrawParameters
-+===============+===============+===============+===============+===============+======*/
+//! @see IDwgDrawParameters
+//=======================================================================================
 struct IDwgDrawOptions
     {
     virtual DwgGiRegenType  _GetRegenType () = 0;
@@ -813,9 +814,9 @@ struct IDwgDrawOptions
 DEFINE_NO_NAMESPACE_TYPEDEFS (IDwgDrawOptions)
 
 
-/*=================================================================================**//**
-// ! A helper class to drop shapes, i.e. text using a shapfile, to an array of linestrings
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A helper class that strokes and drops shapes, i.e. text using a shapfile, to an array of linestrings.
+//=======================================================================================
 struct ShapeTextProcessor : NonCopyableClass
     {
 private:
