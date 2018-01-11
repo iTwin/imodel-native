@@ -7,9 +7,9 @@
     </ECEntityClass>
 
     <ECEnumeration typeName="OpCode" backingTypeName="int" isStrict="true">
-        <ECEnumerator name="Insert" value="1" />
-        <ECEnumerator name="Update" value="2" />
-        <ECEnumerator name="Delete" value="4" />
+        <ECEnumerator name="Insert" value="1" displayLabel="Insert"/>
+        <ECEnumerator name="Update" value="2" displayLabel="Update"/>
+        <ECEnumerator name="Delete" value="4" displayLabel="Delete"/>
     </ECEnumeration>
 
     <ECStructClass typeName="InstanceKey" displayLabel="InstanceKey" modifier="Sealed">

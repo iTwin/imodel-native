@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/SchemaUpgradeTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -5601,6 +5601,93 @@ TEST_F(SchemaUpgradeTestFixture, DeleteExistingECEnumeration)
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>");
     ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Deletion of ECEnumeration is not suppported";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifyECEnumerators)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "EC3 Enum";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator value = '0' />"
+        "   <ECEnumerator value = '1' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Deleting enumerator display label";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator value = '0' displayLabel = 'txt' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Deleting enumerator";
+
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator name='TxtFile' value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator name='LogFile' value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Changing to EC3.2 where names differ from what the EC3->EC3.2 conversion would do means a name change which is not supported";
+
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator name='NonStrictEnum0' value = '0' displayLabel = 'txt' />"
+        "   <ECEnumerator name='NonStrictEnum1' value = '1' displayLabel = 'log' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Changing to EC3.2 should not result in any changes";
+
+    CloseECDb();
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator name='Txt' value = '0' displayLabel = 'txt file' />"
+        "   <ECEnumerator name='Log' value = '1' displayLabel = 'log file' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "EC3.2 Enum";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator name='Txt' value = '0'/>"
+        "   <ECEnumerator name='Log' value = '1' />"
+        " </ECEnumeration>"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Deleting enumerator display label";
+
+    EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator name='Txt' value = '0' displayLabel = 'txt file' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Deleting enumerator";
+
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        " <ECEnumeration typeName='NonStrictEnum' backingTypeName='int' isStrict='False'>"
+        "   <ECEnumerator name='Txt1' value = '0' displayLabel = 'txt file' />"
+        "   <ECEnumerator name='Log' value = '1' displayLabel = 'log file' />"
+        " </ECEnumeration>"
+        "</ECSchema>"))) << "Changing enumerator name";
     }
 
 //---------------------------------------------------------------------------------------

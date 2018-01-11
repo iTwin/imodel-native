@@ -34,6 +34,8 @@ struct ProfileUpgrader_4002 final : ProfileUpgrader
     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
     private:
         DbResult _Upgrade(ECDbCR) const override;
+
+        static void UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, int64_t enumId, Utf8CP enumName);
     };
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle     10/2017

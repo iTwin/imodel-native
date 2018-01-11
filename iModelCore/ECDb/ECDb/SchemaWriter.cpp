@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaWriter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -2527,7 +2527,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(PropertyCategoryChanges& ch
             }
         else if (change.GetState() == ChangeState::Modified)
             {
-            Issues().Report("ECSchema Upgrade failed. PropertyCategory %s in ECSchema %s: Changing PropertyCategory is not supported.",
+            Issues().Report("ECSchema Upgrade failed. PropertyCategory %s in ECSchema %s was modified which is not supported.",
                             change.GetId(), oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
@@ -2631,9 +2631,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
                 ECEnumeratorChange& change = enumeratorChanges.At(i);
                 if (change.GetState() == ChangeState::Deleted)
                     {
-                    Issues().Report("ECSchema Upgrade failed. Enumerator %s was deleted from Enumeration %s which is not supported.",
-                        change.GetId(), oldEnum.GetFullName().c_str());
-
+                    Issues().Report("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
                     return ERROR;
                     }
                 else if (change.GetState() == ChangeState::New)
@@ -2642,9 +2640,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
                     }
                 else if (change.GetState() == ChangeState::Modified)
                     {
-                    Issues().Report("ECSchema Upgrade failed. Enumerator %s was updated from Enumeration %s which is not supported.",
-                        change.GetId(), oldEnum.GetFullName().c_str());
-
+                    Issues().Report("ECSchema Upgrade failed. One or more enumerators of Enumeration %s were modified which is not supported.", oldEnum.GetFullName().c_str());
                     return ERROR;
                     }
                 }

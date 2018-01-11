@@ -43,10 +43,10 @@
     </ECEntityClass>
     
     <ECEnumeration typeName="StandardRootFolderType" backingTypeName="int" isStrict="False" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." displayLabel="Root Folder Type">
-        <ECEnumerator name="DocumentsFolder" value="0"  />
-        <ECEnumerator name="TemporaryFolder" value="1"  />
-        <ECEnumerator name="CachesFolder" value="2"  />
-        <ECEnumerator name="LocalStateFolder" value="3"  />
+        <ECEnumerator name="DocumentsFolder" value="0" displayLabel="DocumentsFolder" />
+        <ECEnumerator name="TemporaryFolder" value="1"  displayLabel="TemporaryFolder"/>
+        <ECEnumerator name="CachesFolder" value="2" displayLabel="CachesFolder" />
+        <ECEnumerator name="LocalStateFolder" value="3" displayLabel="LocalStateFolder" />
     </ECEnumeration>
     
     <ECEntityClass typeName="ExternalFileInfo" description="Attributes of a file stored external to the repository." displayLabel="External File Info">
