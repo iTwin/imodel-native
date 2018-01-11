@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/BasicTypes.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -167,6 +167,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgBinaryData)
 +===============+===============+===============+===============+===============+======*/
 class DwgCmEntityColor : public DWGROOTCLASS_EXTEND(CmEntityColor)
     {
+public:
     DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(CmEntityColor))
     DWGROOTCLASS_ADD_CONSTRUCTORS (CmEntityColor)
 
@@ -214,6 +215,7 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgCmEntityColor)
 +===============+===============+===============+===============+===============+======*/
 class DwgCmColor : public DWGROOTCLASS_EXTEND(CmColor)
     {
+public:
     DEFINE_T_SUPER (DWGROOT_SUPER_CONSTRUCTOR(CmColor))
     DWGROOTCLASS_ADD_CONSTRUCTORS (CmColor)
 
@@ -280,6 +282,7 @@ public:
     DWGDB_EXPORT void       GetDate (int16_t& month, int16_t& day, int16_t& year) const;
     DWGDB_EXPORT void       GetTime (int16_t& hour, int16_t& minute, int16_t& second, int16_t& minisecond) const;
     };
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbDate)
 
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

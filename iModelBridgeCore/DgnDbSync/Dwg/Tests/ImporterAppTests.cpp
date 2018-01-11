@@ -151,7 +151,7 @@ TEST_F(ImporterAppTests, BudweiserBenchmark)
         if (model->GetName().EqualsI("Model"))
             {
             size_t  elemCount = model->MakeIterator().BuildIdList<DgnElementId>().size ();
-            ASSERT_EQ(elemCount, 2057);
+            EXPECT_GE(elemCount, 2057);
             }
         count++;
         }

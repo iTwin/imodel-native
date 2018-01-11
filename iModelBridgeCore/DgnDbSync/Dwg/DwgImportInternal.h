@@ -249,6 +249,7 @@ private:
     DwgDbObjectId       m_clipEntityId;
     DwgDbObjectId       m_backgroundId;
     DwgDbObjectId       m_visualStyleId;
+    DwgDbObjectId       m_sunId;
     double              m_customScale;
     DwgDbObjectCP       m_inputViewport;
     // BIM members
@@ -268,6 +269,8 @@ private:
     void AddSpatialCategories (DgnDbR dgndb, Utf8StringCR viewName);
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
+    void ComputeEnvironment (DisplayStyle3dR displayStyle);
+    bool FindEnvironmentImageFile (BeFileNameR filename) const;
 
 public:
     // constructor for a modelspace viewport

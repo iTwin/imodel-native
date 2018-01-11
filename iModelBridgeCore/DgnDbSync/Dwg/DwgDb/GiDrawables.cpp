@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/GiDrawables.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -1891,6 +1891,24 @@ DwgGiShadowParameters::Shape  DwgGiShadowParameters::GetExtendedLightShape() con
 double DwgGiShadowParameters::GetExtendedLightLength() const { return  T_Super::extendedLightLength(); }
 double DwgGiShadowParameters::GetExtendedLightWidth() const { return T_Super::extendedLightWidth(); }
 double DwgGiShadowParameters::GetExtendedLightRadius() const { return T_Super::extendedLightRadius(); }
+
+DwgGiSkyParameters::DwgGiSkyParameters (DWGGI_TypeCR(SkyParameters) in) { m_toolkitImpl = in; }
+bool       DwgGiSkyParameters::HasAerialPerspective() const { return m_toolkitImpl.aerialPerspective(); }
+double     DwgGiSkyParameters::GetDiskIntensity () const { return m_toolkitImpl.diskIntensity(); }
+double     DwgGiSkyParameters::GetDiskScale () const { return m_toolkitImpl.diskScale(); }
+double     DwgGiSkyParameters::GetGlowIntensity () const { return m_toolkitImpl.glowIntensity(); }
+DwgCmEntityColor DwgGiSkyParameters::GetGroundColor () const { return DWGDB_CALLSDKMETHOD(m_toolkitImpl.groundColor(),m_toolkitImpl.groundColor().entityColor()); }
+DwgCmEntityColor DwgGiSkyParameters::GetNightColor () const { return DWGDB_CALLSDKMETHOD(m_toolkitImpl.nightColor(),m_toolkitImpl.nightColor().entityColor()); }
+double     DwgGiSkyParameters::GetHaze () const { return m_toolkitImpl.haze(); }
+double     DwgGiSkyParameters::GetHorizonBlur () const { return m_toolkitImpl.horizonBlur(); }
+double     DwgGiSkyParameters::GetHorizonHeight () const { return m_toolkitImpl.horizonHeight(); }
+bool       DwgGiSkyParameters::HasIllumination () const { return m_toolkitImpl.illumination(); }
+double     DwgGiSkyParameters::GetIntensityFactor () const { return m_toolkitImpl.intensityFactor(); }
+double     DwgGiSkyParameters::GetRedBlueShift () const { return m_toolkitImpl.redBlueShift(); }
+double     DwgGiSkyParameters::GetSaturation () const { return m_toolkitImpl.saturation(); }
+uint16_t   DwgGiSkyParameters::GetSolarDiskSamples () const { return m_toolkitImpl.solarDiskSamples(); }
+DVec3d     DwgGiSkyParameters::GetSunDirection () const { return Util::DVec3dFrom(m_toolkitImpl.sunDirection()); }
+double     DwgGiSkyParameters::GetVisibilityDistance () const { return m_toolkitImpl.visibilityDistance(); }
 
 
 #ifdef DWGTOOLKIT_OpenDwg

@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -811,6 +811,28 @@ ColorDef        DwgHelper::GetColorDefFromACI (int16_t acColorIndex)
 
     // invert foreground color
     return  rgb == 0 ? ColorDef::White() : ColorDef (rgb);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef        DwgHelper::GetColorDefFromTrueColor (DwgCmColorCR acColor)
+    {
+    // get BGR and swap bytes
+    uint32_t    bgr = acColor.GetRGB ();
+    uint32_t    rgb = (bgr & 0x00ff0000) >> 16 | (bgr & 0x0000ff00) | (bgr & 0x000000ff) << 16;
+    return  ColorDef (rgb);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef        DwgHelper::GetColorDefFromTrueColor (DwgCmEntityColorCR acColor)
+    {
+    // get BGR and swap bytes
+    uint32_t    bgr = acColor.GetRGB ();
+    uint32_t    rgb = (bgr & 0x00ff0000) >> 16 | (bgr & 0x0000ff00) | (bgr & 0x000000ff) << 16;
+    return  ColorDef (rgb);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DbEntities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -666,6 +666,7 @@ bool           DwgDbViewport::IsTransparentOn () const { return T_Super::isTrans
 DwgDbObjectId  DwgDbViewport::GetClipEntity () const { return T_Super::nonRectClipEntityId(); }
 DwgDbObjectId  DwgDbViewport::GetBackground () const { return T_Super::background(); }
 DwgDbObjectId  DwgDbViewport::GetVisualStyle () const { return T_Super::visualStyle(); }
+DwgDbObjectId  DwgDbViewport::GetSunId () const { return T_Super::sunId(); }
 DVec3d         DwgDbViewport::GetViewDirection () const { return Util::DVec3dFrom(T_Super::viewDirection()); }
 double         DwgDbViewport::GetHeight () const { return T_Super::height(); }
 double         DwgDbViewport::GetViewHeight () const { return T_Super::viewHeight(); }
