@@ -2,7 +2,7 @@
 |
 |  $Source: serialization/src/BeCGWriter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -319,41 +319,13 @@ static double CurvatureToRadius (double curvature)
 
 void BeCGWriter::WriteSpiralType (Utf8CP name, int typeCode)
     {
-    switch (typeCode)
+    Utf8String string;
+    if (DSpiral2dBase::TransitionTypeToString (typeCode, string))
         {
-        case DSpiral2dBase::TransitionType_Clothoid:
-            WriteText (name, "Clothoid");
-            break;
-
-        case DSpiral2dBase::TransitionType_Bloss:
-            WriteText (name, "Bloss");
-            break;
-
-        case DSpiral2dBase::TransitionType_Biquadratic:
-            WriteText (name, "Biquadratic");
-            break;
-
-        case DSpiral2dBase::TransitionType_Cosine:
-            WriteText (name, "Cosine");
-            break;
-
-        case DSpiral2dBase::TransitionType_Sine:
-            WriteText (name, "Sine");
-            break;
-
-        case DSpiral2dBase::TransitionType_Viennese:
-            WriteText (name, "Viennese");
-            break;
-
-        case DSpiral2dBase::TransitionType_WeightedViennese:
-            WriteText (name, "WeightedViennese");
-            break;
-
-        default:    // hm.. Call it a clothoid?  No, just tell the truth  . . .
-            WriteText (name, "Unknown");
-            break;
-
+        WriteText (name, string.c_str ());
         }
+    else
+        WriteText (name, "Unknown");
     }
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dspiral2dbase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -26,6 +26,7 @@ int DSpiral2dSine::GetTransitionTypeCode () const { return TransitionType_Sine;}
 
 int DSPiral2dWeightedViennese::GetTransitionTypeCode () const { return TransitionType_WeightedViennese;}
 int DSPiral2dViennese::GetTransitionTypeCode () const { return TransitionType_Viennese;}
+int DSpiral2dNewSouthWales::GetTransitionTypeCode () const { return TransitionType_NewSouthWales;}
 
 
 
@@ -50,35 +51,56 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
         return new DSpiral2dCosine ();
     if (transitionType == TransitionType_Sine)
         return new DSpiral2dSine ();
+    if (transitionType == TransitionType_NewSouthWales)
+        return new DSpiral2dNewSouthWales ();
+#ifdef CompileCZECH
+    if (transitionType == TransitionType_Czech)
+        return new DSpiral2dCzech ();
+#endif
     return NULL;
     }
 
+struct SpiralTagName {
+    int type;
+    Utf8CP name;
+    };
+static SpiralTagName s_spiralNames [] =
+    {
+        {DSpiral2dBase::TransitionType_Clothoid, "clothoid"},
+        {DSpiral2dBase::TransitionType_Bloss, "bloss"},
+        {DSpiral2dBase::TransitionType_Biquadratic, "biquadratic"},
+        {DSpiral2dBase::TransitionType_Cosine, "cosine"},
+        {DSpiral2dBase::TransitionType_Sine, "sine"},
+        {DSpiral2dBase::TransitionType_Viennese, "Viennese"},
+        {DSpiral2dBase::TransitionType_WeightedViennese, "WeightedViennese"},
+        {DSpiral2dBase::TransitionType_Czech, "Czech"},
+        {DSpiral2dBase::TransitionType_NewSouthWales, "NewSouthWales"},
+        {DSpiral2dBase::TransitionType_Australian, "Australian"},
+        {DSpiral2dBase::TransitionType_Italian, "Italian"},
+        {DSpiral2dBase::TransitionType_Polish, "Polish"}
+    };
 int DSpiral2dBase::StringToTransitionType (Utf8CP name)
     {
-    if (0 == BeStringUtilities::Stricmp (name, "clothoid"))
-        return TransitionType_Clothoid;
-        
-    if (0 == BeStringUtilities::Stricmp (name, "bloss"))
-        return TransitionType_Bloss;
-
-    if (0 == BeStringUtilities::Stricmp (name, "biquadratic"))
-        return TransitionType_Biquadratic;
-
-    if (0 == BeStringUtilities::Stricmp (name, "cosine"))
-        return TransitionType_Cosine;
-
-    if (0 == BeStringUtilities::Stricmp (name, "sine"))
-        return TransitionType_Sine;
-
-    if (0 == BeStringUtilities::Stricmp (name, "Viennese"))
-        return TransitionType_Viennese;
-
-    if (0 == BeStringUtilities::Stricmp (name, "WeightedViennese"))
-        return TransitionType_WeightedViennese;
-
+    for (auto &entry : s_spiralNames)
+        if (0 == BeStringUtilities::Stricmp (name, entry.name))
+            return entry.type;
     return TransitionType_Unknown;
     }
 
+bool DSpiral2dBase::TransitionTypeToString (int type, Utf8StringR string)
+    {
+    string.clear ();
+    for (auto &entry : s_spiralNames)
+        {
+        if (entry.type == type)
+            {
+            string.assign (entry.name);
+            return true;
+            }
+        }
+    string.assign ("unknown");
+    return false;
+    }
 //! invoke appropriate concrete class constructor ...
 DSpiral2dBaseP DSpiral2dBase::CreateBearingCurvatureBearingCurvature
       (
@@ -1782,4 +1804,139 @@ double DSpiral2dPlacement::MappedSpiralLengthActiveInterval (RotMatrixCR matrix)
     MappedLengthIntegrator integrator (matrix, *this);
     return integrator.IntegrateMappedLengthBetweenPrimaryFractions (fractionA, fractionB);
     }
+
+#ifdef CompileCZECH
+// Specialize spiral for CZECH ....
+DSpiral2dCzech::DSpiral2dCzech () : DSpiral2dBase () {}
+DSpiral2dBaseP DSpiral2dCzech::Clone () const
+    {
+    DSpiral2dCzech *pClone = new DSpiral2dCzech ();
+    pClone->CopyBaseParameters (this);
+    return pClone;
+    }
+double DSpiral2dCzech::DistanceToLocalAngle (double distance) const
+    {
+    double u = DistanceToFraction (distance);
+    return   mLength * u * (mCurvature0
+           + u * u * (1.0 - 0.5 * u) * (mCurvature1 - mCurvature0));
+    }
+
+double DSpiral2dCzech::DistanceToCurvature (double distance) const
+    {
+    double u = DistanceToFraction (distance);
+    double f = u * u * (3.0 - 2.0 * u);
+    return mCurvature0 + f * (mCurvature1 - mCurvature0);
+    }
+
+double DSpiral2dCzech::DistanceToCurvatureDerivative (double distance) const
+    {
+    if (mLength == 0.0)
+        return 0.0;
+    double u = DistanceToFraction (distance);
+    double dfdu = 6.0 * u * (1.0 - u);
+    return dfdu * (mCurvature1 - mCurvature0) / mLength;
+    }
+#endif
+// convert 2 derivatives of y =f(x) to curvature.
+double univariateCurvature (double dydx, double d2ydxdx)
+    {
+    return d2ydxdx / sqrt (1.0 + dydx * dydx);
+    }
+double parametricCurvature (double dx, double dy, double ddx, double ddy)
+    {
+    double q = dx * dx + dy * dy;
+    return (dx * ddy - ddx * dy) / sqrt (q * q * q);
+    }
+double parametricCurvatureDerivative (double dx, double dy, double ddx, double ddy, double dddx, double dddy)
+    {
+    double q = dx * dx + dy * dy;
+    double f = dx * ddy - ddx * dy;
+    double df = dx * dddy - dddx * dy;
+    double gg = q * q * q;
+    double g = sqrt (q * q * q);
+    double dg = 1.5 * sqrt (q) * 2.0 * (dx *ddx + dy * ddy);
+
+    return (df * g - f * dg) / gg;
+    }
+
+
+double DSpiral2dDirectEvaluation::DistanceToLocalAngle (double distance) const
+    {
+    DPoint2d xy;
+    DVec2d d1xy;
+    EvaluateAtDistance (distance, xy, &d1xy, nullptr, nullptr);
+    return   atan2 (d1xy.y, d1xy.x);
+    }
+
+double DSpiral2dDirectEvaluation::DistanceToCurvature (double distance) const
+    {
+    DPoint2d xy;
+    DVec2d d1xy, d2xy;
+    EvaluateAtDistance (distance, xy, &d1xy, &d2xy, nullptr);
+    return parametricCurvature (d1xy.x, d1xy.y, d2xy.x, d2xy.y);
+    }
+
+double DSpiral2dDirectEvaluation::DistanceToCurvatureDerivative (double distance) const
+    {
+    DPoint2d xy;
+    DVec2d d1xy, d2xy, d3xy;
+    EvaluateAtDistance (distance, xy, &d1xy, &d2xy, &d3xy);
+    return parametricCurvatureDerivative (d1xy.x, d1xy.y, d2xy.x, d2xy.y, d3xy.x, d3xy.y);
+    }
+
+/*-----------------------------------------------------------------*//**
+@description BSIVectorIntegrand query function.
+@param distance IN distance parameter
+@param pF OUT array of two doubles x,y for integration.
++---------------+---------------+---------------+---------------+------*/
+void DSpiral2dDirectEvaluation::EvaluateVectorIntegrand (double distance, double *pF)
+    {
+    DPoint2d xy;
+    DVec2d dxy;
+    EvaluateAtDistance (distance, xy, &dxy, nullptr, nullptr);
+    pF[0] = dxy.x;
+    pF[1] = dxy.y;
+    }
+
+
+
+// Specialize spiral for NEWSOUTHWALES ....
+DSpiral2dNewSouthWales::DSpiral2dNewSouthWales () : DSpiral2dDirectEvaluation () {}
+
+bool DSpiral2dNewSouthWales::EvaluateAtDistance
+    (
+    double s, //!< [in] distance for evaluation
+    DPoint2dR xyz,          //!< [out] coordinates on spiral
+    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
+    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
+    DVec2dP d3XYZ   //!< [out] third derivative wrt distance
+    ) const
+    {
+    double factorX = mCurvature1 * mCurvature1 / (40.0 * mLength * mLength);
+    double s2 = s * s;
+    double s3 = s2 * s;
+    double s4 = s2 * s2;
+
+    double factorY = mCurvature1 / (6.0 * mLength);
+    xyz.Init (s * (1.0 - s4 *  factorX), s3 * factorY);
+
+    if (d1XYZ)
+        d1XYZ->Init (1.0 - 5.0 * s4 * factorX, 3.0 * s2 * factorY);
+
+    if (d2XYZ)
+        d2XYZ->Init (-20.0 * s3 * factorX, 6.0 * s * factorX);
+
+    if (d3XYZ)
+        d3XYZ->Init (-60.0 * factorX, 6.0 * factorY);
+    return true;
+    }
+
+
+DSpiral2dBaseP DSpiral2dNewSouthWales::Clone () const
+    {
+    DSpiral2dNewSouthWales *pClone = new DSpiral2dNewSouthWales ();
+    pClone->CopyBaseParameters (this);
+    return pClone;
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

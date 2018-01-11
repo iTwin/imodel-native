@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/DSpiral2dBase.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -80,6 +80,13 @@ static const int TransitionType_Cosine            = 13;
 static const int TransitionType_Sine              = 14;
 static const int TransitionType_Viennese          = 20;
 static const int TransitionType_WeightedViennese  = 21;
+// convention: spirals that really have direct evaluations start at 50.
+static const int TransitionType_FirstDirectEvaluate = 50;
+static const int TransitionType_NewSouthWales       = 50; // IMPLEMENTED ASSUMING bearing0, curvature0 both zero.   01/18
+static const int TransitionType_Czech               = 51; // NOT IMPLEMENTED
+static const int TransitionType_Australian          = 52; // NOT IMPLEMENTED
+static const int TransitionType_Italian             = 53; // NOT IMPLEMENTED
+static const int TransitionType_Polish              = 54; // NOT IMPLEMENTED
 
 //! invoke appropriate concrete class constructor ...
 public: static DSpiral2dBaseP Create (int transitionType);
@@ -87,6 +94,8 @@ public: static DSpiral2dBaseP Create (int transitionType);
 //! return the integer code for the string name.
 public: static int StringToTransitionType (Utf8CP name);
 
+//! return the string name of the type
+public: static bool TransitionTypeToString (int type, Utf8StringR string);
 //! invoke appropriate concrete class constructor ...
 public: static DSpiral2dBaseP CreateBearingCurvatureBearingCurvature
       (
@@ -211,7 +220,14 @@ public:
     double DistanceToCurvatureDerivative (double distance) const override;\
     int GetTransitionTypeCode () const override;
 
+#define DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_MIDLEVEL_OVERRIDES \
+    double DistanceToLocalAngle  (double distance) const override;\
+    double DistanceToCurvature   (double distance) const override;\
+    double DistanceToCurvatureDerivative (double distance) const override;
 
+#define DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES \
+    DSpiral2dBaseP Clone () const override;\
+    int GetTransitionTypeCode () const override;
 
 
 //!
@@ -581,6 +597,63 @@ public:
 
     DECLARE_DSPIRAL2DBASE_OVERRIDES
 };
+
+/**
+* intermediate class for "spirals" that really have distance-to-xy methods but need to act like spirals that have differential properties
+* This intermediate class implements DistanceToCurvature, DistanceToLocalAngle, DistanceToCurvatureDerivatives
+* based on direct x and y data from EvaluateAtDistance.
+*/
+struct GEOMDLLIMPEXP DSpiral2dDirectEvaluation : DSpiral2dBase
+{
+    DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_MIDLEVEL_OVERRIDES
+
+public:
+//! Evaluate the spiral and derivatives at specified distance along.
+//! return true if valid evaluation.
+virtual bool EvaluateAtDistance
+    (
+    double distanceAlong, //!< [in] distance for evaluation
+    DPoint2dR xyz,          //!< [out] coordinates on spiral
+    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
+    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
+    DVec2dP d3XYZ    //!< [out] third derivative wrt distance
+    ) const = 0;
+/**
+* use results of EvaluateAtDistance to provide integrand for caller's integrals.
+*/
+void EvaluateVectorIntegrand (double distance, double *pF) override;
+};
+// NEWSOUTHWALES Spiral
+// Let a = 1/ (40 R*R*L*L) for exit radius R, spiral length L
+// Let b = 1/(6 R L)
+//  at distance s along the spiral
+//     x = x (1-gamma *s^4)
+//     y = b * x^3
+// curvature queries are answered as if clothoid -- linear interpolation from 0 to 1/R
+// (even though actual curvature is slightly different)
+struct GEOMDLLIMPEXP DSpiral2dNewSouthWales : DSpiral2dDirectEvaluation
+{
+    DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
+public:
+    DSpiral2dNewSouthWales ();
+
+//! Evaluate the spiral and optional derivatives at specified distance along.
+//! return true if valid evaluation.
+bool EvaluateAtDistance
+    (
+    double distanceAlong, //!< [in] distance for evaluation
+    DPoint2dR xyz,          //!< [out] coordinates on spiral
+    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
+    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
+    DVec2dP d3XYZ   //!< [out] third derivative wrt distance
+    ) const override;
+
+
+};
+
+
+
+
 struct DSpiral2dPlacement;
 typedef DSpiral2dPlacement *DSpiral2dPlacementP;
 typedef DSpiral2dPlacement const *DSpiral2dPlacementCP;

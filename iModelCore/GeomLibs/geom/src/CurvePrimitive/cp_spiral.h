@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cp_spiral.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include <bsibasegeomPCH.h>
@@ -117,7 +117,10 @@ void UpdateCurve(double maxStrokeLength)
     s_spiralStrokeCounter.Record (m_strokes.m_xyz.size ());
         double dSpiral = m_placement.spiral->mLength;
         double dStrokes = PolylineOps::Length (m_strokes.m_xyz, false);
-        BeAssert (dStrokes <= fabs (dSpiral));
+        if (m_placement.spiral->GetTransitionTypeCode () < DSpiral2dBase::TransitionType_FirstDirectEvaluate)
+            {
+            BeAssert (dStrokes <= fabs (dSpiral));
+            }
 #endif
 
     }

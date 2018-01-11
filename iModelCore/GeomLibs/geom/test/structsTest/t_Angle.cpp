@@ -255,10 +255,6 @@ double SToY (double s)
     {
     return s * s * s / (6.0 * m_R * m_spiralArcLength);
     }
-double XTodYdx (double x)
-    {
-    return x * x / (2.0 * m_R * m_spiralArcLength);
-    }
 double SToR (double s)
     {
     double curvature0 = 0.0;
@@ -288,6 +284,47 @@ double &directCurvature
     return true;
     }
 };
+
+
+struct AremaSpiral : CubicSpiralVirtuals {
+// INSTANCE SECTION
+double m_R;     // exit radius
+double m_spiralArcLength;  // length along true spiral
+
+AremaSpiral (double endRadius, double arcLength) :
+    m_R (endRadius), m_spiralArcLength (arcLength)
+    {
+    }
+
+bool evaluateProjectedCoordinate (
+double partialLength,
+double &x,      //
+double &y,
+double &t,
+double &r,
+double &directCurvature
+) override
+    {
+    double curvature;
+    DoubleOps::SafeDivide (curvature, 1.0, m_R, 0.0);
+    static double s_factorD = 100.0;
+
+    double D = s_factorD * Angle::RadiansToDegrees(curvature);
+
+    double l = partialLength;
+    double s = l / 100.0;
+    double k = D / ( m_spiralArcLength / 100.0 );
+    double theta = 0.5 * k * s * s;
+
+    x = 100.0 * s - 0.000762 * k * k * pow( s, 5 );
+    y = 0.291 * k * s * s * s - 0.00000158 * k * k * k * pow( s, 7 );
+    t = Angle::DegreesToRadians (theta);
+    r = 0.0;//aecAlg_computeRadiusFromPartialLength( spi, partialLength );
+    directCurvature = 0.0;
+    return true;
+    }
+};
+
 
 /*-------------------------------------------------------------------------+
 |                                                                          |
@@ -381,7 +418,7 @@ TEST(CzechSpiral,NewtonStep)
     bvector<double> radiusMeters {1000, 400, 200 };
     bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
     bvector<double> edgeCount {15, 25, 35};
-    for (int select : {0,1})
+    for (int select : {0,1, 2})
         {
         yShift = 0.0;
         for (size_t i = 0; i < radiusMeters.size (); i++)
@@ -391,6 +428,8 @@ TEST(CzechSpiral,NewtonStep)
             CubicSpiralVirtuals *spiral = nullptr;
             if (select == 1)
                 spiral = new NSWCubicSpiral (radius1, spiralLength);
+            else if (select == 2)
+                spiral = new AremaSpiral (radius1, spiralLength);
             else
                 spiral = new CzechCubicSpiral (radius1, spiralLength, pseudoLength);
 
@@ -412,7 +451,7 @@ TEST(CzechSpiral,NewtonStep)
                 }
             GEOMAPI_PRINTF(" final x,y,t,r %20.15le %20.15le   %le %le  r1 %le\n", xB, yB, tB, rB, directCurvature < s_smallCurvature ? 0.0 : 1.0 / directCurvature);
             auto last = xy.back ();
-            auto xyFlag = xy.back () + DVec3d::From (flagHeight * select, flagHeight);
+            auto xyFlag = xy.back () + DVec3d::FromXYAngleAndMagnitude (select * Angle::DegreesToRadians (15), flagHeight);
             xy.push_back (xyFlag);
             Check::SaveTransformed (xy);
     
@@ -425,7 +464,7 @@ TEST(CzechSpiral,NewtonStep)
                 0.0, averageCircleRadians);
         Check::SaveTransformed (arc);
 #endif
-            yShift += 50.0 * s_uorsPerMeter;
+            yShift += 10.0 * s_uorsPerMeter;
             }
         }
     Check::ClearGeometry ("CzechSpiral.NewtonStep");
@@ -437,6 +476,104 @@ TEST(CzechSpiral,NewtonStep)
     printf ("NSW  (l/le %#.17g) (x/xe %#.17g)\n", l/le, swx/swxe);
 #endif
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PseudoSpiral,NewSouthWales)
+    {
+    static double s_uorsPerMeter = 1.0; //10000.0;
+    static double s_smallCurvature = 1.0e-14;
+    double flagHeight = 2.0 * s_uorsPerMeter;
+    // simulate uor computations:
+    //    convert metric sizes to uors
+    //    use the Check:: transform to scale back to meters for output to dgnjs file
+    //    do all origin shifts within this method (rather than via Check::Shift)
+    auto transform0 = Check::GetTransform ();
+    auto transform1 = Transform::From (RotMatrix::FromScale (1.0 / s_uorsPerMeter), DPoint3d::From (0,0,0));
+    Check::SetTransform (transform1);
+    double spiralLength = 100 * s_uorsPerMeter;
+    double yShift = 0.0;
+    bvector<double> radiusMeters {1000, 400, 200 };
+    //bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
+    //bvector<double> edgeCount {15, 25, 35};
+    for (int select : {2})
+        {
+        yShift = 0.0;
+        for (size_t i = 0; i < radiusMeters.size (); i++)
+            {
+            double radius1 = radiusMeters[i] * s_uorsPerMeter;
+            //double pseudoLength = pseudoLengthMeters[i] * s_uorsPerMeter;
+            auto frame = Transform::From (0, yShift, 0);
+            ICurvePrimitivePtr spiral = nullptr;
+            spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
+                DSpiral2dBase::TransitionType_NewSouthWales,
+                0.0, 0.0, spiralLength, 1.0 / radius1,
+                frame,
+                0.0, 1.0
+                );
+            auto bcurve = spiral->GetProxyBsplineCurvePtr ();
+            auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
+            //Check::SaveTransformed (*spiral);
+            Check::SaveTransformed (*bprim);
+            yShift += 10.0 * s_uorsPerMeter;
+            }
+        }
+    Check::ClearGeometry ("PseudoSpiral.NewSouthWales");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PseudoSpiral,Serialize)
+    {
+    double radius1 = 1000.0;
+    double spiralLength = 100.0;
+    bvector<double> radiusMeters {1000, 400, 200 };
+    //bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
+    //bvector<double> edgeCount {15, 25, 35};
+    double yShift = 0.0;
+    for (int spiralType : {
+                DSpiral2dBase::TransitionType_Clothoid,
+                DSpiral2dBase::TransitionType_Bloss,
+                DSpiral2dBase::TransitionType_Biquadratic,
+                DSpiral2dBase::TransitionType_Cosine,
+                DSpiral2dBase::TransitionType_Sine,
+                //DSpiral2dBase::TransitionType_Viennese,
+                //DSpiral2dBase::TransitionType_WeightedViennese,
+                DSpiral2dBase::TransitionType_NewSouthWales,
+                //DSpiral2dBase::TransitionType_Czech,
+                //DSpiral2dBase::TransitionType_Australian,
+                //DSpiral2dBase::TransitionType_Italian,
+                //DSpiral2dBase::TransitionType_Polish
+                })
+        {
+        yShift += 10.0;
+        auto frame = Transform::From (0, yShift, 0);
+        auto spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
+                spiralType,
+                0.0, 0.0, spiralLength, 1.0 / radius1,
+                frame,
+                0.0, 1.0
+                );
+        if (spiral.IsValid ())
+            {
+            Check::SaveTransformed (*spiral);
+            auto bcurve = spiral->GetProxyBsplineCurvePtr ();
+            if (bcurve.IsValid ())
+                {
+                auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
+                Check::SaveTransformed (*bprim);
+                }
+            }
+        char name[1024];
+        sprintf (name, "Spiral.Serialize.%d", spiralType);
+        Check::ClearGeometry (name);
+        }
+    }
+
+
 
 void TestAngleConstructors (double radians)
     {
