@@ -9,6 +9,7 @@
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <BuildingShared/BuildingSharedApi.h>
 #include "BuildingSharedTestFixtureBase.h"
+#include "TestUtils.h"
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -117,6 +118,180 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLines)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, CreateSplines)
+    {
+    CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
+
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{0, 0, 0}, {1, 2, 3}, {2, 4, 5}}, 3) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{0, 0, 0}, {1, 2, 3}, {2, 4, 5}}, 3),
+                                                                                        TestUtils::CreateSpline({{2, 4, 5}, {7, 8, 2}, {4, 2, 3}, {0, 4, 5}}, 4) });
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 1, 2, 3 });
+    strategy->AddKeyPoint({ 2, 4, 5 });
+    CurveVectorPtr cv1 = strategy->Finish();
+    ASSERT_TRUE(cv1.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1)) << "Created curve vector is incorrect";
+
+    strategy->FinishContiniousPrimitive();
+
+    SplineControlPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineControlPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
+    ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
+
+    currentStrategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, 4);
+    strategy->AddKeyPoint({ 7, 8, 2 });
+    strategy->AddKeyPoint({ 4, 2, 3 });
+    strategy->AddKeyPoint({ 0, 4, 5 });
+    CurveVectorPtr cv2 = strategy->Finish();
+    ASSERT_TRUE(cv2.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2)) << "Created curve vector is incorrect";
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, CreateInterpolationCurves)
+    {
+    CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
+
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 3 },{ 2, 4, 5 } }) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 3 },{ 2, 4, 5 } }),
+                                                                                        TestUtils::CreateInterpolationCurve({ { 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 },{ 0, 4, 5 } }, DVec3d::From(1, 2, 3), DVec3d::From(5, 4, 2)) });
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::InterpolationCurve);
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 1, 2, 3 });
+    strategy->AddKeyPoint({ 2, 4, 5 });
+    CurveVectorPtr cv1 = strategy->Finish();
+    ASSERT_TRUE(cv1.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1)) << "Created curve vector is incorrect";
+
+    strategy->FinishContiniousPrimitive();
+
+    SplineThroughPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineThroughPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
+    ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be interpolation curve strategy";
+
+    currentStrategy->SetStartTangent(DVec3d::From(1, 2, 3));
+    currentStrategy->SetEndTangent(DVec3d::From(5, 4, 2));
+    strategy->AddKeyPoint({ 7, 8, 2 });
+    strategy->AddKeyPoint({ 4, 2, 3 });
+    strategy->AddKeyPoint({ 0, 4, 5 });
+    CurveVectorPtr cv2 = strategy->Finish();
+    ASSERT_TRUE(cv2.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2)) << "Created curve vector is incorrect";
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, CreateLineSplineArc)
+    {
+    CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
+
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
+                                                                                        TestUtils::CreateSpline({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, 4) });
+    CurveVectorPtr expectedCV3 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
+                                                                                        TestUtils::CreateSpline({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, 4),
+                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({ 4, 2, 3 },{ 3,1,0 },{ 1,1,0 })) });
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 1, 2, 3 });
+    CurveVectorPtr cv1 = strategy->Finish();
+    ASSERT_TRUE(cv1.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1)) << "Curve vector is incorrect";
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
+    SplineControlPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineControlPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
+    ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
+
+    currentStrategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order, 4);
+
+    strategy->AddKeyPoint({ 2, 4, 5 });
+    strategy->AddKeyPoint({ 7, 8, 2 });
+    strategy->AddKeyPoint({ 4, 2, 3 });
+    CurveVectorPtr cv2 = strategy->Finish();
+    ASSERT_TRUE(cv2.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2)) << "Curve vector is incorrect";
+
+    strategy->FinishContiniousPrimitive();
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
+
+    strategy->AddKeyPoint({ 3, 1, 0 });
+    strategy->AddKeyPoint({ 1, 1, 0 });
+    CurveVectorPtr cv3 = strategy->Finish();
+    ASSERT_TRUE(cv3.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv3->IsSameStructureAndGeometry(*expectedCV3)) << "Curve vector is incorrect";
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, CreateLineInterpolationCurveArc)
+    {
+    CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
+
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
+                                                                                        TestUtils::CreateInterpolationCurve({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, DVec3d::From(5, 2, 1), DVec3d::From(1, 2, 5)) });
+    CurveVectorPtr expectedCV3 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
+                                                                                        TestUtils::CreateInterpolationCurve({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, DVec3d::From(5, 2, 1), DVec3d::From(1, 2, 5)),
+                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({ 4, 2, 3 },{ 3,1,0 },{ 1,1,0 })) });
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 0, 0, 0 });
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
+
+    strategy->AddKeyPoint({ 1, 2, 3 });
+    CurveVectorPtr cv1 = strategy->Finish();
+    ASSERT_TRUE(cv1.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1)) << "Curve vector is incorrect";
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::InterpolationCurve);
+    SplineThroughPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineThroughPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
+    ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
+
+    currentStrategy->SetStartTangent(DVec3d::From(5, 2, 1));
+    currentStrategy->SetEndTangent(DVec3d::From(1, 2, 5));
+
+    strategy->AddKeyPoint({ 2, 4, 5 });
+    strategy->AddKeyPoint({ 7, 8, 2 });
+    strategy->AddKeyPoint({ 4, 2, 3 });
+    CurveVectorPtr cv2 = strategy->Finish();
+    ASSERT_TRUE(cv2.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2)) << "Curve vector is incorrect";
+
+    strategy->FinishContiniousPrimitive();
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
+
+    strategy->AddKeyPoint({ 3, 1, 0 });
+    strategy->AddKeyPoint({ 1, 1, 0 });
+    CurveVectorPtr cv3 = strategy->Finish();
+    ASSERT_TRUE(cv3.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv3->IsSameStructureAndGeometry(*expectedCV3)) << "Curve vector is incorrect";
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CurveVectorPlacementStrategyTests, CreateLineAndArc)
@@ -215,6 +390,47 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromLineToArc)
     CurveVectorPtr cv = sut->Finish();
     ASSERT_TRUE(cv.IsValid());
     ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToSplineToInterpolationCurveToLine)
+    {
+    CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
+
+    CurveVectorPtr expectedCV0 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{1, 2, 3}, {5, 6, 7}}, 3)});
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({{1, 2, 3}, {5, 6, 7}}, DVec3d::From(0, 0, 0), DVec3d::From(5, 2, 7)) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({1, 2, 3}, {4, 2, 1}) });
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Arc should not be created with less than 3 points";
+
+    strategy->AddKeyPoint({ 1, 2, 3 });
+    strategy->AddKeyPoint({ 5, 6, 7 });
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Arc should not be created with less than 3 points";
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
+    CurveVectorPtr cv0 = strategy->Finish();
+    ASSERT_TRUE(cv0.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv0->IsSameStructureAndGeometry(*expectedCV0)) << "Curve vector is incorrect";
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::InterpolationCurve);
+    SplineThroughPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineThroughPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
+    ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
+    currentStrategy->SetEndTangent(DVec3d::From(5, 2, 7));
+    CurveVectorPtr cv1 = strategy->Finish();
+    ASSERT_TRUE(cv1.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1)) << "Curve vector is incorrect";
+
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
+    ASSERT_TRUE(strategy->Finish().IsNull()) << "Line should not be created with less than 2 points";
+    
+    strategy->AddKeyPoint({ 4, 2, 1 });
+    CurveVectorPtr cv2 = strategy->Finish();
+    ASSERT_TRUE(cv2.IsValid()) << "Failed to create curve vector";
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2)) << "Curve vector is incorrect";
     }
 
 //--------------------------------------------------------------------------------------
