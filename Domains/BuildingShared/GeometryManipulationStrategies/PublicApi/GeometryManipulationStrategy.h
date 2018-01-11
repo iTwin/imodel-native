@@ -36,6 +36,7 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
         virtual void _OnKeyPointsChanged() {};
 
         virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) = 0;
+        virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) = 0;
         virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) = 0;
         virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) = 0;
         virtual void _PopKeyPoint() = 0;
@@ -43,6 +44,7 @@ struct GeometryManipulationStrategy : public GeometryManipulationStrategyBase
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AppendKeyPoint(DPoint3dCR newKeyPoint);
+        void AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();

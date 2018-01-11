@@ -461,3 +461,75 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToLine_StartMidKeyPoints)
     ASSERT_TRUE(cv.IsValid());
     ASSERT_TRUE(cv->IsSameStructureAndGeometry(*expectedCV));
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, CreateLineString_Points)
+    {
+    CurveVectorPlacementStrategyPtr sut = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    CurveVectorPtr expectedCV1 = CurveVector::CreateLinear({{0,0,0},{0,2,0}}, CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr expectedCV2 = CurveVector::CreateLinear({{0,0,0},{0,2,0},{2,2,0}}, CurveVector::BOUNDARY_TYPE_Open);
+
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::LineString);
+    sut->ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType::Points);
+
+    ASSERT_FALSE(sut->Finish().IsValid());
+
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_FALSE(sut->Finish().IsValid());
+
+    sut->AddKeyPoint({0,2,0});
+    CurveVectorPtr cv1 = sut->Finish();
+    ASSERT_TRUE(cv1.IsValid());
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1));
+
+    sut->AddKeyPoint({2,2,0});
+    CurveVectorPtr cv2 = sut->Finish();
+    ASSERT_TRUE(cv2.IsValid());
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorPlacementStrategyTests, CreateLineString_MetesAndBounds)
+    {
+    CurveVectorPlacementStrategyPtr sut = CurveVectorPlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    CurveVectorPtr expectedCV1 = CurveVector::CreateLinear({{-1,0,0},{1,2,0},{-1,2,0}}, CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr expectedCV2 = CurveVector::CreateLinear({{-1,-1,0},{1,1,0},{-1,1,0}}, CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr expectedCvFinal = CurveVector::CreateLinear({{0,0,0}, {2,2,0}, {0,2,0}}, CurveVector::BOUNDARY_TYPE_Open);
+
+    bvector<Utf8String> directions(2);
+    UnitConverter::DirectionToMeetsAndBoundsString(directions[0], DVec3d::FromStartEnd(DPoint3d::From(0, 0, 0), DPoint3d::From(2, 2, 0)));
+    UnitConverter::DirectionToMeetsAndBoundsString(directions[1], DVec3d::FromStartEnd(DPoint3d::From(2, 2, 0), DPoint3d::From(0, 2, 0)));
+    bvector<double> lengths(2);
+    lengths[0] = DSegment3d::From({0,0,0}, {2,2,0}).Length();
+    lengths[1] = DSegment3d::From({2,2,0}, {0,2,0}).Length();
+
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::LineString);
+    sut->ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType::MetesAndBounds);
+
+    ASSERT_FALSE(sut->Finish().IsValid());
+    sut->AddDynamicKeyPoint({-1,0,0});
+    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directions, lengths));
+    CurveVectorPtr cv1 = sut->Finish();
+    ASSERT_TRUE(cv1.IsValid());
+    ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1));
+
+    sut->AddDynamicKeyPoint({-1,-1,0});
+    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directions, lengths));
+    CurveVectorPtr cv2 = sut->Finish();
+    ASSERT_TRUE(cv2.IsValid());
+    ASSERT_TRUE(cv2->IsSameStructureAndGeometry(*expectedCV2));
+
+    sut->AddKeyPoint({0,0,0});
+    sut->SetProperty(LineStringMetesAndBoundsPlacementStrategy::prop_MetesAndBounds, MetesAndBounds(directions, lengths));
+    CurveVectorPtr cvFinal = sut->Finish();
+    ASSERT_TRUE(cvFinal.IsValid());
+    ASSERT_TRUE(cvFinal->IsSameStructureAndGeometry(*expectedCvFinal));
+    }

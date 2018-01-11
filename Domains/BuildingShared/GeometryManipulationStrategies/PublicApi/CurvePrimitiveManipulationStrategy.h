@@ -39,13 +39,18 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ResetDynamicKeyPoint() override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _RemoveKeyPoint(size_t index) override;
 
         virtual ICurvePrimitivePtr _FinishPrimitive() const = 0;
+
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() = 0;
+        virtual LinePlacementStrategyPtr _CreateLinePlacementStrategy(LinePlacementStrategyType strategyType) { BeAssert(false && "This is not a LineManipulationStrategy"); return nullptr; }
+        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType) { BeAssert(false && "This is not an ArcManipulationStrategy"); return nullptr; }
+        virtual LineStringPlacementStrategyPtr _CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType) { BeAssert(false && "This is not a LineStringManipulationStrategy"); return nullptr; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsEmpty() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsSingleKeyPointLeft() const;
@@ -56,7 +61,11 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
+        
         CurvePrimitivePlacementStrategyPtr CreateDefaultPlacementStrategy();
+        LinePlacementStrategyPtr CreateLinePlacementStrategy(LinePlacementStrategyType strategyType);
+        ArcPlacementStrategyPtr CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType);
+        LineStringPlacementStrategyPtr CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType);
 
         bvector<DPoint3d> const& GetAcceptedKeyPoints() const { return m_keyPoints; }
 

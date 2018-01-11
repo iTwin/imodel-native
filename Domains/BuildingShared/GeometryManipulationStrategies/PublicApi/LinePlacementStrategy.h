@@ -8,8 +8,15 @@
 #pragma once
 
 
-
 BEGIN_BUILDING_SHARED_NAMESPACE
+
+enum class LinePlacementStrategyType
+    {
+    Points = 0,
+    PointLengthAngle,
+    PointsLength,
+    PointsAngle
+    };
 
 struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
     {
@@ -30,6 +37,9 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Length;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Angle;
+
+        static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType);
+        static LinePlacementStrategyPtr Create(LinePlacementStrategyType strategyType, LineManipulationStrategyR manipulationStrategy);
     };
 
 struct LinePointsPlacementStrategy : LinePlacementStrategy
@@ -66,12 +76,14 @@ struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
 
         virtual void _SetProperty(Utf8CP key, const double & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
+        using T_Super::_SetProperty;
+        using T_Super::_TryGetProperty;
     
-        void _SetLength(double const & length);
-        double _GetLength() const;
+        void SetLength(double const & length);
+        double GetLength() const;
 
-        void _SetAngle(double const & angle);
-        double _GetAngle() const;
+        void SetAngle(double const & angle);
+        double GetAngle() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
@@ -85,6 +97,60 @@ struct LinePointLengthAnglePlacementStrategy : LinePlacementStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void          SetWorkingPlane(DPlane3d const & plane) { return _SetWorkingPlane(plane); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT DPlane3d      GetWorkingPlane() const { return _GetWorkingPlane(); }
+    };
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               01/2018
+//=======================================================================================
+struct MetesAndBounds : GeometryManipulationStrategyProperty
+    {
+    typedef bpair<Utf8String, double> ValuePair;
+    DEFINE_T_SUPER(GeometryManipulationStrategyProperty)
+
+    private:
+        bvector<ValuePair> m_value;
+
+    public:
+        MetesAndBounds()
+            : T_Super()
+            {}
+        MetesAndBounds(Utf8CP directionString, double length)
+            : T_Super()
+            , m_value({ValuePair(directionString, length)})
+            {}
+        MetesAndBounds(ValuePair const& value)
+            : T_Super()
+            , m_value({value})
+            {}
+        MetesAndBounds(bvector<ValuePair> const& value)
+            : T_Super()
+            , m_value(value)
+            {}
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT MetesAndBounds(bvector<Utf8String> directionStrings, bvector<double> lengths);
+
+        bvector<ValuePair> const& GetValue() const { return m_value; }
+    };
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               01/2018
+//=======================================================================================
+struct LineMetesAndBoundsPlacementStrategy : public LinePointLengthAnglePlacementStrategy
+    {
+    DEFINE_T_SUPER(LinePointLengthAnglePlacementStrategy)
+
+    private:
+        Utf8String m_directionString;
+        
+    protected:
+        LineMetesAndBoundsPlacementStrategy(DPlane3d plane) : T_Super(plane), m_directionString("") {}
+
+        virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
+
+    public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_MetesAndBounds;
+
+        static LineMetesAndBoundsPlacementStrategyPtr Create(DPlane3d const& plane) { return new LineMetesAndBoundsPlacementStrategy(plane); }
     };
 
 struct LinePointsLengthPlacementStrategy : LinePlacementStrategy
@@ -101,8 +167,8 @@ struct LinePointsLengthPlacementStrategy : LinePlacementStrategy
         virtual void _SetProperty(Utf8CP key, const double & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
 
-        void _SetLength(double const & length);
-        double _GetLength() const;
+        void SetLength(double const & length);
+        double GetLength() const;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
@@ -127,8 +193,8 @@ struct LinePointsAnglePlacementStrategy : LinePlacementStrategy
         virtual void _SetProperty(Utf8CP key, const double & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
 
-        void _SetAngle(double const & angle);
-        double _GetAngle() const;
+        void SetAngle(double const & angle);
+        double GetAngle() const;
 
         virtual void _SetWorkingPlane(DPlane3d const & plane);
         virtual DPlane3d _GetWorkingPlane() const { return m_workingPlane; }

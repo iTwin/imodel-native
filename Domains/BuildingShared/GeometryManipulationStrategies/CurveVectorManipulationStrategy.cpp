@@ -12,6 +12,17 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
+    : T_Super()
+    , m_defaultNewGeometryType(DefaultNewGeometryType::Line)
+    , m_defaultLinePlacementStrategyType(LinePlacementStrategyType::Points)
+    , m_defaultArcPlacementStrategyType(ArcPlacementStrategyType::StartMidEnd)
+    , m_defaultLineStringPlacementStrategyType(LineStringPlacementStrategyType::Points)
+    {}
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr CurveVectorManipulationStrategy::_Finish() const
@@ -153,6 +164,9 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::ResetCurrent
         case DefaultNewGeometryType::InterpolationCurve:
             manipulationStrategy = SplineThroughPointsManipulationStrategy::Create();
             break;
+        case DefaultNewGeometryType::LineString:
+            manipulationStrategy = LineStringManipulationStrategy::Create();   
+            break; 
         default:
             if (m_primitiveStrategies.empty())
                 manipulationStrategy = DEFAULT_MANIPULATION_STRATEGY;
@@ -163,7 +177,7 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::ResetCurrent
 
     BeAssert(manipulationStrategy.IsValid());
 
-    CurvePrimitivePlacementStrategyPtr placementStrategy = manipulationStrategy->CreateDefaultPlacementStrategy();
+    CurvePrimitivePlacementStrategyPtr placementStrategy = GetPlacementStrategy(*manipulationStrategy);
     if (!m_primitiveStrategies.empty())
         {
         bvector<DPoint3d> lastStrategyAcceptedKeyPoints = m_primitiveStrategies.back()->GetAcceptedKeyPoints();
@@ -175,6 +189,28 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::ResetCurrent
     return placementStrategy;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetPlacementStrategy
+(
+    CurvePrimitiveManipulationStrategyR manipulationStrategy
+) const
+    {
+    switch (m_defaultNewGeometryType)
+        {
+        case DefaultNewGeometryType::Arc:
+            return manipulationStrategy.CreateArcPlacementStrategy(m_defaultArcPlacementStrategyType);
+        case DefaultNewGeometryType::Line:
+            return manipulationStrategy.CreateLinePlacementStrategy(m_defaultLinePlacementStrategyType);
+        case DefaultNewGeometryType::LineString:
+            return manipulationStrategy.CreateLineStringPlacementStrategy(m_defaultLineStringPlacementStrategyType);
+        default:
+            return manipulationStrategy.CreateDefaultPlacementStrategy();
+        }
+    }
+
+    
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -205,7 +241,7 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    GetStrategyForAppend()->AddKeyPoint(newDynamicKeyPoint);
+    GetStrategyForAppend()->AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -263,6 +299,11 @@ void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
                         tmpPlacementStrategy->AddKeyPoint(point);
                 }
                 break;
+            case DefaultNewGeometryType::LineString:
+            {
+                newPrimitiveStrategy = LineStringManipulationStrategy::Create();
+	    }
+	    break;
             default:
                 return;
             }
@@ -277,6 +318,9 @@ void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
 // @bsimethod                                    Haroldas Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 bool CurveVectorManipulationStrategy::FinishContiniousPrimitive()
+(
+    LinePlacementStrategyType newPlacementStrategyType
+)
     {
     if (!m_primitiveStrategies.empty() && m_primitiveStrategies.back()->IsContinious())
         ResetCurrentManipulationStrategy();
@@ -284,4 +328,70 @@ bool CurveVectorManipulationStrategy::FinishContiniousPrimitive()
         return false;
         
     return true;
+     }
+     
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
+(
+    LinePlacementStrategyType newPlacementStrategyType
+)
+    {
+    if (m_defaultLinePlacementStrategyType == newPlacementStrategyType)
+        return;
+
+    m_defaultLinePlacementStrategyType = newPlacementStrategyType;
     }
+
+    
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
+(
+    ArcPlacementStrategyType newPlacementStrategyType
+)
+    {
+    if (m_defaultArcPlacementStrategyType == newPlacementStrategyType)
+        return;
+
+    m_defaultArcPlacementStrategyType = newPlacementStrategyType;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
+(
+    LineStringPlacementStrategyType newPlacementStrategyType
+)
+    {
+    if (m_defaultLineStringPlacementStrategyType == newPlacementStrategyType)
+        return;
+
+    m_defaultLineStringPlacementStrategyType = newPlacementStrategyType;
+    }
+
+#define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
+    void CurveVectorManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
+        { \
+        GetStrategyForAppend()->SetProperty(key, value); \
+        } \
+    BentleyStatus CurveVectorManipulationStrategy::_TryGetProperty(Utf8CP key, value_type& value) const \
+        { \
+        if(m_primitiveStrategies.empty()) \
+            return BentleyStatus::ERROR; \
+        return m_primitiveStrategies.back()->TryGetProperty(key, value); \
+        }
+
+GMS_PROPERTY_OVERRIDE_IMPL(int)
+GMS_PROPERTY_OVERRIDE_IMPL(double)
+GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
+GMS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElement)
+GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)
+GMS_PROPERTY_OVERRIDE_IMPL(bvector<double>)
+GMS_PROPERTY_OVERRIDE_IMPL(bvector<Utf8String>)
+GMS_PROPERTY_OVERRIDE_IMPL(GeometryManipulationStrategyProperty)

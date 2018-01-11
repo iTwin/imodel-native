@@ -181,3 +181,14 @@ CurvePrimitiveManipulationStrategyPtr ArcManipulationStrategy::_Clone() const
     {
     return Create();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyPtr ArcManipulationStrategy::_CreateArcPlacementStrategy
+(
+    ArcPlacementStrategyType strategyType
+)
+    {
+    return ArcPlacementStrategy::Create(strategyType, *this);
+    }

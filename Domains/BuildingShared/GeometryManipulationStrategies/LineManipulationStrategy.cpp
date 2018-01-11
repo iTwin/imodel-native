@@ -74,3 +74,14 @@ CurvePrimitivePlacementStrategyPtr LineManipulationStrategy::_CreateDefaultPlace
     {
     return LinePointsPlacementStrategy::Create(*this);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePlacementStrategyPtr LineManipulationStrategy::_CreateLinePlacementStrategy
+(
+    LinePlacementStrategyType strategyType
+)
+    {
+    return LinePlacementStrategy::Create(strategyType, *this);
+    }

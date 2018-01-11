@@ -61,7 +61,17 @@ $(o)ArcStartEndMidPlacementStrategy$(oext) : $(_MakeFilePath)ArcStartEndMidPlace
 
 $(o)SplineManipulationStrategy$(oext) : $(_MakeFilePath)SplineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplineManipulationStrategy.h
 
+$(o)ElementPlacementStrategy$(oext) : $(_MakeFilePath)ElementPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementPlacementStrategy.h
+
+$(o)LineStringManipulationStrategy$(oext) : $(_MakeFilePath)LineStringManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringManipulationStrategy.h
+
+$(o)LineStringPlacementStrategy$(oext) : $(_MakeFilePath)LineStringPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringPlacementStrategy.h
+
 $(o)SplinePlacementStrategy$(oext) : $(_MakeFilePath)SplinePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplinePlacementStrategy.h
+
+$(o)ElementManipulationStrategy$(oext) : $(_MakeFilePath)ElementManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementManipulationStrategy.h
+
+$(o)LineStringMetesAndBoundsPlacementStrategy$(oext) : $(_MakeFilePath)LineStringMetesAndBoundsPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringMetesAndBoundsPlacementStrategy.h
 
 
 %include MultiCppCompileGo.mki
@@ -81,5 +91,6 @@ DLM_OBJECT_FILES = $(objs)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki
