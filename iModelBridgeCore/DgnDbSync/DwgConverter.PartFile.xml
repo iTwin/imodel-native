@@ -310,9 +310,9 @@
         <SubPart PartName="RealDwgImportDLL" />
         <SubPart PartName="RealDwgBridge" />
         <Bindings>
-            <Files ProductDirectoryName="SampleListProp" Required="false">Delivery/Samples/XData/ImportXData.h</Files>
-            <Files ProductDirectoryName="SampleListProp" Required="false">Delivery/Samples/XData/ImportXData.cpp</Files>
-            <Files ProductDirectoryName="SampleListProp" Required="false">Delivery/Samples/XData/ImportXData.mke</Files>
+            <Files ProductDirectoryName="SampleListProp" Required="false">Delivery/Samples/ListProp/ListProperty.h</Files>
+            <Files ProductDirectoryName="SampleListProp" Required="false">Delivery/Samples/ListProp/ListProperty.cpp</Files>
+            <Files ProductDirectoryName="SampleListProp" Required="false">Delivery/Samples/ListProp/ListProperty.mke</Files>
         </Bindings>
     </Part>
 
