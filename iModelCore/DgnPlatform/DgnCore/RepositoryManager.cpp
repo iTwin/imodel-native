@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RepositoryManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -189,6 +189,13 @@ protected:
     void _OnCommit(TxnManager& mgr) override;
     void _OnAppliedChanges(TxnManager& mgr) override;
     void _OnUndoRedo(TxnManager& mgr, TxnAction) override;
+    bool _AreResourcesHeld(DgnLockSet& l, DgnCodeSet& c, RepositoryStatus* status) override 
+        {
+        auto ret = T_Super::_AreResourcesHeld(l, c, status);
+        if (nullptr != status && _IsBulkOperation() && !m_req.IsEmpty())
+            *status = RepositoryStatus::Success; // Don't report missing locks and codes if we are in the middle of a bulk op and haven't made our request yet.
+        return ret;
+        }
 
     // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
 
@@ -1437,9 +1444,6 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode)
     {
-    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
-        return DgnDbStatus::Success;
-
     Request req;
     return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, PrepareAction::Verify), req);
     }
@@ -1449,9 +1453,6 @@ DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbO
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
-    if (IsBulkOperation()) // In a bulk op, the "prepare" step schedules the request. We won't process it until later.
-        return DgnDbStatus::Success;
-
     Request req;
     return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, PrepareAction::Verify), req);
     }
