@@ -135,7 +135,6 @@ static Utf8CP const SHARED_TABLE                    = "SharedTable";
 static Utf8CP const TABLE_PER_HIERARCHY             = "TablePerHierarchy";
 static Utf8CP const NOT_MAPPED                      = "NotMapped";
 
-static Utf8CP const CORE_CUSTOMATTRIBUTES           = "CoreCustomAttributes";
 static Utf8CP const HIDDEN_PROPERTY                 = "HiddenProperty";
 static Utf8CP const SHOW                            = "Show";
 static Utf8CP const HIDDEN_SCHEMA                   = "HiddenSchema";

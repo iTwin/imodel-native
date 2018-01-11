@@ -3272,8 +3272,7 @@ void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Ut
 
     BeFileName ecdbSchemaDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaDir);
-    ecdbSchemaDir.AppendToPath(L"ECSchemas");
-    ecdbSchemaDir.AppendToPath(L"ECDb");
+    ecdbSchemaDir.AppendToPath(L"SeedData");
     context->AddSchemaPath(ecdbSchemaDir);
 
     CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
