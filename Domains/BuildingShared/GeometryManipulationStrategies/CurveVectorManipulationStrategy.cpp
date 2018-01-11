@@ -230,7 +230,7 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    GetStrategyForAppend()->AddKeyPoint(newDynamicKeyPoint);
+    GetStrategyForAppend()->AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------

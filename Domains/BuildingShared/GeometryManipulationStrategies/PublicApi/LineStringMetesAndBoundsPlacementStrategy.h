@@ -28,6 +28,7 @@ struct LineStringMetesAndBoundsPlacementStrategy : public LineStringPlacementStr
 
     protected:
         virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
+        virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
 
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override;

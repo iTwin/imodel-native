@@ -167,9 +167,35 @@ void LineStringMetesAndBoundsPlacementStrategy::_OnPropertySet
     if (0 == strcmp(key, prop_MetesAndBounds) && !GetLineStringManipulationStrategy().IsEmpty())
         {
         DPoint3d start = GetLineStringManipulationStrategy().GetFirstKeyPoint();
-        _PopKeyPoint();
-        _AddKeyPoint(start);
+
+        if (!_IsDynamicKeyPointSet())
+            {
+            _PopKeyPoint();
+            _AddKeyPoint(start);
+            }
+        else
+            {
+            _AddDynamicKeyPoint(start);
+            }
         }
 
     T_Super::_OnPropertySet(key);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void LineStringMetesAndBoundsPlacementStrategy::_AddDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
+    {
+    if (_IsComplete())
+        return;
+
+    GetLineStringManipulationStrategyR().AppendDynamicKeyPoint(newDynamicKeyPoint);
+    bvector<DPoint3d> withCalculatedPoints {newDynamicKeyPoint};
+    bvector<DPoint3d> calculatedPoints = CalculateKeyPoints();
+    withCalculatedPoints.insert(withCalculatedPoints.end(), calculatedPoints.begin(), calculatedPoints.end());
+    GetLineStringManipulationStrategyR().AppendDynamicKeyPoints(withCalculatedPoints);
     }
