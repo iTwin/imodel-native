@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDb.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -103,18 +103,6 @@ DgnDb::~DgnDb()
         SaveChanges(); // make sure we save changes before we remove the change tracker (really, the app shouldn't have left them uncommitted!)
         }
     Destroy();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::DestroyBriefcaseManager() 
-    {
-    if (m_briefcaseManager.IsValid())
-        {
-        m_briefcaseManager->OnDgnDbDestroyed();
-        m_briefcaseManager = nullptr;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,6 +319,35 @@ IBriefcaseManagerR DgnDb::BriefcaseManager()
         }
 
     return *m_briefcaseManager;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::DestroyBriefcaseManager() 
+    {
+    if (m_briefcaseManager.IsValid())
+        {
+        m_briefcaseManager->OnDgnDbDestroyed();
+        m_briefcaseManager = nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnDb::SetConcurrencyControl(IConcurrencyControl* control)
+    {
+    // TBD: assert main thread
+
+    if (Txns().HasChanges())
+        return BSIERROR;
+
+    m_concurrencyControl = control;
+
+    DestroyBriefcaseManager();
+    return BSISUCCESS;
     }
 
 //--------------------------------------------------------------------------------------

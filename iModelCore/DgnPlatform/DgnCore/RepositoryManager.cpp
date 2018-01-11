@@ -242,7 +242,10 @@ void BriefcaseManagerBase::_OnDgnDbDestroyed()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
-    return db.IsMasterCopy() || db.IsStandaloneBriefcase() ? MasterBriefcaseManager::Create(db).get() : BulkUpdateBriefcaseManager::Create(db).get();
+    auto bc = (db.IsMasterCopy() || db.IsStandaloneBriefcase()) ? MasterBriefcaseManager::Create(db) : BulkUpdateBriefcaseManager::Create(db);
+    if (bc.IsValid() && (nullptr != db.GetConcurrencyControl()))
+        db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*bc);
+    return bc.get();
     }
 
 #define TABLE_Codes "Codes"
@@ -882,12 +885,19 @@ IBriefcaseManager::Response BriefcaseManagerBase::_ProcessRequest(Request& req, 
     if (nullptr == mgr)
         return Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable);
 
+    auto control = GetDgnDb().GetConcurrencyControl();
+    if (nullptr != control)
+        control->_OnProcessRequest(*this, req, purpose);
+
     auto response = RequestPurpose::Acquire == purpose ? mgr->Acquire(req, GetDgnDb()) : mgr->QueryAvailability(req, GetDgnDb());
     if (RequestPurpose::Acquire == purpose && RepositoryStatus::Success == response.Result())
         {
         InsertCodes(req.Codes(), TableType::Owned);
         InsertLocks(req.Locks(), TableType::Owned, true);
         }
+
+    if (nullptr != control)
+        control->_OnProcessedRequest(*this, req, purpose, response);
 
     return response;
     }
@@ -2498,7 +2508,10 @@ RepositoryStatus BulkUpdateBriefcaseManager::_OnFinishRevision(DgnRevision const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::_OnCommit(TxnManager& mgr)
     {
-    BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
+    if (!mgr.GetDgnDb().GetOptimisticConcurrencyControl())
+        {
+        BeAssert (!m_inBulkUpdate && "somebody called SaveChanges while in a NESTED bulk op");
+        }
     T_Super::_OnCommit(mgr);
     }
 
