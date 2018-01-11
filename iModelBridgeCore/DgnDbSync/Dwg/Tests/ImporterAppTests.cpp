@@ -122,7 +122,7 @@ TEST_F(ImporterAppTests, Description)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ImporterAppTests, BudweiserBenchmark)
+TEST_F(ImporterAppTests, BudweiserBenchmarks)
     {
     WString fileName = L"budweiser2018.dwg";
     BeFileName inFile;
@@ -151,7 +151,8 @@ TEST_F(ImporterAppTests, BudweiserBenchmark)
         if (model->GetName().EqualsI("Model"))
             {
             size_t  elemCount = model->MakeIterator().BuildIdList<DgnElementId>().size ();
-            EXPECT_GE(elemCount, 2057);
+            // PRG & firebugs do not have RealDWG registries - subtract 7 AEC objects from the total count.
+            EXPECT_GE(elemCount, 2050);
             }
         count++;
         }
@@ -183,9 +184,9 @@ TEST_F(ImporterAppTests, BudweiserBenchmark)
     // count drawing categories
     count = DrawingCategory::MakeIterator(*db).BuildIdSet<DgnCategoryId>().size ();
     EXPECT_EQ(3, count);
-    // 7 fonts
+    // 7 fonts, but 1 comes from an AEC object which is not known on PRG or firebug boxes:
     count = db->Fonts().DbFontMap().MakeIterator().QueryCount ();
-    EXPECT_EQ(7, count);
+    EXPECT_EQ(6, count);
     // 13 linestyles
     count = 0;
     auto& lscache = db->LineStyles().GetCache ();
