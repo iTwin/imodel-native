@@ -51,7 +51,7 @@
       <Source multiplicity="(1..1)" polymorphic="true">
         <Class class="GridAxis"/>
       </Source>
-      <Target multiplicity="(1..*)" polymorphic="true">
+      <Target multiplicity="(0..*)" polymorphic="true">
         <Class class="GridSurface"/>
       </Target>
     </ECRelationshipClass>
