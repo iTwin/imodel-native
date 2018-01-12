@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Render.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -1043,5 +1043,37 @@ GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewpor
     : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type)
     {
     //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Material::CreateParams::CreateParams(RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture)
+    {
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
+        {
+        RgbFactor rgb = asset.GetColor(RENDER_MATERIAL_Color);
+        m_diffuseColor = MatColor(ColorUtil::FromRgbFactor(rgb));
+        }
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasSpecularColor, false))
+        {
+        RgbFactor rgb = asset.GetColor(RENDER_MATERIAL_SpecularColor);
+        m_specularColor = MatColor(ColorUtil::FromRgbFactor(rgb));
+        }
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasFinish, false))
+        m_specularExponent = asset.GetDouble(RENDER_MATERIAL_Finish, QvSpecular()) * FinishScale();
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
+        m_transparency = asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+
+    auto const& texMap = asset.GetPatternMap();
+    TexturePtr texture(pTexture);
+    if (texture.IsNull() && texMap.IsValid() && texMap.GetTextureId().IsValid())
+        texture = sys._GetTexture(texMap.GetTextureId(), db);
+
+    if (texture.IsValid())
+        m_textureMapping = TextureMapping(*texture, texMap.GetTextureMapParams());
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMarkupProject.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -976,29 +976,29 @@ ViewControllerPtr RedlineViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::MaterialP RedlineViewController::LoadBackgroundMaterial(ViewContextR context)
     {
-    if (m_backgroundMaterial.IsValid())
-        return m_backgroundMaterial->HasTextureMapping() ? m_backgroundMaterial.get() : nullptr;
-
     // Create the material proactively so we don't repeat all this work every frame if texture cannot be created...
-    Render::Material::CreateParams matParams;
-    matParams.SetDiffuseColor(ColorDef::White());
-    matParams.SetShadows(false);
-    matParams.SetAmbient(1.0);
-    matParams.SetDiffuse(0.0);
-    m_backgroundMaterial = context.GetRenderSystem()->_CreateMaterial(matParams);
+    if (m_backgroundMaterial.IsNull())
+        {
+        Render::Material::CreateParams matParams;
+        matParams.SetDiffuseColor(ColorDef::White());
+        matParams.SetShadows(false);
+        matParams.SetAmbient(1.0);
+        matParams.SetDiffuse(0.0);
 
-    auto def = GetImageDef();
-    auto texture = context.GetRenderSystem()->_GetTexture(def.m_textureId, GetDgnDb());
-    if (texture.IsNull())
-        return nullptr;
+        auto def = GetImageDef();
+        auto texture = context.GetRenderSystem()->_GetTexture(def.m_textureId, GetDgnDb());
+        if (texture.IsValid())
+            {
+            Render::TextureMapping::Params mapParams;
+            Render::TextureMapping::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+            mapParams.SetTransform(&transform);
+            matParams.MapTexture(*texture, mapParams);
+            }
 
-    Render::TextureMapping::Params mapParams;
-    Render::TextureMapping::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
-    mapParams.SetTransform(&transform);
-    Render::TextureMapping mapping(*texture, mapParams);
-    m_backgroundMaterial->MapTexture(mapping);
+        m_backgroundMaterial = context.GetRenderSystem()->_CreateMaterial(matParams);
+        }
 
-    return m_backgroundMaterial.get();
+    return m_backgroundMaterial->HasTextureMapping() ? m_backgroundMaterial.get() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

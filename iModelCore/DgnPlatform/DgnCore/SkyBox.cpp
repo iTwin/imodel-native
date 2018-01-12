@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SkyBox.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -184,12 +184,13 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     matParams.SetAmbient(1.0);
     matParams.SetDiffuse(0.0);
     matParams.SetShadows(false);
-    m_skybox = system._CreateMaterial(matParams);
 
     TextureMapping::Params mapParams;
     TextureMapping::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     mapParams.SetTransform(&transform);
-    m_skybox->MapTexture(TextureMapping(*texture, mapParams));
+    matParams.MapTexture(*texture, mapParams);
+
+    m_skybox = system._CreateMaterial(matParams);
     }
 
 /*---------------------------------------------------------------------------------**//**

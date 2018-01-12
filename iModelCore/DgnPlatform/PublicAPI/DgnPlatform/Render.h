@@ -610,6 +610,14 @@ struct Material : RefCounted<NonCopyableClass>
 {
     struct CreateParams
     {
+        // From DgnViewMaterial.cpp...
+        static constexpr double QvExponentMultiplier() { return 48.0; }
+        static constexpr double QvFinish() { return 0.9; }
+        static constexpr double QvSpecular() { return 0.4; }
+
+        // From TilePublisher.cpp...
+        static constexpr double FinishScale() { return 15.0; }
+
         struct MatColor
         {
             bool m_valid = false;
@@ -622,14 +630,18 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_diffuseColor;
         MatColor m_specularColor;
         MatColor m_emissiveColor;
+        TextureMapping m_textureMapping;
         double m_diffuse = 0.5;
         double m_ambient = 0.5;
-        double m_specularExponent = 0.0;
+        double m_specularExponent = QvFinish() * QvExponentMultiplier();
         double m_reflect = 0.0;
         double m_transparency = 0.0;
         double m_specular = 0.05;
         double m_refract = 1.0;
         bool m_shadows = true;
+
+        CreateParams() = default;
+        DGNPLATFORM_EXPORT CreateParams(RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
 
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
@@ -642,18 +654,17 @@ struct Material : RefCounted<NonCopyableClass>
         void SetSpecular(double val) {m_specular = val;} //<! Set surface specular reflectivity
         void SetRefract(double val) {m_refract = val;} //<! Set index of refraction
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
+        void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping;}
+        void MapTexture(TextureCR texture, TextureMapping::Params const& params) {MapTexture(TextureMapping(texture, params));}
     };
 
 protected:
     TextureMapping  m_textureMapping;
 
-    //! Override to perform additional logic when texture mapping is set, if necessary.
-    virtual void _MapTexture() { }
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
-public:
-    //! Map a texture to this material
-    void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping; _MapTexture();}
 
+    explicit Material(TextureMappingCR textureMapping=TextureMapping()) : m_textureMapping(textureMapping) { }
+public:
     bool HasTextureMapping() const {return m_textureMapping.IsValid();}
     TextureMappingCR GetTextureMapping() const {return m_textureMapping;}
 };
