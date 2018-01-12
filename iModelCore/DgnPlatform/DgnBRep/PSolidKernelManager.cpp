@@ -2451,7 +2451,7 @@ int             order
             pole.z = *geomArrayP++;
 
             if (rational)
-                *geomArrayP++;
+                geomArrayP++;
 
             points.push_back(pole);
             }
@@ -2830,7 +2830,8 @@ void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP
         }
  
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
-    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, viewTransformTag, &options);
+    /* unused - PK_ERROR_code_t failureCode = */
+    PK_TOPOL_render_line(1, &entityTag, nullptr, viewTransformTag, &options);
     s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
 
     PK_ENTITY_delete(1, &viewTransformTag);
@@ -2978,7 +2979,8 @@ void PSolidGoOutput::ProcessFaceHatching(IParasolidWireOutput& output, int divis
         return;
 
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
-    PK_ERROR_code_t failureCode = PK_TOPOL_render_line(1, &entityTag, PK_ENTITY_null, PK_ENTITY_null, &options);
+    /* unused - PK_ERROR_code_t failureCode = */
+    PK_TOPOL_render_line(1, &entityTag, nullptr, PK_ENTITY_null, &options);
     s_frustrumOutput.m_wireOutput = nullptr; // Clear static global callback function...
     }
 
