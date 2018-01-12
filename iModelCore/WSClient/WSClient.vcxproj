@@ -234,6 +234,7 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\SessionInfo.h" />
