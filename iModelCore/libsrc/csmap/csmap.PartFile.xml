@@ -63,7 +63,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="CsmapCompiler" BMakeFile="Dictionaries/compiler.mke">
+    <Part Name="CsmapCompiler" BMakeFile="DictionarySources/compiler.mke">
         <SubPart PartName="csmap"/>
     </Part>
 
