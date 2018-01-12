@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaManagerDispatcher.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -617,6 +617,15 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
     if (schemas.empty())
         {
         m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. List of ECSchemas to import is empty.");
+        return ERROR;
+        }
+
+    ProfileVersion profileVersion(0, 0, 0, 0);
+    if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(profileVersion, m_ecdb) || ProfileManager::GetExpectedVersion() != profileVersion)
+        {
+        m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. The ECDb file is too new (version: %s). Schema imports with this version of the software can "
+                                         "only be done on files with profile version %s.",
+                                         profileVersion.ToString().c_str(), ProfileManager::GetExpectedVersion().ToString().c_str());
         return ERROR;
         }
 

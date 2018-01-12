@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaPersistenceHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -412,7 +412,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
             return ERROR;
             }
 
-        if (!enumValue->GetInvariantDisplayLabel().empty())
+        if (enumValue->GetIsDisplayLabelDefined())
             {
             Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel,
