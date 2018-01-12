@@ -622,15 +622,22 @@ virtual bool EvaluateAtDistance
 * use results of EvaluateAtDistance to provide integrand for caller's integrals.
 */
 void EvaluateVectorIntegrand (double distance, double *pF) override;
+//! rotate xy and optional derivatives by radians.  (To be called by derived class EvaluateAtDistance when to rotate EvaluateAtDistance results from standard position)
+static void ApplyCCWRotation (
+    double radians,
+    DPoint2dR xyz,          //!< [out] coordinates on spiral
+    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
+    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
+    DVec2dP d3XYZ    //!< [out] third derivative wrt distance
+    );
 };
 // NEWSOUTHWALES Spiral
 // Let a = 1/ (40 R*R*L*L) for exit radius R, spiral length L
 // Let b = 1/(6 R L)
 //  at distance s along the spiral
-//     x = x (1-gamma *s^4)
-//     y = b * x^3
-// curvature queries are answered as if clothoid -- linear interpolation from 0 to 1/R
-// (even though actual curvature is slightly different)
+//     x =  s *(1-a *s^4)
+//     y = b * s^3
+
 struct GEOMDLLIMPEXP DSpiral2dNewSouthWales : DSpiral2dDirectEvaluation
 {
     DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
@@ -648,7 +655,51 @@ bool EvaluateAtDistance
     DVec2dP d3XYZ   //!< [out] third derivative wrt distance
     ) const override;
 
+//! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.
+static bool EvaluateAtDistanceInStandardOrientation
+    (
+    double s,           //!< [in] distance for evaluation
+    double length,      //! [in] strictly nonzero length along spiral.
+    double curvature1,  //! [in] strictly nonzero exit curvature
+    DPoint2dR xy,      //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    );
+};
 
+// AUSTRALIAN Spiral
+// In local coordinates, with specific constants  a1,a2,a3,a4 and m based on length and final radius  . . .
+// x = s (1 - a1 m^2 s^4 + a2 m^4 s^8 - a3 m^6 s^12 + a4 m^8 s^16)
+// y = m * s^3
+struct GEOMDLLIMPEXP DSpiral2dAustralian : DSpiral2dDirectEvaluation
+{
+    DECLARE_DSPIRAL2DBASE_DIRECT_EVALUATION_OVERRIDES
+public:
+    DSpiral2dAustralian ();
+
+//! Evaluate the spiral and optional derivatives at specified distance along.
+//! return true if valid evaluation.
+//! (Any trailing subset of the pointer args may be omitted.)
+bool EvaluateAtDistance
+    (
+    double distanceAlong, //!< [in] distance for evaluation
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    ) const override;
+//! Evaluate at distance a spiral in standard orientation -- zero curvature at origin.
+static bool DSpiral2dAustralian::EvaluateAtDistanceInStandardOrientation
+    (
+    double s,           //!< [in] distance for evaluation
+    double length,      //! [in] strictly nonzero length along spiral.
+    double curvature1,  //! [in] strictly nonzero exit curvature
+    DPoint2dR xy,      //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    );
 };
 
 

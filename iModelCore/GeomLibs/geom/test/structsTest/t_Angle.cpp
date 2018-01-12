@@ -523,58 +523,6 @@ TEST(PseudoSpiral,NewSouthWales)
     Check::ClearGeometry ("PseudoSpiral.NewSouthWales");
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(PseudoSpiral,Serialize)
-    {
-    double radius1 = 1000.0;
-    double spiralLength = 100.0;
-    bvector<double> radiusMeters {1000, 400, 200 };
-    //bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
-    //bvector<double> edgeCount {15, 25, 35};
-    double yShift = 0.0;
-    for (int spiralType : {
-                DSpiral2dBase::TransitionType_Clothoid,
-                DSpiral2dBase::TransitionType_Bloss,
-                DSpiral2dBase::TransitionType_Biquadratic,
-                DSpiral2dBase::TransitionType_Cosine,
-                DSpiral2dBase::TransitionType_Sine,
-                //DSpiral2dBase::TransitionType_Viennese,
-                //DSpiral2dBase::TransitionType_WeightedViennese,
-                DSpiral2dBase::TransitionType_NewSouthWales,
-                //DSpiral2dBase::TransitionType_Czech,
-                //DSpiral2dBase::TransitionType_Australian,
-                //DSpiral2dBase::TransitionType_Italian,
-                //DSpiral2dBase::TransitionType_Polish
-                })
-        {
-        yShift += 10.0;
-        auto frame = Transform::From (0, yShift, 0);
-        auto spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
-                spiralType,
-                0.0, 0.0, spiralLength, 1.0 / radius1,
-                frame,
-                0.0, 1.0
-                );
-        if (spiral.IsValid ())
-            {
-            Check::SaveTransformed (*spiral);
-            auto bcurve = spiral->GetProxyBsplineCurvePtr ();
-            if (bcurve.IsValid ())
-                {
-                auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
-                Check::SaveTransformed (*bprim);
-                }
-            }
-        char name[1024];
-        sprintf (name, "Spiral.Serialize.%d", spiralType);
-        Check::ClearGeometry (name);
-        }
-    }
-
-
-
 void TestAngleConstructors (double radians)
     {
     Angle angle0 = Angle::FromRadians (radians);

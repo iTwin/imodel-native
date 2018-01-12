@@ -27,6 +27,7 @@ int DSpiral2dSine::GetTransitionTypeCode () const { return TransitionType_Sine;}
 int DSPiral2dWeightedViennese::GetTransitionTypeCode () const { return TransitionType_WeightedViennese;}
 int DSPiral2dViennese::GetTransitionTypeCode () const { return TransitionType_Viennese;}
 int DSpiral2dNewSouthWales::GetTransitionTypeCode () const { return TransitionType_NewSouthWales;}
+int DSpiral2dAustralian::GetTransitionTypeCode () const { return TransitionType_Australian;}
 
 
 
@@ -57,6 +58,8 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
     if (transitionType == TransitionType_Czech)
         return new DSpiral2dCzech ();
 #endif
+    if (transitionType == TransitionType_Australian)
+        return new DSpiral2dAustralian ();
     return NULL;
     }
 
@@ -1865,7 +1868,7 @@ double DSpiral2dDirectEvaluation::DistanceToLocalAngle (double distance) const
     DPoint2d xy;
     DVec2d d1xy;
     EvaluateAtDistance (distance, xy, &d1xy, nullptr, nullptr);
-    return   atan2 (d1xy.y, d1xy.x);
+    return   atan2 (d1xy.y, d1xy.x) - mTheta0;
     }
 
 double DSpiral2dDirectEvaluation::DistanceToCurvature (double distance) const
@@ -1882,6 +1885,27 @@ double DSpiral2dDirectEvaluation::DistanceToCurvatureDerivative (double distance
     DVec2d d1xy, d2xy, d3xy;
     EvaluateAtDistance (distance, xy, &d1xy, &d2xy, &d3xy);
     return parametricCurvatureDerivative (d1xy.x, d1xy.y, d2xy.x, d2xy.y, d3xy.x, d3xy.y);
+    }
+// rotate each vector by radians ...
+void DSpiral2dDirectEvaluation::ApplyCCWRotation
+(
+double radians,
+DPoint2dR xy,          //!< [out] coordinates on spiral
+DVec2dP d1XY,   //!< [out] first derivative wrt distance
+DVec2dP d2XY,   //!< [out] second derivative wrt distance
+DVec2dP d3XY    //!< [out] third derivative wrt distance
+)
+    {
+    if (radians != 0.0)
+        {
+        xy.RotateCCW (xy, radians);
+        if (d1XY)
+            d1XY->RotateCCW (radians);
+        if (d2XY)
+            d2XY->RotateCCW (radians);
+        if (d3XY)
+            d3XY->RotateCCW (radians);
+        }
     }
 
 /*-----------------------------------------------------------------*//**
@@ -1902,41 +1926,230 @@ void DSpiral2dDirectEvaluation::EvaluateVectorIntegrand (double distance, double
 
 // Specialize spiral for NEWSOUTHWALES ....
 DSpiral2dNewSouthWales::DSpiral2dNewSouthWales () : DSpiral2dDirectEvaluation () {}
-
-bool DSpiral2dNewSouthWales::EvaluateAtDistance
+// STATIC method
+bool DSpiral2dNewSouthWales::EvaluateAtDistanceInStandardOrientation
     (
     double s, //!< [in] distance for evaluation
-    DPoint2dR xyz,          //!< [out] coordinates on spiral
-    DVec2dP d1XYZ,   //!< [out] first derivative wrt distance
-    DVec2dP d2XYZ,   //!< [out] second derivative wrt distance
-    DVec2dP d3XYZ   //!< [out] third derivative wrt distance
-    ) const
+    double length,  //!< [in] nominal length.   ASSUMED NONZERO
+    double curvature1, //!< [in] exit curvature.  ASSUMED NONZERO
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    )
     {
-    double factorX = mCurvature1 * mCurvature1 / (40.0 * mLength * mLength);
+    double factorX = curvature1 * curvature1 / (40.0 * length * length);
     double s2 = s * s;
     double s3 = s2 * s;
     double s4 = s2 * s2;
 
-    double factorY = mCurvature1 / (6.0 * mLength);
-    xyz.Init (s * (1.0 - s4 *  factorX), s3 * factorY);
+    double factorY = curvature1 / (6.0 * length);
+    xy.Init (s * (1.0 - s4 *  factorX), s3 * factorY);
 
-    if (d1XYZ)
-        d1XYZ->Init (1.0 - 5.0 * s4 * factorX, 3.0 * s2 * factorY);
+    if (d1XY)
+        d1XY->Init (1.0 - 5.0 * s4 * factorX, 3.0 * s2 * factorY);
 
-    if (d2XYZ)
-        d2XYZ->Init (-20.0 * s3 * factorX, 6.0 * s * factorX);
+    if (d2XY)
+        d2XY->Init (-20.0 * s3 * factorX, 6.0 * s * factorX);
 
-    if (d3XYZ)
-        d3XYZ->Init (-60.0 * factorX, 6.0 * factorY);
+    if (d3XY)
+        d3XY->Init (-60.0 * factorX, 6.0 * factorY);
     return true;
     }
 
-
+bool DSpiral2dNewSouthWales::EvaluateAtDistance
+    (
+    double s, //!< [in] distance for evaluation
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    ) const
+    {
+    if (mCurvature0 == 0.0)
+        {
+        static bool s_applyRotation = true;
+        bool stat = EvaluateAtDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (stat && s_applyRotation)
+            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+        return stat;
+        }
+    return false;
+    }
 DSpiral2dBaseP DSpiral2dNewSouthWales::Clone () const
     {
     DSpiral2dNewSouthWales *pClone = new DSpiral2dNewSouthWales ();
     pClone->CopyBaseParameters (this);
     return pClone;
     }
+
+// Specialize spiral for AUSTRALIAN ....
+
+double DEGRAD(double a)
+    {
+    return Angle::DegreesToRadians (a);
+    }
+static double aecAlg_computeAustralianPhi( double R, double xc )
+{
+    double phi, expr1, expr2, expr3;
+
+    expr1 = ( 2. / sqrt( 3. ));
+    expr2 = ( - ( 3. / 4. ) * sqrt( 3. ) * xc / R );
+    expr3 = DEGRAD( 240. );
+
+    phi = asin( expr1 * cos( acos( expr2 ) / 3. + expr3 ));
+
+    return( phi );
+}
+
+double aecAlg_computeAustralianPhiFromXcR( double R, double xc )
+{
+    double l, m, phi;
+
+    phi = aecAlg_computeAustralianPhi( R, xc );
+
+    m = tan( phi ) / ( 3. * xc * xc );
+
+    l = xc  + (     9. /   10. ) * pow( m, 2 ) * pow( xc,  5 )
+            - (     9. /    8. ) * pow( m, 4 ) * pow( xc,  9)
+            + (   729. /  208. ) * pow( m, 6 ) * pow( xc, 13 )
+            - ( 32805. / 2176. ) * pow( m, 8 ) * pow( xc, 17 );
+
+    return( l );
+}
+
+double aecAlg_computeAustralianXcFromRL_fast( double L, double R )
+{
+    int idx = 0;
+    double xc, l, m, phi;
+    static double tolerance = 1.0e-5;
+
+    xc = .7 * L;
+
+    for( idx = 0; idx < 100; ++idx )
+    {
+        phi = aecAlg_computeAustralianPhi( R, xc );
+        double xc2 = xc * xc;
+        m = tan( phi ) / ( 3.0 * xc2);
+        double m2x4 = m * m * xc2 * xc2;
+        double correction = xc * m2x4 * (
+                 (     9. /   10. ) + m2x4 * (
+               - (     9. /    8. ) + m2x4 * (
+               + (   729. /  208. ) + m2x4 *
+               - ( 32805. / 2176. ))));
+        l = xc + correction;
+        xc = ( L / l ) * xc;
+
+        if( fabs( L - l ) < tolerance )
+            break;
+    }
+
+    return( xc );
+}
+
+double aecAlg_computeAustralianXcFromRL( double L, double R )
+{
+    int idx = 0;
+    double xc, l, m, phi;
+
+    xc = .7 * L;
+
+    for( idx = 0; idx < 100; ++idx )
+    {
+        phi = aecAlg_computeAustralianPhi( R, xc );
+
+        m = tan( phi ) / ( 3. * xc * xc );
+
+        l = xc + (     9. /   10. ) * pow( m, 2 ) * pow( xc,  5 )
+               - (     9. /    8. ) * pow( m, 4 ) * pow( xc,  9 )
+               + (   729. /  208. ) * pow( m, 6 ) * pow( xc, 13 )
+               - ( 32805. / 2176. ) * pow( m, 8 ) * pow( xc, 17 );
+
+        xc = ( L / l ) * xc;
+
+        if( fabs( L - l ) < 0.00001 )
+            break;
+    }
+
+    return( xc );
+}
+
+DSpiral2dAustralian::DSpiral2dAustralian () : DSpiral2dDirectEvaluation () {}
+// STATIC method ...
+bool DSpiral2dAustralian::EvaluateAtDistanceInStandardOrientation
+    (
+    double s,           //!< [in] distance for evaluation
+    double length,      //! [in] strictly nonzero length along spiral.
+    double curvature1,  //! [in] strictly nonzero exit curvature
+    DPoint2dR xy,      //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    )
+    {
+    double radius1 = 1.0 / curvature1;
+    double xc = aecAlg_computeAustralianXcFromRL (length, radius1);
+    // double xcA = aecAlg_computeAustralianXcFromRL_fast (length1, radius1);
+    double phi = aecAlg_computeAustralianPhi( radius1, xc );
+
+    double a1 = 0.9000;
+    double a2 = 5.1750;
+    double a3 = 43.1948;
+    double a4 = 426.0564;
+    double m = tan( phi ) / ( 3.0 * xc * xc );
+    double m2s4 =  m * m * s * s * s * s;
+    double x = s * (1.0 - m2s4 * (a1 - m2s4 * (a2 - m2s4 * (a3 - m2s4 * a4))));
+    double y = m * x * x * x;
+    xy.Init (x,y);
+    if (d1XY)
+        {
+        double dxds = 1.0 - m2s4 * (5.0 * a1 - m2s4 * (9.0 * a2 - m2s4 * (13.0 * a3 - m2s4 * 17.0 * a4)));
+        double dyds = 3.0 * m * x * x * dxds;  // chain rule!!
+        d1XY->Init (dxds, dyds);
+        if (d2XY)
+            {
+            double m2s3 = m * m * s * s * s;
+            double d2xds2 = -m2s3 * (20.0 * a1 - m2s4 * (72.0 * a2 - m2s4 * (156.0 * a3 - m2s4 * 272.0 * a4 )));
+            double d2yds2 = m * (6.0 * x * dxds + 3.0 * x * x * d2xds2);
+            d2XY->Init (d2xds2, d2yds2);
+            if (d3XY)
+                {
+                double m2s2 = m * m * s * s;
+                double d3xds3 = -m2s2 * (60.0 * a1 - m2s4 * (504.0 * a2 - m2s4 * (1716.0 * a3 - m2s4 * 4080.0 * a4 )));
+                double d3yds3 = m * (6.0 * dxds + 12.0 * x * d2xds2 + 3.0 * x * x * d3xds3);
+                d2XY->Init (d3xds3, d3yds3);
+                }
+            }
+        }
+        
+    return true;
+    }
+
+bool DSpiral2dAustralian::EvaluateAtDistance
+    (
+    double s, //!< [in] distance for evaluation
+    DPoint2dR xy,          //!< [out] coordinates on spiral
+    DVec2dP d1XY,   //!< [out] first derivative wrt distance
+    DVec2dP d2XY,   //!< [out] second derivative wrt distance
+    DVec2dP d3XY   //!< [out] third derivative wrt distance
+    ) const
+    {
+    if (mCurvature0 == 0.0)
+        {
+        bool stat = EvaluateAtDistanceInStandardOrientation (s, mLength, mCurvature1, xy, d1XY, d2XY, d3XY);
+        if (stat)
+            ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
+        return stat;
+        }       
+    return false;
+    }
+DSpiral2dBaseP DSpiral2dAustralian::Clone () const
+    {
+    DSpiral2dAustralian *pClone = new DSpiral2dAustralian ();
+    pClone->CopyBaseParameters (this);
+    return pClone;
+    }
+
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE
