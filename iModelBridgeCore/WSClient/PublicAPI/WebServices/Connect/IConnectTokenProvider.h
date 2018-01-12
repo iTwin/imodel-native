@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/IConnectTokenProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,17 +21,17 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 typedef std::shared_ptr<struct IConnectTokenProvider> IConnectTokenProviderPtr;
 struct IConnectTokenProvider
     {
-    public:
-        virtual ~IConnectTokenProvider()
-            {};
+    virtual ~IConnectTokenProvider() {};
 
-        //! Retrieves new token, caches and returns it.
-        //! Returns null if token cannot be retrieved.
-        virtual AsyncTaskPtr<SamlTokenPtr> UpdateToken() = 0;
+    //! Is used to get new token even if old one is valid.
+    //! Should cache and return the token.
+    //! Should return null if token cannot be updated and authentication should fail.
+    virtual AsyncTaskPtr<SamlTokenPtr> UpdateToken() = 0;
 
-        //! Returns cached token.
-        //! Returns null if token is not cached - calling UpdateToken() would be next step.
-        virtual SamlTokenPtr GetToken() = 0;
+    //! Is used to get cached token for each request.
+    //! Should return token if it is cached and valid, not expired.
+    //! Should return null othervise. UpdateToken() will be called after null is returned.
+    virtual SamlTokenPtr GetToken() = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
