@@ -324,7 +324,7 @@ Dgn::DgnDbStatus                PlanCircumferentialGridSurface::RecomputeGeometr
     DVec3d yVec = DVec3d::From(0.0, radius, 0.0);
     DPoint3d center = DPoint3d::From(0.0, 0.0, staElev);
 
-    DEllipse3d ellipse = DEllipse3d::FromVectors(center, yVec, xVec, startAngle, length);
+    DEllipse3d ellipse = DEllipse3d::FromVectors(center, xVec, yVec, startAngle, length);
 
 
     //start from the grid transform

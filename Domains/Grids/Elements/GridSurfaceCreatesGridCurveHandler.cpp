@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/GridSurfaceCreatesGridCurveHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -39,17 +39,6 @@ Dgn::DgnElementId target
     if (false)
         db.Txns ().ReportError (*new TxnManager::ValidationError (TxnManager::ValidationError::Severity::Fatal, "ABC failed"));
 
-    Utf8String ecsql ("SELECT IsBaseSurface FROM ");
-    ecsql.append (GetECClass (db).GetECSqlName ());
-    ecsql.append (" WHERE SourceECInstanceId = ? AND TargetECInstanceId = ?");
-    BeSQLite::EC::ECSqlStatement statement;
-    statement.Prepare (db, ecsql.c_str ());
-    statement.BindId (1, source);
-    statement.BindId (2, target);
-    statement.Step ();
-
-    bool isBase = statement.GetValueBoolean (0);
-
     Utf8String ecsqlOtherSurface ("SELECT SourceECInstanceId FROM ");
     ecsqlOtherSurface.append (GetECClass (db).GetECSqlName ());
     ecsqlOtherSurface.append (" WHERE TargetECInstanceId = ? AND SourceECInstanceId != ?");
@@ -67,10 +56,7 @@ Dgn::DgnElementId target
 
     ICurvePrimitivePtr newCurve;
     
-    if (isBase)
-        newCurve = ComputeIntersection (otherSurface, thisSurface);
-    else
-        newCurve = ComputeIntersection (thisSurface, otherSurface);
+    newCurve = ComputeIntersection (otherSurface, thisSurface);
 
     if (newCurve.IsValid ())
         {
@@ -105,9 +91,13 @@ GridSurfaceCPtr otherSurface
     if (SUCCESS == GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThis, thisSurface) &&
         SUCCESS == GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThat, otherSurface))
         {
-        CurveVectorPtr bodyThis = Dgn::PSolidGeom::PlanarSheetBodyToCurveVector (*(*brepsThis.begin ()));
-        if (bodyThis.IsValid())
-            return bodyThis->PlaneSection (((GridPlanarSurface*)otherSurface.get ())->GetPlane ());
+        Dgn::IBRepEntity::EntityType type1 = brepsThis[0]->GetEntityType();
+        Dgn::IBRepEntity::EntityType type2 = brepsThat[0]->GetEntityType();
+        CurveVectorPtr result;
+        BRepUtil::Modify::IntersectSheetFaces(result, *brepsThis[0], *brepsThat[0]);
+        if (result->size() > 0)
+            return *result->begin();
+        return nullptr; // TODO get the curvePrimitive
         }
     return nullptr;
     }
@@ -132,15 +122,21 @@ Dgn::DgnModelCR targetModel
     auto relInstBase = ECN::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass)->CreateRelationshipInstance();
     auto relInstIntersecting = ECN::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass)->CreateRelationshipInstance ();
 
-    relInstBase->SetValue ("IsBaseSurface", ECN::ECValue (true));
-    relInstIntersecting->SetValue ("IsBaseSurface", ECN::ECValue (false));
-
     //create and compute the gridcurve
     ICurvePrimitivePtr bodyThis = ComputeIntersection (thisSurface, otherSurface);
 
     if (bodyThis.IsValid ())
         {
-        GridCurvePtr curve = GridLine::Create (targetModel, bodyThis);
+        GridCurvePtr curve;
+        if (bodyThis->GetLineCP())
+            curve = GridLine::Create(targetModel, bodyThis);
+        else if (bodyThis->GetArcCP())
+            curve = GridArc::Create(targetModel, bodyThis);
+        else if (bodyThis->GetBsplineCurveCP() || bodyThis->GetInterpolationCurveCP())
+            curve = GridSpline::Create(targetModel, bodyThis);
+        if (curve.IsNull())
+            return BeSQLite::EC::ECInstanceKey();
+
         curve->Insert ();
         BeSQLite::DbResult result = db.InsertLinkTableRelationship (relKey, *relClass, BeSQLite::EC::ECInstanceId (thisSurface->GetElementId ()), BeSQLite::EC::ECInstanceId (curve->GetElementId ()), relInstIntersecting.get ());
         result = db.InsertLinkTableRelationship (relKey, *relClass, BeSQLite::EC::ECInstanceId (otherSurface->GetElementId ()), BeSQLite::EC::ECInstanceId (curve->GetElementId ()), relInstBase.get ());

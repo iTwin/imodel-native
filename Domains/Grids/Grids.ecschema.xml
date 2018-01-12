@@ -49,7 +49,6 @@
       <Target cardinality="(0,N)" polymorphic="true">
         <Class class="GridCurve"/>
       </Target>
-      <ECProperty propertyName="IsBaseSurface" typeName="boolean" description="whether the surface is the base on which others are imprinted"/>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GridHasAxes" strength="embedding" modifier="None">

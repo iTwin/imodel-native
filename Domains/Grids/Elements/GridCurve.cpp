@@ -97,7 +97,7 @@ void            GridCurve::_CopyFrom(Dgn::DgnElementCR source)
 //---------------+---------------+---------------+---------------+---------------+------
 GridSurfacePtr GridCurve::GetIntersectingSurface () const
     {
-    Utf8String statemntString = Utf8PrintfString ("SELECT SourceECInstanceId FROM " GRIDS_SCHEMA (GRIDS_REL_GridSurfaceCreatesGridCurve) " WHERE TargetECInstanceId=? AND IsBaseSurface=false");
+    Utf8String statemntString = Utf8PrintfString ("SELECT SourceECInstanceId FROM " GRIDS_SCHEMA (GRIDS_REL_GridSurfaceCreatesGridCurve) " WHERE TargetECInstanceId=?");
     BeSQLite::EC::ECSqlStatement statement;
     statement.Prepare (GetDgnDb (), statemntString.c_str ());
 
