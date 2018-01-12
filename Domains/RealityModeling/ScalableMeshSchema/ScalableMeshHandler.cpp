@@ -680,6 +680,12 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
 Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selected, Dgn::TileTree::DrawArgsR args) const
     {
 
+    if (!m_3smModel->m_loadedAllModels)
+        {
+        m_3smModel->InitializeTerrainRegions(args.m_context);
+        }
+
+
     if (s_tryCustomSelect)
         {        
         static clock_t startTime = 0;
@@ -745,6 +751,65 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
 
         if (viewStatus == SMNodeViewStatus::Fine)
             {
+#if 0
+            if (s_showTiles)
+                {
+                DRange3d contentExtent(m_scalableMeshNodePtr->GetContentExtent());
+/**
+                if (isCesium)
+                    {
+                    context.PopTransformClip();
+
+                    DPoint3d box[8];
+                    contentExtent.Get8Corners(box);
+                    smToDgnUorTransform.Multiply(box, 8);
+                    contentExtent = DRange3d::From(box, 8);
+                }
+*/
+
+                __int64  nodeId(m_scalableMeshNodePtr->GetNodeId());
+
+                TextString nodeIdString;
+
+                DPoint3d stringOrigin = { (contentExtent.high.x + contentExtent.low.x) / 2, (contentExtent.high.y + contentExtent.low.y) / 2, contentExtent.high.z };
+
+                char buffer[1000];
+                BeStringUtilities::FormatUInt64(buffer, nodeId);
+
+                nodeIdString.SetOrigin(stringOrigin);
+                nodeIdString.SetText(buffer);
+
+                TextStringStyle stringStyle;
+                double maxExtentDim = std::max(contentExtent.XLength(), contentExtent.YLength());
+                int textSize = std::max((int)(maxExtentDim / s_tileSizePerIdStringSize), 1);
+                stringStyle.SetSize(textSize);
+                nodeIdString.SetStyle(stringStyle);
+/*
+                ElemMatSymbP matSymbP = args.m_context.GetElemMatSymb();
+                matSymbP->Init();
+                matSymbP->SetLineColor(ColorDef::Red());
+                matSymbP->SetFillColor(ColorDef::Red());
+                args.m_context.GetIDrawGeom().ActivateMatSymb(matSymbP);
+*/
+                args.m_context.GetIDrawGeom().DrawTextString(nodeIdString);
+
+                DPoint3d box[8];
+                contentExtent.Get8Corners(box);
+                std::swap(box[6], box[7]);
+                box[3] = box[7];
+
+                args.m_context.GetIDrawGeom().DrawLineString3d(5, &box[3], nullptr);
+
+/*
+                if (isCesium)
+                {
+                    context.PushTransform(smToDgnUorTransform);
+                }
+*/
+            }
+#endif
+
+
             if (IsReady())
                 {
                 selected.push_back(this);
@@ -1156,6 +1221,7 @@ SMNode::~SMNode()
 // @bsimethod                                                    Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 static bool s_applyTexture = true;
+static bool s_applyClips = false;
 
 BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {
@@ -1356,10 +1422,28 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
             }
         }
 
+    IScalableMeshMeshPtr smMeshPtr;
 
-    IScalableMeshMeshFlagsPtr loadFlagsPtr(IScalableMeshMeshFlags::Create(true, false));
-    IScalableMeshMeshPtr smMeshPtr(m_scalableMeshNodePtr->GetMesh(loadFlagsPtr));
+    if (!s_applyClips)
+        {
+        IScalableMeshMeshFlagsPtr loadFlagsPtr(IScalableMeshMeshFlags::Create(true, false));
+        loadFlagsPtr->SetLoadClips(true);
+        loadFlagsPtr->SetSaveToCache(true);
+        smMeshPtr = m_scalableMeshNodePtr->GetMesh(loadFlagsPtr);
+        }
+    else
+        {
+        //if (/*(m_scalableMeshNodePtr->IsLoaded(displayCacheManagerPtr.get(), loadTexture) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) == false) || */!m_scalableMeshNodePtr->IsClippingUpToDate() /*|| !m_scalableMeshNodePtr->HasCorrectClipping(m_activeClips)*/)
+            {
+            if (!m_scalableMeshNodePtr->IsDataUpToDate()) m_scalableMeshNodePtr->UpdateData();
+            m_scalableMeshNodePtr->ApplyAllExistingClips(scene.m_smPtr->GetReprojectionTransform());            
+            //meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture, scalableMeshPtr->ShouldInvertClips());
+            //assert(m_scalableMeshNodePtr->HasCorrectClipping(m_3smModel->m_activeClips));
+            }
 
+        smMeshPtr = m_scalableMeshNodePtr->GetMeshByParts(m_3smModel->m_activeClips);
+        }
+        
     if (!smMeshPtr.IsValid())
         return SUCCESS;
 
