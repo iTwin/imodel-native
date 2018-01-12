@@ -2533,7 +2533,7 @@ struct SceneLights : RefCounted<NonCopyableClass>
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
 
-    TexturePtr  m_environmentMap;          // For image based specular... WIP
+    TexturePtr  m_environmentMap = nullptr;          // For image based specular... WIP
 };
 DEFINE_REF_COUNTED_PTR(SceneLights)
 
