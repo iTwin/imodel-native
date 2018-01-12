@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/UnitManager_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -152,12 +152,20 @@ TEST_F (UnitManagerTest, CreateStandardUnitIterator)
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // TODO: not sure if these are good examples since they are coupled what is in the table (if stuff is added/removed these tests might fail.
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//=======================================================================================
+// @bsiclass                                                    Umar.Hayat     11/2015
+//=======================================================================================
+struct UnitIterator : public ::testing::Test
+{
+    ScopedDgnHost autoDgnHost;
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIterator, ToNext_Ascending)
+TEST_F (UnitIterator, ToNext_Ascending)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
     
@@ -175,9 +183,8 @@ TEST (UnitIterator, ToNext_Ascending)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIterator, ToNext_Descending)
+TEST_F (UnitIterator, ToNext_Descending)
     {
-    ScopedDgnHost autoDgnHost;
     UnitIteratorOptions options;
     options.SetOrderDescending();
     
@@ -332,7 +339,7 @@ TEST_F (UnitIteratorOptionsTest, SetSizeCriteria)
 * TODO: same test as:
 *    TEST_F (UnitManagerTest, CreateStandardUnitIterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIterator, GetUnitDef)
+TEST_F (UnitIterator, GetUnitDef)
     {
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
@@ -351,7 +358,7 @@ TEST (UnitIterator, GetUnitDef)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIterator, GetNumber)
+TEST_F (UnitIterator, GetNumber)
     {
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
@@ -364,7 +371,7 @@ TEST (UnitIterator, GetNumber)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman  03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (UnitIterator, GetName)
+TEST_F (UnitIterator, GetName)
     {
     UnitIteratorOptions     options;
     StandardUnitCollection  collection (options);
