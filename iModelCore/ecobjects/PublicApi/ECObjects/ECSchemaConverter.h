@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchemaConverter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,22 +32,23 @@ typedef std::function<ECObjectsStatus(ECClassP)> ECClassProcessor;
 typedef std::function<ECObjectsStatus(ECPropertyP)> ECPropertyProcessor;
 typedef RefCountedPtr<IECCustomAttributeConverter> IECCustomAttributeConverterPtr;
 
-struct ECSchemaConverter
+typedef RefCountedPtr<CustomECSchemaConverter> CustomECSchemaConverterPtr;
+
+//+===============+===============+===============+===============+===============+======
+// Converts schemas using registered converters.  Use the ECSchemaConverter to do standard conversion.
+// @bsiclass                                                    Colin.Kerr   01/2018
+//+===============+===============+===============+===============+===============+======
+struct CustomECSchemaConverter : RefCountedBase, NonCopyableClass
     {
 private:
-    ECSchemaConverter() {}
-    ECSchemaConverter(const ECSchemaConverter & rhs) = delete;
-    ECSchemaConverter & operator= (const ECSchemaConverter & rhs) = delete;
 
-    static ECSchemaConverterP GetSingleton();
     bool m_convertedOK = true;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
     bvector<Utf8String> m_schemaReferencesToRemove;
-    ECSchemaReadContextPtr m_schemaContext;
 
     void ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName);
-    void ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource);
-    void ConvertSchemaLevel(ECSchemaR schema) {ProcessCustomAttributeInstance(schema.GetCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());}
+    static void ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource);
+    void ConvertSchemaLevel(ECSchemaR schema) { ProcessCustomAttributeInstance(schema.GetCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName()); }
     void ConvertClassLevel(bvector<ECClassP>& classes);
     void ConvertPropertyLevel(bvector<ECClassP>& classes);
     void RemoveSchemaReferences(ECSchemaR schema);
@@ -75,27 +76,30 @@ private:
     static bvector<ECClassP> GetDerivedAndBaseClasses(ECClassCR ecClass);
 
 public:
+    CustomECSchemaConverter() {}
+    CustomECSchemaConverterPtr static Create() { return new CustomECSchemaConverter(); }
+
     //! Traverses the schema supplied and calls converters based on schemaName:customAttributeName
     //! @param[in] schema   The schema to traverse
     //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
-    ECOBJECTS_EXPORT static bool Convert(ECSchemaR schema, bool doValidate = true);
+    ECOBJECTS_EXPORT bool Convert(ECSchemaR schema, bool doValidate = true);
 
     //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
     //! @param[in] schemaName   The schemaName that the customattribute belongs to
     //! @param[in] customAttributeName The name of customAttribute
     //! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
     //! @remarks   Overwrites converter if schemaName+customAttribute name already exists. 
-    ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter);
+    ECOBJECTS_EXPORT ECObjectsStatus AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter);
 
     //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
     //! @param[in] customAttributeQualifiedName Key used to retrieve converter
     //! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
     //! @remarks   Overwrites converter if key already exists. 
-    ECOBJECTS_EXPORT static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
+    ECOBJECTS_EXPORT ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
 
     //! Adds the name of a schema to remove at the end of schema conversion.
     //! @param[in] schemaName   The name of the schema to remove.  Name only, do not include version.
-    ECOBJECTS_EXPORT static void AddSchemaReferenceToRemove(Utf8CP schemaName) { ECSchemaConverter::GetSingleton()->m_schemaReferencesToRemove.push_back(schemaName); };
+    void AddSchemaReferenceToRemove(Utf8CP schemaName) { m_schemaReferencesToRemove.push_back(schemaName); };
 
     //! Gets a vector of EClasses sorted by hierarchy in descending order (parent comes first)
     //! @param[in] schema           The schema whose classes are to be sorted
@@ -112,7 +116,90 @@ public:
     ECOBJECTS_EXPORT static void FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses);
 
     static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
-    static ECSchemaReadContextR GetStandardSchemaReadContext() { return *GetSingleton()->m_schemaContext; }
+    };
+
+struct ECSchemaConverter
+    {
+private:
+    ECSchemaConverter() {}
+    ECSchemaConverter(const ECSchemaConverter & rhs) = delete;
+    ECSchemaConverter & operator= (const ECSchemaConverter & rhs) = delete;
+
+    ECOBJECTS_EXPORT static CustomECSchemaConverterP GetSingleton();
+
+public:
+    //! Traverses the schema supplied and calls converters based on schemaName:customAttributeName
+    //! @param[in] schema   The schema to traverse
+    //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
+    static bool Convert(ECSchemaR schema, bool doValidate = true) { return GetSingleton()->Convert(schema, doValidate); }
+
+    //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
+    //! @param[in] schemaName   The schemaName that the customattribute belongs to
+    //! @param[in] customAttributeName The name of customAttribute
+    //! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
+    //! @remarks   Overwrites converter if schemaName+customAttribute name already exists. 
+    static ECObjectsStatus AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter) 
+        { return GetSingleton()->AddConverter(schemaName, customAttributeName, converter); }
+
+    //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
+    //! @param[in] customAttributeQualifiedName Key used to retrieve converter
+    //! @param[in] converter The converter that is to be called when schemaName:customAtrributeName is found
+    //! @remarks   Overwrites converter if key already exists. 
+    static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter)
+        { return GetSingleton()->AddConverter(customAttributeQualifiedName, converter); }
+
+    //! Adds the name of a schema to remove at the end of schema conversion.
+    //! @param[in] schemaName   The name of the schema to remove.  Name only, do not include version.
+    static void AddSchemaReferenceToRemove(Utf8CP schemaName) { GetSingleton()->AddSchemaReferenceToRemove(schemaName); };
+
+    //! Gets a vector of EClasses sorted by hierarchy in descending order (parent comes first)
+    //! @param[in] schema           The schema whose classes are to be sorted
+    //! @returns bvector<ECClassP>  the hierarchically sorted list in descending order
+    //! @remarks   First sorts the classes by className in ascending order(ignoring case)
+    //!            EC 2.0 does this by default but doesnot ignore cases. 3.0 should fix that
+    static bvector<ECClassP> GetHierarchicallySortedClasses(ECSchemaR schema) { return CustomECSchemaConverter::GetHierarchicallySortedClasses(schema); }
+
+    //! Finds the root base classes for the property
+    //! @param[in] ecProperty The ecProperty 
+    //! @param[in] rootClasses The rootClasses of the ecclass found for the ecProperty 
+    //! @remarks If the property has multiple inheritance, the first class in the rootClasses vector will be the root class
+    //! that would be found if you traversed the base property of the input ecProperty.
+    static void FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses) { return CustomECSchemaConverter::FindRootBaseClasses(ecProperty, rootClasses); }
+
+    static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
+    };
+
+//+===============+===============+===============+===============+===============+======
+// Converts the ECDbMap.01.00:ClassMap custom attribute to the ECDbMap 2.0 version.  
+// Only supports 'SharedTable' mapping with 'AppliesToSubclasses' flag set to true and 
+// 'NotMapped' when it applies to an entire class hierarchy.
+// Use with the CustomECSchemaConverter like:
+// <code>
+// CustomECSchemaConverterPtr converter = CustomECSchemaConverter::Create();
+// IECCustomAttributeConverterPtr classMapConv = new ECDbClassMapConverter(schemaContext);
+// converter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConv);
+// converter->Convert(schema, true);
+// </code>
+// @bsiclass                                                    Colin.Kerr   01/2018
+//+===============+===============+===============+===============+===============+======
+struct ECDbClassMapConverter : IECCustomAttributeConverter
+    {
+    private:
+        ECSchemaReadContextPtr m_schemaContext;
+        ECDbClassMapConverter() = delete;
+
+    public:
+        ECOBJECTS_EXPORT static Utf8CP GetSchemaName();
+        ECOBJECTS_EXPORT static Utf8CP GetClassName();
+
+        //! Constructs an instance of the converter.
+        //! @param[in] schemaContext                A schema context object which can locate the ECDbMap.02.00.00 or greater schema.
+        ECDbClassMapConverter(ECSchemaReadContextR schemaContext) : m_schemaContext(&schemaContext) {}
+        //! Fulfills the IECCustomAttributeConverter interface
+        //! @param[in] schema                   The schema being converted.
+        //! @param[in] container                The schema element which holds the custom attribute instance being converted
+        //! @param[in] instance                 The custom attribute being converted
+        ECOBJECTS_EXPORT ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -154,19 +241,19 @@ private:
     //! Gives name to enumeration, based on className and propertyName 
     //! Usually is (baseClassName+propertyName)
     //! returns rootClass i.e. baseclass
-    Utf8String CreateEnumerationName(bvector<ECClassP>& rootClasses, ECPropertyP& ecProperty);
+    static Utf8String CreateEnumerationName(bvector<ECClassP>& rootClasses, ECPropertyP& ecProperty);
 
     //! Append number to string : returns name_number
     Utf8String AppendNumberToString(Utf8CP name, int number);
 
     //! Attempts to merge the StandardValueInfo into the ECEnumeration
-    ECObjectsStatus MergeEnumeration(ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
+    static ECObjectsStatus MergeEnumeration(ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
 
     //! Finds enumeration in schema that matches sdInfo
     ECObjectsStatus FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
 
     //! Creates enumeration in schema : given enumName, sdInfo
-    ECObjectsStatus CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo);
+    static ECObjectsStatus CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo);
 
     //! Converts all derived class's properties to the given enum
     //! @param[in] rootClass                The class started with for conversion
@@ -180,7 +267,7 @@ private:
     //! @param[in] ecProperty               The property with the standard value to merge
     //! @param[in] sdInfo                   The standard value info to of the enumeration to merge with
     //! @param[in] enumeration              The enumeration to merge with
-    ECObjectsStatus Merge(ECPropertyP ecProperty, StandardValueInfo* sdInfo, ECEnumerationP enumeration);
+    static ECObjectsStatus Merge(ECPropertyP ecProperty, StandardValueInfo* sdInfo, ECEnumerationP enumeration);
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -268,8 +355,8 @@ struct HidePropertyConverter : IECCustomAttributeConverter
 struct DisplayOptionsConverter : IECCustomAttributeConverter
     {
     private:
-        ECObjectsStatus ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance);
-        ECObjectsStatus ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance);
+        static ECObjectsStatus ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance);
+        static ECObjectsStatus ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance);
 
     public:
         ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);

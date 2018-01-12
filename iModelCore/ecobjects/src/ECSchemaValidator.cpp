@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchemaValidator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -40,8 +40,8 @@ Utf8CP oldStandardSchemaNames[] =
 //+---------------+---------------+---------------+---------------+---------------+------
 bool IsOldStandardSchema(Utf8String schemaName)
     {
-    for (Utf8CP* cur = oldStandardSchemaNames, *end = cur + _countof(oldStandardSchemaNames); cur < end; ++cur)
-        if (schemaName.Equals(*cur))
+    for (auto oldSchemaName : oldStandardSchemaNames)
+        if (schemaName.Equals(oldSchemaName))
             return true;
 
     return false;
@@ -202,6 +202,20 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
         status = ECObjectsStatus::Error;
         }
 
+    // If schema contains 'dynamic' (case-insensitive) in the name it should apply the CoreCA:DynamicSchema custom attribute.
+    if (schema.GetName().ContainsI("dynamic"))
+        {
+        bool containsDynamicSchemaCA = schema.GetCustomAttributes(true).end() != std::find_if(
+            schema.GetCustomAttributes(true).begin(),
+            schema.GetCustomAttributes(true).end(),
+            [](auto const& custAttr){return custAttr->GetClass().GetName().Equals("DynamicSchema");});
+        if (!containsDynamicSchemaCA)
+            {
+            LOG.errorv("Failed to validate '%s' since its name contains 'dynamic' but does not contain the 'DynamicSchema' ECCustomAttribute", schema.GetFullSchemaName().c_str());
+            status = ECObjectsStatus::Error;
+            }
+        }
+
     for (bpair <SchemaKey, ECSchemaPtr> ref : schema.GetReferencedSchemas())
         {
         ECSchemaPtr refSchema = ref.second;
@@ -341,6 +355,7 @@ ECObjectsStatus AllClassValidator::Validate(ECClassCR ecClass) const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
     {
+    BeAssert(entity.IsEntityClass());
     ECObjectsStatus status = ECObjectsStatus::Success;
     int numBaseClasses;
     bool entityDerivesFromSpecifiedClass = false;
@@ -364,6 +379,22 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
         {
         LOG.errorv("Entity class '%s' implements both bis:IParentElement and bis:ISubModeledElement", entity.GetFullName());
         status = ECObjectsStatus::Error;
+        }
+
+    // Root entity classes must derive from bis hierarchy.
+    auto const isBisCoreClass = [](ECClassCP entity) -> bool{return entity->GetSchema().GetName().Equals("BisCore");};
+    std::function<bool(ECClassCP entity)> derivesFromBisHierarchy = [&derivesFromBisHierarchy, &isBisCoreClass](ECClassCP entity) -> bool
+        {
+        return isBisCoreClass(entity) ||
+            (entity->GetBaseClasses().end() != std::find_if(
+                entity->GetBaseClasses().begin(),
+                entity->GetBaseClasses().end(),
+                derivesFromBisHierarchy));
+        };
+    if (!entity.GetEntityClassCP()->IsMixin() && !isBisCoreClass(&entity) && !derivesFromBisHierarchy(&entity))
+        {
+            LOG.errorv("Root entity class '%s' does not derive from bis hierarchy", entity.GetFullName());
+            status = ECObjectsStatus::Error;
         }
 
     for (ECPropertyP prop : entity.GetProperties(false))

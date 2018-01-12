@@ -106,13 +106,13 @@ ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, St
 static Utf8CP const  STANDARDVALUES_CUSTOMATTRIBUTE = "StandardValues";
 static Utf8CP const  BECA_SCHEMANAME = "EditorCustomAttributes";
 static Utf8CP const  BSCA_SCHEMANAME = "Bentley_Standard_CustomAttributes";
+static Utf8CP const  ECDB_SCHEMANAME = "ECDbMap";
 
 static Utf8CP const  UNIT_ATTRIBUTES                = "Unit_Attributes";
 static Utf8CP const  KOQ_NAME                       = "KindOfQuantityName";
 static Utf8CP const  DIMENSION_NAME                 = "DimensionName";
 static Utf8CP const  UNIT_SPECIFICATION             = "UnitSpecificationAttr";
 static Utf8CP const  UNIT_SPECIFICATIONS            = "UnitSpecifications";
-//static Utf8CP const  UNIT_SPECIFICATION_LIST        = "UnitSpecificationList"; UNUSED
 static Utf8CP const  DISPLAY_UNIT_SPECIFICATION     = "DisplayUnitSpecificationAttr";
 static Utf8CP const IS_UNIT_SYSTEM                  = "IsUnitSystemSchema";
 static Utf8CP const MIXED_UNIT_SYSTEM               = "Mixed_UnitSystem";
@@ -127,12 +127,87 @@ static Utf8CP const DISPLAY_OPTIONS                 = "DisplayOptions";
 static Utf8CP const HIDDEN                          = "Hidden";
 static Utf8CP const HIDE_INSTANCES                  = "HideInstances";
 
-static Utf8CP const CORE_CUSTOMATTRIBUTES           = "CoreCustomAttributes";
+static Utf8CP const CLASS_MAP                       = "ClassMap";
+static Utf8CP const MAP_STRATEGY                    = "MapStrategy";
+static Utf8CP const STRATEGY                        = "MapStrategy.Strategy";
+static Utf8CP const APPLIES_TO_SUBCLASS             = "MapStrategy.AppliesToSubclasses";
+static Utf8CP const SHARED_TABLE                    = "SharedTable";
+static Utf8CP const TABLE_PER_HIERARCHY             = "TablePerHierarchy";
+static Utf8CP const NOT_MAPPED                      = "NotMapped";
+
 static Utf8CP const HIDDEN_PROPERTY                 = "HiddenProperty";
 static Utf8CP const SHOW                            = "Show";
 static Utf8CP const HIDDEN_SCHEMA                   = "HiddenSchema";
 static Utf8CP const HIDDEN_CLASS                    = "HiddenClass";
 
+bool convertStrategyName(ECValueR strategy, IECInstanceCR classMap, Utf8StringR convertedStrategy)
+    {
+    if (strategy.IsNull() || !strategy.IsString())
+        return false;
+    Utf8CP originalStrategy = strategy.GetUtf8CP();
+    if (0 == strcmp(originalStrategy, SHARED_TABLE))
+        {
+        ECValue appliesToSubClasses;
+        if (ECObjectsStatus::Success != classMap.GetValue(appliesToSubClasses, APPLIES_TO_SUBCLASS) ||
+            appliesToSubClasses.IsNull() || !appliesToSubClasses.IsBoolean() || !appliesToSubClasses.GetBoolean())
+            {
+            return false;
+            }
+        convertedStrategy = TABLE_PER_HIERARCHY;
+        return true;
+        }
+    if (0 == strcmp(originalStrategy, NOT_MAPPED))
+        {
+        convertedStrategy = originalStrategy;
+        return true;
+        }
+    return false;
+    }
+
+Utf8CP ECDbClassMapConverter::GetSchemaName() { return ECDB_SCHEMANAME; }
+Utf8CP ECDbClassMapConverter::GetClassName() { return CLASS_MAP; }
+
+ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    ECClassP ecClass = dynamic_cast<ECClassP> (&container);
+    if (instance.GetClass().GetSchema().GetVersionRead() > 1)
+        {
+        LOG.infov("Found ECDbMap:ClassMap custom attribute from schema version greater than 1.0.  Skipping because we're only trying to convert ClassMap custom attributes from ECDbMap 1.0");
+        return ECObjectsStatus::Success;
+        }
+    container.RemoveCustomAttribute(ECDB_SCHEMANAME, CLASS_MAP);
+    container.RemoveSupplementedCustomAttribute(ECDB_SCHEMANAME, CLASS_MAP);
+
+    if (nullptr == ecClass)
+        {
+        LOG.warningv("ECDbMap:ClassMap custom attribute applied to a container which is not a class.  Removing Custom Attribute from %s and skipping.", container.GetContainerName());
+        return ECObjectsStatus::Success;
+        }
+    
+    Utf8String convertedStrategyName;
+    ECValue strategy;
+    if (ECObjectsStatus::Success != instance.GetValue(strategy, STRATEGY) || !convertStrategyName(strategy, instance, convertedStrategyName))
+        {
+        LOG.warningv("Failed to convert ECDbMap:ClassMap on %s because the MapStrategy is not 'SharedTable with AppliesToSubclasses == true' or 'NotMapped'.  Removing and skipping.", container.GetContainerName());
+        return ECObjectsStatus::Success;
+        }
+        
+    SchemaKey key(ECDB_SCHEMANAME, 2, 0, 0);
+    auto ecdbMapSchema = ECSchema::LocateSchema(key, *m_schemaContext);
+    if (ecdbMapSchema.IsNull() || !ecdbMapSchema.IsValid())
+        {
+        LOG.errorv("Failed to convert ECDbMap::ClassMap on %s because the ECDbMap 2.0.0 schema could not be found.  Removing and skipping.", container.GetContainerName());
+        return ECObjectsStatus::Error;
+        }
+        
+    IECInstancePtr classMap = ecdbMapSchema->GetClassCP(CLASS_MAP)->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue convertedMapStrategy(convertedStrategyName.c_str());
+    classMap->SetValue(MAP_STRATEGY, convertedMapStrategy);
+    schema.AddReferencedSchema(*ecdbMapSchema);
+    container.SetCustomAttribute(*classMap);
+
+    return ECObjectsStatus::Success;
+    }
 
 struct UnitSpecification
     {
@@ -158,39 +233,37 @@ struct UnitSpecification
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECSchemaConverter::Convert(ECSchemaR schema, bool doValidate)
+bool CustomECSchemaConverter::Convert(ECSchemaR schema, bool doValidate)
     {
-    ECSchemaConverterP ecSchemaConverter = GetSingleton();
-    ecSchemaConverter->m_convertedOK = true;
+    m_convertedOK = true;
 
     auto classes = GetHierarchicallySortedClasses(schema);
-    ecSchemaConverter->ConvertClassLevel(classes);
+    ConvertClassLevel(classes);
 
-    ecSchemaConverter->ConvertPropertyLevel(classes);
+    ConvertPropertyLevel(classes);
 
-    ecSchemaConverter->ConvertSchemaLevel(schema);
+    ConvertSchemaLevel(schema);
 
-    ecSchemaConverter->RemoveSchemaReferences(schema);
+    RemoveSchemaReferences(schema);
 
     schema.RemoveUnusedSchemaReferences();
 
-    if (ecSchemaConverter->m_convertedOK && doValidate)
+    if (m_convertedOK && doValidate)
         schema.Validate(true);
 
-    return ecSchemaConverter->m_convertedOK;
+    return m_convertedOK;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSchemaConverterP ECSchemaConverter::GetSingleton()
+CustomECSchemaConverterP ECSchemaConverter::GetSingleton()
     {
-    static ECSchemaConverterP ECSchemaConverterSingleton = nullptr;
+    static CustomECSchemaConverterP ECSchemaConverterSingleton = nullptr;
 
     if (nullptr == ECSchemaConverterSingleton)
         {
-        ECSchemaConverterSingleton = new ECSchemaConverter();
-        ECSchemaConverterSingleton->m_schemaContext = ECSchemaReadContext::CreateContext();
+        ECSchemaConverterSingleton = new CustomECSchemaConverter();
 
         IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
         ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE, scConv);
@@ -237,7 +310,7 @@ ECSchemaConverterP ECSchemaConverter::GetSingleton()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchemaConverter::AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter)
+ECObjectsStatus CustomECSchemaConverter::AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter)
     {
     Utf8String converterName = GetQualifiedClassName(schemaName, customAttributeName);
     return AddConverter(converterName, converter);
@@ -246,11 +319,9 @@ ECObjectsStatus ECSchemaConverter::AddConverter(Utf8StringCR schemaName, Utf8Str
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Stefan.Apfel                  04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECSchemaConverter::AddConverter(Utf8StringCR customAttributeKey, IECCustomAttributeConverterPtr& converter)
+ECObjectsStatus CustomECSchemaConverter::AddConverter(Utf8StringCR customAttributeKey, IECCustomAttributeConverterPtr& converter)
     {
-    ECSchemaConverterP ECSchemaConverter = GetSingleton();
-    ECSchemaConverter->m_converterMap[customAttributeKey] = converter;
-
+    m_converterMap[customAttributeKey] = converter;
     return ECObjectsStatus::Success;
     }
 
@@ -267,7 +338,7 @@ void GatherRootBaseClasses(ECClassCP ecClass, Utf8CP propertyName, bvector<ECCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses)
+void CustomECSchemaConverter::FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECClassP>& rootClasses)
     {
     GatherRootBaseClasses(&ecProperty->GetClass(), ecProperty->GetName().c_str(), rootClasses);
     }
@@ -275,7 +346,7 @@ void ECSchemaConverter::FindRootBaseClasses(ECPropertyP ecProperty, bvector<ECCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<ECClassP> ECSchemaConverter::GetDerivedAndBaseClasses(ECClassCR ecClass)
+bvector<ECClassP> CustomECSchemaConverter::GetDerivedAndBaseClasses(ECClassCR ecClass)
     {
     bvector<ECClassP> baseClasses = ecClass.GetBaseClasses();
     SortClassesByNameAndHierarchy(baseClasses, true);
@@ -291,7 +362,7 @@ bvector<ECClassP> ECSchemaConverter::GetDerivedAndBaseClasses(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-IECCustomAttributeConverterP ECSchemaConverter::GetConverter(Utf8StringCR converterName)
+IECCustomAttributeConverterP CustomECSchemaConverter::GetConverter(Utf8StringCR converterName)
     {
     auto iterator = m_converterMap.find(converterName);
     if (m_converterMap.end() != iterator)
@@ -343,7 +414,7 @@ bool IsCustomAttributeFromOldStandardSchemas(IECInstanceR customAttribute)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName)
+void CustomECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName)
     {
     ECSchemaP schema = container.GetContainerSchema();
     for (auto const& attr : iterable)
@@ -375,7 +446,7 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                 5/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource)
+void CustomECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstraintR constraint, bool isSource)
     {
     if (!constraint.GetRelationshipClass().HasBaseClasses() || 0 != constraint.GetConstraintClasses().size())
         return;
@@ -401,7 +472,7 @@ void ECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstraintR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
+void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
     {
     for (auto const& ecClass : classes)
         {
@@ -423,7 +494,7 @@ void ECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
+void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
     {
     bvector<Utf8CP> reservedNames {"ECInstanceId", "Id", "ECClassId", "SourceECInstanceId", "SourceId", "SourceECClassId", "SourceId", "SourceECClassId", "TargetECInstanceId", "TargetId", "TargetECClassId"};
 
@@ -449,7 +520,7 @@ void ECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                         4/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::RemoveSchemaReferences(ECSchemaR schema)
+void CustomECSchemaConverter::RemoveSchemaReferences(ECSchemaR schema)
     {
     for(Utf8StringCR schemaName : m_schemaReferencesToRemove)
         {
@@ -466,7 +537,7 @@ void ECSchemaConverter::RemoveSchemaReferences(ECSchemaR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::SortClassesByNameAndHierarchy(bvector<ECClassP>& ecClasses, bool reverse)
+void CustomECSchemaConverter::SortClassesByNameAndHierarchy(bvector<ECClassP>& ecClasses, bool reverse)
     {
     SortClassesByName(ecClasses, true);
     SortClassesByHierarchy(ecClasses);
@@ -502,7 +573,7 @@ void AddClassesRootsFirst(bvector<ECClassP>& classList, const bvector<ECClassP>&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::SortClassesByHierarchy(bvector<ECClassP>& ecClasses)
+void CustomECSchemaConverter::SortClassesByHierarchy(bvector<ECClassP>& ecClasses)
     {
     bvector<ECClassP> classes;
     bmap<Utf8CP, ECClassP> visited;
@@ -514,7 +585,7 @@ void ECSchemaConverter::SortClassesByHierarchy(bvector<ECClassP>& ecClasses)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSchemaConverter::SortClassesByName(bvector<ECClassP>& ecClasses, bool ascending)
+void CustomECSchemaConverter::SortClassesByName(bvector<ECClassP>& ecClasses, bool ascending)
     {
     auto classComparer = [](ECClassP ecClass1, ECClassP ecClass2)
         {
@@ -528,7 +599,7 @@ void ECSchemaConverter::SortClassesByName(bvector<ECClassP>& ecClasses, bool asc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR schema)
+bvector<ECClassP> CustomECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR schema)
     {
     bvector<ECClassP> classes;
     Utf8String defaultOrder = "";
@@ -1167,8 +1238,7 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
         }
     auto mapping = it->second;
 
-    SchemaKey key(mapping.GetNewSchemaName().c_str(), 1, 0);
-    auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
 
     ECClassP customAttributeClass = customAttributeSchema->GetClassP(mapping.GetNewCustomAttributeName().c_str());
     IECInstancePtr targetAttributeInstance = customAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1210,6 +1280,7 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
 //+---------------+---------------+---------------+---------------+---------------+------
 bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping()
     {
+    // Only works with schemas from the CoreCustomAttributes schema.
     if (!s_isInitialized)
         {
         // Converts reference of DateTimeInfo CA to the new class
@@ -1522,8 +1593,7 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
     bool if3d = getBoolValue(instance, IF3D, true);
     bool showProp = !if2d && !if3d;
 
-    SchemaKey key(CORE_CUSTOMATTRIBUTES, 1, 0, 0);
-    auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
     IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
     
     ECValue value(showProp);
@@ -1543,8 +1613,7 @@ ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR s
     bool hideSchema = getBoolValue(instance, HIDDEN, false) || getBoolValue(instance, HIDE_INSTANCES, false);
     if (hideSchema)
         {
-        SchemaKey key(CORE_CUSTOMATTRIBUTES, 1, 0, 0);
-        auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
+        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
         IECInstancePtr hiddenSchema = customAttributeSchema->GetClassCP(HIDDEN_SCHEMA)->GetDefaultStandaloneEnabler()->CreateInstance();
         schema.AddReferencedSchema(*customAttributeSchema);
         schema.SetCustomAttribute(*hiddenSchema);
@@ -1558,8 +1627,7 @@ ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR sc
     {
     bool hideClass = getBoolValue(instance, HIDDEN, false) || getBoolValue(instance, HIDE_INSTANCES, false);
 
-    SchemaKey key(CORE_CUSTOMATTRIBUTES, 1, 0, 0);
-    auto customAttributeSchema = ECSchema::LocateSchema(key, ECSchemaConverter::GetStandardSchemaReadContext());
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
     IECInstancePtr hiddenClass = customAttributeSchema->GetClassCP(HIDDEN_CLASS)->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue show(!hideClass);
     hiddenClass->SetValue(SHOW, show);

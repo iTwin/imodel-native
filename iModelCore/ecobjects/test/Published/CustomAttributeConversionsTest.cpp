@@ -7,12 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include <Bentley/BeTest.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct RelationshipConversionTest : ECTestFixture {};
+struct ECDbMappingConversionTests :ECTestFixture {};
 
 struct PropertyPriorityCustomAttributeConversionTest : ECTestFixture
     {
@@ -3257,6 +3259,138 @@ TEST_F(RelationshipConversionTest, BaseClassHasConstraintClasses)
     EXPECT_EQ(2, derivedRelClass->GetTarget().GetConstraintClasses().size());
     EXPECT_STREQ("B", derivedRelClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
     }
+    }
+
+
+void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Utf8CP expectedMappingStrategy)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    BeFileName ecdbSchemaDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaDir);
+    ecdbSchemaDir.AppendToPath(L"SeedData");
+    context->AddSchemaPath(ecdbSchemaDir);
+
+    CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
+    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter(*context);
+    schemaConverter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConverter);
+
+    schemaConverter->Convert(*schema); // Converter doesn't return an error when it hits a mapping strategy it doesn't understand
+    IECInstancePtr classMapCA = schema->GetClassCP("C")->GetCustomAttribute("ClassMap");
+    ASSERT_EQ(expectSuccess, classMapCA.IsValid());
+    if (expectSuccess)
+        {
+        EXPECT_EQ(2, classMapCA->GetClass().GetSchema().GetVersionRead());
+        ECValue actualMappingStrategy;
+        ASSERT_EQ(ECObjectsStatus::Success, classMapCA->GetValue(actualMappingStrategy, "MapStrategy"));
+        EXPECT_STREQ(expectedMappingStrategy, actualMappingStrategy.GetUtf8CP());
+    
+        EXPECT_EQ(1, schema->GetReferencedSchemas().size()) << "Expected only one schema reference on success";
+        Utf8String schemaReferenceFullName = schema->GetReferencedSchemas().begin()->second->GetFullSchemaName();
+        EXPECT_STREQ("ECDbMap.02.00.00", schemaReferenceFullName.c_str()) <<
+            "The only referenced schema does not have the correct name and version.";
+        }
+    else
+        EXPECT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references on failure";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                  01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingConversionTests, ClassMap_SharedTableToTablePerHierarchy)
+    {
+    Utf8CP schemaXmlCanConvert = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="ECDbMap" version="1.0" prefix="ecdbmap"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.01.00">
+                            <MapStrategy>
+                                <Strategy>SharedTable</Strategy>
+                                <AppliesToSubclasses>True</AppliesToSubclasses>
+                            </MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    Utf8CP schemaXmlCanNotConvert0 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="ECDbMap" version="1.0" prefix="ecdbmap"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.01.00">
+                            <MapStrategy>
+                                <Strategy>SharedTable</Strategy>
+                                <AppliesToSubclasses>False</AppliesToSubclasses>
+                            </MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    Utf8CP schemaXmlCanNotConvert1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="ECDbMap" version="1.0" prefix="ecdbmap"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.01.00">
+                            <MapStrategy>
+                                <Strategy>SharedTable</Strategy>
+                            </MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    validateClassMapConvertedCorrectly(schemaXmlCanConvert, true, "TablePerHierarchy");
+    validateClassMapConvertedCorrectly(schemaXmlCanNotConvert0, false, "");
+    validateClassMapConvertedCorrectly(schemaXmlCanNotConvert1, false, "");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                  01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingConversionTests, ClassMap_NotMapped)
+    {
+    Utf8CP schemaXmlCanConvert = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="ECDbMap" version="1.0" prefix="ecdbmap"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.01.00">
+                            <MapStrategy>
+                                <Strategy>NotMapped</Strategy>
+                            </MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    Utf8CP schemaXmlCanNotConvert0 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="ECDbMap" version="1.0" prefix="ecdbmap"/>
+                <ECClass typeName="C" isDomainClass="true">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.01.00">
+                            <MapStrategy>
+                                <Strategy>Banana</Strategy>
+                            </MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    validateClassMapConvertedCorrectly(schemaXmlCanConvert, true, "NotMapped");
+    validateClassMapConvertedCorrectly(schemaXmlCanNotConvert0, false, "");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
