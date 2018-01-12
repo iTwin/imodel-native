@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/TransactionManager_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -1543,6 +1543,10 @@ static BeSQLite::DbResult deleteRelationship(DgnDbR db, ECN::ECClassCR relcls, B
 TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     {
     SetupSeedProject();
+
+    m_db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    m_db->Txns().EnableTracking(true);
+
 
     // Put a couple of elements in the default model
     DgnElementId eid1, eid2;

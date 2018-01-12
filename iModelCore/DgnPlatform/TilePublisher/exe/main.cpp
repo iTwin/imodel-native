@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/exe/main.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
@@ -16,6 +16,8 @@
 #include <RealityPlatformTools/RealityDataService.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <Logging/bentleylogging.h>
+#include <WebServices/iModelHub/Client/ClientHelper.h>
+
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"TilePublisher"))
 
@@ -28,6 +30,7 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -52,8 +55,6 @@ enum class ParamId
     UserName,
     Password,
     Environment,
-    Project,
-    Repository,
     GlobeOn,
     GlobeOff,
     OnlyHistory,
@@ -96,8 +97,6 @@ static CommandParam s_paramTable[] =
         { L"un", L"username", L"UserName for I-Model hub (History Publishing)", false, false },
         { L"pa", L"password", L"Password for I-Model hub (History Publishing)", false, false },
         { L"en", L"environment", L"Environment for I-Model hub (History Publishing)", false, false },
-        { L"pr", L"project", L"Project for I-Model hub (History Publishing)", false, false },
-        { L"re", L"repository", L"Repository for I-Model hub (History Publishing)", false, false },
         { L"gl1", L"globeOn", L"Force globe on in all views", false, true },
         { L"gl0", L"globeOff", L"Force globe off in all views", false, true },
         { L"hi",  L"historyOnly", L"Publish only history", false, true },
@@ -106,6 +105,7 @@ static CommandParam s_paramTable[] =
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
 
+                                      
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -160,6 +160,69 @@ struct CommandArg
         }
 };
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ServiceLocalState : public IJsonLocalState
+    {
+    private:
+        Json::Value m_map;
+
+    public:
+        JsonValueR GetStubMap()
+            {
+            return m_map;
+            }
+        //! Saves the Utf8String value in the local state.
+        //! @note The nameSpace and key pair must be unique.
+        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+            {
+            Utf8PrintfString identifier("%s/%s", nameSpace, key);
+
+            if (value == "null")
+                {
+                m_map.removeMember(identifier);
+                }
+            else
+                {
+                m_map[identifier] = value;
+                }
+            };
+        //! Returns a stored Utf8String from the local state.
+        //! @note The nameSpace and key pair uniquely identifies the value.
+        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+            {
+            Utf8PrintfString identifier("%s/%s", nameSpace, key);
+            return m_map.isMember(identifier) ? m_map[identifier].asCString() : "null";
+            };
+    };
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static ServiceLocalState* getLocalState()
+    {
+    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
+    ServiceLocalState* s_localState = new ServiceLocalState;
+    return s_localState;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static WebServices::ClientInfoPtr getClientInfo()
+    {
+    static Utf8CP s_productId = "1654"; // Navigator Desktop
+    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
+    static WebServices::ClientInfoPtr s_clientInfo = WebServices::ClientInfoPtr(
+        new WebServices::ClientInfo("Bentley-Test", BeVersion(1, 0), "{41FE7A91-A984-432D-ABCF-9B860A8D5360}", "TestDeviceId", "TestSystem", s_productId));
+    return s_clientInfo;
+    }
+
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -167,6 +230,40 @@ struct Params : PublisherParams
 {
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
+                                      
+                                          // History (WIP) requires IModel Hub connection.
+    Utf8String                      m_userName;
+    Utf8String                      m_password;
+    Utf8String                      m_environment;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DoSignInForHistory()
+    {
+    Credentials                 credentials;
+    WebServices::UrlProvider::Environment   urlEnvironment = WebServices::UrlProvider::Environment::Qa;
+
+    if (m_environment.StartsWithI("Dev"))
+        urlEnvironment =  urlEnvironment = WebServices::UrlProvider::Environment::Dev;
+    else if (0 == m_environment.CompareToI("Release"))
+        urlEnvironment = WebServices::UrlProvider::Environment::Release;
+
+
+    credentials.SetUsername(m_userName);
+    credentials.SetPassword(m_password);
+
+    Http::HttpClient::Initialize(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    iModel::Hub::ClientHelper::Initialize(getClientInfo(), getLocalState());
+    UrlProvider::Initialize(urlEnvironment, UrlProvider::DefaultTimeout, getLocalState());
+
+    Tasks::AsyncError error;
+    m_client = iModel::Hub::ClientHelper::GetInstance()->SignInWithCredentials(&error, credentials);
+
+    BeAssert (m_client.IsValid());
+
+    return m_client.IsValid() ? SUCCESS : ERROR;
+    }
 
 };
 
@@ -307,14 +404,6 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 m_environment = Utf8String(arg.m_value.c_str());
                 break;
 
-            case ParamId::Project:
-                m_project = Utf8String(arg.m_value.c_str());
-                break;
-
-            case ParamId::Repository:
-                m_repository = Utf8String(arg.m_value.c_str());
-                break;
-
             case ParamId::GlobeOn:
                 m_globeMode = PublisherContext::GlobeMode::On;
                 break;
@@ -347,8 +436,6 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
             LOG.error ("Username and password are reaquired for history publishing\n");
             return false;
             }
-        if (!m_repository.empty())
-            haveInput = true;       // Attempt to acquire briefcase from project.
         }
 
     
@@ -365,8 +452,6 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
         {
         if (!m_inputFileName.empty())
             m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
-        else if (!m_repository.empty())
-            m_tilesetName = WString(m_repository.c_str(), false);
         }
 
 
@@ -503,6 +588,13 @@ int wmain(int ac, wchar_t const** av)
     DgnViewId defaultView = createParams.GetViewIds(viewsToPublish, *db);
     if (!defaultView.IsValid())
         return 1;
+
+    if (HistoryMode::OmitHistory != createParams.GetHistoryMode() &&
+        SUCCESS != createParams.DoSignInForHistory())
+        {
+        LOG.errorv ("Unable to sign in for history extraction\n");
+        return 1;
+        }
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
