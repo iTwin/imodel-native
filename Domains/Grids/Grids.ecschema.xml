@@ -39,7 +39,6 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GridHasAxes" strength="embedding" modifier="None">
-      <!-- Relationship that indicates a decomposition of child AllocatedVolume -->
       <Source multiplicity="(1..1)" roleLabel="Has Axis" polymorphic="true">
         <Class class="Grid"/>
       </Source>
@@ -134,7 +133,6 @@
     <ECEntityClass typeName="GridSurface" modifier="Abstract" description="A grid surface element.">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
       <ECNavigationProperty propertyName="Axis" relationshipName="GridAxisContainsGridSurfaces" direction="Backward" description="Axis this gridSurface belong to" />
-      <ECProperty propertyName="Length" displayLabel="Length" typeName="double" readOnly="true" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="GridPlanarSurface" modifier="Abstract" description="A planar grid surface element.">
