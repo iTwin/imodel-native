@@ -15,16 +15,6 @@
     <KindOfQuantity typeName="Length" description="Length" persistenceUnit="M" relativeError="1e-6" presentationUnits="FT(fi8)"/>
     <KindOfQuantity typeName="Angle" description="Angle" persistenceUnit="M" relativeError="1e-6" presentationUnits="FT(fi8)"/>
 
-    <ECRelationshipClass typeName="GridIntersectsGridSurface" strength="referencing">
-      <BaseClass>bis:ElementRefersToElements</BaseClass>
-      <Source cardinality="(1,1)" polymorphic="true">
-        <Class class="Grid"/>
-      </Source>
-      <Target cardinality="(1,1)" polymorphic="true">
-        <Class class="GridSurface"/>
-      </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="GridDrivesGridSurface" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>
