@@ -10,20 +10,17 @@
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
-
-
-    <KindOfQuantity typeName="Length" description="Length" persistenceUnit="M" relativeError="1e-6" presentationUnits="FT(fi8)"/>
-    <KindOfQuantity typeName="Angle" description="Angle" persistenceUnit="M" relativeError="1e-6" presentationUnits="FT(fi8)"/>
+    <ECSchemaReference name="AecUnits" version="01.00" prefix="AECU" />
 
     <ECRelationshipClass typeName="GridDrivesGridSurface" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00"/>
       </ECCustomAttributes>
-      <Source cardinality="(1,1)" polymorphic="true">
+      <Source multiplicity="(1..1)" polymorphic="true">
         <Class class="Grid"/>
       </Source>
-      <Target cardinality="(0,N)" polymorphic="true">
+      <Target multiplicity="(0..*)" polymorphic="true">
         <Class class="GridSurface"/>
       </Target>
     </ECRelationshipClass>
@@ -33,17 +30,17 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00"/>
       </ECCustomAttributes>
-      <Source cardinality="(0,N)" polymorphic="true">
+      <Source multiplicity="(0..*)" polymorphic="true">
         <Class class="GridSurface"/>
       </Source>
-      <Target cardinality="(0,N)" polymorphic="true">
+      <Target multiplicity="(0..*)" polymorphic="true">
         <Class class="GridCurve"/>
       </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="GridHasAxes" strength="embedding" modifier="None">
       <!-- Relationship that indicates a decomposition of child AllocatedVolume -->
-      <Source multiplicity="(0..1)" roleLabel="Has Axis" polymorphic="true">
+      <Source multiplicity="(1..1)" roleLabel="Has Axis" polymorphic="true">
         <Class class="Grid"/>
       </Source>
       <Target multiplicity="(0..*)" roleLabel="is axis of" polymorphic="true">
@@ -51,11 +48,11 @@
       </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GridAxisContainsGridSurfaces" strength="referencing" strengthDirection="backward">
-      <Source cardinality="(1,1)" polymorphic="true">
+    <ECRelationshipClass typeName="GridAxisContainsGridSurfaces" strength="embedding">
+      <Source multiplicity="(1..1)" polymorphic="true">
         <Class class="GridAxis"/>
       </Source>
-      <Target cardinality="(1,N)" polymorphic="true">
+      <Target multiplicity="(1..*)" polymorphic="true">
         <Class class="GridSurface"/>
       </Target>
     </ECRelationshipClass>
@@ -137,7 +134,7 @@
     <ECEntityClass typeName="GridSurface" modifier="Abstract" description="A grid surface element.">
       <BaseClass>bis:SpatialLocationElement</BaseClass>
       <ECNavigationProperty propertyName="Axis" relationshipName="GridAxisContainsGridSurfaces" direction="Backward" description="Axis this gridSurface belong to" />
-      <ECProperty propertyName="Length" displayLabel="Length" typeName="double" readOnly="true" kindOfQuantity="Length"/>
+      <ECProperty propertyName="Length" displayLabel="Length" typeName="double" readOnly="true" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="GridPlanarSurface" modifier="Abstract" description="A planar grid surface element.">
@@ -149,7 +146,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="Elevation" displayLabel="Elevation" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="Elevation" displayLabel="Elevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
       <ECProperty propertyName="Surface2d" displayLabel="Surface2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
 
@@ -175,8 +172,8 @@
 
     <ECEntityClass typeName="PlanGrid" modifier="Abstract" description="a plangrid is a grid whose surfaces are extruded in a common direction">
       <BaseClass>Grid</BaseClass>
-      <ECProperty propertyName="DefaultStartElevation" displayLabel="DefaultStartElevation" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultEndElevation" displayLabel="DefaultEndElevation" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultStartElevation" displayLabel="DefaultStartElevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="DefaultEndElevation" displayLabel="DefaultEndElevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="OrthogonalGrid" description="And OrthogonalGrid has all of its' surfaces orthogonal in either X or Y direction">
@@ -184,12 +181,12 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="DefaultCoordinateIncrementX" displayLabel="DefaultCoordinateIncrementX" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultCoordinateIncrementY" displayLabel="DefaultCoordinateIncrementY" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultStartExtentX" displayLabel="DefaultStartExtentX" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultEndExtentX" displayLabel="DefaultEndExtentX" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultStartExtentY" displayLabel="DefaultStartExtentY" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultEndExtentY" displayLabel="DefaultEndExtentY" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultCoordinateIncrementX" displayLabel="DefaultCoordinateIncrementX" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="DefaultCoordinateIncrementY" displayLabel="DefaultCoordinateIncrementY" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="DefaultStartExtentX" displayLabel="DefaultStartExtentX" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="DefaultEndExtentX" displayLabel="DefaultEndExtentX" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="DefaultStartExtentY" displayLabel="DefaultStartExtentY" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="DefaultEndExtentY" displayLabel="DefaultEndExtentY" typeName="double" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="RadialGrid" description="A RadialGrid consists either of arcsurfaces in radial axis or planarsurfaces in circular axis">
@@ -197,12 +194,12 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="DefaultAngleIncrement" displayLabel="DefaultAngleIncrement" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="DefaultRadiusIncrement" displayLabel="DefaultRadiusIncrement" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="DefaultStartAngle" displayLabel="DefaultStartAngle" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="DefaultEndAngle" displayLabel="DefaultEndAngle" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="DefaultStartRadius" displayLabel="DefaultStartRadius" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="DefaultEndRadius" displayLabel="DefaultEndRadius" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultAngleIncrement" displayLabel="DefaultAngleIncrement" typeName="double" kindOfQuantity="AECU:ANGLE"/>
+      <ECProperty propertyName="DefaultRadiusIncrement" displayLabel="DefaultRadiusIncrement" typeName="double" kindOfQuantity="AECU:ANGLE"/>
+      <ECProperty propertyName="DefaultStartAngle" displayLabel="DefaultStartAngle" typeName="double" kindOfQuantity="AECU:ANGLE"/>
+      <ECProperty propertyName="DefaultEndAngle" displayLabel="DefaultEndAngle" typeName="double" kindOfQuantity="AECU:ANGLE"/>
+      <ECProperty propertyName="DefaultStartRadius" displayLabel="DefaultStartRadius" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="DefaultEndRadius" displayLabel="DefaultEndRadius" typeName="double" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="SketchGrid" description="A SketchGrid contains surfaces whose positions are not constrained (other than being swept to the grid normal)">
@@ -217,7 +214,7 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="DefaultElevationIncrement" displayLabel="DefaultElevationIncrement" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="DefaultElevationIncrement" displayLabel="DefaultElevationIncrement" typeName="double" kindOfQuantity="AECU:LENGTH"/>
       <ECProperty propertyName="DefaultSurface2d" displayLabel="DefaultSurface2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
   
@@ -235,8 +232,8 @@
           <AppliesToEntityClass>GridSurface</AppliesToEntityClass>
         </IsMixin>
       </ECCustomAttributes>
-      <ECProperty propertyName="StartElevation" displayLabel="StartElevation" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="EndElevation" displayLabel="EndElevation" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="StartElevation" displayLabel="StartElevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="EndElevation" displayLabel="EndElevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="PlanGridPlanarSurface" modifier="Abstract" description="A planar plangrid surface element.">
@@ -249,9 +246,9 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="Coordinate" displayLabel="Coordinate" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="StartExtent" displayLabel="StartExtent" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="EndExtent" displayLabel="EndExtent" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="Coordinate" displayLabel="Coordinate" typeName="double" kindOfQuantity="AECU:LENGTH" description="Origin of the surface"/>
+      <ECProperty propertyName="StartExtent" displayLabel="StartExtent" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="EndExtent" displayLabel="EndExtent" typeName="double" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="PlanRadialGridSurface" description="A planar grid surface element.">
@@ -259,9 +256,9 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="Angle" displayLabel="Angle" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="StartRadius" displayLabel="StartRadius" typeName="double" kindOfQuantity="Length"/>
-      <ECProperty propertyName="EndRadius" displayLabel="EndRadius" typeName="double" kindOfQuantity="Length"/>
+      <ECProperty propertyName="Angle" displayLabel="Angle" typeName="double" kindOfQuantity="AECU:LENGTH" description="Origin of the surface"/>
+      <ECProperty propertyName="StartRadius" displayLabel="StartRadius" typeName="double" kindOfQuantity="AECU:LENGTH"/>
+      <ECProperty propertyName="EndRadius" displayLabel="EndRadius" typeName="double" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="SketchLineGridSurface" description="An extruded line gridsurface element.">
@@ -282,9 +279,9 @@
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
       </ECCustomAttributes>
-      <ECProperty propertyName="Radius" displayLabel="Radius" typeName="double" kindOfQuantity="Length" description="Origin of the surface"/>
-      <ECProperty propertyName="StartAngle" displayLabel="StartAngle" typeName="double" kindOfQuantity="Angle"/>
-      <ECProperty propertyName="EndAngle" displayLabel="EndAngle" typeName="double" kindOfQuantity="Angle"/>
+      <ECProperty propertyName="Radius" displayLabel="Radius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Origin of the surface"/>
+      <ECProperty propertyName="StartAngle" displayLabel="StartAngle" typeName="double" kindOfQuantity="AECU:ANGLE"/>
+      <ECProperty propertyName="EndAngle" displayLabel="EndAngle" typeName="double" kindOfQuantity="AECU:ANGLE"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="SketchArcGridSurface" description="An extruded spline gridsurface element.">
