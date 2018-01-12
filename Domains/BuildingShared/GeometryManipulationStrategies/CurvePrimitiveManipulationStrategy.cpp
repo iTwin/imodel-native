@@ -104,6 +104,16 @@ void CurvePrimitiveManipulationStrategy::_RemoveKeyPoint
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveManipulationStrategy::_Clear()
+    {
+    m_keyPoints.clear();
+    m_keyPointsWithDynamicKeyPoint.clear();
+    m_dynamicKeyPointSet = false;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 void CurvePrimitiveManipulationStrategy::_AppendDynamicKeyPoint

@@ -236,6 +236,14 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::_Clear()
+    {
+    m_primitiveStrategies.clear();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
 (
     DefaultNewGeometryType newGeometryType

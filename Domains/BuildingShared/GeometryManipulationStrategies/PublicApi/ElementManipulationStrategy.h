@@ -38,6 +38,7 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _RemoveKeyPoint(size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _Clear() override;
 
         virtual GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const = 0;
         virtual GeometryManipulationStrategyR _GetGeometryManipulationStrategyR() = 0;

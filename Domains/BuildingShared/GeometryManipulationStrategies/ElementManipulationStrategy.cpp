@@ -180,6 +180,14 @@ void ElementManipulationStrategy::_RemoveKeyPoint
     _GetGeometryManipulationStrategyR().RemoveKeyPoint(index);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementManipulationStrategy::_Clear()
+    {
+    _GetGeometryManipulationStrategyR().Clear();
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void ElementManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \

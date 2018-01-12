@@ -44,6 +44,7 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _RemoveKeyPoint(size_t index) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _Clear() override;
 
         virtual ICurvePrimitivePtr _FinishPrimitive() const = 0;
 
