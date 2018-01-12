@@ -1133,7 +1133,7 @@ BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes,
             const bool displayLabelDefinedInNew = newEnumerator->GetIsDisplayLabelDefined();
             if (displayLabelDefinedInOld && !displayLabelDefinedInNew)
                 enumeratorChange.GetDisplayLabel().SetValue(ValueId::Deleted, oldEnumerator->GetInvariantDisplayLabel());
-            else if (!displayLabelDefinedInOld && newEnumerator->GetIsDisplayLabelDefined())
+            else if (!displayLabelDefinedInOld && displayLabelDefinedInNew)
                 enumeratorChange.GetDisplayLabel().SetValue(ValueId::New, newEnumerator->GetInvariantDisplayLabel());
             else if (displayLabelDefinedInOld && displayLabelDefinedInNew)
                 {
@@ -1175,53 +1175,59 @@ BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR a, KindOfQuantityCR b)
+BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR oldValue, KindOfQuantityCR newValue)
     {
-    if (a.GetName() != b.GetName())
-        change.GetName().SetValue(a.GetName(), b.GetName());
+    if (oldValue.GetName() != newValue.GetName())
+        change.GetName().SetValue(oldValue.GetName(), newValue.GetName());
 
-    if (a.GetDisplayLabel() != b.GetDisplayLabel())
-        change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
-
-    if (a.GetDescription() != b.GetDescription())
-        change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
-
-    Utf8String aPersUnitStr = a.GetPersistenceUnit().ToText(false);
-    Utf8String bPersUnitStr = b.GetPersistenceUnit().ToText(false);
-    if (!aPersUnitStr.Equals(bPersUnitStr))
-        change.GetPersistenceUnit().SetValue(aPersUnitStr, bPersUnitStr);
-
-    if (a.GetRelativeError() != b.GetRelativeError())
-        change.GetRelativeError().SetValue(a.GetRelativeError(), b.GetRelativeError());
-
-    bset<Utf8String> aMap, bMap, cMap;
-    for (Formatting::FormatUnitSet const& fus : a.GetPresentationUnitList())
+    const bool displayLabelDefinedInOld = oldValue.GetIsDisplayLabelDefined();
+    const bool displayLabelDefinedInNew = newValue.GetIsDisplayLabelDefined();
+    if (displayLabelDefinedInOld && !displayLabelDefinedInNew)
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, oldValue.GetInvariantDisplayLabel());
+    else if (!displayLabelDefinedInOld && displayLabelDefinedInNew)
+        change.GetDisplayLabel().SetValue(ValueId::New, newValue.GetInvariantDisplayLabel());
+    else if (displayLabelDefinedInOld && displayLabelDefinedInNew)
         {
-        aMap.insert(fus.ToText(false));
+        if (!oldValue.GetInvariantDisplayLabel().EqualsIAscii(newValue.GetInvariantDisplayLabel()))
+            change.GetDisplayLabel().SetValue(oldValue.GetInvariantDisplayLabel(), newValue.GetInvariantDisplayLabel());
         }
 
-    for (Formatting::FormatUnitSet const& fus : b.GetPresentationUnitList())
+    if (oldValue.GetDescription() != newValue.GetDescription())
+        change.GetDescription().SetValue(oldValue.GetDescription(), newValue.GetDescription());
+
+    Utf8String oldPersUnitStr = oldValue.GetPersistenceUnit().ToText(false);
+    Utf8String newPersUnitStr = newValue.GetPersistenceUnit().ToText(false);
+    if (!oldPersUnitStr.Equals(newPersUnitStr))
+        change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
+
+    if (oldValue.GetRelativeError() != newValue.GetRelativeError())
+        change.GetRelativeError().SetValue(oldValue.GetRelativeError(), newValue.GetRelativeError());
+
+    bset<Utf8String> oldPresUnits, newPresUnits, allPresUnits;
+    for (Formatting::FormatUnitSet const& fus : oldValue.GetPresentationUnitList())
         {
-        bMap.insert(fus.ToText(false));
+        oldPresUnits.insert(fus.ToText(false));
         }
 
-    cMap.insert(aMap.begin(), aMap.end());
-    cMap.insert(bMap.begin(), bMap.end());
-
-    for (Utf8StringCR u : cMap)
+    for (Formatting::FormatUnitSet const& fus : newValue.GetPresentationUnitList())
         {
-        auto itorA = aMap.find(u);
-        auto itorB = bMap.find(u);
+        newPresUnits.insert(fus.ToText(false));
+        }
 
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
-            {
-            }
-        else if (existInA && !existInB)
-            change.GetPresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *itorA);
-        else if (!existInA && existInB)
-            change.GetPresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *itorB);
+    allPresUnits.insert(oldPresUnits.begin(), oldPresUnits.end());
+    allPresUnits.insert(newPresUnits.begin(), newPresUnits.end());
+
+    for (Utf8StringCR presUnit : allPresUnits)
+        {
+        auto oldIt = oldPresUnits.find(presUnit);
+        auto newIt = newPresUnits.find(presUnit);
+
+        bool existsInOld = oldIt != oldPresUnits.end();
+        bool existsInNew = newIt != newPresUnits.end();
+        if (existsInOld && !existsInNew)
+            change.GetPresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *oldIt);
+        else if (!existsInOld && existsInNew)
+            change.GetPresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *newIt);
         }
     return SUCCESS;
     }
@@ -1229,19 +1235,28 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle  06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& change, PropertyCategoryCR a, PropertyCategoryCR b)
+BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& change, PropertyCategoryCR oldValue, PropertyCategoryCR newValue)
     {
-    if (a.GetName() != b.GetName())
-        change.GetName().SetValue(a.GetName(), b.GetName());
+    if (oldValue.GetName() != newValue.GetName())
+        change.GetName().SetValue(oldValue.GetName(), newValue.GetName());
 
-    if (a.GetDisplayLabel() != b.GetDisplayLabel())
-        change.GetDisplayLabel().SetValue(a.GetDisplayLabel(), b.GetDisplayLabel());
+    const bool displayLabelDefinedInOld = oldValue.GetIsDisplayLabelDefined();
+    const bool displayLabelDefinedInNew = newValue.GetIsDisplayLabelDefined();
+    if (displayLabelDefinedInOld && !displayLabelDefinedInNew)
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, oldValue.GetInvariantDisplayLabel());
+    else if (!displayLabelDefinedInOld && displayLabelDefinedInNew)
+        change.GetDisplayLabel().SetValue(ValueId::New, newValue.GetInvariantDisplayLabel());
+    else if (displayLabelDefinedInOld && displayLabelDefinedInNew)
+        {
+        if (!oldValue.GetInvariantDisplayLabel().EqualsIAscii(newValue.GetInvariantDisplayLabel()))
+            change.GetDisplayLabel().SetValue(oldValue.GetInvariantDisplayLabel(), newValue.GetInvariantDisplayLabel());
+        }
 
-    if (a.GetDescription() != b.GetDescription())
-        change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
+    if (oldValue.GetDescription() != newValue.GetDescription())
+        change.GetDescription().SetValue(oldValue.GetDescription(), newValue.GetDescription());
 
-    if (a.GetPriority() != b.GetPriority())
-        change.GetPriority().SetValue(a.GetPriority(), b.GetPriority());
+    if (oldValue.GetPriority() != newValue.GetPriority())
+        change.GetPriority().SetValue(oldValue.GetPriority(), newValue.GetPriority());
 
     return SUCCESS;
     }
