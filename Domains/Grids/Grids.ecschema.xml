@@ -139,7 +139,7 @@
       <BaseClass>GridSurface</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ElevationGridSurface" description="A planar 2d grid surface with elevation.">
+    <ECEntityClass typeName="ElevationGridSurface" description="A PlanarGridSurface that is parallel with its Grid’s x-y plane (always contained in an ElevationGrid).">
       <BaseClass>GridPlanarSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
@@ -159,7 +159,7 @@
       <BaseClass>GridSurface</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridSplineSurface" modifier="Abstract" description="A grid surface that is parallel to extruded spline.">
+    <ECEntityClass typeName="GridSplineSurface" modifier="Abstract" description="A grid surface that is an extruded spline.">
       <BaseClass>GridSurface</BaseClass>
     </ECEntityClass>
 
@@ -168,7 +168,7 @@
     </ECEntityClass>
 
 
-    <ECEntityClass typeName="PlanGrid" modifier="Abstract" description="a plangrid is a grid whose surfaces are extruded in a common direction">
+    <ECEntityClass typeName="PlanGrid" modifier="Abstract" description="a grid whose surfaces are curves parallel to the local x-y plane extruded along the local z-axis">
       <BaseClass>Grid</BaseClass>
       <ECProperty propertyName="DefaultStartElevation" displayLabel="DefaultStartElevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
       <ECProperty propertyName="DefaultEndElevation" displayLabel="DefaultEndElevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
@@ -239,7 +239,7 @@
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
   
-    <ECEntityClass typeName="PlanCartesianGridSurface" description="A planar grid surface element.">
+    <ECEntityClass typeName="PlanCartesianGridSurface" description="A planar plan grid surface that is perpendicular to the grid’s x-axis or y-axis.">
       <BaseClass>PlanGridPlanarSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
@@ -249,7 +249,7 @@
       <ECProperty propertyName="EndExtent" displayLabel="EndExtent" typeName="double" kindOfQuantity="AECU:LENGTH"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="PlanRadialGridSurface" description="A planar grid surface element.">
+    <ECEntityClass typeName="PlanRadialGridSurface" description="A PlanGridPlanarSurface whose infinite plane contains the PlanGrid’s origin.">
       <BaseClass>PlanGridPlanarSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
@@ -272,7 +272,7 @@
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
   
-    <ECEntityClass typeName="PlanCircumferentialGridSurface" description="An extruded spline gridsurface element.">
+    <ECEntityClass typeName="PlanCircumferentialGridSurface" description="An PlanGridArcSurface that is centered on the Grid’s origin.">
       <BaseClass>PlanGridArcSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
@@ -282,7 +282,7 @@
       <ECProperty propertyName="EndAngle" displayLabel="EndAngle" typeName="double" kindOfQuantity="AECU:ANGLE"/>
     </ECEntityClass>
   
-    <ECEntityClass typeName="SketchArcGridSurface" description="An extruded spline gridsurface element.">
+    <ECEntityClass typeName="SketchArcGridSurface" description="An extruded arc gridsurface element.">
       <BaseClass>PlanGridArcSurface</BaseClass>
       <ECCustomAttributes>
         <ClassHasHandler xmlns="BisCore.01.00" />
