@@ -1048,7 +1048,7 @@ GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewpor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Material::CreateParams::CreateParams(RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture)
+Material::CreateParams::CreateParams(MaterialNameCR name, RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture) : m_name(name)
     {
     if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
         {

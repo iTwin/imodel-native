@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TileWriter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,9 +32,8 @@ struct TileTexture : Render::Texture
     CreateParams        m_createParams;
     Render::Image               m_image;
 
-    TileTexture() { }
-    TileTexture(Render::ImageCR image, CreateParams const& createParams) : m_image(image), m_createParams(createParams) { }
-
+    TileTexture(CreateParams const& params) : Render::Texture(params), m_createParams(params) { }
+    TileTexture(Render::ImageCR image, CreateParams const& createParams) : Render::Texture(createParams), m_image(image), m_createParams(createParams) { }
 
     bool GetRepeat() const { return !m_createParams.m_isTileSection; }
  }; // TileTexture

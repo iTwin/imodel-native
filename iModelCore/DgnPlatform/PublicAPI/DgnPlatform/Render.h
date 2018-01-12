@@ -527,21 +527,89 @@ public:
 };
 
 //=======================================================================================
+//! Identifies a texture or material.
+//! A persistent resource is identified by its element ID within the DgnDb.
+//! A named resource is identified by a string ID which is unique among all such resources
+//! associated with a given DgnDb.
+//! A resource with a valid name can be constructed once and then looked up again later by
+//! name.
+//! An unnamed resource is created for one-time use and cannot be looked up again for reuse.
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+template<typename T_Id> struct ResourceName
+{
+private:
+    T_Id        m_id;
+    Utf8String  m_name;
+public:
+    explicit ResourceName(T_Id id=T_Id()) : m_id(id) { }
+    explicit ResourceName(Utf8StringCR name) : m_name(name) { }
+    ResourceName(ResourceName const&) = default;
+    ResourceName& operator=(ResourceName const&) = default;
+
+    bool IsPersistent() const { return m_id.IsValid(); }
+    bool IsNamed() const { return !m_name.empty(); }
+    bool IsValid() const { return IsPersistent() || IsNamed(); }
+
+    T_Id GetId() const { BeAssert(IsPersistent()); return m_id; }
+    Utf8StringCR GetName() const { BeAssert(IsNamed()); return m_name; }
+
+    bool operator!=(ResourceName const& rhs) const { return !(*this == rhs); }
+    bool operator==(ResourceName const& rhs) const
+        {
+        if (IsPersistent())
+            return rhs.IsPersistent() && GetId() == rhs.GetId();
+        else if (IsNamed())
+            return rhs.IsNamed() && GetName().Equals(rhs.GetName());
+        else
+            return false;
+        }
+
+    bool operator<(ResourceName const& rhs) const
+        {
+        BeAssert(IsValid());
+        if (IsPersistent())
+            return rhs.IsPersistent() ? GetId() < rhs.GetId() : true;
+        else if (IsNamed())
+            return rhs.IsNamed() ? GetName().CompareTo(rhs.GetName()) < 0 : !rhs.IsPersistent();
+        else
+            return false;
+        }
+};
+
+using TextureName = ResourceName<DgnTextureId>;
+using MaterialName = ResourceName<RenderMaterialId>;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(TextureName);
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(MaterialName);
+
+//=======================================================================================
 //! A Texture for rendering
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
-protected:
-    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
-public:
     struct CreateParams
     {
-        bool m_isTileSection = false;
+        TextureName m_name;
         int m_pitch = 0;
+        bool m_isTileSection = false;
+
+        TextureNameCR GetName() const { return m_name; }
+
         void SetIsTileSection() {m_isTileSection=true;}
         void SetPitch(int val) {m_pitch=val;}
+
+        explicit CreateParams(TextureNameCR name=TextureName()) : m_name(name) { }
     };
+protected:
+    TextureName m_name;
+
+    uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
+
+    explicit Texture(CreateParams const& params) : m_name(params.m_name) { }
+public:
+    TextureNameCR GetName() const { return m_name; }
 };
 
 //=======================================================================================
@@ -631,6 +699,7 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_specularColor;
         MatColor m_emissiveColor;
         TextureMapping m_textureMapping;
+        MaterialName m_name;
         double m_diffuse = 0.5;
         double m_ambient = 0.5;
         double m_specularExponent = QvFinish() * QvExponentMultiplier();
@@ -640,8 +709,8 @@ struct Material : RefCounted<NonCopyableClass>
         double m_refract = 1.0;
         bool m_shadows = true;
 
-        CreateParams() = default;
-        DGNPLATFORM_EXPORT CreateParams(RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
+        explicit CreateParams(MaterialNameCR name=MaterialName()) : m_name(name) { }
+        DGNPLATFORM_EXPORT CreateParams(MaterialNameCR name, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
 
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
@@ -660,13 +729,15 @@ struct Material : RefCounted<NonCopyableClass>
 
 protected:
     TextureMapping  m_textureMapping;
+    MaterialName    m_name;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
-    explicit Material(TextureMappingCR textureMapping=TextureMapping()) : m_textureMapping(textureMapping) { }
+    explicit Material(CreateParams const& params) : m_textureMapping(params.m_textureMapping), m_name(params.m_name) { }
 public:
     bool HasTextureMapping() const {return m_textureMapping.IsValid();}
     TextureMappingCR GetTextureMapping() const {return m_textureMapping;}
+    MaterialNameCR GetName() const {return m_name;}
 };
 
 //=======================================================================================
