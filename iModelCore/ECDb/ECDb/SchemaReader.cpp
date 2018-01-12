@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaReader.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -937,6 +937,7 @@ BentleyStatus SchemaReader::ReadSchema(SchemaDbEntry*& outECSchemaKey, Context& 
     if (SUCCESS != LoadSchemaDefinition(outECSchemaKey, newlyLoadedSchemas, schemaId))
         return ERROR;
 
+
     for (SchemaDbEntry* newlyLoadedSchema : newlyLoadedSchemas)
         {
         ECSchemaR schema = *newlyLoadedSchema->m_cachedSchema;
@@ -962,9 +963,15 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
     if (!ecSchemaKey)
         return ERROR;
 
+    {
+    BeMutexHolder ecdbLock(GetECDbMutex());
     if (fullyLoadedSchemas.find(ecSchemaKey) != fullyLoadedSchemas.end())
         return SUCCESS;
+    }
 
+    BeSqliteDbMutexHolder dbLock(GetECDbR());
+    BeMutexHolder ecdbLock(GetECDbMutex());
+    //Accessing cache object not safe. Parent funtion make sure its a thread safe call
     //Enure all reference schemas also loaded
     for (auto& refSchemaKey : ecSchemaKey->m_cachedSchema->GetReferencedSchemas())
         {
