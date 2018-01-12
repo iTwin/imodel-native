@@ -2160,12 +2160,13 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     if (PK_ENTITY_null == sheet1Tag || PK_ENTITY_null == sheet2Tag)
         return ERROR;
 
-    int         nFaces = 0;
-    PK_FACE_t*  sheet2FaceTags = nullptr;
-    PK_FACE_t*  sheet1FaceTags = nullptr;
+    PK_FACE_t  sheet2FaceTag = PK_ENTITY_null;
+    PK_FACE_t  sheet1FaceTag = PK_ENTITY_null;
 
-    PK_BODY_ask_faces(sheet1Tag, &nFaces, &sheet1FaceTags);
-    PK_BODY_ask_faces(sheet2Tag, &nFaces, &sheet2FaceTags);
+    if (SUCCESS != PK_BODY_ask_first_face(sheet1Tag, &sheet1FaceTag) || PK_ENTITY_null == sheet1FaceTag)
+        return ERROR;
+    if (SUCCESS != PK_BODY_ask_first_face(sheet2Tag, &sheet2FaceTag) || PK_ENTITY_null == sheet2FaceTag)
+        return ERROR;
 
     PK_FACE_intersect_face_o_t options;
     PK_FACE_intersect_face_o_m(options);
@@ -2177,7 +2178,7 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     PK_INTERVAL_t* bounds = nullptr;
     PK_intersect_curve_t* curvesTypes = nullptr;
 
-    BentleyStatus   status = (SUCCESS == PK_FACE_intersect_face(sheet1FaceTags[0], sheet2FaceTags[0], &options, &numVectors, &vectors, &numCurves, &curves, &bounds, &curvesTypes) ? SUCCESS : ERROR);
+    BentleyStatus   status = (SUCCESS == PK_FACE_intersect_face(sheet1FaceTag, sheet2FaceTag, &options, &numVectors, &vectors, &numCurves, &curves, &bounds, &curvesTypes) ? SUCCESS : ERROR);
     
     if (status == SUCCESS)
         vectorOut = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
