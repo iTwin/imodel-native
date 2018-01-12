@@ -2813,34 +2813,62 @@ CurveVectorPtr AlignmentPairEditor::MoveVerticalTangent(DPoint3dCR fromPt, DPoin
 
     return nullptr; // not found
     }
-#if 0
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Scott.Devoe                     02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr AlignmentPairEditor::ForceGradeAtStation (const double& station, const double& slopeAbsolute, StationRangeEditR editRange)
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::UpdateVerticalRadius(size_t index, double radius, StationRangeEditP pRangeEdit) const
     {
-    bvector<AlignmentPVI> pvis = _GetPVIs ();
-    if (pvis.size () <= 0)
+    bvector<AlignmentPVI> pvis = GetPVIs();
+    if (index >= pvis.size())
         return nullptr;
-    // find the PVI to work from
-    for (int i = 0; i < ( pvis.size () - 1 ); i++)
+
+    if (0 == index || index + 1 == pvis.size())
+        return nullptr; // todo start and end?
+
+    AlignmentPVIR pvi = pvis[index];
+    if (AlignmentPVI::TYPE_Arc != pvi.GetType())
         {
-        if (pvis[i].poles[PVI].x <= station && station < pvis[i + 1].poles[PVI].x)
-            {
-            // Compute the new potential pvi at i+1 and call MovePVI
-            double distance = pvis[i + 1].poles[PVI].x - pvis[i].poles[PVI].x;
-            double newZ = pvis[i].poles[PVI].z + ( slopeAbsolute * distance );
-
-            DPoint3d currentPt = DPoint3d::From (pvis[i + 1].poles[PVI].x, 0.0, pvis[i + 1].poles[PVI].z);
-            DPoint3d newPt = DPoint3d::From (pvis[i + 1].poles[PVI].x, 0.0, newZ);
-
-            return MovePVI (currentPt, newPt, editRange);
-            }
+        REPLACEMENT_LOGW("AlignmentPairEditor::UpdateVerticalRadius - PVI is not an Arc");
+        return nullptr;
         }
-    return nullptr;
+
+    pvi.GetArcP()->radius = radius;;
+
+    VerticalEditResult result = SolveValidateAndBuild(pvis, index, false/*isDelete*/);
+    if (nullptr != pRangeEdit && result.vtCurve.IsValid())
+        *pRangeEdit = StationRangeEdit(result.modifiedRange);
+
+    return result.vtCurve;
     }
-#endif
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+CurveVectorPtr AlignmentPairEditor::ForceGradeAtStation(double distanceAlongFromStart, double slope, StationRangeEditP pRangeEdit) const
+    {
+    bvector<AlignmentPVI> pvis = GetPVIs();
+    if (2 > pvis.size())
+        return nullptr;
+
+    size_t index = FindNexOrEqualPVIIndex(pvis, distanceAlongFromStart);
+    if (index == pvis.size())
+        return nullptr;
+
+    if (DoubleOps::AlmostEqual(distanceAlongFromStart, pvis[index].GetPVILocation().x))
+        index++;
+
+    if (0 == index || index >= pvis.size())
+        return nullptr;
+
+    // PVI is strictly after the provided distance. It is the PVI we will be editing
+    AlignmentPVIR pvi = pvis[index];
+    DPoint3dCR current = pvi.GetPVILocation();
+    DPoint3dCR previous = pvis[index - 1].GetPVILocation();
+    const double distance = current.x - previous.x;
+    const double newZ = previous.z + (slope * distance);
+
+    const DPoint3d newLocation = DPoint3d::From(current.x, 0.0, newZ);
+    return MovePVI(index, newLocation, pRangeEdit);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 * Allow the move of a pvc or pvt based on station.  Will return invalid if the result
@@ -3321,6 +3349,8 @@ bool AlignmentPairEditor::SolveArcPVI(bvector<AlignmentPVI>& pvis, size_t index)
     if (0.0 >= pArc->radius)
         return false;
 
+    // We don't know the orientation beforehand, just pass in Unknown.
+    pArc->orientation = Orientation::ORIENTATION_Unknown;
     pArc->pvc = pvis[index - 1].GetPVILocation();
     pArc->pvt = pvis[index + 1].GetPVILocation();
 

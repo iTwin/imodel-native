@@ -2,7 +2,7 @@
 |
 |  $Source: CivilBaseGeometry/Tests/NonPublished/AlignmentPair_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestHeader.h"
@@ -2818,6 +2818,79 @@ void AlignmentPairEditor_MoveArcPVCorPVT()
     result = editor->MoveArcPVCorPVT(62.0, 70.0);
     EXPECT_FALSE(result.IsValid());
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_UpdateVerticalRadius()
+    {
+    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+
+    AlignmentPVI pvi;
+    pvi.InitArc(DPoint3d::From(50, 0.0, 795.0), 60.0);
+    CurveVectorPtr result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    editor->UpdateVerticalCurveVector(result.get());
+
+    // Update a non-arc PVI
+    StationRangeEdit rangeEdit;
+    result = editor->UpdateVerticalRadius(0, 10.0, &rangeEdit);
+    EXPECT_FALSE(result.IsValid());
+
+    // update out of bounds
+    result = editor->UpdateVerticalRadius(6, 150, nullptr);
+    EXPECT_FALSE(result.IsValid());
+
+    // null radius
+    result = editor->UpdateVerticalRadius(1, 0.0, nullptr);
+    EXPECT_FALSE(result.IsValid());
+
+    // Valid test
+    result = editor->UpdateVerticalRadius(1, 40, &rangeEdit);
+    ASSERT_TRUE(result.IsValid());
+    AlignmentPairEditorPtr resultEditor = AlignmentPairEditor::CreateVerticalOnly(*result);
+    ASSERT_TRUE(resultEditor->GetPVI(pvi, 1));
+    ASSERT_TRUE(nullptr != pvi.GetArc());
+    EXPECT_EQ_DOUBLE(40.0, pvi.GetArc()->radius);
+
+    // Try with a radius that is too large
+    result = editor->UpdateVerticalRadius(2, 12323.0, nullptr);
+    EXPECT_FALSE(result.IsValid());
+
+    // Try with a Parabola. Should fail
+    editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+    pvi.InitParabola(DPoint3d::From(50.0, 0.0, 824), 24.0);
+    result = editor->InsertPVI(pvi);
+    ASSERT_TRUE(result.IsValid());
+    editor->UpdateVerticalCurveVector(result.get());
+    result = editor->UpdateVerticalRadius(1, 40.0);
+    EXPECT_FALSE(result.IsValid());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+void AlignmentPairEditor_ForceGradeAtStation()
+    {
+    AlignmentPairPtr pair = createLinearPair();
+    AlignmentPairEditorPtr editor = AlignmentPairEditor::CreateVerticalOnly(*pair->GetVerticalCurveVector());
+
+    StationRangeEdit editRange;
+    CurveVectorPtr result = editor->ForceGradeAtStation(-5.0, 0.0, &editRange);
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->ForceGradeAtStation(105.0, 0.1, nullptr);
+    EXPECT_FALSE(result.IsValid());
+
+    result = editor->ForceGradeAtStation(50.0, 0.2, nullptr);
+    ASSERT_TRUE(result.IsValid());
+    DPoint3d start, end;
+    EXPECT_TRUE(result->GetStartEnd(start, end));
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(0, 0, 800), start);
+    EXPECT_EQ_DPOINT3D(DPoint3d::From(100, 0, 820), end);
+
+    result = editor->ForceGradeAtStation(0.0, 0.4, nullptr);
+    EXPECT_TRUE(result.IsValid());
+    }
 
 #if 0
 //---------------------------------------------------------------------------------------
@@ -3198,7 +3271,8 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     AlignmentPairEditor_MoveVerticalTangent();
     AlignmentPairEditor_MoveParabolaPVCorPVT();
     AlignmentPairEditor_MoveArcPVCorPVT();
-
+    AlignmentPairEditor_UpdateVerticalRadius();
+    AlignmentPairEditor_ForceGradeAtStation();
 
 
 #if 0 //&&AG NEEDSWORK EDITOR

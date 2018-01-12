@@ -2,7 +2,7 @@
 |
 |     $Source: CivilBaseGeometry/Native/PublicAPI/CivilBaseGeometry/AlignmentPairEditor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -500,6 +500,9 @@ public:
     // Allow the move of an arc pvc or pvt based on station. Result may be invalid
     // Updates the arc radius based on the new position of the pvc/pvt
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MoveArcPVCorPVT(double fromDistanceAlong, double toDistanceAlong, StationRangeEditP pEditRange = nullptr) const;
+    // Updates the radius of a particular PVI or nullptr if the radius is too large
+    // @remarks will only work for ARC types
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr UpdateVerticalRadius(size_t index, double radius, StationRangeEditP pRangeEdit = nullptr) const;
     // insert a pvi to a vertical alignment
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr InsertPVI(AlignmentPVICR pi, StationRangeEditP pRangeEdit = nullptr) const;
     // delete a pvi in a vertical alignment
@@ -507,14 +510,14 @@ public:
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr DeletePVI(size_t index, StationRangeEditP pRangeEdit = nullptr) const;
     // remove all PVIS between station range, primary use case is the removal of a grade crossing when an intersection changes
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr DeletePVIs(StationRangeCR range, StationRangeEditP pRangeEdit = nullptr) const;
+    // force a grade at a station, will hold the previous PVI and modify beyond.
+    CIVILBASEGEOMETRY_EXPORT CurveVectorPtr ForceGradeAtStation(double distanceAlongFromStart, double slope, StationRangeEditP pEditRange = nullptr) const;
 
 #if 0
     // enforce pvi's to have some distance, unless no grade change
     CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr ValidateVerticalData (bool updateInternalCurveVector = false);
     // force a vertical curve or tangent through a point (point in x, z)
     CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr ForceThroughPoint (DPoint3d pt, StationRangeEditR editRange);
-    // force a grade at a station, will hold the previous PVI and modify beyond.
-    CIVILBASEGEOMETRY_EXPORT virtual CurveVectorPtr ForceGradeAtStation (const double& station, const double& slopeAbsolute, StationRangeEditR editRange);
 
     // Add data for an start intersection
     CIVILBASEGEOMETRY_EXPORT virtual bool InsertStartIntersection (CurveVectorCR drapeVector, double lengthofgradeapproachinmeters, double endSlope, StationRangeEditP editP = nullptr);
