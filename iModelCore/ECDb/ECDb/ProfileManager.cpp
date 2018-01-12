@@ -36,13 +36,6 @@ DbResult ProfileManager::CreateProfile(ECDbR ecdb)
         return stat;
         }
 
-    stat = ProfileSchemaUpgrader::ImportProfileSchemas(ecdb);
-    if (stat != BE_SQLITE_OK)
-        {
-        ecdb.AbandonChanges();
-        return stat;
-        }
-
     stat = AssignProfileVersion(ecdb, true);
     if (stat != BE_SQLITE_OK)
         {
@@ -52,6 +45,13 @@ DbResult ProfileManager::CreateProfile(ECDbR ecdb)
         return stat;
         }
 
+    stat = ProfileSchemaUpgrader::ImportProfileSchemas(ecdb);
+    if (stat != BE_SQLITE_OK)
+        {
+        ecdb.AbandonChanges();
+        return stat;
+        }
+  
     ecdb.SaveChanges();
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End CreateECProfile");
     return BE_SQLITE_OK;
@@ -110,20 +110,18 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(ecdb))
-        {
-        ecdb.AbandonChanges();
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
     //after upgrade procedure set new profile version in ECDb file
-    stat = AssignProfileVersion(ecdb, false);
-
-    if (stat != BE_SQLITE_OK)
+    if (BE_SQLITE_OK != AssignProfileVersion(ecdb, false))
         {
         ecdb.AbandonChanges();
         LOG.errorv("Failed to upgrade " PROFILENAME " profile in file '%s'. Could not assign new profile version. %s",
                    ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(ecdb))
+        {
+        ecdb.AbandonChanges();
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 

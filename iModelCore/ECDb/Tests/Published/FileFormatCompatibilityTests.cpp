@@ -84,6 +84,9 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
 
     protected:
         BentleyStatus SetupTestFile(Utf8CP fileName);
+
+        static DbResult IncrementProfileVersion(DbR);
+
         static bool CompareTable(DbCR benchmark, DbCR actual, Utf8CP tableName, Utf8CP selectSql, CompareOptions options = CompareOptions::None);
 
         static Utf8String GetPkColumnName(DbCR db, Utf8CP tableName);
@@ -2003,6 +2006,185 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
+    {
+    //Future EC3.2 ECEnumerator property (If this code has already EC3.2 we don't need to execute the test)
+    if (ECN::ECVersion::Latest > ECN::ECVersion::V3_1)
+        return;
+
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_ECEnums.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="IntEnumNoDisplayLabel" backingTypeName="int" >
+                    <ECEnumerator value="0" />
+                    <ECEnumerator value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="IntEnumDisplayLabel" backingTypeName="int" >
+                    <ECEnumerator value="0" displayLabel="Turn On"/>
+                    <ECEnumerator value="1" displayLabel="Turn Off"/>
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumNoDisplayLabel" backingTypeName="string" >
+                    <ECEnumerator value="On" />
+                    <ECEnumerator value="Off" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumDisplayLabel" backingTypeName="string" >
+                    <ECEnumerator value="On" displayLabel="Turn On" />
+                    <ECEnumerator value="Off" displayLabel="Turn Off" />
+                </ECEnumeration>                
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Prop1" typeName="IntEnumNoDisplayLabel" />
+                    <ECProperty propertyName="Prop2" typeName="IntEnumDisplayLabel" />
+                    <ECProperty propertyName="Prop3" typeName="StringEnumNoDisplayLabel" />
+                    <ECProperty propertyName="Prop4" typeName="StringEnumDisplayLabel" />
+                </ECEntityClass>
+         </ECSchema>)xml")));
+
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT Name, Id, EnumValues FROM ec_Enumeration ORDER BY Name"));
+    bmap<BeInt64Id, Json::Value> enumValues;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP enumName = stmt.GetValueText(0);
+        Json::Value& json = enumValues[stmt.GetValueId<BeInt64Id>(1)];
+        ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(json, stmt.GetValueText(2)));
+
+        for (Json::Value& enumValue : json)
+            {
+            if (enumValue.isMember("StringValue"))
+                enumValue["Name"] = ECNameValidation::EncodeToValidName(enumValue["StringValue"].asCString());
+            else if (enumValue.isMember("IntValue"))
+                {
+                Utf8String name;
+                name.Sprintf("%s%d", enumName, enumValue["IntValue"].asInt());
+                enumValue["Name"] = ECNameValidation::EncodeToValidName(name);
+                }
+
+            if (enumValue.isMember("DisplayLabel"))
+                enumValue["Description"] = enumValue["DisplayLabel"].asCString();
+            }
+        stmt.Finalize();
+        ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "UPDATE ec_Enumeration SET EnumValues=? WHERE Id=?"));
+        for (bpair<BeInt64Id, Json::Value> const& kvPair : enumValues)
+            {
+            ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, kvPair.second.ToString(), Statement::MakeCopy::Yes));
+            ASSERT_EQ(BE_SQLITE_OK, stmt.BindId(2, kvPair.first));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Reset();
+            stmt.ClearBindings();
+            }
+        stmt.Finalize();
+        }
+
+    //bump up profile version (which is expected if the file format changes)
+    ASSERT_EQ(BE_SQLITE_OK, IncrementProfileVersion(m_ecdb));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnumNoDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(0, enumValue->GetInteger());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnumDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(0, enumValue->GetInteger());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn On", enumValue->GetDisplayLabel().c_str());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn Off", enumValue->GetDisplayLabel().c_str());
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnumNoDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnumDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn On", enumValue->GetDisplayLabel().c_str());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn Off", enumValue->GetDisplayLabel().c_str());
+    }
+
+    //ECSQL
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Prop1 FROM ts.Foo")) << "Preparing ECSQL against class with unknown property primitive type is expected to fail";
+
+    //ECClass views
+    Savepoint sp(m_ecdb, "");
+    EXPECT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+    sp.Cancel();
+
+    //Schema upgrade
+    sp.Begin();
+    EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="IntEnumNoDisplayLabel" backingTypeName="int" >
+                    <ECEnumerator value="0" />
+                    <ECEnumerator value="1" />
+                    <ECEnumerator value="2" />
+                </ECEnumeration>
+                <ECEnumeration typeName="IntEnumDisplayLabel" backingTypeName="int" >
+                    <ECEnumerator value="0" displayLabel="Turn On"/>
+                    <ECEnumerator value="1" displayLabel="Turn Off"/>
+                    <ECEnumerator value="2" displayLabel="Toggle"/>
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumNoDisplayLabel" backingTypeName="string" >
+                    <ECEnumerator value="On" />
+                    <ECEnumerator value="Off" />
+                    <ECEnumerator value="Toggle" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumDisplayLabel" backingTypeName="string" >
+                    <ECEnumerator value="On" displayLabel="Turn On" />
+                    <ECEnumerator value="Off" displayLabel="Turn Off" />
+                    <ECEnumerator value="Toggle" displayLabel="Toggle me" />
+                </ECEnumeration>                
+                <ECEntityClass typeName="Foo">
+                    <ECProperty propertyName="Prop1" typeName="IntEnumNoDisplayLabel" />
+                    <ECProperty propertyName="Prop2" typeName="IntEnumDisplayLabel" />
+                    <ECProperty propertyName="Prop3" typeName="StringEnumNoDisplayLabel" />
+                    <ECProperty propertyName="Prop4" typeName="StringEnumDisplayLabel" />
+                </ECEntityClass>
+         </ECSchema>)xml"))) << "Profile newer than software";
+    sp.Cancel();
+
+    m_ecdb.AbandonChanges();
+    }
+
 //*****************************************************************************************
 // FileFormatCompatibilityTests
 //*****************************************************************************************
@@ -2012,6 +2194,24 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards)
 //no need to release a static non-POD variable (Bentley C++ coding standards)
 //static
 ProfileVersion const* FileFormatCompatibilityTests::s_initialBim2ProfileVersion = new ProfileVersion(4, 0, 0, 0);
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2018
+//---------------------------------------------------------------------------------------
+//static
+DbResult FileFormatCompatibilityTests::IncrementProfileVersion(DbR db)
+    {
+    //bump up profile version (which is expected if the file format changes)
+    PropertySpec profileVersionSpec("SchemaVersion", "ec_Db");
+    Utf8String profileVersionStr;
+    DbResult stat = db.QueryProperty(profileVersionStr, profileVersionSpec);
+    if (BE_SQLITE_ROW != stat)
+        return stat;
+
+    ProfileVersion profileVersion(profileVersionStr.c_str());
+    profileVersion = ProfileVersion(profileVersion.GetMajor(), profileVersion.GetMinor(), profileVersion.GetSub1(), profileVersion.GetSub2() + 1);
+    return db.SavePropertyString(profileVersionSpec, profileVersion.ToJson());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017

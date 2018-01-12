@@ -419,7 +419,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
         
         if (enumValue->GetIsDisplayLabelDefined())
             {
-            Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();;
+            Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel,
                                     rapidjson::Value(displayLabel.c_str(), (rapidjson::SizeType) displayLabel.size(), jsonAllocator).Move(),
                                     jsonAllocator);
