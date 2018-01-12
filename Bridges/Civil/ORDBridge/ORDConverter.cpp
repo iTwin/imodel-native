@@ -276,8 +276,29 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
 
     // Create Alignment
     auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*m_bimAlignmentModelPtr);
+    
     if (bimCode.IsValid())
         bimAlignmentPtr->SetCode(bimCode);
+
+    // By default, set the user label to name of the Alignment.  This corresponds to the "Feature Name" property in ORD.
+    Utf8String userLabel(cifAlignment.GetName().c_str());
+
+    // Handling the user label if it's unset in ORD is still not well defined.  
+    // We're following the guidelines here: http://builds.bentley.com/prgbuilds/AzureBuilds/BISDocs/latest/public/introduction-to-bis/imodel-bridges/
+    // but the final decision for how we auto-create user labels has not been made yet.
+    if (Utf8String::IsNullOrEmpty(userLabel.c_str()))
+        {
+        if (bimCode.IsValid())
+            {
+            userLabel = bimCode.GetValueUtf8();
+            }
+        else
+            {
+            userLabel += Utf8String(cifAlignment.GetClassName());
+            }
+        }
+    
+    bimAlignmentPtr->SetUserLabel(userLabel.c_str());
     
     Bentley::WString featureDefName;
     if (cifAlignment.GetFeatureDefinition().IsValid())
