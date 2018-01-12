@@ -1091,69 +1091,81 @@ BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& a, EnumeratorIterable const& b)
+BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& oldValues, EnumeratorIterable const& newValues)
     {
-    std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (ECEnumeratorCP enumCP : a)
-        aMap[enumCP->GetName().c_str()] = enumCP;
+    std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> oldEnumValues, newEnumValues, allEnumValues;
+    for (ECEnumeratorCP enumCP : oldValues)
+        oldEnumValues[enumCP->GetName().c_str()] = enumCP;
 
-    for (ECEnumeratorCP enumCP : b)
-        bMap[enumCP->GetName().c_str()] = enumCP;
+    for (ECEnumeratorCP enumCP : newValues)
+        newEnumValues[enumCP->GetName().c_str()] = enumCP;
 
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
+    allEnumValues.insert(oldEnumValues.cbegin(), oldEnumValues.cend());
+    allEnumValues.insert(newEnumValues.cbegin(), newEnumValues.cend());
 
-    for (auto& u : cMap)
+    for (std::pair<Utf8CP, ECEnumeratorCP> const& kvPair : allEnumValues)
         {
-        Utf8CP enumeratorName = u.first;
-        auto itorA = aMap.find(enumeratorName);
-        auto itorB = bMap.find(enumeratorName);
+        Utf8CP enumeratorName = kvPair.first;
+        auto oldIt = oldEnumValues.find(enumeratorName);
+        auto newIt = newEnumValues.find(enumeratorName);
 
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
+        bool existsInOld = oldIt != oldEnumValues.end();
+        ECEnumeratorCP oldEnumerator = existsInOld ? oldIt->second : nullptr;
+        bool existsInNew = newIt != newEnumValues.end();
+        ECEnumeratorCP newEnumerator = existsInNew ? newIt->second : nullptr;
+
+        if (existsInOld && existsInNew)
             {
             ECEnumeratorChange& enumeratorChange = changes.Add(ChangeState::Modified, enumeratorName);
-            if (itorA->second->IsInteger())
+            if (oldEnumerator->IsInteger())
                 {
-                if (itorA->second->GetInteger() != (itorB->second->GetInteger()))
-                    enumeratorChange.GetInteger().SetValue(itorA->second->GetInteger(), itorB->second->GetInteger());
+                if (oldEnumerator->GetInteger() != newEnumerator->GetInteger())
+                    enumeratorChange.GetInteger().SetValue(oldEnumerator->GetInteger(), newEnumerator->GetInteger());
                 }
 
-            if (itorA->second->IsString())
+            if (oldIt->second->IsString())
                 {
-                if (itorA->second->GetString() != (itorB->second->GetString()))
-                    enumeratorChange.GetString().SetValue(itorA->second->GetString(), itorB->second->GetString());
+                if (oldIt->second->GetString() != newEnumerator->GetString())
+                    enumeratorChange.GetString().SetValue(oldEnumerator->GetString(), newEnumerator->GetString());
                 }
 
-            if (!itorA->second->GetInvariantDisplayLabel().EqualsIAscii(itorB->second->GetInvariantDisplayLabel()))
-                enumeratorChange.GetDisplayLabel().SetValue(itorA->second->GetInvariantDisplayLabel(), itorB->second->GetInvariantDisplayLabel());
+            const bool displayLabelDefinedInOld = oldEnumerator->GetIsDisplayLabelDefined();
+            const bool displayLabelDefinedInNew = newEnumerator->GetIsDisplayLabelDefined();
+            if (displayLabelDefinedInOld && !displayLabelDefinedInNew)
+                enumeratorChange.GetDisplayLabel().SetValue(ValueId::Deleted, oldEnumerator->GetInvariantDisplayLabel());
+            else if (!displayLabelDefinedInOld && newEnumerator->GetIsDisplayLabelDefined())
+                enumeratorChange.GetDisplayLabel().SetValue(ValueId::New, newEnumerator->GetInvariantDisplayLabel());
+            else if (displayLabelDefinedInOld && displayLabelDefinedInNew)
+                {
+                if (!oldEnumerator->GetInvariantDisplayLabel().EqualsIAscii(newEnumerator->GetInvariantDisplayLabel()))
+                    enumeratorChange.GetDisplayLabel().SetValue(oldEnumerator->GetInvariantDisplayLabel(), newEnumerator->GetInvariantDisplayLabel());
+                }
 
-            if (!itorA->second->GetInvariantDescription().EqualsIAscii(itorB->second->GetInvariantDescription()))
-                enumeratorChange.GetDescription().SetValue(itorA->second->GetInvariantDescription(), itorB->second->GetInvariantDescription());
+            if (!oldIt->second->GetInvariantDescription().EqualsIAscii(newEnumerator->GetInvariantDescription()))
+                enumeratorChange.GetDescription().SetValue(oldEnumerator->GetInvariantDescription(), newEnumerator->GetInvariantDescription());
 
             }
-        else if (existInA && !existInB)
+        else if (existsInOld && !existsInNew)
             {
             auto& change = changes.Add(ChangeState::Deleted, enumeratorName);
-            change.GetName().SetValue(ValueId::Deleted, itorA->second->GetName());
-            change.GetDisplayLabel().SetValue(ValueId::Deleted, itorA->second->GetInvariantDisplayLabel());
-            change.GetDescription().SetValue(ValueId::Deleted, itorA->second->GetInvariantDescription());
-            if (itorA->second->IsInteger())
-                change.GetInteger().SetValue(ValueId::Deleted, itorA->second->GetInteger());
+            change.GetName().SetValue(ValueId::Deleted, oldIt->second->GetName());
+            change.GetDisplayLabel().SetValue(ValueId::Deleted, oldIt->second->GetInvariantDisplayLabel());
+            change.GetDescription().SetValue(ValueId::Deleted, oldIt->second->GetInvariantDescription());
+            if (oldEnumerator->IsInteger())
+                change.GetInteger().SetValue(ValueId::Deleted, oldIt->second->GetInteger());
             else
-                change.GetString().SetValue(ValueId::Deleted, itorA->second->GetString());
+                change.GetString().SetValue(ValueId::Deleted, oldIt->second->GetString());
             }
-        else if (!existInA && existInB)
+        else if (!existsInOld && existsInNew)
             {
             auto& change = changes.Add(ChangeState::New, enumeratorName);
-            change.GetName().SetValue(ValueId::New, itorB->second->GetName());
-            change.GetDisplayLabel().SetValue(ValueId::New, itorB->second->GetInvariantDisplayLabel());
-            change.GetDescription().SetValue(ValueId::New, itorB->second->GetInvariantDescription());
-            if (itorB->second->IsInteger())
-                change.GetInteger().SetValue(ValueId::New, itorB->second->GetInteger());
+            change.GetName().SetValue(ValueId::New, newEnumerator->GetName());
+            change.GetDisplayLabel().SetValue(ValueId::New, newEnumerator->GetInvariantDisplayLabel());
+            change.GetDescription().SetValue(ValueId::New, newEnumerator->GetInvariantDescription());
+            if (newEnumerator->IsInteger())
+                change.GetInteger().SetValue(ValueId::New, newEnumerator->GetInteger());
             else
-                change.GetString().SetValue(ValueId::New, itorB->second->GetString());
+                change.GetString().SetValue(ValueId::New, newEnumerator->GetString());
             }
         }
 
