@@ -272,6 +272,21 @@
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify
 
+    ### ECEnumeration
+    - @b Modify 
+        - @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "IsStrict"
+            - Only when modifying from true to false.
+        - @ref BentleyApi::ECN::ECEnumeration::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECEnumeration::GetDescription "Description"
+
+    - @b ECEnumerators
+        - @b Add a new @ref BentleyApi::ECN::ECEnumerator "ECEnumerator"
+
+    ### ECEnumerator
+    - @b Modify 
+        - @ref BentleyApi::ECN::ECEnumerator::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECEnumerator::GetDescription "Description"
+
     ### ECProperty
     - @b Modify 
         - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"

@@ -2587,7 +2587,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
             }
         else
             {
-            Issues().Report("ECSchema Upgrade failed. ECEnumeration %s: 'IsStrict' changed. 'None-strict' cannot be change to 'strict'. The other way around is allowed.",
+            Issues().Report("ECSchema Upgrade failed. ECEnumeration %s: 'IsStrict' changed. 'Non-strict' cannot be change to 'strict'. The other way around is allowed.",
                 oldEnum.GetFullName().c_str());
 
             return ERROR;
@@ -2625,7 +2625,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
             }
         else
             {
-            size_t newEnumerators = 0;
+            bool allowRewriteEnumValues = false;
             for (size_t i = 0; i < enumeratorChanges.Count(); i++)
                 {
                 ECEnumeratorChange& change = enumeratorChanges.At(i);
@@ -2636,16 +2636,21 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
                     }
                 else if (change.GetState() == ChangeState::New)
                     {
-                    newEnumerators++;
+                    allowRewriteEnumValues = true;
                     }
                 else if (change.GetState() == ChangeState::Modified)
                     {
-                    Issues().Report("ECSchema Upgrade failed. One or more enumerators of Enumeration %s were modified which is not supported.", oldEnum.GetFullName().c_str());
-                    return ERROR;
+                    if (change.GetName().IsValid() || change.GetInteger().IsValid() || change.GetString().IsValid())
+                        {
+                        Issues().Report("ECSchema Upgrade failed. The name or value of one or more enumerators of Enumeration %s was modified which is not supported.", oldEnum.GetFullName().c_str());
+                        return ERROR;
+                        }
+
+                    allowRewriteEnumValues = true;
                     }
                 }
 
-            if (newEnumerators > 0)
+            if (allowRewriteEnumValues)
                 {
                 Utf8String enumValueJson;
                 if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum))
