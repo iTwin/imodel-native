@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RenderPrimitives.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -275,8 +275,8 @@ struct Triangle
     bool        m_singleSided;
     uint8_t     m_edgeFlags[3];
 
-    uint32_t operator[](int index) const { BeAssert(index < 3); return m_indices[index]; }
-    uint32_t& operator[](int index) { BeAssert(index < 3); return m_indices[index]; }
+    uint32_t operator[](int index) const { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
+    uint32_t& operator[](int index) { BeAssert(index < 3); if(index>2) index=2; return m_indices[index]; }
 
     explicit Triangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); SetEdgeFlags(MeshEdge::Flags::Visible); }
     Triangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); SetEdgeFlags(MeshEdge::Flags::Visible); }
@@ -289,7 +289,7 @@ struct Triangle
     void SetEdgeFlags(bool const* visible) { m_edgeFlags[0] = visible[0] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; 
                                              m_edgeFlags[1] = visible[1] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible;
                                              m_edgeFlags[2] = visible[2] ? MeshEdge::Flags::Visible : MeshEdge::Flags::Invisible; }
-    bool GetEdgeVisible(size_t index) const { BeAssert(index < 3); return m_edgeFlags[index] == MeshEdge::Flags::Visible; }
+    bool GetEdgeVisible(size_t index) const { BeAssert(index < 3); if(index>2) index=2; return m_edgeFlags[index] == MeshEdge::Flags::Visible; }
 
     bool IsDegenerate() const  { return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2]; }                                   
 };

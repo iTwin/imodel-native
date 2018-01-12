@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RepositoryManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/LocksManager.h>
 #include <DgnPlatform/DgnCodesManager.h>
+#include <BeSQLite/ChangeSet.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -557,6 +558,88 @@ namespace RepositoryJson
     DGNPLATFORM_EXPORT void RequestPurposeToJson(JsonValueR value, IBriefcaseManager::RequestPurpose purpose);
 } // namespace RepositoryJson
 //__PUBLISH_SECTION_START__
+
+struct IOptimisticConcurrencyControl;
+
+/* A concurrency control policy */
+struct IConcurrencyControl : IRefCounted
+    {
+    virtual IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() = 0;
+    virtual void _ConfigureBriefcaseManager(IBriefcaseManager&) = 0;
+    virtual void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) = 0;
+    virtual void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) = 0;
+    };
+
+/* The pessimistic concurrency control policy. Locks and codes must be acquired before a changeset can be pushed to iModelHub. */
+struct PessimisticConcurrencyControl : RefCounted<IConcurrencyControl>
+    {
+    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return nullptr;}
+    void _ConfigureBriefcaseManager(IBriefcaseManager&) override {}
+    void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) override {}
+    void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override {}
+    };
+
+/* An optimistic concurrency control policy */
+struct IOptimisticConcurrencyControl : IConcurrencyControl
+    {
+    virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) = 0;
+    };
+
+/* An optimistic concurrency control policy */
+struct OptimisticConcurrencyControlBase : IOptimisticConcurrencyControl
+    {
+    DgnLockSet m_locks;
+
+    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return this;}
+    DGNPLATFORM_EXPORT void _ConfigureBriefcaseManager(IBriefcaseManager& b) override;
+    DGNPLATFORM_EXPORT void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) override;
+    DGNPLATFORM_EXPORT void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override;
+    };
+
+/* An optimistic concurrency control policy where conflict-resolution is controlled by policy settings. */
+struct OptimisticConcurrencyControl : RefCounted<OptimisticConcurrencyControlBase>
+    {
+    /** How to handle a conflict */
+    enum class OnConflict
+        {
+        /** Reject the incoming change */
+        RejectIncomingChange = 0,
+        /** Accept the incoming change */
+        AcceptIncomingChange = 1,
+        };
+        
+    /** The options for how conflicts are to be handled during change-merging in an OptimisticConcurrencyControlPolicy.
+     * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
+     * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
+     */
+    struct Policy
+        {
+        /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
+        OnConflict updateVsUpdate;
+        /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
+        OnConflict updateVsDelete;
+        /** What to do with the incoming change in the case where an entity was deleted locally and would be updated by the incoming change. */
+        OnConflict deleteVsUpdate;
+        };
+
+    private:
+    Policy m_policy;
+    bvector<DgnElementId> m_conflictingElementsRejected;
+    bvector<DgnElementId> m_conflictingElementsAccepted;
+
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) override;
+
+    BeSQLite::ChangeSet::ConflictResolution HandleConflict(OptimisticConcurrencyControl::OnConflict, Utf8CP tableName, BeSQLite::Changes::Change, BeSQLite::DbOpcode, bool indirect);
+
+    public:
+    DGNPLATFORM_EXPORT OptimisticConcurrencyControl(Policy conflicts);
+
+    bvector<DgnElementId> const& GetConflictingElementsRejected() const {return m_conflictingElementsRejected;}
+    bvector<DgnElementId> const& GetConflictingElementsAccepted() const {return m_conflictingElementsAccepted;}
+    void ConflictsProcessed() {m_conflictingElementsRejected.clear(); m_conflictingElementsAccepted.clear();}
+    };
+
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
