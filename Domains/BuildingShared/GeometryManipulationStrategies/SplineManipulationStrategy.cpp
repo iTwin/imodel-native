@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
-#include "PublicApi\SplineManipulationStrategy.h"
 
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -42,6 +41,9 @@ ICurvePrimitivePtr SplineControlPointsManipulationStrategy::_FinishPrimitive() c
         knots.push_back(i);
 
     MSBsplineCurvePtr bspline = MSBsplineCurve::CreateFromPolesAndOrder(poles, &weights, &knots, order, false, false);
+    if (bspline.IsNull())
+        return nullptr;
+
     return ICurvePrimitive::CreateBsplineCurve(bspline);
     }
 
@@ -67,4 +69,22 @@ ICurvePrimitivePtr SplineThroughPointsManipulationStrategy::_FinishPrimitive() c
         return nullptr;
 
     return ICurvePrimitive::CreateInterpolationCurveSwapFromSource(*curve);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SplineThroughPointsManipulationStrategy::SetStartTangent(DVec3d startTangent) 
+    {
+    startTangent.Normalize();
+    _SetStartTangent(startTangent); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void SplineThroughPointsManipulationStrategy::SetEndTangent(DVec3d endTangent) 
+    { 
+    endTangent.Normalize();
+    _SetEndTangent(endTangent); 
     }

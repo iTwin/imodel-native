@@ -29,6 +29,18 @@ void CurvePrimitiveManipulationStrategy::_AppendKeyPoint
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveManipulationStrategy::_AppendKeyPoints
+(
+    bvector<DPoint3d> const& newKeyPoints
+)
+    {
+    for (DPoint3dCR keyPoint : newKeyPoints)
+        _AppendKeyPoint(keyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 void CurvePrimitiveManipulationStrategy::_InsertKeyPoint
@@ -89,6 +101,16 @@ void CurvePrimitiveManipulationStrategy::_RemoveKeyPoint
         }
 
     m_keyPoints.erase(&m_keyPoints[index]);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveManipulationStrategy::_Clear()
+    {
+    m_keyPoints.clear();
+    m_keyPointsWithDynamicKeyPoint.clear();
+    m_dynamicKeyPointSet = false;
     }
 
 //--------------------------------------------------------------------------------------
@@ -373,4 +395,37 @@ DPoint3d CurvePrimitiveManipulationStrategy::GetFirstKeyPoint() const
 CurvePrimitiveManipulationStrategyPtr CurvePrimitiveManipulationStrategy::Clone() const
     {
     return _Clone();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLinePlacementStrategy
+(
+    LinePlacementStrategyType strategyType
+)
+    {
+    return _CreateLinePlacementStrategy(strategyType);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateArcPlacementStrategy
+(
+    ArcPlacementStrategyType strategyType
+)
+    {
+    return _CreateArcPlacementStrategy(strategyType);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineStringPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLineStringPlacementStrategy
+(
+    LineStringPlacementStrategyType strategyType
+)
+    {
+    return _CreateLineStringPlacementStrategy(strategyType);
     }

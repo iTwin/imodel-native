@@ -25,6 +25,47 @@ ArcPlacementStrategy::ArcPlacementStrategy
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyPtr ArcPlacementStrategy::Create
+(
+    ArcPlacementStrategyType strategyType
+)
+    {
+    switch (strategyType)
+        {
+        case ArcPlacementStrategyType::CenterStart :
+            return ArcCenterStartPlacementStrategy::Create();
+        case ArcPlacementStrategyType::StartCenter :
+            return ArcStartCenterPlacementStrategy::Create();
+        case ArcPlacementStrategyType::StartMidEnd :
+            return ArcStartMidEndPlacementStrategy::Create();
+        case ArcPlacementStrategyType::StartEndMid :
+            return ArcStartEndMidPlacementStrategy::Create();
+        default :
+            BeAssert(false);
+            return nullptr;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyPtr ArcPlacementStrategy::Create
+(
+    ArcPlacementStrategyType strategyType, 
+    ArcManipulationStrategyR manipulationStrategy
+)
+    {
+    ArcPlacementStrategyPtr placementStrategy = Create(strategyType);
+    if (placementStrategy.IsNull())
+        return nullptr;
+
+    placementStrategy->m_manipulationStrategy = &manipulationStrategy;
+    return placementStrategy;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 DPoint3d ArcPlacementStrategy::CalculateVec90KeyPoint

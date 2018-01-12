@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineManipulationStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineControlPointsManipulationStrategy)
-BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SplineThroughPointsManipulationStrategy)
-
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //=======================================================================================
@@ -62,8 +58,8 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
     DEFINE_T_SUPER(SplineManipulationStrategy)
 
     private:
-        DVec3d m_startTangent = DVec3d::From(0, 0, 0);
-        DVec3d m_endTangent = DVec3d::From(0, 0, 0);
+        DVec3d m_startTangent = DVec3d::From(1, 0, 0);
+        DVec3d m_endTangent = DVec3d::From(1, 0, 0);
 
         SplineThroughPointsManipulationStrategy() : T_Super() {}
 
@@ -72,11 +68,11 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { BeAssert(false && "Not implemented"); return nullptr; }
 
         void _SetStartTangent(DVec3d startTangent) { m_startTangent = startTangent; }
-        void _RemoveStartTangent() { m_startTangent.Zero(); }
+        void _RemoveStartTangent() { m_startTangent.Zero(); m_startTangent.Normalize(); }
         DVec3d _GetStartTangent() const { return m_startTangent; }
 
         void _SetEndTangent(DVec3d endTangent) { m_endTangent = endTangent; }
-        void _RemoveEndTangent() { m_endTangent.Zero(); }
+        void _RemoveEndTangent() { m_endTangent.Zero(); m_endTangent.Normalize(); }
         DVec3d _GetEndTangent() const { return m_endTangent; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return Create(); };
@@ -84,11 +80,11 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
     public:
         static SplineThroughPointsManipulationStrategyPtr Create() { return new SplineThroughPointsManipulationStrategy(); }
 
-        void SetStartTangent(DVec3d startTangent) { _SetStartTangent(startTangent); }
+        void SetStartTangent(DVec3d startTangent);
         void RemoveStartTangent() { _RemoveStartTangent(); }
-        DVec3d GetStartTangent() const { _GetStartTangent(); }
+        DVec3d GetStartTangent() const { return _GetStartTangent(); }
 
-        void SetEndTangent(DVec3d endTangent) { _SetEndTangent(endTangent); }
+        void SetEndTangent(DVec3d endTangent);
         void RemoveEndTangent() { _RemoveEndTangent(); }
         DVec3d GetEndTangent() const { return _GetEndTangent(); }
     };

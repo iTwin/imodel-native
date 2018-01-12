@@ -30,6 +30,16 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     GMS_TRYGET_PROPERTY_TYPE(value_type)
 
 //=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               01/2018
+//=======================================================================================
+struct GeometryManipulationStrategyProperty
+    {
+    protected:
+        GeometryManipulationStrategyProperty() {}
+        virtual ~GeometryManipulationStrategyProperty() {}
+    };
+
+//=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
 struct GeometryManipulationStrategyBase : RefCountedBase
@@ -41,12 +51,18 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         friend struct GeometryPlacementStrategy;
 
     protected:
+        virtual void _OnPropertySet(Utf8CP key) {}
+
         GMS_V_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(double)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(DVec3d)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(DPlane3d)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElementId)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(Utf8String)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(bvector<double>)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(bvector<Utf8String>)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(GeometryManipulationStrategyProperty)
 
         virtual bvector<DPoint3d> _GetKeyPoints() const = 0;
 
@@ -60,9 +76,13 @@ struct GeometryManipulationStrategyBase : RefCountedBase
         GMS_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_SET_TRYGET_PROPERTY_TYPE(double)
         GMS_SET_TRYGET_PROPERTY_TYPE(DVec3d)
+        GMS_SET_TRYGET_PROPERTY_TYPE(DPlane3d)
         GMS_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElementId)
         GMS_SET_TRYGET_PROPERTY_TYPE(Dgn::DgnElement)
         GMS_SET_TRYGET_PROPERTY_TYPE(Utf8String)
+        GMS_SET_TRYGET_PROPERTY_TYPE(bvector<double>)
+        GMS_SET_TRYGET_PROPERTY_TYPE(bvector<Utf8String>)
+        GMS_SET_TRYGET_PROPERTY_TYPE(GeometryManipulationStrategyProperty)
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;
 

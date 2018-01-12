@@ -35,6 +35,17 @@ void GeometryManipulationStrategy::AppendKeyPoint
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::AppendKeyPoints
+(
+    bvector<DPoint3d> const& newKeyPoints
+)
+    {
+    ManipulateKeyPoint([&] { _AppendKeyPoints(newKeyPoints); });
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryManipulationStrategy::InsertKeyPoint
@@ -169,4 +180,12 @@ void GeometryManipulationStrategy::UpsertDynamicKeyPoints
 )
     {
     ManipulateKeyPoint([&] { _UpsertDynamicKeyPoints(newDynamicKeyPoints, index); });
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::Clear()
+    {
+    ManipulateKeyPoint([&] { _Clear(); });
     }

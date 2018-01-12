@@ -64,6 +64,7 @@
 
     <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke">
         <SubPart PartName="BuildingUtils"/>
+        <SubPart PartName="BuildingUnits"/>
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
