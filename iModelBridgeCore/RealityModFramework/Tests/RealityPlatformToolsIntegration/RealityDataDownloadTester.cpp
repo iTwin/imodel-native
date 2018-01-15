@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/RealityPlatformTools/RealityDataDownloadTester.cpp $
+//:>     $Source: Tests/RealityPlatformToolsIntegration/RealityDataDownloadTester.cpp $
 //:>
 //:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>

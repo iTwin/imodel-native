@@ -753,7 +753,23 @@
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="SpatioTemporalSelector" SourceName="Delivery/UnitTests/Objects/SpatioTemporalSelector"/>
         </Bindings>
     </Part>
-
+  
+    <Part Name="RealityPlatformToolsIntegrationTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityPlatformToolsIntegration">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="RealityPlatformTools"/>
+        <Bindings>
+          <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RealityPlatformToolsIntegration" SourceName="Delivery/UnitTests/Objects/RealityPlatformToolsIntegration"/>
+        </Bindings>
+    </Part>
+  
+    <Part Name="RealityAdminIntegrationTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=RealityAdminIntegration">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="RealityAdmin"/>
+        <Bindings>
+          <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RealityAdminIntegration" SourceName="Delivery/UnitTests/Objects/RealityAdminIntegration"/>
+        </Bindings>
+    </Part>
+  
     <!-- Define a test collection product -->
     <Part Name="Tests">
         <SubPart PartName="RealityPlatformUnitTests"/>
@@ -761,6 +777,12 @@
         <SubPart PartName="RealityAdminUnitTests"/>
         <SubPart PartName="CrawlerLibUnitTests"/>
         <SubPart PartName="SpatioTemporalSelectorTests"/>
+        <!--<SubPart PartName="IntegrationTests"/>--> <!--Uncomment this SubPart to build & run integration tests-->
+    </Part>
+    
+    <Part Name="IntegrationTests">
+        <SubPart PartName="RealityAdminIntegrationTests"/>
+        <SubPart PartName="RealityPlatformToolsIntegrationTests"/>
     </Part>
 
     <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
