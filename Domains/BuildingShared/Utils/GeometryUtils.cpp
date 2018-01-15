@@ -1100,13 +1100,10 @@ DEllipse3d GeometryUtils::CreateArc(double radius, double baseAngle, double exte
 
     DPoint3d center = DPoint3d::FromZero();
 
-    DPoint3d start = center;
-    GeometryUtils::AddRotatedVectorToPoint(start, DVec3d::FromStartEnd(center, DPoint3d::From(radius, 0.0)), (baseAngle + extendAngle));
+    DVec3d xVec = DVec3d::From(radius, 0.0, 0.0);
+    DVec3d yVec = DVec3d::From(0.0, radius, 0.0);
 
-    DPoint3d end = center;
-    GeometryUtils::AddRotatedVectorToPoint(end, DVec3d::FromStartEnd(center, DPoint3d::From(radius, 0.0)), -extendAngle);
-
-    return CreateDEllipse3dArc(center, start, end, false);
+    return DEllipse3d::FromVectors(center, xVec, yVec, -extendAngle, baseAngle + extendAngle);
     }
 
 //---------------------------------------------------------------------------------------
