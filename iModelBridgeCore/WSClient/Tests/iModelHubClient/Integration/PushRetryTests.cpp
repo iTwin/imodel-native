@@ -339,3 +339,61 @@ TEST_F(PushRetryTests, DownloadedChangeSetInvalid)
     pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
     EXPECT_SUCCESS(pushResult);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PushRetryTests, CreateChangeSetTimeoutsButSucceedsOnServer)
+    {
+    //Create model in m_briefcase. This should also acquire locks automatically.
+    PhysicalModelPtr model = CreateModel(TestCodeName().c_str(), m_briefcase->GetDgnDb());
+    IHttpHandlerPtr orginalHandler = m_connection->GetHttpHandler();
+
+    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
+    mockHandler->ForAnyRequest([=](Http::RequestCR request)
+        {
+        Http::Response response = orginalHandler->_PerformRequest(request)->GetResult();
+        if (request.GetUrl().EndsWith("ChangeSet"))
+            {
+            m_connection->SetRepositoryClient(m_originalClient);
+            return TimeoutResponse(request);
+            }
+        return response;
+        });
+    
+    // Set other wsclient
+    IWSRepositoryClientPtr newClient = iModelHubHelpers::CreateWSClient(s_info, mockHandler);
+    m_connection->SetRepositoryClient(newClient);
+
+    ChangeSetsResult pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    EXPECT_SUCCESS(pushResult);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PushRetryTests, ConfirmChangeSetTimeoutsButSucceedsOnServer)
+    {
+    //Create model in m_briefcase. This should also acquire locks automatically.
+    PhysicalModelPtr model = CreateModel(TestCodeName().c_str(), m_briefcase->GetDgnDb());
+    IHttpHandlerPtr orginalHandler = m_connection->GetHttpHandler();
+
+    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
+    mockHandler->ForAnyRequest([=](Http::RequestCR request)
+        {
+        Http::Response response = orginalHandler->_PerformRequest(request)->GetResult();
+        if (request.GetUrl().EndsWith("$changeset"))
+            {
+            m_connection->SetRepositoryClient(m_originalClient);
+            return TimeoutResponse(request);
+            }
+        return response;
+        });
+    
+    // Set other wsclient
+    IWSRepositoryClientPtr newClient = iModelHubHelpers::CreateWSClient(s_info, mockHandler);
+    m_connection->SetRepositoryClient(newClient);
+
+    ChangeSetsResult pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    EXPECT_SUCCESS(pushResult);
+    }
