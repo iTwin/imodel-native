@@ -419,3 +419,14 @@ LineStringPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLineStr
     {
     return _CreateLineStringPlacementStrategy(strategyType);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateSplinePlacementStrategy
+(
+    SplinePlacementStrategyType strategyType
+)
+    {
+    return _CreateSplinePlacementStrategy(strategyType);
+    }

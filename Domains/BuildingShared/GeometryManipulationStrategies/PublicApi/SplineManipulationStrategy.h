@@ -23,6 +23,8 @@ struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override { return true; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override { return true; }
+
+        SplinePlacementStrategyPtr _CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType) override;
     };
 
 //=======================================================================================

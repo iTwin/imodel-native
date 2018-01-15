@@ -165,7 +165,8 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateInterpolationCurves)
     CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 3 },{ 2, 4, 5 } }) });
     CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 3 },{ 2, 4, 5 } }),
                                                                                         TestUtils::CreateInterpolationCurve({ { 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 },{ 0, 4, 5 } }, DVec3d::From(1, 2, 3), DVec3d::From(5, 4, 2)) });
-    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::InterpolationCurve);
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
+    strategy->ChangeDefaultPlacementStrategy(SplinePlacementStrategyType::ThroughPoints);
     ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
 
     strategy->AddKeyPoint({ 0, 0, 0 });
@@ -267,7 +268,8 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineInterpolationCurveArc)
     ASSERT_TRUE(cv1.IsValid()) << "Failed to create curve vector";
     ASSERT_TRUE(cv1->IsSameStructureAndGeometry(*expectedCV1)) << "Curve vector is incorrect";
 
-    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::InterpolationCurve);
+    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
+    strategy->ChangeDefaultPlacementStrategy(SplinePlacementStrategyType::ThroughPoints);
     SplineThroughPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineThroughPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
     ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
 
@@ -416,7 +418,7 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToSplineToInterpolationCu
     ASSERT_TRUE(cv0.IsValid()) << "Failed to create curve vector";
     ASSERT_TRUE(cv0->IsSameStructureAndGeometry(*expectedCV0)) << "Curve vector is incorrect";
 
-    strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::InterpolationCurve);
+    strategy->ChangeDefaultPlacementStrategy(SplinePlacementStrategyType::ThroughPoints);
     SplineThroughPointsPlacementStrategyPtr currentStrategy = dynamic_cast<SplineThroughPointsPlacementStrategy *>(strategy->GetCurrentCurvePrimitivePlacementStrategy().get());
     ASSERT_TRUE(currentStrategy.IsValid()) << "Current strategy should be spline strategy";
     currentStrategy->SetEndTangent(DVec3d::From(5, 2, 7));

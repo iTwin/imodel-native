@@ -15,8 +15,7 @@ enum class DefaultNewGeometryType
     Line,
     LineString,
     Arc,
-    Spline,
-    InterpolationCurve
+    Spline
     };
 
 #define CV_PROPERTY_OVERRIDE(value_type) \
@@ -39,7 +38,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         LinePlacementStrategyType m_defaultLinePlacementStrategyType;
         ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
         LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
-
+        SplinePlacementStrategyType m_defaultSplinePlacementStrategyType;
+       
         CurvePrimitivePlacementStrategyPtr GetPlacementStrategy(CurvePrimitiveManipulationStrategyR manipulationStrategy) const;
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
@@ -94,9 +94,11 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
 
         bool FinishContiniousPrimitive();
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
-        void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(SplinePlacementStrategyType newPlacementStrategyType);
     };
 
 END_BUILDING_SHARED_NAMESPACE

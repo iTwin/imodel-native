@@ -50,9 +50,6 @@ void CurveVectorPlacementStrategy::ChangeDefaultNewGeometryType
 // @bsimethod                                    Haroldas Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 bool CurveVectorPlacementStrategy::FinishContiniousPrimitive()
-(
-    LinePlacementStrategyType newPlacementStrategyType
-)
     {
     return m_manipulationStrategy->FinishContiniousPrimitive();
     }
@@ -90,3 +87,15 @@ void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
     {
     m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
+(
+    SplinePlacementStrategyType newPlacementStrategyType
+)
+    {
+    return m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
+    }
+
