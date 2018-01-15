@@ -181,3 +181,11 @@ void GeometryManipulationStrategy::UpsertDynamicKeyPoints
     {
     ManipulateKeyPoint([&] { _UpsertDynamicKeyPoints(newDynamicKeyPoints, index); });
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategy::Clear()
+    {
+    ManipulateKeyPoint([&] { _Clear(); });
+    }

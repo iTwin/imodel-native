@@ -74,6 +74,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _PopKeyPoint() override;
         virtual void _RemoveKeyPoint(size_t index) override { BeAssert(false && "Not implemented"); }
+        virtual void _Clear() override;
 
         CV_PROPERTY_OVERRIDE(int)
         CV_PROPERTY_OVERRIDE(double)
