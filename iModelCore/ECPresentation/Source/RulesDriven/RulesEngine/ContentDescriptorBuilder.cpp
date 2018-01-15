@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentDescriptorBuilder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -442,7 +442,11 @@ public:
         : ContentSpecificationsHandler(context), m_specification(specification), m_isRecursiveSpecification(false),
         m_propertyInfos(GetContext().GetSchemaHelper(), GetContext().GetRuleset(), specification)
         {
-        m_descriptor = ContentDescriptor::Create(GetContext().GetPreferredDisplayType());
+        RulesDrivenECPresentationManager::ContentOptions options(GetContext().GetRuleset().GetRuleSetId());
+        m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), options.GetJson(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType());
+
+        if (nullptr != GetContext().GetSelectionInfo())
+            m_descriptor->SetSelectionInfo(*GetContext().GetSelectionInfo());
         if (nullptr != m_specification)
             QueryBuilderHelpers::ApplyDefaultContentFlags(*m_descriptor, GetContext().GetPreferredDisplayType(), *m_specification);
         }
@@ -450,18 +454,18 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void HandleSpecification(SelectedNodeInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
+    void HandleSpecification(SelectedNodeInstancesSpecificationCR spec, IParsedInput const& input)
         {
-        ContentSpecificationsHandler::HandleSpecification(spec, selection);
+        ContentSpecificationsHandler::HandleSpecification(spec, input);
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void HandleSpecification(ContentRelatedInstancesSpecificationCR spec, IParsedSelectionInfo const& selection)
+    void HandleSpecification(ContentRelatedInstancesSpecificationCR spec, IParsedInput const& input)
         {
         m_isRecursiveSpecification = spec.IsRecursive();
-        ContentSpecificationsHandler::HandleSpecification(spec, selection);
+        ContentSpecificationsHandler::HandleSpecification(spec, input);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -522,20 +526,20 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(SelectedNodeInstancesSpecificationCR specification, IParsedSelectionInfo const& selection) const
+ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(SelectedNodeInstancesSpecificationCR specification, IParsedInput const& input) const
     {
     ContentDescriptorBuilderImpl builder(m_context, &specification);
-    builder.HandleSpecification(specification, selection);
+    builder.HandleSpecification(specification, input);
     return builder.GetDescriptor();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(ContentRelatedInstancesSpecificationCR specification, IParsedSelectionInfo const& selection) const
+ContentDescriptorPtr ContentDescriptorBuilder::CreateDescriptor(ContentRelatedInstancesSpecificationCR specification, IParsedInput const& input) const
     {
     ContentDescriptorBuilderImpl builder(m_context, &specification);
-    builder.HandleSpecification(specification, selection);
+    builder.HandleSpecification(specification, input);
     return builder.GetDescriptor();
     }
 

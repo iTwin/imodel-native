@@ -2,7 +2,7 @@
 |
 |     $Source: Source/Selection.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -520,10 +520,11 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
 
     // create the selection info
     SelectionInfo selection(*m_manager, evt);
+    INavNodeKeysContainerCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetDb()) : m_manager->GetSelection(evt.GetConnection().GetDb());
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetDb(), contentDisplayType, selection, contentOptions).get();
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetDb(), contentDisplayType, *inputKeys, &selection, contentOptions).get();
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);
@@ -535,7 +536,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(evt.GetConnection().GetDb(), *descriptor, selection, PageOptions(), contentOptions).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     if (content.IsNull())
         {
         _SelectInstances(evt, selectedKeys);

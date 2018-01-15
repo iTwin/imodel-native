@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentClassesLocater.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -91,7 +91,7 @@ static void SplitPolymorphicClassesList(bvector<ECClassCP>& result, TList const&
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +===============+===============+===============+===============+===============+======*/
-struct ClassSelectionInfo : IParsedSelectionInfo
+struct ClassInput : IParsedInput
 {
 private:
     bvector<ECClassCP> m_classes;
@@ -106,7 +106,7 @@ protected:
         return s_empty;
         }
 public:
-    ClassSelectionInfo(ECDbCR db, NavNodeKeyListCR keys)
+    ClassInput(ECDbCR db, NavNodeKeyListCR keys)
         {
         for (NavNodeKeyCPtr const& key : keys)
             {
@@ -146,7 +146,7 @@ struct ContentClassesLocaterImpl : ContentSpecificationsHandler, PresentationRul
 {
 private:
     bvector<SelectClassInfo> m_classes;
-    IParsedSelectionInfo const* m_selectionInfo;
+    IParsedInput const* m_inputInfo;
     uint32_t m_handledSpecifications;
     ContentSpecificationCP m_currentSpecification;
 
@@ -164,7 +164,7 @@ protected:
             return;
 
         m_currentSpecification = &specification;
-        HandleSpecification(specification, *m_selectionInfo);
+        HandleSpecification(specification, *m_inputInfo);
         m_currentSpecification = nullptr;
         m_handledSpecifications++;
         }
@@ -223,7 +223,7 @@ protected:
 
 public:
     ContentClassesLocaterImpl(ContentClassesLocater::Context& context) : ContentSpecificationsHandler(context), m_currentSpecification(nullptr) {}
-    void SetCurrentSelection(IParsedSelectionInfo const* selection) {m_selectionInfo = selection;}
+    void SetCurrentInput(IParsedInput const* input) {m_inputInfo = input;}
     bvector<SelectClassInfo> const& GetClasses() const {return m_classes;}
 };
 
@@ -249,18 +249,18 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> c
 bvector<SelectClassInfo> ContentClassesLocater::Locate(bvector<ECClassCP> const& classes) const
     {
     RulesPreprocessor::ContentRuleParameters params(m_context.GetConnections(), m_context.GetConnection(), *NavNodeKeyListContainer::Create(GetClassKeys(classes)), 
-        m_context.GetPreferredDisplayType(), "", false, m_context.GetRuleset(), m_context.GetUserSettings(), 
+        m_context.GetPreferredDisplayType(), nullptr, m_context.GetRuleset(), m_context.GetUserSettings(), 
         nullptr, m_context.GetECExpressionsCache(), m_context.GetNodesLocater());
     ContentRuleSpecificationsList ruleSpecs = RulesPreprocessor::GetContentSpecifications(params);
 
     ContentClassesLocaterImpl locater(m_context);
     for (ContentRuleSpecification const& rule : ruleSpecs)
         {
-        ClassSelectionInfo selection(m_context.GetConnection().GetDb(), rule.GetMatchingSelectedNodeKeys());
-        locater.SetCurrentSelection(&selection);
+        ClassInput input(m_context.GetConnection().GetDb(), rule.GetMatchingSelectedNodeKeys());
+        locater.SetCurrentInput(&input);
         for (ContentSpecificationCP spec : rule.GetRule().GetSpecifications())
             spec->Accept(locater);
-        locater.SetCurrentSelection(nullptr);
+        locater.SetCurrentInput(nullptr);
         }
 
     return locater.GetClasses();

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManagerImpl.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -696,7 +696,7 @@ bool RulesDrivenECPresentationManagerImpl::_HasChild(IConnectionCR, NavNodeCR pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, SelectionInfo const& selectionInfo, ContentOptions const& options)
+SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentProviderKey const& key, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider]", NativeLogging::LOG_TRACE);
     RefCountedPtr<PerformanceLogger> _l2;
@@ -725,18 +725,18 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ECSqlStatementCache& statementCache = m_statementCache->GetCache(connection.GetDb());
 
     // set up the provider context
-    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, key.GetPreferredDisplayType(), *m_nodesCache,
+    ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, key.GetPreferredDisplayType(), inputKeys, *m_nodesCache,
         GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, *m_nodesFactory, GetLocalState());
     context->SetQueryContext(m_connections, connection, statementCache, *m_customFunctions);
     context->SetLocalizationContext(GetLocalizationProvider());
-    context->SetSelectionContext(selectionInfo);
     context->SetPropertyFormattingContext(GetECPropertyFormatter());
     context->SetCancelationToken(&cancelationToken);
+    if (nullptr != selectionInfo)
+        context->SetSelectionInfo(*selectionInfo);
 
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
-    RulesPreprocessor::ContentRuleParameters params(m_connections, connection, selectionInfo.GetSelectedNodeKeys(), key.GetPreferredDisplayType(), selectionInfo.GetSelectionProviderName(),
-        selectionInfo.IsSubSelection(), *ruleset, settings, &context->GetUsedSettingsListener(), ecexpressionsCache, *m_nodesCache);
+    RulesPreprocessor::ContentRuleParameters params(m_connections, connection, inputKeys, key.GetPreferredDisplayType(), selectionInfo, *ruleset, settings, &context->GetUsedSettingsListener(), ecexpressionsCache, *m_nodesCache);
     ContentRuleSpecificationsList specs = RulesPreprocessor::GetContentSpecifications(params);
     _l2 = nullptr;
 
@@ -752,10 +752,10 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options)
+SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(IConnectionCR connection, ICancelationTokenCR cancelationToken, ContentDescriptorCR descriptor, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options)
     {
-    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), selectionInfo);
-    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, key, selectionInfo, options);
+    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), inputKeys, selectionInfo);
+    SpecificationContentProviderCPtr cachedProvider = GetContentProvider(connection, cancelationToken, key, inputKeys, selectionInfo, options);
     if (cachedProvider.IsNull())
         return nullptr;
 
@@ -802,25 +802,27 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken)
+ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType,
+    INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentDescriptor]", NativeLogging::LOG_TRACE);
 
     if (nullptr == preferredDisplayType || 0 == *preferredDisplayType)
         preferredDisplayType = ContentDisplayType::Undefined;
 
-    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, selectionInfo);
-    ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, selectionInfo, options);
+    ContentProviderKey key(connection.GetId(), options.GetRulesetId(), preferredDisplayType, inputKeys, selectionInfo);
+    ContentProviderCPtr provider = GetContentProvider(connection, cancelationToken, key, inputKeys, selectionInfo, options);
     return provider.IsValid() ? provider->GetContentDescriptor() : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOpts, ContentOptions const& options, ICancelationTokenCR cancelationToken)
+ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContent]", NativeLogging::LOG_TRACE);
-    ContentProviderPtr provider = GetContentProvider(connection, cancelationToken, descriptor, selectionInfo, options);
+    ContentProviderPtr provider = GetContentProvider(descriptor.GetConnection(), cancelationToken, descriptor, descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo(),
+        descriptor.GetOptions());
     if (provider.IsNull() || nullptr == provider->GetContentDescriptor())
         {
         LoggingHelper::LogMessage(Log::Content, "No content", NativeLogging::LOG_ERROR);
@@ -848,10 +850,11 @@ ContentCPtr RulesDrivenECPresentationManagerImpl::_GetContent(IConnectionCR conn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken)
+size_t RulesDrivenECPresentationManagerImpl::_GetContentSetSize(ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken)
     {
     RefCountedPtr<PerformanceLogger> _l1 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentSetSize]", NativeLogging::LOG_TRACE);
-    ContentProviderPtr provider = GetContentProvider(connection, cancelationToken, descriptor, selectionInfo, options);
+    ContentProviderPtr provider = GetContentProvider(descriptor.GetConnection(), cancelationToken, descriptor, descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo(),
+        descriptor.GetOptions());
     if (provider.IsNull() || nullptr == provider->GetContentDescriptor())
         {
         LoggingHelper::LogMessage(Log::Content, "No content", NativeLogging::LOG_ERROR);

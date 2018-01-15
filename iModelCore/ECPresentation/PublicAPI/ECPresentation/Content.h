@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/Content.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,42 +28,30 @@ struct SelectionInfo
 {
 private:
     Utf8String m_selectionProviderName;
-    INavNodeKeysContainerCPtr m_keys;
     bool m_isSubSelection;
-    bool m_isValid;
 
 public:
-    //! Constructor. Creates an invalid selection info object.
-    SelectionInfo() : m_isValid(false), m_isSubSelection(false) {}
-
-    //! Move constructor.
-    SelectionInfo(SelectionInfo&& other)
-        : m_isValid(other.m_isValid), m_selectionProviderName(std::move(other.m_selectionProviderName)), 
-        m_isSubSelection(other.m_isSubSelection), m_keys(std::move(other.m_keys))
-        {}
-
-    //! Copy constructor.
-    SelectionInfo(SelectionInfo const& other)
-        : m_isValid(other.m_isValid), m_selectionProviderName(other.m_selectionProviderName), 
-        m_isSubSelection(other.m_isSubSelection), m_keys(other.m_keys)
-        {}
-
     //! Constructor.
     //! @param[in] providerName Name of the selection provider which last changed the selection.
     //! @param[in] isSubSelection Did the last selection change happen in sub-selection.
-    //! @param[in] selectedNodeKeys The selection.
-    SelectionInfo(Utf8String providerName, bool isSubSelection, INavNodeKeysContainerCR selectedNodeKeys)
-        : m_isValid(true), m_selectionProviderName(providerName), m_isSubSelection(isSubSelection), m_keys(&selectedNodeKeys)
+    SelectionInfo(Utf8String providerName, bool isSubSelection)
+        : m_selectionProviderName(providerName), m_isSubSelection(isSubSelection)
         {}
-    
+
     //! Constructor. Initializes the instance from the provided selection event.
     //! @param[in] selectionProvider The provider used to get the current selection.
     //! @param[in] evt The last selection event.
     ECPRESENTATION_EXPORT SelectionInfo(ISelectionProvider const& selectionProvider, SelectionChangedEventCR evt);
 
-    //! Constructor. Initializes the instance from the provided list of ECClasses.
-    //! @param[in] classes List of ECClasses to create the selection info for.
-    ECPRESENTATION_EXPORT SelectionInfo(bvector<ECN::ECClassCP> const& classes);
+    //! Move constructor.
+    SelectionInfo(SelectionInfo&& other)
+        : m_selectionProviderName(std::move(other.m_selectionProviderName)), m_isSubSelection(other.m_isSubSelection)
+        {}
+
+    //! Copy constructor.
+    SelectionInfo(SelectionInfo const& other)
+        : m_selectionProviderName(other.m_selectionProviderName), m_isSubSelection(other.m_isSubSelection)
+        {}
 
     //! Compare this selection event info object with the supplied one.
     ECPRESENTATION_EXPORT bool operator==(SelectionInfo const& other) const;
@@ -77,17 +65,11 @@ public:
     //! Move assignment operator.
     ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo&& other);
 
-    //! Is this struct valid.
-    bool IsValid() const {return m_isValid;}
-
     //! Get the name of the selection source which caused the last selection change.
     Utf8StringCR GetSelectionProviderName() const {return m_selectionProviderName;}
 
     //! Did the last selection change happen in sub-selection.
     bool IsSubSelection() const {return m_isSubSelection;}
-
-    //! Get the selection.
-    INavNodeKeysContainerCR GetSelectedNodeKeys() const {return *m_keys;}
 };
 
 //=======================================================================================
@@ -871,11 +853,13 @@ private:
     SortDirection m_sortDirection;
     int m_contentFlags;
     Utf8String m_filterExpression;
+    IConnectionCR m_connection;
+    INavNodeKeysContainerCPtr m_inputKeys;
+    SelectionInfo const* m_selectionInfo;
+    Json::Value m_options;
 
 private:
-    ContentDescriptor(Utf8String preferredDisplayType) 
-        : m_preferredDisplayType(preferredDisplayType), m_contentFlags(0), m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending)
-        {}
+    ECPRESENTATION_EXPORT ContentDescriptor(IConnectionCR connection, JsonValueCR options, INavNodeKeysContainerCR input, Utf8String preferredDisplayType);
     ECPRESENTATION_EXPORT ContentDescriptor(ContentDescriptorCR other);
     ECPRESENTATION_EXPORT int GetFieldIndex(Utf8CP name) const;
     void OnFlagAdded(ContentFlags flag);
@@ -888,8 +872,12 @@ protected:
 
 public:
     //! Creates a content descriptor.
+    //! @param[in] connection The connection to create the descriptor for.
+    //! @param[in] options The options to create the descriptor with.
+    //! @param[in] input The input to create the descriptor for.
     //! @param[in] preferredDisplayType The display type to create the descriptor for.
-    static ContentDescriptorPtr Create(Utf8CP preferredDisplayType = ContentDisplayType::Undefined) {return new ContentDescriptor(preferredDisplayType);}
+    static ContentDescriptorPtr Create(IConnectionCR connection, JsonValueCR options, INavNodeKeysContainerCR input, Utf8CP preferredDisplayType = ContentDisplayType::Undefined)
+        {return new ContentDescriptor(connection, options, input, preferredDisplayType);}
 
     //! Copies the supplied content descriptor.
     //! @param[in] other The descriptor to copy.
@@ -910,6 +898,16 @@ public:
 
     //! Get the preferred display type which this descriptor is created for.
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
+    //! Get node keys which this descriptor is created for.
+    INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputKeys;}
+    //! Get connection which this descriptor is created for.
+    IConnectionCR GetConnection() const {return m_connection;}
+    //! Get content options which this descriptor is created using.
+    JsonValueCR GetOptions() const {return m_options;}
+    //! Get selection info which this descriptor is created with. (returns nullptr if no selection info was provided)
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
+    //! Set selection info which this descriptor is created with.
+    void SetSelectionInfo(SelectionInfo const& selectionInfo) {DELETE_AND_CLEAR(m_selectionInfo); m_selectionInfo = new SelectionInfo(selectionInfo);}
     
     //! Get information about ECClasses which the descriptor consists from.
     bvector<SelectClassInfo> const& GetSelectClasses() const {return m_classes;}

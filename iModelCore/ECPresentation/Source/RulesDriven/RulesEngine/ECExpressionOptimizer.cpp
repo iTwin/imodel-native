@@ -69,10 +69,10 @@ IsOfClassOptimizedExpression::~IsOfClassOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey())
+    if (nullptr == params.GetInputNodeKey())
         return false;
 
-    NavNodeKeyCP nodeKey = params.GetSelectedNodeKey();
+    NavNodeKeyCP nodeKey = params.GetInputNodeKey();
     ECClassId lookupClassId;
     if (nullptr != nodeKey->AsECInstanceNodeKey())
         lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
@@ -140,10 +140,10 @@ ClassNameOptimizedExpression::~ClassNameOptimizedExpression()
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey())
+    if (nullptr == params.GetInputNodeKey())
         return false;
 
-    NavNodeKeyCP nodeKey = params.GetSelectedNodeKey();
+    NavNodeKeyCP nodeKey = params.GetInputNodeKey();
     ECClassId lookupClassId;
     if (nullptr != nodeKey->AsECInstanceNodeKey())
         lookupClassId = nodeKey->AsECInstanceNodeKey()->GetECClassId();
@@ -198,10 +198,10 @@ bool ClassNameOptimizedExpression::_IsEqual(OptimizedExpression const& other) co
 +---------------+---------------+---------------+---------------+---------------+--*/
 bool InstanceIdOptimizedExpression::_Value(OptimizedExpressionsParameters const& params)
     {
-    if (nullptr == params.GetSelectedNodeKey() || nullptr == params.GetSelectedNodeKey()->AsECInstanceNodeKey())
+    if (nullptr == params.GetInputNodeKey() || nullptr == params.GetInputNodeKey()->AsECInstanceNodeKey())
         return false;
 
-    ECInstanceNodeKey const& nodeKey = *params.GetSelectedNodeKey()->AsECInstanceNodeKey();
+    ECInstanceNodeKey const& nodeKey = *params.GetInputNodeKey()->AsECInstanceNodeKey();
     return nodeKey.GetInstanceId() == m_instanceId;
     }
 

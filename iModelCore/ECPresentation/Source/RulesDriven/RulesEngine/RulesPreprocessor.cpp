@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RulesPreprocessor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -687,35 +687,34 @@ ContentRuleSpecificationsList RulesPreprocessor::GetContentSpecifications(Conten
     ContentRuleSpecificationsList specs;
     bset<NavNodeKeyCP> handledNodes;
 
-    if (params.HasSelectionInfo())
+
+    for (NavNodeKeyCPtr const& inputNodeKey : params.GetInputNodeKeys())
         {
-        for (NavNodeKeyCPtr const& selectedNodeKey : params.GetSelectedNodeKeys())
+        std::function<ExpressionContextPtr()> contextPreparer = [&]()
             {
-            std::function<ExpressionContextPtr()> contextPreparer = [&]()
+            ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName(),
+                params.IsSubSelection(), params.GetConnection(), params.GetNodeLocater(), inputNodeKey.get(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
+            return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
+            };
+        OptimizedExpressionsParameters optimizedParams(params.GetConnections(), params.GetConnection(), inputNodeKey.get(), params.GetPreferredDisplayType().c_str());
+
+        for (ContentRuleCP rule : params.GetRuleset().GetContentRules())
+            {
+            if (rule->GetOnlyIfNotHandled() && handledNodes.end() != handledNodes.find(inputNodeKey.get()))
+                continue;
+
+            if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), params.GetECExpressionsCache(), &optimizedParams, contextPreparer))
                 {
-                ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), params.GetSelectionProviderName().c_str(),
-                    params.IsSubSelection(), params.GetConnection(), params.GetNodeLocater(), selectedNodeKey.get(), params.GetUserSettings(), params.GetUsedUserSettingsListener());
-                return ECExpressionContextsProvider::GetContentRulesContext(contextParams);
-                };
-            OptimizedExpressionsParameters optimizedParams(params.GetConnections(), params.GetConnection(), selectedNodeKey.get(), params.GetPreferredDisplayType().c_str());
+                auto iter = specs.find(*rule);
+                if (specs.end() == iter)
+                    iter = specs.insert(*rule).first;
 
-            for (ContentRuleCP rule : params.GetRuleset().GetContentRules())
-                {
-                if (rule->GetOnlyIfNotHandled() && handledNodes.end() != handledNodes.find(selectedNodeKey.get()))
-                    continue;
-
-                if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), params.GetECExpressionsCache(), &optimizedParams, contextPreparer))
-                    {
-                    auto iter = specs.find(*rule);
-                    if (specs.end() == iter)
-                        iter = specs.insert(*rule).first;
-
-                    iter->GetMatchingSelectedNodeKeys().push_back(selectedNodeKey);
-                    handledNodes.insert(selectedNodeKey.get());
-                    }
+                iter->GetMatchingSelectedNodeKeys().push_back(inputNodeKey);
+                handledNodes.insert(inputNodeKey.get());
                 }
             }
         }
+        
     std::function<ExpressionContextPtr()> contextPreparer = [&]() 
         {
         ECExpressionContextsProvider::ContentRulesContextParameters contextParams(params.GetPreferredDisplayType().c_str(), "", false,

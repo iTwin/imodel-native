@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentProviders.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -17,10 +17,10 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
+ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
     IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
     : RulesDrivenProviderContext(ruleset, holdRuleset, userSettings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState), m_preferredDisplayType(preferredDisplayType), 
-    m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier)
+    m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
     {
     Init();
     }
@@ -30,12 +30,12 @@ ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderContext::ContentProviderContext(ContentProviderContextCR other) 
     : RulesDrivenProviderContext(other), m_preferredDisplayType(other.m_preferredDisplayType), m_nodesLocater(other.m_nodesLocater), 
-    m_categorySupplier(other.m_categorySupplier)
+    m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys)
     {
     Init();
 
     if (other.IsSelectionContext())
-        SetSelectionContext(other);
+        SetSelectionInfo(other);
 
     if (other.IsPropertyFormattingContext())
         SetPropertyFormattingContext(other);
@@ -71,7 +71,7 @@ ContentProviderContext::~ContentProviderContext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProviderContext::SetSelectionContext(SelectionInfo const& selectionInfo)
+void ContentProviderContext::SetSelectionInfo(SelectionInfo const& selectionInfo)
     {
     BeAssert(!IsSelectionContext());
     m_isSelectionContext = true;
@@ -82,7 +82,7 @@ void ContentProviderContext::SetSelectionContext(SelectionInfo const& selectionI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProviderContext::SetSelectionContext(SelectionInfo&& selectionInfo)
+void ContentProviderContext::SetSelectionInfo(SelectionInfo&& selectionInfo)
     {
     BeAssert(!IsSelectionContext());
     m_isSelectionContext = true;
@@ -93,7 +93,7 @@ void ContentProviderContext::SetSelectionContext(SelectionInfo&& selectionInfo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProviderContext::SetSelectionContext(ContentProviderContextCR other)
+void ContentProviderContext::SetSelectionInfo(ContentProviderContextCR other)
     {
     BeAssert(!IsSelectionContext());
     m_isSelectionContext = true;
@@ -482,13 +482,13 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item) const
 struct ContentSpecificationsVisitor : PresentationRuleSpecificationVisitor
 {
 private:
-    IParsedSelectionInfo const* m_selectionInfo;    
+    IParsedInput const* m_input;    
 protected:
-    IParsedSelectionInfo const* GetSelectionInfo() {return m_selectionInfo;}
+    IParsedInput const* GetInput() {return m_input;}
 public:
-    ContentSpecificationsVisitor(ContentProviderContext const& context) : m_selectionInfo(nullptr) {}
+    ContentSpecificationsVisitor(ContentProviderContext const& context) : m_input(nullptr) {}
     virtual ~ContentSpecificationsVisitor() {}
-    void SetCurrentSelection(IParsedSelectionInfo const* selection) {m_selectionInfo = selection;}
+    void SetCurrentInput(IParsedInput const* input) {m_input = input;}
 };
 
 /*=================================================================================**//**
@@ -507,7 +507,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void _Visit(SelectedNodeInstancesSpecificationCR specification) override
         {
-        if (nullptr == GetSelectionInfo())
+        if (nullptr == GetInput())
             {
             BeAssert(false);
             return;
@@ -520,7 +520,7 @@ protected:
             return;
             }
 
-        ContentDescriptorPtr specificationDescriptor = m_descriptorBuilder->CreateDescriptor(specification, *GetSelectionInfo());
+        ContentDescriptorPtr specificationDescriptor = m_descriptorBuilder->CreateDescriptor(specification, *GetInput());
         if (specificationDescriptor.IsValid())
             {
             QueryBuilderHelpers::Aggregate(m_descriptor, *specificationDescriptor);
@@ -550,13 +550,13 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void _Visit(ContentRelatedInstancesSpecificationCR specification) override 
         {
-        if (nullptr == GetSelectionInfo())
+        if (nullptr == GetInput())
             {
             BeAssert(false);
             return;
             }
 
-        ContentDescriptorPtr specificationDescriptor = m_descriptorBuilder->CreateDescriptor(specification, *GetSelectionInfo());
+        ContentDescriptorPtr specificationDescriptor = m_descriptorBuilder->CreateDescriptor(specification, *GetInput());
         if (specificationDescriptor.IsValid())
             {
             QueryBuilderHelpers::Aggregate(m_descriptor, *specificationDescriptor);
@@ -576,7 +576,7 @@ public:
         IECPropertyFormatter const* formatter = context.IsPropertyFormattingContext() ? &context.GetECPropertyFormatter() : nullptr;
         ILocalizationProvider const* localizationProvider = context.IsLocalizationContext() ? &context.GetLocalizationProvider() : nullptr;
         m_context = new ContentDescriptorBuilder::Context(context.GetSchemaHelper(), context.GetConnections(), context.GetConnection(), context.GetRuleset(),
-            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider);
+            context.GetPreferredDisplayType().c_str(), context.GetCategorySupplier(), formatter, localizationProvider, context.GetInputNodeKeys(), context.GetSelectionInfo());
         m_descriptorBuilder = new ContentDescriptorBuilder(*m_context);
         }
     
@@ -607,7 +607,7 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void _Visit(SelectedNodeInstancesSpecificationCR specification) override
         {
-        if (nullptr == GetSelectionInfo())
+        if (nullptr == GetInput())
             {
             BeAssert(false);
             return;
@@ -620,7 +620,7 @@ protected:
             return;
             }
 
-        ContentQueryPtr query = m_queryBuilder->CreateQuery(specification, *m_descriptor, *GetSelectionInfo());
+        ContentQueryPtr query = m_queryBuilder->CreateQuery(specification, *m_descriptor, *GetInput());
         if (query.IsValid())
             {
             QueryBuilderHelpers::SetOrUnion(m_union, *query);
@@ -650,13 +650,13 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void _Visit(ContentRelatedInstancesSpecificationCR specification) override 
         {
-        if (nullptr == GetSelectionInfo())
+        if (nullptr == GetInput())
             {
             BeAssert(false);
             return;
             }
 
-        ContentQueryPtr query = m_queryBuilder->CreateQuery(specification, *m_descriptor, *GetSelectionInfo());
+        ContentQueryPtr query = m_queryBuilder->CreateQuery(specification, *m_descriptor, *GetInput());
         if (query.IsValid())
             {
             QueryBuilderHelpers::SetOrUnion(m_union, *query);
@@ -726,36 +726,34 @@ ContentProvider::ContentProvider(ContentProviderCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpecificationContentProvider::~SpecificationContentProvider()
     {
-    for (auto iter : m_parsedSelectionsCache)
+    for (auto iter : m_inputCache)
         delete iter.second;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ContentRuleCP, IParsedSelectionInfo const*> selectionsCache,
+static void VisitRuleSpecifications(ContentSpecificationsVisitor& visitor, bmap<ContentRuleCP, IParsedInput const*> inputCache,
     ContentProviderContextCR context, ContentRuleSpecificationsList const& rules)
     {
     for (ContentRuleSpecification const& rule : rules)
         {
-        IParsedSelectionInfo const* selectionInfo = nullptr;
-        if (context.IsSelectionContext())
+        IParsedInput const* input = nullptr;
+        auto inputIter = inputCache.find(&rule.GetRule());
+        if (inputCache.end() == inputIter)
             {
-            auto selectionIter = selectionsCache.find(&rule.GetRule());
-            if (selectionsCache.end() == selectionIter)
-                {
-                // note: each content rule may be based on different selected nodes, so we create a different selection context for each of them
-                selectionIter = selectionsCache.Insert(&rule.GetRule(),
-                    new ParsedSelectionInfo(rule.GetMatchingSelectedNodeKeys(), context.GetNodesLocater(), context.GetConnection(), context.GetSchemaHelper())).first;
-                }
-            selectionInfo = selectionIter->second;
+            // note: each content rule may be based on different selected nodes, so we create a different selection context for each of them
+            inputIter = inputCache.Insert(&rule.GetRule(),
+                new ParsedInput(rule.GetMatchingSelectedNodeKeys(), context.GetNodesLocater(), context.GetConnection(), context.GetSchemaHelper())).first;
             }
-        visitor.SetCurrentSelection(selectionInfo);
+        input = inputIter->second;
+
+        visitor.SetCurrentInput(input);
 
         for (ContentSpecificationCP spec : rule.GetRule().GetSpecifications())
             spec->Accept(visitor);
 
-        visitor.SetCurrentSelection(nullptr);
+        visitor.SetCurrentInput(nullptr);
         }
     }
 
@@ -767,7 +765,7 @@ ContentDescriptorCP SpecificationContentProvider::_GetContentDescriptor() const
     if (m_descriptor.IsNull())
         {
         DescriptorBuilder builder(GetContext());
-        VisitRuleSpecifications(builder, m_parsedSelectionsCache, GetContext(), m_rules);
+        VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
         m_descriptor = builder.GetDescriptor();
         }    
     return m_descriptor.get();
@@ -785,7 +783,7 @@ ContentQueryCPtr SpecificationContentProvider::_GetQuery() const
             return nullptr;
 
         QueryBuilder builder(GetContext(), *descriptor);
-        VisitRuleSpecifications(builder, m_parsedSelectionsCache, GetContext(), m_rules);
+        VisitRuleSpecifications(builder, m_inputCache, GetContext(), m_rules);
         m_query = builder.GetQuery();
         QueryBuilderHelpers::ApplyPagingOptions(m_query, GetPageOptions());
         }

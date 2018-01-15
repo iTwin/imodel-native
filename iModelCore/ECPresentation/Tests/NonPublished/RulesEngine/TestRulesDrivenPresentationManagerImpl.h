@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/NonPublished/RulesEngine/TestRulesDrivenPresentationManagerImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/BackDoor/ECPresentation/ECPresentationTest.h>
@@ -34,9 +34,9 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<void(IConnectionCR, NavigationOptions const&, ICancelationTokenCR)> Handler_OnAllNodesCollapsed;
     
     typedef std::function<bvector<SelectClassInfo>(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentClasses;
-    typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
-    typedef std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, ContentOptions const&, ICancelationTokenCR)> Handler_GetContent;
-    typedef std::function<size_t(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentSetSize;
+    typedef std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR)> Handler_GetContentDescriptor;
+    typedef std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)> Handler_GetContent;
+    typedef std::function<size_t(ContentDescriptorCR, ICancelationTokenCR)> Handler_GetContentSetSize;
     
     typedef std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR)> Handler_SaveValueChange;
     
@@ -155,22 +155,22 @@ protected:
             return m_contentClassesHandler(connection, displayType, inputClasses, options, cancelationToken);
         return bvector<SelectClassInfo>();
         }
-    ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR connection, Utf8CP displayType, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+    ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR connection, Utf8CP displayType, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentDescriptorHandler)
-            return m_contentDescriptorHandler(connection, displayType, selectionInfo, options, cancelationToken);
+            return m_contentDescriptorHandler(connection, displayType, inputKeys, selectionInfo, options, cancelationToken);
         return nullptr;
         }
-    ContentCPtr _GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+    ContentCPtr _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentHandler)
-            return m_contentHandler(connection, descriptor, selectionInfo, pageOptions, options, cancelationToken);
+            return m_contentHandler(descriptor, pageOptions, cancelationToken);
         return nullptr;
         }
-    size_t _GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) override 
+    size_t _GetContentSetSize(ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) override
         {
         if (m_contentSetSizeHandler)
-            return m_contentSetSizeHandler(connection, descriptor, selectionInfo, options, cancelationToken);
+            return m_contentSetSizeHandler(descriptor, cancelationToken);
         return 0;
         }
 

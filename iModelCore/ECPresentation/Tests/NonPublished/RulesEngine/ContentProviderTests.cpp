@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/QueryContracts.h"
@@ -45,7 +45,7 @@ void ContentProviderTests::SetUp()
     m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
     m_ruleset = PresentationRuleSet::CreateInstance("ContentProviderTests", 1, 0, false, "", "", "", false);
 
-    m_context = ContentProviderContext::Create(*m_ruleset, true, ContentDisplayType::Undefined, m_nodesLocater, m_categorySupplier,
+    m_context = ContentProviderContext::Create(*m_ruleset, true, ContentDisplayType::Undefined, *NavNodeKeyListContainer::Create(), m_nodesLocater, m_categorySupplier,
         m_settings, m_expressionsCache, m_relatedPathsCache, m_nodesFactory, nullptr);
     m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions);
     }
@@ -70,8 +70,7 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfOneSelectedNo
 
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
 
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -102,8 +101,7 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     NavNodeKeyList keys;
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -139,8 +137,7 @@ TEST_F (ContentProviderTests, SelectedNodeInstances_AllPropertiesOfMultipleSelec
     NavNodeKeyList keys;
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -170,8 +167,7 @@ TEST_F (ContentProviderTests, CreatesImageIdWhenSpecified)
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instance));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
@@ -201,8 +197,7 @@ TEST_F (ContentProviderTests, CustomizesImageId)
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instance));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
     
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->SetShowImages(true);
@@ -230,8 +225,7 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instance));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
 
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
     
@@ -271,8 +265,7 @@ TEST_F (ContentProviderTests, PagingUnsortedData)
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
     keys.push_back(&node3->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -311,8 +304,7 @@ TEST_F (ContentProviderTests, PagingSortedData)
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
     keys.push_back(&node3->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
@@ -354,8 +346,7 @@ TEST_F (ContentProviderTests, PageDoesNotExceedPageSize)
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
     keys.push_back(&node3->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
-    m_context->SetSelectionContext(selection);
+    m_context->SetInputNodeKeys(*NavNodeKeyListContainer::Create(keys));
     
     ContentRule rule;
     rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));

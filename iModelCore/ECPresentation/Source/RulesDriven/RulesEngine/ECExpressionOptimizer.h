@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ECExpressionOptimizer.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentation/ECPresentation.h>
@@ -17,14 +17,14 @@ struct OptimizedExpressionsParameters
 private:
     IConnectionManagerCR m_connections;
     IConnectionCR m_connection;
-    NavNodeKeyCP m_selectedNodeKey;
+    NavNodeKeyCP m_inputNodeKey;
     Utf8String m_contentDisplayType;
 public:
-    OptimizedExpressionsParameters(IConnectionManagerCR connections, IConnectionCR connection, NavNodeKeyCP selectedNodeKey, Utf8CP displayType)
-        : m_connections(connections), m_connection(connection), m_selectedNodeKey(selectedNodeKey), m_contentDisplayType(displayType)
+    OptimizedExpressionsParameters(IConnectionManagerCR connections, IConnectionCR connection, NavNodeKeyCP inputNodeKey, Utf8CP displayType)
+        : m_connections(connections), m_connection(connection), m_inputNodeKey(inputNodeKey), m_contentDisplayType(displayType)
         {}
     Utf8StringCR GetContentDisplayType() const {return m_contentDisplayType;}
-    NavNodeKeyCP GetSelectedNodeKey() const {return m_selectedNodeKey;}
+    NavNodeKeyCP GetInputNodeKey() const {return m_inputNodeKey;}
     IConnectionManagerCR GetConnections() const {return m_connections;}
     IConnectionCR GetConnection() const {return m_connection;}
 };
@@ -185,7 +185,7 @@ struct IsInstanceNodeOptimizedExpression : OptimizedExpression
 private:
     IsInstanceNodeOptimizedExpression() {}
 protected:
-    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey() && nullptr != params.GetSelectedNodeKey()->AsECInstanceNodeKey();}
+    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetInputNodeKey() && nullptr != params.GetInputNodeKey()->AsECInstanceNodeKey();}
     bool _IsEqual(OptimizedExpression const& other) const override {return nullptr != other.AsIsInstanceNodeOptimizedExpression();}
     IsInstanceNodeOptimizedExpression const* _AsIsInstanceNodeOptimizedExpression() const override {return this;}
 public:
@@ -200,7 +200,7 @@ struct IsPropertyGroupingOptimizedExpression : OptimizedExpression
 private:
     IsPropertyGroupingOptimizedExpression() {}
 protected:
-    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey() && nullptr != params.GetSelectedNodeKey()->AsECPropertyGroupingNodeKey();}
+    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetInputNodeKey() && nullptr != params.GetInputNodeKey()->AsECPropertyGroupingNodeKey();}
     bool _IsEqual(OptimizedExpression const& other) const override {return nullptr != other.AsIsPropertyGroupingOptimizedExpression();}
     IsPropertyGroupingOptimizedExpression const* _AsIsPropertyGroupingOptimizedExpression() const override {return this;}
 public:
@@ -215,7 +215,7 @@ struct IsECClassGroupingOptimizedExpression : OptimizedExpression
 private:
     IsECClassGroupingOptimizedExpression() {}
 protected:
-    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetSelectedNodeKey() && nullptr != params.GetSelectedNodeKey()->AsECClassGroupingNodeKey();}
+    bool _Value(OptimizedExpressionsParameters const& params) override {return nullptr != params.GetInputNodeKey() && nullptr != params.GetInputNodeKey()->AsECClassGroupingNodeKey();}
     bool _IsEqual(OptimizedExpression const& other) const override {return nullptr != other.AsIsECClassGroupingOptimizedExpression();}
     IsECClassGroupingOptimizedExpression const* _AsIsECClassGroupingOptimizedExpression() const override {return this;}
 public:

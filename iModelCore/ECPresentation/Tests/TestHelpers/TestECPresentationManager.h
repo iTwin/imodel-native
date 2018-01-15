@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/TestECPresentationManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationTest.h"
@@ -75,8 +75,8 @@ private:
     std::function<bool(IConnectionCR, NavNodeCR parentNode, NavNodeKeyCR childNodeKey, JsonValueCR)> m_hasChildHandler;
     std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> m_getFilteredNodesPathsHandler;
     std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> m_saveValueChangeHandler;
-    std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, SelectionInfo const&, JsonValueCR)> m_contentDescriptorHandler;
-    std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR)> m_contentHandler;
+    std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, JsonValueCR)> m_contentDescriptorHandler;
+    std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> m_contentHandler;
     std::function<void(IConnectionCR, uint64_t)> m_onNodeCheckedHandler;
     std::function<void(IConnectionCR, uint64_t)> m_onNodeUncheckedHandler;
     std::function<void(IConnectionCR, uint64_t)> m_onNodeExpandedHandler;
@@ -173,19 +173,19 @@ protected:
         {
         return bvector<SelectClassInfo>();
         }
-    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options) override 
+    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, INavNodeKeysContainerCR input, SelectionInfo const* selectionInfo, JsonValueCR options) override 
         {
         if (nullptr != m_contentDescriptorHandler)
-            return m_contentDescriptorHandler(db, preferredDisplayType, selectionInfo, options);
-        return ContentDescriptor::Create();
+            return m_contentDescriptorHandler(db, preferredDisplayType, input, selectionInfo, options);
+        return ContentDescriptor::Create(db, options, *NavNodeKeyListContainer::Create());
         }
-    folly::Future<ContentCPtr> _GetContent(IConnectionCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR options) override 
+    folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions) override 
         {
         if (nullptr != m_contentHandler)
-            return m_contentHandler(db, descriptor, selectionInfo, pageOptions, options);
+            return m_contentHandler(descriptor, pageOptions);
         return Content::Create(descriptor, *TestDataSource::Create());
         }
-    folly::Future<size_t> _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) override
+    folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) override
         {
         return 0;
         }
@@ -218,8 +218,8 @@ public:
     void SetHasChildHandler(std::function<bool(IConnectionCR, NavNodeCR, NavNodeKeyCR, JsonValueCR)> handler) {m_hasChildHandler = handler;}
     void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHandler = handler;}
     void SetSaveValueChangeHandler(std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> handler) {m_saveValueChangeHandler = handler;}
-    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, SelectionInfo const&, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
-    void SetContentHandler(std::function<ContentCPtr(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR)> handler){m_contentHandler = handler;}
+    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
+    void SetContentHandler(std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> handler){m_contentHandler = handler;}
     void SetOnNodeCheckedHandler(std::function<void(IConnectionCR, uint64_t)> handler) {m_onNodeCheckedHandler = handler;}
     void SetOnNodeUncheckedHandler(std::function<void(IConnectionCR, uint64_t)> handler) {m_onNodeUncheckedHandler = handler;}
     void SetOnNodeExpandedHandler(std::function<void(IConnectionCR, uint64_t)> handler) {m_onNodeExpandedHandler = handler;}

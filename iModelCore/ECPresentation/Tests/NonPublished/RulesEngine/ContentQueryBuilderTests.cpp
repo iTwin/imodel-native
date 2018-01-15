@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ContentQueryBuilderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -13,14 +13,15 @@
 void ContentQueryBuilderTests::SetUp()
     {
     Localization::Init();
-    m_connection = m_connections.NotifyConnectionOpened(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb());
+    IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
+    IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false);
     m_schemaHelper = new ECSchemaHelper(ExpectedQueries::GetInstance(BeTest::GetHost()).GetDb(), &m_relatedPathsCache, nullptr);
-    m_descriptorBuilder = new ContentDescriptorBuilder(*new ContentDescriptorBuilder::Context(*m_schemaHelper, m_connections,
-        *m_connection, *m_ruleset, ContentDisplayType::Undefined, m_categorySupplier, 
-        nullptr, &m_localizationProvider));
-    m_queryBuilder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, m_connections,
-        m_nodesLocater, *m_connection, *m_ruleset, m_settings, m_expressionsCache, 
+    m_descriptorBuilder = new ContentDescriptorBuilder(*new ContentDescriptorBuilder::Context(*m_schemaHelper, connections,
+        connection, *m_ruleset, ContentDisplayType::Undefined, m_categorySupplier, 
+        nullptr, &m_localizationProvider, *NavNodeKeyListContainer::Create(), nullptr));
+    m_queryBuilder = new ContentQueryBuilder(ContentQueryBuilderParameters(*m_schemaHelper, connections,
+        m_nodesLocater, connection, *m_ruleset, m_settings, m_expressionsCache, 
         m_categorySupplier, nullptr, nullptr, &m_localizationProvider));
     }
 
@@ -75,7 +76,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesDontCollideWhenSelectingInstanceAndR
     ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
 
     // set up selection
-    TestParsedSelectionInfo info({
+    TestParsedInput info({
         bpair<ECClassCP, ECInstanceId>(gadgetClass, {ECInstanceId((uint64_t)1)}), 
         bpair<ECClassCP, ECInstanceId>(widgetClass, {ECInstanceId((uint64_t)2)}), 
         });
@@ -294,7 +295,7 @@ TEST_F (ContentQueryBuilderTests, SetsShowImagesFlag)
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     spec.SetShowImages(true);
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -318,7 +319,7 @@ TEST_F (ContentQueryBuilderTests, SetsShowLabelsFlagForGridContentType)
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
         
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -342,7 +343,7 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndKeysOnlyFlagForGraphicsContentT
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -366,7 +367,7 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndShowLabelsFlagsForListContentTy
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     
-    TestParsedSelectionInfo info(*ecClass, ECInstanceId((uint64_t)123));
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
 

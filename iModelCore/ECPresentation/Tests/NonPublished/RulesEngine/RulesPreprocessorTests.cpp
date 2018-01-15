@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/RulesPreprocessorTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -847,7 +847,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_NoConditions)
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
     rules->AddPresentationRule(*new ContentRule("", 1, false));
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", "", false, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleSpecificationsList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }
@@ -867,7 +867,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_RulesSortedByPriority)
     ContentRuleP rule2 = new ContentRule("", 2, true);
     rules->AddPresentationRule(*rule2);
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", "", false, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleSpecificationsList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     ASSERT_EQ(rule2, &(*specs.begin()).GetRule());
@@ -888,7 +888,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_WithConditions)
     ContentRuleP rule2 = new ContentRule("1 = 1", 1, false);
     rules->AddPresentationRule(*rule2);
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", "", false, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleSpecificationsList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     ASSERT_EQ(rule2, &(*specs.begin()).GetRule());
@@ -907,7 +907,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_ReturnsMultipleRulesIfO
     rules->AddPresentationRule(*new ContentRule("", 1, false));
     rules->AddPresentationRule(*new ContentRule("", 1, false));
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", "", false, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleSpecificationsList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(2, specs.size());
     }
@@ -925,7 +925,7 @@ TEST_F (RulesPreprocessorTests, GetContentSpecifications_ReturnsOneRuleIfOnlyIfN
     rules->AddPresentationRule(*new ContentRule("", 1, true));
     rules->AddPresentationRule(*new ContentRule("", 1, true));
     
-    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", "", false, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
+    RulesPreprocessor::ContentRuleParameters params(m_connections, *m_connection, *NavNodeKeyListContainer::Create(selectedNodeKeys), "", nullptr, *rules, m_userSettings, nullptr, m_expressionsCache, TestNodeLocater(*node));
     ContentRuleSpecificationsList specs = RulesPreprocessor::GetContentSpecifications(params);
     ASSERT_EQ(1, specs.size());
     }

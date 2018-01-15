@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/PresentationManagerImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -78,9 +78,9 @@ protected:
 
 /** @name IECPresentationManager: Content */
     virtual bvector<SelectClassInfo> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR) = 0;
-    virtual ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) = 0;
-    virtual ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, ContentOptions const&, ICancelationTokenCR) = 0;
-    virtual size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) = 0;
+    virtual ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) = 0;
+    virtual ContentCPtr _GetContent(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) = 0;
+    virtual size_t _GetContentSetSize(ContentDescriptorCR, ICancelationTokenCR) = 0;
 /** @} */
 
 /** @name IECPresentationManager: Updating */
@@ -164,9 +164,9 @@ public:
 
 /** @name IECPresentationManager: Content */
     bvector<SelectClassInfo> GetContentClasses(IConnectionCR connection, Utf8CP preferredDisplayType, bvector<ECClassCP> const& inputClasses, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentClasses(connection, preferredDisplayType, inputClasses, options, cancelationToken);}
-    ContentDescriptorCPtr GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentDescriptor(connection, preferredDisplayType, selectionInfo, options, cancelationToken);}
-    ContentCPtr GetContent(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContent(connection, descriptor, selectionInfo, pageOptions, options, cancelationToken);}
-    size_t GetContentSetSize(IConnectionCR connection, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(connection, descriptor, selectionInfo, options, cancelationToken);}
+    ContentDescriptorCPtr GetContentDescriptor(IConnectionCR connection, Utf8CP preferredDisplayType, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, ContentOptions const& options, ICancelationTokenCR cancelationToken) {return _GetContentDescriptor(connection, preferredDisplayType, inputKeys, selectionInfo, options, cancelationToken);}
+    ContentCPtr GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, ICancelationTokenCR cancelationToken) {return _GetContent(descriptor, pageOptions, cancelationToken);}
+    size_t GetContentSetSize(ContentDescriptorCR descriptor, ICancelationTokenCR cancelationToken) {return _GetContentSetSize(descriptor, cancelationToken);}
 /** @} */
 
 /** @name IECPresentationManager: Updating */
@@ -205,8 +205,8 @@ private:
 private:
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&);
     INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavNodeCR parent, NavigationOptions const&);
-    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, SelectionInfo const&, ContentOptions const&);
-    SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&);
+    SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
+    SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
         
 protected:
     // IRulesetCallbacksHandler
@@ -242,9 +242,9 @@ protected:
 
     // RulesDrivenECPresentationManager::Impl: Content
     ECPRESENTATION_EXPORT bvector<SelectClassInfo> _GetContentClasses(IConnectionCR, Utf8CP, bvector<ECClassCP> const&, ContentOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT ContentCPtr _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, ContentOptions const&, ICancelationTokenCR) override;
-    ECPRESENTATION_EXPORT size_t _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, ContentOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT ContentDescriptorCPtr _GetContentDescriptor(IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT ContentCPtr _GetContent(ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR) override;
+    ECPRESENTATION_EXPORT size_t _GetContentSetSize(ContentDescriptorCR, ICancelationTokenCR) override;
 
     // RulesDrivenECPresentationManager::Impl: Updating
     ECPRESENTATION_EXPORT bvector<ECInstanceChangeResult> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR) override;

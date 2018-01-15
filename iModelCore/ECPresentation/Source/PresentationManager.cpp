@@ -2,7 +2,7 @@
 |
 |     $Source: Source/PresentationManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -107,7 +107,7 @@ folly::Future<bvector<SelectClassInfo>> IECPresentationManager::GetContentClasse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR options)
+folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR options)
     {
     IConnectionCPtr connection = GetConnections().GetConnection(db);
     if (connection.IsNull())
@@ -115,35 +115,24 @@ folly::Future<ContentDescriptorCPtr> IECPresentationManager::GetContentDescripto
         BeAssert(false && "Unknown connection");
         return folly::makeFuture(ContentDescriptorCPtr(nullptr));
         }
-    return _GetContentDescriptor(*connection, preferredDisplayType, selectionInfo, options);
+    return _GetContentDescriptor(*connection, preferredDisplayType, inputKeys, selectionInfo, options);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentCPtr> IECPresentationManager::GetContent(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR options)
+folly::Future<ContentCPtr> IECPresentationManager::GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions)
     {
-    IConnectionCPtr connection = GetConnections().GetConnection(db);
-    if (connection.IsNull())
-        {
-        BeAssert(false && "Unknown connection");
-        return folly::makeFuture(ContentCPtr(nullptr));
-        }
-    return _GetContent(*connection, descriptor, selectionInfo, pageOptions, options);
+    return _GetContent(descriptor, pageOptions);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> IECPresentationManager::GetContentSetSize(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR options)
+folly::Future<size_t> IECPresentationManager::GetContentSetSize(ContentDescriptorCR descriptor)
     {
-    IConnectionCPtr connection = GetConnections().GetConnection(db);
-    if (connection.IsNull())
-        {
-        BeAssert(false && "Unknown connection");
-        return 0;
-        }
-    return _GetContentSetSize(*connection, descriptor, selectionInfo, options);
+
+    return _GetContentSetSize(descriptor);
     }
 
 /*---------------------------------------------------------------------------------**//**

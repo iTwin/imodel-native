@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RulesEngine/PresentationManagerContentTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationManagerTests.h"
@@ -42,9 +42,12 @@ struct RulesDrivenECPresentationManagerContentTests : RulesDrivenECPresentationM
 // @betest                                       Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsValidDescriptorBasedOnSelectedClasses)
-    {    
-    // set up selection
-    SelectionInfo selection({m_gadgetClass, m_widgetClass});
+    {
+    // set up input
+    NavNodeKeyList keys;
+    keys.push_back(ECInstanceNodeKey::Create(m_gadgetClass->GetId(), ECInstanceId()));
+    keys.push_back(ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId()));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_ReturnsValidDescriptorBasedOnSelectedClasses", 1, 0, false, "", "", "", false);
@@ -56,7 +59,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(2, descriptor->GetSelectClasses().size());
@@ -79,10 +82,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance1);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AllPropertiesOfOneSelectedNode", 1, 0, false, "", "", "", false);
@@ -96,12 +99,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -120,11 +123,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     NavNodePtr widgetNode = TestNodesHelper::CreateInstanceNode(*widgetInstance);
     NavNodePtr gadgetNode = TestNodesHelper::CreateInstanceNode(*gadgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&widgetNode->GetKey());
     keys.push_back(&gadgetNode->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AcceptableClassNames_ReturnsInstanceOfDefinedClassName", 1, 0, false, "", "", "", false);
@@ -138,12 +141,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -160,10 +163,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AcceptableSchemaName_WrongSchemaName_ContentIsNotValid", 1, 0, false, "", "", "", false);
@@ -177,7 +180,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_FALSE(descriptor.IsValid());
     }
 
@@ -196,11 +199,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     NavNodePtr nodeE = TestNodesHelper::CreateInstanceNode(*classEInstance);
     NavNodePtr nodeF = TestNodesHelper::CreateInstanceNode(*classFInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&nodeE->GetKey());
     keys.push_back(&nodeF->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AcceptablePolymorphically", 1, 0, false, "", "", "", false);
@@ -214,12 +217,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Acce
     RulesDrivenECPresentationManager::ContentOptions options("SelectedNodeInstances_AcceptablePolymorphically");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -238,11 +241,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfTheSameClass", 1, 0, false, "", "", "", false);
@@ -256,12 +259,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     RulesDrivenECPresentationManager::ContentOptions options("SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfTheSameClass");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -280,11 +283,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*instance1);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfDifferentClasses", 1, 0, false, "", "", "", false);
@@ -298,12 +301,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     RulesDrivenECPresentationManager::ContentOptions options("SelectedNodeInstances_AllPropertiesOfMultipleSelectedNodesOfDifferentClasses");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -322,11 +325,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     NavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*widget);
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*gadget);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DescriptorOverride_SortingField", 1, 0, false, "", "", "", false);
@@ -338,11 +341,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options("DescriptorOverride_SortingField");
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // get the default content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate the default content set
@@ -353,7 +356,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     ovr->SetSortingField("Widget_Gadget_MyID");
 
     // get the content with descriptor override
-    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
+    content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are sorted
@@ -363,7 +366,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithSor
     ovr->SetSortDirection(SortDirection::Descending);
 
     // get the content with the changed sorting order
-    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
+    content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are sorted in descending order
@@ -389,9 +392,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
     rules->AddPresentationRule(*rule);
 
     // get the descriptor
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // create the override
@@ -399,7 +401,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Sorting
     ovr->SetSortingField("ClassQ_IntEnum");
 
     // get the content with descriptor override
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are sorted
@@ -417,10 +419,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DescriptorOverride_RemovesPropertyField", 1, 0, false, "", "", "", false);
@@ -432,7 +434,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
@@ -441,7 +443,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     ovr->RemoveField("Widget_IntProperty");
 
     // get the content with descriptor override
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the IntProperty field has been removed
@@ -468,8 +470,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
@@ -478,7 +479,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_Removes
     ovr->RemoveField("Sprocket_Gadget");
 
     // get the content with descriptor override
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the Gadget field has been removed
@@ -505,12 +506,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
     NavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*instance2);
     NavNodePtr node3 = TestNodesHelper::CreateInstanceNode(*instance3);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node1->GetKey());
     keys.push_back(&node2->GetKey());
     keys.push_back(&node3->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DescriptorOverride_WithFilters", 1, 0, false, "", "", "", false);
@@ -522,11 +523,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options("DescriptorOverride_WithFilters");
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // get the default content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate the default content set
@@ -537,7 +538,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
     ovr->SetFilterExpression("Widget_IntProperty > 1 or Widget_DoubleProperty < 0");
 
     // get the content with descriptor override
-    content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *ovr, selection, PageOptions(), options.GetJson()).get();
+    content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // make sure the records in the content set are filtered
@@ -549,8 +550,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_ReturnsValidDescriptorWhichDoesNotDependOnSelectedClasses)
     {    
-    // set up selection
-    SelectionInfo selection({m_gadgetClass});
+    // set up input
+    NavNodeKeyList keys;
+    keys.push_back(ECInstanceNodeKey::Create(m_gadgetClass->GetId(), ECInstanceId()));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClasses_ReturnsValidDescriptorWhichDoesNotDependOnSelectedClasses", 1, 0, false, "", "", "", false);
@@ -562,7 +565,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
@@ -578,9 +581,6 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     // insert some widget & gadget instances
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
-    
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(NavNodeKeyList()));
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClasses_ClassNames_ReturnsInstanceOfDefinedClass", 1, 0, false, "", "", "", false);
@@ -594,12 +594,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstancesOfSpecificClasses_ClassNames_ReturnsInstanceOfDefinedClass");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -614,9 +614,6 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     // insert some widget instances
     IECInstancePtr widgetInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(1));});
     IECInstancePtr widgetInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(2));});
-    
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(NavNodeKeyList()));
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClasses_InstanceFilter", 1, 0, false, "", "", "", false);
@@ -630,12 +627,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstancesOfSpecificClasses_InstanceFilter");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -653,9 +650,6 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     
     IECInstancePtr classEInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     IECInstancePtr classFInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
-    
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(NavNodeKeyList()));
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClasses_ArePolymorphic", 1, 0, false, "", "", "", false);
@@ -669,12 +663,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecific
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstancesOfSpecificClasses_ArePolymorphic");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -694,8 +688,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     ECRelationshipClassCP rel5 = GetClass("RulesEngineTest", "GadgetHasSprocket")->GetRelationshipClassCP();
     ECRelationshipClassCP rel6 = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
 
-    // set up selection
-    SelectionInfo selection({m_gadgetClass});
+    // set up input
+    NavNodeKeyList keys;
+    keys.push_back(ECInstanceNodeKey::Create(m_gadgetClass->GetId(), ECInstanceId()));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_ReturnsValidDescriptorBasedOnSelectedClasses", 1, 0, false, "", "", "", false);
@@ -707,7 +703,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(6, descriptor->GetSelectClasses().size());
@@ -765,10 +761,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
 
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RelatedClassNames_ReturnsRelatedInstance", 1, 0, false, "", "", "", false);
@@ -782,12 +778,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelatedClassNames_ReturnsRelatedInstance");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     
     // validate content set
@@ -807,10 +803,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*gadgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RelatedClassNames_ReturnsRelatedInstance_BackwardsDirection", 1, 0, false, "", "", "", false);
@@ -824,12 +820,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelatedClassNames_ReturnsRelatedInstance_BackwardsDirection");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -852,10 +848,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassAHasBAndC, *instanceA, *instanceB);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassAHasBAndC, *instanceA, *instanceC);
     
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceA));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ReturnsRelatedInstancesPolymorphically", 1, 0, false, "", "", "", false);
@@ -869,12 +865,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ret
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -908,10 +904,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RelationshipClassNames_ReturnsInvalidContentWhenRelationshipDoesNotExist", 1, 0, false, "", "", "", false);
@@ -928,7 +924,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelationshipClassNames_ReturnsInvalidContentWhenRelationshipDoesNotExist");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_FALSE(descriptor.IsValid());
     }
 
@@ -948,10 +944,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RelationshipClassNames", 1, 0, false, "", "", "", false);
@@ -965,12 +961,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelationshipClassNames");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -990,10 +986,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*gadgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RelationshipClassNames_BackwardsDirection", 1, 0, false, "", "", "", false);
@@ -1007,12 +1003,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rel
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_RelationshipClassNames_BackwardsDirection");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1034,10 +1030,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ins
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*widgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_InstanceFilter", 1, 0, false, "", "", "", false);
@@ -1051,12 +1047,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Ins
     RulesDrivenECPresentationManager::ContentOptions options("ContentRelatedInstances_InstanceFilter");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1095,10 +1091,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
 
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance2);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_Recursive", 1, 0, false, "", "", "", false);
@@ -1112,12 +1108,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1170,10 +1166,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
 
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance1);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RecursiveWithMultipleRelationships", 1, 0, false, "", "", "", false);
@@ -1188,12 +1184,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1242,9 +1238,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *parentA, *childA);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipClass, *parentB, *childB);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys = {ECInstanceNodeKey::Create(*parentA), ECInstanceNodeKey::Create(*parentB)};
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_RecursiveWithMultipleSelectClasses", 1, 0, false, "", "", "", false);
@@ -1259,12 +1255,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Rec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1282,9 +1278,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
         instance.SetValue("MyID", ECValue("Test"));
         });
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstanceOfSpecificClass", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -1301,7 +1294,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options("ContentInstanceOfSpecificClass");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(10, descriptor->GetVisibleFields().size());
 
@@ -1322,7 +1315,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_STREQ("this.MyID", descriptor->GetVisibleFields()[9]->AsCalculatedPropertyField()->GetValueExpression().c_str());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1347,11 +1340,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(1000));});
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance) { instance.SetValue("PropertyF", ECValue(2000));});
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceF));
     keys.push_back(ECInstanceNodeKey::Create(*instanceH));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("CalculatedPropertiesSpecificationAppliedForBaseClassAndDerived_CreatesOneField", 1, 0, false, "", "", "", false);
@@ -1370,12 +1363,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1422,10 +1415,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
     
     NavNodePtr node = TestNodesHelper::CreateInstanceNode(*instance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(&node->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentSerialization", 1, 0, false, "", "", "", false);
@@ -1437,9 +1430,9 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
         
     // request for content
     RulesDrivenECPresentationManager::ContentOptions options("ContentSerialization");
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     rapidjson::Document contentJson = content->AsJson();
     EXPECT_TRUE(contentJson.IsObject());
@@ -1541,7 +1534,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesCustomPropertyCategoryS
     RulesDrivenECPresentationManager::ContentOptions options("UsesCustomPropertyCategorySupplierIfSet");
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
@@ -1574,13 +1567,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     IECInstancePtr widget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test Widget 2"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget1, *gadget);
 
-    // set up selection
+    // set up input
     NavNodePtr gadgetNode = TestNodesHelper::CreateInstanceNode(*gadget);
     NavNodePtr widgetNode = TestNodesHelper::CreateInstanceNode(*widget2);
     NavNodeKeyList keys;
     keys.push_back(&gadgetNode->GetKey());
     keys.push_back(&widgetNode->GetKey());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedPropertyValuesAreCorrectWhenSelectionIncludesInstanceOfRelatedInstanceClass", 1, 0, false, "", "", "", false);
@@ -1598,12 +1591,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(3, descriptor->GetVisibleFields().size()); // Gadget.Description, related Widget.MyID, Widget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1640,9 +1633,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     ECInstanceKey gadgetKey(m_gadgetClass->GetId(), gadgetId);
     ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsPropertyValueInstanceKeys", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -1659,12 +1649,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(5, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID, Widget.IntProperty
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1710,9 +1700,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
     ECInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsPropertyValueInstanceKeysWhenColumnsAreMerged", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -1727,12 +1714,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID + Sprocket.MyID, Gadget.Description + Sprocket.MyID, Gadget.Widget, Sprocket.Gadget
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1804,9 +1791,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     ECInstanceKey gadgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*gadget1);
     ECInstanceKey gadgetKey2 = RulesEngineTestHelpers::GetInstanceKey(*gadget2);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsPropertyValueInstanceKeysWhenRowsAreMerged", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -1821,7 +1805,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget
 
@@ -1830,7 +1814,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1869,9 +1853,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
     ECInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsPropertyValueInstanceKeysWhenRowsAndColumnsAreMerged", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -1886,7 +1867,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID + Sprocket.MyID, Gadget.Description + Sprocket.MyID, Gadget.Widget, Sprocket.Gadget
     
@@ -1895,7 +1876,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1955,9 +1936,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
         instance.SetValue("MyID", ECValue("Sprocket"));
         instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel));
         });
-    
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectsRelatedPropertyValuesWhenSelectingFromMultipleClasses", 1, 0, false, "", "", "", false);
@@ -1975,12 +1953,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); // 7 Widget properties (2 of them merged with Sprocket MyID and Description), Sprocket.Gadget, Gadget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2028,9 +2006,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
         instance.SetValue("MyID", ECValue("Sprocket"));
         });
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel_gs, *gadget2, *sprocket);
-    
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectsRelatedPropertyValuesWhenSelectingFromMultipleClassesAndFieldsAreMerged", 1, 0, false, "", "", "", false);
@@ -2048,7 +2023,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); // 7 Widget properties (2 of them merged with Sprocket MyID and Description), Gadget.MyID, Sprocket.Gadget
     
@@ -2057,7 +2032,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2091,9 +2066,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
         {
         instance.SetValue("MyID", ECValue("Sprocket"));
         });
-    
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectsRelatedPropertyValuesWhenSelectingFromMultipleClasses", 1, 0, false, "", "", "", false);
@@ -2111,12 +2083,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(10, descriptor->GetVisibleFields().size()); // 7 Widget properties (2 of them merged with MyID and Description of Gadget and Sprocket), Gadget.Widget, Sprocket.Gadget, Gadget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2182,9 +2154,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     IECInstancePtr relatedInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *baseRelatedClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element2, *relatedInstance2);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectsRelatedPropertyValuesWhenSelectingFromDerivedRelatedInstances", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2201,13 +2170,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::PropertyPane, 
-        selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::PropertyPane, *NavNodeKeyListContainer::Create(), nullptr,
+        options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Element.ElementProperty + <BaseRelatedClass.RelatedProperty, DerivedRelatedClass.RelatedProperty>
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2234,9 +2203,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
     ECInstanceKey gadgetKey(m_gadgetClass->GetId(), gadgetId);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsNullPropertyValueInstanceKeyWhenThereIsNoRelatedInstance", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2253,12 +2219,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2305,9 +2271,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     ECInstanceId::FromString(gadgetId2, gadget2->GetInstanceId().c_str());
     ECInstanceKey gadgetKey2(m_gadgetClass->GetId(), gadgetId2);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsNullPropertyValueInstanceKeyWhenThereIsNoRelatedInstance_MergedValuesCase", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2325,7 +2288,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), 
-        nullptr, selection, options.GetJson()).get();
+        nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID
 
@@ -2334,7 +2297,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2377,9 +2340,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsDisplayLabelProperty", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2395,7 +2355,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2403,7 +2363,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2423,9 +2383,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsDisplayLabelPropertyWhenMergingRecords", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2441,7 +2398,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2450,7 +2407,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2470,9 +2427,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, 
         [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Custom label 2"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreDifferent", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2488,7 +2442,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2497,7 +2451,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2515,9 +2469,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsDisplayLabelPropertyWhenMergingRecordsAndClassesAreDifferent", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2532,7 +2483,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2541,7 +2492,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2559,9 +2510,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsClassInfoWhenMergingRecordsAndClassesAreEqual", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2576,7 +2524,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2584,7 +2532,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2602,9 +2550,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SetsNullClassWhenMergingRecordsAndClassesDifferent", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2619,7 +2564,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     
     // set the "show labels" flag
@@ -2627,7 +2572,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2659,16 +2604,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
-    // selection
-    SelectionInfo selection("Test", false, *NavNodeKeyListContainer::Create());
-
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2707,10 +2649,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
@@ -2719,7 +2660,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2756,10 +2697,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); // no display label in the descriptor
 
@@ -2768,7 +2708,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DisplayLabelFieldsGetCreate
     modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(9, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
 
@@ -2816,10 +2756,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(7, descriptor->GetVisibleFields().size());
 
@@ -2828,7 +2766,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, SelectionInfo(), PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -2897,7 +2835,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, SelectionInfo(), options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(7, descriptor->GetVisibleFields().size());
 
@@ -2916,11 +2854,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWhenParametersEqual)
     {
-    // set up selection
-    SelectionInfo selection("aaa", true, *NavNodeKeyListContainer::Create({
+    // set up input
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create({
         ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
         ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
-        }));
+        });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsCachedWhenParametersEqual", 1, 0, false, "", "", "", false);
@@ -2932,8 +2870,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWh
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_EQ(descriptor1, descriptor2);
@@ -2949,9 +2887,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
     project2.Create("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", "RulesEngineTest.01.00.ecschema.xml");
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_Connection", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2962,8 +2897,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(project2.GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(project2.GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -2976,9 +2911,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType)
     {
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_ContentDisplayType", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -2989,8 +2921,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Graphics, selection, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Grid, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Graphics, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), ContentDisplayType::Grid, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3002,10 +2934,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider)
     {
     // set up selection 1
-    SelectionInfo selection1("A", false, *NavNodeKeyListContainer::Create());
+    SelectionInfo selection1("A", false);
     
     // set up selection 2
-    SelectionInfo selection2("B", false, *NavNodeKeyListContainer::Create());
+    SelectionInfo selection2("B", false);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider", 1, 0, false, "", "", "", false);
@@ -3017,8 +2949,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), &selection1, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), &selection2, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3030,10 +2962,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection)
     {
     // set up selection 1
-    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create());
+    SelectionInfo selection1("", false);
     
     // set up selection 2
-    SelectionInfo selection2("", true, *NavNodeKeyListContainer::Create());
+    SelectionInfo selection2("", true);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection", 1, 0, false, "", "", "", false);
@@ -3045,8 +2977,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), &selection1, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), &selection2, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3057,17 +2989,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys)
     {
-    // set up selection 1
-    SelectionInfo selection1("", false, *NavNodeKeyListContainer::Create({
+    // set up input 1
+    INavNodeKeysContainerCPtr input1 = NavNodeKeyListContainer::Create({
         ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
         ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
-        }));
+        });
     
-    // set up selection 2
-    SelectionInfo selection2("", false, *NavNodeKeyListContainer::Create({
+    // set up input 2
+    INavNodeKeysContainerCPtr input2 = NavNodeKeyListContainer::Create({
         ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)3)),
         ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId((uint64_t)4))
-        }));
+        });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys", 1, 0, false, "", "", "", false);
@@ -3079,8 +3011,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection1, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection2, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input1, nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input2, nullptr, options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3091,9 +3023,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId)
     {
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set 1
     PresentationRuleSetPtr rules1 = PresentationRuleSet::CreateInstance("ContentDescriptorIsNotCachedWhenParametersDifferent_RulesetId_1", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules1);
@@ -3110,9 +3039,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options1(rules1->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options1.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options1.GetJson()).get();
     RulesDrivenECPresentationManager::ContentOptions options2(rules2->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options2.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options2.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3128,9 +3057,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
         instance.SetValue("Description", ECValue("TestDescription")); 
         instance.SetValue("MyID", ECValue("TestID"));
         });
-
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentModifierAppliesHiddenPropertiesSpecification", 1, 0, false, "", "", "", false);
@@ -3149,12 +3075,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3177,9 +3103,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget, *gadget);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentModifierAppliesRelatedPropertiesSpecification", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3198,12 +3121,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3229,9 +3152,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesCalculatedPropertiesSpecification", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3249,12 +3169,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); //Gadget_Widget_MyId, Gadget_Widget_Description, Gadget_Widget, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3281,9 +3201,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("B")); });
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
     
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClassesSpecification_ContentModifierOnBaseClassPropertyIsAppliedToOnlyOneChildClass", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3301,12 +3218,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); //ShouldBe:BaseOfBAndC_MyId, CalculatedProperty_0 Is:ClassB_ClassC_MyId, ClassB_ClassC_A, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3339,9 +3256,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, 
         [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("C")); });
     
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClassesSpecification_ContentModifierIsAppliedToOnlyOneChildClassPolimorphically", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3359,12 +3273,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); //BaseOfBAndC_MyId, ClassB_ClassC_A, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3395,8 +3309,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*gadgetInstance)}));
+    // set up input
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*gadgetInstance)});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstancesSpecification_ContentModifierAppliesCalculatedPropertiesSpecification", 1, 0, false, "", "", "", false);
@@ -3414,12 +3328,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); //Widget_MyId,Widget_Description, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3457,8 +3371,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceE);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceF);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceG);
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceD)}));
+    
+    // set up input
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceD)});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstancesSpecification_ContentModifierAppliesCalculatedPropertiesSpecificationPolymorphically", 1, 0, false, "", "", "", false);
@@ -3476,12 +3391,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();;
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();;
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();;
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();;
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3536,8 +3451,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     IECInstancePtr instanceD = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [](IECInstanceR instance) { instance.SetValue("IntProperty", ECValue(12345)); });
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipClassDHasClassE, *instanceD, *instanceE);
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceD)}));
+    
+    // set up input
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceD)});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstancesSpecification_ContentModifierDoesNotApplyCalculatedPropertyForNonExistingClass", 1, 0, false, "", "", "", false);
@@ -3559,14 +3475,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     IGNORE_BE_ASSERT()
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
 
     //Calculated property is not applied
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3591,11 +3507,11 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
     
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*widgetInstance));
     keys.push_back(ECInstanceNodeKey::Create(*gadgetInstance));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AcceptableClassNames_ReturnsInstanceOfDefinedClassName", 1, 0, false, "", "", "", false);
@@ -3613,12 +3529,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); //Gadget_Widget_MyId, Gadget_Widget_Description, Gadget_Widget, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date, CalculatedProperty_0
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -3675,15 +3591,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3707,9 +3622,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClasses_AppliesDisplayedPropertiesSpecification", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3725,12 +3637,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3750,10 +3662,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Appli
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*widget));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstances_AppliesDisplayedPropertiesSpecification", 1, 0, false, "", "", "", false);
@@ -3770,12 +3682,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Appli
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3798,10 +3710,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
     IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadgetInstance));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_AppliesDisplayedPropertiesSpecification", 1, 0, false, "", "", "", false);
@@ -3818,12 +3730,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3843,9 +3755,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentAppliesDisplayedPropertiesSpecificationWhenPriorityIsHigher", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3862,12 +3771,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3887,9 +3796,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentAppliesHiddenPropertiesSpecificationWhenPriorityIsHigher", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3906,12 +3812,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); //Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3931,9 +3837,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(1));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentAppliesHiddenPropertiesSpecificationWhenPrioritiesEqual", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3950,12 +3853,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_IntProperty
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3978,9 +3881,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
         instance.SetValue("IntProperty", ECValue(10));
         });
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentAppliesDisplayedPropertiesSpecificationFromBaseClass", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -3997,12 +3897,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); //ClassF_IntProperty
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4027,9 +3927,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
         instance.SetValue("PropertyF", ECValue(456));
         });
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("HidesBaseClassPropertiesWhenUsingDisplayedPropertiesSpecificationInContentModifierAndRequestingDerivedClass", 
         1, 0, false, "", "", "", false);
@@ -4048,12 +3945,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassF_PropertyF
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4074,9 +3971,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentModifierAppliesDisplayedPropertiesSpecification", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4094,12 +3988,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4119,9 +4013,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentModifierAppliesDisplayPropertiesSpecificationWhenPriorityIsHigher", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4140,12 +4031,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4165,9 +4056,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentModifierAppliesHiddenPropertiesSpecificationWhenPriorityIsHigher", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4186,12 +4074,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4211,9 +4099,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentInstancesOfSpecificClassesSpecificationApliesPropertyEditorsSpecification", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4229,7 +4114,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_IntProperty
     
@@ -4246,11 +4131,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadget));
     keys.push_back(ECInstanceNodeKey::Create(*widget));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("AppliesPropertyEditorsSpecification_GetOneFieldWhenPropertiesAndEditorsAreSimilar", 1, 0, false, "", "", "", false);
@@ -4267,7 +4152,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget_Widget_MyID
     
@@ -4284,11 +4169,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*widget));
     keys.push_back(ECInstanceNodeKey::Create(*gadget));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("AppliesPropertyEditorsSpecification_GetDifferentFieldsWhenPropertiesAndEditorsAreDifferent", 1, 0, false, "", "", "", false);
@@ -4309,7 +4194,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Widget_MyID, Gadget_MyID
 
@@ -4331,11 +4216,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
     IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceE));
     keys.push_back(ECInstanceNodeKey::Create(*instanceF));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("AppliesPropertyEditorsSpecificationFromBaseClassOnDerivedClass", 1, 0, false, "", "", "", false);
@@ -4355,7 +4240,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassE_ClassF_IntProperty
     
@@ -4376,12 +4261,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
     IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
     IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceH));
     keys.push_back(ECInstanceNodeKey::Create(*instanceF));
     keys.push_back(ECInstanceNodeKey::Create(*instanceE));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesNotApplyPropertyEditorsSpecificationFromDerivedClassOnBaseClass", 1, 0, false, "", "", "", false);
@@ -4401,7 +4286,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
     
@@ -4422,10 +4307,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));});
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widgetInstance, *gadgetInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadgetInstance));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstance_GetNavigationPropertyValue", 1, 0, false, "", "", "", false);
@@ -4441,12 +4326,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(3, descriptor->GetVisibleFields().size());
 
     ContentDescriptorCPtr over = ContentDescriptor::Create(*descriptor);
 
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4477,11 +4362,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classAHasBAndC, *instanceA, *instanceB);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classAHasBAndC, *instanceA, *instanceC);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceB));
     keys.push_back(ECInstanceNodeKey::Create(*instanceC));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstance_GetOneFieldForSimilarNavigationProperties", 1, 0, false, "", "", "", false);
@@ -4496,10 +4381,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4534,11 +4419,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widgetInstance, *gadgetInstance);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadgetInstance, *sprocketInstance);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadgetInstance));
     keys.push_back(ECInstanceNodeKey::Create(*sprocketInstance));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstance_GetDifferentFieldsForDifferentNavigationProperties", 1, 0, false, "", "", "", false);
@@ -4553,10 +4438,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(4, descriptor->GetVisibleFields().size());
 
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4601,11 +4486,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classAHasBAndC, *instanceA, *instanceB);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2HasB2, *instanceA2Base, *instanceB2);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceB));
     keys.push_back(ECInstanceNodeKey::Create(*instanceB2));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstance_GetCorrectValuesWhenNavigationPropertiesPointsToDifferentClassesButAreInTheSameField", 1, 0, false, "", "", "", false);
@@ -4620,11 +4505,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4658,10 +4543,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
     IECInstancePtr instanceA2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA2);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2HasB2, *instanceA2, *instanceB2);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceB2));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstance_GetDerivedClassLabelWhenNavigationPropertyPointsToDerivedClass", 1, 0, false, "", "", "", false);
@@ -4676,11 +4561,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4705,10 +4590,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadget));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("SelectedNodeInstance_GetCorrectNavigationPropertiesValuesWhenRelatedPropertiesSpecificationIsApplied", 1, 0, false, "", "", "", false);
@@ -4726,11 +4611,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4756,10 +4641,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget);
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*widget));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("ContentRelatedInstances_GetRelatedInstanceNavigationPropertyValue", 1, 0, false, "", "", "", false);
@@ -4775,11 +4660,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(3, descriptor->GetVisibleFields().size());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4809,9 +4694,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     IECInstancePtr derivedInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classG);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *relatedInstance, *derivedInstance);
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GetDerivedClassNavigationPropertyWhenSelectingFromBaseClassAndDerivedClass", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -4825,11 +4707,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     // validate content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
@@ -4882,10 +4764,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -4903,7 +4784,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4969,10 +4850,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -4990,7 +4870,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5056,9 +4936,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesDescriptorsWithSimila
     IECInstancePtr elementInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element);
     IECInstancePtr derivedInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *derivedElement);
 
-    // set up selection
-    SelectionInfo elementSelection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*elementInstance)}));
-    SelectionInfo derivedSelection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*derivedInstance)}));
+    // set up input
+    INavNodeKeysContainerCPtr elementInput = NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*elementInstance)});
+    INavNodeKeysContainerCPtr derivedInput = NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*derivedInstance)});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("MergesDescriptorsWithSimilarNavigationProperties", 1, 0, false, "", "", "", false);
@@ -5073,10 +4953,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesDescriptorsWithSimila
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptors
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, elementSelection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *elementInput, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, derivedSelection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *derivedInput, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor2.IsValid());
 
     // merge descriptors
@@ -5128,15 +5008,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5205,10 +5084,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5216,7 +5094,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5279,10 +5157,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5290,7 +5167,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5341,10 +5218,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5352,7 +5228,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5412,10 +5288,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5423,7 +5298,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5475,10 +5350,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5486,7 +5360,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5536,10 +5410,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5547,7 +5420,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5604,10 +5477,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -5625,7 +5497,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsEnumsArrayPropertyValu
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5709,10 +5581,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -5741,7 +5612,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5817,15 +5688,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsO
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5900,10 +5770,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5911,7 +5780,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5977,10 +5846,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -5988,7 +5856,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6042,10 +5910,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6053,7 +5920,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6117,10 +5984,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6128,7 +5994,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6181,10 +6047,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6192,7 +6057,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6264,10 +6129,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -6300,7 +6164,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6398,15 +6262,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6495,10 +6358,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6506,7 +6368,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6583,10 +6445,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6594,7 +6455,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6660,10 +6521,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6671,7 +6531,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6754,10 +6614,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6765,7 +6624,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6832,10 +6691,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6843,7 +6701,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6902,10 +6760,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -6913,7 +6770,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *mergingDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -6968,10 +6825,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     rapidjson::Document expectedFieldType;
@@ -6997,7 +6853,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7061,15 +6917,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7124,15 +6979,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7252,10 +7106,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ParentClass_ParentProperty, Nested<5 ChildClass properties>
     
@@ -7344,7 +7197,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7511,10 +7364,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassD_StringProperty, Array<ClassE_IntProperty + ClassE_LongProperty>
     
@@ -7523,7 +7375,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7640,10 +7492,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassD_StringProperty, Array<ClassE_IntProperty + ClassE_LongProperty>
     
@@ -7652,7 +7503,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7757,10 +7608,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassD_StringProperty, Array<ClassE_IntProperty + ClassE_LongProperty>
     
@@ -7769,7 +7619,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *modifiedDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*modifiedDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7823,15 +7673,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); // 7 Widget properties, Gadget 
     
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7916,15 +7765,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); // 7 Widget properties, Sprocket 
     
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -7966,9 +7814,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithClassIdsAllowsUsingSelectedNodeECExpressionSymbol)
     {    
-    // set up selection
+    // set up input
     ECClassCP classF = GetClass("RulesEngineTest", "ClassF");
-    SelectionInfo selection({classF});
+    NavNodeKeyList keys;
+    keys.push_back(ECInstanceNodeKey::Create(classF->GetId(), ECInstanceId()));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RequestingDescriptorWithClassIdsAllowsUsingSelectedNodeECExpressionSymbol", 1, 0, false, "", "", "", false);
@@ -7980,7 +7830,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
 
     ASSERT_EQ(1, descriptor->GetSelectClasses().size());
@@ -7992,8 +7842,10 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithClassIdsAndUsingSelectedNodeECInstanceSymbolFailsGracefully)
     {    
-    // set up selection
-    SelectionInfo selection({m_widgetClass});
+    // set up input
+    NavNodeKeyList keys;
+    keys.push_back(ECInstanceNodeKey::Create(m_widgetClass->GetId(), ECInstanceId()));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RequestingDescriptorWithClassIdsAndUsingSelectedNodeECInstanceSymbolFailsGracefully", 1, 0, false, "", "", "", false);
@@ -8005,7 +7857,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsNull());
     }
 
@@ -8014,7 +7866,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecification_GetCorrectFieldDisplayLabelWhenRelationshipMeaningIsSetToSameInstance)
     {    
-    // set up selection
+    // set up input
     ECRelationshipClassCP widgetHasGadget = GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
@@ -8022,7 +7874,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
     
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadget));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedPropertiesSpecification_GetCorrectFieldDisplayLabelWhenRelationshipMeaningIsSetToSameInstance", 1, 0, false, "", "", "", false);
@@ -8037,7 +7889,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(4, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[0]->IsPropertiesField());
@@ -8058,7 +7910,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecification_GetCorrectFieldDisplayLabelWhenRelationshipMeaningIsSetToRelatedInstance)
     {    
-    // set up selection
+    // set up input
     ECRelationshipClassCP widgetHasGadget = GetClass("RulesEngineTest", "WidgetHasGadget")->GetRelationshipClassCP();
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
@@ -8066,7 +7918,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*gadget));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("RelatedPropertiesSpecification_GetCorrectFieldDisplayLabelWhenRelationshipMeaningIsSetToRelatedInstance", 1, 0, false, "", "", "", false);
@@ -8081,7 +7933,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_EQ(4, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[0]->IsPropertiesField());
@@ -8102,7 +7954,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RelatedPropertiesSpecifica
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropertiesHaveDifferentKindOfQuantities)
     {
-    // set up selection
+    // set up input
     ECClassCP classK = GetClass("RulesEngineTest", "ClassK");
     ECClassCP classL = GetClass("RulesEngineTest", "ClassL");
     IECInstancePtr instanceK = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classK);
@@ -8111,7 +7963,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instanceK));
     keys.push_back(ECInstanceNodeKey::Create(*instanceL));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GetDifferentFieldsIfPropertiesHaveDifferentKindOfQuantities", 1, 0, false, "", "", "", false);
@@ -8124,7 +7976,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDifferentFieldsIfPropert
 
     // validate descriptor
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
@@ -8143,9 +7995,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test1"));});
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Test2"));});
 
-    // set up selection
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GetDistinctValues", 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -8159,7 +8008,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
 
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     bvector<ContentDescriptor::Field*> fieldVectorCopy = descriptor->GetAllFields();
@@ -8175,7 +8024,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues)
     EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size()); // Widget_MyID
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*overridenDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -8201,13 +8050,13 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
     IECInstancePtr instance4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
 
-    // set up selection
+    // set up input
     NavNodeKeyList keys;
     keys.push_back(ECInstanceNodeKey::Create(*instance1));
     keys.push_back(ECInstanceNodeKey::Create(*instance2));
     keys.push_back(ECInstanceNodeKey::Create(*instance3));
     keys.push_back(ECInstanceNodeKey::Create(*instance4));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("GetDistinctValuesFromMergedField", 1, 0, false, "", "", "", false);
@@ -8222,7 +8071,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(8, descriptor->GetVisibleFields().size()); //Gadget_Widget_MyId, Gadget_Widget_Description, Gadget_Widget, Widget_IntProperty, Widget_BoolProperty, Widget_DoubleProperty, Widget_LongProperty, Widget_Date
     
@@ -8238,7 +8087,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, GetDistinctValuesFromMerge
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*overridenDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
         
     // validate content set
@@ -8265,8 +8114,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgets, *widget, *gadget);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *gadgetHasSprockets, *gadget, *sprocket);
 
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetsContentDescriptorWithNavigationPropertiesFromDifferentContentSpecifications", 1, 0, false, "", "", "", true);
     m_locater->AddRuleSet(*ruleSet);
@@ -8283,12 +8130,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     // validate content descriptor
     RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
 
-    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content
@@ -8319,8 +8166,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget, *gadget);
     RulesEngineTestHelpers::InsertRelationship(*s_project, *widgetHasGadgets, *widget1, *gadget);
 
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create());
-
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetDistinctNavigationProperties", 1, 0, false, "", "", "", true);
     m_locater->AddRuleSet(*ruleSet);
@@ -8334,7 +8179,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
 
     // validate content descriptor
-    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = RulesDrivenECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
@@ -8343,7 +8188,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // request for content
-    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *overridenDescriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = RulesDrivenECPresentationManager::GetManager().GetContent(*overridenDescriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content
@@ -8387,15 +8232,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntLoadCompositeContentI
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceA), ECInstanceNodeKey::Create(*instanceB)}));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*instanceA), ECInstanceNodeKey::Create(*instanceB)});
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -8448,15 +8293,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntTakeContentTwiceForTh
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*rootElement), ECInstanceNodeKey::Create(*childElement)}));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create({ECInstanceNodeKey::Create(*rootElement), ECInstanceNodeKey::Create(*childElement)});
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
 
     // expect 2 content set items

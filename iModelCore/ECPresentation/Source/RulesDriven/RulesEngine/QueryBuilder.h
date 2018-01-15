@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/QueryBuilder.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -124,11 +124,11 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017
 +===============+===============+===============+===============+===============+======*/
-struct ParsedSelectionInfo : IParsedSelectionInfo
+struct ParsedInput : IParsedInput
 {
 private:
     bvector<ECClassCP> m_orderedClasses;
-    bmap<ECClassCP, bvector<ECInstanceId>> m_classSelection;
+    bmap<ECClassCP, bvector<ECInstanceId>> m_classInput;
 private:
     void GetNodeClasses(NavNodeKeyCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
     void Parse(NavNodeKeyListCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
@@ -136,7 +136,7 @@ protected:
     bvector<ECClassCP> const& _GetClasses() const override {return m_orderedClasses;}
     bvector<ECInstanceId> const& _GetInstanceIds(ECClassCR selectClass) const override;
 public:
-    ParsedSelectionInfo(NavNodeKeyListCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
+    ParsedInput(NavNodeKeyListCR, INavNodeLocater const&, IConnectionCR, ECSchemaHelper const&);
 };
 
 /*=================================================================================**//**
@@ -150,15 +150,19 @@ struct ContentDescriptorBuilder
         IPropertyCategorySupplierR m_categorySupplier;
         IECPropertyFormatter const* m_propertyFormatter;
         ILocalizationProvider const* m_localizationProvider;
+        INavNodeKeysContainerCPtr m_inputKeys;
+        SelectionInfo const* m_selectionInfo;
     public:
-        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, 
-            IPropertyCategorySupplierR categorySupplier, IECPropertyFormatter const* propertyFormatter, ILocalizationProvider const* localizationProvider) 
+        Context(ECSchemaHelper const& helper, IConnectionManagerCR connections, IConnectionCR connection, PresentationRuleSetCR ruleset, Utf8CP preferredDisplayType, IPropertyCategorySupplierR categorySupplier,
+            IECPropertyFormatter const* propertyFormatter, ILocalizationProvider const* localizationProvider, INavNodeKeysContainerCR input, SelectionInfo const* selection) 
             : ContentSpecificationsHandler::Context(helper, connections, connection, ruleset, preferredDisplayType), m_categorySupplier(categorySupplier), 
-            m_propertyFormatter(propertyFormatter), m_localizationProvider(localizationProvider)
+            m_propertyFormatter(propertyFormatter), m_localizationProvider(localizationProvider), m_inputKeys(&input), m_selectionInfo(selection)
             {}
         IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
         IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
         ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
+        INavNodeKeysContainerCR GetInputKeys() const {return *m_inputKeys;}
+        SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
     };
     struct CreateDescriptorContext;
 
@@ -169,8 +173,8 @@ public:
     ContentDescriptorBuilder(Context& context) : m_context(context) {}
     Context& GetContext() {return m_context;}
     Context const& GetContext() const {return m_context;}
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(SelectedNodeInstancesSpecificationCR, IParsedSelectionInfo const&) const;
-    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentRelatedInstancesSpecificationCR, IParsedSelectionInfo const&) const;
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(SelectedNodeInstancesSpecificationCR, IParsedInput const&) const;
+    ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentRelatedInstancesSpecificationCR, IParsedInput const&) const;
     ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentInstancesOfSpecificClassesSpecificationCR) const;
     ECPRESENTATION_EXPORT ContentDescriptorPtr CreateDescriptor(ContentDescriptor::NestedContentField const&) const;
 };
@@ -216,8 +220,8 @@ public:
     ContentQueryBuilderParameters const& GetParameters() const {return m_params;}
     ContentQueryBuilderParameters& GetParameters() {return m_params;}
 
-    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(SelectedNodeInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
-    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentRelatedInstancesSpecificationCR, ContentDescriptorCR, IParsedSelectionInfo const&);
+    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(SelectedNodeInstancesSpecificationCR, ContentDescriptorCR, IParsedInput const&);
+    ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentRelatedInstancesSpecificationCR, ContentDescriptorCR, IParsedInput const&);
     ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentInstancesOfSpecificClassesSpecificationCR, ContentDescriptorCR);
     ECPRESENTATION_EXPORT ContentQueryPtr CreateQuery(ContentDescriptor::NestedContentField const&);
 };

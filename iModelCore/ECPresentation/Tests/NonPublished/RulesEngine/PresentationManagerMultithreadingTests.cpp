@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
@@ -23,6 +23,7 @@ struct RulesDrivenECPresentationManagerMultithreadingTests : ::testing::Test
     static Utf8CP s_projectName;
     static ECDbTestProject* s_project;
     TestConnectionManager m_connections;
+    IConnectionPtr m_connection;
     RulesDrivenECPresentationManager* m_manager;
     
     static void SetUpTestCase();
@@ -61,7 +62,7 @@ void RulesDrivenECPresentationManagerMultithreadingTests::TearDownTestCase()
 void RulesDrivenECPresentationManagerMultithreadingTests::SetUp()
     {
     m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
-    m_connections.NotifyConnectionOpened(s_project->GetECDb());
+    m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
     Sync();
     }
 
@@ -373,7 +374,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     {
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -381,9 +382,8 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options("doesnt matter");
-    m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()).wait();
+    m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -394,7 +394,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     {
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -402,10 +402,9 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options("doesnt matter");
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
-    m_manager->GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()).wait();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    m_manager->GetContent(*descriptor, PageOptions()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -416,7 +415,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     {        
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -424,10 +423,9 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options("doesnt matter");
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
-    m_manager->GetContentSetSize(s_project->GetECDb(), *descriptor, selection, options.GetJson()).wait();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    m_manager->GetContentSetSize(*descriptor).wait();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -1184,17 +1182,16 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenManagerIsTerminated)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()));
     TerminateAndVerifyResult();
     }
 
@@ -1204,17 +1201,16 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenConnectionIsClosed)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()));
     CloseConnectionAndVerifyResult();
     }
 
@@ -1224,17 +1220,16 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenRulesetIsDisposed)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()));
     DisposeRulesetAndVerifyResult();
     }
 
@@ -1244,17 +1239,16 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenSelectionOnSameConnectionChanges)
     {
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()));
     ChangeSelectionAndVerifyResult();
     }
 
@@ -1268,17 +1262,16 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(connection2->GetDb(), nullptr, selection, options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(connection2->GetDb(), nullptr, *NavNodeKeyListContainer::Create(), nullptr, options.GetJson()), false);
     ChangeSelectionAndVerifyResult(false);
 
     m_connections.NotifyConnectionClosed(*connection2);
@@ -1290,18 +1283,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRequestWhenManagerIsTerminated)
     {
     // set the request handler
-    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()));
+    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
     TerminateAndVerifyResult();
     }
 
@@ -1311,18 +1303,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRequestWhenConnectionIsClosed)
     {
     // set the request handler
-    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()));
+    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
     CloseConnectionAndVerifyResult();
     }
 
@@ -1332,18 +1323,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRequestWhenRulesetIsDisposed)
     {
     // set the request handler
-    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()));
+    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
     DisposeRulesetAndVerifyResult();
     }
 
@@ -1353,18 +1343,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRequestWhenSelectionOnSameConnectionChanges)
     {
     // set the request handler
-    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(s_project->GetECDb(), *descriptor, selection, PageOptions(), options.GetJson()));
+    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
     ChangeSelectionAndVerifyResult();
     }
 
@@ -1378,18 +1367,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
-    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return nullptr;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*connection2, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(connection2->GetDb(), *descriptor, selection, PageOptions(), options.GetJson()), false);
+    DoRequest(m_manager->GetContent(*descriptor, PageOptions()), false);
     ChangeSelectionAndVerifyResult(false);
 
     m_connections.NotifyConnectionClosed(*connection2);
@@ -1401,18 +1389,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSetSizeRequestWhenManagerIsTerminated)
     {        
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return 0;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(s_project->GetECDb(), *descriptor, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentSetSize(*descriptor));
     TerminateAndVerifyResult();
     }
 
@@ -1422,18 +1409,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSetSizeRequestWhenConnectionIsClosed)
     {        
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return 0;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(s_project->GetECDb(), *descriptor, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentSetSize(*descriptor));
     CloseConnectionAndVerifyResult();
     }
 
@@ -1443,18 +1429,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSetSizeRequestWhenRulesetIsDisposed)
     {        
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return 0;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(s_project->GetECDb(), *descriptor, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentSetSize(*descriptor));
     DisposeRulesetAndVerifyResult();
     }
 
@@ -1464,18 +1449,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSetSizeRequestWhenSelectionOnSameConnectionChanges)
     {        
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return 0;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(s_project->GetECDb(), *descriptor, selection, options.GetJson()));
+    DoRequest(m_manager->GetContentSetSize(*descriptor));
     ChangeSelectionAndVerifyResult();
     }
 
@@ -1489,18 +1473,17 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, DoesntCancelCont
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
        
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, SelectionInfo const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
         {
         m_didGetHit.store(true);
         return 0;
         });
 
     // request and verify
-    SelectionInfo selection("selection provider", false, *NavNodeKeyListContainer::Create());
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create();
+    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*connection2, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(connection2->GetDb(), *descriptor, selection, options.GetJson()), false);
+    DoRequest(m_manager->GetContentSetSize(*descriptor), false);
     ChangeSelectionAndVerifyResult(false);
 
     m_connections.NotifyConnectionClosed(*connection2);

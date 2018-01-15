@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/RulesEngine/ContentPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RulesEnginePerformanceTests.h"
@@ -78,17 +78,17 @@ void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int
     stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
     while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
         keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
 
     // start the timer
     Timer _timer;
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, *input, nullptr, options.GetJson()).get();
 
     // get the content
-    ContentCPtr content = m_manager->GetContent(m_project, *descriptor, selection, PageOptions(), options.GetJson()).get();
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(expectedContentSize, content->GetContentSet().GetSize());
     for (ContentSetItemCPtr record : content->GetContentSet())
@@ -121,11 +121,15 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
     bset<ECClassCP> allElementClassesSet = GetDerivedClasses(m_project, *elementClass);
     bvector<ECClassCP> allElementClasses(allElementClassesSet.begin(), allElementClassesSet.end());
-    SelectionInfo selection(allElementClasses);
+    NavNodeKeyList keys;
+    for (ECClassCP ecClass : allElementClasses)
+        keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId()));
+
+    INavNodeKeysContainerCPtr input = NavNodeKeyListContainer::Create(keys);
     
     // get the descriptor
     Timer _timer;
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, selection, CreateContentOptions().GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, *input, nullptr, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(descriptor.IsValid());
     }
 

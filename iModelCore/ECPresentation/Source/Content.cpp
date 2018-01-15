@@ -2,7 +2,7 @@
 |
 |     $Source: Source/Content.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -125,11 +125,20 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::ContentDescriptor(IConnectionCR connection, JsonValueCR options, INavNodeKeysContainerCR input, Utf8String preferredDisplayType)
+    : m_preferredDisplayType(preferredDisplayType), m_contentFlags(0), m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending), m_connection(connection),
+    m_selectionInfo(nullptr), m_inputKeys(&input), m_options(options)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(ContentDescriptorCR other) 
-    : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_filterExpression(other.m_filterExpression),
-    m_contentFlags(other.m_contentFlags), m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection)
+    : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_filterExpression(other.m_filterExpression), m_contentFlags(other.m_contentFlags),
+    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connection(other.m_connection), m_inputKeys(other.m_inputKeys), m_options(other.m_options)
     {
     bmap<Field const*, Field const*> fieldsRemapInfo;
     for (Field const* field : other.m_fields)
@@ -140,6 +149,8 @@ ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
         }
     for (Field* field : m_fields)
         field->NotifyFieldsCloned(fieldsRemapInfo);
+
+    m_selectionInfo = (nullptr != other.m_selectionInfo) ? new SelectionInfo(*other.m_selectionInfo) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,6 +160,8 @@ ContentDescriptor::~ContentDescriptor()
     {
     for (Field* field : m_fields)
         delete field;
+
+    DELETE_AND_CLEAR(m_selectionInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -162,7 +175,10 @@ bool ContentDescriptor::Equals(ContentDescriptor const& other) const
         || m_sortDirection != other.m_sortDirection
         || m_filterExpression != other.m_filterExpression
         || m_classes.size() != other.m_classes.size()
-        || m_fields.size() != other.m_fields.size())
+        || m_fields.size() != other.m_fields.size()
+        || !m_connection.GetId().Equals(other.m_connection.GetId())
+        || !m_inputKeys->GetHash().Equals(other.m_inputKeys->GetHash())
+        || m_options != other.m_options)
         {
         return false;
         }
@@ -178,6 +194,12 @@ bool ContentDescriptor::Equals(ContentDescriptor const& other) const
         if (*m_fields[i] != *other.m_fields[i])
             return false;
         }
+
+    if ((nullptr != m_selectionInfo && nullptr == other.m_selectionInfo) || (nullptr == m_selectionInfo && nullptr != other.m_selectionInfo))
+        return false;
+
+    if (nullptr != m_selectionInfo && nullptr != other.m_selectionInfo && !(*m_selectionInfo == *other.m_selectionInfo))
+        return false;
 
     return true;
     }
@@ -252,12 +274,30 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     BeAssert(m_contentFlags == other.m_contentFlags && "Can't merge descriptors with different content flags");
     BeAssert(m_sortDirection == other.m_sortDirection && "Can't merge descriptors with different sort directions");
     BeAssert(m_filterExpression.Equals(other.m_filterExpression) && "Can't merge descriptors with different filter expressions");
+    BeAssert(m_connection.GetId().Equals(other.m_connection.GetId()) && "Can't merge descriptors with different connections");
+    BeAssert(m_options == other.m_options && "Can't merge descriptors with different options");
+    BeAssert((nullptr == m_selectionInfo && nullptr == other.m_selectionInfo)
+        || (nullptr != m_selectionInfo && nullptr != other.m_selectionInfo && *m_selectionInfo == *other.m_selectionInfo) && "Can't merge descriptors with different selection");
 
     for (SelectClassInfo const& sourceClassInfo : other.m_classes)
         {
         auto iter = std::find(m_classes.begin(), m_classes.end(), sourceClassInfo);
         if (m_classes.end() == iter)
             m_classes.push_back(sourceClassInfo);
+        }
+
+    NavNodeKeyList newKeys;
+    for (NavNodeKeyCPtr inputKey : *other.m_inputKeys)
+        {
+        if (m_inputKeys->end() != m_inputKeys->find(inputKey))
+            newKeys.push_back(inputKey);
+        }
+    if (0 != newKeys.size())
+        {
+        for (NavNodeKeyCPtr inputKey : *m_inputKeys)
+            newKeys.push_back(inputKey);
+
+        m_inputKeys = NavNodeKeyListContainer::Create(newKeys);
         }
 
     bmap<Field const*, Field const*> fieldsRemapInfo;
@@ -470,6 +510,17 @@ static rapidjson::Value CreateRelationshipPathJson(RelatedClassPathCR path, rapi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static rapidjson::Value CreateSelectionInfoJson(SelectionInfo const& info, rapidjson::Document::AllocatorType& allocator)
+    {
+    rapidjson::Value selectionInfo(rapidjson::kObjectType);
+    selectionInfo.AddMember("SelectionProvider", rapidjson::StringRef(info.GetSelectionProviderName().c_str()), allocator);
+    selectionInfo.AddMember("IsSubSelection", info.IsSubSelection(), allocator);
+    return selectionInfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
@@ -496,7 +547,15 @@ rapidjson::Document ContentDescriptor::AsJson(rapidjson::MemoryPoolAllocator<>* 
     json.AddMember("SortingFieldIndex", m_sortingFieldIndex, json.GetAllocator());
     json.AddMember("SortDirection", (int)m_sortDirection, json.GetAllocator());
     json.AddMember("ContentFlags", m_contentFlags, json.GetAllocator());
+    json.AddMember("ConnectionId", rapidjson::StringRef(m_connection.GetId().c_str()), json.GetAllocator());
     json.AddMember("FilterExpression", rapidjson::StringRef(m_filterExpression.c_str()), json.GetAllocator());
+    json.AddMember("InputKeysHash", rapidjson::Value(m_inputKeys->GetHash().c_str(), json.GetAllocator()), json.GetAllocator());
+    rapidjson::Document options(&json.GetAllocator());
+    options.Parse(m_options.ToString().c_str());
+    json.AddMember("ContentOptions", options, json.GetAllocator());
+    if (nullptr != m_selectionInfo)
+        json.AddMember("SelectionInfo", CreateSelectionInfoJson(*m_selectionInfo, json.GetAllocator()), json.GetAllocator());
+
     return json;
     }
 
@@ -1316,31 +1375,16 @@ rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::MemoryPoolAllocato
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 SelectionInfo::SelectionInfo(ISelectionProvider const& selectionProvider, SelectionChangedEventCR evt)
-    : m_isValid(true), m_selectionProviderName(evt.GetSourceName()), m_isSubSelection(evt.IsSubSelection()), 
-    m_keys(evt.IsSubSelection() ? selectionProvider.GetSubSelection(evt.GetDb()) : selectionProvider.GetSelection(evt.GetDb()))
+    : m_selectionProviderName(evt.GetSourceName()), m_isSubSelection(evt.IsSubSelection())
     {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-SelectionInfo::SelectionInfo(bvector<ECClassCP> const& classes)
-    : m_isValid(true), m_isSubSelection(false)
-    {
-    NavNodeKeyList keys;
-    for (ECClassCP ecClass : classes)
-        keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId()));
-    m_keys = NavNodeKeyListContainer::Create(keys);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SelectionInfo& SelectionInfo::operator=(SelectionInfo const& other)
     {
-    m_isValid = other.m_isValid;
     m_selectionProviderName = other.m_selectionProviderName;
     m_isSubSelection = other.m_isSubSelection;
-    m_keys = other.m_keys;
     return *this;
     }
 
@@ -1349,10 +1393,8 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo const& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
     {
-    m_isValid = other.m_isValid;
     m_isSubSelection = other.m_isSubSelection;
     m_selectionProviderName.swap(other.m_selectionProviderName);
-    m_keys.swap(other.m_keys);
     return *this;
     }
 
@@ -1361,10 +1403,8 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SelectionInfo::operator==(SelectionInfo const& other) const
     {
-    return (!m_isValid && !other.m_isValid)
-        || (m_isSubSelection == other.m_isSubSelection
-            && m_selectionProviderName == other.m_selectionProviderName
-            && m_keys->GetHash() == other.m_keys->GetHash());
+    return (m_isSubSelection == other.m_isSubSelection
+            && m_selectionProviderName == other.m_selectionProviderName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1372,11 +1412,6 @@ bool SelectionInfo::operator==(SelectionInfo const& other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SelectionInfo::operator<(SelectionInfo const& other) const
     {
-    if (!m_isValid && other.m_isValid)
-        return true;
-    if (m_isValid && !other.m_isValid)
-        return false;
-
     if (!m_isSubSelection && other.m_isSubSelection)
         return true;
     if (m_isSubSelection && !other.m_isSubSelection)
@@ -1385,11 +1420,6 @@ bool SelectionInfo::operator<(SelectionInfo const& other) const
     int selectionProviderNameCmp = m_selectionProviderName.CompareTo(other.m_selectionProviderName);
     if (selectionProviderNameCmp < 0)
         return true;
-    if (selectionProviderNameCmp > 0)
-        return false;
-
-    if (m_keys.IsValid() && other.m_keys.IsValid())
-        return m_keys->GetHash().CompareTo(other.m_keys->GetHash()) < 0;
     return false;    
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/RulesPreprocessor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -251,42 +251,39 @@ struct RulesPreprocessor
     {
     private:
         INavNodeLocaterCR m_nodeLocater;
-        INavNodeKeysContainerCPtr m_selectedNodeKeys;
+        INavNodeKeysContainerCPtr m_inputNodeKeys;
         Utf8StringCR m_preferredContentDisplayType;
-        Utf8StringCR m_selectionProviderName;
-        bool m_isSubSelection;
+        SelectionInfo const* m_selectionInfo;
     public:
         //! Constructor.
         //! @param[in] connections The connections manager.
         //! @param[in] connection The connection used for evaluating ECDb-based ECExpressions
-        //! @param[in] selectedNodeKeys A container of selected nodes.
+        //! @param[in] inputNodeKeys A container of input nodes.
         //! @param[in] preferredContentDisplayType Type of content display that the content is going to be displayed in.
-        //! @param[in] selectionProviderName Name of the last selection source.
-        //! @param[in] isSubSelection Did the last selection event happen in sub-selection.
+        //! @param[in] selectionInfo Info about last selection.
         //! @param[in] ruleset The ruleset that contains the presentation rules.
         //! @param[in] settings The user settings object.
         //! @param[in] ecexpressionsCache ECExpressions cache that should be used by preprocessor.
         //! @param[in] nodeLocater Nodes locater.
-        ContentRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, INavNodeKeysContainerCR selectedNodeKeys, Utf8StringCR preferredContentDisplayType,
-            Utf8StringCR selectionProviderName, bool isSubSelection, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
+        ContentRuleParameters(IConnectionManagerCR connections, IConnectionCR connection, INavNodeKeysContainerCR inputNodeKeys, Utf8StringCR preferredContentDisplayType,
+            SelectionInfo const* selectionInfo, PresentationRuleSetCR ruleset, IUserSettings const& settings, IUsedUserSettingsListener* settingsListener,
             ECExpressionsCache& ecexpressionsCache, INavNodeLocaterCR nodeLocater)
-            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_selectedNodeKeys(&selectedNodeKeys), 
-            m_preferredContentDisplayType(preferredContentDisplayType), m_selectionProviderName(selectionProviderName), m_nodeLocater(nodeLocater)
+            : PreprocessorParameters(connections, connection, ruleset, settings, settingsListener, ecexpressionsCache), m_inputNodeKeys(&inputNodeKeys), 
+            m_preferredContentDisplayType(preferredContentDisplayType), m_selectionInfo(selectionInfo), m_nodeLocater(nodeLocater)
             {
-            m_isSubSelection = isSubSelection;
             }
-        //! Do these parameters contain any selection.
-        bool HasSelectionInfo() const {return m_selectedNodeKeys.IsValid();}
+        //! Do these parameters contain selection info.
+        bool HasSelectionInfo() const {return nullptr != m_selectionInfo;}
         //! Get the nodes locater.
         INavNodeLocaterCR GetNodeLocater() const {return m_nodeLocater;}
         //! Get selected node keys.
-        INavNodeKeysContainerCR GetSelectedNodeKeys() const {return *m_selectedNodeKeys;}
+        INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputNodeKeys;}
         //! Get preferred display type.
         Utf8StringCR GetPreferredDisplayType() const {return m_preferredContentDisplayType;}
         //! Get the name of the last selection source.
-        Utf8StringCR GetSelectionProviderName() const {return m_selectionProviderName;}
+        Utf8CP GetSelectionProviderName() const {return HasSelectionInfo() ? m_selectionInfo->GetSelectionProviderName().c_str() : nullptr;}
         //! Did the last selection event happen in sub-selection.
-        bool IsSubSelection() const {return m_isSubSelection;}
+        bool IsSubSelection() const {return HasSelectionInfo() ? m_selectionInfo->IsSubSelection() : false;}
     };
     
     typedef RootNodeRuleParameters const&               RootNodeRuleParametersCR;

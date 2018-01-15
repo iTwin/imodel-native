@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/IECPresentationManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -91,15 +91,15 @@ protected:
 
     //! Get the content descriptor based on the supplied parameters.
     //! @see GetContentDescriptor
-    virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, SelectionInfo const&, JsonValueCR) = 0;
+    virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, INavNodeKeysContainerCR, SelectionInfo const*, JsonValueCR) = 0;
 
     //! Get the content.
     //! @see GetContent
-    virtual folly::Future<ContentCPtr> _GetContent(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, PageOptionsCR, JsonValueCR) = 0;
+    virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR) = 0;
 
     //! Get the content set size. 
     //! @see GetContentSetSize
-    virtual folly::Future<size_t> _GetContentSetSize(IConnectionCR, ContentDescriptorCR, SelectionInfo const&, JsonValueCR) = 0;
+    virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR) = 0;
 /** @} */
     
 /** @name Updating
@@ -222,26 +222,21 @@ public:
     //! Get the content descriptor based on the supplied parameters.
     //! @param[in] db The db to use for getting the content.
     //! @param[in] preferredDisplayType The display type that the content will be displayed in. See @ref ContentDisplayType.
+    //! @param[in] inputKeys The node keys to get content descriptor for.
     //! @param[in] selectionInfo Info about the selection.
     //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<ContentDescriptorCPtr> GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ContentDescriptorCPtr> GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, INavNodeKeysContainerCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR extendedOptions = Json::Value());
 
     //! Get the content.
-    //! @param[in] db The db to use for getting the content.
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
-    //! @param[in] selectionInfo Info about the selection.
     //! @param[in] pageOptions Info about the requested page of data.
-    //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<ContentCPtr> GetContent(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, PageOptionsCR pageOptions, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<ContentCPtr> GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions);
 
     //! Get the content set size.
-    //! @param[in] db The db to use for getting the content.
     //! @param[in] descriptor The content descriptor which describes what should be included in the content and how
     //!            it should be formatted. To get the default descriptor, use @ref GetContentDescriptor.
-    //! @param[in] selectionInfo Info about the selection.
-    //! @param[in] extendedOptions Additional options which depend on the implementation of @ref IECPresentationManager.
-    ECPRESENTATION_EXPORT folly::Future<size_t> GetContentSetSize(ECDbCR db, ContentDescriptorCR descriptor, SelectionInfo const& selectionInfo, JsonValueCR extendedOptions = Json::Value());
+    ECPRESENTATION_EXPORT folly::Future<size_t> GetContentSetSize(ContentDescriptorCR descriptor);
 /** @} */
     
 /** @name Updating

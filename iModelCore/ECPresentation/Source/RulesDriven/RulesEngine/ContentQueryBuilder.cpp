@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentQueryBuilder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -16,7 +16,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ParsedSelectionInfo::ParsedSelectionInfo(NavNodeKeyListCR nodeKeys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
+ParsedInput::ParsedInput(NavNodeKeyListCR nodeKeys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
     Parse(nodeKeys, nodesLocater, connection, helper);
     }
@@ -24,7 +24,7 @@ ParsedSelectionInfo::ParsedSelectionInfo(NavNodeKeyListCR nodeKeys, INavNodeLoca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
+void ParsedInput::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
     if (nullptr != nodeKey.AsDisplayLabelGroupingNodeKey() && !nodeKey.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
         {
@@ -43,9 +43,9 @@ void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater c
             BeAssert(false);
             return;
             }
-        if (m_classSelection.end() == m_classSelection.find(ecClass))
+        if (m_classInput.end() == m_classInput.find(ecClass))
             m_orderedClasses.push_back(ecClass);
-        m_classSelection[ecClass].push_back(instanceNodeKey.GetInstanceId());
+        m_classInput[ecClass].push_back(instanceNodeKey.GetInstanceId());
         return;
         }
         
@@ -66,7 +66,7 @@ void ParsedSelectionInfo::GetNodeClasses(NavNodeKeyCR nodeKey, INavNodeLocater c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ParsedSelectionInfo::Parse(NavNodeKeyListCR keys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
+void ParsedInput::Parse(NavNodeKeyListCR keys, INavNodeLocater const& nodesLocater, IConnectionCR connection, ECSchemaHelper const& helper)
     {
     for (NavNodeKeyCPtr const& key : keys)
         GetNodeClasses(*key, nodesLocater, connection, helper);
@@ -75,10 +75,10 @@ void ParsedSelectionInfo::Parse(NavNodeKeyListCR keys, INavNodeLocater const& no
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECInstanceId> const& ParsedSelectionInfo::_GetInstanceIds(ECClassCR selectClass) const
+bvector<ECInstanceId> const& ParsedInput::_GetInstanceIds(ECClassCR selectClass) const
     {
-    auto iter = m_classSelection.find(&selectClass);
-    if (m_classSelection.end() != iter)
+    auto iter = m_classInput.find(&selectClass);
+    if (m_classInput.end() != iter)
         return iter->second;
         
     static bvector<ECInstanceId> s_empty;
@@ -142,7 +142,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    BoundQueryRecursiveChildrenIdSet const& GetRecursiveChildrenIds(IParsedSelectionInfo const& selection, SelectClassInfo const& thisInfo)
+    BoundQueryRecursiveChildrenIdSet const& GetRecursiveChildrenIds(IParsedInput const& input, SelectClassInfo const& thisInfo)
         {
         bool forward = IsRecursiveJoinForward(thisInfo);
         BoundQueryRecursiveChildrenIdSet*& set = forward ? m_fwdRecursiveChildrenIds : m_bwdRecursiveChildrenIds;
@@ -163,7 +163,7 @@ public:
                         relationships.insert(rel.GetRelationship());
                     }
                 }
-            set = new BoundQueryRecursiveChildrenIdSet(relationships, forward, selection.GetInstanceIds(*thisInfo.GetPrimaryClass()));
+            set = new BoundQueryRecursiveChildrenIdSet(relationships, forward, input.GetInstanceIds(*thisInfo.GetPrimaryClass()));
             }
         return *set;
         }
@@ -172,12 +172,12 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedSelectionInfo const& selection)
+ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider());
-    ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, selection);
+        m_params.GetLocalizationProvider(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+    ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
     
@@ -193,8 +193,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
             classQuery->Join(path, true);
 
-        // handle filtering by selection
-        bvector<ECInstanceId> const& selectedInstanceIds = selection.GetInstanceIds(selectClassInfo.GetSelectClass());
+        // handle filtering by input
+        bvector<ECInstanceId> const& selectedInstanceIds = input.GetInstanceIds(selectClassInfo.GetSelectClass());
         if (!selectedInstanceIds.empty())
             classQuery->Where("InVirtualSet(?, [this].[ECInstanceId])", {new BoundQueryIdSet(std::move(selectedInstanceIds))});
 
@@ -213,12 +213,12 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedSelectionInfo const& selection)
+ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider());
-    ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, selection);
+        m_params.GetLocalizationProvider(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
+    ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification, input);
     if (specificationDescriptor.IsNull())
         return nullptr;
     
@@ -236,13 +236,13 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
             {
             // in case of recursive query just bind the children ids
             classQuery->Where("InVirtualSet(?, [this].[ECInstanceId])", 
-                {new BoundQueryRecursiveChildrenIdSet(recursiveQueries.GetRecursiveChildrenIds(selection, selectClassInfo))});
+                {new BoundQueryRecursiveChildrenIdSet(recursiveQueries.GetRecursiveChildrenIds(input, selectClassInfo))});
             }
         else
             {
             BeAssert(!selectClassInfo.GetPathToPrimaryClass().empty());
             classQuery->Join(selectClassInfo.GetPathToPrimaryClass(), false);
-            classQuery->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet(selection.GetInstanceIds(*selectClassInfo.GetPrimaryClass()))});
+            classQuery->Where("InVirtualSet(?, [related].[ECInstanceId])", {new BoundQueryIdSet(input.GetInstanceIds(*selectClassInfo.GetPrimaryClass()))});
             }
 
         // handle related properties
@@ -272,7 +272,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         descriptor.GetPreferredDisplayType().c_str(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider());
+        m_params.GetLocalizationProvider(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo());
     ContentDescriptorPtr specificationDescriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(specification);
     if (specificationDescriptor.IsNull())
         return nullptr;
@@ -312,7 +312,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
         ContentDisplayType::Undefined, m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), 
-        m_params.GetLocalizationProvider());
+        m_params.GetLocalizationProvider(), *NavNodeKeyListContainer::Create(), nullptr);
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         return nullptr;

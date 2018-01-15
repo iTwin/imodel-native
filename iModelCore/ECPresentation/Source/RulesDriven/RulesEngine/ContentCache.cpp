@@ -2,13 +2,73 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "ContentCache.h"
 #include "ContentProviders.h"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, INavNodeKeysContainerCR inputNodeKeys,
+    SelectionInfo const* selectionInfo)
+    : m_connectionId(connectionId), m_rulesetId(rulesetId), m_preferredDisplayType(displayType), m_inputNodeKeys(&inputNodeKeys), m_selectionInfo(selectionInfo)
+    {
+    if (nullptr != selectionInfo)
+        m_selectionInfo = new SelectionInfo(*selectionInfo);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentProviderKey::ContentProviderKey(ContentProviderKey const& other)
+    : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_preferredDisplayType(other.m_preferredDisplayType), m_inputNodeKeys(other.m_inputNodeKeys),
+    m_selectionInfo(other.m_selectionInfo)
+    {
+    if (nullptr != other.m_selectionInfo)
+        m_selectionInfo = new SelectionInfo(*other.m_selectionInfo);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentProviderKey::ContentProviderKey(ContentProviderKey&& other)
+    : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), m_preferredDisplayType(std::move(other.m_preferredDisplayType)),
+    m_inputNodeKeys(std::move(other.m_inputNodeKeys))
+    {
+    m_selectionInfo = other.m_selectionInfo;
+    other.m_selectionInfo = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey const& other)
+    {
+    m_connectionId = other.m_connectionId;
+    m_rulesetId = other.m_rulesetId;
+    m_preferredDisplayType = other.m_preferredDisplayType;
+    m_inputNodeKeys = other.m_inputNodeKeys;
+    m_selectionInfo = (nullptr != other.m_selectionInfo) ? new SelectionInfo(*other.m_selectionInfo) : nullptr;
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey&& other)
+    {
+    m_connectionId = std::move(other.m_connectionId);
+    m_rulesetId = std::move(other.m_rulesetId);
+    m_preferredDisplayType = std::move(other.m_preferredDisplayType);
+    m_inputNodeKeys = std::move(other.m_inputNodeKeys);
+    m_selectionInfo = other.m_selectionInfo;
+    other.m_selectionInfo = nullptr;
+    return *this;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
@@ -32,8 +92,20 @@ bool ContentProviderKey::operator<(ContentProviderKey const& other) const
         return true;
     if (displayTypeCompareResult > 0)
         return false;
+
+    int inputNodeKeysCompareResult = m_inputNodeKeys->GetHash().CompareTo(other.m_inputNodeKeys->GetHash());
+    if (inputNodeKeysCompareResult < 0)
+        return true;
+    if (inputNodeKeysCompareResult > 0)
+        return false;
     
-    return m_selectionInfo < other.m_selectionInfo;
+    if (nullptr == m_selectionInfo && nullptr == other.m_selectionInfo)
+        return false;
+    if (nullptr == m_selectionInfo && nullptr != other.m_selectionInfo)
+        return true;
+    if (nullptr != m_selectionInfo && nullptr == other.m_selectionInfo)
+        return false;
+    return *m_selectionInfo < *other.m_selectionInfo;
     }
 
 /*---------------------------------------------------------------------------------**//**

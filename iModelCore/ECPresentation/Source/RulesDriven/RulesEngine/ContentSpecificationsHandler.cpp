@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentSpecificationsHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -438,16 +438,16 @@ void ContentSpecificationsHandler::_OnBeforeAppendClassPaths(bvector<RelatedClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpecificationCR specification, IParsedSelectionInfo const& selection)
+void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpecificationCR specification, IParsedInput const& input)
     {
-    if (selection.GetClasses().empty())
+    if (input.GetClasses().empty())
         return;
     
     bvector<SupportedEntityClassInfo> classInfos;
-    for (ECClassCP selectedClass : selection.GetClasses())
+    for (ECClassCP inputClass : input.GetClasses())
         {
-        if (selectedClass->IsEntityClass())
-            classInfos.push_back(SupportedEntityClassInfo(*selectedClass->GetEntityClassCP()));
+        if (inputClass->IsEntityClass())
+            classInfos.push_back(SupportedEntityClassInfo(*inputClass->GetEntityClassCP()));
         }
     _OnBeforeAppendClassInfos(classInfos);
     
@@ -461,12 +461,12 @@ void ContentSpecificationsHandler::HandleSpecification(SelectedNodeInstancesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSpecificationCR specification, IParsedSelectionInfo const& selection)
+void ContentSpecificationsHandler::HandleSpecification(ContentRelatedInstancesSpecificationCR specification, IParsedInput const& input)
     {
-    if (selection.GetClasses().empty())
+    if (input.GetClasses().empty())
         return;
 
-    for (ECClassCP ecClass : selection.GetClasses())
+    for (ECClassCP ecClass : input.GetClasses())
         {
         bvector<RelatedClassPath> paths = GetRelatedClassPaths(GetContext().GetSchemaHelper(), GetContext(), *ecClass, specification, GetContext().GetRuleset());
         _OnBeforeAppendClassPaths(paths);

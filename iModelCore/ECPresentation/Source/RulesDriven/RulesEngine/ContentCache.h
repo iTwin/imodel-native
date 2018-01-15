@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -22,13 +22,18 @@ struct ContentProviderKey
 private:
     Utf8String m_connectionId;
     Utf8String m_rulesetId;
-    Utf8String m_preferredDisplayType;
-    SelectionInfo m_selectionInfo;
+    Utf8String m_preferredDisplayType; 
+    INavNodeKeysContainerCPtr m_inputNodeKeys;
+    SelectionInfo const* m_selectionInfo;
 public:
-    ContentProviderKey() {}
-    ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, SelectionInfo selectionInfo) 
-        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_preferredDisplayType(displayType), m_selectionInfo(selectionInfo)
-        {}
+    ContentProviderKey() : m_selectionInfo(nullptr) {}
+    ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo);
+    ContentProviderKey(ContentProviderKey const& other);
+    ContentProviderKey(ContentProviderKey&& other);
+    ContentProviderKey& operator=(ContentProviderKey const& other);
+    ContentProviderKey& operator=(ContentProviderKey&& other);
+    ~ContentProviderKey() {DELETE_AND_CLEAR(m_selectionInfo);}
+
     bool operator<(ContentProviderKey const& other) const;
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}

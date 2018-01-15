@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/QueryBuilderTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,15 +32,13 @@ struct NavigationQueryBuilderTests : ::testing::Test
     ChildNodeRuleP m_childNodeRule;
     NavigationQueryBuilder* m_builder;
     TestUserSettings m_settings;
-    TestConnectionManager m_connections;
-    IConnectionCPtr m_connection;
     RelatedPathsCache m_relatedPathsCache;
     ECExpressionsCache m_expressionsCache;
     RuleSetLocaterManager m_locaterManager;
     TestNodesCache m_nodesCache;
 
     NavigationQueryBuilderTests() 
-        : m_builder(nullptr), m_locaterManager(m_connections)
+        : m_builder(nullptr), m_locaterManager(ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections())
         {}
     
     void SetUp() override;
@@ -69,7 +67,7 @@ struct NavigationQueryBuilder_MultiLevelGroupingTests : NavigationQueryBuilderTe
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2017
 +===============+===============+===============+===============+===============+======*/
-struct TestParsedSelectionInfo : IParsedSelectionInfo
+struct TestParsedInput : IParsedInput
 {
 private:
     bvector<ECClassCP> m_classes;
@@ -85,18 +83,18 @@ protected:
         return s_empty;
         }
 public:
-    TestParsedSelectionInfo() {}
-    TestParsedSelectionInfo(ECClassCR ecClass, ECInstanceId instanceId)
+    TestParsedInput() {}
+    TestParsedInput(ECClassCR ecClass, ECInstanceId instanceId)
         {
         m_classes.push_back(&ecClass);
         m_instanceIds[&ecClass].push_back(instanceId);
         }
-    TestParsedSelectionInfo(ECClassCR ecClass, bvector<ECInstanceId> instanceIds)
+    TestParsedInput(ECClassCR ecClass, bvector<ECInstanceId> instanceIds)
         {
         m_classes.push_back(&ecClass);
         m_instanceIds[&ecClass] = instanceIds;
         }
-    TestParsedSelectionInfo(bvector<bpair<ECClassCP, ECInstanceId>> pairs)
+    TestParsedInput(bvector<bpair<ECClassCP, ECInstanceId>> pairs)
         {
         bset<ECClassCP> used;
         for (auto pair : pairs)
@@ -121,8 +119,6 @@ struct ContentQueryBuilderTests : ::testing::Test
     ContentDescriptorBuilder* m_descriptorBuilder;
     ContentQueryBuilder* m_queryBuilder;
     TestUserSettings m_settings;
-    TestConnectionManager m_connections;
-    IConnectionCPtr m_connection;
     RuleSetLocaterManager m_locaterManager;
     TestNodeLocater m_nodesLocater;
     TestLocalizationProvider m_localizationProvider;
@@ -131,7 +127,7 @@ struct ContentQueryBuilderTests : ::testing::Test
     RelatedPathsCache m_relatedPathsCache;
 
     ContentQueryBuilderTests() 
-        : m_descriptorBuilder(nullptr), m_queryBuilder(nullptr), m_locaterManager(m_connections)
+        : m_descriptorBuilder(nullptr), m_queryBuilder(nullptr), m_locaterManager(ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections())
         {}
     
     void SetUp() override;

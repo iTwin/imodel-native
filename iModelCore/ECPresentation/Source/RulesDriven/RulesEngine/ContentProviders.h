@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ContentProviders.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -25,8 +25,9 @@ private:
     IPropertyCategorySupplierR m_categorySupplier;
     bool m_isNestedContent;
     bool m_createFields;
+    INavNodeKeysContainerCPtr m_inputNodeKeys;
 
-    // Selection context
+    // Selection info context
     bool m_isSelectionContext;
     SelectionInfo const* m_selectionInfo;
     bool m_ownsSelectionInfo;
@@ -36,14 +37,14 @@ private:
 
 private:
     void Init();
-    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
+    ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, bool, Utf8String, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierR, IUserSettings const&, ECExpressionsCache&, RelatedPathsCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT ContentProviderContext(ContentProviderContextCR other);
     
 public:
-    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
+    static ContentProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String preferredDisplayType, INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier,
         IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
         {
-        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, nodesLocater, categorySupplier, settings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState);
+        return new ContentProviderContext(ruleset, holdRuleset, preferredDisplayType, inputKeys, nodesLocater, categorySupplier, settings, ecexpressionsCache, relatedPathsCache, nodesFactory, localState);
         }
     static ContentProviderContextPtr Create(ContentProviderContextCR other) {return new ContentProviderContext(other);}
     ~ContentProviderContext();
@@ -54,13 +55,15 @@ public:
     IPropertyCategorySupplierR GetCategorySupplier() const {return m_categorySupplier;}
     bool IsNestedContent() const {return m_isNestedContent;}
     void SetIsNestedContent(bool value) {m_isNestedContent = value;}
+    INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputNodeKeys;}
+    void SetInputNodeKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
     
-    // Selected nodes context
-    ECPRESENTATION_EXPORT void SetSelectionContext(SelectionInfo const& selectionInfo);
-    ECPRESENTATION_EXPORT void SetSelectionContext(SelectionInfo&& selectionInfo);
-    ECPRESENTATION_EXPORT void SetSelectionContext(ContentProviderContextCR);
+    // Selection info context
+    ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfo const& selectionInfo);
+    ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfo&& selectionInfo);
+    ECPRESENTATION_EXPORT void SetSelectionInfo(ContentProviderContextCR);
     bool IsSelectionContext() const {return m_isSelectionContext;}
-    SelectionInfo const& GetSelectionInfo() const {BeAssert(IsSelectionContext()); return *m_selectionInfo;}
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
     
     // Property formatting context
     ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&);
@@ -135,7 +138,7 @@ private:
     ContentRuleSpecificationsList m_rules;
     mutable ContentDescriptorCPtr m_descriptor;
     mutable ContentQueryPtr m_query;
-    mutable bmap<ContentRuleCP, IParsedSelectionInfo const*> m_parsedSelectionsCache;
+    mutable bmap<ContentRuleCP, IParsedInput const*> m_inputCache;
 private:
     ECPRESENTATION_EXPORT SpecificationContentProvider(ContentProviderContextR, ContentRuleSpecificationsList);
     ECPRESENTATION_EXPORT SpecificationContentProvider(SpecificationContentProviderCR);
