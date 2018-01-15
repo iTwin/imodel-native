@@ -596,8 +596,6 @@ MetesAndBounds::MetesAndBounds
     bvector<double> lengths
 )
     {
-    BeAssert(directionStrings.size() == lengths.size());
-
     auto directionsIter = directionStrings.begin();
     auto lengthsIter = lengths.begin();
     for (; directionStrings.end() != directionsIter && lengths.end() != lengthsIter
