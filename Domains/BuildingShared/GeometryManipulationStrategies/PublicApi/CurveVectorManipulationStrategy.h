@@ -37,6 +37,9 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
         LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
 
+        DPlane3d m_workingPlane;
+
+        DPoint3d AdjustKeyPoint(DPoint3dCR keyPoint) const;
         CurvePrimitivePlacementStrategyPtr GetPlacementStrategy(CurvePrimitiveManipulationStrategyR manipulationStrategy) const;
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
@@ -82,6 +85,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         CV_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_WorkingPlane;
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;
 
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }

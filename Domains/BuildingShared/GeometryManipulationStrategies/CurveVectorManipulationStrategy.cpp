@@ -11,6 +11,8 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
+const Utf8CP CurveVectorManipulationStrategy::prop_WorkingPlane = "WorkingPlane";
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -20,6 +22,7 @@ CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
     , m_defaultLinePlacementStrategyType(LinePlacementStrategyType::Points)
     , m_defaultArcPlacementStrategyType(ArcPlacementStrategyType::StartMidEnd)
     , m_defaultLineStringPlacementStrategyType(LineStringPlacementStrategyType::Points)
+    , m_workingPlane(DPlane3d::FromOriginAndNormal({0,0,0}, DVec3d::From(0, 0, 1)))
     {}
 
 //--------------------------------------------------------------------------------------
@@ -219,7 +222,7 @@ void CurveVectorManipulationStrategy::_AppendKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    GetStrategyForAppend()->AddKeyPoint(newKeyPoint);
+    GetStrategyForAppend()->AddKeyPoint(AdjustKeyPoint(newKeyPoint));
     }
 
 //--------------------------------------------------------------------------------------
@@ -230,7 +233,7 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    GetStrategyForAppend()->AddDynamicKeyPoint(newDynamicKeyPoint);
+    GetStrategyForAppend()->AddDynamicKeyPoint(AdjustKeyPoint(newDynamicKeyPoint));
     }
 
 //--------------------------------------------------------------------------------------
@@ -335,6 +338,62 @@ void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
     m_defaultLineStringPlacementStrategyType = newPlacementStrategyType;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d CurveVectorManipulationStrategy::AdjustKeyPoint
+(
+    DPoint3dCR keyPoint
+) const
+    {
+    DPoint3d projection;
+    m_workingPlane.ProjectPoint(projection, keyPoint);
+    return projection;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::_SetProperty
+(
+    Utf8CP key,
+    DPlane3dCR value
+)
+    {
+    if (0 == strcmp(key, prop_WorkingPlane))
+        {
+        m_workingPlane = value;
+        }
+
+    GetStrategyForAppend()->SetProperty(key, value);
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus CurveVectorManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    DPlane3dR value
+) const
+    {
+    if (0 == strcmp(key, prop_WorkingPlane))
+        {
+        value = m_workingPlane;
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (m_primitiveStrategies.empty())
+        return BentleyStatus::ERROR;
+    BentleyStatus status = m_primitiveStrategies.back()->TryGetProperty(key, value);
+
+    if (BentleyStatus::SUCCESS != status)
+        return T_Super::_TryGetProperty(key, value);
+
+    return status;
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void CurveVectorManipulationStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \
@@ -350,7 +409,6 @@ void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
 GMS_PROPERTY_OVERRIDE_IMPL(int)
 GMS_PROPERTY_OVERRIDE_IMPL(double)
 GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
-GMS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
 GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
 GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElement)
 GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)
