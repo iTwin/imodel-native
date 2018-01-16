@@ -370,7 +370,7 @@ IECSqlValue const& ArrayECSqlField::JsonECSqlValue::CreateStructMemberValue(ECN:
         }
 
     BeAssert(m_structMemberCache.find(memberName) == m_structMemberCache.end());
-    ECSqlColumnInfo memberColInfo = ECSqlColumnInfo::CreateChild(m_columnInfo, memberProp, m_ecdb.Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(memberProp).IsSystemProperty());
+    ECSqlColumnInfo memberColInfo = ECSqlFieldFactory::CreateChildColumnInfo(m_ecdb.GetImpl().Issues(), m_columnInfo, memberProp, m_ecdb.Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(memberProp).IsSystemProperty());
     std::unique_ptr<JsonECSqlValue> memberValue = std::make_unique<JsonECSqlValue>(m_ecdb, *memberJson, memberColInfo);
     JsonECSqlValue const* memberValueCP = memberValue.get();
     m_structMemberCache[memberName] = std::move(memberValue);
@@ -485,7 +485,7 @@ void ArrayECSqlField::JsonECSqlValue::ArrayIteratorState::_MoveToNext(bool onIni
 
     BeAssert(m_jsonIteratorIndex < (int) GetJson().Size());
 
-    ECSqlColumnInfo elementColumnInfo = ECSqlColumnInfo::CreateForArrayElement(m_value.m_columnInfo, m_jsonIteratorIndex);
+    ECSqlColumnInfo elementColumnInfo = ECSqlFieldFactory::CreateColumnInfoForArrayElement(m_value.m_columnInfo, m_jsonIteratorIndex);
     m_value.m_arrayElementCache.push_back(std::make_unique<JsonECSqlValue>(m_value.m_ecdb, *m_jsonIterator, elementColumnInfo));
     }
 

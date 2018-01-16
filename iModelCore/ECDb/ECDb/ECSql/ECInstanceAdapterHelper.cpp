@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceAdapterHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -534,7 +534,7 @@ bool ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(ECDbCR ecd
     dummyECSql.Sprintf("SELECT NULL FROM ONLY %s ECSQLOPTIONS %s", ecClass.GetECSqlName().c_str(), ecsqlOptions);
     
     ECSqlParser parser;
-    std::unique_ptr<Exp> parseTree = parser.Parse(ecdb, dummyECSql.c_str());
+    std::unique_ptr<Exp> parseTree = parser.Parse(ecdb, dummyECSql.c_str(), ScopedIssueReporter(ecdb, true));
     if (parseTree == nullptr)
         return false;
 

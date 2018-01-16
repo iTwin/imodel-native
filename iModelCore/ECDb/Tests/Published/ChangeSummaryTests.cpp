@@ -748,6 +748,23 @@ TEST_F(ChangeSummaryTestFixture, AttachChangeCacheMethodInput)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  01/18
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, IsChangeCacheAttached)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IsChangeCacheAttached.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_FALSE(m_ecdb.IsChangeCacheAttached());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  12/17
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, InMemoryPrimaryECDb)
@@ -1116,6 +1133,10 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflow)
         //printf("Changeset 3: %s\r\n", changeset3.ToJson(m_ecdb).ToString().c_str());
         ECInstanceKey changeSummary3Key;
         ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummary3Key, ChangeSetArg(changeset3))) << scenario;
+
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "className":"ECDbChange.ChangeSummary"}])json", changeSummary1Key.GetInstanceId().ToHexStr().c_str())),
+                  GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,ECClassId FROM change.ChangeSummary WHERE ECInstanceId=%s", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str())) << scenario;
+
 
         Utf8String maryIdStr = maryKey.GetInstanceId().ToHexStr();
         Utf8String samIdStr = samKey.GetInstanceId().ToHexStr();

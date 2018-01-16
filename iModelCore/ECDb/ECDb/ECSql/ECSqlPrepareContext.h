@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -108,6 +108,7 @@ struct ECSqlPrepareContext final
 
     private:
         ECDbCR m_ecdb;
+        ScopedIssueReporter const& m_issues;
         SingleECSqlPreparedStatement* m_singlePreparedStatement = nullptr;
         NativeSqlBuilder m_nativeSqlBuilder;
         bool m_nativeStatementIsNoop = false;
@@ -120,11 +121,11 @@ struct ECSqlPrepareContext final
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
 
     public:
-        explicit ECSqlPrepareContext(IECSqlPreparedStatement&);
+        ECSqlPrepareContext(IECSqlPreparedStatement&, ScopedIssueReporter const&);
         void Reset(SingleECSqlPreparedStatement&);
 
         ECDbCR GetECDb() const { return m_ecdb; }
-
+        ScopedIssueReporter const& Issues() const { return m_issues; }
         SelectClauseInfo const& GetSelectionOptions() const { return m_selectionOptions; }
         SelectClauseInfo& GetSelectionOptionsR() { return m_selectionOptions; }
 

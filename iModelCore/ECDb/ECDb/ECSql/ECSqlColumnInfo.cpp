@@ -21,130 +21,20 @@ ECSqlColumnInfo::ECSqlColumnInfo() {}
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Info const& dateTimeInfo, ECN::ECStructClassCP structType, ECPropertyCP ecProperty, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
-    : m_dataType(dataType), m_dateTimeInfo(dateTimeInfo), m_structType(structType), m_property(ecProperty), m_isSystemProperty(isSystemProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(&rootClass), m_rootClassAlias(rootClassAlias)
+ECSqlColumnInfo::ECSqlColumnInfo(ECTypeDescriptor const& dataType, DateTime::Info const& dateTimeInfo, ECN::ECStructClassCP structType, ECPropertyCP ecProperty, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, RootClass const& rootClass)
+    : m_dataType(dataType), m_dateTimeInfo(dateTimeInfo), m_structType(structType), m_property(ecProperty), m_isSystemProperty(isSystemProperty), m_isGeneratedProperty(isGeneratedProperty), m_propertyPath(propertyPath), m_rootClass(rootClass)
     {}
 
+//********************** ECSqlColumnInfo::RootClass **************************************
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 10/2013
+// @bsimethod                                    Krischan.Eberle                 01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlColumnInfo ECSqlColumnInfo::CreateTopLevel(bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECN::ECClassCR rootClass, Utf8CP rootClassAlias)
-    {
-    BeAssert(propertyPath.Size() > 0);
-    ECPropertyCP ecProperty = propertyPath.GetLeafEntry().GetProperty();
-    BeAssert(ecProperty != nullptr);
-    DateTime::Info dateTimeInfo;
-    ECStructClassCP structType = nullptr;
-    ECTypeDescriptor typeDescriptor = DetermineDataType(dateTimeInfo, structType, *ecProperty);
-    return ECSqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, isSystemProperty, isGeneratedProperty, propertyPath, rootClass, rootClassAlias);
-    }
+ECSqlColumnInfo::RootClass::RootClass() {}
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 10/2013
+// @bsimethod                                    Krischan.Eberle                 01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlColumnInfo ECSqlColumnInfo::CreateChild(ECSqlColumnInfo const& parent, ECPropertyCR childProperty, bool isSystemProperty)
-    {
-    DateTime::Info dateTimeInfo;
-    ECStructClassCP structType = nullptr;
-    ECTypeDescriptor dataType = DetermineDataType(dateTimeInfo, structType, childProperty);
-
-    ECSqlPropertyPath childPropPath;
-    childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
-    childPropPath.AddEntry(childProperty);
-
-    return ECSqlColumnInfo(dataType, dateTimeInfo, structType, &childProperty, isSystemProperty, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlColumnInfo ECSqlColumnInfo::CreateForArrayElement(ECSqlColumnInfo const& parent, int arrayIndex)
-    {
-    ECTypeDescriptor arrayElementDataType;
-    DateTime::Info dateTimeInfo;
-    ECStructClassCP structType = nullptr;
-    if (parent.GetDataType().IsPrimitiveArray())
-        {
-        arrayElementDataType = ECTypeDescriptor::CreatePrimitiveTypeDescriptor(parent.GetDataType().GetPrimitiveType());
-        dateTimeInfo = parent.m_dateTimeInfo;
-        }
-    else
-        {
-        BeAssert(parent.GetDataType().IsStructArray());
-        structType = parent.m_structType;
-        arrayElementDataType = ECTypeDescriptor::CreateStructTypeDescriptor();
-        }
-
-    ECSqlPropertyPath childPropPath;
-    childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
-    childPropPath.AddEntry(arrayIndex);
-
-    return ECSqlColumnInfo(arrayElementDataType, dateTimeInfo, structType, nullptr, false, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass(), parent.GetRootClassAlias());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECTypeDescriptor ECSqlColumnInfo::DetermineDataType(DateTime::Info& dateTimeInfo, ECN::ECStructClassCP& structType, ECPropertyCR ecProperty)
-    {
-    if (ecProperty.GetIsPrimitive())
-        {
-        const PrimitiveType primType = ecProperty.GetAsPrimitiveProperty()->GetType();
-        if (primType == PRIMITIVETYPE_DateTime)
-            {
-            if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
-                {
-                LOG.errorv("Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
-                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-                BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding primitive ECProperty.");
-                }
-            }
-
-        return ECTypeDescriptor::CreatePrimitiveTypeDescriptor(primType);
-        }
-
-    if (ecProperty.GetIsStruct())
-        {
-        structType = &ecProperty.GetAsStructProperty()->GetType();
-        return ECTypeDescriptor::CreateStructTypeDescriptor();
-        }
-
-    if (ecProperty.GetIsPrimitiveArray())
-        {
-        const PrimitiveType primType = ecProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-        if (primType == PRIMITIVETYPE_DateTime)
-            {
-            if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
-                {
-                LOG.errorv("Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
-                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-                BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding primitive array ECProperty.");
-                }
-            }
-
-        return ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(primType);
-        }
-
-    if (ecProperty.GetIsStructArray())
-        {
-        structType = &ecProperty.GetAsStructArrayProperty()->GetStructElementType();
-        return ECTypeDescriptor::CreateStructArrayTypeDescriptor();
-        }
-        
-
-    if (ecProperty.GetIsNavigation())
-        {
-        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
-        return ECTypeDescriptor::CreateNavigationTypeDescriptor(navProp->GetType(), navProp->IsMultiple());
-        }
-
-    BeAssert(false && "Unhandled ECProperty type. Adjust code to new ECProperty type");
-    return ECTypeDescriptor();
-    }
+ECSqlColumnInfo::RootClass::RootClass(ECN::ECClassCR ecClass, Utf8CP tableSpace, Utf8CP alias) : m_class(&ecClass), m_tableSpace(tableSpace), m_alias(alias) {}
 
 //********************** ECSqlPropertyPath **************************************
 //--------------------------------------------------------------------------------------

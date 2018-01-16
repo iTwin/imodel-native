@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -16,9 +16,9 @@ USING_NAMESPACE_BENTLEY_EC
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
+std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, ScopedIssueReporter const& issues) const
     {
-    ScopedContext scopedContext(*this, ecdb);
+    ScopedContext scopedContext(*this, ecdb , issues);
     //Parse statement
     Utf8String error;
     OSQLParser parser;
@@ -489,7 +489,7 @@ BentleyStatus ECSqlParser::ParseOptECSqlOptionsClause(std::unique_ptr<OptionsExp
         if (SUCCESS != stat)
             return stat;
 
-        if (SUCCESS != optionsExp->AddOptionExp(std::move(optionExp)))
+        if (SUCCESS != optionsExp->AddOptionExp(std::move(optionExp), Issues()))
             return ERROR;
         }
 
@@ -2606,7 +2606,7 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseValueExpPrimary(valueExp, parseNode);
 
                 default:
-                    LOG.errorv("ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
+                    Issues().Report("ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
             };

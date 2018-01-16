@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    03/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext(IECSqlPreparedStatement& stmt) : m_ecdb(stmt.GetECDb()) 
+ECSqlPrepareContext::ECSqlPrepareContext(IECSqlPreparedStatement& stmt, ScopedIssueReporter const& issues) : m_ecdb(stmt.GetECDb()), m_issues(issues)
     {
     if (!stmt.IsCompoundStatement())
         {

@@ -190,6 +190,9 @@
     <ClCompile Include="Published\ECSqlToSqlGenerationTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\TableSpaceTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">

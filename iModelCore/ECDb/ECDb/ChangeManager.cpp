@@ -32,7 +32,7 @@ ProfileVersion const* ChangeManager::s_expectedCacheVersion = new ProfileVersion
 bool ChangeManager::IsChangeCacheAttachedAndValid(ECDbCR ecdb, bool logError)
     {
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM " TABLESPACE_ECChange ".meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'"))
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM " TABLESPACE_ECChange ".meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'", false))
         {
         if (logError)
             ecdb.GetImpl().Issues().Report("Changes cache file is not attached or another file has been attached with the same table space (" TABLESPACE_ECChange ")");
@@ -69,7 +69,7 @@ bool ChangeManager::IsChangeCacheAttachedAndValid(ECDbCR ecdb, bool logError)
 bool ChangeManager::IsChangeCacheValid(ECDbCR cacheECDb, bool logError)
     {
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(cacheECDb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'"))
+    if (ECSqlStatus::Success != stmt.Prepare(cacheECDb, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name='" ECSCHEMA_ECDbChange "'", false))
         {
         if (logError)
             cacheECDb.GetImpl().Issues().Report("Invalid Change cache file '%s' : File is not an ECDb file.", cacheECDb.GetDbFileName());
