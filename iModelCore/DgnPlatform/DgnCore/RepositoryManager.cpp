@@ -203,6 +203,29 @@ protected:
     bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
     Response _EndBulkOperation() override;
 
+    void _ExtractRequestFromBulkOperation(Request& reqOut, bool locks, bool codes) override 
+        {
+        auto control = GetDgnDb().GetConcurrencyControl();
+        if (nullptr != control)
+            control->_OnExtractRequest(m_req, *this);
+
+        if (locks)
+            {
+            reqOut.Codes().insert(m_req.Codes().begin(), m_req.Codes().end());
+            m_req.Codes().clear();
+            }
+        if (codes)
+            {
+            reqOut.Locks().GetLockSet().insert(m_req.Locks().GetLockSet().begin(), m_req.Locks().GetLockSet().end());
+            m_req.Locks().Clear();
+            }
+        // TODO: merge options
+        // reqOut.SetOptions(m_req.Options());
+
+        if (nullptr != control)
+            control->_OnExtractedRequest(m_req, *this);
+        }
+
     void AccumulateRequests(Request const&);
 public:
     static RefCountedPtr<BulkUpdateBriefcaseManager> Create(DgnDbR db) {return new BulkUpdateBriefcaseManager(db);}
@@ -891,7 +914,7 @@ IBriefcaseManager::Response BriefcaseManagerBase::_ProcessRequest(Request& req, 
 
     auto control = GetDgnDb().GetConcurrencyControl();
     if (nullptr != control)
-        control->_OnProcessRequest(*this, req, purpose);
+        control->_OnProcessRequest(req, *this, purpose);
 
     auto response = RequestPurpose::Acquire == purpose ? mgr->Acquire(req, GetDgnDb()) : mgr->QueryAvailability(req, GetDgnDb());
     if (RequestPurpose::Acquire == purpose && RepositoryStatus::Success == response.Result())
@@ -901,7 +924,7 @@ IBriefcaseManager::Response BriefcaseManagerBase::_ProcessRequest(Request& req, 
         }
 
     if (nullptr != control)
-        control->_OnProcessedRequest(*this, req, purpose, response);
+        control->_OnProcessedRequest(req, *this, purpose, response);
 
     return response;
     }
@@ -1234,22 +1257,30 @@ bool BriefcaseManagerBase::_AreResourcesHeld(DgnLockSet& locks, DgnCodeSet& code
     Cull(locks);
     Cull(codes);
 
+    auto control = GetDgnDb().GetConcurrencyControl();
+    if (nullptr != control)
+        control->_OnQueryHeld(locks, codes, *this);
+
+    bool allHeld = true;
+
     if (!locks.empty())
         {
         if (nullptr != pStatus)
             *pStatus = RepositoryStatus::LockNotHeld;
-
-        return false;
+        allHeld = false;
         }
     else if (!codes.empty())
         {
         if (nullptr != pStatus)
             *pStatus = RepositoryStatus::CodeNotReserved;
 
-        return false;
+        allHeld = false;
         }
 
-    return true;
+    if (nullptr != control)
+        control->_OnQueriedHeld(locks, codes, *this);
+
+    return allHeld;
     }
 
 /*---------------------------------------------------------------------------------**//**
