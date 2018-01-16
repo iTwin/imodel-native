@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SpatialViewController.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -431,10 +431,18 @@ Render::SceneLightsPtr SpatialViewController::GetLights() const
     if (nullptr == target)
         return nullptr;
 
-    auto& displayStle = GetSpatialViewDefinition().GetDisplayStyle3d();
-    m_lights = displayStle.CreateSceneLights(*target); // lighting setup for the scene
+    auto& displayStyle = GetSpatialViewDefinition().GetDisplayStyle3d();
+    m_lights = displayStyle.CreateSceneLights(*target); // lighting setup for the scene
 
-    if (!displayStle.GetViewFlags().ShowSourceLights())
+    if (displayStyle.IsSkyBoxEnabled())
+        {
+        (const_cast<SpatialViewControllerP> (this))->LoadSkyBox (target->GetSystem());
+
+        if (m_skybox.IsValid() && m_skybox->HasTextureMapping())
+            m_lights->m_environmentMap = const_cast<Render::TextureP> (m_skybox->GetTextureMapping().GetTexture());
+        }
+
+    if (!displayStyle.GetViewFlags().ShowSourceLights())
         return m_lights;
 
     auto& models = GetDgnDb().Models();
