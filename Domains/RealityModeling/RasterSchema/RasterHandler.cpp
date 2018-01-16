@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
@@ -16,6 +16,11 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RASTER
 
 HANDLER_DEFINE_MEMBERS(RasterModelHandler)
+
+BEGIN_UNNAMED_NAMESPACE
+static const double halfMillimeter() { return .5 * DgnUnits::OneMillimeter(); }
+static void fixRange(double& low, double& high) { if (low == high) { low -= halfMillimeter(); high += halfMillimeter(); } }
+END_UNNAMED_NAMESPACE
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                      Mathieu.Marchand  3/2016
@@ -297,6 +302,11 @@ AxisAlignedBox3d RasterModel::_QueryModelRange() const
 
     AxisAlignedBox3d aaRange;
     aaRange.Extend(box.m_pts, 8);
+
+    // low and high are not allowed to be equal
+    fixRange(aaRange.low.x, aaRange.high.x);
+    fixRange(aaRange.low.y, aaRange.high.y);
+    fixRange(aaRange.low.z, aaRange.high.z);
 
     return aaRange;
     }
