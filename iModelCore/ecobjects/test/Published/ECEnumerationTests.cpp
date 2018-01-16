@@ -165,8 +165,8 @@ TEST_F(ECEnumerationTest, TestFindEnumeratorIsCaseInsensitive)
     {
     Utf8CP schemaXML = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECEnumeration typeName="FoodType" backingTypeName="int" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
-                <ECEnumerator value="0" displayLabel="spaghetti"/>
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator value="Spaghetti" displayLabel="Spaghetti"/>
             </ECEnumeration>
         </ECSchema>)xml";
 
@@ -177,10 +177,10 @@ TEST_F(ECEnumerationTest, TestFindEnumeratorIsCaseInsensitive)
     ECEnumerationCP ecEnum = schema->GetEnumerationCP("FoodType");
     ASSERT_NE(nullptr, ecEnum);
 
-    EXPECT_NE(nullptr, schema->GetEnumerationCP("FoodType"));
-    EXPECT_NE(nullptr, schema->GetEnumerationCP("FOODTYPE"));
-    EXPECT_NE(nullptr, schema->GetEnumerationCP("foodtype"));
-    EXPECT_NE(nullptr, schema->GetEnumerationCP("FoOdTyPE"));
+    EXPECT_NE(nullptr, ecEnum->FindEnumerator("Spaghetti"));
+    EXPECT_NE(nullptr, ecEnum->FindEnumerator("spaghetti"));
+    EXPECT_NE(nullptr, ecEnum->FindEnumerator("SPAGHETTI"));
+    EXPECT_NE(nullptr, ecEnum->FindEnumerator("SpAgHeTtI"));
     }
 
 /*---------------------------------------------------------------------------------**//**
