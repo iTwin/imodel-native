@@ -1077,3 +1077,38 @@ Material::CreateParams::CreateParams(MaterialNameCR name, RenderingAssetCR asset
         m_textureMapping = TextureMapping(*texture, texMap.GetTextureMapParams());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TexturePtr System::_GetTexture(DgnTextureId id, DgnDbR db) const
+    {
+    TextureName name(id);
+    TexturePtr tx = _FindTexture(name, db);
+    if (tx.IsNull())
+        {
+        DgnTextureCPtr txElem = DgnTexture::Get(db, id);
+        if (txElem.IsValid())
+            tx = _CreateTexture(txElem->GetImageSource(), Image::BottomUp::No, db, Texture::CreateParams(name));
+        }
+
+    return tx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+MaterialPtr System::_GetMaterial(RenderMaterialId id, DgnDbR db) const
+    {
+    MaterialName name(id);
+    MaterialPtr mat = _FindMaterial(name, db);
+    if (mat.IsNull())
+        {
+        RenderMaterialCPtr matElem = RenderMaterial::Get(db, id);
+        RenderingAssetCP asset = matElem.IsValid() ? &matElem->GetRenderingAsset() : nullptr;
+        if (nullptr != asset)
+            mat = _CreateMaterial(Material::CreateParams(name, *asset, db, *this), db);
+        }
+
+    return mat;
+    }
+

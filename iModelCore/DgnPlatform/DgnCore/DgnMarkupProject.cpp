@@ -995,7 +995,7 @@ Render::MaterialP RedlineViewController::LoadBackgroundMaterial(ViewContextR con
             matParams.MapTexture(*texture, mapParams);
             }
 
-        m_backgroundMaterial = context.GetRenderSystem()->_CreateMaterial(matParams);
+        m_backgroundMaterial = context.GetRenderSystem()->_CreateMaterial(matParams, GetDgnDb());
         }
 
     return m_backgroundMaterial->HasTextureMapping() ? m_backgroundMaterial.get() : nullptr;

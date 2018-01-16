@@ -575,6 +575,17 @@ public:
         else
             return false;
         }
+
+    //! @private
+    Utf8String ToDebugString() const
+        {
+        if (IsNamed())
+            return GetName();
+        else if (IsPersistent())
+            return GetId().ToHexStr();
+        else
+            return "<unnamed>";
+        }
 };
 
 using TextureName = ResourceName<DgnTextureId>;
@@ -3094,11 +3105,15 @@ struct System
     //! Create an offscreen render target.
     virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) = 0;
 
+    //! Find a previously-created Material by name. Returns null if no such material exists.
+    virtual MaterialPtr _FindMaterial(MaterialNameCR name, DgnDbR db) const = 0;
+
     //! Get or create a material from a material element, by id
-    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const = 0;
+    //! The default implementation uses _FindMaterial() and calls _CreateMaterial() if not found.
+    DGNPLATFORM_EXPORT virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const;
 
     //! Create a Material from parameters
-    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
+    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&, DgnDbR) const = 0;
 
     virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const = 0;
@@ -3135,19 +3150,23 @@ struct System
     //! Create a Graphic consisting of batched Features.
     virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
 
+    //! Find a previously-created Texture by name. Returns null if no such texture exists.
+    virtual TexturePtr _FindTexture(TextureNameCR name, DgnDbR db) const = 0;
+
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
+    //! The default implementation uses _FindTexture() and calls _CreateTexture() if not found.
     //! @param[in] textureId the DgnElementId of the texture element
     //! @param[in] db the DgnDb for textureId
-    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
+    DGNPLATFORM_EXPORT virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const;
 
     //! Get or create a Texture from a GradientSymb. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const = 0;
 
     //! Create a new Texture from an Image.
-    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
+    virtual TexturePtr _CreateTexture(ImageCR image, DgnDbR db, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a new Texture from an ImageSource.
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, DgnDbR db, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
@@ -3323,8 +3342,8 @@ public:
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) {return m_system._CreateSprite(sprite, location, xVec, transparency, db);}
     MaterialPtr GetMaterial(RenderMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
-    TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
-    TexturePtr CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp);}
+    TexturePtr CreateTexture(ImageCR image, DgnDbR db) const {return m_system._CreateTexture(image, db);}
+    TexturePtr CreateTexture(ImageSourceCR source, DgnDbR db, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, bottomUp, db);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     LightPtr CreateLight(Lighting::Parameters const& params, DVec3dCP direction=nullptr, DPoint3dCP location=nullptr) {return m_system._CreateLight(params, direction, location);}
     SystemR GetSystem() {return m_system;}

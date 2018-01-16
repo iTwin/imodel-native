@@ -910,7 +910,7 @@ protected:
 
     void ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);
 
-    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
+    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp, GetDgnDb()) : nullptr; }
 
 public:
     DGNPLATFORM_EXPORT void CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, Render::SystemP renderSys);

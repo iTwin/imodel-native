@@ -120,7 +120,7 @@ Render::TexturePtr SpatialViewController::LoadTexture(Utf8CP fileName, Render::S
         return nullptr;
 
     ImageSource jpeg(ImageSource::Format::Jpeg, std::move(jpegData));
-    return system._CreateTexture(jpeg, Image::BottomUp::No);
+    return system._CreateTexture(jpeg, Image::BottomUp::No, GetDgnDb());
     }
 
 static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
@@ -175,7 +175,7 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
             }
 
         Render::Image image(1, GRADIENT_PIXEL_COUNT, std::move(buffer), Image::Format::Rgba);
-        texture = system._CreateTexture(image);
+        texture = system._CreateTexture(image, GetDgnDb());
         }
 
     Material::CreateParams matParams;
@@ -190,7 +190,7 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     mapParams.SetTransform(&transform);
     matParams.MapTexture(*texture, mapParams);
 
-    m_skybox = system._CreateMaterial(matParams);
+    m_skybox = system._CreateMaterial(matParams, GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
