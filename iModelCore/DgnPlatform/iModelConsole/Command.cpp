@@ -1427,22 +1427,25 @@ void MetadataCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         Utf8String propPathStr = isGeneratedProp ? prop->GetDisplayLabel() : propPath.ToString();
         Utf8String typeName = GetPropertyTypeName(*prop);
 
+        ECSqlColumnInfo::RootClass const& rootClass = columnInfo.GetRootClass();
         Utf8String rootClassName;
         if (isGeneratedProp)
             rootClassName = "generated";
         else
             {
-            ECClassCR rootClass = columnInfo.GetRootClass();
             //system properties have a different schema, so they must be excluded and never get a full class name
-            if (!isSystemProp && rootClass.GetSchema().GetId() != prop->GetClass().GetSchema().GetId())
-                rootClassName = rootClass.GetFullName();
+            if (!isSystemProp && rootClass.GetClass().GetSchema().GetId() != prop->GetClass().GetSchema().GetId())
+                {
+                if (!rootClass.GetTableSpace().EqualsIAscii("main"))
+                    rootClassName.assign(rootClass.GetTableSpace()).append(".");
+
+                rootClassName.append(rootClass.GetClass().GetFullName());
+                }
             else
-                rootClassName = rootClass.GetName();
+                rootClassName = rootClass.GetClass().GetName();
             }
 
-        Utf8CP rootClassAlias = columnInfo.GetRootClassAlias();
-
-        IModelConsole::WriteLine("%3d     %-35s %-35s %-8s %-25s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), isSystemProp? "yes":"no", typeName.c_str(), rootClassName.c_str(), rootClassAlias);
+        IModelConsole::WriteLine("%3d     %-35s %-35s %-8s %-25s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), isSystemProp? "yes":"no", typeName.c_str(), rootClassName.c_str(), rootClass.GetAlias().c_str());
         }
 
     IModelConsole::WriteLine();
