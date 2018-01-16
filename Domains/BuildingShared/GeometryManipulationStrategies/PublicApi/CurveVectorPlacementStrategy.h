@@ -35,6 +35,10 @@ struct CurveVectorPlacementStrategy : public GeometryPlacementStrategy
         static CurveVectorPlacementStrategyPtr Create() { return new CurveVectorPlacementStrategy(); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitivePlacementStrategyPtr GetCurrentCurvePrimitivePlacementStrategy() { return m_manipulationStrategy->GetStrategyForAppend(); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool FinishContiniousPrimitive();
+        
         void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
         void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);

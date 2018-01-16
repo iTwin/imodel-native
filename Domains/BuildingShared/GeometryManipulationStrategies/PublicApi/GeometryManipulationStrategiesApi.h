@@ -52,6 +52,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 enum class LinePlacementStrategyType;
 enum class ArcPlacementStrategyType;
 enum class LineStringPlacementStrategyType;
+enum class SplinePlacementStrategyType;
 END_BUILDING_SHARED_NAMESPACE
 
 #include "GeometryManipulationStrategyBase.h"

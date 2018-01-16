@@ -19,8 +19,10 @@ struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
     protected:
         SplineManipulationStrategy() : T_Super() {}
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override { return !_IsComplete(); };
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override { return false; }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override { return true; }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override { return true; }
     };
 
 //=======================================================================================
@@ -37,17 +39,19 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
-        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { BeAssert(false && "Not implemented"); return nullptr; }
+        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
 
         void _SetOrder(int order) { m_order = order; }
         int _GetOrder() const { return m_order; }
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return Create(m_order); };
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineControlPointsManipulationStrategy(*this); };
     public:
         static SplineControlPointsManipulationStrategyPtr Create(int order) { return new SplineControlPointsManipulationStrategy(order); }
 
         void SetOrder(int order) { _SetOrder(order); }
         int GetOrder() const { return _GetOrder(); }
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const int default_Order;
     };
 
 //=======================================================================================
@@ -65,7 +69,7 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
-        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { BeAssert(false && "Not implemented"); return nullptr; }
+        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
 
         void _SetStartTangent(DVec3d startTangent) { m_startTangent = startTangent; }
         void _RemoveStartTangent() { m_startTangent.Zero(); m_startTangent.Normalize(); }
@@ -75,7 +79,7 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         void _RemoveEndTangent() { m_endTangent.Zero(); m_endTangent.Normalize(); }
         DVec3d _GetEndTangent() const { return m_endTangent; }
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return Create(); };
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineThroughPointsManipulationStrategy(*this); };
 
     public:
         static SplineThroughPointsManipulationStrategyPtr Create() { return new SplineThroughPointsManipulationStrategy(); }

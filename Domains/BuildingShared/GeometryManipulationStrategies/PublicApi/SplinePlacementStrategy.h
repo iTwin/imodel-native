@@ -28,6 +28,8 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
         SplineControlPointsPlacementStrategy(int order) :
             T_Super(), 
             m_manipulationStrategy(SplineControlPointsManipulationStrategy::Create(order)) {}
+        SplineControlPointsPlacementStrategy(SplineControlPointsManipulationStrategyR);
+
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
         virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
@@ -39,9 +41,9 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
 
         void _SetOrder(int const & order);
         int _GetOrder() const;
-
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(int order) { return new SplineControlPointsPlacementStrategy(order); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(SplineControlPointsManipulationStrategyR manipulationStrategy) { return new SplineControlPointsPlacementStrategy(manipulationStrategy); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const Utf8CP prop_Order;
     };
@@ -59,6 +61,7 @@ struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
             m_manipulationStrategy(SplineThroughPointsManipulationStrategy::Create())
             {
             }
+        SplineThroughPointsPlacementStrategy(SplineThroughPointsManipulationStrategyR);
 
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return *m_manipulationStrategy; }
         virtual GeometryManipulationStrategyR _GetManipulationStrategyR() override { return *m_manipulationStrategy; }
@@ -75,6 +78,7 @@ struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineThroughPointsPlacementStrategyPtr Create() { return new SplineThroughPointsPlacementStrategy(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineThroughPointsPlacementStrategyPtr Create(SplineThroughPointsManipulationStrategyR manipulationStrategy) { return new SplineThroughPointsPlacementStrategy(manipulationStrategy); }
 
         virtual void SetStartTangent(DVec3d tangent) { _SetStartTangent(tangent); }
         virtual void RemoveStartTangent() { _RemoveStartTangent(); }

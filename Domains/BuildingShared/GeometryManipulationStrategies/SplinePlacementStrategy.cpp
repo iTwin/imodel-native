@@ -14,6 +14,23 @@ const Utf8CP SplineControlPointsPlacementStrategy::prop_Order = "Order";
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// SplineControlPointsPlacementStrategy
+/////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplineControlPointsPlacementStrategy::SplineControlPointsPlacementStrategy
+(
+    SplineControlPointsManipulationStrategyR manipulationStrategy
+)
+    : T_Super(),
+    m_manipulationStrategy(&manipulationStrategy)
+    {
+    BeAssert(m_manipulationStrategy.IsValid());
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -55,6 +72,19 @@ int SplineControlPointsPlacementStrategy::_GetOrder() const
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineThroughPointsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplineThroughPointsPlacementStrategy::SplineThroughPointsPlacementStrategy
+(
+    SplineThroughPointsManipulationStrategyR manipulationStrategy
+)
+    : T_Super(),
+    m_manipulationStrategy(&manipulationStrategy)
+    {
+    BeAssert(m_manipulationStrategy.IsValid());
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -103,7 +133,4 @@ DVec3d SplineThroughPointsPlacementStrategy::_GetEndTangent() const
     return m_manipulationStrategy->GetEndTangent();
     }
 
-
-
 END_BUILDING_SHARED_NAMESPACE
-

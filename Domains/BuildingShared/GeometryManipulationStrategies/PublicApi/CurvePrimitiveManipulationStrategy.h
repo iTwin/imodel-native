@@ -52,13 +52,16 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         virtual LinePlacementStrategyPtr _CreateLinePlacementStrategy(LinePlacementStrategyType strategyType) { BeAssert(false && "This is not a LineManipulationStrategy"); return nullptr; }
         virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType) { BeAssert(false && "This is not an ArcManipulationStrategy"); return nullptr; }
         virtual LineStringPlacementStrategyPtr _CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType) { BeAssert(false && "This is not a LineStringManipulationStrategy"); return nullptr; }
-
+        virtual SplinePlacementStrategyPtr _CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType) { BeAssert(false && "This is not a SplineControlPointsManipulationStrategy"); return nullptr; }
+        
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsEmpty() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsSingleKeyPointLeft() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _GetLastKeyPoint() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DPoint3d _GetFirstKeyPoint() const;
 
         virtual CurvePrimitiveManipulationStrategyPtr _Clone() const = 0;
+
+        virtual bool _IsContinious() const = 0;
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
@@ -67,7 +70,8 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         LinePlacementStrategyPtr CreateLinePlacementStrategy(LinePlacementStrategyType strategyType);
         ArcPlacementStrategyPtr CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType);
         LineStringPlacementStrategyPtr CreateLineStringPlacementStrategy(LineStringPlacementStrategyType strategyType);
-
+        SplinePlacementStrategyPtr CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType);
+        
         bvector<DPoint3d> const& GetAcceptedKeyPoints() const { return m_keyPoints; }
 
         bool IsEmpty() const;
@@ -76,6 +80,8 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         DPoint3d GetFirstKeyPoint() const;
 
         CurvePrimitiveManipulationStrategyPtr Clone() const;
+
+        bool IsContinious() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

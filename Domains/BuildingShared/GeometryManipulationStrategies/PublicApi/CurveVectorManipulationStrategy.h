@@ -14,7 +14,9 @@ enum class DefaultNewGeometryType
     Default = 0,
     Line,
     LineString,
-    Arc
+    Arc,
+    Spline,
+    InterpolationCurve
     };
 
 #define CV_PROPERTY_OVERRIDE(value_type) \
@@ -33,10 +35,11 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         
         DefaultNewGeometryType m_defaultNewGeometryType;
 
+        CurvePrimitivePlacementStrategyPtr ResetCurrentManipulationStrategy();
         LinePlacementStrategyType m_defaultLinePlacementStrategyType;
         ArcPlacementStrategyType m_defaultArcPlacementStrategyType;
         LineStringPlacementStrategyType m_defaultLineStringPlacementStrategyType;
-
+       
         DPlane3d m_workingPlane;
 
         DPoint3d AdjustKeyPoint(DPoint3dCR keyPoint) const;
@@ -44,6 +47,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         CurvePrimitivePlacementStrategyPtr GetStrategyForAppend();
         bool IsLastStrategyReadyForPop() const;
 
+        friend struct CurveVectorPlacementStrategy;
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorManipulationStrategy();
 
@@ -94,8 +98,10 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
 
+        bool FinishContiniousPrimitive();
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LinePlacementStrategyType newPlacementStrategyType);
-        void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(ArcPlacementStrategyType newPlacementStrategyType);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType newPlacementStrategyType);
     };
 

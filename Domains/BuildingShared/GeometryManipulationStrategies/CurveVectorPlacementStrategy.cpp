@@ -47,6 +47,14 @@ void CurveVectorPlacementStrategy::ChangeDefaultNewGeometryType
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurveVectorPlacementStrategy::FinishContiniousPrimitive()
+    {
+    return m_manipulationStrategy->FinishContiniousPrimitive();
+    }
+    
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
@@ -56,6 +64,7 @@ void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
     {
     m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
     }
+    
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018

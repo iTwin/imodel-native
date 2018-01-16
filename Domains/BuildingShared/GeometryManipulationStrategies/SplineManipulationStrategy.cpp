@@ -12,17 +12,12 @@ USING_NAMESPACE_BUILDING_SHARED
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool SplineManipulationStrategy::_IsComplete() const
-    {
-    return GetAcceptedKeyPoints().size() > 1;
-    }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+const int SplineControlPointsManipulationStrategy::default_Order = 3;
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -47,6 +42,14 @@ ICurvePrimitivePtr SplineControlPointsManipulationStrategy::_FinishPrimitive() c
     return ICurvePrimitive::CreateBsplineCurve(bspline);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr SplineControlPointsManipulationStrategy::_CreateDefaultPlacementStrategy() 
+    {
+    return SplineControlPointsPlacementStrategy::Create(*this); 
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineThroughPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +72,14 @@ ICurvePrimitivePtr SplineThroughPointsManipulationStrategy::_FinishPrimitive() c
         return nullptr;
 
     return ICurvePrimitive::CreateInterpolationCurveSwapFromSource(*curve);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas             01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurvePrimitivePlacementStrategyPtr SplineThroughPointsManipulationStrategy::_CreateDefaultPlacementStrategy() 
+    { 
+    return SplineThroughPointsPlacementStrategy::Create(*this); 
     }
 
 //--------------------------------------------------------------------------------------
