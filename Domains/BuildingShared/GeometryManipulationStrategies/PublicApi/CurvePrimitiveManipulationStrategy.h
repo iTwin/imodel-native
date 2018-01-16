@@ -61,6 +61,8 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
 
         virtual CurvePrimitiveManipulationStrategyPtr _Clone() const = 0;
 
+        virtual bool _IsContinious() const = 0;
+
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
         
@@ -78,6 +80,8 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
         DPoint3d GetFirstKeyPoint() const;
 
         CurvePrimitiveManipulationStrategyPtr Clone() const;
+
+        bool IsContinious() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

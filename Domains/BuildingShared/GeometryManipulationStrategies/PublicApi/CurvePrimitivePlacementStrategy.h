@@ -21,6 +21,8 @@ struct CurvePrimitivePlacementStrategy : public GeometryPlacementStrategy
             : T_Super() {}
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const;
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const;
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ICurvePrimitivePtr FinishPrimitive() const;
     };

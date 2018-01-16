@@ -25,3 +25,12 @@ ICurvePrimitivePtr CurvePrimitivePlacementStrategy::FinishPrimitive() const
     {
     return _FinishPrimitive();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitivePlacementStrategy::_IsContinious() const
+    {
+    CurvePrimitiveManipulationStrategyCR strategy = dynamic_cast<CurvePrimitiveManipulationStrategyCR>(GetManipulationStrategy());
+    return strategy.IsContinious();
+    }

@@ -440,3 +440,11 @@ SplinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateSplinePlace
     {
     return _CreateSplinePlacementStrategy(strategyType);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitiveManipulationStrategy::IsContinious() const
+    {
+    return _IsContinious();
+    }

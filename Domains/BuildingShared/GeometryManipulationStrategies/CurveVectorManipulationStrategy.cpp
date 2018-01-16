@@ -225,7 +225,7 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetPlacement
 CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetStrategyForAppend()
     {
     if (!m_primitiveStrategies.empty() && m_primitiveStrategies.back()->CanAcceptMorePoints())
-        return m_primitiveStrategies.back()->CreateDefaultPlacementStrategy();
+        return GetPlacementStrategy(*m_primitiveStrategies.back());
     else
         return ResetCurrentManipulationStrategy();
     }

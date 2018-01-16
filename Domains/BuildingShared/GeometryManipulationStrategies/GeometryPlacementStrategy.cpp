@@ -136,14 +136,6 @@ bool GeometryPlacementStrategy::_IsComplete() const
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool GeometryPlacementStrategy::_IsContinious() const
-    {
-    return _GetManipulationStrategy().IsContinious();
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 bool GeometryPlacementStrategy::_CanAcceptMorePoints() const

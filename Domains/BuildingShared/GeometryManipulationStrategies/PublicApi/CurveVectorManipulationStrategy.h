@@ -55,8 +55,6 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override { return true; }
 
-        virtual bool _IsContinious() const override { return false; }
-
         virtual bool _IsDynamicKeyPointSet() const override;
         virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
         virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
