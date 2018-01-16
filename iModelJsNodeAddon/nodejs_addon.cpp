@@ -5,9 +5,6 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if defined (BENTLEY_WIN32)
-#include <windows.h>
-#endif
 #include <functional>
 #include <queue>
 #include <sys/types.h>
@@ -24,6 +21,7 @@
 #include <ECObjects/ECSchema.h>
 #include <rapidjson/rapidjson.h>
 #include "ECPresentationUtils.h"
+#include <Bentley/Desktop/FileSystem.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -67,6 +65,12 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
+#define REQUIRE_ARGUMENT_BOOL(i, var)\
+    if (info.Length() <= (i) || !info[i].IsBoolean()) {\
+        Napi::TypeError::New(Env(), "Argument " #i " must be a boolean").ThrowAsJavaScriptException();\
+    }\
+    bool var = info[i].As<Napi::Boolean>().Value();
+
 #define OPTIONAL_ARGUMENT_INTEGER(i, var, default)\
     int var;\
     if (info.Length() <= (i) || info[i].IsUndefined()) {\
@@ -92,11 +96,13 @@ USING_NAMESPACE_BENTLEY_EC
         Napi::TypeError::New(Env(), "Argument " #i " must be string or undefined").ThrowAsJavaScriptException();\
     }
 
+namespace IModelJsAddon {
+
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct NodeUtils
-    {
+struct NapiUtils
+{
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Sam.Wilson                      09/17
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -130,21 +136,29 @@ struct NodeUtils
         retObj.Set(Napi::String::New(env, "error"), CreateErrorObject0(errCode, msg, env));
         return retObj;
         }
-    };
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Sam.Wilson                      01/18
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static Napi::String Stringify(Napi::Env env, Napi::Value value)
+        {
+        return env.Global().Get("JSON").As<Napi::Object>().Get("stringify").As<Napi::Function>()({value}).ToString();
+        }
+
+};
 
 //=======================================================================================
 // Projects the ECDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb> 
+struct AddonECDb : Napi::ObjectWrap<AddonECDb> 
 {
 private:
     static Napi::FunctionReference s_constructor;
     std::unique_ptr<ECDb> m_ecdb;
 
 public:
-    NodeAddonECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECDb>(info) {}
-    ~NodeAddonECDb() {}
+    AddonECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonECDb>(info) {}
+    ~AddonECDb() {}
  
     ECDbR GetECDb() 
         {
@@ -154,7 +168,7 @@ public:
         return *m_ecdb;
         }
 
-    // Check if val is really a NodeAddonECDb peer object
+    // Check if val is really a AddonECDb peer object
     static bool HasInstance(Napi::Value val) {
         if (!val.IsObject())
             return false;
@@ -230,14 +244,14 @@ public:
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECDb", {
-            InstanceMethod("createDb", &NodeAddonECDb::CreateDb),
-            InstanceMethod("openDb", &NodeAddonECDb::OpenDb),
-            InstanceMethod("closeDb", &NodeAddonECDb::CloseDb),
-            InstanceMethod("dispose", &NodeAddonECDb::Dispose),
-            InstanceMethod("saveChanges", &NodeAddonECDb::SaveChanges),
-            InstanceMethod("abandonChanges", &NodeAddonECDb::AbandonChanges),
-            InstanceMethod("importSchema", &NodeAddonECDb::ImportSchema),
-            InstanceMethod("isOpen", &NodeAddonECDb::IsOpen)
+            InstanceMethod("createDb", &AddonECDb::CreateDb),
+            InstanceMethod("openDb", &AddonECDb::OpenDb),
+            InstanceMethod("closeDb", &AddonECDb::CloseDb),
+            InstanceMethod("dispose", &AddonECDb::Dispose),
+            InstanceMethod("saveChanges", &AddonECDb::SaveChanges),
+            InstanceMethod("abandonChanges", &AddonECDb::AbandonChanges),
+            InstanceMethod("importSchema", &AddonECDb::ImportSchema),
+            InstanceMethod("isOpen", &AddonECDb::IsOpen)
         });
 
         exports.Set("NodeAddonECDb", t);
@@ -282,12 +296,12 @@ public:
 };
 
 // Project the IBriefcaseManager::Request class 
-struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBriefcaseManagerResourcesRequest>
+struct AddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<AddonBriefcaseManagerResourcesRequest>
 {
     IBriefcaseManager::Request m_req;
     static Napi::FunctionReference s_constructor;
 
-    NodeAddonBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonBriefcaseManagerResourcesRequest>(info)
+    AddonBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonBriefcaseManagerResourcesRequest>(info)
         {
         }
 
@@ -308,9 +322,9 @@ struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBri
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonBriefcaseManagerResourcesRequest", {
-          InstanceMethod("reset", &NodeAddonBriefcaseManagerResourcesRequest::Reset),
-          InstanceMethod("isEmpty", &NodeAddonBriefcaseManagerResourcesRequest::IsEmpty),
-          InstanceMethod("toJSON", &NodeAddonBriefcaseManagerResourcesRequest::ToJSON),
+          InstanceMethod("reset", &AddonBriefcaseManagerResourcesRequest::Reset),
+          InstanceMethod("isEmpty", &AddonBriefcaseManagerResourcesRequest::IsEmpty),
+          InstanceMethod("toJSON", &AddonBriefcaseManagerResourcesRequest::ToJSON),
         });
 
         exports.Set("NodeAddonBriefcaseManagerResourcesRequest", t);
@@ -342,26 +356,84 @@ struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBri
 // Projects the DgnDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
+struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 {
+    struct AddonAppData : Db::AppData 
+        {
+        AddonDgnDb& m_addonDb;
+
+        static Key const& GetKey()
+            {
+            static Key s_key;
+            return s_key;
+            }
+
+        AddonAppData(AddonDgnDb& adb) : m_addonDb(adb) {}
+
+        static AddonAppData* Find(DgnDbR db)
+            {
+            return (AddonAppData*) db.FindAppData(GetKey());
+            }
+
+        static void Add(AddonDgnDb& adb)
+            {
+            BeAssert(nullptr == Find(adb.GetDgnDb()));
+            adb.GetDgnDb().AddAppData(GetKey(), new AddonAppData(adb));
+            }
+
+        static void Remove(DgnDbR db)
+            {
+            db.DropAppData(GetKey());
+            }
+        };
+    
     static Napi::FunctionReference s_constructor;
     
     Dgn::DgnDbPtr m_dgndb;
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
-    NodeAddonDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonDgnDb>(info)
+    AddonDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonDgnDb>(info)
         {
         }
 
-    ~NodeAddonDgnDb() 
+    ~AddonDgnDb() 
         {
+        CloseDgnDb();
+        }
+
+    void CloseDgnDb()
+        {
+        if (!m_dgndb.IsValid())
+            return;
         TearDownPresentationManager();
+        AddonUtils::CloseDgnDb(*m_dgndb);
+        AddonAppData::Remove(GetDgnDb());
+        m_dgndb = nullptr;
+        }
+
+    void OnDgnDbOpened(DgnDbP dgndb)
+        {
+        if (nullptr == dgndb)
+            CloseDgnDb();
+
+        m_dgndb = dgndb;
+        if (!m_dgndb.IsValid())
+            return;
+
+        SetupPresentationManager();
+        AddonAppData::Add(*this);
+        }
+
+    static AddonDgnDb* From(DgnDbR db)
+        {
+        auto appdata = AddonAppData::Find(db);
+        return appdata? &appdata->m_addonDb: nullptr;
         }
 
     DgnDbR GetDgnDb() {return *m_dgndb;}
 
-    //  Check if val is really a NodeAddonDgnDb peer object
+    //  Check if val is really a AddonDgnDb peer object
     static bool HasInstance(Napi::Value val) {
         if (!val.IsObject())
             return false;
@@ -388,10 +460,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         m_presentationManager.reset();
         }
 
-    Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NodeUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
+    Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NapiUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
 
     template<typename STATUSTYPE>
-    Napi::Object CreateBentleyReturnErrorObject(STATUSTYPE errCode, Utf8CP msg = nullptr) {return NodeUtils::CreateBentleyReturnErrorObject(errCode, msg, Env());}
+    Napi::Object CreateBentleyReturnErrorObject(STATUSTYPE errCode, Utf8CP msg = nullptr) {return NapiUtils::CreateBentleyReturnErrorObject(errCode, msg, Env());}
 
     template<typename STATUSTYPE>
     Napi::Object CreateBentleyReturnObject(STATUSTYPE errCode, Napi::Value goodValue)
@@ -411,9 +483,10 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, dbname);
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         RETURN_IF_HAD_EXCEPTION
-        auto status = AddonUtils::OpenDgnDb(m_dgndb, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        DgnDbPtr db;
+        auto status = AddonUtils::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
         if (BE_SQLITE_OK == status)
-            SetupPresentationManager();
+            OnDgnDbOpened(db.get());
 
         return Napi::Number::New(Env(), (int)status);
         }
@@ -463,7 +536,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
         DbResult result = AddonUtils::OpenBriefcase(m_dgndb, jsonBriefcaseToken, jsonChangeSetTokens, (SchemaUpgradeOptions::RevisionUpgradeOptions)revisionUpgradeOptions);
         if (BE_SQLITE_OK == result)
-            SetupPresentationManager();
+            OnDgnDbOpened(m_dgndb.get());
 
         return Napi::Number::New(Env(), (int)result);
         }
@@ -689,15 +762,13 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     void CloseDgnDb(const Napi::CallbackInfo& info)
         {
-        TearDownPresentationManager();
-        AddonUtils::CloseDgnDb(*m_dgndb);
-        m_dgndb = nullptr;
+        CloseDgnDb();
         }
 
     Napi::Value CreateChangeCache(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
+        REQUIRE_ARGUMENT_OBJ(0, AddonECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changeCachePathStr);
         RETURN_IF_HAD_EXCEPTION
 
@@ -729,7 +800,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
     Napi::Value ExtractChangeSummary(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
+        REQUIRE_ARGUMENT_OBJ(0, AddonECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
         RETURN_IF_HAD_EXCEPTION
 
@@ -815,7 +886,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForElement(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_STRING(1, elemProps);
         REQUIRE_ARGUMENT_INTEGER(2, dbop);
         Json::Value elemPropsJson = Json::Value::From(elemProps);
@@ -824,7 +895,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_STRING(1, props);
         REQUIRE_ARGUMENT_INTEGER(2, dbop);
         Json::Value propsJson = Json::Value::From(props);
@@ -833,7 +904,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForCodeSpec(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_STRING(1, props);
         REQUIRE_ARGUMENT_INTEGER(2, dbop);
         Json::Value propsJson = Json::Value::From(props);
@@ -842,33 +913,73 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForModel(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_STRING(1, modelProps);
         REQUIRE_ARGUMENT_INTEGER(2, dbop);
         Json::Value modelPropsJson = Json::Value::From(modelProps);
         return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(req->m_req, GetDgnDb(), modelPropsJson, (BeSQLite::DbOpcode)dbop));
         }
 
+    void ExtractBulkResourcesRequest(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_BOOL(1, locks);
+        REQUIRE_ARGUMENT_BOOL(2, codes);
+        GetDgnDb().BriefcaseManager().ExtractRequestFromBulkOperation(req->m_req, locks, codes);
+        }
+		
+   void AppendBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(1, AddonBriefcaseManagerResourcesRequest, reqIn);
+        req->m_req.Codes().insert(reqIn->m_req.Codes().begin(), reqIn->m_req.Codes().end());
+        req->m_req.Locks().GetLockSet().insert(reqIn->m_req.Locks().GetLockSet().begin(), reqIn->m_req.Locks().GetLockSet().end());
+        // TBD: merge in request options 
+        }
+
+   void ExtractBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, reqOut);
+        REQUIRE_ARGUMENT_OBJ(1, AddonBriefcaseManagerResourcesRequest, reqIn);
+        REQUIRE_ARGUMENT_BOOL(2, locks);
+        REQUIRE_ARGUMENT_BOOL(3, codes);
+        if (codes)
+            {
+            reqOut->m_req.Codes().insert(reqIn->m_req.Codes().begin(), reqIn->m_req.Codes().end());
+            reqIn->m_req.Codes().clear();
+            }
+        if (locks)
+            {
+            reqOut->m_req.Locks().GetLockSet().insert(reqIn->m_req.Locks().GetLockSet().begin(), reqIn->m_req.Locks().GetLockSet().end());
+            reqIn->m_req.Locks().Clear();
+            }
+        // TBD: merge in request options 
+        }
+
     Napi::Value SetBriefcaseManagerOptimisticConcurrencyControlPolicy(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, conflictRes);
-        AddonUtils::BriefcaseManagerConflictResolution uu = (AddonUtils::BriefcaseManagerConflictResolution)conflictRes.Get("updateVsUpdate").ToNumber().Int32Value();
-        AddonUtils::BriefcaseManagerConflictResolution ud = (AddonUtils::BriefcaseManagerConflictResolution)conflictRes.Get("updateVsDelete").ToNumber().Int32Value();
-        AddonUtils::BriefcaseManagerConflictResolution du = (AddonUtils::BriefcaseManagerConflictResolution)conflictRes.Get("deleteVsUpdate").ToNumber().Int32Value();
-        if (AddonUtils::BriefcaseManagerConflictResolution::Take != uu && AddonUtils::BriefcaseManagerConflictResolution::Reject != uu
-          ||AddonUtils::BriefcaseManagerConflictResolution::Take != ud && AddonUtils::BriefcaseManagerConflictResolution::Reject != ud
-          ||AddonUtils::BriefcaseManagerConflictResolution::Take != du && AddonUtils::BriefcaseManagerConflictResolution::Reject != du)
+        OptimisticConcurrencyControl::OnConflict uu = (OptimisticConcurrencyControl::OnConflict)conflictRes.Get("updateVsUpdate").ToNumber().Int32Value();
+        OptimisticConcurrencyControl::OnConflict ud = (OptimisticConcurrencyControl::OnConflict)conflictRes.Get("updateVsDelete").ToNumber().Int32Value();
+        OptimisticConcurrencyControl::OnConflict du = (OptimisticConcurrencyControl::OnConflict)conflictRes.Get("deleteVsUpdate").ToNumber().Int32Value();
+        if (OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange != uu && OptimisticConcurrencyControl::OnConflict::RejectIncomingChange != uu
+         || OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange != ud && OptimisticConcurrencyControl::OnConflict::RejectIncomingChange != ud
+         || OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange != du && OptimisticConcurrencyControl::OnConflict::RejectIncomingChange != du)
             {
-            Napi::TypeError::New(Env(), "Invalid conflict resolution value").ThrowAsJavaScriptException();\
+            Napi::TypeError::New(Env(), "Invalid conflict resolution value").ThrowAsJavaScriptException();
             return Napi::Number::New(Env(), 1);
             }
+        OptimisticConcurrencyControl::Policy policy;
+        policy.deleteVsUpdate = du;
+        policy.updateVsDelete = uu;
+        policy.updateVsDelete = ud;
 
-        return Napi::Number::New(Env(), (int)AddonUtils::SetBriefcaseManagerOptimisticConcurrencyControlPolicy(GetDgnDb(), uu, ud, du));
+        return Napi::Number::New(Env(), (int)GetDgnDb().SetConcurrencyControl(new OptimisticConcurrencyControl(policy)));
         }
 
     Napi::Value SetBriefcaseManagerPessimisticConcurrencyControlPolicy(const Napi::CallbackInfo& info)
         {
-        return Napi::Number::New(Env(), (int)AddonUtils::SetBriefcaseManagerPessimisticConcurrencyControlPolicy(GetDgnDb()));
+        return Napi::Number::New(Env(), (int)GetDgnDb().SetConcurrencyControl(new PessimisticConcurrencyControl()));
         }
 
     Napi::Value BriefcaseManagerStartBulkOperation(const Napi::CallbackInfo& info)
@@ -925,49 +1036,52 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonDgnDb", {
-            InstanceMethod("openDgnDb", &NodeAddonDgnDb::OpenDgnDb),
-            InstanceMethod("closeDgnDb", &NodeAddonDgnDb::CloseDgnDb),
-            InstanceMethod("createChangeCache", &NodeAddonDgnDb::CreateChangeCache),
-            InstanceMethod("attachChangeCache", &NodeAddonDgnDb::AttachChangeCache),
-            InstanceMethod("isChangeCacheAttached", &NodeAddonDgnDb::IsChangeCacheAttached),
-            InstanceMethod("extractChangeSummary", &NodeAddonDgnDb::ExtractChangeSummary),
-            InstanceMethod("setBriefcaseId", &NodeAddonDgnDb::SetBriefcaseId),
-            InstanceMethod("getBriefcaseId", &NodeAddonDgnDb::GetBriefcaseId),
-            InstanceMethod("getParentChangeSetId", &NodeAddonDgnDb::GetParentChangeSetId),
-            InstanceMethod("getDbGuid", &NodeAddonDgnDb::GetDbGuid),
-            InstanceMethod("setDbGuid", &NodeAddonDgnDb::SetDbGuid),
-            InstanceMethod("openBriefcase", &NodeAddonDgnDb::OpenBriefcase),
-            InstanceMethod("saveChanges", &NodeAddonDgnDb::SaveChanges),
-            InstanceMethod("importSchema", &NodeAddonDgnDb::ImportSchema),
-            InstanceMethod("getElement", &NodeAddonDgnDb::GetElement),
-            InstanceMethod("getModel", &NodeAddonDgnDb::GetModel),
-            InstanceMethod("insertElement", &NodeAddonDgnDb::InsertElement),
-            InstanceMethod("updateElement", &NodeAddonDgnDb::UpdateElement),
-            InstanceMethod("deleteElement", &NodeAddonDgnDb::DeleteElement),
-            InstanceMethod("insertModel", &NodeAddonDgnDb::InsertModel),
-            InstanceMethod("updateModel", &NodeAddonDgnDb::UpdateModel),
-            InstanceMethod("deleteModel", &NodeAddonDgnDb::DeleteModel),
-            InstanceMethod("insertCodeSpec", &NodeAddonDgnDb::InsertCodeSpec),
-            InstanceMethod("getElementPropertiesForDisplay", &NodeAddonDgnDb::GetElementPropertiesForDisplay),
-            InstanceMethod("insertLinkTableRelationship", &NodeAddonDgnDb::InsertLinkTableRelationship),
-            InstanceMethod("updateLinkTableRelationship", &NodeAddonDgnDb::UpdateLinkTableRelationship),
-            InstanceMethod("deleteLinkTableRelationship", &NodeAddonDgnDb::DeleteLinkTableRelationship),
-            InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::GetECClassMetaData),
-            InstanceMethod("getECClassMetaData", &NodeAddonDgnDb::GetECClassMetaData),
-            InstanceMethod("getCachedBriefcaseInfos", &NodeAddonDgnDb::GetCachedBriefcaseInfos),
-            InstanceMethod("getIModelProps", &NodeAddonDgnDb::GetIModelProps),
-			InstanceMethod("updateProjectExtents", &NodeAddonDgnDb::UpdateProjectExtents),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForCodeSpec", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForCodeSpec),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NodeAddonDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
-            InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NodeAddonDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
-            InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NodeAddonDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
-            InstanceMethod("briefcaseManagerStartBulkOperation", &NodeAddonDgnDb::BriefcaseManagerStartBulkOperation),
-            InstanceMethod("briefcaseManagerEndBulkOperation", &NodeAddonDgnDb::BriefcaseManagerEndBulkOperation),
-			
+            InstanceMethod("openDgnDb", &OpenDgnDb),
+            InstanceMethod("closeDgnDb", &CloseDgnDb),
+            InstanceMethod("createChangeCache", &CreateChangeCache),
+            InstanceMethod("attachChangeCache", &AttachChangeCache),
+            InstanceMethod("isChangeCacheAttached", &IsChangeCacheAttached),
+            InstanceMethod("extractChangeSummary", &ExtractChangeSummary),
+            InstanceMethod("setBriefcaseId", &SetBriefcaseId),
+            InstanceMethod("getBriefcaseId", &GetBriefcaseId),
+            InstanceMethod("getParentChangeSetId", &GetParentChangeSetId),
+            InstanceMethod("getDbGuid", &GetDbGuid),
+            InstanceMethod("setDbGuid", &SetDbGuid),
+            InstanceMethod("openBriefcase", &OpenBriefcase),
+            InstanceMethod("saveChanges", &SaveChanges),
+            InstanceMethod("importSchema", &ImportSchema),
+            InstanceMethod("getElement", &GetElement),
+            InstanceMethod("getModel", &GetModel),
+            InstanceMethod("insertElement", &InsertElement),
+            InstanceMethod("updateElement", &UpdateElement),
+            InstanceMethod("deleteElement", &DeleteElement),
+            InstanceMethod("insertModel", &InsertModel),
+            InstanceMethod("updateModel", &UpdateModel),
+            InstanceMethod("deleteModel", &DeleteModel),
+            InstanceMethod("insertCodeSpec", &InsertCodeSpec),
+            InstanceMethod("getElementPropertiesForDisplay", &GetElementPropertiesForDisplay),
+            InstanceMethod("insertLinkTableRelationship", &InsertLinkTableRelationship),
+            InstanceMethod("updateLinkTableRelationship", &UpdateLinkTableRelationship),
+            InstanceMethod("deleteLinkTableRelationship", &DeleteLinkTableRelationship),
+            InstanceMethod("getECClassMetaData", &GetECClassMetaData),
+            InstanceMethod("getECClassMetaData", &GetECClassMetaData),
+            InstanceMethod("getCachedBriefcaseInfos", &GetCachedBriefcaseInfos),
+            InstanceMethod("getIModelProps", &GetIModelProps),
+			InstanceMethod("updateProjectExtents", &UpdateProjectExtents),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &BuildBriefcaseManagerResourcesRequestForElement),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForCodeSpec", &BuildBriefcaseManagerResourcesRequestForCodeSpec),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &BuildBriefcaseManagerResourcesRequestForElement),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &BuildBriefcaseManagerResourcesRequestForModel),
+            InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
+            InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
+            InstanceMethod("briefcaseManagerStartBulkOperation", &BriefcaseManagerStartBulkOperation),
+            InstanceMethod("briefcaseManagerEndBulkOperation", &BriefcaseManagerEndBulkOperation),
+            InstanceMethod("extractBulkResourcesRequest", &ExtractBulkResourcesRequest),
+            InstanceMethod("appendBriefcaseManagerResourcesRequest", &AppendBriefcaseManagerResourcesRequest),
+            InstanceMethod("extractBriefcaseManagerResourcesRequest", &ExtractBriefcaseManagerResourcesRequest),
+						
 			// DEVELOPMENT-ONLY METHODS:
-			InstanceMethod("executeTestById", &NodeAddonDgnDb::ExecuteTestById),
+			InstanceMethod("executeTestById", &ExecuteTestById),
 
         });
 
@@ -982,7 +1096,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
-struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
+struct AddonECSqlStatement : Napi::ObjectWrap<AddonECSqlStatement>
 {
     #define MUST_HAVE_M_STMT if (m_stmt.get() == nullptr) Napi::TypeError::New(Env(), "Statement is not prepared").ThrowAsJavaScriptException();
 
@@ -994,7 +1108,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         return status.IsSQLiteError()? (int)status.GetSQLiteError(): (int)status.Get();
         }
 
-    NodeAddonECSqlStatement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECSqlStatement>(info), m_stmt(new ECSqlStatement())
+    AddonECSqlStatement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonECSqlStatement>(info), m_stmt(new ECSqlStatement())
         {
         }
 
@@ -1015,13 +1129,13 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECSqlStatement", {
-          InstanceMethod("prepare", &NodeAddonECSqlStatement::Prepare),
-          InstanceMethod("reset", &NodeAddonECSqlStatement::Reset),
-          InstanceMethod("dispose", &NodeAddonECSqlStatement::Dispose),
-          InstanceMethod("clearBindings", &NodeAddonECSqlStatement::ClearBindings),
-          InstanceMethod("bindValues", &NodeAddonECSqlStatement::BindValues),
-          InstanceMethod("step", &NodeAddonECSqlStatement::Step),
-          InstanceMethod("getRow", &NodeAddonECSqlStatement::GetRow),
+          InstanceMethod("prepare", &AddonECSqlStatement::Prepare),
+          InstanceMethod("reset", &AddonECSqlStatement::Reset),
+          InstanceMethod("dispose", &AddonECSqlStatement::Dispose),
+          InstanceMethod("clearBindings", &AddonECSqlStatement::ClearBindings),
+          InstanceMethod("bindValues", &AddonECSqlStatement::BindValues),
+          InstanceMethod("step", &AddonECSqlStatement::Step),
+          InstanceMethod("getRow", &AddonECSqlStatement::GetRow),
         });
 
         exports.Set("NodeAddonECSqlStatement", t);
@@ -1040,16 +1154,16 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
             }
 
         ECDb* ecdb;
-        if (NodeAddonDgnDb::HasInstance(info[paramIdx])) {   
-            NodeAddonDgnDb* var = NodeAddonDgnDb::Unwrap(info[paramIdx].As<Napi::Object>());
+        if (AddonDgnDb::HasInstance(info[paramIdx])) {   
+            AddonDgnDb* var = AddonDgnDb::Unwrap(info[paramIdx].As<Napi::Object>());
             if (!var->IsOpen())
-                return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());            
+                return NapiUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());            
             ecdb = &var->GetDgnDb();
         }
-        else if (NodeAddonECDb::HasInstance(info[paramIdx])) {
-            NodeAddonECDb* var = NodeAddonECDb::Unwrap(info[paramIdx].As<Napi::Object>());
+        else if (AddonECDb::HasInstance(info[paramIdx])) {
+            AddonECDb* var = AddonECDb::Unwrap(info[paramIdx].As<Napi::Object>());
             if (!var->GetECDb().IsDbOpen())
-                return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());            
+                return NapiUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());            
             ecdb = &var->GetECDb();        
         }
         else {
@@ -1063,10 +1177,10 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
 
         auto status = m_stmt->Prepare(*ecdb, ecsqlStr.c_str());
         if (!status.IsSuccess())
-            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastECDbIssue().c_str(), Env());
+            return NapiUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastECDbIssue().c_str(), Env());
 
         MUST_HAVE_M_STMT;                           // success post-condition
-        return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
+        return NapiUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
         }
 
     Napi::Value Reset(const Napi::CallbackInfo& info)
@@ -1099,9 +1213,9 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
        auto status = AddonUtils::JsonBinder::BindValues(*m_stmt, Json::Value::From(valuesStr));
 
        if (BSISUCCESS != status)
-           return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastECDbIssue().c_str(), Env());
+           return NapiUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastECDbIssue().c_str(), Env());
 
-       return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
+       return NapiUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
        }
 
 
@@ -1123,18 +1237,18 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
 };
 
 //=======================================================================================
-// Projects the NodeAddonECPresentationManager class into JS.
+// Projects the AddonECPresentationManager class into JS.
 //! @bsiclass
 //=======================================================================================
-struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentationManager>
+struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
     {
     static Napi::FunctionReference s_constructor;
 
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     
-    NodeAddonECPresentationManager(const Napi::CallbackInfo& info) 
-        : Napi::ObjectWrap<NodeAddonECPresentationManager>(info)
+    AddonECPresentationManager(const Napi::CallbackInfo& info) 
+        : Napi::ObjectWrap<AddonECPresentationManager>(info)
         {
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
         }
@@ -1156,7 +1270,7 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECPresentationManager", {
-          InstanceMethod("handleRequest", &NodeAddonECPresentationManager::HandleRequest)
+          InstanceMethod("handleRequest", &AddonECPresentationManager::HandleRequest)
         });
 
         exports.Set("NodeAddonECPresentationManager", t);
@@ -1167,22 +1281,22 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
 
     Napi::Value HandleRequest(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonDgnDb, db);    // contract pre-conditions
+        REQUIRE_ARGUMENT_OBJ(0, AddonDgnDb, db);    // contract pre-conditions
         REQUIRE_ARGUMENT_STRING(1, serializedRequest);
 
         if (!db->IsOpen())
-            return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
+            return NapiUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
 
         m_connections.NotifyConnectionOpened(db->GetDgnDb());
 
         Json::Value request;
         Json::Reader().parse(serializedRequest, request);
         if (request.isNull())
-            return NodeUtils::CreateErrorObject0(ERROR, nullptr, Env());
+            return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
 
         Utf8CP requestId = request["requestId"].asCString();
         if (Utf8String::IsNullOrEmpty(requestId))
-            return NodeUtils::CreateErrorObject0(ERROR, nullptr, Env());
+            return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
 
         JsonValueCR params = request["params"];
         rapidjson::Document response;
@@ -1209,7 +1323,7 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         else if (0 == strcmp("SaveValueChange", requestId))
             ECPresentationUtils::SaveValueChange(*m_presentationManager, db->GetDgnDb(), params, response);
         else
-            return NodeUtils::CreateErrorObject0(ERROR, nullptr, Env());
+            return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
 
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -1219,73 +1333,44 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         }
     };
 
+static Napi::Env* s_env;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+static void ThrowJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
     {
-#ifdef WIP_NAPI
-    if (s_env != nullptr)
-        Napi::Error::New(*s_env, Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
-#endif
-
-    //else
-    //    LOG.errorv(L"ASSERTION FAILURE: %ls %ls %d\n", msg, file, line);
+    Napi::Error::New(*s_env, Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
     }
 
-#if defined (BENTLEYCONFIG_OS_WINDOWS)
+} // namespace IModelJsAddon
 
-// TODO: This is implemented by DeskTop::FileSystem. Delete this and use that as soon as Bentley has been merged.
 
-static BeFileName getLibraryDir()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void BentleyApi::Dgn::AddonUtils::ThrowJsException(Utf8CP msg)
     {
-    void* addr = (void*)getLibraryDir;
-
-    MEMORY_BASIC_INFORMATION mbi;
-    HINSTANCE h = VirtualQuery (addr, &mbi, sizeof mbi)? (HINSTANCE)mbi.AllocationBase: (HINSTANCE)addr;
-
-    WChar tModuleName[MAX_PATH];
-    if (0 == ::GetModuleFileNameW (h, tModuleName, MAX_PATH)) // (yes, 0 means failure)
-        return BeFileName();
-
-    return BeFileName(tModuleName).GetDirectoryName();
+    Napi::Error::New(*IModelJsAddon::s_env, msg).ThrowAsJavaScriptException();
     }
-
-#elif defined (BENTLEYCONFIG_OS_LINUX) || defined (BENTLEYCONFIG_OS_APPLE_MACOS)
-
-#define _GNU_SOURCE         /* See feature_test_macros(7) */
-#include <dlfcn.h>
-
-static BeFileName getLibraryDir()
-    {
-    Dl_info  dlInfo;
-    if (0 == dladdr((void*)getLibraryDir, &dlInfo)) // (yes, 0 means failure)
-        return BeFileName();
-
-    return BeFileName(dlInfo.dli_fname, true).GetDirectoryName();
-    }
-
-#else
-
-#error unsupported platform
-
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
+static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object exports)
     {
+    IModelJsAddon::s_env = new Napi::Env(env);
+
     Napi::HandleScope scope(env);
 
-    BeFileName addondir = getLibraryDir();
+    BeFileName addondir = Desktop::FileSystem::GetLibraryDir();
 
-    AddonUtils::Initialize(addondir, throwJsExceptionOnAssert);
-    NodeAddonDgnDb::Init(env, exports);
-    NodeAddonECDb::Init(env, exports);
-    NodeAddonECSqlStatement::Init(env, exports);
-    NodeAddonBriefcaseManagerResourcesRequest::Init(env, exports);
-    NodeAddonECPresentationManager::Init(env, exports);
+    AddonUtils::Initialize(addondir, IModelJsAddon::ThrowJsExceptionOnAssert);
+    IModelJsAddon::AddonDgnDb::Init(env, exports);
+    IModelJsAddon::AddonECDb::Init(env, exports);
+    IModelJsAddon::AddonECSqlStatement::Init(env, exports);
+    IModelJsAddon::AddonBriefcaseManagerResourcesRequest::Init(env, exports);
+    IModelJsAddon::AddonECPresentationManager::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -1295,10 +1380,10 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     return exports;
     }
 
-Napi::FunctionReference NodeAddonBriefcaseManagerResourcesRequest::s_constructor;
-Napi::FunctionReference NodeAddonECSqlStatement::s_constructor;
-Napi::FunctionReference NodeAddonDgnDb::s_constructor;
-Napi::FunctionReference NodeAddonECPresentationManager::s_constructor;
-Napi::FunctionReference NodeAddonECDb::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonBriefcaseManagerResourcesRequest::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECSqlStatement::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonDgnDb::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECPresentationManager::s_constructor;
+Napi::FunctionReference IModelJsAddon::AddonECDb::s_constructor;
 
-NODE_API_MODULE(AddonUtils, registerModule)
+NODE_API_MODULE(IModelJsAddon, iModelJsAddonRegisterModule)

@@ -2,56 +2,47 @@
 |
 |     $Source: AddonUtilsBriefcaseManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AddonUtils.h"
 
 //=======================================================================================
-// @bsistruct                                   Sam.Wilson                  12/17
+// @bsistruct                                   Sam.Wilson                  01/18
 //=======================================================================================
-struct OptimisticBriefcaseManager : IBriefcaseManager
+struct RepositoryManagerWatchDog : IRepositoryManager
 {
-    AddonUtils::BriefcaseManagerConflictResolution uu, ud, du;
+    using ResponseOptions = IBriefcaseManager::ResponseOptions;
+    using RequestPurpose = IBriefcaseManager::RequestPurpose;
+    using Response = IBriefcaseManager::Response;
 
-    OptimisticBriefcaseManager(DgnDbR db) : IBriefcaseManager(db) { }
-
-    Response _ProcessRequest(Request& req, RequestPurpose purpose) override { return Response(purpose, req.Options(), RepositoryStatus::Success); }
-    RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override { return RepositoryStatus::Success; }
-    RepositoryStatus _Relinquish(Resources) override { return RepositoryStatus::Success; }
-    RepositoryStatus _ReserveCode(DgnCodeCR) override { return RepositoryStatus::Success; }
-    RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
-    IOwnedLocksIteratorPtr _GetOwnedLocks(FastQuery fast) override { return nullptr; }
-    RepositoryStatus _OnFinishRevision(DgnRevision const&) override { return RepositoryStatus::Success; }
-    RepositoryStatus _RefreshFromRepository() override { return RepositoryStatus::Success; }
-    void _OnElementInserted(DgnElementId) override { }
-    void _OnModelInserted(DgnModelId) override { }
-    void _StartBulkOperation() override {}
-    bool _IsBulkOperation() const override {return false;}
-    Response _EndBulkOperation() override {return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);}
-
-    RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& lockIds) override
+    Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly) override
         {
-        for (auto const& id : lockIds)
-            levels.insert(DgnLock(id, LockLevel::Exclusive));
+        if (queryOnly)
+            return Response(RequestPurpose::Query, req.Options(), RepositoryStatus::Success);
 
+        // This is just a watchdog to ensure that there are *NO LOCKS OR CODES REQUIRED* at the time native code needs to acquire or assert them.
+        // The TS app must get all locks and codes before attempting to save changes.
+        if (req.Locks().IsEmpty() && req.Codes().empty())
+            return Response(RequestPurpose::Acquire, req.Options(), RepositoryStatus::Success);
+
+        AddonUtils::ThrowJsException("acquire all locks and codes before calling endBulkOperation or saveChanges");
+        return Response(RequestPurpose::Acquire, req.Options(), RepositoryStatus::InvalidRequest);
+        }
+
+    RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db) override {BeAssert(false && "should not be used"); return RepositoryStatus::InvalidRequest;}
+    RepositoryStatus _Relinquish(Resources which, DgnDbR db) override {BeAssert(false && "should not be used"); return RepositoryStatus::InvalidRequest;}
+
+    RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override
+        {
         return RepositoryStatus::Success;
         }
-    bool _AreResourcesHeld(DgnLockSet&, DgnCodeSet&, RepositoryStatus* status) override 
+
+    RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) override
         {
-        if (nullptr != status)
-            *status = RepositoryStatus::Success;
-        return true;
+        BeAssert(false && "should not be used");
+        return RepositoryStatus::InvalidRequest;
         }
-    RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override
-        {
-        auto bcId = GetDgnDb().GetBriefcaseId();
-        for (auto const& code : codes)
-            states.insert(DgnCodeInfo(code)).first->SetReserved(bcId);
-        return RepositoryStatus::Success;
-        }
-    RepositoryStatus _PrepareForElementOperation(Request&, DgnElementCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
-    RepositoryStatus _PrepareForModelOperation(Request&, DgnModelCR, BeSQLite::DbOpcode) override { return RepositoryStatus::Success; }
 };
 
 //=======================================================================================
@@ -61,14 +52,15 @@ struct AddonRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
 {
     DEFINE_T_SUPER(RepositoryAdmin);
 
-    bset<DgnDbP> m_optimistic;
-
     AddonRepositoryAdmin() {}
     
+    IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override 
+        {
+        return new RepositoryManagerWatchDog();
+        }
+
     IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override
         {
-        if (m_optimistic.find(&db) != m_optimistic.end())
-            return new OptimisticBriefcaseManager(db);
         return T_Super::_CreateBriefcaseManager(db);
         }
 };
@@ -105,9 +97,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestToInsertElemen
     if (RepositoryStatus::Success != rc)
         return rc;
 
-    DgnCode code;
-    code.FromJson(elemProps["code"]);
-
+    DgnCode code = DgnCode::FromJson2(elemProps["code"]);
     if (code.IsValid() && !code.IsEmpty())
         {
         // Avoid asking repository manager to reserve code if we know it's already in use...
@@ -210,88 +200,17 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForCodeSpec(IB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::SetBriefcaseManagerOptimisticConcurrencyControlPolicy(DgnDbR dgndb, BriefcaseManagerConflictResolution uu, 
-                                                                                BriefcaseManagerConflictResolution ud, BriefcaseManagerConflictResolution du)
-    {
-    BeSqliteDbMutexHolder serializeAccess(dgndb);
-    // TBD: assert main thread
-
-    if (true)
-        {
-        auto& existingBcm = dgndb.BriefcaseManager();
-        if (nullptr != dynamic_cast<OptimisticBriefcaseManager*>(&existingBcm))
-            {
-            // Already in optimistic mode
-            return RepositoryStatus::Success;
-            }
-
-        // Must switch from pessimistic to optimistic
-        if (dgndb.Txns().HasChanges())
-            {
-            return RepositoryStatus::InvalidRequest;
-            }
-        }
-
-    dgndb.DestroyBriefcaseManager();
-    static_cast<AddonRepositoryAdmin&>(T_HOST.GetRepositoryAdmin()).m_optimistic.insert(&dgndb);
-    auto& bcm = dgndb.BriefcaseManager();
-    static_cast<AddonRepositoryAdmin&>(T_HOST.GetRepositoryAdmin()).m_optimistic.erase(&dgndb);
-
-    OptimisticBriefcaseManager* obm = dynamic_cast<OptimisticBriefcaseManager*>(&bcm);
-    if (nullptr == obm)
-        {
-        BeAssert(false);
-        return RepositoryStatus::InvalidRequest;
-        }
-    obm->uu = uu;
-    obm->ud = ud;
-    obm->du = du;
-    return RepositoryStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::SetBriefcaseManagerPessimisticConcurrencyControlPolicy(DgnDbR dgndb)
-    {
-    BeSqliteDbMutexHolder serializeAccess(dgndb);
-    // TBD: assert main thread
-
-    if (true)
-        {
-        auto& existingBcm = dgndb.BriefcaseManager();
-        if (nullptr == dynamic_cast<OptimisticBriefcaseManager*>(&existingBcm))
-            {
-            // Already in Pessimistic mode
-            return RepositoryStatus::Success;
-            }
-
-        // Must switch from optimistic to pessimistic
-        if (dgndb.Txns().HasChanges())
-            {
-            return RepositoryStatus::InvalidRequest;
-            }
-        }
-
-    dgndb.DestroyBriefcaseManager();
-    return RepositoryStatus::Success;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus AddonUtils::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
     {
     // TBD: assert main thread
-    auto& bcm = dgndb.BriefcaseManager();
-    if (nullptr != dynamic_cast<OptimisticBriefcaseManager*>(&bcm))
+
+    if (nullptr != dgndb.GetOptimisticConcurrencyControl())
         {
         GetLogger().error("Not in pessimistic concurrency mode");
         return RepositoryStatus::InvalidRequest;
         }
 
-    bcm.StartBulkOperation();
+    dgndb.BriefcaseManager().StartBulkOperation();
     return RepositoryStatus::Success;
     }
 
@@ -301,12 +220,13 @@ RepositoryStatus AddonUtils::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
 RepositoryStatus AddonUtils::BriefcaseManagerEndBulkOperation(DgnDbR dgndb)
     {
     // TBD: assert main thread
-    auto& bcm = dgndb.BriefcaseManager();
-    if (nullptr != dynamic_cast<OptimisticBriefcaseManager*>(&bcm))
+
+    if (nullptr != dgndb.GetOptimisticConcurrencyControl())
         {
         GetLogger().error("Not in pessimistic concurrency mode");
         return RepositoryStatus::InvalidRequest;
         }
 
+    auto& bcm = dgndb.BriefcaseManager();
     return bcm.EndBulkOperation().Result();
     }

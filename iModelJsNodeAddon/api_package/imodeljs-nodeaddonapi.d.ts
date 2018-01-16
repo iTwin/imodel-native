@@ -54,25 +54,104 @@ declare class NodeAddonBriefcaseManagerResourcesRequest {
     toJSON(): string;
 }
 
-/** How to handle a conflict */
-export const enum NodeAddonBriefcaseManagerConflictResolution {
-    /** Reject the incoming change */
-    Reject = 0,
-    /** Accept the incoming change */
-    Take = 1,
+/** How to handle a conflict 
+export const enum NodeAddonBriefcaseManagerOnConflict {
+    // Reject the incoming change
+    RejectIncomingChange = 0,
+    // Accept the incoming change
+    AcceptIncomingChange = 1,
 }
+*/
 
 /** The options for how conflicts are to be handled during change-merging in an OptimisticConcurrencyControlPolicy.
  * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
  * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
  */
-export interface NodeAddonBriefcaseManagerConflictResolutionPolicy {
+export interface NodeAddonBriefcaseManagerOnConflictPolicy {
     /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
-    updateVsUpdate: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+    updateVsUpdate: /*NodeAddonBriefcaseManagerOnConflict*/number;
     /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
-    updateVsDelete: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+    updateVsDelete: /*NodeAddonBriefcaseManagerOnConflict*/number;
     /** What to do with the incoming change in the case where an entity was deleted locally and would be updated by the incoming change. */
-    deleteVsUpdate: /*NodeAddonBriefcaseManagerConflictResolution*/number;
+    deleteVsUpdate: /*NodeAddonBriefcaseManagerOnConflict*/number;
+}
+
+export interface NodeAddonHeldResources {
+    /** The outcome of the query */
+    status: RepositoryStatus;
+    /** The set of locks tracked by the repository and held by the briefcase */
+    locks: string;
+    /** The set of locks tracked by the repository and unavailable for acquisition by this briefcase */
+    unavailableLocks: string;
+    /** The set of codes tracked by the repository and held by the briefcase */
+    codes: string;
+    /** The set of codes tracked by the repository and unavailable for acquisition by this briefcase */
+    unavailableCodes: string;
+}
+
+/*
+export enum NodeAddonRepositoryManagerResponseOptions {
+    None = 0, // No special options
+    LockState = 1 << 0, // If a request to acquire locks is denied, the response will include the current lock state of each denied lock
+    CodeState = 1 << 1, // Include DgnCodeState for any codes for which the request was denied
+    RevisionIds = 1 << 2, // For locks or codes requiring a revision to be pulled, include the specific revision IDs.
+    UnlimitedReporting = 1 << 3, // Acuire all denied instances despite server side thresholds
+    All = 0xff, // Include all options
+}
+
+export enum NodeAddonRepositoryManagerRequestPurpose {
+    Acquire,    // Attempted to acquire locks/codes
+    Query,      // Queried server for availability of locks/codes
+    FastQuery,  // Queried local cache for availability of locks/codes. Response may not include full ownership details for denied request.
+}
+*/
+
+/* Must match JSON format expected by native code. */
+export interface NodeAddonRepositoryManagerResponse {
+    /** The outcome of the operation */
+    Status: RepositoryStatus;
+    /** The purpose of the request */
+    Purpose: number; // NodeAddonRepositoryManagerRequestPurpose;
+    /** The options for customizing the response to this request */
+    Options: number; // NodeAddonRepositoryManagerResponseOptions;
+    /** The states of any locks which could *not* be acquired, if ResponseOptions::LockState was specified */
+    LockStates: string;
+    /** The states of any codes which could *not* be reserved, if ResponseOptions::CodeState was specified */
+    CodeStates: string;
+}
+
+/** A request made to the IBriefcaseManager and possibly forwarded to the IRepositoryManager.
+  * Specifies a set of locks the briefcase wishes to acquire and/or a set of codes to be reserved.
+  * Must match JSON format expected by native code.
+  */
+export interface NodeAddonRepositoryManagerRequest {
+    /** The locks to be acquired */
+    Locks: string; // DgnLockSet in JSON format
+    /** The codes to be reserved */
+    Codes: string; // CodeSet in JSON format
+    /** The options for customizing the response to this request */
+    Options: number; // NodeAddonRepositoryManagerResponseOptions;
+}
+
+/** The interface to be implemented by a TypeScript class that functions as a RepositoryManager that native code can call on to process requests. */
+export interface NodeAddonRepositoryManager {
+    /**
+     * Process a request.
+     * @param req The request. This will be a NodeAddonRepositoryManagerRequest object in JSON.stringified format.
+     * @param db The DgnDb
+     * @param queryOnly Is the request only to query the locks and codes? Otherwise, the request is to acquire them.
+     * @return The server's response.
+     */
+    processRequest(req: string /*NodeAddonRepositoryManagerRequest*/, db: NodeAddonDgnDb, queryOnly: boolean): NodeAddonRepositoryManagerResponse;
+
+    /**
+     * Retrieves the set of resources held by a briefcase as recorded in the repository
+     * @param db    The requesting briefcase
+     * @remarks This method shoudld only return resources tracked by the repository. It should exclude locks that are implicitly
+     * held for elements/models created locally by this briefcase and not yet committed to the repository
+     * @return the locks and codes that are held, plus a list of locks and codes that are unavailable.
+     */
+    queryHeldResources(db: NodeAddonDgnDb): NodeAddonHeldResources;
 }
 
 /**
@@ -100,6 +179,9 @@ declare class NodeAddonDgnDb {
 
   /** Close this iModel. */
   closeDgnDb(): void;
+
+  /** Register a NodeAddonRepositoryManager. This is called indirectly as a side-effect of the app calling saveChanges or briefcaseManagerEndBulkOperation. */
+  setRepositoryManager(mgr: NodeAddonRepositoryManager): void;
 
   /** Creates an EC change cache for this iModel (but does not attach it). 
    * @param changeCacheFile The created change cache ECDb file
@@ -314,6 +396,30 @@ declare class NodeAddonDgnDb {
     */
     buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: NodeAddonBriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
 
+    /**
+     * Extract requests from the current bulk operation and append them to reqOut
+     * @param req The pending requests.
+     * @param locks Extract lock requests?
+     * @param codes Extract Code requests?
+     */
+    extractBulkResourcesRequest(req: NodeAddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
+
+    /**
+     * Extract requests from reqIn and append them to reqOut
+     * @param reqOut The output request
+     * @param reqIn The input request
+     * @param locks Extract lock requests?
+     * @param codes Extract Code requests?
+     */
+    extractBriefcaseManagerResourcesRequest(reqOut: NodeAddonBriefcaseManagerResourcesRequest, reqIn: NodeAddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
+
+    /**
+     * Append reqIn to reqOut
+     * @param reqOut The request to be augmented
+     * @param reqIn The request to read
+     */
+    appendBriefcaseManagerResourcesRequest(reqOut: NodeAddonBriefcaseManagerResourcesRequest, reqIn: NodeAddonBriefcaseManagerResourcesRequest): void;
+
     /** Start bulk update mode. Valid only with the pessimistic concurrency control policy */
     briefcaseManagerStartBulkOperation(): RepositoryStatus;
 
@@ -329,7 +435,7 @@ declare class NodeAddonDgnDb {
      * @param policy The policy to used
      * @return non-zero if the policy could not be set
      */
-    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: NodeAddonBriefcaseManagerConflictResolutionPolicy): RepositoryStatus;
+    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: NodeAddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
     
   /**
    * Execute a test known to exist using the id recognized by the addon's test execution handler
