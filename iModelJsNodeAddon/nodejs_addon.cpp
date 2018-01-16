@@ -61,6 +61,18 @@ USING_NAMESPACE_BENTLEY_EC
     }\
     Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
 
+#define REQUIRE_ARGUMENT_STRING_ARRAY(i, var)\
+    if (info.Length() <= (i) || !info[i].IsArray()) {\
+        Napi::TypeError::New(info.Env(), "Argument " #i " must be an array of strings").ThrowAsJavaScriptException();\
+    }\
+    bvector<Utf8String> var;\
+    Napi::Array arr = info[i].As<Napi::Array>();\
+    for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {\
+        Napi::Value arrValue = arr[arrIndex];\
+        if (arrValue.IsString())\
+            var.push_back(arrValue.As<Napi::String>().Utf8Value().c_str());\
+    }
+
 #define REQUIRE_ARGUMENT_INTEGER(i, var)\
     if (info.Length() <= (i) || !info[i].IsNumber()) {\
         Napi::TypeError::New(Env(), "Argument " #i " must be an integer").ThrowAsJavaScriptException();\
@@ -1156,7 +1168,8 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NodeAddonECPresentationManager", {
-          InstanceMethod("handleRequest", &NodeAddonECPresentationManager::HandleRequest)
+          InstanceMethod("handleRequest", &NodeAddonECPresentationManager::HandleRequest),
+          InstanceMethod("setupRulesetDirectories", &NodeAddonECPresentationManager::SetupRulesetDirectories)
         });
 
         exports.Set("NodeAddonECPresentationManager", t);
@@ -1216,6 +1229,12 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         response.Accept(writer);
 
         return Napi::String::New(Env(), buffer.GetString());
+        }
+
+    void SetupRulesetDirectories(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories);
+        ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
         }
     };
 
