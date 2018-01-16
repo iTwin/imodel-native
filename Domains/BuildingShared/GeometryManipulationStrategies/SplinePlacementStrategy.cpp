@@ -14,34 +14,6 @@ const Utf8CP SplineControlPointsPlacementStrategy::prop_Order = "Order";
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsPlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-SplinePlacementStrategyPtr SplinePlacementStrategy::Create(SplinePlacementStrategyType strategyType)
-    {
-    switch (strategyType)
-        {
-        case SplinePlacementStrategyType::ControlPoints:
-            return SplineControlPointsPlacementStrategy::Create(SplineControlPointsManipulationStrategy::default_Order);
-        case SplinePlacementStrategyType::ThroughPoints:
-            return SplineThroughPointsPlacementStrategy::Create();
-        default:
-            BeAssert(false && "Unrecognized spline strategy type");
-            return nullptr;
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-SplinePlacementStrategyPtr SplinePlacementStrategy::Create(SplinePlacementStrategyType strategyType, SplineManipulationStrategyR manipulationStrategy)
-    {
-    SplinePlacementStrategyPtr strategy = SplinePlacementStrategy::Create(strategyType);
-    strategy->_SetManipulationStrategy(manipulationStrategy);
-
-    return strategy;
-    }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsPlacementStrategy
@@ -95,17 +67,6 @@ void SplineControlPointsPlacementStrategy::_SetOrder(int const & order)
 int SplineControlPointsPlacementStrategy::_GetOrder() const
     {
     return m_manipulationStrategy->GetOrder();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void SplineControlPointsPlacementStrategy::_SetManipulationStrategy(SplineManipulationStrategyR manipulationStrategy)
-    {
-    SplineControlPointsManipulationStrategyPtr controlPointsStrategy = dynamic_cast<SplineControlPointsManipulationStrategy*>(&manipulationStrategy);
-    BeAssert(controlPointsStrategy.IsValid() && "Strategy should be control points strategy");
-
-    m_manipulationStrategy = controlPointsStrategy;
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -170,17 +131,6 @@ void SplineThroughPointsPlacementStrategy::_RemoveEndTangent()
 DVec3d SplineThroughPointsPlacementStrategy::_GetEndTangent() const
     {
     return m_manipulationStrategy->GetEndTangent();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void SplineThroughPointsPlacementStrategy::_SetManipulationStrategy(SplineManipulationStrategyR manipulationStrategy)
-    {
-    SplineThroughPointsManipulationStrategyPtr throughPointsStrategy = dynamic_cast<SplineThroughPointsManipulationStrategy*>(&manipulationStrategy);
-    BeAssert(throughPointsStrategy.IsValid() && "Strategy should be through points strategy");
-
-    m_manipulationStrategy = throughPointsStrategy;
     }
 
 END_BUILDING_SHARED_NAMESPACE

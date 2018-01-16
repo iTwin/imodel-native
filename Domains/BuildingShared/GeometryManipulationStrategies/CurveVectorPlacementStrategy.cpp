@@ -87,15 +87,3 @@ void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
     {
     m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
     }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas Vitunskas              01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void CurveVectorPlacementStrategy::ChangeDefaultPlacementStrategy
-(
-    SplinePlacementStrategyType newPlacementStrategyType
-)
-    {
-    return m_manipulationStrategy->ChangeDefaultPlacementStrategy(newPlacementStrategyType);
-    }
-

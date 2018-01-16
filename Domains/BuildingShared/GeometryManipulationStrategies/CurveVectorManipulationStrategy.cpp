@@ -20,7 +20,6 @@ CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
     , m_defaultLinePlacementStrategyType(LinePlacementStrategyType::Points)
     , m_defaultArcPlacementStrategyType(ArcPlacementStrategyType::StartMidEnd)
     , m_defaultLineStringPlacementStrategyType(LineStringPlacementStrategyType::Points)
-    , m_defaultSplinePlacementStrategyType(SplinePlacementStrategyType::ControlPoints)
     {}
 
 //--------------------------------------------------------------------------------------
@@ -160,15 +159,10 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::ResetCurrent
             manipulationStrategy = LineManipulationStrategy::Create();
             break;
         case DefaultNewGeometryType::Spline:
-            switch (m_defaultSplinePlacementStrategyType)
-                {
-                case SplinePlacementStrategyType::ControlPoints:
-                    manipulationStrategy = SplineControlPointsManipulationStrategy::Create(SplineControlPointsManipulationStrategy::default_Order);
-                    break;
-                case SplinePlacementStrategyType::ThroughPoints:
-                    manipulationStrategy = SplineThroughPointsManipulationStrategy::Create();
-                    break;
-                }
+            manipulationStrategy = SplineControlPointsManipulationStrategy::Create(SplineControlPointsManipulationStrategy::default_Order);
+            break;
+        case DefaultNewGeometryType::InterpolationCurve:
+            manipulationStrategy = SplineThroughPointsManipulationStrategy::Create();
             break;
         case DefaultNewGeometryType::LineString:
             manipulationStrategy = LineStringManipulationStrategy::Create();   
@@ -211,8 +205,6 @@ CurvePrimitivePlacementStrategyPtr CurveVectorManipulationStrategy::GetPlacement
             return manipulationStrategy.CreateLinePlacementStrategy(m_defaultLinePlacementStrategyType);
         case DefaultNewGeometryType::LineString:
             return manipulationStrategy.CreateLineStringPlacementStrategy(m_defaultLineStringPlacementStrategyType);
-        case DefaultNewGeometryType::Spline:
-            return manipulationStrategy.CreateSplinePlacementStrategy(m_defaultSplinePlacementStrategyType);
         default:
             return manipulationStrategy.CreateDefaultPlacementStrategy();
         }
@@ -268,8 +260,7 @@ void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
     DefaultNewGeometryType newGeometryType
 )
     {
-    if (m_defaultNewGeometryType == newGeometryType &&
-        DefaultNewGeometryType::Spline != newGeometryType )
+    if (m_defaultNewGeometryType == newGeometryType)
         return;
 
     if (!m_primitiveStrategies.empty() && !m_primitiveStrategies.back()->IsComplete())
@@ -300,15 +291,16 @@ void CurveVectorManipulationStrategy::ChangeDefaultNewGeometryType
             }
             case DefaultNewGeometryType::Spline:
                 {
-                switch (m_defaultSplinePlacementStrategyType)
-                    {
-                    case SplinePlacementStrategyType::ControlPoints:
-                        newPrimitiveStrategy = SplineControlPointsManipulationStrategy::Create(SplineControlPointsManipulationStrategy::default_Order);
-                        break;
-                    case SplinePlacementStrategyType::ThroughPoints:
-                        newPrimitiveStrategy = SplineThroughPointsManipulationStrategy::Create();
-                        break;
-                    }
+                newPrimitiveStrategy = SplineControlPointsManipulationStrategy::Create(SplineControlPointsManipulationStrategy::default_Order);
+                CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
+                for (DPoint3d point : lastPrimitiveKeyPoints)
+                    if (!point.AlmostEqual(DPoint3d::From(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max())))
+                        tmpPlacementStrategy->AddKeyPoint(point);
+                }
+                break;
+            case DefaultNewGeometryType::InterpolationCurve:
+                {
+                newPrimitiveStrategy = SplineThroughPointsManipulationStrategy::Create();
                 CurvePrimitivePlacementStrategyPtr tmpPlacementStrategy = newPrimitiveStrategy->CreateDefaultPlacementStrategy();
                 for (DPoint3d point : lastPrimitiveKeyPoints)
                     if (!point.AlmostEqual(DPoint3d::From(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max())))
@@ -384,22 +376,6 @@ void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
         return;
 
     m_defaultLineStringPlacementStrategyType = newPlacementStrategyType;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void CurveVectorManipulationStrategy::ChangeDefaultPlacementStrategy
-(
-    SplinePlacementStrategyType newPlacementStrategyType
-)
-    {
-    if (m_defaultSplinePlacementStrategyType == newPlacementStrategyType)
-        return;
-
-    m_defaultSplinePlacementStrategyType = newPlacementStrategyType;
-    if (DefaultNewGeometryType::Spline == m_defaultNewGeometryType)
-        ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

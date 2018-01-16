@@ -12,14 +12,6 @@ USING_NAMESPACE_BUILDING_SHARED
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas             01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-SplinePlacementStrategyPtr SplineManipulationStrategy::_CreateSplinePlacementStrategy(SplinePlacementStrategyType strategyType)
-    {
-    return SplinePlacementStrategy::Create(strategyType, *this);
-    }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsManipulationStrategy

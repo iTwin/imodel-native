@@ -9,24 +9,12 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-enum class SplinePlacementStrategyType
-    {
-    ControlPoints = 0,
-    ThroughPoints
-    };
-
 struct SplinePlacementStrategy : CurvePrimitivePlacementStrategy
     {
     DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
 
     protected:
         SplinePlacementStrategy() : T_Super() {}
-
-        virtual void _SetManipulationStrategy(SplineManipulationStrategyR manipulationStrategy) = 0;
-
-    public:
-        static SplinePlacementStrategyPtr Create(SplinePlacementStrategyType strategyType);
-        static SplinePlacementStrategyPtr Create(SplinePlacementStrategyType strategyType, SplineManipulationStrategyR manipulationStrategy);
     };
 
 struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
@@ -53,9 +41,6 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
 
         void _SetOrder(int const & order);
         int _GetOrder() const;
-
-        virtual void _SetManipulationStrategy(SplineManipulationStrategyR manipulationStrategy) override;
-
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(int order) { return new SplineControlPointsPlacementStrategy(order); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineControlPointsPlacementStrategyPtr Create(SplineControlPointsManipulationStrategyR manipulationStrategy) { return new SplineControlPointsPlacementStrategy(manipulationStrategy); }
@@ -90,8 +75,6 @@ struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
         virtual void _SetEndTangent(DVec3d tangent);
         virtual void _RemoveEndTangent();
         virtual DVec3d _GetEndTangent() const;
-
-        virtual void _SetManipulationStrategy(SplineManipulationStrategyR manipulationStrategy) override;
 
     public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineThroughPointsPlacementStrategyPtr Create() { return new SplineThroughPointsPlacementStrategy(); }
