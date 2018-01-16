@@ -2217,10 +2217,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
         if (context.ExcludeSchemaFromBisification(*schema))
             continue;
 
-        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_1))
+        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::Latest))
             {
             Utf8String errorMsg;
-            errorMsg.Sprintf("Failed to validate ECSchema %s as an EC3.1 ECSchema.", schema->GetFullSchemaName().c_str());
+            errorMsg.Sprintf("Failed to validate ECSchema %s as an EC%s ECSchema.", schema->GetFullSchemaName().c_str(), BECN::ECSchema::GetECVersionString(ECN::ECVersion::Latest));
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             return BentleyApi::BSIERROR;
             }
