@@ -832,14 +832,14 @@ void CodeDiscardReservedJsonRequest(std::shared_ptr<WSChangeset> changeSet, cons
 ObjectId GetLockId
 (
 LockableId lock,
-const BeBriefcaseId*  briefcaseId
+const BeBriefcaseId briefcaseId
 )
     {
     Utf8String idString;
-    if (nullptr == briefcaseId)
-        idString.Sprintf("%d-%s", (int)lock.GetType(), FormatBeInt64Id(lock.GetId()).c_str());
+    if (briefcaseId.IsValid())
+        idString.Sprintf("%d-%s-%u", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()).c_str(), briefcaseId.GetValue());
     else
-        idString.Sprintf("%d-%s-%u", (int)lock.GetType(), FormatBeInt64Id(lock.GetId()).c_str(), briefcaseId->GetValue());
+        idString.Sprintf("%d-%s", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()).c_str());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Lock, idString);
     }
@@ -850,12 +850,12 @@ const BeBriefcaseId*  briefcaseId
 ObjectId GetCodeId
 (
 DgnCodeCR code,
-const BeBriefcaseId*  briefcaseId
+const BeBriefcaseId briefcaseId
 )
     {
     Utf8String idString;
-    if (nullptr != briefcaseId)
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValueUtf8(), *briefcaseId).c_str());
+    if (briefcaseId.IsValid())
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValueUtf8(), briefcaseId).c_str());
     else
         idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValueUtf8()).c_str());
 
@@ -920,57 +920,6 @@ BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-CodeLockSetTaskPtr iModelConnection::QueryCodesLocksInternal
-(
-DgnCodeSet const* codes,
-LockableIdSet const* locks,
-const BeBriefcaseId*  briefcaseId,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    const Utf8String methodName = "iModelConnection::QueryCodesLocksInternal";
-
-    bset<StatusTaskPtr> tasks;
-    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
-
-    if (nullptr != codes && 0 < codes->size())
-        {
-        auto task = QueryCodesInternal(*codes, briefcaseId, finalValue, cancellationToken);
-        tasks.insert(task);
-        }
-
-    if (nullptr != locks && 0 < locks->size())
-        {
-        auto task = QueryLocksInternal(*locks, briefcaseId, finalValue, cancellationToken);
-        tasks.insert(task);
-        }
-
-    //Query codes locks by briefcase id
-    if (nullptr != briefcaseId && tasks.empty())
-        {
-        auto task = QueryCodesInternal(briefcaseId, finalValue, cancellationToken);
-        tasks.insert(task);
-
-        task = QueryLocksInternal(briefcaseId, finalValue, cancellationToken);
-        tasks.insert(task);
-        }
-
-    return AsyncTask::WhenAll(tasks)
-        ->Then<CodeLockSetResult>([=]
-        {
-        for (auto task : tasks)
-            {
-            auto taskResult = ExecuteAsync(task);
-            if (!taskResult->IsSuccess())
-                return CodeLockSetResult::Error(taskResult->GetError());
-            }
-        return CodeLockSetResult::Success(*finalValue);
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2016
-//---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::QueryCodesLocksInternal
 (
 WSQuery query,
@@ -1022,7 +971,7 @@ void AddCodes(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr c
 StatusTaskPtr iModelConnection::QueryCodesInternal
 (
 const DgnCodeSet& codes,
-const BeSQLite::BeBriefcaseId*  briefcaseId,
+const BeSQLite::BeBriefcaseId briefcaseId,
 CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
@@ -1045,15 +994,17 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::QueryCodesInternal
 (
-const BeSQLite::BeBriefcaseId*  briefcaseId,
+const BeSQLite::BeBriefcaseId  briefcaseId,
 CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    BeAssert(briefcaseId.IsValid() && "Query by invalid briefcase id is not supported.");
+    
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiCode);
 
     Utf8String filter;
-    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
+    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
     query.SetFilter(filter);
 
     auto addMultiCodesCallback = [&](const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
@@ -1100,14 +1051,14 @@ ICancellationTokenPtr cancellationToken
 StatusTaskPtr iModelConnection::QueryLocksInternal
 (
 const LockableIdSet& locks,
-const BeSQLite::BeBriefcaseId*  briefcaseId,
+const BeSQLite::BeBriefcaseId  briefcaseId,
 CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Lock);
-
     BeAssert(0 != locks.size() && "Query Ids in empty array is not supported.");
+
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Lock);
 
     std::deque<ObjectId> queryIds;
     for (auto& lock : locks)
@@ -1136,15 +1087,17 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::QueryLocksInternal
 (
-const BeSQLite::BeBriefcaseId*  briefcaseId,
+const BeSQLite::BeBriefcaseId  briefcaseId,
 CodeLockSetResultInfoPtr codesLocksOut,
 ICancellationTokenPtr cancellationToken
 ) const
     {
+    BeAssert(briefcaseId.IsValid() && "Query by invalid briefcase id is not supported.");
+
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock);
 
     Utf8String filter;
-    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
+    filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
     query.SetFilter(filter);
 
     auto addMultiLocksCallback = [&](const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
@@ -3121,6 +3074,28 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
+CodeLockSetTaskPtr ExecuteCodesLocksQueryTasks
+(
+bset<StatusTaskPtr> tasks,
+CodeLockSetResultInfoPtr finalValue
+)
+    {
+    return AsyncTask::WhenAll(tasks)
+        ->Then<CodeLockSetResult>([=]
+        {
+        for (auto task : tasks)
+            {
+            auto taskResult = ExecuteAsync(task);
+            if (!taskResult->IsSuccess())
+                return CodeLockSetResult::Error(taskResult->GetError());
+            }
+        return CodeLockSetResult::Success(*finalValue);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
 CodeLockSetTaskPtr iModelConnection::QueryCodesLocksById
 (
 DgnCodeSet const& codes,
@@ -3128,9 +3103,7 @@ LockableIdSet const& locks,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    const Utf8String methodName = "iModelConnection::QueryCodesLocksById";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return QueryCodesLocksInternal(&codes, &locks, nullptr, cancellationToken);
+    return QueryCodesLocksById(codes, locks, BeBriefcaseId(), cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3146,7 +3119,17 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesLocksById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return QueryCodesLocksInternal(&codes, &locks, &briefcaseId, cancellationToken);
+
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+    bset<StatusTaskPtr> tasks;
+    
+    if (0 < codes.size())
+        tasks.insert(QueryCodesInternal(codes, briefcaseId, finalValue, cancellationToken));
+
+    if (0 < locks.size())
+        tasks.insert(QueryLocksInternal(locks, briefcaseId, finalValue, cancellationToken));
+
+    return ExecuteCodesLocksQueryTasks(tasks, finalValue);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3160,7 +3143,150 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "iModelConnection::QueryCodesLocks";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return QueryCodesLocksInternal(nullptr, nullptr, &briefcaseId, cancellationToken);
+
+    bset<StatusTaskPtr> tasks;
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+
+    //Query codes locks by briefcase id
+    if (!briefcaseId.IsValid())
+        {
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "BriefcaseId is invalid.");
+        return CreateCompletedAsyncTask<CodeLockSetResult>(CodeLockSetResult::Error(Error::Id::InvalidBriefcase));
+        }
+
+    tasks.insert(QueryCodesInternal(briefcaseId, finalValue, cancellationToken));
+    tasks.insert(QueryLocksInternal(briefcaseId, finalValue, cancellationToken));
+
+    return ExecuteCodesLocksQueryTasks(tasks, finalValue);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+CodeInfoSetTaskPtr iModelConnection::QueryCodesByIds
+(
+DgnCodeSet const& codes,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    return QueryCodesByIds(codes, BeBriefcaseId(), cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+CodeInfoSetTaskPtr iModelConnection::QueryCodesByIds
+(
+DgnCodeSet const& codes,
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryCodesByIds";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+
+    if (0 == codes.size())
+        return CreateCompletedAsyncTask(CodeInfoSetResult::Success(finalValue->GetCodeStates()));
+
+    auto result = ExecuteAsync(QueryCodesInternal(codes, briefcaseId, finalValue, cancellationToken));
+
+    if (result->IsSuccess())
+        return CreateCompletedAsyncTask(CodeInfoSetResult::Success(finalValue->GetCodeStates()));
+    return CreateCompletedAsyncTask(CodeInfoSetResult::Error(result->GetError()));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+CodeInfoSetTaskPtr iModelConnection::QueryCodesByBriefcaseId
+(
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryCodesByBriefcaseId";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+
+    if (!briefcaseId.IsValid())
+        {
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "BriefcaseId is invalid.");
+        return CreateCompletedAsyncTask(CodeInfoSetResult::Error(Error::Id::InvalidBriefcase));
+        }
+
+    auto result = ExecuteAsync(QueryCodesInternal(briefcaseId, finalValue, cancellationToken));
+
+    if (result->IsSuccess())
+        return CreateCompletedAsyncTask(CodeInfoSetResult::Success(finalValue->GetCodeStates()));
+    return CreateCompletedAsyncTask(CodeInfoSetResult::Error(result->GetError()));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+LockInfoSetTaskPtr iModelConnection::QueryLocksByIds
+(
+LockableIdSet const& locks,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    return QueryLocksByIds(locks, BeBriefcaseId(), cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+LockInfoSetTaskPtr iModelConnection::QueryLocksByIds
+(
+LockableIdSet const& locks,
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryLocksByIds";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+
+    if (0 == locks.size())
+        return CreateCompletedAsyncTask(LockInfoSetResult::Success(finalValue->GetLockStates()));
+
+    auto result = ExecuteAsync(QueryLocksInternal(locks, briefcaseId, finalValue, cancellationToken));
+
+    if (result->IsSuccess())
+        return CreateCompletedAsyncTask(LockInfoSetResult::Success(finalValue->GetLockStates()));
+    return CreateCompletedAsyncTask(LockInfoSetResult::Error(result->GetError()));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+LockInfoSetTaskPtr iModelConnection::QueryLocksByBriefcaseId
+(
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryLocksByBriefcaseId";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+
+    StatusTaskPtr task;
+    if (!briefcaseId.IsValid())
+        {
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "BriefcaseId is invalid.");
+        return CreateCompletedAsyncTask(LockInfoSetResult::Error(Error::Id::InvalidBriefcase));
+        }
+
+    auto result = ExecuteAsync(QueryLocksInternal(briefcaseId, finalValue, cancellationToken));
+
+    if (result->IsSuccess())
+        return CreateCompletedAsyncTask(LockInfoSetResult::Success(finalValue->GetLockStates()));
+    return CreateCompletedAsyncTask(LockInfoSetResult::Error(result->GetError()));
     }
 
 //---------------------------------------------------------------------------------------

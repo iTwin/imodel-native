@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/iModelConnection.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,8 @@ DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(CodeLockSetResultInfo, CodeLockSet);
 DEFINE_TASK_TYPEDEFS(CodeSequence, CodeSequence);
 DEFINE_TASK_TYPEDEFS(Http::Response, EventReponse);
+DEFINE_TASK_TYPEDEFS(Dgn::DgnCodeInfoSet, CodeInfoSet);
+DEFINE_TASK_TYPEDEFS(Dgn::DgnLockInfoSet, LockInfoSet);
 
 //=======================================================================================
 //! CodeSet and DgnDbLockSet results.
@@ -77,9 +79,9 @@ public:
     void Insert(const Dgn::DgnCodeSet& codes, const Dgn::DgnCodeInfoSet& codeStates, const Dgn::DgnLockSet& locks, 
                 const Dgn::DgnLockInfoSet& lockStates);
 
-    //! Returns the set of locks.
+    //! Returns the set of codes.
     Dgn::DgnCodeSet const& GetCodes() const {return m_codes;}
-    //! Returns lock state information.
+    //! Returns code state information.
     Dgn::DgnCodeInfoSet const& GetCodeStates() const {return m_codeStates;}
     //! Returns the set of locks.
     Dgn::DgnLockSet const& GetLocks() const {return m_locks;}
@@ -214,7 +216,7 @@ private:
     StatusTaskPtr QueryCodesInternal
     (
     Dgn::DgnCodeSet const& codes,
-    BeSQLite::BeBriefcaseId const* briefcaseId,
+    BeSQLite::BeBriefcaseId const briefcaseId,
     CodeLockSetResultInfoPtr codesLocksOut,
     ICancellationTokenPtr cancellationToken
     ) const;
@@ -222,7 +224,7 @@ private:
     //Returns all codes by briefcase id
     StatusTaskPtr QueryCodesInternal
     (
-    BeSQLite::BeBriefcaseId const*  briefcaseId,
+    BeSQLite::BeBriefcaseId const briefcaseId,
     CodeLockSetResultInfoPtr codesLocksOut,
     ICancellationTokenPtr cancellationToken
     ) const;
@@ -231,7 +233,7 @@ private:
     StatusTaskPtr QueryLocksInternal
     (
     LockableIdSet const& locks,
-    BeSQLite::BeBriefcaseId const*  briefcaseId,
+    BeSQLite::BeBriefcaseId const briefcaseId,
     CodeLockSetResultInfoPtr codesLocksOut,
     ICancellationTokenPtr cancellationToken
     ) const;
@@ -239,17 +241,8 @@ private:
     //Returns all locks by briefcase id
     StatusTaskPtr QueryLocksInternal
     (
-    BeSQLite::BeBriefcaseId const*  briefcaseId,
+    BeSQLite::BeBriefcaseId const briefcaseId,
     CodeLockSetResultInfoPtr codesLocksOut,
-    ICancellationTokenPtr cancellationToken
-    ) const;
-
-    //! Returns all available codes and locks for given briefcase id.
-    CodeLockSetTaskPtr QueryCodesLocksInternal
-    (
-    Dgn::DgnCodeSet const* codes,
-    LockableIdSet const* locks,
-    BeSQLite::BeBriefcaseId const* briefcaseId,
     ICancellationTokenPtr cancellationToken
     ) const;
 
@@ -656,6 +649,47 @@ public:
     //! @param[in] cancellationToken
     IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryCodesLocks(BeSQLite::BeBriefcaseId const briefcaseId, 
                                                               ICancellationTokenPtr cancellationToken = nullptr) const;
+    
+    //! Returns all codes by ids.
+    //! @param[in] codes
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeInfoSetTaskPtr QueryCodesByIds(Dgn::DgnCodeSet const& codes,
+                                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all codes by ids and briefcase id.
+    //! @param[in] codes
+    //! @param[in] briefcaseId
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeInfoSetTaskPtr QueryCodesByIds(Dgn::DgnCodeSet const& codes,
+                                                              BeSQLite::BeBriefcaseId briefcaseId,
+                                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all codes by briefcase id.
+    //! @param[in] briefcaseId
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeInfoSetTaskPtr QueryCodesByBriefcaseId(BeSQLite::BeBriefcaseId const briefcaseId,
+                                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    
+    //! Returns all locks by ids.
+    //! @param[in] locks
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT LockInfoSetTaskPtr QueryLocksByIds(LockableIdSet const& locks,
+                                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all locks by ids and briefcase id.
+    //! @param[in] locks
+    //! @param[in] briefcaseId
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT LockInfoSetTaskPtr QueryLocksByIds(LockableIdSet const& locks,
+                                                              BeSQLite::BeBriefcaseId briefcaseId,
+                                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all locks by briefcase id.
+    //! @param[in] briefcaseId
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT LockInfoSetTaskPtr QueryLocksByBriefcaseId(BeSQLite::BeBriefcaseId const briefcaseId,
+                                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks held by other briefcases.
     //! @param[in] briefcaseId
