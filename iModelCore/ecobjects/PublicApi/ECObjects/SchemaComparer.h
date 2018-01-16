@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaComparer.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -895,7 +895,7 @@ struct SchemaChange final : ECObjectChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECEnumeratorChange final :ECObjectChange
+struct ECEnumeratorChange final : ECObjectChange
     {
     public:
         ECEnumeratorChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
@@ -904,7 +904,9 @@ struct ECEnumeratorChange final :ECObjectChange
             BeAssert(systemId == GetSystemId());
             }
         ~ECEnumeratorChange() {}
+        StringChange& GetName() {return Get<StringChange>(SystemId::Name); }
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
         StringChange& GetString() { return Get<StringChange>(SystemId::String); }
         Int32Change& GetInteger() { return Get<Int32Change>(SystemId::Integer); }
     };
@@ -1265,9 +1267,8 @@ private :
     BentleyStatus CompareECEnumerations(ECEnumerationChanges&, ECN::ECEnumerationContainerCR, ECN::ECEnumerationContainerCR);
     BentleyStatus CompareCustomAttributes(ECInstanceChanges&, ECN::IECCustomAttributeContainerCR, ECN::IECCustomAttributeContainerCR);
     BentleyStatus CompareCustomAttribute(ECPropertyValueChange&, ECN::IECInstanceCR, ECN::IECInstanceCR);
-    BentleyStatus CompareECEnumeration(ECEnumerationChange&, ECN::ECEnumerationCR, ECN::ECEnumerationCR);
-    BentleyStatus CompareIntegerECEnumerators(ECEnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
-    BentleyStatus CompareStringECEnumerators(ECEnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
+    BentleyStatus CompareECEnumeration(ECEnumerationChange&, ECN::ECEnumerationCR oldVal, ECN::ECEnumerationCR newVal);
+    BentleyStatus CompareECEnumerators(ECEnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
     BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
     BentleyStatus CompareReferences(ReferenceChanges&, ECN::ECSchemaReferenceListCR, ECN::ECSchemaReferenceListCR);
     BentleyStatus AppendECSchema(SchemaChanges&, ECN::ECSchemaCR, ValueId appendType);

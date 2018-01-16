@@ -1942,7 +1942,7 @@ public:
     //! @param[in] enumerationName          Name of the enumerator's parent enumeration.
     //! @param[in] enumeratorValueString    Value of the enumerator if the enumeration is of type string, nullptr if the enumeration is of type integer.
     //! @param[in] enumeratorValueInteger   Value of the enumerator if the enumeration is of type integer, nullptr if the enumeration is of type string.
-    ECOBJECTS_EXPORT static Utf8String ECEnumerator::DetermineName(Utf8StringCR enumerationName, Utf8CP enumeratorValueString, int32_t const* enumeratorValueInteger);
+    ECOBJECTS_EXPORT static Utf8String DetermineName(Utf8StringCR enumerationName, Utf8CP enumeratorValueString, int32_t const* enumeratorValueInteger);
 };
 
 //=======================================================================================

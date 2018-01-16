@@ -90,6 +90,7 @@ EC_TYPEDEFS (CustomAttributeDeserializerManager);
 EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);
 EC_TYPEDEFS(ECSchemaConverter);
+EC_TYPEDEFS(CustomECSchemaConverter);
 EC_TYPEDEFS(IECCustomAttributeConverter);
 EC_TYPEDEFS(ECSchemaValidator);
 EC_TYPEDEFS(IECSchemaValidator);
