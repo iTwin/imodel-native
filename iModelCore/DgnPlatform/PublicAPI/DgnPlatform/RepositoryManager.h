@@ -203,6 +203,7 @@ protected:
     virtual void _StartBulkOperation() = 0;
     virtual bool _IsBulkOperation() const = 0;
     virtual Response _EndBulkOperation() = 0;
+    virtual void _ExtractRequestFromBulkOperation(Request&, bool locks, bool codes) {;}
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
@@ -427,6 +428,8 @@ public:
     //! Check if a bulk operation is in progress
     bool IsBulkOperation() const {return _IsBulkOperation();}
 
+    void ExtractRequestFromBulkOperation(Request& r, bool locks, bool codes) {_ExtractRequestFromBulkOperation(r, locks, codes);}
+
     //! Call this if you want to acquire locks and codes @em before the end of the transaction.
     //! @note DgnDb::SaveChanges automatically calls this function to end the bulk operation and acquire locks and codes.
     //! If successful, this terminates the bulk operation.
@@ -566,8 +569,12 @@ struct IConcurrencyControl : IRefCounted
     {
     virtual IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() = 0;
     virtual void _ConfigureBriefcaseManager(IBriefcaseManager&) = 0;
-    virtual void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) = 0;
-    virtual void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) = 0;
+    virtual void _OnProcessRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose) = 0;
+    virtual void _OnProcessedRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) = 0;
+    virtual void _OnQueryHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) = 0;
+    virtual void _OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) = 0;
+    virtual void _OnExtractRequest(IBriefcaseManager::Request&, IBriefcaseManager&) = 0;
+    virtual void _OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&) = 0;
     };
 
 /* The pessimistic concurrency control policy. Locks and codes must be acquired before a changeset can be pushed to iModelHub. */
@@ -575,8 +582,12 @@ struct PessimisticConcurrencyControl : RefCounted<IConcurrencyControl>
     {
     IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return nullptr;}
     void _ConfigureBriefcaseManager(IBriefcaseManager&) override {}
-    void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) override {}
-    void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override {}
+    void _OnProcessRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose) override {}
+    void _OnProcessedRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override {}
+    void _OnQueryHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override {}
+    void _OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override {}
+    void _OnExtractRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override {}
+    void _OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override {}
     };
 
 /* An optimistic concurrency control policy */
@@ -589,11 +600,16 @@ struct IOptimisticConcurrencyControl : IConcurrencyControl
 struct OptimisticConcurrencyControlBase : IOptimisticConcurrencyControl
     {
     DgnLockSet m_locks;
+    DgnLockSet m_locksTemp;
 
     IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return this;}
-    DGNPLATFORM_EXPORT void _ConfigureBriefcaseManager(IBriefcaseManager& b) override;
-    DGNPLATFORM_EXPORT void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) override;
-    DGNPLATFORM_EXPORT void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override;
+    DGNPLATFORM_EXPORT void _ConfigureBriefcaseManager(IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnProcessRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose) override;
+    DGNPLATFORM_EXPORT void _OnProcessedRequest(IBriefcaseManager::Request&, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override;
+    DGNPLATFORM_EXPORT void _OnQueryHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnExtractRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override;
+    DGNPLATFORM_EXPORT void _OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&) override;
     };
 
 /* An optimistic concurrency control policy where conflict-resolution is controlled by policy settings. */
