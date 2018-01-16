@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -186,6 +186,10 @@ Utf8CP BisConversionRuleHelper::ToString(BisConversionRule rule)
                 return "ToPhysicalElement";
             case BisConversionRule::ToPhysicalObject:
                 return "ToPhysicalObject";
+            case BisConversionRule::ToDefaultBisBaseClass:
+                return "ToDefaultBisBaseClass";
+            case BisConversionRule::ToDefaultBisClass:
+                return "ToDefaultBisClass";
             default:
                 BeAssert(false && "Please update V8ECClassInfo::ToString for new value of the BisConversionRule enum.");
                 return "";

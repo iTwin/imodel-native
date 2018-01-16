@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/BasicTypes.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgDbInternal.h"
@@ -75,8 +75,7 @@ DwgDbStatus DwgCmColor::SetColorIndex (uint16_t color)
 
 uint32_t    DwgCmEntityColor::GetRGBFromIndex (uint16_t index) { return static_cast<uint32_t>(DWGCM_Type(EntityColor)::lookUpRGB(static_cast<uint8_t>(index))); }
 uint32_t    DwgCmEntityColor::GetMRGB () const    { return static_cast<uint32_t>(T_Super::color()); }
-// Teigha does not seem to have implemented OdCmEntityColor::trueColor - return OdCmEntityColor::color wwith the high bits removed!!
-uint32_t    DwgCmEntityColor::GetRGB () const     { return static_cast<uint32_t>(DWGDB_CALLSDKMETHOD(T_Super::color() & 0x00FFFFFF,T_Super::trueColor())); }
+uint32_t    DwgCmEntityColor::GetRGB () const     { return static_cast<uint32_t>(DWGDB_CALLSDKMETHOD(T_Super::color,T_Super::trueColor)() & 0x00FFFFFF); }
 int16_t     DwgCmEntityColor::GetIndex () const   { return static_cast<int16_t>(T_Super::colorIndex()); }
 Byte        DwgCmEntityColor::GetRed () const     { return static_cast<Byte>(T_Super::red()); }
 Byte        DwgCmEntityColor::GetGreen () const   { return static_cast<Byte>(T_Super::green()); }

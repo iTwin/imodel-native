@@ -828,7 +828,8 @@ public:
         L10N_STRING(SyncInfoInconsistent)        // =="The syncInfo file [%s] is inconsistent with the project"==
         L10N_STRING(SyncInfoTooNew)              // =="Sync info was created by a later version"==
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
-        L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
+        L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
+        L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -1083,6 +1084,8 @@ protected:
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterialSection ();
     DGNDBSYNC_EXPORT virtual BentleyStatus          _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
     DGNDBSYNC_EXPORT virtual BentleyStatus          _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
+    //! Search material paths specified in the Config file.  If a match found, replace the file name.
+    DGNDBSYNC_EXPORT virtual bool                   _FindTextureFile (BeFileNameR filename) const;
     DGNDBSYNC_EXPORT bvector<BeFileName> const&     GetMaterialSearchPaths () const { return m_materialSearchPaths; }
 
     //! @name  Importing entities

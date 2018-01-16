@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbObjects.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,6 +19,8 @@
 #include    <Teigha/Drawing/Include/DbSpatialIndex.h>
 #include    <Teigha/Drawing/Include/DbSortentsTable.h>
 #include    <Teigha/Drawing/Include/DbObjectIterator.h>
+#include    <Teigha/Drawing/Include/DbBackground.h>
+#include    <Teigha/Drawing/Include/DbSun.h>
 
 #elif DWGTOOLKIT_RealDwg
 
@@ -34,6 +36,7 @@
 #include    <RealDwg/Base/dbxrecrd.h>
 #include    <RealDwg/Base/dbspfilt.h>
 #include    <RealDwg/Base/dbspindx.h>
+#include    <RealDwg/Base/dbsun.h>
 #include    <RealDwg/Base/sorttab.h>
 #else
     #error  "Must define DWGTOOLKIT!!!"
@@ -316,6 +319,129 @@ public:
     DWGDB_EXPORT double                 GetTransmittanceScale () const;
     };  // DwgDbMaterial
 DWGDB_DEFINE_OBJECTPTR (Material)
+
+class DwgGiSkyParameters;
+class DwgGiShadowParameters;
+struct DwgGiDrawable;
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbSun : public DWGDB_EXTENDCLASS(Sun)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(Sun)
+
+    DWGDB_EXPORT bool           IsOn () const;
+    DWGDB_EXPORT bool           IsDayLightSavingOn () const;
+    DWGDB_EXPORT double         GetAltitude () const;
+    DWGDB_EXPORT double         GetAzimuth () const;
+    DWGDB_EXPORT DwgDbDateCR    GetDateTime () const;
+    DWGDB_EXPORT double         GetIntensity () const;
+    DWGDB_EXPORT DwgCmColorCR   GetSunColor () const;
+    DWGDB_EXPORT RgbFactor      GetSunColorPhotometric (double scale);
+    DWGDB_EXPORT DVec3d         GetSunDirection () const;
+    DWGDB_EXPORT DwgDbStatus    GetSkyParameters (DwgGiSkyParameters& params) const;
+    DWGDB_EXPORT DwgDbStatus    GetShadowParameters (DwgGiShadowParameters& params) const;
+    DWGDB_EXPORT RefCountedPtr<DwgGiDrawable>   GetDrawable ();
+    };  // DwgDbSun
+DWGDB_DEFINE_OBJECTPTR (Sun)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbSkyBackground : public DWGDB_EXTENDCLASS(SkyBackground)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(SkyBackground)
+
+    DWGDB_EXPORT DwgDbObjectId  GetSunId () const;
+    };  // DwgDbSkyBackground
+DWGDB_DEFINE_OBJECTPTR (SkyBackground)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbGradientBackground : public DWGDB_EXTENDCLASS(GradientBackground)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(GradientBackground)
+
+    DWGDB_EXPORT DwgCmEntityColor   GetColorTop () const;
+    DWGDB_EXPORT DwgCmEntityColor   GetColorMiddle () const;
+    DWGDB_EXPORT DwgCmEntityColor   GetColorBottom () const;
+    DWGDB_EXPORT double             GetHorizon () const;
+    DWGDB_EXPORT double             GetHeight () const;
+    DWGDB_EXPORT double             GetRotation () const;
+    };  // DwgDbGradientBackground
+DWGDB_DEFINE_OBJECTPTR (GradientBackground)
+                
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbGroundPlaneBackground : public DWGDB_EXTENDCLASS(GroundPlaneBackground)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(GroundPlaneBackground)
+
+    DWGDB_EXPORT DwgCmEntityColor   GetColorSkyZenith () const;
+    DWGDB_EXPORT DwgCmEntityColor   GetColorSkyHorizon () const;
+    DWGDB_EXPORT DwgCmEntityColor   GetColorUndergroundHorizon () const;
+    DWGDB_EXPORT DwgCmEntityColor   GetColorUndergroundAzimuth () const;
+    DWGDB_EXPORT DwgCmEntityColor   GetColorGroundPlaneNear () const;
+    DWGDB_EXPORT DwgCmEntityColor   GetColorGroundPlaneFar () const;
+    };  // DwgDbGroundPlaneBackground
+DWGDB_DEFINE_OBJECTPTR (GroundPlaneBackground)
+                
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbIBLBackground : public DWGDB_EXTENDCLASS(IBLBackground)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(IBLBackground)
+
+    //! Is the Image Based Light(IBL) enabled?  When false, the background will be default black transparent.
+    DWGDB_EXPORT bool       IsEnabled () const;
+    //! Is the IBL image displayed in the background?
+    DWGDB_EXPORT bool       IsImageDisplayed () const;
+    //! Get the image used for the IBL
+    DWGDB_EXPORT DwgString  GetIBLImageName () const;
+    DWGDB_EXPORT double     GetRotation () const;
+    //! The background to be displayed when IsImageDisplayed is false.
+    DWGDB_EXPORT DwgDbObjectId  GetSecondaryBackground () const;
+    };  // DwgDbIBLBackground
+DWGDB_DEFINE_OBJECTPTR (IBLBackground)
+                
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbImageBackground : public DWGDB_EXTENDCLASS(ImageBackground)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(ImageBackground)
+
+    DWGDB_EXPORT DwgString      GetImageFileName () const;
+    DWGDB_EXPORT bool           IsToFitScreen () const;
+    DWGDB_EXPORT bool           IsToMaintainAspectRatio () const;
+    DWGDB_EXPORT bool           IsToUseTiling () const;
+    DWGDB_EXPORT DPoint2d       GetOffset () const;
+    DWGDB_EXPORT DPoint2d       GetScale () const;
+    };  // DwgDbImageBackground
+DWGDB_DEFINE_OBJECTPTR (ImageBackground)
+                
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbSolidBackground : public DWGDB_EXTENDCLASS(SolidBackground)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(SolidBackground)
+
+    //! The solor color for the background.
+    DWGDB_EXPORT DwgCmEntityColor   GetColorSolid () const;
+    };  // DwgDbSolidBackground
+DWGDB_DEFINE_OBJECTPTR (SolidBackground)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16

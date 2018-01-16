@@ -200,7 +200,7 @@
 #endif  // DWGTOOLKIT
 
 
-// declare supper constructor of a DwgDbXxxx class
+// declare super constructor of a DwgDbXxxx class
 #define DWGDB_SUPER_CONSTRUCTOR(_classSuffix_)          DWGROOT_SUPER_CONSTRUCTOR(Db##_classSuffix_##)
 
 // declare SmartPtr access methods
@@ -362,6 +362,14 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbSortentsTable)
 DEFINE_DWGDB_TYPEDEFS (DwgDbXrecord)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDwgFiler)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDxfFiler)
+DEFINE_DWGDB_TYPEDEFS (DwgDbSun)
+DEFINE_DWGDB_TYPEDEFS (DwgDbBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbGradientBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbGroundPlaneBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbIBLBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbImageBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbSkyBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbSolidBackground)
 
 
 enum class DwgDbStatus

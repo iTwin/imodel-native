@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportMaterials.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -325,40 +325,8 @@ BentleyStatus   MaterialFactory::ReadToRgba (Render::ImageR image, BeFileNameCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    MaterialFactory::FindTextureFile (BeFileNameR filename)
     {
-    if (filename.empty())
-        return  false;
-
-    // absolute path precedes search paths
-    if (filename.DoesPathExist())
+    if (m_importer._FindTextureFile(filename))
         return  true;
-
-    BeFileName basename (BeFileName::GetFileNameAndExtension(filename.c_str()));
-    if (basename.empty())
-        return  false;
-
-    // search user paths
-    for (auto path : m_importer.GetMaterialSearchPaths())
-        {
-        BeFileName  fullspec (path);
-        fullspec.AppendToPath (basename);
-        if (fullspec.DoesPathExist())
-            {
-            filename = fullspec;
-            return  true;
-            }
-        }
-    
-    // search input DWG path as requested
-    if (m_importer.GetOptions().IsDwgPathInMaterialSearch())
-        {
-        BeFileName  fullspec (m_importer.GetRootDwgFileName().GetDirectoryName());
-        fullspec.AppendToPath (basename);
-        if (fullspec.DoesPathExist())
-            {
-            filename = fullspec;
-            return  true;
-            }
-        }
 
     // warn about the missing material texture file
     Utf8PrintfString    context("Material \"%s\"", m_materialName.c_str());
@@ -795,6 +763,51 @@ BentleyStatus   MaterialFactory::Update (RenderMaterialR out)
         }
 
     return BSISUCCESS;
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgImporter::_FindTextureFile (BeFileNameR filename) const
+    {
+    if (filename.empty())
+        return  false;
+
+    // absolute path precedes search paths
+    if (filename.DoesPathExist())
+        return  true;
+
+    BeFileName basename (BeFileName::GetFileNameAndExtension(filename.c_str()));
+    if (basename.empty())
+        return  false;
+
+    // search user paths
+    for (auto path : this->GetMaterialSearchPaths())
+        {
+        BeFileName  fullspec (path);
+        fullspec.AppendToPath (basename);
+        if (fullspec.DoesPathExist())
+            {
+            filename = fullspec;
+            return  true;
+            }
+        }
+    
+    // search input DWG path as requested
+    if (this->GetOptions().IsDwgPathInMaterialSearch())
+        {
+        BeFileName  fullspec (this->GetRootDwgFileName().GetDirectoryName());
+        fullspec.AppendToPath (basename);
+        if (fullspec.DoesPathExist())
+            {
+            filename = fullspec;
+            return  true;
+            }
+        }
+
+    return  false;
     }
 
 /*---------------------------------------------------------------------------------**//**
