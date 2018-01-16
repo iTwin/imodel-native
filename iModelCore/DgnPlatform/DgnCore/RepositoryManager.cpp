@@ -203,6 +203,15 @@ protected:
     bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
     Response _EndBulkOperation() override;
 
+    void _ExtractRequestFromBulkOperation(Request& req, bool locks, bool codes) override 
+        {
+        req.SetOptions(m_req.Options());
+        if (locks)
+            req.Locks() = std::move(m_req.Locks());
+        if (codes)
+            req.Codes() = std::move(m_req.Codes());
+        }
+
     void AccumulateRequests(Request const&);
 public:
     static RefCountedPtr<BulkUpdateBriefcaseManager> Create(DgnDbR db) {return new BulkUpdateBriefcaseManager(db);}
