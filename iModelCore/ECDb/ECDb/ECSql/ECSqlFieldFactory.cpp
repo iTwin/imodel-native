@@ -293,7 +293,8 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForArrayElement(ECSqlColumnIn
     if (parent.GetDataType().IsPrimitiveArray())
         {
         arrayElementDataType = ECTypeDescriptor::CreatePrimitiveTypeDescriptor(parent.GetDataType().GetPrimitiveType());
-        dateTimeInfo = parent.GetDateTimeInfo();
+        if (arrayElementDataType == PRIMITIVETYPE_DateTime)
+            dateTimeInfo = parent.GetDateTimeInfo();
         }
     else
         {
