@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -14,11 +14,7 @@
 
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
-#ifdef VANCOUVER_API
-#include    <CCApi\CCPublic.h>
-#else
-#include <ConnectClientWrapperNative/ConnectClientWrapper.h>
-#endif
+#include <CCApi\CCPublic.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -213,7 +209,6 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
 	WString serverUrl;
 	try
 		{
-#ifdef VANCOUVER_API
         CallStatus status = APIERR_SUCCESS;
         WString buddiUrl;
         UINT32 bufLen;
@@ -226,12 +221,6 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
         serverUrl.assign(buffer);
         CCApi_FreeApi(api);
-#else
-        wstring buddiUrl;
-        Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
-        connectClient.GetBuddiUrl(L"RealityDataServices", buddiUrl);
-        serverUrl = buddiUrl.c_str();
-#endif
         }
 	catch (...)
 		{

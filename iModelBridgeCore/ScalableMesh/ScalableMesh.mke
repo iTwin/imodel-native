@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
      
@@ -492,7 +492,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
-    $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
+    $(ContextSubpartsLibs)CCApi.lib
 
 #    $(DgnPlatformV8LibDir)Bentley.lib \
 #    $(DgnPlatformV8LibDir)ECObjects.lib \
