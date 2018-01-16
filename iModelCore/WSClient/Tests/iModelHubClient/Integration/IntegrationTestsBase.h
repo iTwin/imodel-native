@@ -2,68 +2,43 @@
 |
 |     $Source: Tests/iModelHubClient/Integration/IntegrationTestsBase.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include "IntegrationTestsHelper.h"
+#include "Helpers.h"
 #include <Bentley/BeTest.h>
-#include "../BackDoor/PublicAPI/BackDoor/WebServices/iModelHub/BackDoor.h"
-#include <WebServices/iModelHub/Client/iModelInfo.h>
-#include <WebServices/iModelHub/Client/Client.h>
-#include <WebServices/Client/ClientInfo.h>
-#include <BeHttp/Credentials.h>
-#include <BeHttp/ProxyHttpHandler.h>
 
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
-USING_NAMESPACE_BENTLEY_IMODELHUB
+::testing::TestInfo const& GetTestInfo();
 struct IntegrationTestsBase : public ::testing::Test
     {
-private:
-    BeFileName m_seed;
-    void CreateInitialSeedDb();
-    void InitLogging();
-    void Initialize(ScopediModelHubHost* host);
-protected:
-    static double s_lastProgressBytesTransfered;
-    static double s_lastProgressBytesTotal;
-    static int    s_progressRetryCount;
-    ScopediModelHubHost *m_pHost;
-    Utf8String m_projectId;
-    DgnCategoryId m_categoryId;
+    private:
+        static BeFileName s_seed;
+        static DgnCategoryId s_defaultCategoryId;
+        static void CreateSeedDb();
 
-    Request::ProgressCallback CreateProgressCallback();
-    void CheckProgressNotified();
-    void CheckNoProgress();
-    static void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector);
-public:
-    virtual void SetUp() override;
-    virtual void TearDown() override;
-    static void SetUpTestCase();
-    static void TearDownTestCase();
+    protected:
+        Utf8String m_imodelName;
+        static ClientPtr s_client;
+        static Utf8String s_projectId;
 
-    BeFileName LocalPath(Utf8StringCR baseName);
-    
-    DgnDbPtr CreateTestDb(Utf8StringCR baseName);
-    ClientPtr SetUpClient(Credentials credentials, IHttpHandlerPtr customHandler = nullptr);
-    iModelInfoPtr CreateNewiModel(ClientCR client, Utf8StringCR imodelName);
-    iModelInfoPtr CreateNewiModelFromDb(ClientCR client, DgnDbR db);
-    iModelConnectionPtr ConnectToiModel(ClientCR client, iModelInfoPtr imodelInfo);
-    void DeleteiModel(Utf8StringCR projectId, ClientCR client, iModelInfoCR imodel);
-    BriefcasePtr AcquireBriefcase(ClientCR client, iModelInfoCR imodelInfo, bool pull = false, bool forceDomainUpgrade = false);
-    BriefcasePtr InitializeWithChangeSets(ClientCR client, iModelInfoCR imodel, uint32_t changeSetCount);
-    void CreateAndPushNewChangeSets(BriefcaseR briefcase, uint32_t changeSetCount);
-    BeSQLite::BeGuid ReplaceSeedFile(iModelConnectionPtr imodelConnection, DgnDbR db);
-    Utf8String PushPendingChanges(Briefcase& briefcase, bool relinquishLocksCodes = false);
+    public:
+        static void SetUpTestCase();
+        static void TearDownTestCase();
+        virtual void SetUp() override;
+        virtual void TearDown() override;
 
-    void ExpectLocksCount(Briefcase& briefcase, int expectedCount);
-    void ExpectCodesEqual(DgnCodeStateCR exp, DgnCodeStateCR act);
-    void ExpectCodesEqual(DgnCodeInfoCR exp, DgnCodeInfoCR act);
-    void ExpectCodesEqual(DgnCodeInfoSet const& expected, DgnCodeInfoSet const& actual);
-    void ExpectCodeState(DgnCodeInfoSet const& expect, IRepositoryManagerP imodelManager);
-    void ExpectCodeState(DgnCodeInfoCR expect, IRepositoryManagerP imodelManager);
-    DgnCodeInfo CreateCodeUsed(DgnCodeCR code, Utf8StringCR changeSetId);
-    DgnCode MakeModelCode(Utf8CP name, DgnDbR db);
+        static Dgn::DgnDbPtr CreateTestDb(Utf8StringCR name);
+
+        static iModelResult CreateiModel(DgnDbPtr db, bool expectSuccess = true);
+        static iModelConnectionPtr CreateiModelConnection(iModelInfoPtr info);
+
+        virtual Utf8String GetTestiModelName();
+        Dgn::DgnDbPtr CreateTestDb();
+        BeFileName OutputDir() const;
+        Utf8String TestCodeName(int number = 0) const;
+        ClientPtr CreateNonAdminClient() const;
+        static IRepositoryManagerP _GetRepositoryManager(DgnDbR db);
     };
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

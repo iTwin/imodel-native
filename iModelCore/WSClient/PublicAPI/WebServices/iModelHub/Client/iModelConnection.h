@@ -152,6 +152,7 @@ private:
 
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
+    IHttpHandlerPtr            m_customHandler;
 
     EventServiceClientPtr      m_eventServiceClient = nullptr;
     BeMutex                    m_eventServiceClientMutex;
@@ -433,6 +434,11 @@ public:
     //! @return Returns repository client
     //! @private
     IWSRepositoryClientPtr GetRepositoryClient() const { return m_wsRepositoryClient; }
+
+    //! Get custom handler.
+    //! @return Returns HttpHandler
+    //! @private
+    IHttpHandlerPtr GetHttpHandler() { return m_customHandler; }
 
     //! Sets RepositoryClient.
     //! @param[in] client

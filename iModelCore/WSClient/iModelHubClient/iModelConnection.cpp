@@ -33,7 +33,7 @@ iModelInfoCR           iModel,
 WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
 IHttpHandlerPtr            customHandler
-) : m_iModelInfo(iModel)
+) : m_iModelInfo(iModel), m_customHandler(customHandler)
     {
     auto wsRepositoryClient = WSRepositoryClient::Create(iModel.GetServerURL(), iModel.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     CompressionOptions options;
@@ -2338,8 +2338,16 @@ ICancellationTokenPtr               cancellationToken
 #endif
             if (!initializePushResult.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializePushResult.GetError().GetMessage().c_str());
-                finalResult->SetError(initializePushResult.GetError());
+                Error error(initializePushResult.GetError());
+                if (Error::Id::ChangeSetAlreadyExists == error.GetId())
+                    {
+                    finalResult->SetSuccess();
+                    }
+                else
+                    {
+                    finalResult->SetError(error);
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, initializePushResult.GetError().GetMessage().c_str());
+                    }
                 return;
                 }
 
