@@ -34,8 +34,8 @@ rem * set SqliteSrcRoot environment var to point to the location of the sqlite s
 
 rem Check out source
 pushd %SqliteSrcRoot%
-REM branch-3.20
-fossil update release
+REM branch-3.22
+fossil update trunk
 
 rem Set up build directory
 rmdir /s/q bld

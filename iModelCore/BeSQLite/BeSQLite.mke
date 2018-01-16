@@ -2,7 +2,7 @@
 #
 #     $Source: BeSQLite.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 GCC_DEFAULT_VISIBILITY              = default
@@ -36,7 +36,7 @@ cDefs + -DSQLITE_DEFAULT_CACHE_SIZE=4000
 cDefs + -DSQLITE_STMTJRNL_SPILL=262144
 cDefs + -DSQLITE_DEFAULT_AUTOVACUUM=1
 cDefs + -DSQLITE_TEMP_STORE=3
-cDefs + -DSQLITE_ENABLE_STAT4
+#cDefs + -DSQLITE_ENABLE_STAT4
 cDefs + -DSQLITE_OMIT_DEPRECATED
 cDefs + -DSQLITE_OMIT_AUTHORIZATION
 cDefs + -DSQLITE_OMIT_PROGRESS_CALLBACK
