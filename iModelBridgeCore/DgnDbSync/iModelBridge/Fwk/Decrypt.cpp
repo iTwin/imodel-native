@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/Decrypt.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Decrypt.h"
@@ -35,8 +35,12 @@ void            CryptoHelper::DecryptString(Utf8StringR decrypedString, Utf8Stri
     entropy.pbData = entropyKey;
     if (!::CryptUnprotectData(&blob, NULL, &entropy, NULL, NULL, 0, &unencryptedBlob))
         return;
-    wchar_t* data = (wchar_t*) (unencryptedBlob.pbData);
-    decrypedString = Utf8String(data);
+    
+    char* stringBlob = new char[unencryptedBlob.cbData +1];
+    memset(stringBlob, 0, unencryptedBlob.cbData+1);
+    memcpy(stringBlob, unencryptedBlob.pbData, unencryptedBlob.cbData);
+    decrypedString = Utf8String(stringBlob);
+    delete[] stringBlob;
     LocalFree(unencryptedBlob.pbData);
 #endif
     }
