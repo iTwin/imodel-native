@@ -621,6 +621,9 @@ protected:
     explicit Texture(CreateParams const& params) : m_name(params.m_name) { }
 public:
     TextureNameCR GetName() const { return m_name; }
+
+    // Named textures should preserve their image data so it can be obtained later.
+    virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }
 };
 
 //=======================================================================================
