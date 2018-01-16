@@ -167,6 +167,10 @@ enum class VerticalCurveType
 // part of the 'fillet', and which are just part of the offset alignments
 #define VERTICAL_HOLD_CURVE_LENGTH ICurvePrimitive::CurvePrimitiveMarkerBit::CURVE_PRIMITIVE_BIT_ApplicationBit1
 
+//&&AG check with Scott what was the previous application bit used for
+// Marker applied to Parabola PVIs to indicate whether the editing should hold the length or the K-Value of the parabola
+#define VERTICAL_LENGTH_BY_K ICurvePrimitive::CurvePrimitiveMarkerBit::CURVE_PRIMITIVE_BIT_ApplicationBit2
+
 //=======================================================================================
 // @bsiclass
 // AlignmentPVI
@@ -200,11 +204,13 @@ public:
     DPoint3d pvc;
     DPoint3d pvt;
 
+    bool isLengthByK;
     double length;
-    bool holdLength;
+    double kValue; // Whenever the PVI is solved, we keep a copy of the KValue
 
-    // Return the computed K value
-    CIVILBASEGEOMETRY_EXPORT double KValue() const;
+    // Return the computed K value based on pvc/pvt slopes and current length
+    //! @private
+    CIVILBASEGEOMETRY_EXPORT double ComputeKValue() const;
     // Return a length computed based on a given K value
     CIVILBASEGEOMETRY_EXPORT double LengthFromK(double kvalue) const;
     };
@@ -231,7 +237,9 @@ public:
     CIVILBASEGEOMETRY_EXPORT AlignmentPVI();
     CIVILBASEGEOMETRY_EXPORT void InitGradeBreak(DPoint3dCR pviPoint);
     CIVILBASEGEOMETRY_EXPORT void InitArc(DPoint3dCR pviPoint, double radius);
-    CIVILBASEGEOMETRY_EXPORT void InitParabola(DPoint3dCR pviPoint, double length = 0.0, bool holdLength = false);
+    // Initializes a parabola PVI.
+    // @remarks when isLengthByK is true, the third parameter is the K Value, and is the length otherwise
+    CIVILBASEGEOMETRY_EXPORT void InitParabola(DPoint3dCR pviPoint, bool isLengthByK = false, double kValueOrLength = 0.0);
     void InitInvalid(Type pviType); //! @private
 
     // Returns whether this PVI is initialized

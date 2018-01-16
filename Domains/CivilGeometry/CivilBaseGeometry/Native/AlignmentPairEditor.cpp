@@ -247,12 +247,13 @@ void AlignmentPVI::InitArc(DPoint3dCR pviPoint, double radius)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
-void AlignmentPVI::InitParabola(DPoint3dCR pviPoint, double length, bool holdLength)
+void AlignmentPVI::InitParabola(DPoint3dCR pviPoint, bool isLengthByK, double kValueOrLength)
     {
     ParabolaInfo parInfo;
     parInfo.pvi = DPoint3d::From(pviPoint.x, 0.0, pviPoint.z);
-    parInfo.length = length;
-    parInfo.holdLength = holdLength;
+    parInfo.isLengthByK = isLengthByK;
+    parInfo.length = isLengthByK ? 0.0 : kValueOrLength;
+    parInfo.kValue = isLengthByK ? kValueOrLength : 0.0;
 
     // Set same point for pvc/pvt so we can check whether that PVI has been solved or not
     parInfo.pvc = parInfo.pvi;
@@ -286,7 +287,7 @@ void AlignmentPVI::InitInvalid(AlignmentPVI::Type pviType)
 * @bsimethod                                    Scott.Devoe                     04/2016
 // k = L / | G1-G2 |
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AlignmentPVI::ParabolaInfo::KValue() const
+double AlignmentPVI::ParabolaInfo::ComputeKValue() const
     {
     if (0.0 == length)
         return 0.0;
@@ -1725,7 +1726,8 @@ bool AlignmentPairEditor::LoadVerticalParabolaData(AlignmentPVIR pvi, ICurvePrim
         pPara->pvi = DPoint3d::From(poles[1].x, 0.0, poles[1].z);
         pPara->pvt = DPoint3d::From(poles[2].x, 0.0, poles[2].z);
         pPara->length = fabs(poles[2].x - poles[0].x);
-        pPara->holdLength = primitiveParabola.GetMarkerBit(VERTICAL_HOLD_CURVE_LENGTH);
+        pPara->kValue = pPara->ComputeKValue();
+        pPara->isLengthByK = primitiveParabola.GetMarkerBit(VERTICAL_LENGTH_BY_K);
         }
 
     return (3 == count);
@@ -1797,7 +1799,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildVerticalParabola(AlignmentPVI::Para
 
     ICurvePrimitivePtr primitive = parabolaCurve.IsValid() ? ICurvePrimitive::CreateBsplineCurve(parabolaCurve) : nullptr;
     if (primitive.IsValid())
-        primitive->SetMarkerBit(VERTICAL_HOLD_CURVE_LENGTH, info.holdLength);
+        primitive->SetMarkerBit(VERTICAL_LENGTH_BY_K, info.isLengthByK);
 
     return primitive;
     }
@@ -3375,20 +3377,30 @@ bool AlignmentPairEditor::SolveParabolaPVI(bvector<AlignmentPVI>& pvis, size_t i
     AlignmentPVI::ParabolaInfoP pParabola = pvis[index].GetParabolaP();
     if (0.0 >= pParabola->length)
         return false;
+        
+    double length = pParabola->length;
+    
+    if (pParabola->isLengthByK && 0.0 < pParabola->kValue)
+        {
+        pParabola->pvc = pvis[index - 1].GetPVILocation();
+        pParabola->pvt = pvis[index + 1].GetPVILocation();
+        length = pParabola->LengthFromK(pParabola->kValue);
+        }
 
+    // The maximum length the parabola can have based on the positions of previous and next PVIs
     const double maxLength = ComputeMaximumLength(pvis, index);
 
     //&&AG TODO FORCE FIT
-    if (maxLength < pParabola->length)
+    if (maxLength < length)
         return false;
 
     const double frontSlope = AlignmentPVI::Slope(pvis[index - 1].GetPVILocation(), pvis[index].GetPVILocation());
-    pParabola->pvc.x = pParabola->pvi.x - (0.5 * pParabola->length);
-    pParabola->pvc.z = pParabola->pvi.z - (0.5 * pParabola->length * frontSlope);
+    pParabola->pvc.x = pParabola->pvi.x - (0.5 * length);
+    pParabola->pvc.z = pParabola->pvi.z - (0.5 * length * frontSlope);
 
     const double backSlope = AlignmentPVI::Slope(pvis[index].GetPVILocation(), pvis[index + 1].GetPVILocation());
-    pParabola->pvt.x = pParabola->pvi.x + (0.5 * pParabola->length);
-    pParabola->pvt.z = pParabola->pvi.z + (0.5 * pParabola->length * backSlope);
+    pParabola->pvt.x = pParabola->pvi.x + (0.5 * length);
+    pParabola->pvt.z = pParabola->pvi.z + (0.5 * length * backSlope);
 
     ICurvePrimitivePtr primitive = BuildVerticalParabola(*pParabola);
     if (!primitive.IsValid())
