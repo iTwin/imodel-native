@@ -16,6 +16,51 @@ const Utf8CP CurveVectorManipulationStrategy::prop_WorkingPlane = "WorkingPlane"
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
+CurveVectorManipulationStrategyPtr CurveVectorManipulationStrategy::Create
+(
+    CurveVectorCR cv
+)
+    {
+    CurveVectorManipulationStrategyPtr strategy = Create();
+
+    for (ICurvePrimitivePtr const& primitive : cv)
+        {
+        if (primitive.IsNull())
+            continue;
+
+        switch (primitive->GetCurvePrimitiveType())
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                {
+                LineStringManipulationStrategyPtr primitiveStrategy = LineStringManipulationStrategy::Create(*primitive);
+                strategy->m_primitiveStrategies.push_back(primitiveStrategy);
+                break;
+                }
+            default:
+                BeAssert(false && "Not implemented");
+                break;
+            }
+        }
+
+    if (cv.GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer)
+        {
+        bvector<DPoint3d> const& keyPoints = strategy->_GetKeyPoints();
+        if (keyPoints.size() > 1 && keyPoints.front().AlmostEqual(keyPoints.back()))
+            strategy->_PopKeyPoint();
+
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        cv.CentroidNormalArea(centroid, normal, area);
+        strategy->m_workingPlane = DPlane3d::FromOriginAndNormal(centroid, normal);
+        }
+
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
 CurveVectorManipulationStrategy::CurveVectorManipulationStrategy()
     : T_Super()
     , m_defaultNewGeometryType(DefaultNewGeometryType::Line)
@@ -392,6 +437,54 @@ BentleyStatus CurveVectorManipulationStrategy::_TryGetProperty
         return T_Super::_TryGetProperty(key, value);
 
     return status;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::_UpdateDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint, 
+    size_t index
+)
+    {
+    size_t primitiveBeginIndex = 0;
+    for (CurvePrimitiveManipulationStrategyPtr const& primitiveStrategy : m_primitiveStrategies)
+        {
+        bvector<DPoint3d> const& keyPoints = primitiveStrategy->GetKeyPoints();
+        size_t nextPrimitiveBeginIndex = primitiveBeginIndex + keyPoints.size();
+
+        if (index >= primitiveBeginIndex && index < nextPrimitiveBeginIndex)
+            {
+            size_t indexInPrimitive = index - primitiveBeginIndex;
+            primitiveStrategy->UpdateDynamicKeyPoint(AdjustKeyPoint(newDynamicKeyPoint), indexInPrimitive);
+            return;
+            }
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::_ReplaceKeyPoint
+(
+    DPoint3dCR newKeyPoint, 
+    size_t index
+)
+    {
+    size_t primitiveBeginIndex = 0;
+    for (CurvePrimitiveManipulationStrategyPtr const& primitiveStrategy : m_primitiveStrategies)
+        {
+        bvector<DPoint3d> const& keyPoints = primitiveStrategy->GetKeyPoints();
+        size_t nextPrimitiveBeginIndex = primitiveBeginIndex + keyPoints.size();
+
+        if (index >= primitiveBeginIndex && index < nextPrimitiveBeginIndex)
+            {
+            size_t indexInPrimitive = index - primitiveBeginIndex;
+            primitiveStrategy->ReplaceKeyPoint(AdjustKeyPoint(newKeyPoint), indexInPrimitive);
+            return;
+            }
+        }
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

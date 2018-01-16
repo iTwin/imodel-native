@@ -12,6 +12,27 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
+LineStringManipulationStrategyPtr LineStringManipulationStrategy::Create
+(
+    ICurvePrimitiveCR primitive
+)
+    {
+    BeAssert(primitive.GetCurvePrimitiveType() == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString);
+    if (primitive.GetCurvePrimitiveType() != ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString)
+        return nullptr;
+
+    bvector<DPoint3d> const* keyPoints = primitive.GetLineStringCP();
+    if (nullptr == keyPoints)
+        return nullptr;
+
+    LineStringManipulationStrategyPtr strategy = Create();
+    strategy->AppendKeyPoints(*keyPoints);
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
 ICurvePrimitivePtr LineStringManipulationStrategy::_FinishPrimitive() const
     {
     bvector<DPoint3d> const& keyPoints = _GetKeyPoints();

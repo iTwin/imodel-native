@@ -32,6 +32,7 @@ struct LineStringManipulationStrategy : public CurvePrimitiveManipulationStrateg
 
     public:
         static LineStringManipulationStrategyPtr Create() { return new LineStringManipulationStrategy(); }
+        static LineStringManipulationStrategyPtr Create(ICurvePrimitiveCR primitive);
     };
 
 END_BUILDING_SHARED_NAMESPACE

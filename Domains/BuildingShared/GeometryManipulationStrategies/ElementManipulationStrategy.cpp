@@ -24,6 +24,14 @@ DgnElementPtr ElementManipulationStrategy::FinishElement
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
+DgnElementPtr ElementManipulationStrategy::FinishElement() const
+    {
+    return _FinishElement();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
 void ElementManipulationStrategy::_AppendDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint

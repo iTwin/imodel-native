@@ -59,7 +59,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
+        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
         virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
@@ -68,7 +68,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
         virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
-        virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
+        virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
         virtual void _PopKeyPoint() override;
         virtual void _RemoveKeyPoint(size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _Clear() override;
@@ -90,6 +90,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurveVectorPtr Finish() const;
 
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static CurveVectorManipulationStrategyPtr Create(CurveVectorCR cv);
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
 
