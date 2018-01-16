@@ -203,13 +203,20 @@ protected:
     bool _IsBulkOperation() const override {return 0 != m_inBulkUpdate;}
     Response _EndBulkOperation() override;
 
-    void _ExtractRequestFromBulkOperation(Request& req, bool locks, bool codes) override 
+    void _ExtractRequestFromBulkOperation(Request& reqOut, bool locks, bool codes) override 
         {
-        req.SetOptions(m_req.Options());
         if (locks)
-            req.Locks() = std::move(m_req.Locks());
+            {
+            reqOut.Codes().insert(m_req.Codes().begin(), m_req.Codes().end());
+            m_req.Codes().clear();
+            }
         if (codes)
-            req.Codes() = std::move(m_req.Codes());
+            {
+            reqOut.Locks().GetLockSet().insert(m_req.Locks().GetLockSet().begin(), m_req.Locks().GetLockSet().end());
+            m_req.Locks().Clear();
+            }
+        // TODO: merge options
+        // reqOut.SetOptions(m_req.Options());
         }
 
     void AccumulateRequests(Request const&);
