@@ -54,7 +54,7 @@ AnnotationTextStyleCP   DwgImporter::_ImportTextStyle (DwgDbTextStyleTableRecord
     if (fabs(height) > 1.e-4)
         {
         double      toMeters = 1.0;
-        m_rootTransform.IsRigidScale (toMeters);
+        this->GetRootTransform().IsRigidScale (toMeters);
 
         height *= toMeters;
         }

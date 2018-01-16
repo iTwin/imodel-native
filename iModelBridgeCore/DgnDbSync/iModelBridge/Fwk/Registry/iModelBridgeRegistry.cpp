@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/Registry/iModelBridgeRegistry.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -904,8 +904,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentProperties(iModelBridgeDocumentP
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0         1           2       3              4
-    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
+    //                                               0         1           2       3              4                         5
+    auto stmt = m_stateDb.GetCachedStatement("SELECT docGuid, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON, ChangeHistoryJSON FROM DocumentProperties WHERE (LocalFilePath=?)");
     stmt->BindText(1, Utf8String(fn), Statement::MakeCopy::Yes);
     if (BE_SQLITE_ROW != stmt->Step())
         return BSIERROR;
@@ -926,8 +926,8 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     if (!m_stateDb.TableExists("DocumentProperties"))
         return BSIERROR;
 
-    //                                               0               1           2       3              4
-    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON FROM DocumentProperties WHERE (docGuid=?)");
+    //                                               0               1           2       3              4                          5
+    auto stmt = m_stateDb.GetCachedStatement("SELECT LocalFilePath, DesktopURN, WebURN, AttributesJSON, SpatialRootTransformJSON, ChangeHistoryJSON FROM DocumentProperties WHERE (docGuid=?)");
 #ifdef WIP_GUID_BINARY
     stmt->BindGuid(1, docGuid);
 #else
@@ -944,6 +944,7 @@ BentleyStatus iModelBridgeRegistry::_GetDocumentPropertiesByGuid(iModelBridgeDoc
     props.m_webURN              = stmt->GetValueText(2);
     props.m_attributesJSON      = stmt->GetValueText(3);
     props.m_spatialRootTransformJSON = stmt->GetValueText(4);
+    props.m_changeHistoryJSON   = stmt->GetValueText(5);
     return BSISUCCESS;
     }
 

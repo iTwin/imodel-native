@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/DwgDbInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,17 +78,16 @@
 #include    <RealDwg/base/textengine.h>
 #include    <RealDwg/base/acgiutil.h>
 
-#ifdef _MSC_VER
-#include    <wininet.h>
-#endif
-
 #endif  // DWGTOOLKIT_
 
 #ifdef _MSC_VER
 #include    <io.h>                  // _wsopen_s, _read, _close
 #include    <fcntl.h>               // modes defs for _wsopen_s
+#include    <wininet.h>             // URL cache
+#include    <Urlmon.h>              // URL download
 #endif
 
+#include    <Bentley/BeFileName.h>
 #include    <Geom/CurveVector.h>
 
 #include    "ToolkitHost.h"
@@ -140,8 +139,8 @@ public:
     DWGRX_DEFINE_SMARTPTR_BASE ()
 
     // constructors for the toolkit
-    DwgDbDxfFiler () : m_clientFiler(s_defaultDxfFiler) {;}
-    DwgDbDxfFiler (DWGDB_TypeCR(DxfFiler) sdkFiler) : T_Super(), m_clientFiler(s_defaultDxfFiler) {;}
+    DwgDbDxfFiler () : m_clientFiler(s_defaultDxfFiler), m_status(DwgDbStatus::Success) {;}
+    DwgDbDxfFiler (DWGDB_TypeCR(DxfFiler) sdkFiler) : T_Super(), m_clientFiler(s_defaultDxfFiler), m_status(DwgDbStatus::Success) {;}
     // construtors for the client
     explicit DwgDbDxfFiler (IDxfFilerR filer) : m_clientFiler(filer), m_status(DwgDbStatus::Success) {}
 
@@ -219,6 +218,7 @@ virtual Acad::ErrorStatus   writePoint3d (AcDb::DxfCode code, const AcGePoint3d&
 virtual Acad::ErrorStatus   writeVector2d(AcDb::DxfCode code, const AcGeVector2d& val, int prec = kDfltPrec) override;
 virtual Acad::ErrorStatus   writeVector3d(AcDb::DxfCode code, const AcGeVector3d& val, int prec = kDfltPrec) override;
 virtual Acad::ErrorStatus   writeScale3d (AcDb::DxfCode code, const AcGeScale3d& val, int prec = kDfltPrec) override;
+virtual Acad::ErrorStatus   writeEmbeddedObjectStart () override;
 virtual bool                includesDefaultValues() const override;
 #endif  // DWGTOOLKIT_
 

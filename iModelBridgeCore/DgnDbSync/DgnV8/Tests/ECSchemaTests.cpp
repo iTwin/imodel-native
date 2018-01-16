@@ -297,7 +297,7 @@ TEST_F(ECSchemaTests, Schema_UnUsed)
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(NULL != ecSchema);
+    ASSERT_TRUE(NULL == ecSchema);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -479,116 +479,6 @@ TEST_F(ECSchemaTests, ReferenceSchema)
     VerifyElement(*db, eid, "ClassC", true);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            04/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECSchemaTests, MergeSchemas)
-    {
-    LineUpFiles(L"MergedSchemas.ibim", L"Test3d.dgn", false);
-    {
-    BentleyApi::BeFileName refV8File1;
-    CreateAndAddV8Attachment(refV8File1, 1);
-    ImportSchema(refV8File1, SchemaVersionA);
-
-    BentleyApi::BeFileName refV8File2;
-    CreateAndAddV8Attachment(refV8File2, 2);
-    ImportSchema(refV8File2, SchemaVersionB);
-
-    BentleyApi::BeFileName refV8File3;
-    CreateAndAddV8Attachment(refV8File3, 3);
-    ImportSchema(refV8File3, SchemaVersionC);
-    }
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(NULL != ecSchema);
-    ASSERT_TRUE(nullptr != ecSchema);
-
-    BentleyApi::ECN::ECClassCP classA = ecSchema->GetClassCP("ClassA");
-    ASSERT_TRUE(nullptr != classA);
-
-    BentleyApi::ECN::ECClassCP classB = ecSchema->GetClassCP("ClassB");
-    ASSERT_TRUE(nullptr != classB);
-
-    BentleyApi::ECN::ECClassCP classC = ecSchema->GetClassCP("ClassC");
-    ASSERT_TRUE(nullptr != classC);
-
-    BentleyApi::ECN::ECPropertyP propN = classA->GetPropertyP("n");
-    ASSERT_TRUE(nullptr != propN);
-
-    BentleyApi::ECN::ECPropertyP propM = classA->GetPropertyP("m");
-    ASSERT_TRUE(nullptr != propM);
-    }
-
-// There is no guarantee of the order that the models are read, so we can't guarantee
-// the order that the schemas are merged, and thus which conflict is taken
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            04/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-//TEST_F(ECSchemaTests, MergeSchemasWithPropertyConflict)
-//    {
-//    LineUpFiles(L"MergedSchemas.ibim", L"Test3d.dgn", false);
-//    {
-//    BentleyApi::BeFileName refV8File1;
-//    CreateAndAddV8Attachment(refV8File1, 1);
-//    ImportSchema(refV8File1, SchemaVersionA);
-//
-//    BentleyApi::BeFileName refV8File2;
-//    CreateAndAddV8Attachment(refV8File2, 2);
-//    ImportSchema(refV8File2, SchemaVersionConflict);
-//    }
-//
-//    DoConvert(m_dgnDbFileName, m_v8FileName);
-//
-//    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-//    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-//    ASSERT_TRUE(nullptr != ecSchema);
-//
-//    BentleyApi::ECN::ECClassCP classA = ecSchema->GetClassCP("ClassA");
-//    ASSERT_TRUE(nullptr != classA);
-//
-//    BentleyApi::ECN::ECPropertyP propN = classA->GetPropertyP("n");
-//    ASSERT_TRUE(nullptr != propN);
-//
-//    BentleyApi::ECN::PrimitiveType propType = propN->GetAsPrimitivePropertyP()->GetType();
-//    ASSERT_EQ(BentleyApi::ECN::PrimitiveType::PRIMITIVETYPE_Integer, propType);
-//    }
-//
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            04/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-//TEST_F(ECSchemaTests, MergeSchemasWithRelationshipConflict)
-//    {
-//    LineUpFiles(L"MergedSchemas.ibim", L"Test3d.dgn", false);
-//    {
-//    BentleyApi::BeFileName refV8File1;
-//    CreateAndAddV8Attachment(refV8File1, 1);
-//    ImportSchema(refV8File1, SchemaVersionA);
-//
-//    BentleyApi::BeFileName refV8File2;
-//    CreateAndAddV8Attachment(refV8File2, 2);
-//    ImportSchema(refV8File2, SchemaVersionConflictRelationship);
-//    }
-//
-//    DoConvert(m_dgnDbFileName, m_v8FileName);
-//
-//    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-//    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-//    ASSERT_TRUE(nullptr != ecSchema);
-//
-//    BentleyApi::ECN::ECClassCP ecClass = ecSchema->GetClassCP("AtoB");
-//    ASSERT_TRUE(nullptr != ecClass);
-//
-//    BentleyApi::ECN::ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-//    ASSERT_TRUE(nullptr != relClass);
-//
-//    ASSERT_TRUE(relClass->GetStrength() == BentleyApi::ECN::StrengthType::Referencing);
-//    ASSERT_TRUE(relClass->GetTarget().GetIsPolymorphic());
-//    ASSERT_TRUE(relClass->GetTarget().GetCardinality().GetUpperLimit() == UINT_MAX);
-//    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                          04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -689,8 +579,16 @@ TEST_F(ECSchemaTests, ConvertSchemaWithCaseSensitiveIssues)
 
     LineUpFiles(L"schemawithcasesensitiveissues.ibim", L"Test3d.dgn", false);
 
-    ImportSchema(m_v8FileName, schemaXml);
-
+    ECObjectsV8::ECSchemaPtr schema=ImportSchema(m_v8FileName, schemaXml);
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"Goo");
+        }
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
@@ -919,7 +817,16 @@ TEST_F(ECSchemaTests, IdSpecificationCASkipIndex)
 
     LineUpFiles(L"unsupportedcaonproperty.ibim", L"Test3d.dgn", false);
 
-    ImportSchema(m_v8FileName, SchemaXML);
+    ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, SchemaXML);
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"ClassWithSyncId");
+        }
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     BentleyApi::Dgn::DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
@@ -936,11 +843,20 @@ TEST_F(ECSchemaTests, IdSpecificationCASkipIndex)
 // @bsimethod                                   Muhammad Hassan              01/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 // Strength, StrengthDirection, SourceClassMultiplicity, TargetClassMultiplicity of the converted relationship must match the BIS base relationship.
-TEST_F(ECSchemaTests, DerivedRelationshipAttribtues)
+TEST_F(ECSchemaTests, DerivedRelationshipAttributes)
     {
     LineUpFiles(L"unsupportedcaonproperty.ibim", L"Test3d.dgn", false);
 
-    ImportSchema(m_v8FileName, SchemaVersionA);
+    ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, SchemaVersionA);
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"ClassA");
+        }
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     BentleyApi::Dgn::DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
@@ -999,7 +915,16 @@ TEST_F(ECSchemaTests, RelsWithAnyClassConstraint)
     LineUpFiles(L"relswithanyclassasconstraint.ibim", L"Test3d.dgn", false);
     m_wantCleanUp = false;
 
-    ImportSchema(m_v8FileName, xmlRelsWithAnyClass);
+    ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, xmlRelsWithAnyClass);
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"ClassA");
+        }
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     BentleyApi::Dgn::DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
@@ -1071,8 +996,17 @@ TEST_F(ECSchemaTests, Mixinify)
 
 	LineUpFiles(L"mixinify.ibim", L"Test3d.dgn", false);
 
-	ImportSchema(m_v8FileName, schemaMixinTest);
-	DoConvert(m_dgnDbFileName, m_v8FileName);
+    ECObjectsV8::ECSchemaPtr schema = ImportSchema(m_v8FileName, schemaMixinTest);
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema->GetName().c_str(), L"ClassA");
+        }
+    DoConvert(m_dgnDbFileName, m_v8FileName);
 	
 	BentleyApi::Dgn::DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
 	ASSERT_TRUE(dgnProj->IsDbOpen());

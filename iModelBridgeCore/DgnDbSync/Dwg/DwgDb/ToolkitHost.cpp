@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/ToolkitHost.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -154,41 +154,23 @@ Adesk::Boolean      DwgToolkitHost::isRemoteFile (const ACHAR* localFile, ACHAR*
 +---------------+---------------+---------------+---------------+---------------+------*/
 Acad::ErrorStatus   DwgToolkitHost::getRemoteFile (const ACHAR* url, ACHAR* local, size_t localLen, Adesk::Boolean ignoreCache) const
     {
-#ifdef _MSC_VER
-    DWORD   err = ERROR_FILE_NOT_FOUND;
-    if (!ignoreCache)
-        {
-        DWORD   size = 0;
-        if (::GetUrlCacheEntryInfo(url, nullptr, &size))
-            return Acad::eInetFileGenericError; //this shouldn't succeed
+    if (nullptr == url || nullptr == local)
+        return  Acad::eInetNotAnURL;
 
-        err = ::GetLastError();
-        if (err == ERROR_INSUFFICIENT_BUFFER)
-            {
-            INTERNET_CACHE_ENTRY_INFO* cacheEntry = (INTERNET_CACHE_ENTRY_INFO*)malloc(size);
-            if (::GetUrlCacheEntryInfo(url, cacheEntry, &size))
-                {
-                size_t  size2copy = MIN(size, localLen);
-                if (size2copy > 0)
-                    {
-                    ::wcsncpy (local, cacheEntry->lpszLocalFileName, size2copy);
-                    m_localToUrlMap.Insert (WString(local), WString(url));
-                    }
-                ::free(cacheEntry);
-                return Acad::eInetOk;
-                }
-            err = ::GetLastError();
-            }
-        }
-    if (err == ERROR_FILE_NOT_FOUND)
+    WString inFile(url), outFile;
+
+    DwgDbStatus status = this->DownloadOrGetCachedFile (outFile, inFile, ignoreCache);
+
+    if (DwgDbStatus::Success == status)
         {
-        if (SUCCEEDED(::URLDownloadToCacheFile(nullptr, url, local, (DWORD)localLen, 0, nullptr)))
-            {
-            m_localToUrlMap.Insert (WString(local), WString(url));
-            return Acad::eInetOk;
-            }
+        size_t  size2copy = MIN(outFile.size(), localLen);
+        if (size2copy > 0)
+            ::wcsncpy (local, outFile.c_str(), size2copy);
+        // tell RealDWG about the success
+        return Acad::eInetOk;
         }
-#endif // _MSC_VER
+
+    // tell RealDWG about the failure:
     return Acad::eInetFileGenericError;
     }
 
@@ -198,7 +180,7 @@ Acad::ErrorStatus   DwgToolkitHost::getRemoteFile (const ACHAR* url, ACHAR* loca
 Adesk::Boolean      DwgToolkitHost::isURL (const wchar_t* url) const
     {
 #ifdef _MSC_VER
-    return ::PathIsURL(url) ? Adesk::kTrue : Adesk::kFalse;
+    return ::PathIsURLW(url) ? Adesk::kTrue : Adesk::kFalse;
 #else
     return  Adesk::kFalse;
 #endif
@@ -362,6 +344,75 @@ DwgDbProgressMeter*     DwgToolkitHost::NewWorkingProgressMeter (IDwgDbProgressM
         m_workingProgressMeter = nullptr;
 
     return  m_workingProgressMeter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WStringCR url, bool ignoreCache) const
+    {
+#ifdef _MSC_VER
+    DWORD   winError = ERROR_FILE_NOT_FOUND;
+    if (!ignoreCache)
+        {
+        // look the file up from the OS's cache:
+        DWORD   size = 0;
+        if (::GetUrlCacheEntryInfo(url.c_str(), nullptr, &size))
+            return DwgDbStatus::UrlCacheError;
+
+        winError = ::GetLastError();
+        if (winError == ERROR_INSUFFICIENT_BUFFER)
+            {
+            INTERNET_CACHE_ENTRY_INFO* cacheEntry = (INTERNET_CACHE_ENTRY_INFO*)::malloc(size);
+            if (::GetUrlCacheEntryInfo(url.c_str(), cacheEntry, &size) && BeFileName::DoesPathExist(cacheEntry->lpszLocalFileName))
+                {
+                // found the cache file - return it:
+                local.assign (cacheEntry->lpszLocalFileName);
+                // but also save it to our list for future lookup:
+                m_localToUrlMap.Insert (local, url);
+                ::free(cacheEntry);
+                return DwgDbStatus::Success;
+                }
+            winError = ::GetLastError();
+            }
+        }
+
+    if (winError == ERROR_FILE_NOT_FOUND)
+        {
+        // download and cache the URL file
+        static DWORD    localSize = 2048;
+        LPTSTR  localFile = static_cast<LPTSTR> (::calloc(1, 2048));
+
+        HRESULT result = ::URLDownloadToCacheFile (nullptr, url.c_str(), localFile, localSize, 0, nullptr);
+
+        if (SUCCEEDED(result))
+            {
+            // return the downloaded cache file:
+            local.assign (localFile);
+            // save the cache file for future lookup:
+            m_localToUrlMap.Insert (local, url);
+            }
+        ::free (localFile);
+
+        if (SUCCEEDED(result))
+            return  DwgDbStatus::Success;
+        }
+#endif // _MSC_VER
+    return DwgDbStatus::UrlCacheError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgToolkitHost::FindCachedLocalFile (WStringR cached, WStringCR url)
+    {
+    auto found = std::find_if (m_localToUrlMap.begin(), m_localToUrlMap.end(), [&](bpair<WString,WString> const& entry){ return entry.second.EqualsI(url.c_str()); });
+    if (found != m_localToUrlMap.end())
+        {
+        cached.assign (found->first.c_str());
+        return  true;
+        }
+    return  false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,6 +651,19 @@ bool            IDwgDbHost::LoadObjectEnabler (WStringCR moduleName)
     loaded = acrxLoadModule (moduleName.c_str(), true);
 #endif
     return  loaded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            IDwgDbHost::GetCachedLocalFile (WStringR local, WStringCR url)
+    {
+    DwgToolkitHost& host = DwgToolkitHost::GetHost ();
+    // first look the URL up in our saved list
+    if (host.FindCachedLocalFile(local, url))
+        return  true;
+    // try OS's cache - will download & cache as necessary:
+    return  host.DownloadOrGetCachedFile(local, url) == DwgDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

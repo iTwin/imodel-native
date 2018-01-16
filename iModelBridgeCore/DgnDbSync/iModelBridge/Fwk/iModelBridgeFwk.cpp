@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/iModelBridgeFwk.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -1265,6 +1265,40 @@ int iModelBridgeFwk::ProcessSchemaChange()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String   iModelBridgeFwk::GetRevisionComment()
+    {
+    //Revision comment override from command line has the first priority
+    if (!m_jobEnvArgs.m_revisionComment.empty())
+        return m_jobEnvArgs.m_revisionComment;
+
+    bvector<BeFileName> inputFiles;
+    GetRegistry()._QueryAllFilesAssignedToBridge(inputFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+
+    if (0 == inputFiles.size())
+        return Utf8String();
+
+    Json::Value auditArray;
+    for (BeFileNameCR file : inputFiles)
+        {
+        iModelBridgeDocumentProperties prop;
+        if (SUCCESS != GetRegistry()._GetDocumentProperties(prop, file))
+            continue;
+
+        if (prop.m_changeHistoryJSON.empty())
+            continue;
+
+        Json::Value auditLogs = Json::Value::From(prop.m_changeHistoryJSON);
+        if (auditLogs.isNull())
+            continue;
+
+        auditArray.append(auditLogs);
+        }
+    return auditArray.ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::UpdateExistingBim()
@@ -1441,7 +1475,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
 
-        if (BSISUCCESS != Briefcase_PullMergePush(m_jobEnvArgs.m_revisionComment.c_str()))
+        if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
             return RETURN_STATUS_SERVER_ERROR;
         // (Retain shared locks, so that we can re-try our push later.)
 

@@ -229,6 +229,7 @@ void DwgSyncInfo::ImportJob::CreateTable (BeSQLite::Db& db)
     db.CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob),
                          "DwgModelSyncInfoId INTEGER PRIMARY KEY,"
                          "SubjectId BIGINT NOT NULL,"
+                         "Transform BLOB,"
                          "Type INTEGER,"
                          "Prefix TEXT");
     }
@@ -239,12 +240,30 @@ void DwgSyncInfo::ImportJob::CreateTable (BeSQLite::Db& db)
 BeSQLite::DbResult DwgSyncInfo::ImportJob::Insert (BeSQLite::Db& db) const
     {
     Statement stmt;
-    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) "(DwgModelSyncInfoId,SubjectId,Type,Prefix) VALUES (?,?,?,?)");
+    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) "(DwgModelSyncInfoId,SubjectId,Transform,Type,Prefix) VALUES (?,?,?,?,?)");
     int col = 1;
     stmt.BindInt(col++, m_dwgRootModel.GetValue());
     stmt.BindId(col++, m_subjectId);
+    stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
     stmt.BindInt(col++, (int)m_type);
     stmt.BindText(col++, m_prefix, Statement::MakeCopy::No);
+    auto res = stmt.Step();
+    m_ROWID = db.GetLastInsertRowId();
+    return res;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult DwgSyncInfo::ImportJob::Update (BeSQLite::Db& db) const
+    {
+    Statement stmt;
+    stmt.Prepare(db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) " SET SubjectId=?,Transform=?,Prefix=? WHERE(ROWID=?)");
+    int col = 1;
+    stmt.BindId(col++, m_subjectId);
+    stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
+    stmt.BindText(col++, m_prefix, Statement::MakeCopy::No);
+    stmt.BindInt64(col++, m_ROWID);
     return stmt.Step();
     }
 
@@ -259,9 +278,17 @@ BentleyStatus DwgSyncInfo::InsertImportJob(ImportJob const& importJob)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DwgSyncInfo::UpdateImportJob(ImportJob const& importJob)
+    {
+    return (BE_SQLITE_DONE == importJob.Update(*m_dgndb))? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DwgSyncInfo::ImportJob::GetSelectSql()
     {
-    return "SELECT DwgModelSyncInfoId,SubjectId,Type,Prefix FROM " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob);
+    return "SELECT ROWID,DwgModelSyncInfoId,SubjectId,Transform,Type,Prefix FROM " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,10 +296,13 @@ Utf8String DwgSyncInfo::ImportJob::GetSelectSql()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DwgSyncInfo::ImportJob::FromSelect(BeSQLite::Statement& stmt)
     {
-    SetDwgModelSyncInfoId (DwgModelSyncInfoId(stmt.GetValueInt(0)));
-    SetSubjectId (stmt.GetValueId<DgnElementId>(1));
-    SetType ((Type)stmt.GetValueInt(2));
-    SetPrefix (stmt.GetValueText(3));
+    int col = 0;
+    m_ROWID = stmt.GetValueInt64(col++);
+    SetDwgModelSyncInfoId (DwgModelSyncInfoId(stmt.GetValueInt(col++)));
+    SetSubjectId (stmt.GetValueId<DgnElementId>(col++));
+    memcpy(&m_transform, stmt.GetValueBlob(col++), sizeof(Transform));
+    SetType ((Type)stmt.GetValueInt(col++));
+    SetPrefix (stmt.GetValueText(col++));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -650,11 +680,42 @@ DbResult DwgSyncInfo::DwgModelMapping::Insert(Db& db) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DwgSyncInfo::DwgModelMapping::Update (Db& db) const
+    {
+    if (!m_id.IsValid() || !m_syncInfoId.IsValid() || m_instanceId == 0)
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement stmt;
+    stmt.Prepare(db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Model) " SET ModelId=?,DwgFileId=?,DwgModelId=?,DwgInstanceId=?,DwgName=?,SourceType=?,Transform=? WHERE (ROWID=?)");
+    int col = 1;
+    stmt.BindId(col++, m_id);
+    stmt.BindInt(col++, m_source.GetDwgFileId().GetValue());
+    stmt.BindInt(col++, m_source.GetDwgModelId().GetValue());
+    stmt.BindInt(col++, m_instanceId);
+    stmt.BindText(col++, m_dwgName, Statement::MakeCopy::No);
+    stmt.BindInt(col++, static_cast<int>(m_sourceType));
+    if (m_transform.IsIdentity())
+        stmt.BindNull(col++);
+    else
+        stmt.BindBlob(col++, &m_transform, sizeof(m_transform), Statement::MakeCopy::No);
+    stmt.BindInt64(col++, m_syncInfoId.GetValue());
+
+    auto rc = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == rc);
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgSyncInfo::DwgModelMapping::DwgModelMapping ()
     {
-    m_sourceType = ModelSourceType::ModelOrPaperSpace;
+    m_sourceType = ModelSourceType::ModelSpace;
     m_instanceId = 0;
     m_transform.InitIdentity();
     }
@@ -680,7 +741,7 @@ DwgSyncInfo::DwgModelMapping::DwgModelMapping(DgnModelId mid, DwgDbBlockTableRec
 
     m_transform  = trans;
     m_id = mid;
-    m_sourceType = ModelSourceType::ModelOrPaperSpace;
+    m_sourceType = block.IsModelspace() ? ModelSourceType::ModelSpace : ModelSourceType::PaperSpace;
     m_instanceId = block.GetObjectId().ToUInt64 ();
     }
 
@@ -912,6 +973,27 @@ BentleyStatus   DwgSyncInfo::FindModel (DwgSyncInfo::DwgModelMapping* mapping, D
             }
         }
 
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::FindModel (DwgSyncInfo::DwgModelMapping* mapping, DwgModelSyncInfoId syncInfoId)
+    {
+    DwgSyncInfo::ModelIterator iter (*m_dgndb, "ROWID=?");
+
+    iter.GetStatement()->BindInt64 (1, syncInfoId.GetValue());
+
+    for (auto entry = iter.begin(); entry != iter.end(); ++entry)
+        {
+        if (syncInfoId == entry.GetDwgModelSyncInfoId())
+            {
+            if (nullptr != mapping)
+                *mapping = entry.GetMapping();
+            return BSISUCCESS;
+            }
+        }
     return BSIERROR;
     }
 

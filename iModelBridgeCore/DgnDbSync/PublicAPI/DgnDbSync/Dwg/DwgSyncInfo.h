@@ -215,9 +215,10 @@ struct DwgSyncInfo
 
     enum class ModelSourceType
         {
-        ModelOrPaperSpace       = 1,    // modelspace or paperspace
-        XRefAttachment          = 2,    // xRef insert
-        RasterAttachment        = 3,    // raster image
+        ModelSpace              = 1,    // modelspace
+        PaperSpace              = 2,    // paperspace
+        XRefAttachment          = 3,    // xRef insert
+        RasterAttachment        = 4,    // raster image
         };  // ModelSourceType
 
     //! Sync info for a unique model/attachment. This struct includes all information needed to map a dwg model to a DgnDb model.
@@ -243,6 +244,7 @@ struct DwgSyncInfo
         DwgModelMapping (DgnModelId mid, DwgDbRasterImageCR raster, TransformCR trans);
 
         BeSQLite::DbResult  Insert (BeSQLite::Db&) const;
+        BeSQLite::DbResult  Update (BeSQLite::Db&) const;
         bool                IsValid () const {return m_syncInfoId.IsValid();}
         DwgModelSyncInfoId  GetDwgModelSyncInfoId () const {return m_syncInfoId;}
         void                SetDwgModelSyncInfoId (DwgModelSyncInfoId const& id) {m_syncInfoId=id;}
@@ -258,7 +260,7 @@ struct DwgSyncInfo
         void                SetSource (DwgModelSource const& s) {m_source=s;}
         ModelSourceType     GetSourceType () const {return m_sourceType;}
         void                SetSourceType (ModelSourceType const& t) {m_sourceType=t;}
-        Transform           GetTransform () const {return m_transform;}
+        TransformCR         GetTransform () const {return m_transform;}
         void                SetTransform (TransformCR t) {m_transform=t;}
         };
 
@@ -303,13 +305,17 @@ struct DwgSyncInfo
     private:
         DwgModelSyncInfoId  m_dwgRootModel;
         DgnElementId        m_subjectId;
+        Transform           m_transform;
         Type                m_type;
         Utf8String          m_prefix;
+        mutable int64_t     m_ROWID {};
 
     public:
+        ImportJob () : m_type(Type::RootModels) { m_transform.InitIdentity(); }
         static Utf8String       GetSelectSql ();
         void                    FromSelect (BeSQLite::Statement&);
         BeSQLite::DbResult      Insert (BeSQLite::Db&) const;
+        BeSQLite::DbResult      Update (BeSQLite::Db&) const;
         static BentleyStatus    FindById (ImportJob&, DgnDbCR, DwgModelSyncInfoId const&);
         static void             CreateTable (BeSQLite::Db&);
         Type    GetType () const { return m_type; }
@@ -320,6 +326,8 @@ struct DwgSyncInfo
         void SetSubjectId (DgnElementId id) { m_subjectId = id; }
         DwgModelSyncInfoId const& GetDwgModelSyncInfoId () const { return m_dwgRootModel; }
         void SetDwgModelSyncInfoId (DwgModelSyncInfoId const& m) { m_dwgRootModel = m; }
+        void SetTransform(TransformCR t) { m_transform = t; }
+        Transform GetTransform() const { return m_transform; }
         };  // ImportJob
 
     struct ImportJobIterator : BeSQLite::DbTableIterator
@@ -697,11 +705,10 @@ public:
     //! @param[in] id The dwg object ID
     //! @param[in] trans The transformation for the model, optional
     DGNDBSYNC_EXPORT BentleyStatus FindModel (DwgModelMapping* mapping, DwgDbObjectIdCR id, TransformCP trans);
-    //! Find DgnModel by source ID (xref insert ID in the parent file)
+    //! Find DgnModel by DwgModelSyncInfoId
     //! @param[out] mapping The sync info found for the model
-    //! @param[in] modelId The DWG object ID of the parent model
-    //! @param[in] sourceId The DWG object ID of the source model
-    DGNDBSYNC_EXPORT BentleyStatus FindModel (DwgModelMapping* mapping, DwgDbObjectIdCR modelId, DwgDbObjectIdCR sourceId);
+    //! @param[in] syncInfoId The syncInfo ID for the model
+    DGNDBSYNC_EXPORT BentleyStatus FindModel (DwgModelMapping* mapping, DwgModelSyncInfoId syncInfoId);
 
     //! @}
 
@@ -806,6 +813,9 @@ public:
     //! Record the fact that the specified importJob has been converted and stored in the DgnDb
     //! @param importJob    The importJob info to insert
     DGNDBSYNC_EXPORT BentleyStatus InsertImportJob(ImportJob const& importJob);
+    //! Update the import job's transform, prefix, and subjectid.
+    //! @param importJob    The importJob info to update
+    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(ImportJob const& importJob);
     //! @}
     };  // DwgSyncInfo
 

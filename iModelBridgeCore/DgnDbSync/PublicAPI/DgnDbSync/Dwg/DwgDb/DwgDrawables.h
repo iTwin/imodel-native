@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDrawables.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -203,12 +203,12 @@ public:
     };  // DwgGiClipBoundary
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiClipBoundary)
 
-/*-------------------------------------------------------------------------------------------*/
-//! We have choosen encapsulating, instead of extending, below gradient fill classes based on
-//! the facts that only RealDWG has these classes and some of its public contructors exposes 
-//! arguments such as AcArray<AcCmColor> which cause unresolved link errors in an end app that 
+//=======================================================================================
+//! These classes encapsulate, as opposed to extending to, the toolkit's Gi fill classes based on
+//! the facts that only RealDWG has these classes and some of its public contructors expose
+//! arguments such as AcArray<AcCmColor> which cause unresolved link errors in an app that 
 //! includes this header file. 
-/*-------------------------------------------------------------------------------------------*/
+//=======================================================================================
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
@@ -617,6 +617,58 @@ public:
     };  // DwgGiShadowParameters
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiShadowParameters)
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          11/17
++===============+===============+===============+===============+===============+======*/
+class DwgGiSkyParameters : public RefCountedBase
+    {
+//__PUBLISH_SECTION_END__
+    // AcGiSkyParameters has an implementation layer that is not inlined, effectively preventing us from deriving the class without providing the implementation!
+private:
+    DWGGI_Type(SkyParameters)    m_toolkitImpl;
+//__PUBLISH_SECTION_START__
+public:
+    DwgGiSkyParameters () {}
+    DwgGiSkyParameters (DWGGI_TypeCR(SkyParameters) in);
+
+    //! Should aerial perspective be applied? 
+    DWGDB_EXPORT bool       HasAerialPerspective () const;
+    //! The intensity of the sun disc.
+    DWGDB_EXPORT double     GetDiskIntensity () const;
+    //! The scale of the sun disk (1.0 = correct size). 
+    DWGDB_EXPORT double     GetDiskScale () const;
+    //! The intensity of the sun glow.
+    DWGDB_EXPORT double     GetGlowIntensity () const;
+    //! The color of the ground.
+    DWGDB_EXPORT DwgCmEntityColor GetGroundColor () const;
+    //! The color of the night sky.
+    DWGDB_EXPORT DwgCmEntityColor GetNightColor () const;
+    //! The turbidity or atmosphere value.
+    DWGDB_EXPORT double     GetHaze () const;
+    //! The amount of blurring between ground plane and sky. 
+    DWGDB_EXPORT double     GetHorizonBlur () const;
+    //! The world-space height of the horizon plane. 
+    DWGDB_EXPORT double     GetHorizonHeight () const;
+    //! Should skylight illumination be calculated?
+    DWGDB_EXPORT bool       HasIllumination () const;
+    //! The intensity factor which determines the level of non-physical modulation of skylight.
+    DWGDB_EXPORT double     GetIntensityFactor () const;
+    //! The red-blue shift on the sky. 
+    //! @note This provides control on the "redness" of the sky. The default of 0.0 is physically accurate. A minimum value of -1.0 will produce an extremely blue sky, whereas the maximum value of 1.0 will produce an extremely red sky.
+    DWGDB_EXPORT double     GetRedBlueShift () const;
+    //! The the sky's saturation level.
+    //! @note The minimum value of 0.0 will produce an extreme of black and white whereas the maximum value of 2.0 will produce highly boosted saturation.
+    DWGDB_EXPORT double     GetSaturation () const;
+    //! The number of samples to take on the solar disk.
+    DWGDB_EXPORT uint16_t   GetSolarDiskSamples () const;
+    //! The direction from the Sun to the model.
+    DWGDB_EXPORT DVec3d     GetSunDirection () const;
+    //! The distance at which 10% haze occlusion results. 
+    DWGDB_EXPORT double     GetVisibilityDistance () const;
+    };  // DwgGiSkyParameters
+typedef RefCountedPtr<DwgGiSkyParameters>   DwgGiSkyParametersPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiSkyParameters)
+
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
@@ -673,11 +725,11 @@ public:
 typedef RefCountedPtr<DwgGiDrawable>    DwgGiDrawablePtr;
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiDrawable)
 
-/*=================================================================================**//**
+//=======================================================================================
 //! Each of these metheds should be implemented such that they can be called from the toolkit
 //! when DwgDbEntity::Draw is called.
 //! @see IDwgDrawParameters
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
 struct IDwgDrawGeometry
     {
 public:
@@ -709,12 +761,13 @@ public:
     };  // IDwgDrawGeometry
 DEFINE_NO_NAMESPACE_TYPEDEFS (IDwgDrawGeometry)
 
-/*=================================================================================**//**
+//=======================================================================================
 //! Implement these methods such that prior to a graphical component of an entity is drawn,
-//! these methods may be called from the toolkit to set the symbology etc for the component.
-//! Therefore it is used and controlled by the toolkit and is a per component operation.
-//! @see DwgDrawGeometry
-+===============+===============+===============+===============+===============+======*/
+//! these methods may be called from the toolkit to set the symbology and other entity traits
+//! for the component which is about to be drawn. It is used and controlled by the toolkit 
+//! and is a per component operation.
+//! @see IDwgDrawGeometry
+//=======================================================================================
 struct IDwgDrawParameters
     {
     virtual DwgCmEntityColorCR  _GetColor () const = 0;
@@ -742,11 +795,11 @@ struct IDwgDrawParameters
     };  // IDwgDrawParameters
 DEFINE_NO_NAMESPACE_TYPEDEFS (IDwgDrawParameters)
 
-/*=================================================================================**//**
+//=======================================================================================
 //! Options to control a toolkit on how to draw an entity when DwgDbEntity::Draw is called.
 //! These options may come from viewports or user prefs, and therefore are per viewport or per file.
-//! @see DwgDrawParameters
-+===============+===============+===============+===============+===============+======*/
+//! @see IDwgDrawParameters
+//=======================================================================================
 struct IDwgDrawOptions
     {
     virtual DwgGiRegenType  _GetRegenType () = 0;
@@ -761,9 +814,9 @@ struct IDwgDrawOptions
 DEFINE_NO_NAMESPACE_TYPEDEFS (IDwgDrawOptions)
 
 
-/*=================================================================================**//**
-// ! A helper class to drop shapes, i.e. text using a shapfile, to an array of linestrings
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A helper class that strokes and drops shapes, i.e. text using a shapfile, to an array of linestrings.
+//=======================================================================================
 struct ShapeTextProcessor : NonCopyableClass
     {
 private:

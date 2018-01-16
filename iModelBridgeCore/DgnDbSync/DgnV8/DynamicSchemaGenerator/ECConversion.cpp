@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -186,6 +186,10 @@ Utf8CP BisConversionRuleHelper::ToString(BisConversionRule rule)
                 return "ToPhysicalElement";
             case BisConversionRule::ToPhysicalObject:
                 return "ToPhysicalObject";
+            case BisConversionRule::ToDefaultBisBaseClass:
+                return "ToDefaultBisBaseClass";
+            case BisConversionRule::ToDefaultBisClass:
+                return "ToDefaultBisClass";
             default:
                 BeAssert(false && "Please update V8ECClassInfo::ToString for new value of the BisConversionRule enum.");
                 return "";
@@ -1065,6 +1069,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
         BeFile outFile;
         outFile.Create(outPath.GetName());
         Utf8String xmlString(schemaXml);
+        xmlString.ReplaceAll("UTF-16", "utf-8");
         outFile.Write(nullptr, xmlString.c_str(), static_cast<uint32_t>(xmlString.size()));
 #endif
 
@@ -1096,11 +1101,20 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              needsFlattening = true;
              break;
              }
+         else if (schema->GetName().StartsWithI("ECXA_"))
+             {
+             needsFlattening = true;
+             break;
+             }
          }
 
      if (needsFlattening)
          {
+         bvector<BECN::ECSchemaP> schemasCopy;
          for (BECN::ECSchemaP schema : schemas)
+             schemasCopy.push_back(schema);
+
+         for (BECN::ECSchemaP schema : schemasCopy)
              if (BSISUCCESS != FlattenSchemas(schema))
                 return BSIERROR;
          }
@@ -1156,53 +1170,49 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
 void DynamicSchemaGenerator::SwizzleOpenPlantSupplementals(bvector<BECN::ECSchemaPtr>& tmpSupplementals, BECN::ECSchemaP primarySchema, bvector<BECN::ECSchemaP> supplementalSchemas)
     {
     bool foundSupplemental = false;
-    bvector<BECN::ECSchemaP> units;
-    Utf8PrintfString suppName("%s_Supplemental_Units", primarySchema->GetName().c_str());
+    bvector<BECN::ECSchemaP> baseSupplementals;
+    Utf8PrintfString suppName("%s_Supplemental", primarySchema->GetName().c_str());
+    suppName.ReplaceAll("_3D", "");
     for (BECN::ECSchemaP supp : supplementalSchemas)
         {
         if (supp->GetName().StartsWithIAscii(suppName.c_str()))
-            foundSupplemental = true;
-        else if (supp->GetName().StartsWithIAscii("OpenPlant_Supplemental_Units"))
-            units.push_back(supp);
+            baseSupplementals.push_back(supp);
         }
-    if (!foundSupplemental)
+    for (BECN::ECSchemaP supp : baseSupplementals)
         {
-        for (BECN::ECSchemaP unitSchema : units)
+        BECN::ECSchemaPtr op3d;
+        if (BECN::ECObjectsStatus::Success != supp->CopySchema(op3d))
             {
-            BECN::ECSchemaPtr op3d;
-            if (BECN::ECObjectsStatus::Success != unitSchema->CopySchema(op3d))
-                {
-                Utf8String error;
-                error.Sprintf("Failed to create an %s copy of the units schema '%s'; Unit information will be unavailable. See log file for details.", primarySchema->GetName().c_str(), (unitSchema->GetName()).c_str());
-                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                continue;
-                }
-
-            Utf8String oldName(op3d->GetName().c_str());
-            oldName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
-            op3d->SetName(oldName);
-            BECN::SupplementalSchemaMetaDataPtr metaData;
-            if (!BECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *op3d))
-                {
-                Utf8String error;
-                error.Sprintf("Failed to get supplemental metadata from supplemental units schema '%s'; Unit information will be unavailable. See log file for details.", Utf8String(unitSchema->GetName()).c_str());
-                ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
-                continue;
-                }
-            BECN::IECInstancePtr instance = metaData->CreateCustomAttribute();
-            op3d->RemoveCustomAttribute("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
-            Utf8String newName(metaData->GetPrimarySchemaName());
-            newName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
-            BECN::SupplementalSchemaMetaDataPtr newMetaData = BECN::SupplementalSchemaMetaData::Create(newName.c_str(), metaData->GetPrimarySchemaReadVersion(), metaData->GetPrimarySchemaWriteVersion(),
-                                                                                                       metaData->GetPrimarySchemaMinorVersion(), metaData->GetSupplementalSchemaPrecedence(), metaData->GetSupplementalSchemaPurpose().c_str());
-            if (!ECN::ECSchema::IsSchemaReferenced(*op3d, instance->GetClass().GetSchema()))
-                {
-                BECN::ECClassP nonConstClass = const_cast<BECN::ECClassP>(&instance->GetClass());
-                op3d->AddReferencedSchema(nonConstClass->GetSchemaR());
-                }
-            BECN::SupplementalSchemaMetaData::SetMetadata(*op3d, *newMetaData);
-            tmpSupplementals.push_back(op3d);
+            Utf8String error;
+            error.Sprintf("Failed to create an %s copy of the base supplemental schema '%s'; Supplemental information will be unavailable. See log file for details.", primarySchema->GetName().c_str(), (supp->GetName()).c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
             }
+
+        Utf8String oldName(op3d->GetName().c_str());
+        oldName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
+        op3d->SetName(oldName);
+        BECN::SupplementalSchemaMetaDataPtr metaData;
+        if (!BECN::SupplementalSchemaMetaData::TryGetFromSchema(metaData, *op3d))
+            {
+            Utf8String error;
+            error.Sprintf("Failed to get supplemental metadata from supplemental schema '%s'; Supplemental information will be unavailable. See log file for details.", Utf8String(supp->GetName()).c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            continue;
+            }
+        BECN::IECInstancePtr instance = metaData->CreateCustomAttribute();
+        op3d->RemoveCustomAttribute("Bentley_Standard_CustomAttributes", "SupplementalSchemaMetaData");
+        Utf8String newName(metaData->GetPrimarySchemaName());
+        newName.ReplaceAll("OpenPlant", primarySchema->GetName().c_str());
+        BECN::SupplementalSchemaMetaDataPtr newMetaData = BECN::SupplementalSchemaMetaData::Create(newName.c_str(), metaData->GetPrimarySchemaReadVersion(), metaData->GetPrimarySchemaWriteVersion(),
+                                                                                                    metaData->GetPrimarySchemaMinorVersion(), metaData->GetSupplementalSchemaPrecedence(), metaData->GetSupplementalSchemaPurpose().c_str());
+        if (!ECN::ECSchema::IsSchemaReferenced(*op3d, instance->GetClass().GetSchema()))
+            {
+            BECN::ECClassP nonConstClass = const_cast<BECN::ECClassP>(&instance->GetClass());
+            op3d->AddReferencedSchema(nonConstClass->GetSchemaR());
+            }
+        BECN::SupplementalSchemaMetaData::SetMetadata(*op3d, *newMetaData);
+        tmpSupplementals.push_back(op3d);
         }
     }
 
@@ -1932,8 +1942,9 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
 
     for (ECN::ECSchemaP sourceSchema : schemas)
         {
+        Utf8String sourceSchemaName(sourceSchema->GetName().c_str());
         m_schemaReadContext->GetCache().DropSchema(sourceSchema->GetSchemaKey());
-        m_schemaReadContext->AddSchema(*m_flattenedRefs[sourceSchema->GetName()]);
+        m_schemaReadContext->AddSchema(*m_flattenedRefs[sourceSchemaName]);
         }
 
     return BSISUCCESS;
@@ -2066,6 +2077,28 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandl
     return BentleyApi::SUCCESS;
     }
 
+static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
+    "BaseElementSchema",
+    "BentleyDesignLinksPersistence",
+    "BentleyDesignLinksPresetnation",
+    "BentleyDrawingLinksPersistence",
+    "DetailSymbolExtender",
+    "DgnComponentSchema",
+    "DgnContentRelationshipSchema",
+    "DgnCustomAttributes",
+    "DgnElementSchema",
+    "DgnFileSchema",
+    "DgnindexQueryschema",
+    "DgnLevelSchema",
+    "DgnModelSchema",
+    "DgnPointCloudSchema",
+    "DgnTextStyleObjSchema",
+    "DgnVisualizationObjSchema",
+    "ExtendedElementSchema",
+    "MstnPropertyFormatter",
+    "Ustn_ElementParams",
+    "DTMElement_TemplateExtender_Schema"
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
@@ -2080,11 +2113,16 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
         auto& ecClass = ecClassInfo.first;
         bool isPrimary = ecClassInfo.second;
         
+        Utf8String v8SchemaName(ecClass.m_schemaName.c_str());
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        if (found != s_dgnV8DeliveredSchemas.end())
+            continue;
+
         // We fabricate the DgnV8 Tag Set Definition schema at runtime during conversion; never allow instances of that schema to be considered primary.
         if (isPrimary && ecClass.m_schemaName.Equals(Converter::GetV8TagSetDefinitionSchemaName()))
             isPrimary = false;
         
-        ECClassName v8ClassName(Utf8String(ecClass.m_schemaName.c_str()).c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
+        ECClassName v8ClassName(v8SchemaName.c_str(), Utf8String(ecClass.m_className.c_str()).c_str());
         ECN::SchemaKey conversionKey(Utf8String(v8ClassName.GetSchemaName()).append("_DgnDbSync").c_str(), 1, 0);
         ECN::ECSchemaPtr conversionSchema = m_syncReadContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
         bool namedGroupOwnsMembers = false;
@@ -2098,6 +2136,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             return BSIERROR;
         if (!isPrimary && (BentleyApi::SUCCESS != V8ElementSecondaryECClassInfo::Insert(GetDgnDb(), v8Element, v8ClassName)))
             return BSIERROR;
+        m_hasECContent = true;
         }
 
     return BentleyApi::SUCCESS;
@@ -2353,7 +2392,60 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
 
     m_anyImported = true;
 
+    if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+        {
+        StopWatch timer(true);
+        ValidateSchemas(constSchemas);
+        ConverterLogging::LogPerformance(timer, "Convert Schemas> Validate V8 ECSchemas");
+        }
     return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void DynamicSchemaGenerator::ValidateSchemas(bvector<BECN::ECSchemaCP>& importedSchemas)
+    {
+
+    for (BECN::ECSchemaCP importedSchema : importedSchemas)
+        {
+        bmap<Utf8String, ECObjectsV8::ECSchemaPtr>::const_iterator it = m_v8Schemas.find(importedSchema->GetName());
+        if (it == m_v8Schemas.end())
+            continue;
+
+        SchemaRemapper mapper(m_converter);
+
+        for (auto& v8class : it->second->GetClasses())
+            {
+            ECObjectsV8::ECRelationshipClassCP relClass = v8class->GetRelationshipClassCP();
+            if (nullptr != relClass)
+                continue;
+            BentleyApi::ECN::ECClassCP ecClass = importedSchema->GetClassCP(Utf8String(v8class->GetName().c_str()).c_str());
+            if (nullptr == ecClass)
+                {
+                Utf8PrintfString aspectName("%s%s", Utf8String(v8class->GetName().c_str()).c_str(), BIS_CLASS_ElementAspect);
+                ecClass = importedSchema->GetClassCP(aspectName.c_str());
+                if (nullptr == ecClass)
+                    {
+                    LOG.warningv("Unable to find entity class %s in imported schema", Utf8String(v8class->GetFullName()).c_str());
+                    continue;
+                    }
+                }
+            for (auto& v8prop : v8class->GetProperties(true))
+                {
+                BentleyApi::ECN::ECPropertyP prop = ecClass->GetPropertyP(v8prop->GetName().c_str());
+                if (nullptr == prop)
+                    {
+                    Utf8String v8PropName(v8prop->GetName().c_str());
+                    if (mapper.ResolvePropertyName(v8PropName, *ecClass))
+                        prop = ecClass->GetPropertyP(v8PropName);
+                    if (nullptr == prop)
+                        LOG.warningv("Schema Validation: Failed to find %s:%s", Utf8String(v8class->GetFullName()).c_str(), v8PropName.c_str());
+                    }
+                }
+            }
+
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2414,6 +2506,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
             schemaKey.m_checkSum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
 
             isDynamicSchema = IsDynamicSchema(schemaName, schemaXml);
+
+            // If we're validating schemas, then we need to retrieve the actual V8 schema
+            if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+                {
+                if (m_v8Schemas.find(schemaName.c_str()) == m_v8Schemas.end())
+                    {
+                    ECObjectsV8::ECSchemaPtr v8Schema = dgnv8EC.LocateSchemaInDgnFile(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact, true);
+                    if (v8Schema.IsValid())
+                        m_v8Schemas[schemaName.c_str()] = v8Schema;
+                    }
+                }
             }
         else
             {
@@ -2441,6 +2544,21 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
                 }
             if (BSIERROR == ProcessReferenceSchemasFromExternal(*externalSchema, v8Model))
                 return BSIERROR;
+            if (GetConfig().GetOptionValueBool("ValidateSchemas", false))
+                {
+                if (m_v8Schemas.find(schemaName.c_str()) == m_v8Schemas.end())
+                    {
+                    m_v8Schemas[schemaName.c_str()] = externalSchema;
+                    }
+                ECObjectsV8::ECSchemaReferenceListCR referencedSchemas = externalSchema->GetReferencedSchemas();
+                for (ECObjectsV8::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+                    {
+                    if (m_v8Schemas.find(Utf8String(it->second->GetName().c_str())) == m_v8Schemas.end())
+                        {
+                        m_v8Schemas[Utf8String(it->second->GetName().c_str())] = it->second;
+                        }
+                    }
+                }
             }
 
         if (BSIERROR == ProcessSchemaXml(schemaKey, schemaXml.c_str(), isDynamicSchema, v8Model))
@@ -2729,6 +2847,12 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             continue;
             }
 
+        // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
+        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(Utf8String(v8SchemaInfo.GetSchemaName())))
+            {
+            m_needReimportSchemas = true;
+            continue;
+            }
         Bentley::Utf8String schemaXml;
         uint32_t checksum = -1;
         if (v8SchemaInfo.IsStoredSchema())
@@ -2838,6 +2962,12 @@ void DynamicSchemaGenerator::BisifyV8Schemas(bvector<DgnV8FileP> const& uniqueFi
         }
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas> Analyze V8 EC content");
+
+    if (!m_hasECContent)
+        {
+        scope.SetSucceeded();
+        return;
+        }
 
     SetStepName(Converter::ProgressMessage::STEP_IMPORT_SCHEMAS());
 

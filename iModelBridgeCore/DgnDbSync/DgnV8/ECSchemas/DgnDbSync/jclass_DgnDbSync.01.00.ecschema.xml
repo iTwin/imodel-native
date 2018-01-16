@@ -21,5 +21,10 @@
             <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="SCHEDULE_GROUP" isDomainClass="True">
+        <ECCustomAttributes>
+            <NamedGroupOwnsMembers xmlns="DgnDbSyncV8.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
 </ECSchema>
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportRaster.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -30,9 +30,32 @@ bool            DwgRasterImageExt::GetExistingModel (ResolvedModelMapping& model
         if (nullptr == dwg)
             dwg = &m_importer->GetDwgDb ();
 
-        modelMap = m_importer->GetModelFromSyncInfo (rasterId, *dwg, toDgn);
+        DwgImporter::RootTransformInfo const&   rootTransInfo = m_importer->GetRootTransformInfo ();
+        bool    searchByOldTrans = rootTransInfo.HasChanged() && m_dwgRaster->GetOwnerId() == m_importer->GetModelSpaceId();
+        Transform   searchTrans;
+        if (searchByOldTrans)
+            {
+            Transform   fromNewToOld = rootTransInfo.GetChangeTransformFromNewToOld ();
+            searchTrans.InitProduct (fromNewToOld, toDgn);
+            }
+        else
+            {
+            // no root model transform change:
+            searchTrans = toDgn;
+            }
+
+        // search the syncInfo
+        modelMap = m_importer->GetModelFromSyncInfo (rasterId, *dwg, searchTrans);
         if (modelMap.IsValid() && modelMap.GetModel() != nullptr && modelMap.GetMapping().GetSourceType() == DwgSyncInfo::ModelSourceType::RasterAttachment)
+            {
+            if (searchByOldTrans)
+                {
+                // update model map with the new transform
+                modelMap.SetTransform (toDgn);
+                modelMap.GetMapping().Update (m_importer->GetDgnDb());
+                }
             return  true;
+            }
         // not found in syncinfo => treat as insert
         }
 
@@ -127,6 +150,22 @@ bool            DwgRasterImageExt::CopyRasterToDgnDbFolder (BeFileNameCR rasterF
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgRasterImageExt::GetUrlCacheFile (DwgStringR checkPath)
+    {
+#ifdef BENTLEY_WIN32
+    if (::PathIsURLW(checkPath.c_str()))
+        {
+        WString localPath;
+        if (DwgImportHost::GetHost().GetCachedLocalFile(localPath, WString(checkPath.c_str())))
+            checkPath.Assign (localPath.c_str());
+        }
+#endif 
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
@@ -146,6 +185,8 @@ BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& cont
     if (DwgDbStatus::Success != m_dwgRaster->GetFileName(rasterPath, &activePath))
         return  BSIERROR;
  
+    this->GetUrlCacheFile (rasterPath);
+
     // see if there exists the model:
     ResolvedModelMapping modelMap;
     this->GetExistingModel (modelMap);
@@ -249,6 +290,7 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     m_importer->AddToDwgModelMap (modelMap);
     // tell the updater about the newly discovered model
     m_importer->_GetChangeDetector()._OnModelInserted (*m_importer, modelMap, nullptr);
+    m_importer->_GetChangeDetector()._OnModelSeen (*m_importer, modelMap);
 
     // add the new model ID to views
     if (m_dwgRaster->IsDisplayed())
@@ -289,7 +331,7 @@ void    DwgRasterImageExt::AddModelToViews (DgnModelId modelId)
                 else
                     {
                     // WIP - add model to paperspace view
-                    m_importer->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("adding a raster mode in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
+                    m_importer->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("adding a raster model in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
                     }
                 }
             }

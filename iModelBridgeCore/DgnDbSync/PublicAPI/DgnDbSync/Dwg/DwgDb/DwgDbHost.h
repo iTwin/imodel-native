@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbHost.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,9 +58,9 @@ public:
     };  // IDwgDbProgressMeter
 
 /*=================================================================================**//**
-//! This interface is a gate way to/from toolkit's host, and only a essential subset of
-//! the toolkit.  Most of the other stuff is handled in DwgDb layer thus shielded from
-//! the app which does not have to deal with toolkit specific issues/requirements.
+This interface is a gate way to/from toolkit's host, and consists of only an essential 
+subset of the toolkit.  Most of the other stuff is handled in DwgDb layer thus shielded from
+the app which does not have to deal with toolkit specific issues/requirements.
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
 struct IDwgDbHost : NonCopyableClass
@@ -112,6 +112,8 @@ public:
     DWGDB_EXPORT static bool            IsDxfFile (WStringCR filename);
     //! Explicitly load a DBX(RealDWG) or TX(OpenDWG) module by name(including file extension)
     DWGDB_EXPORT static bool            LoadObjectEnabler (WStringCR filename);
+    //! Download an URL file to local cache if not already done, return the cached file back:
+    DWGDB_EXPORT static bool            GetCachedLocalFile (WStringR localFile, WStringCR url);
 };  // IDwgDbHost
 
 END_DWGDB_NAMESPACE

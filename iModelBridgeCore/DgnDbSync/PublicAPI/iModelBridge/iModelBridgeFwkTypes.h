@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeFwkTypes.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,7 +28,7 @@ struct iModelBridgeDocumentProperties
     Utf8String m_desktopURN; //!< The URN to use when referring to this document from a desktop program
     Utf8String m_attributesJSON; //!< Document attributes, in JSON format
     Utf8String m_spatialRootTransformJSON; //!< Spatial data transform for root document, in JSON format
-
+    Utf8String m_changeHistoryJSON;
     iModelBridgeDocumentProperties() {}
     iModelBridgeDocumentProperties(Utf8CP g, Utf8CP w, Utf8CP d, Utf8CP a, Utf8CP o) : m_docGuid(g), m_webURN(w), m_desktopURN(d), m_attributesJSON(o), m_spatialRootTransformJSON(o) {}
     };

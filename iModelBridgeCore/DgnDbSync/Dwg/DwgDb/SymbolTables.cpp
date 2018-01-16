@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/SymbolTables.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -476,6 +476,7 @@ bool           DwgDbViewportTableRecord::IsIsometricSnapEnabled () const { retur
 int16_t        DwgDbViewportTableRecord::GetGridMajor () const { return T_Super::gridMajor(); }
 double         DwgDbViewportTableRecord::GetBrightness () const { return T_Super::brightness(); }
 DwgCmColor     DwgDbViewportTableRecord::GetAmbientLightColor () const { return static_cast<DwgCmColor>(T_Super::ambientLightColor()); }
+DwgDbObjectId  DwgDbViewportTableRecord::GetSunId () const { return T_Super::sunId(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16

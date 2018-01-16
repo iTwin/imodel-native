@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -840,12 +840,10 @@ bool Converter::_IsModelPrivate(DgnV8ModelCR v8Model)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
-#ifdef WIP_MERGE_Raman
 static UnitDefinition fromV8(DgnV8Api::UnitDefinition const& v8Def)
     {
     return UnitDefinition(UnitBase(v8Def.GetBase()), UnitSystem(v8Def.GetSystem()), v8Def.GetNumerator(), v8Def.GetDenominator(), Utf8String(v8Def.GetLabelCP()).c_str());
     }
-#endif
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -1034,6 +1032,9 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
     GeometricModelP geometricModel = model->ToGeometricModelP();
     if (geometricModel != nullptr)
         {
+#ifdef NEEDS_WORK_RAMAN
+        // m_rootModelRef is not available so fix for 515560 below is not currently posssible....
+
         /* Note: We use the V8 root model to set the display info for *all* of the models as a stop 
          * gap measure (in Q4) to fix TFS#515560: 
          * Users reported a discrepancy between the units displayed in DgnDb based Navigator and v8i Microstation. 
@@ -1042,9 +1043,11 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
          * The longer term fix for this issue is to make these display settings as something that's defined for the 
          * entire DgnDb/BIM, and not individual models. This is tracked by TFS#634638. 
          */
-#ifdef WIP_MERGE_Raman
         DgnV8Api::ModelInfo const& v8ModelInfo = m_rootModelRef->GetDgnModelP()->GetModelInfo();
-        GeometricModel::DisplayInfo& displayInfo = geometricModel->GetDisplayInfoR();
+#else
+        DgnV8Api::ModelInfo const& v8ModelInfo = v8Model.GetModelInfo();
+#endif
+        auto& displayInfo = geometricModel->GetFormatterR();
 
         displayInfo.SetUnits(fromV8(v8ModelInfo.GetMasterUnit()), fromV8(v8ModelInfo.GetSubUnit()));
         displayInfo.SetRoundoffUnit(v8ModelInfo.GetRoundoffUnit(), v8ModelInfo.GetRoundoffRatio());
@@ -1055,7 +1058,6 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         displayInfo.SetDirectionMode(DirectionMode(v8ModelInfo.GetDirectionMode()));
         displayInfo.SetDirectionClockwise(v8ModelInfo.GetDirectionClockwise());
         displayInfo.SetDirectionBaseDir(v8ModelInfo.GetDirectionBaseDir());
-#endif
         }
 
     /* WIP: move description to modeled element instead of model.
@@ -1823,6 +1825,35 @@ BentleyStatus Converter::InitSheetListModel()
     return BentleyStatus::SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DefinitionModelPtr Converter::GetJobDefinitionModel()
+    {
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    SubjectCR job = GetJobSubject();
+    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(job, partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    DefinitionPartitionPtr ed = DefinitionPartition::Create(job, partitionName.c_str());
+    DefinitionPartitionCPtr partition = ed->InsertT<DefinitionPartition>();
+    if (!partition.IsValid())
+        return DefinitionModelPtr();
+
+    DefinitionModelPtr defModel = DefinitionModel::CreateAndInsert(*partition);
+    if (!defModel.IsValid())
+        return DefinitionModelPtr();
+
+    m_jobDefinitionModelId = defModel->GetModelId();
+    return defModel;
+    }
+
 static const Utf8CP s_codeSpecName = "DgnV8"; // TBD: One CodeSpec per V8 file?
 
 /*---------------------------------------------------------------------------------**//**
@@ -2407,7 +2438,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
         {                                                                                                                           // *** WIP_BIM_BRIDGE -- remove this logic
         Utf8String duplicateMessage;                                                                                                // *** WIP_BIM_BRIDGE -- remove this logic
         duplicateMessage.Sprintf("Duplicate element code '%s' ignored", code.GetValueUtf8().c_str());                                   // *** WIP_BIM_BRIDGE -- remove this logic
-        ReportIssue(IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());         // *** WIP_BIM_BRIDGE -- remove this logic
+        ReportIssue(IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());         // *** WIP_BIM_BRIDGE -- remove this logic
                                                                                                                                     // *** WIP_BIM_BRIDGE -- remove this logic
         DgnDbStatus stat2 = results.m_element->SetCode(DgnCode::CreateEmpty()); // just leave the code null                         // *** WIP_BIM_BRIDGE -- remove this logic
         BeAssert(DgnDbStatus::Success == stat2);                                                                                    // *** WIP_BIM_BRIDGE -- remove this logic
@@ -2418,7 +2449,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
         {
         BeAssert((DgnDbStatus::LockNotHeld != stat) && "Failed to get or retain necessary locks");
         BeAssert(false);
-        ReportIssue(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*results.m_element).c_str());
+        ReportIssue(IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*results.m_element).c_str());
         return stat;
         }
 
@@ -2922,7 +2953,7 @@ SyncInfo::V8ElementMapping Converter::FindFirstElementMappedTo(DgnV8ModelCR v8Mo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementMapping Converter::FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
+SyncInfo::V8ElementMapping Converter::_FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
                                                                IChangeDetector::T_SyncInfoElementFilter* filter)
     {
     ElementRefP targetEl;

@@ -107,6 +107,7 @@ BentleyStatus TiledConverterApp::_OnOpenBim(DgnDbR db)
     {
     m_converter.reset(new TiledFileConverter(m_params));
     m_converter->SetDgnDb(db);
+    CreateSyncInfoIfNecessary();
     return m_converter->AttachSyncInfo();
     }
 

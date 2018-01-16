@@ -82,4 +82,5 @@ typedef DgnV8Api::DgnURLLink const& DgnV8URLLinkCR;
 typedef DgnV8Api::ElementHandle const& DgnV8EhCR;
 typedef DgnV8Api::ElementHandle const* DgnV8EhCP;
 typedef DgnV8Api::EditElementHandle& DgnV8EehR;
+typedef DgnV8Api::SchemaInfo&       DgnV8SchemaInfoR;
 
