@@ -427,7 +427,7 @@ ECEnumeratorP ECEnumeration::FindEnumerator(Utf8CP value) const
     for (auto const& entry : m_enumeratorList)
         {
         Utf8StringCR strValue = entry->GetString();
-        if(strcmp(strValue.c_str(), value) == 0)
+        if(strValue.EqualsI(value))
             return entry;
         }
 
