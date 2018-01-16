@@ -503,7 +503,6 @@ public:
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MoveVerticalTangent(DPoint3dCR fromPt, DPoint3dCR toPt, StationRangeEditP pRAngeEdit = nullptr) const;
     // Allow the move of a parabola pvc or pvt based on station. Result may be invalid
     // Updates the length based on the new position of the pvc/pvt and the 'holdLength' flag
-    //&&AG needswork with 'holdLength' property.
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr MoveParabolaPVCorPVT(double fromDistanceAlong, double toDistanceAlong, StationRangeEditP pEditRange = nullptr) const;
     // Allow the move of an arc pvc or pvt based on station. Result may be invalid
     // Updates the arc radius based on the new position of the pvc/pvt

@@ -2902,7 +2902,9 @@ CurveVectorPtr AlignmentPairEditor::MoveParabolaPVCorPVT(double fromDistanceAlon
 
     const double newLength = 2.0 * fabs(toDistanceAlong - pvis[index].GetPVILocation().x);
 
-    pvis[index].GetParabolaP()->length = newLength;
+    AlignmentPVI::ParabolaInfoP pParabola = pvis[index].GetParabolaP();
+    pParabola->length = newLength;
+    pParabola->kValue = pParabola->ComputeKValue();
 
     VerticalEditResult result = SolveValidateAndBuild(pvis, index, false/*isDelete*/);
     if (nullptr != pRangeEdit && result.vtCurve.IsValid())
