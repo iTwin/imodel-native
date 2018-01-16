@@ -5,3 +5,8 @@
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+CurveVectorPlacementStrategyTests.CreateSplines
+CurveVectorPlacementStrategyTests.CreateInterpolationCurves
+CurveVectorPlacementStrategyTests.CreateLineSplineArc
+CurveVectorPlacementStrategyTests.CreateLineInterpolationCurveArc
+CurveVectorPlacementStrategyTests.ChangeFromArcToSplineToInterpolationCurveToLine
