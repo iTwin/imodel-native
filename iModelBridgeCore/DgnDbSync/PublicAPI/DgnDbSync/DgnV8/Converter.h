@@ -979,6 +979,10 @@ public:
 
     bool SkipECContent() const {return m_skipECContent;}
 
+    //! Allows a bridge to determine whether a particular schema should be imported or not
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) { return true; }
+    //! @}
+
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
@@ -1065,6 +1069,8 @@ public:
     //! @see _GetV8FileIntoSyncInfo which must be called first, in order for this function to work.
     //! @see GetV8FileSyncInfoId for a short-cut method
     DGNDBSYNC_EXPORT static SyncInfo::V8FileSyncInfoId GetV8FileSyncInfoIdFromAppData(DgnV8FileCR);
+
+    DGNDBSYNC_EXPORT static void DiscardV8FileSyncInfoAppData(DgnV8FileR);
 
     //! Short cut method that first calls GetV8FileSyncInfoIdFromAppData to see if the file's SyncInfoId is already cached. 
     //! If not, this function calls _GetV8FileIntoSyncInfo .
@@ -2485,6 +2491,7 @@ public:
     static WCharCP GetRegistrySubKey() {return L"DgnV8Bridge";}
 
     DGNDBSYNC_EXPORT explicit RootModelConverter(RootModelSpatialParams&);
+    DGNDBSYNC_EXPORT  ~RootModelConverter();
 
     DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
 

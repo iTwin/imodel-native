@@ -2486,6 +2486,10 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
 
         //TODO: Need to filter out V8/MicroStation specific ECSchemas, not needed in Graphite
 
+        Utf8String fullName(schemaKey.GetFullSchemaName().c_str());
+        if (!m_converter._ShouldImportSchema(fullName, v8Model))
+            continue;
+
         Bentley::Utf8String schemaName(schemaKey.GetName());
 
         bool isDynamicSchema = false;
