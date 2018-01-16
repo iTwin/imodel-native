@@ -21,6 +21,10 @@
     struct HDC__;
 #endif
 
+// For EAP use only simple hard coded default lighting.
+#define SIMPLE_DEFAULT_LIGHTS
+// #define IMAGE_BASED_LIGHTING      // WIP
+
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -622,14 +626,14 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_diffuseColor;
         MatColor m_specularColor;
         MatColor m_emissiveColor;
-        double m_diffuse = 0.5;
-        double m_ambient = 0.5;
-        double m_specularExponent = 0.0;
+        double m_diffuse = 0.6;                        // QVision default...
+        double m_specular = 0.4;                       // QVision default...
+        double m_specularExponent = (0.9 * 15.0);      // QVision default...
         double m_reflect = 0.0;
         double m_transparency = 0.0;
-        double m_specular = 0.05;
         double m_refract = 1.0;
-        bool m_shadows = true;
+        double m_ambient = .3;
+        bool   m_shadows = true;
 
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
@@ -2528,6 +2532,8 @@ struct SceneLights : RefCounted<NonCopyableClass>
     bvector<LightPtr> m_list;
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
+
+    TexturePtr  m_environmentMap = nullptr;          // For image based specular... WIP
 };
 DEFINE_REF_COUNTED_PTR(SceneLights)
 

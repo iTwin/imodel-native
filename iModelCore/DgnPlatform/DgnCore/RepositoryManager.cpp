@@ -251,7 +251,11 @@ void BriefcaseManagerBase::_OnDgnDbDestroyed()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseManager(DgnDbR db) const
     {
-    auto bc = (db.IsMasterCopy() || db.IsStandaloneBriefcase()) ? MasterBriefcaseManager::Create(db) : BulkUpdateBriefcaseManager::Create(db);
+    IBriefcaseManagerPtr bc;
+    if (db.IsMasterCopy() || db.IsStandaloneBriefcase())
+        bc = MasterBriefcaseManager::Create(db);
+    else
+        bc = BulkUpdateBriefcaseManager::Create(db);
     if (bc.IsValid() && (nullptr != db.GetConcurrencyControl()))
         db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*bc);
     return bc.get();

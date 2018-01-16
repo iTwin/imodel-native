@@ -576,7 +576,7 @@ struct IConcurrencyControl : IRefCounted
 /* The pessimistic concurrency control policy. Locks and codes must be acquired before a changeset can be pushed to iModelHub. */
 struct PessimisticConcurrencyControl : RefCounted<IConcurrencyControl>
     {
-    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() {return nullptr;}
+    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return nullptr;}
     void _ConfigureBriefcaseManager(IBriefcaseManager&) override {}
     void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) override {}
     void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override {}
@@ -593,7 +593,7 @@ struct OptimisticConcurrencyControlBase : IOptimisticConcurrencyControl
     {
     DgnLockSet m_locks;
 
-    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() {return this;}
+    IOptimisticConcurrencyControl* _AsIOptimisticConcurrencyControl() override {return this;}
     DGNPLATFORM_EXPORT void _ConfigureBriefcaseManager(IBriefcaseManager& b) override;
     DGNPLATFORM_EXPORT void _OnProcessRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose) override;
     DGNPLATFORM_EXPORT void _OnProcessedRequest(IBriefcaseManager&, IBriefcaseManager::Request&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response&) override;
