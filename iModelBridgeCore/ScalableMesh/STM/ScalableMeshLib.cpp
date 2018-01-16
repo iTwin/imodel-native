@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshLib.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -23,6 +23,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/ImageppLib.h>
 
 #include <CCApi\CCPublic.h>
+#include <Logging\bentleylogging.h>
 
 
 
@@ -209,26 +210,52 @@ WebServiceKey GetBingKey()
     {    
      Utf8String readBuffer;    
   
+    BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("Bing");
 
+
+    logger->debug("Retrieving Bing Key from CC");
 
     WString serverUrl;
     UINT32 bufLen;
     CallStatus status = APIERR_SUCCESS;
     try
     {
+        char tempBuffer[100000];
+
         CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+
+        bool sessionActive = false;
+        status = CCApi_IsUserSessionActive(api, &sessionActive);
+        sprintf(tempBuffer, "user Session Active status: %ld Active: %ld", status, sessionActive ? 1 : 0);
+        logger->debug(tempBuffer);
+
         wchar_t* buffer;
         status = CCApi_GetBuddiUrl(api, L"ContextServices", NULL, &bufLen);
+        if (APIERR_SUCCESS != status)
+            {
+            sprintf(tempBuffer, "1st GetBuddiURL status : %ld", status);
+            logger->error(tempBuffer);
+            }
+
         bufLen++;
         buffer = (wchar_t*)calloc(1, bufLen * sizeof(wchar_t));
         status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
+        if (APIERR_SUCCESS != status)
+            {
+            char tempBuffer[100000];
+            sprintf(tempBuffer, "2nd GetBuddiURL status: %ld", status);
+            logger->error(tempBuffer);
+            }
         serverUrl.assign(buffer);
         CCApi_FreeApi(api);
     }
     catch (...)
     {
+        logger->error("CC exception caught");
+        return WebServiceKey();
     }
 
+    logger->debug(serverUrl.c_str());
 
     Utf8String contextServiceURL;
     contextServiceURL.assign(Utf8String(serverUrl.c_str()).c_str());
@@ -242,12 +269,16 @@ WebServiceKey GetBingKey()
     Utf8String bingKeyUrl(contextServiceURL);    
     bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+");
     bingKeyUrl.append(productIdStr);
+
+    logger->debug("Perform curl using");
+    logger->debug(bingKeyUrl.c_str());
             
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
 
     if (CURLE_OK != result)
-        {        
+        { 
+        logger->error("curl failed, returning empty key");
         return WebServiceKey();
         }
 
@@ -256,6 +287,7 @@ WebServiceKey GetBingKey()
 
     if (!packageInfos.isMember("instances"))
         {
+        logger->error("instances is not a member of packageInfos, returning empty key");
         return WebServiceKey();
         }
 
@@ -267,9 +299,13 @@ WebServiceKey GetBingKey()
         {
         DateTime expiration;
         DateTime::FromString(expiration, packageInfos["instances"][0]["properties"]["expirationDate"].asCString());
+        logger->debug("Key retrieved");
+        logger->debug(packageInfos["instances"][0]["properties"]["key"].asCString());
+
         return WebServiceKey(packageInfos["instances"][0]["properties"]["key"].asString(), expiration);
         }
     
+    logger->error("invalid instances in packageInfos, returning empty key");
     return WebServiceKey();
     }
 
