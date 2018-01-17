@@ -1801,6 +1801,10 @@ private:
 
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
+    //! Returns true if an enumerator with the given name and value would not conflict with existing enumerators within this enumeration.
+    bool EnumeratorIsUnique(Utf8CP enumeratorName, int32_t enumeratorValue) const;
+    bool EnumeratorIsUnique(Utf8CP enumeratorName, Utf8CP enumeratorValue) const;
+
 public:
     //! The ECSchema that this enumeration is defined in
     ECSchemaCR GetSchema() const {return m_schema;}
@@ -1851,6 +1855,8 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, Utf8CP value);
     //!Creates a new enumerator at the end of this enumeration.
     ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, int32_t value);
+    //! Finds the enumerator with the provided name, returns nullptr if none found.
+    ECOBJECTS_EXPORT ECEnumeratorP FindEnumeratorByName(Utf8CP name) const;
     //! Finds the enumerator with the provided integer value, returns nullptr if none found.
     ECOBJECTS_EXPORT ECEnumeratorP FindEnumerator(int32_t value) const;
     //! Finds the enumerator with the provided string value, returns nullptr if none found.

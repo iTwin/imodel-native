@@ -663,7 +663,7 @@ ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueIn
     for (auto const& pair : nonConflictingValues)
         {
         ECEnumeratorP enumerator;
-        enumeration->CreateEnumerator(enumerator, ECNameValidation::EncodeToValidName(pair.second), pair.first);
+        enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
         enumerator->SetDisplayLabel(pair.second.c_str());
 
         // Add it to the sdInfo so that subsequent classes can be compared against it. 
@@ -894,7 +894,7 @@ ECObjectsStatus StandardValuesConverter::MergeEnumeration(ECEnumerationP& enumer
         ECEnumeratorP enumerator = enumeration->FindEnumerator(pair.first);
         if (enumerator == nullptr)
             {
-            enumeration->CreateEnumerator(enumerator, ECNameValidation::EncodeToValidName(pair.second), pair.first);
+            enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
             enumerator->SetDisplayLabel(pair.second.c_str());
             }
         else if (enumerator->GetInvariantDisplayLabel() != pair.second)
@@ -946,7 +946,7 @@ ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enume
 
     for (auto const& pair : sdInfo.m_valuesMap)
         {
-        status = enumeration->CreateEnumerator(enumerator, ECNameValidation::EncodeToValidName(pair.second), pair.first);
+        status = enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
         if (ECObjectsStatus::Success != status)
             return status;
 

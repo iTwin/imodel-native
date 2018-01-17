@@ -234,6 +234,34 @@ SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalon
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                 01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECEnumeration::EnumeratorIsUnique(Utf8CP enumeratorName, int32_t enumeratorValue) const
+    {
+    for (auto const& entry : m_enumeratorList)
+        {
+        if (entry->GetName().EqualsI(enumeratorName) || entry->GetInteger() == enumeratorValue)
+            return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                 01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECEnumeration::EnumeratorIsUnique(Utf8CP enumeratorName, Utf8CP enumeratorValue) const
+    {
+    for (auto const& entry : m_enumeratorList)
+        {
+        if (entry->GetName().EqualsI(enumeratorName) || entry->GetString().EqualsI(enumeratorValue))
+            return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeXmlNodeP childNode)
@@ -352,11 +380,11 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, Utf8StringCR name, Utf8CP value)
     {
+    BeAssert(nullptr != value);
     if (GetType() != PrimitiveType::PRIMITIVETYPE_String)
         return ECObjectsStatus::DataTypeMismatch;
 
-    enumerator = FindEnumerator(value);
-    if (enumerator != nullptr)
+    if (!EnumeratorIsUnique(name.c_str(), value))
         {
         enumerator = nullptr;
         return ECObjectsStatus::NamedItemAlreadyExists;
@@ -381,8 +409,7 @@ ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, Utf8S
     if (GetType() != PrimitiveType::PRIMITIVETYPE_Integer)
         return ECObjectsStatus::DataTypeMismatch;
 
-    enumerator = FindEnumerator(value);
-    if (enumerator != nullptr)
+    if (!EnumeratorIsUnique(name.c_str(), value))
         {
         enumerator = nullptr;
         return ECObjectsStatus::NamedItemAlreadyExists;
@@ -397,6 +424,20 @@ ECObjectsStatus ECEnumeration::CreateEnumerator(ECEnumeratorP& enumerator, Utf8S
 
     m_enumeratorList.push_back(enumerator);
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                 01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECEnumeratorP ECEnumeration::FindEnumeratorByName(Utf8CP name) const
+    {
+    for (auto const& entry : m_enumeratorList)
+        {
+        if (entry->GetName().EqualsI(name))
+            return entry;
+        }
+
+    return nullptr;
     }
 
 /*--------------------------------------------------------------------------------------/

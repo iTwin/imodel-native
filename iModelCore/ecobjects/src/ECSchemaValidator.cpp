@@ -189,6 +189,7 @@ void ECSchemaValidator::ValidateSchema(ECSchemaR schema)
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
     {
+    // RULE: The schema must be valid and convertable to the lastest ECVersion.
     ECObjectsStatus status = ECObjectsStatus::Success;
     if (!schema.Validate() || !schema.IsECVersion(ECVersion::Latest))
         {
@@ -196,13 +197,14 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
         status = ECObjectsStatus::Error;
         }
 
+    // RULE: The schema's written ECXML version must be the lastest ECVersion.
     if (!schema.OriginalECXmlVersionAtLeast(ECVersion::Latest))
         {
         LOG.errorv("Failed to validate '%s' since its original ECXML version is not ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
         status = ECObjectsStatus::Error;
         }
 
-    // If schema contains 'dynamic' (case-insensitive) in the name it should apply the CoreCA:DynamicSchema custom attribute.
+    // RULE: If the schema contains 'dynamic' (case-insensitive) in its name it should apply the CoreCA:DynamicSchema custom attribute.
     if (schema.GetName().ContainsI("dynamic"))
         {
         bool containsDynamicSchemaCA = schema.GetCustomAttributes(true).end() != std::find_if(
