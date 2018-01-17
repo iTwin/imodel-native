@@ -43,8 +43,8 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         virtual GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const = 0;
         virtual GeometryManipulationStrategyR _GetGeometryManipulationStrategyR() = 0;
 
-        virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) const = 0;
-        virtual Dgn::DgnElementPtr _FinishElement() const = 0;
+        virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) = 0;
+        virtual Dgn::DgnElementPtr _FinishElement() = 0;
 
         ELEM_PROPERTY_OVERRIDE(int)
         ELEM_PROPERTY_OVERRIDE(double)
@@ -58,8 +58,8 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         ELEM_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
-        Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model) const;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement() const;
+        Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
     };
 
 END_BUILDING_SHARED_NAMESPACE

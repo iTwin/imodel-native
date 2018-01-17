@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_DGN
 DgnElementPtr ElementManipulationStrategy::FinishElement
 (
     DgnModelR model
-) const
+)
     {
     return _FinishElement(model);
     }
@@ -24,7 +24,7 @@ DgnElementPtr ElementManipulationStrategy::FinishElement
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-DgnElementPtr ElementManipulationStrategy::FinishElement() const
+DgnElementPtr ElementManipulationStrategy::FinishElement()
     {
     return _FinishElement();
     }

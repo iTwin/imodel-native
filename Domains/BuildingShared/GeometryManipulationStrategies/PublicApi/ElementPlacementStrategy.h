@@ -22,10 +22,10 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         virtual ElementManipulationStrategyCR _GetElementManipulationStrategy() const = 0;
         virtual ElementManipulationStrategyR _GetElementManipulationStrategyR() = 0;
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model);
 
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
     };
 
 END_BUILDING_SHARED_NAMESPACE

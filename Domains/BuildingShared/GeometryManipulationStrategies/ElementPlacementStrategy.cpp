@@ -16,9 +16,9 @@ USING_NAMESPACE_BENTLEY_DGN
 DgnElementPtr ElementPlacementStrategy::_FinishElement
 (
     DgnModelR model
-) const
+)
     {
-    return _GetElementManipulationStrategy().FinishElement(model);
+    return _GetElementManipulationStrategyR().FinishElement(model);
     }
 
 //--------------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ DgnElementPtr ElementPlacementStrategy::_FinishElement
 DgnElementPtr ElementPlacementStrategy::FinishElement
 (
     DgnModelR model
-) const
+)
     {
     return _FinishElement(model);
     }
