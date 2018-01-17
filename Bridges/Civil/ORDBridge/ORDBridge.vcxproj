@@ -99,6 +99,7 @@
     <NMakeCleanCommandLine>bb -p ORDBridge -f CiviliModelBridges -r Civil-iModelBridges -ax64 re ORDBridgeLibrary -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__ORDBRIDGE_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)Civil\iModelBridges\ORDBridge\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(OutRoot)Winx64\BuildContexts\CivilIModelBridges\PublicAPI\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
