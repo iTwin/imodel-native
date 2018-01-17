@@ -2,7 +2,7 @@
 |
 |  $Source: iModelBridge/Tests/NonPublished/Tests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -761,6 +761,15 @@ struct TestRegistry : RefCounted<IModelBridgeRegistry>
             return BSIERROR;
         props = i->second;
         return BSISUCCESS;
+        }
+
+    BentleyStatus _AssignFileToBridge(BeFileNameCR sourceFilePath, wchar_t const* bridgeRegSubKey)
+        {
+        if (m_bridgeRegSubKey != bridgeRegSubKey)
+            return ERROR;
+
+        m_docPropsByFilename[sourceFilePath] = iModelBridgeDocumentProperties();
+        return SUCCESS;
         }
     };
 
