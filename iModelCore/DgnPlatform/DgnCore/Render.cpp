@@ -1050,6 +1050,11 @@ GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewpor
 +---------------+---------------+---------------+---------------+---------------+------*/
 Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture) : m_key(key)
     {
+#if defined(DEBUG_JSON_CONTENT)
+    Utf8String string = Json::FastWriter().write(asset);
+    UNUSED_VARIABLE(string);
+#endif
+
     if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
         {
         RgbFactor rgb = asset.GetColor(RENDER_MATERIAL_Color);
@@ -1075,7 +1080,20 @@ Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, 
         m_specular = asset.GetDouble(RENDER_MATERIAL_Specular, Defaults::Specular());
 
     if (asset.GetBool(RENDER_MATERIAL_FlagHasReflect, false))
-        m_reflect = asset.GetDouble(RENDER_MATERIAL_Reflect, Defaults::Reflect());
+        {
+        // Reflectance stored as fraction of specular in V8 material settings.
+        m_reflect = m_specular * asset.GetDouble(RENDER_MATERIAL_Reflect, Defaults::Reflect());
+        }
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasReflectColor, false))
+        {
+        RgbFactor rgb = asset.GetColor(RENDER_MATERIAL_ReflectColor);
+        m_reflectColor = MatColor(ColorUtil::FromRgbFactor(rgb));
+        }
+    else
+        {
+        m_reflectColor = m_specularColor;       // Linked...
+        }
 
     auto const& texMap = asset.GetPatternMap();
     TexturePtr texture(pTexture);

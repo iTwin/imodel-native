@@ -718,6 +718,8 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_diffuseColor;
         MatColor m_specularColor;
         MatColor m_emissiveColor;
+        MatColor m_reflectColor;
+        TextureMapping m_textureMapping;
         MaterialKey m_key;
         double m_diffuse = Defaults::Diffuse();
         double m_specular = Defaults::Specular();
