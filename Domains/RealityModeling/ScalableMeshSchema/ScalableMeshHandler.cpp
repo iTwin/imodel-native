@@ -68,7 +68,6 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     return m_range;
     }
 
-#if defined(TODO_TILE_PUBLISH)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -77,9 +76,8 @@ PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
     if (m_smPtr.IsNull())
         return PublishedTilesetInfo();
 
-    return PublishedTilesetInfo(Utf8String(GetPath()), _GetRange());
+    return PublishedTilesetInfo(Utf8String(GetPath()), m_smPtr->GetRootNode()->GetContentExtent());
     }
-#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     8/2017
