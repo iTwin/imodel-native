@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECConversion.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -257,6 +257,7 @@ struct BisClassConverter
                 explicit ECClassRemovalContext(SchemaConversionContext&);
                 BentleyStatus AddClassToRemove(ECN::ECClassR, bool includeSubclasses = false);
                 BentleyStatus FixClassHierarchies();
+                SchemaConversionContext& SchemaContext() { return m_schemaConversionContext; }
 
                 bset<ECN::ECClassP> const& GetClasses() const { return m_classesToRemove; }
             };
@@ -292,7 +293,7 @@ struct BisClassConverter
     public:
         //! Converts the given v8 ECClass and its direct derived ECClasses
         static BentleyStatus ConvertECClass(SchemaConversionContext&, ECClassName const& v8ClassName);
-        static BentleyStatus ConvertECRelationshipClass(SchemaConversionContext& context, ECN::ECRelationshipClassR inputClass, ECN::ECSchemaReadContextP syncContext);
+        static BentleyStatus ConvertECRelationshipClass(ECClassRemovalContext& context, ECN::ECRelationshipClassR inputClass, ECN::ECSchemaReadContextP syncContext);
         static void CheckForMixinConversion(SchemaConversionContext& context, ECN::ECClassR inputClass);
         static BentleyStatus FindAppliesToClass(ECN::ECClassP& appliesTo, SchemaConversionContext& context, ECN::ECSchemaR targetSchema, ECN::ECClassR mixinClass);
         static void ProcessConstraints(ECN::ECRelationshipClassR inputClass, ECN::ECEntityClassP defaultConstraintClass, SchemaConversionContext& context);
