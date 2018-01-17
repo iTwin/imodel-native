@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/BriefcaseManager_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -2970,6 +2970,45 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
 
     pStyle = nullptr;
+
+    db.SaveChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void checkCodesAreReserved(DgnDbR db, DgnCodeSet const& codes, bool expectedValue)
+    {
+    DgnCodeInfoSet codeStates;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(codeStates, codes));
+    for (DgnCodeInfo const& codeState : codeStates)
+        {
+        EXPECT_EQ(expectedValue, codeState.IsReserved());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, AutoReserveCodesBulkOpMode)
+    {
+    DgnDbPtr pDb = SetupDb(L"PlantScenarioTest.bim", BeBriefcaseId(2));
+    DgnDbR db = *pDb;
+
+    db.BriefcaseManager().StartBulkOperation();
+    ASSERT_TRUE(db.BriefcaseManager().IsBulkOperation());
+
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(db, "TestPhysicalModel");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(db, "TestSpatialCategory");
+
+    DgnCodeSet codes;
+    codes.insert(physicalModel->GetModeledElement()->GetCode());
+    codes.insert(db.Elements().GetElement(categoryId)->GetCode());
+    checkCodesAreReserved(db, codes, false);
+
+    db.BriefcaseManager().EndBulkOperation();
+
+    checkCodesAreReserved(db, codes, true);
 
     db.SaveChanges();
     }

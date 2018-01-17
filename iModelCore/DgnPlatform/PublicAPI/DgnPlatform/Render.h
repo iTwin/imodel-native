@@ -21,6 +21,10 @@
     struct HDC__;
 #endif
 
+// For EAP use only simple hard coded default lighting.
+#define SIMPLE_DEFAULT_LIGHTS
+// #define IMAGE_BASED_LIGHTING      // WIP
+
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -692,13 +696,10 @@ struct Material : RefCounted<NonCopyableClass>
 {
     struct CreateParams
     {
-        // From DgnViewMaterial.cpp...
-        static constexpr double QvExponentMultiplier() { return 48.0; }
+        // From DgnViewMaterial.cpp...(QVision defaults)
+        static constexpr double QvExponentMultiplier() { return 15.0; }
         static constexpr double QvFinish() { return 0.9; }
         static constexpr double QvSpecular() { return 0.4; }
-
-        // From TilePublisher.cpp...
-        static constexpr double FinishScale() { return 15.0; }
 
         struct MatColor
         {
@@ -714,14 +715,14 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_emissiveColor;
         TextureMapping m_textureMapping;
         MaterialName m_name;
-        double m_diffuse = 0.5;
-        double m_ambient = 0.5;
+        double m_diffuse = 0.6;                        // QVision default...
+        double m_specular = QvSpecular();
         double m_specularExponent = QvFinish() * QvExponentMultiplier();
         double m_reflect = 0.0;
         double m_transparency = 0.0;
-        double m_specular = 0.05;
         double m_refract = 1.0;
-        bool m_shadows = true;
+        double m_ambient = .3;
+        bool   m_shadows = true;
 
         explicit CreateParams(MaterialNameCR name=MaterialName()) : m_name(name) { }
         DGNPLATFORM_EXPORT CreateParams(MaterialNameCR name, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
@@ -2624,6 +2625,8 @@ struct SceneLights : RefCounted<NonCopyableClass>
     bvector<LightPtr> m_list;
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
+
+    TexturePtr  m_environmentMap = nullptr;          // For image based specular... WIP
 };
 DEFINE_REF_COUNTED_PTR(SceneLights)
 

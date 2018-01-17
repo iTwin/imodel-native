@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/SolidKernelUtil.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2108,6 +2108,77 @@ RefCountedPtr<IRefCounted> BRepUtil::Modify::CreateRollbackMark()
     return new BRepRollbackMark();
 #else
     return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Jonas.Valiunas  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityR sheet1, IBRepEntityR sheet2)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Sheet != sheet1.GetEntityType())
+        return ERROR;
+
+    if (IBRepEntity::EntityType::Sheet != sheet2.GetEntityType())
+        return ERROR;
+
+    Transform   invTargetTransform;
+    invTargetTransform.InverseOf(sheet1.GetEntityTransform());
+    Transform   toolTransform;
+    toolTransform.InitProduct(invTargetTransform, sheet2.GetEntityTransform());
+    IBRepEntityPtr sheet2Clone = sheet2.Clone();
+    PK_ENTITY_t sheet2Tag = PSolidUtil::GetEntityTagForModify(*sheet2Clone);
+    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTagForModify(sheet1);
+    PSolidUtil::TransformBody(sheet2Tag, toolTransform);
+    
+    if (PK_ENTITY_null == sheet1Tag || PK_ENTITY_null == sheet2Tag)
+        return ERROR;
+
+    PK_FACE_t  sheet2FaceTag = PK_ENTITY_null;
+    PK_FACE_t  sheet1FaceTag = PK_ENTITY_null;
+
+    if (SUCCESS != PK_BODY_ask_first_face(sheet1Tag, &sheet1FaceTag) || PK_ENTITY_null == sheet1FaceTag)
+        return ERROR;
+
+    if (SUCCESS != PK_BODY_ask_first_face(sheet2Tag, &sheet2FaceTag) || PK_ENTITY_null == sheet2FaceTag)
+        return ERROR;
+
+    PK_FACE_intersect_face_o_t options;
+    PK_FACE_intersect_face_o_m(options);
+
+    int numVectors = 0;
+    PK_VECTOR_t* vectors = nullptr;
+    int numCurves = 0;
+    PK_CURVE_t* curves = nullptr;
+    PK_INTERVAL_t* bounds = nullptr;
+    PK_intersect_curve_t* curvesTypes = nullptr;
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_intersect_face(sheet1FaceTag, sheet2FaceTag, &options, &numVectors, &vectors, &numCurves, &curves, &bounds, &curvesTypes) ? SUCCESS : ERROR);
+    
+    if (SUCCESS == status)
+        {
+        vectorOut = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+        for (int i =0; i< numCurves; i++)
+            {
+            ICurvePrimitivePtr curvePrimitive = PSolidGeom::GetAsCurvePrimitive(curves[i], bounds[i], false);
+            vectorOut->push_back(curvePrimitive);
+            }
+
+        // apply sheet1 trans to curvevec here
+        vectorOut->TransformInPlace(sheet1.GetEntityTransform());
+        }
+
+    PK_ENTITY_delete(numCurves, curves);
+    PK_MEMORY_free(curves);
+    PK_MEMORY_free(bounds);
+    PK_MEMORY_free(vectors);
+    PK_MEMORY_free(curvesTypes);
+
+    return status;
+#else
+    return ERROR;
 #endif
     }
 
