@@ -1048,7 +1048,7 @@ GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewpor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Material::CreateParams::CreateParams(MaterialNameCR name, RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture) : m_name(name)
+Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture) : m_key(key)
     {
     if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
         {
@@ -1091,7 +1091,7 @@ Material::CreateParams::CreateParams(MaterialNameCR name, RenderingAssetCR asset
 +---------------+---------------+---------------+---------------+---------------+------*/
 TexturePtr System::_GetTexture(DgnTextureId id, DgnDbR db) const
     {
-    TextureName name(id);
+    TextureKey name(id);
     TexturePtr tx = _FindTexture(name, db);
     if (tx.IsNull())
         {
@@ -1108,7 +1108,7 @@ TexturePtr System::_GetTexture(DgnTextureId id, DgnDbR db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 MaterialPtr System::_GetMaterial(RenderMaterialId id, DgnDbR db) const
     {
-    MaterialName name(id);
+    MaterialKey name(id);
     MaterialPtr mat = _FindMaterial(name, db);
     if (mat.IsNull())
         {

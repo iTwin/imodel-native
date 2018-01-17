@@ -176,9 +176,9 @@ protected:
 
     TargetPtr _CreateOffscreenTarget(Device& dev, double tileSizeMod) { return _CreateTarget(dev, tileSizeMod); }
 
-    MaterialPtr _FindMaterial(MaterialNameCR id, DgnDbR db) const override { return nullptr; }
+    MaterialPtr _FindMaterial(MaterialKeyCR id, DgnDbR db) const override { return nullptr; }
     MaterialPtr _CreateMaterial(Material::CreateParams const& params, DgnDbR) const override { return new FakeMaterial(params); }
-    TexturePtr _FindTexture(TextureNameCR, DgnDbR) const override { return nullptr; }
+    TexturePtr _FindTexture(TextureKeyCR, DgnDbR) const override { return nullptr; }
     TexturePtr _GetTexture(GradientSymbCR, DgnDbR) const override { return nullptr; }
     TexturePtr _CreateTexture(ImageCR, DgnDbR, Texture::CreateParams const& params) const override { return new FakeTexture(params); }
     TexturePtr _CreateTexture(ImageSourceCR, Image::BottomUp, DgnDbR, Texture::CreateParams const& params) const override { return new FakeTexture(params); }

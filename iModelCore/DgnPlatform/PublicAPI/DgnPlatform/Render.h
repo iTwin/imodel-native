@@ -540,16 +540,16 @@ public:
 //! An unnamed resource is created for one-time use and cannot be looked up again for reuse.
 // @bsistruct                                                   Paul.Connelly   01/18
 //=======================================================================================
-template<typename T_Id> struct ResourceName
+template<typename T_Id> struct ResourceKey
 {
 private:
     T_Id        m_id;
     Utf8String  m_name;
 public:
-    explicit ResourceName(T_Id id=T_Id()) : m_id(id) { }
-    explicit ResourceName(Utf8StringCR name) : m_name(name) { }
-    ResourceName(ResourceName const&) = default;
-    ResourceName& operator=(ResourceName const&) = default;
+    explicit ResourceKey(T_Id id=T_Id()) : m_id(id) { }
+    explicit ResourceKey(Utf8StringCR name) : m_name(name) { }
+    ResourceKey(ResourceKey const&) = default;
+    ResourceKey& operator=(ResourceKey const&) = default;
 
     bool IsPersistent() const { return m_id.IsValid(); }
     bool IsNamed() const { return !m_name.empty(); }
@@ -558,8 +558,8 @@ public:
     T_Id GetId() const { BeAssert(IsPersistent()); return m_id; }
     Utf8StringCR GetName() const { BeAssert(IsNamed()); return m_name; }
 
-    bool operator!=(ResourceName const& rhs) const { return !(*this == rhs); }
-    bool operator==(ResourceName const& rhs) const
+    bool operator!=(ResourceKey const& rhs) const { return !(*this == rhs); }
+    bool operator==(ResourceKey const& rhs) const
         {
         if (IsPersistent())
             return rhs.IsPersistent() && GetId() == rhs.GetId();
@@ -569,7 +569,7 @@ public:
             return false;
         }
 
-    bool operator<(ResourceName const& rhs) const
+    bool operator<(ResourceKey const& rhs) const
         {
         BeAssert(IsValid());
         if (IsPersistent())
@@ -592,11 +592,11 @@ public:
         }
 };
 
-using TextureName = ResourceName<DgnTextureId>;
-using MaterialName = ResourceName<RenderMaterialId>;
+using TextureKey = ResourceKey<DgnTextureId>;
+using MaterialKey = ResourceKey<RenderMaterialId>;
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(TextureName);
-DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(MaterialName);
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(TextureKey);
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(MaterialKey);
 
 //=======================================================================================
 //! A Texture for rendering
@@ -606,25 +606,25 @@ struct Texture : RefCounted<NonCopyableClass>
 {
     struct CreateParams
     {
-        TextureName m_name;
+        TextureKey m_key;
         int m_pitch = 0;
         bool m_isTileSection = false;
 
-        TextureNameCR GetName() const { return m_name; }
+        TextureKeyCR GetKey() const { return m_key; }
 
         void SetIsTileSection() {m_isTileSection=true;}
         void SetPitch(int val) {m_pitch=val;}
 
-        explicit CreateParams(TextureNameCR name=TextureName()) : m_name(name) { }
+        explicit CreateParams(TextureKeyCR key=TextureKey()) : m_key(key) { }
     };
 protected:
-    TextureName m_name;
+    TextureKey m_key;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
-    explicit Texture(CreateParams const& params) : m_name(params.m_name) { }
+    explicit Texture(CreateParams const& params) : m_key(params.m_key) { }
 public:
-    TextureNameCR GetName() const { return m_name; }
+    TextureKeyCR GetKey() const { return m_key; }
 
     // Named textures should preserve their image data so it can be obtained later.
     virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }
@@ -723,7 +723,7 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_specularColor;
         MatColor m_emissiveColor;
         TextureMapping m_textureMapping;
-        MaterialName m_name;
+        MaterialKey m_key;
         double m_diffuse = Defaults::Diffuse();
         double m_specular = Defaults::Specular();
         double m_specularExponent = Defaults::SpecularExponent();
@@ -733,8 +733,8 @@ struct Material : RefCounted<NonCopyableClass>
         double m_ambient = .3;
         bool   m_shadows = true;
 
-        explicit CreateParams(MaterialNameCR name=MaterialName()) : m_name(name) { }
-        DGNPLATFORM_EXPORT CreateParams(MaterialNameCR name, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
+        explicit CreateParams(MaterialKeyCR key=MaterialKey()) : m_key(key) { }
+        DGNPLATFORM_EXPORT CreateParams(MaterialKeyCR key, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
 
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
@@ -753,15 +753,15 @@ struct Material : RefCounted<NonCopyableClass>
 
 protected:
     TextureMapping  m_textureMapping;
-    MaterialName    m_name;
+    MaterialKey     m_key;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
-    explicit Material(CreateParams const& params) : m_textureMapping(params.m_textureMapping), m_name(params.m_name) { }
+    explicit Material(CreateParams const& params) : m_textureMapping(params.m_textureMapping), m_key(params.m_key) { }
 public:
     bool HasTextureMapping() const {return m_textureMapping.IsValid();}
     TextureMappingCR GetTextureMapping() const {return m_textureMapping;}
-    MaterialNameCR GetName() const {return m_name;}
+    MaterialKeyCR GetKey() const {return m_key;}
 };
 
 //=======================================================================================
@@ -3120,8 +3120,8 @@ struct System
     //! Create an offscreen render target.
     virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) = 0;
 
-    //! Find a previously-created Material by name. Returns null if no such material exists.
-    virtual MaterialPtr _FindMaterial(MaterialNameCR name, DgnDbR db) const = 0;
+    //! Find a previously-created Material by key. Returns null if no such material exists.
+    virtual MaterialPtr _FindMaterial(MaterialKeyCR key, DgnDbR db) const = 0;
 
     //! Get or create a material from a material element, by id
     //! The default implementation uses _FindMaterial() and calls _CreateMaterial() if not found.
@@ -3165,8 +3165,8 @@ struct System
     //! Create a Graphic consisting of batched Features.
     virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
 
-    //! Find a previously-created Texture by name. Returns null if no such texture exists.
-    virtual TexturePtr _FindTexture(TextureNameCR name, DgnDbR db) const = 0;
+    //! Find a previously-created Texture by key. Returns null if no such texture exists.
+    virtual TexturePtr _FindTexture(TextureKeyCR key, DgnDbR db) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! The default implementation uses _FindTexture() and calls _CreateTexture() if not found.

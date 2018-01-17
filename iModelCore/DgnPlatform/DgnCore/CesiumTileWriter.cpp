@@ -334,12 +334,12 @@ struct RenderSystem : Render::System
 
     RenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange()), m_featureTable(model.GetModelId(), s_maxFeatures)  { }
 
-    MaterialPtr _FindMaterial(MaterialNameCR, DgnDbR) const override { return nullptr; }
+    MaterialPtr _FindMaterial(MaterialKeyCR, DgnDbR) const override { return nullptr; }
     virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
-    TexturePtr _FindTexture(TextureNameCR, DgnDbR) const override { return nullptr; }
+    TexturePtr _FindTexture(TextureKeyCR, DgnDbR) const override { return nullptr; }
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const override { return nullptr; }
 
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
