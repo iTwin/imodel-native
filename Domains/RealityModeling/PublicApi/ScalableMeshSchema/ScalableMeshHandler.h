@@ -268,7 +268,7 @@ typedef RefCountedPtr<IScalableMeshLocationProvider> IScalableMeshLocationProvid
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublishing
+struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetTileTreeForPublishing, Dgn::Render::IGetPublishedTilesetInfo
 {
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
@@ -339,6 +339,10 @@ private:
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
+    bool _AllowPublishing() const override { return !m_smPtr->IsCesium3DTiles(); }
+
+    Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo();
+
 protected:
     struct Properties
     {
@@ -377,7 +381,6 @@ protected:
 
         BeFileName GenerateClipFileName(BeFileNameCR smFilename, BentleyApi::Dgn::DgnDbR dgnProject);
 public:
-    //Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo() override;
         SCALABLEMESH_SCHEMA_EXPORT static BentleyStatus SetLocationProvider(IScalableMeshLocationProvider& locationProviderPtr);
 
     //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
