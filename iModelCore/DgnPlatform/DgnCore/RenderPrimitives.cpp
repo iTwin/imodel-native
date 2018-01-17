@@ -497,9 +497,11 @@ DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, 
         if (nullptr != geom->GetPatternParams())
             fillFlags |= FillFlags::Behind;
 
+#if defined(WIP_TFS_807359)
         // TFS#807359: FillDisplay::Never for planar regions...
         if (!filled && FillDisplay::Never == geom->GetFillDisplay())
             neverFilled = true;
+#endif
 
         if (filled)
             {
