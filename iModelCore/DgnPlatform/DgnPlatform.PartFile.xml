@@ -44,10 +44,10 @@
     <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64" WipPartEnable="ParasolidIos">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
     </Part>
-    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64" WipPartEnable="ParasolidLinux">
+    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_LinuxX64"/>
     </Part>
-    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64" WipPartEnable="ParasolidMacOS">
+    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_MacOSx64"/>
     </Part>
     <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
