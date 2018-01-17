@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ORDBridge/PublicAPI/ORDBridge/ORDBridge.h $
+|     $Source: ORDBridge/ORDBridge.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "ORDBridgeApi.h"
+#include "ORDBridgeInternal.h"
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -17,10 +17,14 @@ BEGIN_ORDBRIDGE_NAMESPACE
 //=======================================================================================
 struct ORDBridge : Dgn::iModelBridgeWithSyncInfoBase
 {
-    DEFINE_T_SUPER(iModelBridgeBase)
+    DEFINE_T_SUPER(Dgn::iModelBridgeWithSyncInfoBase)
 
 private:
     static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
+    BentleyStatus CreateSyncInfoIfNecessary();
+
+    Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams m_params;
+    std::unique_ptr<Dgn::DgnDbSync::DgnV8::RootModelConverter> m_converter;
 
 protected:
     Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR);
@@ -35,6 +39,7 @@ protected:
 
     Dgn::SubjectCPtr CreateAndInsertJobSubject(Dgn::DgnDbR db, Utf8CP jobName);
     Dgn::SubjectCPtr QueryJobSubject(Dgn::DgnDbR db, Utf8CP jobName);
+    Dgn::iModelBridge::Params& _GetParams() override { return m_params; }
 
 public:
     virtual Dgn::iModelBridge::CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]) override;
@@ -47,17 +52,14 @@ public:
     virtual Dgn::SubjectCPtr _FindJob() override;
     virtual void _OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId) override;
 
+    virtual BentleyStatus _MakeSchemaChanges() override;
+    virtual BentleyStatus _OnOpenBim(Dgn::DgnDbR db) override;
+    void _OnCloseBim(BentleyStatus) override;
+    virtual BentleyStatus _DetectDeletedDocuments() override;
+
     static WCharCP GetRegistrySubKey() { return L"OpenRoads Designer Bridge"; }
 
     ORDBridge() {}
-};
-
-extern "C"
-{
-ORDBRIDGE_EXPORT Dgn::iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName);
-ORDBRIDGE_EXPORT BentleyStatus iModelBridge_releaseInstance(Dgn::iModelBridge* bridge);
-ORDBRIDGE_EXPORT void iModelBridge_getAffinity(Dgn::iModelBridge::BridgeAffinity& bridgeAffinity,
-    BeFileName const& affinityLibraryPath, BeFileName const& sourceFileName);
 };
 
 END_ORDBRIDGE_NAMESPACE

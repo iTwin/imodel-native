@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDConverter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -37,5 +37,23 @@ private:
 public:
     void ConvertORDData(Params& params);
 }; // ORDConverter
+
+struct ORDV8Converter : Dgn::DgnDbSync::DgnV8::RootModelConverter
+{
+protected:
+    virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
+    virtual Dgn::DgnModelId _MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP, DgnV8Api::DgnAttachment const* attachment) override;
+
+public:
+    ORDV8Converter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
+        Dgn::DgnDbSync::DgnV8::RootModelConverter(params)
+        {}
+}; // ORDV8Converter
+
+struct ConvertORDElementExtension : Dgn::DgnDbSync::DgnV8::ConvertToDgnDbElementExtension
+    {
+    static void Register();
+    virtual Result _PreConvertElement(DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
+    };
 
 END_ORDBRIDGE_NAMESPACE

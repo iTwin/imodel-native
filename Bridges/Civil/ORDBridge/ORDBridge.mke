@@ -2,11 +2,10 @@
 #
 #     $Source: ORDBridge/ORDBridge.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)Civil/iModelBridges/ORDBridge/ORDBridge.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -45,9 +44,9 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
-$(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(appPublicApi)ORDBridge.h
+$(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDBridge.h
 
-$(o)ORDBridge$(oext) : $(_MakeFilePath)ORDBridge.cpp ${MultiCompileDepends} $(appPublicApi)ORDBridge.h
+$(o)ORDBridge$(oext) : $(_MakeFilePath)ORDBridge.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDBridge.h
 
 $(o)ORDConverter$(oext) : $(_MakeFilePath)ORDConverter.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDConverter.h
 
@@ -60,6 +59,7 @@ DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(MultiCompileObjectList)
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_PCH              = $(o)ORDBridgeInternal$(oext) 
+DLM_EXPORT_OBJS             = $(MultiCompileObjectList) 
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1

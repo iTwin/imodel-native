@@ -2,7 +2,7 @@
 |
 |     $Source: ORDBridge/ORDConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ORDBridgeInternal.h>
@@ -864,7 +864,7 @@ void ORDConverter::ConvertORDData(Params& params)
 
     DgnDbSync::DgnV8::ConverterLibrary converterLib(params.subjectCPtr->GetDgnDb(), converterLibraryParams);
     converterLib.SetJobSubject(*params.subjectCPtr);
-    converterLib.SetSpatialParentSubject(*params.subjectCPtr);
+    converterLib.SetSpatialParentSubject(*params.subjectCPtr);    
     
     BeFileName dgnFileName = params.iModelBridgeParamsCP->GetInputFileName();
 
@@ -948,6 +948,77 @@ void ORDConverter::ConvertORDData(Params& params)
 
         converterLib._OnConversionComplete();
         }
+    }
+
+/*void ORDConverter::ConvertORDData(Params& params)
+    {
+    DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams converterLibraryParams;
+
+    BentleyApi::BeFileName configFileName = params.iModelBridgeParamsCP->GetAssetsDir();
+    configFileName.AppendToPath(L"ImportConfig.xml");
+
+    converterLibraryParams.SetConfigFile(configFileName);
+    converterLibraryParams.SetWantThumbnails(true);
+
+    ORDV8Converter converter(converterLibraryParams);
+    converterLibraryParams.SetAssetsDir(params.iModelBridgeParamsCP->GetAssetsDir());
+    converterLibraryParams.SetBridgeRegSubKey(params.iModelBridgeParamsCP->GetBridgeRegSubKey());
+    converterLibraryParams.SetInputFileName(params.iModelBridgeParamsCP->GetInputFileName());
+    converter.SetWantDebugCodes(true);
+    converter.SetDgnDb(params.subjectCPtr->GetDgnDb());
+    converter.SetIsUpdating(false);
+
+    if (BSISUCCESS != DgnDbSync::DgnV8::SyncInfo::CreateEmptyFile(DgnDbSync::DgnV8::SyncInfo::GetDbFileName(params.iModelBridgeParamsCP->GetBriefcaseName()))) // Bootstrap the V8 converter by pairing an empty syncinfo file with the briefcase
+        return;
+
+    converter.AttachSyncInfo();
+    if (DgnFileStatus::DGNFILE_STATUS_Success != converter.InitRootModel())
+        return;
+
+    if (BentleyStatus::SUCCESS != converter.MakeSchemaChanges())
+        return;
+
+    //ASSERT_FALSE(converter.WasAborted());
+    converter.InitializeJob();
+    converter.Process();
+
+    params.subjectCPtr->GetDgnDb().SaveChanges();
+    }*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ORDV8Converter::_ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model)
+    {
+    if (fullSchemaName.Contains("Civil"))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId ORDV8Converter::_MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newName, DgnV8Api::DgnAttachment const* attachment)
+    {
+    return RootModelConverter::_MapModelIntoProject(v8Model, newName, attachment);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertORDElementExtension::Register()
+    {
+    ConvertORDElementExtension* instance = new ConvertORDElementExtension();
+    RegisterExtension(DgnV8Api::TagElementHandler::GetInstance(), *instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ConvertORDElementExtension::Result ConvertORDElementExtension::_PreConvertElement(DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& converter, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
+    {
+    return Result::SkipElement;
     }
 
 END_ORDBRIDGE_NAMESPACE

@@ -42,12 +42,12 @@ AdminType& AffinityHost::GetAdmin ()
     return *s_adminhost;
     }
 
-BEGIN_ORDBRIDGE_NAMESPACE
+USING_NAMESPACE_BENTLEY_ORDBRIDGE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-extern "C" void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAffinity, BeFileName const& affinityLibraryPath, BeFileName const& sourceFileName)
+extern "C" void iModelBridge_getAffinity(BentleyApi::Dgn::iModelBridge::BridgeAffinity& bridgeAffinity, BentleyApi::BeFileName const& affinityLibraryPath, BentleyApi::BeFileName const& sourceFileName)
     {
     bridgeAffinity.m_affinity = iModelBridge::Affinity::None;
 
@@ -103,5 +103,3 @@ extern "C" void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAff
         return; 
         }
     }
-
-END_ORDBRIDGE_NAMESPACE
