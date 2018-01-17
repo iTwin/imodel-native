@@ -2896,31 +2896,34 @@ void AlignmentPairEditor_ForceGradeAtStation()
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        01/2018
 //---------------------------------------------------------------------------------------
-#define APP_BIT ICurvePrimitive::CURVE_PRIMITIVE_BIT_ApplicationBit2
-void ECValueMarkerBitIssue_Test()
+void AlignmentMarkerBits_GetSet()
     {
-    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     ICurvePrimitivePtr prim = ICurvePrimitive::CreateLine(DPoint3d::FromZero(), DPoint3d::FromOne());
-    cv->push_back(prim);
 
     // Make sure the marker bit isn't set initially
-    EXPECT_EQ(false, cv->front()->GetMarkerBit(APP_BIT));
+    EXPECT_EQ(false, AlignmentMarkerBits::GetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
+    
 
     // Set the marker bit
-    cv->front()->SetMarkerBit(APP_BIT, true);
-    EXPECT_EQ(true, cv->front()->GetMarkerBit(APP_BIT));
+    AlignmentMarkerBits::SetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK, true);
+    EXPECT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
+
+    CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    cv->push_back(prim);
 
     // Make sure IGeometry keeps the marker bit
     IGeometryPtr iGeom = IGeometry::Create(cv);
-    EXPECT_EQ(true, iGeom->GetAsCurveVector()->front()->GetMarkerBit(APP_BIT));
-
+    EXPECT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*cv->front(), AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
 
     ECN::ECValue ecVal;
     ecVal.SetIGeometry(*IGeometry::Create(cv));
 
     // Make sure ECValue keeps the marker bit
     IGeometryPtr ecGeom = ecVal.GetIGeometry();
-    EXPECT_EQ(true, ecGeom->GetAsCurveVector()->front()->GetMarkerBit(APP_BIT));
+    EXPECT_EQ(true, AlignmentMarkerBits::GetMarkerBit(*ecGeom->GetAsCurveVector()->front(), AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK));
+
+    AlignmentMarkerBits::SetMarkerBit(*prim, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK, false);
+    EXPECT_FALSE(AlignmentMarkerBits::GetMarkerBit(*prim, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK));
     }
 
 #if 0
@@ -3305,7 +3308,7 @@ TEST_F(CivilBaseGeometryTests, AlignmentPairTests)
     AlignmentPairEditor_UpdateVerticalRadius();
     AlignmentPairEditor_ForceGradeAtStation();
 
-    ECValueMarkerBitIssue_Test();
+    AlignmentMarkerBits_GetSet();
 
 #if 0 //&&AG NEEDSWORK EDITOR
     AlignmentPairEditor_RoadPVITests();

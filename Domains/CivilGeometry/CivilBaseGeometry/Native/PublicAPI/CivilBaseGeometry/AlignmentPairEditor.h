@@ -22,6 +22,28 @@ enum class Orientation { ORIENTATION_Unknown, ORIENTATION_CW, ORIENTATION_CCW };
 
 //=======================================================================================
 // @bsiclass
+// Class that keeps all the marker bits used for our alignment classes.
+// ECValue doesn't support storing marker bits directly on ICurvePrimitive,
+// so we use CurvePrimitiveId and this API instead.
+//=======================================================================================
+struct AlignmentMarkerBits
+{
+private:
+    static uint32_t GetMarkerBitsFromPrimitive(ICurvePrimitiveCR primitive);
+    static void SetMarkerBitsToPrimitive(ICurvePrimitiveR primitive, uint32_t markerBits);
+
+public:
+    enum Bit
+        {
+        BIT_Vertical_IsParabolaLengthByK = ICurvePrimitive::CurvePrimitiveMarkerBit::CURVE_PRIMITIVE_BIT_ApplicationBit0
+        };
+
+    CIVILBASEGEOMETRY_EXPORT static void SetMarkerBit(ICurvePrimitiveR primitive, Bit bit, bool value);
+    CIVILBASEGEOMETRY_EXPORT static bool GetMarkerBit(ICurvePrimitiveCR primitive, Bit bit);
+};
+
+//=======================================================================================
+// @bsiclass
 // AlignmentPI
 // Data holder for different PI types stored using a discriminated union
 //=======================================================================================
@@ -161,15 +183,6 @@ enum class VerticalCurveType
     TypeIV = 4,
     Invalid = -1
     };
-/*---------------------------------------------------------------------------------**//**
-+---------------+---------------+---------------+---------------+---------------+------*/
-// marker applied to curvePrimitives of intersection/ramp edges, to denote which primitives of the edge curve are
-// part of the 'fillet', and which are just part of the offset alignments
-#define VERTICAL_HOLD_CURVE_LENGTH ICurvePrimitive::CurvePrimitiveMarkerBit::CURVE_PRIMITIVE_BIT_ApplicationBit1
-
-//&&AG check with Scott what was the previous application bit used for
-// Marker applied to Parabola PVIs to indicate whether the editing should hold the length or the K-Value of the parabola
-#define VERTICAL_LENGTH_BY_K ICurvePrimitive::CurvePrimitiveMarkerBit::CURVE_PRIMITIVE_BIT_ApplicationBit2
 
 //=======================================================================================
 // @bsiclass

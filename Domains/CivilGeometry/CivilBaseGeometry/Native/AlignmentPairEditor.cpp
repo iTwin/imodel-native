@@ -19,6 +19,56 @@
 //=======================================================================================
 // AlignmentPI
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+uint32_t AlignmentMarkerBits::GetMarkerBitsFromPrimitive(ICurvePrimitiveCR primitive)
+    {
+    uint32_t markerBits = 0;
+
+    CurvePrimitiveIdCP pId = primitive.GetId();
+    if (nullptr != pId && CurvePrimitiveId::Type::ConceptStationAlignmentIndex == pId->GetType())
+        {
+        BeAssert(sizeof(uint32_t) == pId->GetIdSize());
+        markerBits = *reinterpret_cast<uint32_t const*>(pId->PeekId());
+        }
+
+    return markerBits;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+void AlignmentMarkerBits::SetMarkerBitsToPrimitive(ICurvePrimitiveR primitive, uint32_t markerBits)
+    {
+    auto id = CurvePrimitiveId::Create(CurvePrimitiveId::Type::ConceptStationAlignmentIndex, (void*)&markerBits, sizeof(markerBits));
+    if (id.IsValid())
+        primitive.SetId(id.get());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+void AlignmentMarkerBits::SetMarkerBit(ICurvePrimitiveR primitive, AlignmentMarkerBits::Bit bit, bool value)
+    {
+    uint32_t markerBits = GetMarkerBitsFromPrimitive(primitive);
+
+    if (value)
+        markerBits |= static_cast<uint32_t>(bit);
+    else
+        markerBits &= ~static_cast<uint32_t>(bit);
+
+    SetMarkerBitsToPrimitive(primitive, markerBits);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        01/2018
+//---------------------------------------------------------------------------------------
+bool AlignmentMarkerBits::GetMarkerBit(ICurvePrimitiveCR primitive, AlignmentMarkerBits::Bit bit)
+    {
+    const uint32_t markerBits = GetMarkerBitsFromPrimitive(primitive);
+    return 0 != (static_cast<uint32_t>(bit) & markerBits);
+    }
+
+//=======================================================================================
+// AlignmentPI
+//---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        11/2017
 //---------------------------------------------------------------------------------------
 AlignmentPI::AlignmentPI()
@@ -1727,7 +1777,7 @@ bool AlignmentPairEditor::LoadVerticalParabolaData(AlignmentPVIR pvi, ICurvePrim
         pPara->pvt = DPoint3d::From(poles[2].x, 0.0, poles[2].z);
         pPara->length = fabs(poles[2].x - poles[0].x);
         pPara->kValue = pPara->ComputeKValue();
-        pPara->isLengthByK = primitiveParabola.GetMarkerBit(VERTICAL_LENGTH_BY_K);
+        pPara->isLengthByK = AlignmentMarkerBits::GetMarkerBit(primitiveParabola, AlignmentMarkerBits::Bit::BIT_Vertical_IsParabolaLengthByK);
         }
 
     return (3 == count);
@@ -1799,7 +1849,7 @@ ICurvePrimitivePtr AlignmentPairEditor::BuildVerticalParabola(AlignmentPVI::Para
 
     ICurvePrimitivePtr primitive = parabolaCurve.IsValid() ? ICurvePrimitive::CreateBsplineCurve(parabolaCurve) : nullptr;
     if (primitive.IsValid())
-        primitive->SetMarkerBit(VERTICAL_LENGTH_BY_K, info.isLengthByK);
+        AlignmentMarkerBits::SetMarkerBit(*primitive, AlignmentMarkerBits::BIT_Vertical_IsParabolaLengthByK, info.isLengthByK);
 
     return primitive;
     }
