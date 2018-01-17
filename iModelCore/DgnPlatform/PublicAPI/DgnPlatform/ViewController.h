@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewController.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -617,6 +617,8 @@ public:
     //! Elements whose aabb projects onto the view an area less than this box are skipped during background-element display.
     double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
+    DGNPLATFORM_EXPORT Render::TextureCP GetEnvironmentMap(Render::SystemCR system) const;
+
 };
 
 //=======================================================================================

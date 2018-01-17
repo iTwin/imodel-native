@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SkyBox.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -130,6 +130,9 @@ static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     {
+    if (m_skybox.IsValid())
+        return;
+
     Render::TexturePtr texture;
 
     auto& env = GetSpatialViewDefinition().GetDisplayStyle3d().GetEnvironmentDisplay();
@@ -308,8 +311,7 @@ void SpatialViewController::DrawSkyBox(DecorateContextR context)
         return;
 
     auto vp=context.GetViewport();
-    if (!m_skybox.IsValid())
-        LoadSkyBox(vp->GetRenderTarget()->GetSystem());
+    LoadSkyBox(vp->GetRenderTarget()->GetSystem());
 
     BeAssert(m_skybox.IsValid());
 

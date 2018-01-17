@@ -67,6 +67,10 @@ LINKER_LIBRARIES = $(SubpartLibs)$(libprefix)Bentley$(libext)\
 
 %endif
 
+%if $(TARGET_PLATFORM) == "MacOS"
+    LINKER_LIBRARIES + -framework CFNetwork
+%endif
+
 %include $(SharedMki)linktool.mki
 
 $(BuildContext)Delivery/logging.config.xml : $(baseDir)logging.config.xml
