@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/Tests/NonPublished/TestFixture.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -629,12 +629,14 @@ protected:
     TargetPtr _CreateTarget(Device& dev, double tileSizeMod) override { BeAssert(false); return nullptr; }
     TargetPtr _CreateOffscreenTarget(Device& dev, double tileSizeMod) { return _CreateTarget(dev, tileSizeMod); }
 
+    MaterialPtr _FindMaterial(MaterialNameCR, DgnDbR) const override { return nullptr; }
     MaterialPtr _GetMaterial(RenderMaterialId id, DgnDbR db) const override { return nullptr; }
-    MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; }
+    MaterialPtr _CreateMaterial(Material::CreateParams const&, DgnDbR) const override { return nullptr; }
+    TexturePtr _FindTexture(TextureNameCR, DgnDbR) const override { return nullptr; }
     TexturePtr _GetTexture(DgnTextureId, DgnDbR) const override { return nullptr; }
     TexturePtr _GetTexture(GradientSymbCR, DgnDbR) const override { return nullptr; }
-    TexturePtr _CreateTexture(ImageCR, Texture::CreateParams const&) const override { return nullptr; }
-    TexturePtr _CreateTexture(ImageSourceCR, Image::BottomUp, Texture::CreateParams const&) const override { return nullptr; }
+    TexturePtr _CreateTexture(ImageCR, DgnDbR, Texture::CreateParams const&) const override { return nullptr; }
+    TexturePtr _CreateTexture(ImageSourceCR, Image::BottomUp, DgnDbR, Texture::CreateParams const&) const override { return nullptr; }
     TexturePtr _CreateGeometryTexture(GraphicCR, DRange2dCR, bool, bool) const override { return nullptr; }
     LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP, DPoint3dCP) const override { return nullptr; }
 
