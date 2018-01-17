@@ -202,14 +202,6 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForCodeSpec(IB
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus AddonUtils::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
     {
-    // TBD: assert main thread
-
-    if (nullptr != dgndb.GetOptimisticConcurrencyControl())
-        {
-        GetLogger().error("Not in pessimistic concurrency mode");
-        return RepositoryStatus::InvalidRequest;
-        }
-
     dgndb.BriefcaseManager().StartBulkOperation();
     return RepositoryStatus::Success;
     }
@@ -219,14 +211,6 @@ RepositoryStatus AddonUtils::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus AddonUtils::BriefcaseManagerEndBulkOperation(DgnDbR dgndb)
     {
-    // TBD: assert main thread
-
-    if (nullptr != dgndb.GetOptimisticConcurrencyControl())
-        {
-        GetLogger().error("Not in pessimistic concurrency mode");
-        return RepositoryStatus::InvalidRequest;
-        }
-
     auto& bcm = dgndb.BriefcaseManager();
     return bcm.EndBulkOperation().Result();
     }

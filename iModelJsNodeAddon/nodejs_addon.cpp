@@ -750,6 +750,12 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         return Napi::Number::New(Env(), (int)stat);
         }
 
+    Napi::Value AbandonChanges(const Napi::CallbackInfo& info)
+        {            
+        DbResult status = GetDgnDb().AbandonChanges();
+        return Napi::Number::New(Env(), (int) status);
+        }
+
     Napi::Value ImportSchema(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -902,15 +908,6 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(req->m_req, GetDgnDb(), propsJson, (BeSQLite::DbOpcode)dbop));
         }
 
-    Napi::Value BuildBriefcaseManagerResourcesRequestForCodeSpec(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
-        REQUIRE_ARGUMENT_STRING(1, props);
-        REQUIRE_ARGUMENT_INTEGER(2, dbop);
-        Json::Value propsJson = Json::Value::From(props);
-        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForCodeSpec(req->m_req, GetDgnDb(), propsJson, (BeSQLite::DbOpcode)dbop));
-        }
-
     Napi::Value BuildBriefcaseManagerResourcesRequestForModel(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
@@ -1049,6 +1046,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("setDbGuid", &SetDbGuid),
             InstanceMethod("openBriefcase", &OpenBriefcase),
             InstanceMethod("saveChanges", &SaveChanges),
+            InstanceMethod("abandonChanges", &AbandonChanges),
             InstanceMethod("importSchema", &ImportSchema),
             InstanceMethod("getElement", &GetElement),
             InstanceMethod("getModel", &GetModel),
@@ -1069,7 +1067,6 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("getIModelProps", &GetIModelProps),
 			InstanceMethod("updateProjectExtents", &UpdateProjectExtents),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &BuildBriefcaseManagerResourcesRequestForElement),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForCodeSpec", &BuildBriefcaseManagerResourcesRequestForCodeSpec),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &BuildBriefcaseManagerResourcesRequestForModel),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &SetBriefcaseManagerOptimisticConcurrencyControlPolicy),

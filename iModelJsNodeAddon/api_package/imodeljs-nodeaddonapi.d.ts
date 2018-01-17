@@ -244,6 +244,11 @@ declare class NodeAddonDgnDb {
    */
   saveChanges(description?: string): DbResult;
 
+  /** Abandon changes
+  * @return non-zero error status if operation failed.
+  */
+  abandonChanges(): DbResult;
+
   /**
    * Import an EC schema.
    * There are a number of restrictions when importing schemas into a briefcase. 
@@ -379,14 +384,6 @@ declare class NodeAddonDgnDb {
     * @param opcode The operation that will be performed on the model.
     */
     buildBriefcaseManagerResourcesRequestForModel(req: NodeAddonBriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
-
-    /**
-    * Add the resource request that would be needed in order to carry out the specified operation.
-    * @param req The request object, which accumulates requests.
-    * @param codeSpecId The ID of an existing CodeSpec or {} for a new CodeSpec
-    * @param opcode The operation that will be performed on the CodeSpec.
-    */
-    buildBriefcaseManagerResourcesRequestForCodeSpec(req: NodeAddonBriefcaseManagerResourcesRequest, codeSpecId: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
     * Add the resource request that would be needed in order to carry out the specified operation.
