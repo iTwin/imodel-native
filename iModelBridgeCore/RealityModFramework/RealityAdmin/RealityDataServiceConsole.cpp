@@ -662,7 +662,7 @@ void RealityDataConsole::ConfigureServer()
         return;
         }
 
-    DisplayInfo("ProjectId required for multiple operations. Set ProjectId now?\n", DisplayOption::Question);
+    DisplayInfo("ProjectId required for various operations. Set ProjectId now?\n", DisplayOption::Question);
     std::string str;
     std::getline(*s_inputSource, str);
     if (strstr(str.c_str(), "quit"))
