@@ -109,6 +109,7 @@ private:
     DgnGeometryClass    m_class = DgnGeometryClass::Primary;
     bool                m_ignoreLighting = false; // always true for text and linear geometry; true for meshes only if normals not desired
     bool                m_hasRegionOutline = false;
+    bool                m_neverFilled = false;
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
@@ -125,15 +126,15 @@ private:
     DisplayParams(ColorDef lineColor, uint32_t width, LinePixels px, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
         { InitLinear(lineColor, width, px, cat, sub, gc); }
     DisplayParams(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels px, MaterialP mat, GradientSymbCP grad, TextureMappingCP tx,
-        FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
-        { InitMesh(lineColor, fillColor, width, px, mat, grad, tx, ff, cat, sub, gc); }
+        FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc, bool neverFilled)
+        { InitMesh(lineColor, fillColor, width, px, mat, grad, tx, ff, cat, sub, gc, neverFilled); }
 
     bool ComputeHasRegionOutline() const;
 
     void InitGeomParams(DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitText(ColorDef lineColor, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitLinear(ColorDef lineColor, uint32_t width, LinePixels, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
-    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, MaterialP, GradientSymbCP, TextureMappingCP, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
+    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, MaterialP, GradientSymbCP, TextureMappingCP, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass, bool neverFilled);
 public:
     Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
@@ -159,6 +160,7 @@ public:
     bool HasBlankingFill() const { return FillFlags::Blanking == (GetFillFlags() & FillFlags::Blanking); }
     bool NeverRegionOutline() const { return HasBlankingFill() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
     bool HasRegionOutline() const;
+    bool IsNeverFilled() const { return m_neverFilled; }
 
     enum class ComparePurpose
     {
