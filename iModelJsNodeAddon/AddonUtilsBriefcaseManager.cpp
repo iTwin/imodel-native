@@ -2,7 +2,7 @@
 |
 |     $Source: AddonUtilsBriefcaseManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AddonUtils.h"
@@ -232,7 +232,7 @@ RepositoryStatus AddonUtils::SetBriefcaseManagerOptimisticConcurrencyControlPoli
             }
         }
 
-    dgndb.DestroyBriefcaseManager();
+    // WIP dgndb.DestroyBriefcaseManager();
     static_cast<AddonRepositoryAdmin&>(T_HOST.GetRepositoryAdmin()).m_optimistic.insert(&dgndb);
     auto& bcm = dgndb.BriefcaseManager();
     static_cast<AddonRepositoryAdmin&>(T_HOST.GetRepositoryAdmin()).m_optimistic.erase(&dgndb);
@@ -273,7 +273,7 @@ RepositoryStatus AddonUtils::SetBriefcaseManagerPessimisticConcurrencyControlPol
             }
         }
 
-    dgndb.DestroyBriefcaseManager();
+    // WIP dgndb.DestroyBriefcaseManager();
     return RepositoryStatus::Success;
     }
 
