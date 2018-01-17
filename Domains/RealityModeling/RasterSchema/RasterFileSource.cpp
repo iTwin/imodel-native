@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileSource.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterInternal.h"
@@ -92,13 +92,13 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
         return ERROR;
 
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
+    auto& root = rasterTile.GetRoot();
 
     Render::Texture::CreateParams params;
     params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
-    auto texture = GetRenderSystem()->_CreateTexture(m_image, params);
+    auto texture = GetRenderSystem()->_CreateTexture(m_image, root.GetDgnDb(), params);
 
     // ###TODO: is this needed?  auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0);
-    auto& root = rasterTile.GetRoot();
     Dgn::TileTree::TriMeshTree::TriMesh::CreateParams geomParams;
     FPoint3d fpts[4]; // local storage for floating point corners
     geomParams.FromTile(*texture, rasterTile.GetCorners(), fpts, root.GetDgnDb()); // ###TODO: gfParams?

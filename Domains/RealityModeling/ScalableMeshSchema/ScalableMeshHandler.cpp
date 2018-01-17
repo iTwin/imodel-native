@@ -1430,7 +1430,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
             Render::Texture::CreateParams params;
             params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
-            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, params);
+            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, scene.GetDgnDb(), params);
             }
 #else
 
