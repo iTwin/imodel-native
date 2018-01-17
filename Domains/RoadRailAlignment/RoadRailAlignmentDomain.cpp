@@ -2,11 +2,13 @@
 |
 |     $Source: RoadRailAlignmentDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/RoadRailAlignmentDomain.h>
+
+#define DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW 10.0 // For Profile and XS view definitions
 
 DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
 
@@ -107,7 +109,10 @@ RefCountedPtr<VIEWDEF_T> createViewDefinition(DictionaryModelR dictionary, Utf8S
 
     RefCountedPtr<VIEWDEF_T> viewDefinition = new VIEWDEF_T(dictionary, viewName, *cSelector, *dStyle, *mSelector);
     if (viewDefinition.IsValid())
+        {
         viewDefinition->SetIsPrivate(true);
+        viewDefinition->SetAspectRatioSkew(DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW);
+        }
 
     return viewDefinition;
     }
