@@ -21,10 +21,6 @@
     struct HDC__;
 #endif
 
-// For EAP use only simple hard coded default lighting.
-#define SIMPLE_DEFAULT_LIGHTS
-// #define IMAGE_BASED_LIGHTING      // WIP
-
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -722,7 +718,6 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_diffuseColor;
         MatColor m_specularColor;
         MatColor m_emissiveColor;
-        TextureMapping m_textureMapping;
         MaterialKey m_key;
         double m_diffuse = Defaults::Diffuse();
         double m_specular = Defaults::Specular();
@@ -735,10 +730,11 @@ struct Material : RefCounted<NonCopyableClass>
 
         explicit CreateParams(MaterialKeyCR key=MaterialKey()) : m_key(key) { }
         DGNPLATFORM_EXPORT CreateParams(MaterialKeyCR key, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
-
+                                           
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
         void SetEmissiveColor(ColorDef val) {m_emissiveColor = val;} //<!  Set the surface emissive color
+        void SetReflectColor(ColorDef val) {m_reflectColor = val;} //<!  Set the surface reflectance color
         void SetDiffuse(double val) {m_diffuse = val;} //<! Set surface diffuse reflectivity
         void SetAmbient(double val) {m_ambient = val;} //<! Set surface ambient reflectivity
         void SetSpecularExponent(double val) {m_specularExponent = val;} //<! Set surface shininess (range 0 to 128)
