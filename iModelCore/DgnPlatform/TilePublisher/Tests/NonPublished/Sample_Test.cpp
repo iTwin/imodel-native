@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/Tests/NonPublished/Sample_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,11 +23,6 @@ struct SampleTestFixture : TestFixture
         testImpl();
         }
     };
-
-#define DEFINE_SAMPLE_TEST(MEMBER_FUNC) TEST_F(SampleTestFixture, MEMBER_FUNC) \
-    { \
-    ExecuteTest(L ## #MEMBER_FUNC , [&]() { MEMBER_FUNC(); }); \
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * Test a single element represented as a single red rectangle.
@@ -188,6 +183,19 @@ void SampleTestFixture::TwoElementsNonUniformColor()
     AppData::VerifyMesh(mesh, 3, 0, 7, 7, 0, AppData::ColorDefList {ColorDef::Red(), ColorDef::Blue()}, false);
     }
 
-DEFINE_SAMPLE_TEST(RedRectangle);
-DEFINE_SAMPLE_TEST(TwoElementsNonUniformColor);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SampleTestFixture, TestRedRectangle)
+    {
+    ExecuteTest(L"RedRectangle", [&]() { RedRectangle(); });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SampleTestFixture, TestTwoElementsNonUniformColor)
+    {
+    ExecuteTest(L"TwoElementsNonUniformColor", [&]() { TwoElementsNonUniformColor(); });
+    }
 
