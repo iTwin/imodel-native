@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -1762,6 +1762,31 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     rc = _OnDbCreated(params);
     if (BE_SQLITE_OK != rc)
         return  rc;
+
+    //we create sqlite_stat1 so it could be tracked later on.
+    rc = ExecuteSql("analyze;");
+    if (BE_SQLITE_OK != rc)
+        return  rc;
+
+    //make sure its empty we just want sqlite to add the tables 
+    rc = ExecuteSql("delete from sqlite_stat1;");
+    if (BE_SQLITE_OK != rc)
+        return  rc;
+
+#ifdef SQLITE_ENABLE_STAT2  
+    BeAssert(false && "stat2 is not tracked by change tracking as of now by sqlite 3.22.0");
+    return BE_SQLITE_ERROR;
+#endif
+
+#ifdef SQLITE_ENABLE_STAT3
+    BeAssert(false && "stat3 is not tracked by change tracking as of now by sqlite 3.22.0");
+    return BE_SQLITE_ERROR;
+#endif
+
+#ifdef SQLITE_ENABLE_STAT4
+    BeAssert(false && "stat4 is not tracked by change tracking as of now by sqlite 3.22.0");
+    return BE_SQLITE_ERROR;
+#endif
 
     if (DefaultTxn::No == params.m_startDefaultTxn)
         m_dbFile->m_defaultTxn.Commit(nullptr);
