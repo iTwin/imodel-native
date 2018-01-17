@@ -46,15 +46,16 @@ UIList UIUtils::GetAvailableFractionalPercisions()
     {
     UIList fracPercisionList;
 
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Whole,     UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Half,      UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Quarter,   UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Eighth,    UNITSL10N_GETSTRING(FractionalPrecision_Eighth).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Sixteenth, UNITSL10N_GETSTRING(FractionalPrecision_Sixteenth).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_32,   UNITSL10N_GETSTRING(FractionalPrecision_Over_32).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
-    fracPercisionList.AddListEntry(UIListEntry((int)FractionalPrecision::Over_256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
+    // See Utils::FractionalPrecisionByDenominator
+    fracPercisionList.AddListEntry(UIListEntry(1,    UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(2,    UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(4,    UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(8,    UNITSL10N_GETSTRING(FractionalPrecision_Eighth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(16,   UNITSL10N_GETSTRING(FractionalPrecision_Sixteenth).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(32,   UNITSL10N_GETSTRING(FractionalPrecision_Over_32).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
+    fracPercisionList.AddListEntry(UIListEntry(256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
     return fracPercisionList;
     }
 
