@@ -1517,15 +1517,13 @@ void OptimisticConcurrencyControlBase::_OnProcessRequest(IBriefcaseManager::Requ
 //---------------------------------------------------------------------------------------
 void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager::Request& req, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response& response)
     {
-    BeAssert(m_locksTemp.empty());
-
     if (response.Result() != RepositoryStatus::Success)
         {
         std::swap(m_locksTemp, req.Locks().GetLockSet()); // restore the locks that we stole
         }
     else
         {
-        m_locks.insert(m_locksTemp.begin(), m_locksTemp.end()); // record the locks
+        m_locks.insert(m_locksTemp.begin(), m_locksTemp.end()); // take ownership of the locks, so that we can report them to the caller (just for information purposes)
         m_locksTemp.clear();
         }
     
