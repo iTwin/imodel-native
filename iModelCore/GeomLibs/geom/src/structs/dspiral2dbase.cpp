@@ -76,11 +76,14 @@ static SpiralTagName s_spiralNames [] =
         {DSpiral2dBase::TransitionType_Sine, "sine"},
         {DSpiral2dBase::TransitionType_Viennese, "Viennese"},
         {DSpiral2dBase::TransitionType_WeightedViennese, "WeightedViennese"},
-        {DSpiral2dBase::TransitionType_Czech, "Czech"},
         {DSpiral2dBase::TransitionType_NewSouthWales, "NewSouthWales"},
+        {DSpiral2dBase::TransitionType_Czech, "Czech"},
         {DSpiral2dBase::TransitionType_Australian, "Australian"},
         {DSpiral2dBase::TransitionType_Italian, "Italian"},
-        {DSpiral2dBase::TransitionType_Polish, "Polish"}
+        {DSpiral2dBase::TransitionType_PolishCubic, "PolishCubic"},
+        {DSpiral2dBase::TransitionType_AremaCubic, "AremaCubic"},
+        {DSpiral2dBase::TransitionType_MXCubic, "MXCubic"},
+        {DSpiral2dBase::TransitionType_MXCubicArc, "MXCubicArc"}
     };
 int DSpiral2dBase::StringToTransitionType (Utf8CP name)
     {
@@ -1950,7 +1953,7 @@ bool DSpiral2dNewSouthWales::EvaluateAtDistanceInStandardOrientation
         d1XY->Init (1.0 - 5.0 * s4 * factorX, 3.0 * s2 * factorY);
 
     if (d2XY)
-        d2XY->Init (-20.0 * s3 * factorX, 6.0 * s * factorX);
+        d2XY->Init (-20.0 * s3 * factorX, 6.0 * s * factorY);
 
     if (d3XY)
         d3XY->Init (-60.0 * factorX, 6.0 * factorY);

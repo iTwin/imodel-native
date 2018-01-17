@@ -82,11 +82,14 @@ static const int TransitionType_Viennese          = 20;
 static const int TransitionType_WeightedViennese  = 21;
 // convention: spirals that really have direct evaluations start at 50.
 static const int TransitionType_FirstDirectEvaluate = 50;
-static const int TransitionType_NewSouthWales       = 50; // IMPLEMENTED ASSUMING bearing0, curvature0 both zero.   01/18
+static const int TransitionType_NewSouthWales       = 50; // IMPLEMENTED 01/18
 static const int TransitionType_Czech               = 51; // NOT IMPLEMENTED
-static const int TransitionType_Australian          = 52; // NOT IMPLEMENTED
+static const int TransitionType_Australian          = 52; // IMPLEMENTED 01/18
 static const int TransitionType_Italian             = 53; // NOT IMPLEMENTED
-static const int TransitionType_Polish              = 54; // NOT IMPLEMENTED
+static const int TransitionType_PolishCubic         = 54; // NOT IMPLEMENTED
+static const int TransitionType_AremaCubic          = 55; // NOT IMPLEMENTED
+static const int TransitionType_MXCubic             = 56; // NOT IMPLEMENTED
+static const int TransitionType_MXCubicArc          = 57; // NOT IMPLEMENTED
 
 //! invoke appropriate concrete class constructor ...
 public: static DSpiral2dBaseP Create (int transitionType);

@@ -74,4 +74,57 @@ TEST(PseudoSpiral,Serialize)
         Check::ClearGeometry (fileName);
         }
     }
+
+ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, double radiusA, double radiusB, double lengthAB)
+    {
+    double curvatureA = DoubleOps::ValidatedDivideDistance (1.0, radiusA);
+    double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
+
+    // extrapolate to inflection, assuming clothoid (linear) curvature function
+    //   (curvatureB - curvatureA) / lengthAB = curvatureB / length0B
+    double length0B = curvatureB * lengthAB / (curvatureB - curvatureA);
+    double fractionA = curvatureA / curvatureB;
+    double fractionB = 1.0;
+    auto referenceSpiral = DSpiral2dBase::Create (typeCode);
+    double bearing0 = 0.0;
+    double curvature0 = 0.0;
+    referenceSpiral->SetBearingCurvatureLengthCurvature (bearing0, curvature0, length0B, curvatureB);
+    GEOMAPI_PRINTF ("RRL Spiral type %d\n", typeCode);
+    for (double curvatureTarget : { curvatureA, curvatureB})
+        {
+        double f = curvatureTarget/ curvatureB;
+        double s = referenceSpiral->FractionToDistance (f);
+        double curvatureF = referenceSpiral->DistanceToCurvature (s);
+        double radiusF = DoubleOps::ValidatedDivideDistance (1.0, curvatureF, 0.0);
+        double radiusTarget = DoubleOps::ValidatedDivideDistance (1.0, curvatureTarget, 0.0);
+        GEOMAPI_PRINTF(" (f %g) (s %g) (r %g (er %g)) (q %g)\n",
+                        f, s, radiusF, radiusF - radiusTarget, referenceSpiral->DistanceToLocalAngle (s));
+        }
+    auto fullSpiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (typeCode, 0.0, 0.0, length0B, curvatureB, Transform::FromIdentity (),
+            fractionA, fractionB);
+    return fullSpiral;
+    }
     
+TEST(Spiral,TwoRadiusConstruction)
+    {
+    double radiusB = 1000.0;
+    double length0B = 100.0;
+    int typeCode = DSpiral2dBase::TransitionType_NewSouthWales;
+    double yShiftB = 45.0;
+    double yShiftA = 5.0;
+    for (double fraction : {0.0, 0.25, 0.5, 0.75})
+        {
+        double curvatureB = DoubleOps::ValidatedDivideDistance (1.0, radiusB);
+        double curvatureA = fraction * curvatureB;
+        double radiusA = DoubleOps::ValidatedDivideDistance (1.0, curvatureA);
+        double lengthAB = (1.0 - fraction) * length0B;
+        auto spiral0B = ConstructSpiralRadiusRadiusLength (typeCode, 0.0, radiusB,
+                lengthAB * curvatureB / (curvatureB- curvatureA));
+        auto spiralAB = ConstructSpiralRadiusRadiusLength (typeCode, radiusA, radiusB, lengthAB);
+        Check::SaveTransformed (*spiralAB);
+        Check::Shift (0, yShiftA, 0);
+        Check::SaveTransformed (*spiral0B);
+        Check::Shift (0, yShiftB, 0);
+        }
+    Check::ClearGeometry ("Spiral.TwoRadiusConstruction");
+    }
