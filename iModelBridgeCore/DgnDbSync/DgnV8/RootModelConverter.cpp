@@ -130,7 +130,13 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             prop = targetClass->GetPropertyP("Element");
             }
         else
+            {
             prop = targetClass->GetPropertyP(relClass->GetName().c_str());
+            if (nullptr == prop)
+                {
+                prop = GetDgnDb().Schemas().GetClass(sourceInstanceKey.GetClassId())->GetPropertyP(relClass->GetName().c_str());
+                }
+            }
 
         if (nullptr == prop)
             {
