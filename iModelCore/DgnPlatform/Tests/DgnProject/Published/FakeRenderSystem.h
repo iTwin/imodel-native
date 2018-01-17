@@ -180,7 +180,7 @@ protected:
     MaterialPtr _CreateMaterial(Material::CreateParams const& params, DgnDbR) const override { return new FakeMaterial(params); }
     TexturePtr _FindTexture(TextureNameCR, DgnDbR) const override { return nullptr; }
     TexturePtr _GetTexture(GradientSymbCR, DgnDbR) const override { return nullptr; }
-    TexturePtr _CreateTexture(ImageCR, DgnDbR, Texture::CreateParams const& params, DgnDbR) const override { return new FakeTexture(params); }
+    TexturePtr _CreateTexture(ImageCR, DgnDbR, Texture::CreateParams const& params) const override { return new FakeTexture(params); }
     TexturePtr _CreateTexture(ImageSourceCR, Image::BottomUp, DgnDbR, Texture::CreateParams const& params) const override { return new FakeTexture(params); }
     TexturePtr _CreateGeometryTexture(GraphicCR, DRange2dCR, bool, bool) const override { return new FakeTexture(Texture::CreateParams()); }
     LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP, DPoint3dCP) const override { return new Light(); }
