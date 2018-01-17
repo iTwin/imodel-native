@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -1601,6 +1601,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     auto                pCollector = &collector;
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
     auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model); // ###TODO: empty interface; remove this once no longer needed
+    auto                getPublishedURL = dynamic_cast<IGetPublishedTilesetInfo*>(&model);
     GeometricModelP     geometricModel = model.ToGeometricModelP();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
@@ -1616,20 +1617,16 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-#ifdef ACCEPT_PUBLISHED_TILESET_INTERFACE 
-    if (nullptr != getPublishedURL)
-        {
-        return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
-        }
-#endif
 
     if (nullptr != getTileTree)
         {
         // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
-        if (!getTileTree->_AllowPublishing())
-            return TileGeneratorStatus::NoGeometry;
+        if (getTileTree->_AllowPublishing())
+            return GenerateTilesFromTileTree(&collector, leafTolerance, surfacesOnly, geometricModel);
+        else if (nullptr != getPublishedURL)
+            return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
         else
-            return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
+            return TileGeneratorStatus::NoGeometry;
         }
     else if (nullptr != generateMeshTiles)
         {
