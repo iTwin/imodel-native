@@ -3,7 +3,7 @@
 
 |     $Source: DgnCore/CacheTileWriter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -112,9 +112,10 @@ BentleyStatus  CreateMaterialJson(Json::Value& matJson, MeshCR mesh,  DisplayPar
     if (displayParams.GetSubCategoryId().IsValid())
         matJson["subCategoryId"] = displayParams.GetSubCategoryId().GetValue();
 
-
-    if (displayParams.GetMaterialId().IsValid())
-        matJson["materialId"] = displayParams.GetMaterialId().GetValue();
+    // ###TODO: Support non-persistent materials if/when necessary...
+    auto material = displayParams.GetMaterial();
+    if (nullptr != material && material->GetKey().IsPersistent())
+        matJson["materialId"] = material->GetKey().GetId().GetValue();
 
     matJson["class"] = (uint16_t) displayParams.GetClass();
     matJson["ignoreLighting"] = displayParams.IgnoresLighting();
