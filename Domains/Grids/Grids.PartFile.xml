@@ -36,7 +36,7 @@
 
     <Part Name="GridsSchema" BentleyBuildMakeFile="Grids/GridsSchema.prewire.mke">
       <SubPart PartName="ConstraintModelSchema" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
-      <SubPart PartName="AecUnitsDomain" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
+      <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
       <Bindings>
         <Files ProductDirectoryName="Assets"        ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/Grids*.xml</Files>
       </Bindings>
