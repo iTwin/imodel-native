@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnElement_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -826,7 +826,45 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
     EXPECT_EQ(true, Element->GetPropertyValueBoolean("b"));
     }
-    /*---------------------------------------------------------------------------------**//**
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Affan.Khan        1/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, FederationGuid_Update)
+    {
+    SetupSeedProject();
+    DgnElementId elementId;
+    DgnDbStatus stat;
+    //Insert element
+        {
+        DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+        TestElement el(params);
+        DgnElementCPtr persistentEl = el.Insert(&stat);        
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        ASSERT_TRUE(persistentEl.IsValid());
+        elementId = persistentEl->GetElementId();
+        }
+
+    BeGuid fedId(true);
+        {
+        // Get ready to modify the element
+        TestElementPtr editEl = m_db->Elements().GetForEdit<TestElement>(elementId);
+        ASSERT_TRUE(editEl.IsValid());
+
+        editEl->SetFederationGuid(fedId);
+        DgnDbStatus stat;
+        DgnElementCPtr updated_element = editEl->Update(&stat);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
+        ASSERT_TRUE(updated_element.IsValid());
+        EXPECT_EQ(fedId, updated_element->GetFederationGuid());
+        }
+
+    TestElementCPtr el = m_db->Elements().Get<TestElement>(elementId);
+    ASSERT_TRUE(el.IsValid());
+    EXPECT_EQ(fedId, el->GetFederationGuid());
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, GetSetAutoHandledStructProperties)

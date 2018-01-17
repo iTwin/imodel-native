@@ -1500,27 +1500,74 @@ RevisionStatus RevisionManager::DoReinstateRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 void OptimisticConcurrencyControlBase::_ConfigureBriefcaseManager(IBriefcaseManager& b)
     {
-    b.StartBulkOperation(); // always run in bulk operation mode!
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                         01/2018
 //---------------------------------------------------------------------------------------
-void OptimisticConcurrencyControlBase::_OnProcessRequest(IBriefcaseManager& b, IBriefcaseManager::Request& req, IBriefcaseManager::RequestPurpose)
+void OptimisticConcurrencyControlBase::_OnProcessRequest(IBriefcaseManager::Request& req, IBriefcaseManager&, IBriefcaseManager::RequestPurpose)
     {
-    // In optimistic concurrency, we don't acquire locks. Instead, we report them.
-    std::swap(m_locks, req.Locks().GetLockSet());
+    std::swap(m_locksTemp, req.Locks().GetLockSet()); // prepare to steal the locks
+
+    BeAssert(req.Locks().GetLockSet().empty());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                         01/2018
 //---------------------------------------------------------------------------------------
-void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager& b, IBriefcaseManager::Request& req, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response& response)
+void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager::Request& req, IBriefcaseManager&, IBriefcaseManager::RequestPurpose, IBriefcaseManager::Response& response)
     {
+    BeAssert(m_locksTemp.empty());
+
     if (response.Result() != RepositoryStatus::Success)
-        std::swap(m_locks, req.Locks().GetLockSet());
+        {
+        std::swap(m_locksTemp, req.Locks().GetLockSet()); // restore the locks that we stole
+        }
+    else
+        {
+        m_locks.insert(m_locksTemp.begin(), m_locksTemp.end()); // record the locks
+        m_locksTemp.clear();
+        }
+    
+    BeAssert(m_locksTemp.empty());
+    }
 
-    b.StartBulkOperation(); // always remain in bulk operation mode!
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnExtractRequest(IBriefcaseManager::Request& req, IBriefcaseManager&)
+    {
+    BeAssert(m_locksTemp.empty());
+    
+    // In optimistic concurrency, we don't acquire locks. Instead, we report them.
+    auto& rlocks = req.Locks().GetLockSet();
+    m_locks.insert(rlocks.begin(), rlocks.end());   // steal the locks
+    rlocks.clear();
+
+    BeAssert(req.Locks().GetLockSet().empty());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnExtractedRequest(IBriefcaseManager::Request&, IBriefcaseManager&)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnQueryHeld(DgnLockSet& locks, DgnCodeSet&, IBriefcaseManager&)
+    {
+    m_locks.insert(locks.begin(), locks.end()); // steal the locks
+    locks.clear();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         01/2018
+//---------------------------------------------------------------------------------------
+void OptimisticConcurrencyControlBase::_OnQueriedHeld(DgnLockSet&, DgnCodeSet&, IBriefcaseManager&)
+    {
     }
 
 //---------------------------------------------------------------------------------------
