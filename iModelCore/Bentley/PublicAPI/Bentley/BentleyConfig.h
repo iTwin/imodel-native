@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BentleyConfig.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,6 +34,7 @@
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
         #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
         #define BENTLEYCONFIG_DISPLAY_FAKE_QV
+        #define BENTLEYCONFIG_PARASOLID
     #endif
 
 #elif defined (ANDROID)
@@ -79,6 +80,7 @@
     #define BENTLEYCONFIG_VIRTUAL_MEMORY
     #define BENTLEYCONFIG_GETENV 
     #define BENTLEYCONFIG_SUPPORTS_SYSTEM_MOUSE
+    #define BENTLEYCONFIG_PARASOLID
 
 #elif defined (__EMSCRIPTEN__)
 
