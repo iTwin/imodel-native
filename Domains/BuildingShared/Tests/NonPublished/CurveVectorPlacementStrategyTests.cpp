@@ -125,9 +125,9 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateSplines)
     CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
     ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
 
-    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{0, 0, 0}, {1, 2, 3}, {2, 4, 5}}, 3) });
-    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{0, 0, 0}, {1, 2, 3}, {2, 4, 5}}, 3),
-                                                                                        TestUtils::CreateSpline({{2, 4, 5}, {7, 8, 2}, {4, 2, 3}, {0, 4, 5}}, 4) });
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{0, 0, 0}, {1, 2, 0}, {2, 4, 0}}, 3) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{0, 0, 0}, {1, 2, 0}, {2, 4, 0}}, 3),
+                                                                                        TestUtils::CreateSpline({{2, 4, 0}, {7, 8, 0}, {4, 2, 0}, {0, 4, 0}}, 4) });
     strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
     ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
 
@@ -162,9 +162,9 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateInterpolationCurves)
     CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
     ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
 
-    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 3 },{ 2, 4, 5 } }) });
-    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 3 },{ 2, 4, 5 } }),
-                                                                                        TestUtils::CreateInterpolationCurve({ { 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 },{ 0, 4, 5 } }, DVec3d::From(1, 2, 3), DVec3d::From(5, 4, 2)) });
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 0 },{ 2, 4, 0 } }) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({ { 0, 0, 0 },{ 1, 2, 0 },{ 2, 4, 0 } }),
+                                                                                        TestUtils::CreateInterpolationCurve({ { 2, 4, 0 },{ 7, 8, 0 },{ 4, 2, 0 },{ 0, 4, 0 } }, DVec3d::From(1, 2, 3), DVec3d::From(5, 4, 2)) });
     strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::InterpolationCurve);
     ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
 
@@ -200,12 +200,12 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineSplineArc)
     CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
     ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
 
-    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }) });
-    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
-                                                                                        TestUtils::CreateSpline({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, 4) });
-    CurveVectorPtr expectedCV3 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
-                                                                                        TestUtils::CreateSpline({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, 4),
-                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({ 4, 2, 3 },{ 3,1,0 },{ 1,1,0 })) });
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 0 }) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 0 }),
+                                                                                        TestUtils::CreateSpline({ { 1, 2, 0 },{ 2, 4, 0 },{ 7, 8, 0 },{ 4, 2, 0 }}, 4) });
+    CurveVectorPtr expectedCV3 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 0 }),
+                                                                                        TestUtils::CreateSpline({ { 1, 2, 0 },{ 2, 4, 0 },{ 7, 8, 0 },{ 4, 2, 0 }}, 4),
+                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({ 4, 2, 0 },{ 3,1,0 },{ 1,1,0 })) });
 
     strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
     ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
@@ -249,12 +249,12 @@ TEST_F(CurveVectorPlacementStrategyTests, CreateLineInterpolationCurveArc)
     CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
     ASSERT_TRUE(strategy.IsValid()) << "Strategy creation should not fail";
 
-    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }) });
-    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
-                                                                                        TestUtils::CreateInterpolationCurve({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, DVec3d::From(5, 2, 1), DVec3d::From(1, 2, 5)) });
-    CurveVectorPtr expectedCV3 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 3 }),
-                                                                                        TestUtils::CreateInterpolationCurve({ { 1, 2, 3 },{ 2, 4, 5 },{ 7, 8, 2 },{ 4, 2, 3 }}, DVec3d::From(5, 2, 1), DVec3d::From(1, 2, 5)),
-                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({ 4, 2, 3 },{ 3,1,0 },{ 1,1,0 })) });
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 0 }) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 0 }),
+                                                                                        TestUtils::CreateInterpolationCurve({ { 1, 2, 0 },{ 2, 4, 0 },{ 7, 8, 0 },{ 4, 2, 0 }}, DVec3d::From(5, 2, 1), DVec3d::From(1, 2, 5)) });
+    CurveVectorPtr expectedCV3 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({ 0, 0, 0 },{ 1, 2, 0 }),
+                                                                                        TestUtils::CreateInterpolationCurve({ { 1, 2, 0 },{ 2, 4, 0 },{ 7, 8, 0 },{ 4, 2, 0 }}, DVec3d::From(5, 2, 1), DVec3d::From(1, 2, 5)),
+                                                                                        ICurvePrimitive::CreateArc(DEllipse3d::FromPointsOnArc({ 4, 2, 0 },{ 3,1,0 },{ 1,1,0 })) });
 
     strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Line);
     ASSERT_TRUE(strategy->Finish().IsNull()) << "Should not be created with less than 2 points";
@@ -400,9 +400,9 @@ TEST_F(CurveVectorPlacementStrategyTests, ChangeFromArcToSplineToInterpolationCu
     CurveVectorPlacementStrategyPtr strategy = CurveVectorPlacementStrategy::Create();
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
-    CurveVectorPtr expectedCV0 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{1, 2, 3}, {5, 6, 7}}, 3)});
-    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({{1, 2, 3}, {5, 6, 7}}, DVec3d::From(0, 0, 0), DVec3d::From(5, 2, 7)) });
-    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({1, 2, 3}, {4, 2, 1}) });
+    CurveVectorPtr expectedCV0 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateSpline({{1, 2, 0}, {5, 6, 0}}, 3)});
+    CurveVectorPtr expectedCV1 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { TestUtils::CreateInterpolationCurve({{1, 2, 0}, {5, 6, 0}}, DVec3d::From(0, 0, 0), DVec3d::From(5, 2, 7)) });
+    CurveVectorPtr expectedCV2 = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, { ICurvePrimitive::CreateLine({1, 2, 0}, {4, 2, 0}) });
 
     strategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
     ASSERT_TRUE(strategy->Finish().IsNull()) << "Arc should not be created with less than 3 points";
