@@ -21,10 +21,6 @@
     struct HDC__;
 #endif
 
-// For EAP use only simple hard coded default lighting.
-#define SIMPLE_DEFAULT_LIGHTS
-// #define IMAGE_BASED_LIGHTING      // WIP
-
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 //=======================================================================================
@@ -626,6 +622,7 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_diffuseColor;
         MatColor m_specularColor;
         MatColor m_emissiveColor;
+        MatColor m_reflectColor;
         double m_diffuse = 0.6;                        // QVision default...
         double m_specular = 0.4;                       // QVision default...
         double m_specularExponent = (0.9 * 15.0);      // QVision default...
@@ -634,10 +631,11 @@ struct Material : RefCounted<NonCopyableClass>
         double m_refract = 1.0;
         double m_ambient = .3;
         bool   m_shadows = true;
-
+                                           
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
         void SetEmissiveColor(ColorDef val) {m_emissiveColor = val;} //<!  Set the surface emissive color
+        void SetReflectColor(ColorDef val) {m_reflectColor = val;} //<!  Set the surface reflectance color
         void SetDiffuse(double val) {m_diffuse = val;} //<! Set surface diffuse reflectivity
         void SetAmbient(double val) {m_ambient = val;} //<! Set surface ambient reflectivity
         void SetSpecularExponent(double val) {m_specularExponent = val;} //<! Set surface shininess (range 0 to 128)
