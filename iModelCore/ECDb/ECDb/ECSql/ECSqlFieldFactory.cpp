@@ -35,8 +35,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
         return stat;
 
     ECSqlColumnInfo ecsqlColumnInfo = generatedProperty != nullptr ? 
-                CreateECSqlColumnInfoFromGeneratedProperty(ctx, *generatedProperty) :
-                CreateECSqlColumnInfoFromPropertyNameExp(ctx, *propNameExp);
+                CreateColumnInfoFromGeneratedProperty(ctx, *generatedProperty) : CreateColumnInfoFromPropertyNameExp(ctx, *propNameExp);
 
     ECSqlTypeInfo const& valueTypeInfo = valueExp->GetTypeInfo();
     BeAssert(valueTypeInfo.GetKind() != ECSqlTypeInfo::Kind::Unset);
@@ -80,7 +79,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
 //static
 ECSqlStatus ECSqlFieldFactory::CreateChildField(std::unique_ptr<ECSqlField>& childField, ECSqlPrepareContext& ctx, int& sqlColumnIndex, ECSqlColumnInfo const& parentFieldColumnInfo, ECN::ECPropertyCR childProperty)
     {
-    ECSqlColumnInfo columnInfo = ECSqlColumnInfo::CreateChild(parentFieldColumnInfo, childProperty, ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(childProperty).IsSystemProperty());
+    ECSqlColumnInfo columnInfo = CreateChildColumnInfo(ctx.Issues(), parentFieldColumnInfo, childProperty, ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(childProperty).IsSystemProperty());
 
     if (childProperty.GetIsStruct())
         {
@@ -208,13 +207,18 @@ ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields(std::unique_ptr<ECSqlFie
     return ECSqlStatus::Success;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    10/2013
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlSelectPreparedStatement& ECSqlFieldFactory::GetPreparedStatement(ECSqlPrepareContext& ctx) { return ctx.GetPreparedStatement<ECSqlSelectPreparedStatement>(); }
 
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromPropertyNameExp(ECSqlPrepareContext const& ctx, PropertyNameExp const& propertyNameExp)
+ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoFromPropertyNameExp(ECSqlPrepareContext const& ctx, PropertyNameExp const& propertyNameExp)
     {
     PropertyPath const& internalPropPath = propertyNameExp.GetPropertyPath();
     size_t entryCount = internalPropPath.Size();
@@ -227,27 +231,143 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromPropertyNameExp(ECSq
 
     BeAssert(ecsqlPropPath.Size() > 0 && "Error in program logic. Property path must not be empty.");
 
-    ECClassCR& rootClass = internalPropPath.GetClassMap()->GetClass();
+    ECClassCR rootClass = internalPropPath.GetClassMap()->GetClass();
     ECPropertyCP leafProp = ecsqlPropPath.GetLeafEntry().GetProperty();
     const bool isSystem = leafProp != nullptr && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
-    return ECSqlColumnInfo::CreateTopLevel(isSystem, false, std::move(ecsqlPropPath), rootClass, propertyNameExp.GetClassName());
+    DbTableSpace const& tableSpace = propertyNameExp.GetPropertyMap().GetClassMap().GetSchemaManager().GetTableSpace();
+    return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, false, std::move(ecsqlPropPath), ECSqlColumnInfo::RootClass(rootClass, tableSpace.GetName().c_str(), propertyNameExp.GetClassName()));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromGeneratedProperty(ECSqlPrepareContext const& ctx, ECPropertyCR generatedProperty)
+ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoFromGeneratedProperty(ECSqlPrepareContext const& ctx, ECPropertyCR generatedProperty)
     {
     ECSqlPropertyPath propertyPath;
     propertyPath.AddEntry(generatedProperty);
-    return ECSqlColumnInfo::CreateTopLevel(false, true, std::move(propertyPath), generatedProperty.GetClass(), nullptr);
+    return CreateTopLevelColumnInfo(ctx.Issues(), false, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(generatedProperty.GetClass(), nullptr));
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 10/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlSelectPreparedStatement& ECSqlFieldFactory::GetPreparedStatement(ECSqlPrepareContext& ctx) { return ctx.GetPreparedStatement<ECSqlSelectPreparedStatement>(); }
+ECSqlColumnInfo ECSqlFieldFactory::CreateTopLevelColumnInfo(IIssueReporter const& issues, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECSqlColumnInfo::RootClass const& rootClass)
+    {
+    BeAssert(propertyPath.Size() > 0);
+    ECPropertyCP ecProperty = propertyPath.GetLeafEntry().GetProperty();
+    BeAssert(ecProperty != nullptr);
+    DateTime::Info dateTimeInfo;
+    ECStructClassCP structType = nullptr;
+    ECTypeDescriptor typeDescriptor = DetermineDataType(dateTimeInfo, structType, issues, *ecProperty);
+    return ECSqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, isSystemProperty, isGeneratedProperty, propertyPath, rootClass);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 10/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlColumnInfo ECSqlFieldFactory::CreateChildColumnInfo(IIssueReporter const& issues, ECSqlColumnInfo const& parent, ECPropertyCR childProperty, bool isSystemProperty)
+    {
+    DateTime::Info dateTimeInfo;
+    ECStructClassCP structType = nullptr;
+    ECTypeDescriptor dataType = DetermineDataType(dateTimeInfo, structType, issues, childProperty);
+
+    ECSqlPropertyPath childPropPath;
+    childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
+    childPropPath.AddEntry(childProperty);
+
+    return ECSqlColumnInfo(dataType, dateTimeInfo, structType, &childProperty, isSystemProperty, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 10/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForArrayElement(ECSqlColumnInfo const& parent, int arrayIndex)
+    {
+    ECTypeDescriptor arrayElementDataType;
+    DateTime::Info dateTimeInfo;
+    ECStructClassCP structType = nullptr;
+    if (parent.GetDataType().IsPrimitiveArray())
+        {
+        arrayElementDataType = ECTypeDescriptor::CreatePrimitiveTypeDescriptor(parent.GetDataType().GetPrimitiveType());
+        if (arrayElementDataType == PRIMITIVETYPE_DateTime)
+            dateTimeInfo = parent.GetDateTimeInfo();
+        }
+    else
+        {
+        BeAssert(parent.GetDataType().IsStructArray());
+        structType = parent.GetStructType();
+        arrayElementDataType = ECTypeDescriptor::CreateStructTypeDescriptor();
+        }
+
+    ECSqlPropertyPath childPropPath;
+    childPropPath.InsertEntriesAtBeginning(parent.GetPropertyPath());
+    childPropPath.AddEntry(arrayIndex);
+
+    return ECSqlColumnInfo(arrayElementDataType, dateTimeInfo, structType, nullptr, false, parent.IsGeneratedProperty(), childPropPath, parent.GetRootClass());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 10/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECTypeDescriptor ECSqlFieldFactory::DetermineDataType(DateTime::Info& dateTimeInfo, ECN::ECStructClassCP& structType, IIssueReporter const& issues, ECPropertyCR ecProperty)
+    {
+    if (ecProperty.GetIsPrimitive())
+        {
+        const PrimitiveType primType = ecProperty.GetAsPrimitiveProperty()->GetType();
+        if (primType == PRIMITIVETYPE_DateTime)
+            {
+            if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
+                {
+                issues.Report("Could not read DateTimeInfo custom attribute from the primitive ECProperty %s:%s.",
+                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
+                }
+            }
+
+        return ECTypeDescriptor::CreatePrimitiveTypeDescriptor(primType);
+        }
+
+    if (ecProperty.GetIsStruct())
+        {
+        structType = &ecProperty.GetAsStructProperty()->GetType();
+        return ECTypeDescriptor::CreateStructTypeDescriptor();
+        }
+
+    if (ecProperty.GetIsPrimitiveArray())
+        {
+        const PrimitiveType primType = ecProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+        if (primType == PRIMITIVETYPE_DateTime)
+            {
+            if (ECObjectsStatus::Success != CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty))
+                {
+                issues.Report("Could not read DateTimeInfo custom attribute from the primitive array ECProperty %s:%s.",
+                           ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
+                }
+            }
+
+        return ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(primType);
+        }
+
+    if (ecProperty.GetIsStructArray())
+        {
+        structType = &ecProperty.GetAsStructArrayProperty()->GetStructElementType();
+        return ECTypeDescriptor::CreateStructArrayTypeDescriptor();
+        }
+
+
+    if (ecProperty.GetIsNavigation())
+        {
+        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
+        return ECTypeDescriptor::CreateNavigationTypeDescriptor(navProp->GetType(), navProp->IsMultiple());
+        }
+
+    BeAssert(false && "Unhandled ECProperty type. Adjust code to new ECProperty type");
+    return ECTypeDescriptor();
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

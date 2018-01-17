@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -129,8 +129,8 @@ BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(JsonValueR rowJson, ECClass
             continue;
 
         ECSqlColumnInfoCR colInfo = ecsqlValue.GetColumnInfo();
-        ECClassCR rootClass = colInfo.GetRootClass();
-        if (colInfo.IsGeneratedProperty() || rootClass.GetId() != classId)
+        ECSqlColumnInfo::RootClass const& rootClass = colInfo.GetRootClass();
+        if (colInfo.IsGeneratedProperty() || rootClass.GetClass().GetId() != classId)
             continue;
 
         if (colInfo.GetPropertyPath().GetLeafEntry().GetKind() == ECSqlPropertyPath::Entry::Kind::ArrayIndex)
@@ -203,7 +203,7 @@ BentleyStatus ECSqlToJsonConverter::SelectClauseItemToJson(JsonValueR json, IECS
 
                 case ECSqlSystemPropertyInfo::Class::ECClassId:
                 {
-                ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>());
+                ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
                 if (cls == nullptr)
                     return ERROR;
 
@@ -228,7 +228,7 @@ BentleyStatus ECSqlToJsonConverter::SelectClauseItemToJson(JsonValueR json, IECS
                 case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
                 case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
                 {
-                ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>());
+                ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
                 if (cls == nullptr)
                     return ERROR;
 
@@ -335,7 +335,7 @@ BentleyStatus ECSqlToJsonConverter::NavigationToJson(JsonValueR jsonValue, IECSq
     if (relClassIdVal.IsNull())
         return SUCCESS;
 
-    ECClassCP relClass = m_stmt.GetECDb()->Schemas().GetClass(relClassIdVal.GetId<ECClassId>());
+    ECClassCP relClass = m_stmt.GetECDb()->Schemas().GetClass(relClassIdVal.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
     if (relClass == nullptr)
         return ERROR;
 
