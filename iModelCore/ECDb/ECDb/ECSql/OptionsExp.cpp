@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/OptionsExp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -25,12 +25,12 @@ Utf8CP const OptionsExp::READONLYPROPERTIESAREUPDATABLE_OPTION = "ReadonlyProper
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp)
+BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp, IIssueReporter const& issues)
     {
     Utf8CP name = optionExp->GetName();
     if (m_optionsByName.find(name) != m_optionsByName.end())
         {
-        LOG.errorv("Multiple options with same name ('%s') are not supported.", name);
+        issues.Report("Multiple options with same name ('%s') are not supported.", name);
         return ERROR;
         }
 

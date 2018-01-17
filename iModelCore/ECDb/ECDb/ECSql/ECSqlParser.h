@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,6 +65,7 @@ public:
 
 private:
     ECDbCR m_ecdb;
+    ScopedIssueReporter const& m_issues;
 
     std::vector<std::unique_ptr<ParseArg>> m_finalizeParseArgs;
     bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>, CompareIUtf8Ascii> m_classNameExpInfoList;
@@ -90,7 +91,7 @@ private:
         return m_attachedTableSpaceCache;
         }
 public:
-    explicit ECSqlParseContext(ECDbCR ecdb) : m_ecdb(ecdb) {}
+    ECSqlParseContext(ECDbCR ecdb, ScopedIssueReporter const& issues) : m_ecdb(ecdb), m_issues(issues) {}
     BentleyStatus FinalizeParsing(Exp& rootExp);
     void PushArg(std::unique_ptr<ParseArg>);
     ParseArg const* CurrentArg() const;
@@ -101,7 +102,7 @@ public:
     void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     Utf8String GenerateAlias();
     int TrackECSqlParameter(ParameterExp& parameterExp);
-    IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
+    ScopedIssueReporter const& Issues() const { return m_issues; }
     SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
     };
@@ -123,9 +124,9 @@ private:
     private:
         ECSqlParser const& m_parser;
     public:
-        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb) : m_parser(parser)
+        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, ScopedIssueReporter const& issues) : m_parser(parser)
             {
-            m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb));
+            m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb, issues));
             }
 
         ~ScopedContext() { m_parser.m_context = nullptr; }
@@ -229,7 +230,7 @@ private:
     BentleyStatus ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
 
-    IssueReporter const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
+    ScopedIssueReporter const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
     static void ResolveEnumerators(Exp& exp, ECDbCR ecdb);
     static bool IsPredicate(connectivity::OSQLParseNode const&);
     static Utf8CP SqlDataTypeKeywordToString(sal_uInt32 sqlKeywordId);
@@ -238,7 +239,7 @@ public:
     ECSqlParser() : m_context (nullptr) {}
     ~ECSqlParser() {}
 
-    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql) const;
+    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql, ScopedIssueReporter const&) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2361,8 +2361,8 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
             ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Double, colInfo.GetDataType().GetPrimitiveType()) << colInfo.GetPropertyPath().ToString();
             }
 
-        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias())) << colInfo.GetPropertyPath().ToString();
-        ASSERT_STREQ("P", colInfo.GetRootClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
+        ASSERT_TRUE(colInfo.GetRootClass().GetAlias().empty()) << colInfo.GetPropertyPath().ToString();
+        ASSERT_STREQ("P", colInfo.GetRootClass().GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
         }
     }
 
@@ -2384,8 +2384,8 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
         else
             ASSERT_STREQ("RelationshipECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
 
-        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias())) << colInfo.GetPropertyPath().ToString();
-        ASSERT_STREQ("PSAHasPSA_NN", colInfo.GetRootClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
+        ASSERT_TRUE(colInfo.GetRootClass().GetAlias().empty()) << colInfo.GetPropertyPath().ToString();
+        ASSERT_STREQ("PSAHasPSA_NN", colInfo.GetRootClass().GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
         }
     }
 
@@ -2412,8 +2412,8 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     ASSERT_FALSE(columnInfo1.IsGeneratedProperty());
     ASSERT_TRUE(columnInfo1.IsSystemProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo1.GetProperty()->GetClass().GetName().c_str());
-    ASSERT_STREQ("c1", columnInfo1.GetRootClassAlias());
-    ASSERT_STREQ("PSA", columnInfo1.GetRootClass().GetName().c_str());
+    ASSERT_STREQ("c1", columnInfo1.GetRootClass().GetAlias().c_str());
+    ASSERT_STREQ("PSA", columnInfo1.GetRootClass().GetClass().GetName().c_str());
 
     auto const& value2 = statement.GetValue(1);
     auto const& columnInfo2 = value2.GetColumnInfo();
@@ -2422,8 +2422,8 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     ASSERT_TRUE(columnInfo2.IsSystemProperty());
     ASSERT_FALSE(columnInfo2.IsGeneratedProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo2.GetProperty()->GetClass().GetName().c_str());
-    ASSERT_STREQ("c2", columnInfo2.GetRootClassAlias());
-    ASSERT_STREQ("P", columnInfo2.GetRootClass().GetName().c_str());
+    ASSERT_STREQ("c2", columnInfo2.GetRootClass().GetAlias().c_str());
+    ASSERT_STREQ("P", columnInfo2.GetRootClass().GetClass().GetName().c_str());
 
     auto const& value3 = statement.GetValue(2);
     auto const& columnInfo3 = value3.GetColumnInfo();
@@ -2432,8 +2432,8 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     ASSERT_TRUE(columnInfo3.IsSystemProperty());
     ASSERT_FALSE(columnInfo3.IsGeneratedProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo3.GetProperty()->GetClass().GetName().c_str());
-    ASSERT_STREQ("c1", columnInfo3.GetRootClassAlias());
-    ASSERT_STREQ("PSA", columnInfo3.GetRootClass().GetName().c_str());
+    ASSERT_STREQ("c1", columnInfo3.GetRootClass().GetAlias().c_str());
+    ASSERT_STREQ("PSA", columnInfo3.GetRootClass().GetClass().GetName().c_str());
 
     auto const& value4 = statement.GetValue(3);
     auto const& columnInfo4 = value4.GetColumnInfo();
@@ -2442,8 +2442,8 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     ASSERT_TRUE(columnInfo4.IsSystemProperty());
     ASSERT_FALSE(columnInfo4.IsGeneratedProperty());
     ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo4.GetProperty()->GetClass().GetName().c_str());
-    ASSERT_STREQ("c2", columnInfo4.GetRootClassAlias());
-    ASSERT_STREQ("P", columnInfo4.GetRootClass().GetName().c_str());
+    ASSERT_STREQ("c2", columnInfo4.GetRootClass().GetAlias().c_str());
+    ASSERT_STREQ("P", columnInfo4.GetRootClass().GetClass().GetName().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2480,8 +2480,8 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndNavigationAndPointProp)
             }
 
         ASSERT_STREQ("P", colInfo.GetProperty()->GetClass().GetName().c_str());
-        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias()));
-        ASSERT_STREQ("P", colInfo.GetRootClass().GetName().c_str());
+        ASSERT_TRUE(colInfo.GetRootClass().GetAlias().empty());
+        ASSERT_STREQ("P", colInfo.GetRootClass().GetClass().GetName().c_str());
         }
 
     }
@@ -3663,11 +3663,11 @@ void AssertColumnInfo(Utf8CP expectedPropertyName, bool expectedIsSystem, bool e
         expectedPropPathEntryIx++;
         }
 
-    EXPECT_STREQ(expectedRootClassName, actualColumnInfo.GetRootClass().GetName().c_str());
+    EXPECT_STREQ(expectedRootClassName, actualColumnInfo.GetRootClass().GetClass().GetName().c_str());
     if (expectedRootClassAlias == nullptr)
-        EXPECT_TRUE(Utf8String::IsNullOrEmpty(actualColumnInfo.GetRootClassAlias()));
+        EXPECT_TRUE(actualColumnInfo.GetRootClass().GetAlias().empty());
     else
-        EXPECT_STREQ(expectedRootClassAlias, actualColumnInfo.GetRootClassAlias());
+        EXPECT_STREQ(expectedRootClassAlias, actualColumnInfo.GetRootClass().GetAlias().c_str());
     }
 
 //---------------------------------------------------------------------------------------

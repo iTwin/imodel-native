@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlStatement.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,8 +62,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! Prepares the statement with the specified ECSQL
         //! @param[in] ecdb ECDb context
         //! @param[in] ecsql ECSQL
+        //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql) { return Prepare(ecdb, ecsql, nullptr); }
+        ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, bool logErrors = true) { return Prepare(ecdb, ecsql, nullptr, logErrors); }
 
         //! Prepares the statement with the specified ECSQL
         //! @param[in] ecdb ECDb context
@@ -71,8 +72,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if 
         //! the ECDb file was set-up with the option "ECSQL write token validation".
         //! If the option is not set, nullptr can be passed for @p token.
+        //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
         //! @return ECSqlStatus::Success or error codes
-        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token);
+        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token, bool logErrors = true);
 
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise

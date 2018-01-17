@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,6 +28,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECSqlStatement::Impl final
     {
     private:
+        
         struct Diagnostics final
             {
             private:
@@ -66,7 +67,7 @@ struct ECSqlStatement::Impl final
         Impl() {}
         ~Impl() {}
 
-        ECSqlStatus Prepare(ECDbCR, Utf8CP ecsql, ECCrudWriteToken const*);
+        ECSqlStatus Prepare(ECDbCR, Utf8CP ecsql, ECCrudWriteToken const*, bool logErrors);
 
         bool IsPrepared() const { return m_preparedStatement != nullptr; }
 

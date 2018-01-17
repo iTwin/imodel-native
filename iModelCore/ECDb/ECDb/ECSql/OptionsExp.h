@@ -2,13 +2,14 @@
 |
 |     $Source: ECDb/ECSql/OptionsExp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "Exp.h"
+#include "../IssueReporter.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -49,7 +50,7 @@ private:
 
 public:
     OptionsExp() :Exp(Type::Options) {}
-    BentleyStatus AddOptionExp(std::unique_ptr<OptionExp> optionExp);
+    BentleyStatus AddOptionExp(std::unique_ptr<OptionExp> optionExp, IIssueReporter const&);
     //! Checks whether an option with the given name was defined.
     //! If it exists and if it has a value, the value is checked for truth.
     //! Ex: ECSQLOPTIONS opt1 opt2=True opt3=1 opt4=False opt5=0

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -93,7 +93,7 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
             if (columnInfo.IsGeneratedProperty())
                 continue;
 
-            ecClass = &(columnInfo.GetRootClass());
+            ecClass = &columnInfo.GetRootClass().GetClass();
             break;
             }
         }
@@ -465,9 +465,9 @@ BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
                     if (!columnInfo.IsGeneratedProperty())
                         {
                         if (targetClassInSelectClause == nullptr)
-                            targetClassInSelectClause = &columnInfo.GetRootClass();
+                            targetClassInSelectClause = &columnInfo.GetRootClass().GetClass();
                         else
-                            isSingleClassSelectClause = ECInstanceAdapterHelper::Equals(*targetClassInSelectClause, columnInfo.GetRootClass());
+                            isSingleClassSelectClause = ECInstanceAdapterHelper::Equals(*targetClassInSelectClause, columnInfo.GetRootClass().GetClass());
                         }
                     else
                         isSingleClassSelectClause = false;

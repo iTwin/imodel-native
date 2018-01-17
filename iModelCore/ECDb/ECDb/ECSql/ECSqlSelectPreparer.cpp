@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlSelectPreparer.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -295,7 +295,7 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
     const size_t count = lhs.GetChildrenCount();
     if (count != rhs.GetChildrenCount())
         {
-        ctx.GetECDb().GetImpl().Issues().Report("Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
+        ctx.Issues().Report("Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
         return ERROR;
         }
 
@@ -307,13 +307,13 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
         ECSqlTypeInfo const& rhsTypeInfo = rhsDerivedPropExp->GetExpression()->GetTypeInfo();
         if (!lhsTypeInfo.CanCompare(rhsTypeInfo))
             {
-            ctx.GetECDb().GetImpl().Issues().Report("Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.Issues().Report("Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
             return ERROR;
             }
 
         if (lhsTypeInfo.IsNull() && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
             {
-            ctx.GetECDb().GetImpl().Issues().Report("NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.Issues().Report("NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
             return ERROR;
             }
         }
