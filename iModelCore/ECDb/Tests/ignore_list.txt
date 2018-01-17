@@ -8,3 +8,6 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #----------------------------------------------------------------------------------------
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
+
+#TFS#807252 waiting for sqlite team to repond.
+ChangeSummaryTestFixture.sqlite_stat1

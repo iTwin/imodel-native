@@ -363,7 +363,80 @@ TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             1/18
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("change_statistic1.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo2">
+                <ECProperty propertyName="Dt" typeName="dateTime" />
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    
+    ReopenECDb();
+    //Enusre only on system table exist by default
+    ASSERT_TRUE(m_ecdb.TableExists("sqlite_stat1"));
+    ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat2"));
+    ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat3"));
+    ASSERT_FALSE(m_ecdb.TableExists("sqlite_stat4"));
+    //and that table is empty by default
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(0, stmt->GetValueInt(0));
+    }
+    //Make sure change is that system table can be tracked.
+    TestChangeSet changeset1;
+    {
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+    m_ecdb.ExecuteSql("analyze");
+    tracker.EnableTracking(false);
+    //Make we captured some changes
+    ASSERT_TRUE(tracker.HasChanges());
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker)); 
+    }
 
+    m_ecdb.CloseDb();
+    ASSERT_EQ(SUCCESS, SetupECDb("change_statistic2.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo1">
+                <ECProperty propertyName="S" typeName="string" />
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo2">
+                <ECProperty propertyName="Dt" typeName="dateTime" />
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(0, stmt->GetValueInt(0));
+    }
+    //printf("\n%s\n", changeset1.ToJson(m_ecdb).ToString().c_str());
+
+    //apply the change set to a new db
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.ApplyChanges(m_ecdb));
+    m_ecdb.SaveChanges();
+    {
+    auto stmt = m_ecdb.GetCachedStatement("SELECT COUNT(*) FROM sqlite_stat1");
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(48, stmt->GetValueInt(0));
+    }
+
+    //printf("%s", changeset1.ToJson(m_ecdb).ToString().c_str());
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  12/17
 //---------------------------------------------------------------------------------------
