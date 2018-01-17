@@ -694,12 +694,21 @@ public:
 //=======================================================================================
 struct Material : RefCounted<NonCopyableClass>
 {
-    struct CreateParams
+    // QVision defaults...
+    struct Defaults
     {
         // From DgnViewMaterial.cpp...(QVision defaults)
-        static constexpr double QvExponentMultiplier() { return 15.0; }
-        static constexpr double QvFinish() { return 0.9; }
-        static constexpr double QvSpecular() { return 0.4; }
+        static constexpr double ExponentMultiplier() { return 15.0; }
+        static constexpr double Finish() { return 0.9; }
+        static constexpr double Specular() { return 0.4; }
+        static constexpr double Diffuse() { return 0.6; }
+        static constexpr double Reflect() { return 0.0; }
+        static constexpr double SpecularExponent() { return Finish() * ExponentMultiplier(); }
+    };
+
+    struct CreateParams
+    {
+        using Defaults = Material::Defaults;
 
         struct MatColor
         {
@@ -715,10 +724,10 @@ struct Material : RefCounted<NonCopyableClass>
         MatColor m_emissiveColor;
         TextureMapping m_textureMapping;
         MaterialName m_name;
-        double m_diffuse = 0.6;                        // QVision default...
-        double m_specular = QvSpecular();
-        double m_specularExponent = QvFinish() * QvExponentMultiplier();
-        double m_reflect = 0.0;
+        double m_diffuse = Defaults::Diffuse();
+        double m_specular = Defaults::Specular();
+        double m_specularExponent = Defaults::SpecularExponent();
+        double m_reflect = Defaults::Reflect();
         double m_transparency = 0.0;
         double m_refract = 1.0;
         double m_ambient = .3;

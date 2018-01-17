@@ -1063,10 +1063,19 @@ Material::CreateParams::CreateParams(MaterialNameCR name, RenderingAssetCR asset
         }
 
     if (asset.GetBool(RENDER_MATERIAL_FlagHasFinish, false))
-        m_specularExponent = asset.GetDouble(RENDER_MATERIAL_Finish, QvSpecular()) * FinishScale();
+        m_specularExponent = asset.GetDouble(RENDER_MATERIAL_Finish, Defaults::SpecularExponent());
 
     if (asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
         m_transparency = asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasDiffuse, false))
+        m_diffuse = asset.GetDouble(RENDER_MATERIAL_Diffuse, Defaults::Diffuse());
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasSpecular, false))
+        m_specular = asset.GetDouble(RENDER_MATERIAL_Specular, Defaults::Specular());
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasReflect, false))
+        m_reflect = asset.GetDouble(RENDER_MATERIAL_Reflect, Defaults::Reflect());
 
     auto const& texMap = asset.GetPatternMap();
     TexturePtr texture(pTexture);
