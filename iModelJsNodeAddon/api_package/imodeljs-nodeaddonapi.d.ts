@@ -423,6 +423,9 @@ declare class NodeAddonDgnDb {
     /** End bulk update mode. This will wait for locks and codes. Valid only with the pessimistic concurrency control policy */
     briefcaseManagerEndBulkOperation(): RepositoryStatus;
 
+    /** Check if there is a bulk operation in progress. */
+    inBulkOperation(): boolean;
+
     /**
      *  The the pessimistic concurrency control policy.
      */

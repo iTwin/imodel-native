@@ -39,13 +39,13 @@ USING_NAMESPACE_BENTLEY_EC
     if (info.Length() <= (i)) {\
         Napi::TypeError::New(Env(), "Argument " #i " must be an object").ThrowAsJavaScriptException();\
     }\
-    Napi::Object var = info[0].As<Napi::Object>();
+    Napi::Object var = info[i].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_OBJ(i, T, var)\
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {\
         Napi::TypeError::New(Env(), "Argument " #i " must be an object of type " #T).ThrowAsJavaScriptException();\
     }\
-    T* var = T::Unwrap(info[0].As<Napi::Object>());
+    T* var = T::Unwrap(info[i].As<Napi::Object>());
 
 #define REQUIRE_ARGUMENT_FUNCTION(i, var)\
     if (info.Length() <= (i) || !info[i].IsFunction()) {\
@@ -924,6 +924,11 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_BOOL(2, codes);
         GetDgnDb().BriefcaseManager().ExtractRequestFromBulkOperation(req->m_req, locks, codes);
         }
+
+    Napi::Value InBulkOperation(const Napi::CallbackInfo& info)
+        {
+        return Napi::Boolean::New(Env(), GetDgnDb().BriefcaseManager().IsBulkOperation());
+        }
 		
    void AppendBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info)
         {
@@ -1076,6 +1081,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             InstanceMethod("extractBulkResourcesRequest", &ExtractBulkResourcesRequest),
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &AppendBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &ExtractBriefcaseManagerResourcesRequest),
+            InstanceMethod("inBulkOperation", &InBulkOperation),
 						
 			// DEVELOPMENT-ONLY METHODS:
 			InstanceMethod("executeTestById", &ExecuteTestById),
