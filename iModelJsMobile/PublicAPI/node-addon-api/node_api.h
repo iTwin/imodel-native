@@ -80,31 +80,9 @@ typedef struct {
 #define EXTERN_C_END
 #endif
 
-#define NAPI_MODULE_X(modname, regfunc, priv, flags)                  \
-  EXTERN_C_START                                                      \
-    static napi_module _module =                                      \
-    {                                                                 \
-      NAPI_MODULE_VERSION,                                            \
-      flags,                                                          \
-      __FILE__,                                                       \
-      regfunc,                                                        \
-      #modname,                                                       \
-      priv,                                                           \
-      {0},                                                            \
-    };                                                                \
-    NAPI_C_CTOR(_register_ ## modname) {                              \
-      napi_module_register(&_module);                                 \
-    }                                                                 \
-  EXTERN_C_END
-
-#define NAPI_MODULE(modname, regfunc) \
-  NAPI_MODULE_X(modname, regfunc, NULL, 0)
-
 #define NAPI_AUTO_LENGTH SIZE_MAX
 
 EXTERN_C_START
-
-NAPI_EXTERN void napi_module_register(napi_module* mod);
 
 NAPI_EXTERN napi_status
 napi_get_last_error_info(napi_env env,

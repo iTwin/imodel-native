@@ -845,49 +845,7 @@ napi_status ConcludeDeferred(napi_env env,
 
 }  // end of namespace v8impl
 
-// Intercepts the Node-V8 module registration callback. Converts parameters
-// to NAPI equivalents and then calls the registration callback specified
-// by the NAPI module.
-void napi_module_register_cb(v8::Local<v8::Object> exports,
-                             v8::Local<v8::Value> module,
-                             v8::Local<v8::Context> context,
-                             void* priv) {
-  napi_module* mod = static_cast<napi_module*>(priv);
-
-  // Create a new napi_env for this module or reference one if a pre-existing
-  // one is found.
-  napi_env env = v8impl::GetEnv(context);
-
-  napi_value _exports =
-      mod->nm_register_func(env, v8impl::JsValueFromV8LocalValue(exports));
-
-  // If register function returned a non-null exports object different from
-  // the exports object we passed it, set that as the "exports" property of
-  // the module.
-  if (_exports != nullptr &&
-      _exports != v8impl::JsValueFromV8LocalValue(exports)) {
-    napi_value _module = v8impl::JsValueFromV8LocalValue(module);
-    napi_set_named_property(env, _module, "exports", _exports);
-  }
-}
-
 }  // end of anonymous namespace
-
-// Registers a NAPI module.
-void napi_module_register(napi_module* mod) {
-  node::node_module* nm = new node::node_module {
-    0,
-    mod->nm_flags,
-    nullptr,
-    mod->nm_filename,
-    nullptr,
-    napi_module_register_cb,
-    mod->nm_modname,
-    mod,  // priv
-    nullptr,
-  };
-  imodeljs_extension_register(nm);
-}
 
 // Warning: Keep in-sync with napi_status enum
 static

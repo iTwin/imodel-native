@@ -12,6 +12,10 @@
 #include <cstring>
 #include <type_traits>
 
+#ifndef __IMODELJS_BUILD__
+extern "C" void imodeljs_register_addon(char const*, Napi::ModuleRegisterCallback);
+#endif
+
 namespace Napi {
 
 // Helpers to handle functions exposed from C++.
@@ -154,13 +158,6 @@ struct AccessorCallbackData {
 ////////////////////////////////////////////////////////////////////////////////
 // Module registration
 ////////////////////////////////////////////////////////////////////////////////
-
-#define NODE_API_MODULE(modname, regfunc)                 \
-  napi_value __napi_ ## regfunc(napi_env env,             \
-                                napi_value exports) {     \
-    return Napi::RegisterModule(env, exports, regfunc);   \
-  }                                                       \
-  NAPI_MODULE(modname, __napi_ ## regfunc);
 
 // Adapt the NAPI_MODULE registration function:
 //  - Wrap the arguments in NAPI wrappers.
@@ -2997,5 +2994,8 @@ inline void AsyncWorker::OnWorkComplete(
 #undef NAPI_THROW_IF_FAILED
 
 } // namespace Napi
+
+#define NODE_API_MODULE(modname, regfunc) \
+    extern "C" { void imodeljs_addon_entry_point() {imodeljs_register_addon(#modname, regfunc);} }
 
 #endif // SRC_NAPI_INL_H_

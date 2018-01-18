@@ -61,6 +61,67 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Steve.Wilson   7/17
 //=======================================================================================
+struct Addon
+    {
+private:
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Steve.Wilson                    7/2017
+    //---------------------------------------------------------------------------------------
+    static void Utilities (Js::RuntimeR runtime)
+        {
+        OnTestStarted();
+
+        auto evaluateResult = runtime.EvaluateScript (u8R"(
+            (function() {
+                let info = bentley.imodeljs.servicesTier.getHostInfo();
+                BeAssert (typeof (info.argv) !== "undefined");
+
+                bentley.imodeljs.servicesTier.scheduleIdleCallback (function() {
+                    __iModelJsServicesTierTests_OnTestFinished();
+                });
+            })();
+        )", "iModelJsServicesTierTests:///Addon.Utilities.js");
+
+        BeAssert (evaluateResult.status == Js::EvaluateStatus::Success);
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Steve.Wilson                    7/2017
+    //---------------------------------------------------------------------------------------
+    static void Test1 (Js::RuntimeR runtime)
+        {
+        OnTestStarted();
+
+        auto evaluateResult = runtime.EvaluateScript (u8R"(
+            (function() {
+                let require = bentley.imodeljs.servicesTier.require;
+                debugger;
+                let addon = require ("@bentley/imodeljs-nodeaddon");
+
+                BeAssert (addon !== undefined);
+            })();
+        )", "iModelJsServicesTierTests:///Addon.Test1.js");
+
+        BeAssert (evaluateResult.status == Js::EvaluateStatus::Success);
+
+        OnTestFinished();
+        }
+
+public:
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Steve.Wilson                    7/2017
+    //---------------------------------------------------------------------------------------
+    static void PerformTests (Js::RuntimeR runtime)
+        {
+        Utilities (runtime);
+        Test1 (runtime);
+        }
+    };
+
+
+//=======================================================================================
+// @bsiclass                                                    Steve.Wilson   7/17
+//=======================================================================================
 struct Core
     {
 private:
@@ -88,7 +149,7 @@ private:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
     //---------------------------------------------------------------------------------------
-    static void ExtensionLoading (Js::RuntimeR runtime)
+    static void Test1 (Js::RuntimeR runtime)
         {
         OnTestStarted();
 
@@ -102,7 +163,7 @@ private:
                 BeAssert (before === 1.0);
                 BeAssert (after === 2.0);
             })();
-        )", "iModelJsServicesTierTests:///Core.ExtensionLoading.js");
+        )", "iModelJsServicesTierTests:///Core.Test1.js");
 
         BeAssert (evaluateResult.status == Js::EvaluateStatus::Success);
 
@@ -116,7 +177,7 @@ public:
     static void PerformTests (Js::RuntimeR runtime)
         {
         Utilities (runtime);
-        ExtensionLoading (runtime);
+        Test1 (runtime);
         }
     };
 
@@ -400,6 +461,7 @@ static void PerformTests()
         Napi::HandleScope scope(runtime.Env());
 
         Setup(runtime);
+        Addon::PerformTests(runtime);
         Core::PerformTests(runtime);
         ServicesTierUtilities::PerformTests(runtime);
         s_wait = false;

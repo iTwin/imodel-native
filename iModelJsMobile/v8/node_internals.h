@@ -115,31 +115,6 @@ constexpr size_t arraysize(const T(&)[N]) { return N; }
 
 NO_RETURN void FatalError(const char* location, const char* message);
 
-typedef void (*addon_register_func)(
-    v8::Local<v8::Object> exports,
-    v8::Local<v8::Value> module,
-    void* priv);
-
-typedef void (*addon_context_register_func)(
-    v8::Local<v8::Object> exports,
-    v8::Local<v8::Value> module,
-    v8::Local<v8::Context> context,
-    void* priv);
-
-struct node_module {
-  int nm_version;
-  unsigned int nm_flags;
-  void* nm_dso_handle;
-  const char* nm_filename;
-  addon_register_func nm_register_func;
-  addon_context_register_func nm_context_register_func;
-  const char* nm_modname;
-  void* nm_priv;
-  struct node_module* nm_link;
-};
-
 }  // namespace node
-
-extern "C" NODE_EXTERN void imodeljs_extension_register(void* mod);
 
 #endif  // SRC_NODE_INTERNALS_H_
