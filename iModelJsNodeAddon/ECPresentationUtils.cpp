@@ -2,56 +2,10 @@
 |
 |     $Source: ECPresentationUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationUtils.h"
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct SimpleRulesetLocater : RefCounted<RuleSetLocater>
-{
-private:
-    Utf8String m_rulesetId;
-    mutable PresentationRuleSetPtr m_ruleset;
-
-protected:
-    SimpleRulesetLocater(Utf8String rulesetId) : m_rulesetId(rulesetId) {}
-    int _GetPriority() const override {return 100;}
-    bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override
-        {
-        if (m_ruleset.IsNull())
-            {
-            m_ruleset = PresentationRuleSet::CreateInstance(m_rulesetId, 1, 0, false, "", "", "", false);
-
-            m_ruleset->AddPresentationRule(*new ContentRule("", 1, false));
-            m_ruleset->GetContentRules().back()->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
-
-            m_ruleset->AddPresentationRule(*new RootNodeRule());
-            m_ruleset->GetRootNodesRules().back()->AddSpecification(*new CustomNodeSpecification(1, false, "T_Models", "Models", "Models in this imodel", "img"));
-
-            m_ruleset->AddPresentationRule(*new ChildNodeRule("ParentNode.Type=\"T_Models\"", 1, false, TargetTree_Both));
-            m_ruleset->GetChildNodesRules().back()->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
-                "", "BisCore:Model", true));
-
-            OnRulesetCreated(*m_ruleset);
-            }
-        return bvector<PresentationRuleSetPtr>{m_ruleset};
-        }
-    bvector<Utf8String> _GetRuleSetIds() const override {return bvector<Utf8String>{m_rulesetId};}
-    void _InvalidateCache(Utf8CP rulesetId) override
-        {
-        if (m_ruleset.IsValid() && (nullptr == rulesetId || m_rulesetId.Equals(rulesetId)))
-            {
-            OnRulesetDisposed(*m_ruleset);
-            m_ruleset = nullptr;
-            }
-        }
-
-public:
-    static RefCountedPtr<SimpleRulesetLocater> Create(Utf8String rulesetId) {return new SimpleRulesetLocater(rulesetId);}
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
@@ -62,8 +16,16 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
-    manager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Items"));
     return manager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::SetupRulesetDirectories(RulesDrivenECPresentationManager& manager, bvector<Utf8String> const& directories)
+    {
+    Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
+    manager.GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**

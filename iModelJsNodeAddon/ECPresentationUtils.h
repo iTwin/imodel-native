@@ -2,7 +2,7 @@
 |
 |     $Source: ECPresentationUtils.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -24,6 +24,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct ECPresentationUtils
 {
     static RulesDrivenECPresentationManager* CreatePresentationManager(IConnectionManagerR, Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&);
+    static void SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
     static void GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetRootNodes(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetChildrenCount(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
