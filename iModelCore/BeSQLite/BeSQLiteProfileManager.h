@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLiteProfileManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,5 +63,14 @@ public:
     DbResult Upgrade(DbR db) const { return _Upgrade(db); }
     };
 
+//=======================================================================================
+// @bsiclass                                                 Affan.Khan            1/2018
+//+===============+===============+===============+===============+===============+======
+struct ProfileUpgrader_3102 final : BeSQLiteProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        DbResult _Upgrade(DbR db) const override;
+    };
 
 END_BENTLEY_SQLITE_NAMESPACE
