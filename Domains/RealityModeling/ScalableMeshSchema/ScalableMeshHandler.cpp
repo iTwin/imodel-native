@@ -68,7 +68,6 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     return m_range;
     }
 
-#if defined(TODO_TILE_PUBLISH)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -77,9 +76,8 @@ PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
     if (m_smPtr.IsNull())
         return PublishedTilesetInfo();
 
-    return PublishedTilesetInfo(Utf8String(GetPath()), _GetRange());
+    return PublishedTilesetInfo(Utf8String(GetPath()), m_smPtr->GetRootNode()->GetContentExtent());
     }
-#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     8/2017
@@ -1534,7 +1532,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
             Render::Texture::CreateParams params;
             params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
-            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, params);
+            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, scene.GetDgnDb(), params);
             }
 #else
 
@@ -3366,7 +3364,7 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         m_tryOpen = true;
         }
     
-    if (m_smPtr.IsValid())
+    if (m_smPtr.IsValid() && !m_smPtr->IsCesium3DTiles())
         {
         Json::Value publishingMetadata;
         publishingMetadata["name"] = "SMMasterHeader";

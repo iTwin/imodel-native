@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/WmsSource.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterInternal.h"
@@ -451,6 +451,7 @@ folly::Future<BentleyStatus> WmsTile::WmsTileLoader::_GetFromSource()
 BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
     {
     WmsTile& rasterTile = static_cast<WmsTile&>(*m_tile);
+    auto& root = rasterTile.GetRoot();
 
     Render::Image image;
     
@@ -470,10 +471,9 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
 
     Render::Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = GetRenderSystem()->_CreateTexture(image, textureParams);
+    auto texture = GetRenderSystem()->_CreateTexture(image, root.GetDgnDb(), textureParams);
 
     // ###TODO: is this needed?  auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0);
-    auto& root = rasterTile.GetRoot();
     Dgn::TileTree::TriMeshTree::TriMesh::CreateParams geomParams;
     FPoint3d fpts[4]; // local storage for floating point corners
     geomParams.FromTile(*texture, rasterTile.m_corners, fpts, root.GetDgnDb()); // ###TODO: gfParams?
