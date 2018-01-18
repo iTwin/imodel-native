@@ -5,6 +5,7 @@ import { IModelStatus, StatusCodeWithMessage, RepositoryStatus } from "@bentley/
 import { BentleyStatus } from "@bentley/bentleyjs-core/lib/Bentley";
 import { DbResult, DbOpcode } from "@bentley/bentleyjs-core/lib/BeSQLite";
 import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
+import { IDisposable } from "@bentley/bentleyjs-core/lib/Disposable";
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
@@ -341,7 +342,7 @@ declare class NodeAddonDgnDb {
 }
 
 /* The NodeAddonECDb class that is projected by the iModelJs node addon. */
-declare class NodeAddonECDb {
+declare class NodeAddonECDb implements IDisposable {
     constructor();
      /**
      * Create a new ECDb.
@@ -389,7 +390,7 @@ declare class NodeAddonECDb {
 }
 
 /* The NodeAddonECSqlStatement class that is projected by the iModelJs node addon. */
-declare class NodeAddonECSqlStatement {
+declare class NodeAddonECSqlStatement implements IDisposable {
     constructor();
 
     /**
@@ -407,6 +408,8 @@ declare class NodeAddonECSqlStatement {
 
     /** Dispose of the native ECSqlStatement object - call this when finished stepping a statement, but only if the statement is not shared. */
     dispose(): void;
+
+    getBinder(param: number | string): NodeAddonECSqlBinder;
 
     /** Clear the bindings of this statement. See bindValues.
      * @return non-zero error status in case of failure.
@@ -431,6 +434,29 @@ declare class NodeAddonECSqlStatement {
      */
     getRow(): string;
 
+}
+
+/* The NodeAddonECSqlBinder class that is projected by the iModelJs node addon. */
+declare class NodeAddonECSqlBinder implements IDisposable {
+    constructor();
+
+    /** Dispose of the NodeAddonECSqlBinder object */
+    dispose(): void;
+
+    bindNull(): DbResult;
+    bindBlob(base64String: string): DbResult;
+    bindBoolean(val: boolean): DbResult;
+    bindDateTime(isoString: string): DbResult;
+    bindDouble(val: number): DbResult;
+    bindId(hexStr: string): DbResult;
+    bindInt(val: number): DbResult;
+    bindInt64(val: string | number): DbResult;
+    bindPoint2d(x: number, y: number): DbResult;
+    bindPoint3d(x: number, y: number, z: number): DbResult;
+    bindString(val: string): DbResult;
+    bindNavigation(navIdHexStr: string, relClassName?: string, relClassTableSpace?: string): DbResult;
+    bindMember(memberName: string): NodeAddonECSqlBinder;
+    addArrayElement(): NodeAddonECSqlBinder;
 }
 
 /* The NodeAddonECPresentationManager class that is projected by the iModelJs node addon. */

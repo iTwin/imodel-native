@@ -44,7 +44,7 @@ USING_NAMESPACE_BENTLEY_EC
     Napi::Object var = info[0].As<Napi::Object>();
 
 #define REQUIRE_ARGUMENT_OBJ(i, T, var)\
-    if (info.Length() <= (i) || !T::HasInstance(info[i])) {\
+    if (info.Length() <= (i) || !T::InstanceOf(info[i])) {\
         Napi::TypeError::New(Env(), "Argument " #i " must be an object of type " #T).ThrowAsJavaScriptException();\
     }\
     T* var = T::Unwrap(info[0].As<Napi::Object>());
@@ -60,6 +60,12 @@ USING_NAMESPACE_BENTLEY_EC
         Napi::TypeError::New(info.Env(), "Argument " #i " must be a string").ThrowAsJavaScriptException();\
     }\
     Utf8String var = info[i].As<Napi::String>().Utf8Value().c_str();
+
+#define REQUIRE_ARGUMENT_NUMBER(i, var)\
+    if (info.Length() <= (i) || !info[i].IsNumber()) {\
+        Napi::TypeError::New(Env(), "Argument " #i " must be a number").ThrowAsJavaScriptException();\
+    }\
+    Napi::Number var = info[i].As<Napi::Number>();
 
 #define REQUIRE_ARGUMENT_INTEGER(i, var)\
     if (info.Length() <= (i) || !info[i].IsNumber()) {\
@@ -136,116 +142,120 @@ struct NodeUtils
 // Projects the ECDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb> 
-{
-private:
-    static Napi::FunctionReference s_constructor;
-    std::unique_ptr<ECDb> m_ecdb;
+struct NodeAddonECDb : Napi::ObjectWrap<NodeAddonECDb>
+    {
+    private:
+        static Napi::FunctionReference s_constructor;
+        std::unique_ptr<ECDb> m_ecdb;
 
-public:
-    NodeAddonECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECDb>(info) {}
-    ~NodeAddonECDb() {}
- 
-    ECDbR GetECDb() 
-        {
-        if (m_ecdb == nullptr)
-            m_ecdb = std::make_unique<ECDb>();
+    public:
+        NodeAddonECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECDb>(info) {}
+        ~NodeAddonECDb() {}
 
-        return *m_ecdb;
-        }
-
-    // Check if val is really a NodeAddonECDb peer object
-    static bool HasInstance(Napi::Value val) {
-        if (!val.IsObject())
-            return false;
-        Napi::Object obj = val.As<Napi::Object>();
-        return obj.InstanceOf(s_constructor.Value());
-        }
-
-    Napi::Value CreateDb(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, dbName);
-        RETURN_IF_HAD_EXCEPTION
-        DbResult status = AddonUtils::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
-        return Napi::Number::New(Env(), (int)status);
-        }
-
-    Napi::Value OpenDb(const Napi::CallbackInfo& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, dbName);
-        REQUIRE_ARGUMENT_INTEGER(1, mode);
-        RETURN_IF_HAD_EXCEPTION
-
-        DbResult status = AddonUtils::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode)mode);
-        return Napi::Number::New(Env(), (int) status);
-        }
-
-    Napi::Value CloseDb(const Napi::CallbackInfo& info)
-        {
-        if (m_ecdb != nullptr)
+        // Check if val is really a NodeAddonECDb peer object
+        static bool InstanceOf(Napi::Value val)
             {
-            m_ecdb->CloseDb();
-            m_ecdb = nullptr;
+            if (!val.IsObject())
+                return false;
+
+            Napi::HandleScope scope(val.Env());
+            return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+            }
+        ECDbR GetECDb()
+            {
+            if (m_ecdb == nullptr)
+                m_ecdb = std::make_unique<ECDb>();
+
+            return *m_ecdb;
             }
 
-        return Napi::Number::New(Env(), (int) BE_SQLITE_OK);
-        }
+        Napi::Value CreateDb(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, dbName);
+            RETURN_IF_HAD_EXCEPTION
+            const DbResult status = AddonUtils::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
+            return Napi::Number::New(Env(), (int) status);
+            }
 
-    Napi::Value Dispose(const Napi::CallbackInfo& info) { return CloseDb(info); }
+        Napi::Value OpenDb(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, dbName);
+            REQUIRE_ARGUMENT_INTEGER(1, mode);
+            RETURN_IF_HAD_EXCEPTION
 
-    Napi::Value SaveChanges(const Napi::CallbackInfo& info)
-        {            
-        OPTIONAL_ARGUMENT_STRING(0, changeSetName);        
-        RETURN_IF_HAD_EXCEPTION
-        DbResult status = GetECDb().SaveChanges(changeSetName.empty() ? nullptr : changeSetName.c_str());
-        return Napi::Number::New(Env(), (int) status);
-        }
+            const DbResult status = AddonUtils::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
+            return Napi::Number::New(Env(), (int) status);
+            }
 
-    Napi::Value AbandonChanges(const Napi::CallbackInfo& info)
-        {            
-        DbResult status = GetECDb().AbandonChanges();
-        return Napi::Number::New(Env(), (int) status);
-        }
+        Napi::Value CloseDb(const Napi::CallbackInfo& info)
+            {
+            if (m_ecdb != nullptr)
+                {
+                m_ecdb->CloseDb();
+                m_ecdb = nullptr;
+                }
 
-    Napi::Value ImportSchema(const Napi::CallbackInfo& info)
-        {  
-        REQUIRE_ARGUMENT_STRING(0, schemaPathName);          
-        RETURN_IF_HAD_EXCEPTION
-        DbResult status = AddonUtils::ImportSchema(GetECDb(), BeFileName(schemaPathName.c_str(), true));
-        return Napi::Number::New(Env(), (int) status);  
-        }
+            return Napi::Number::New(Env(), (int) BE_SQLITE_OK);
+            }
 
-    Napi::Value IsOpen(const Napi::CallbackInfo& info) { return Napi::Boolean::New(Env(), GetECDb().IsDbOpen()); }
+        Napi::Value Dispose(const Napi::CallbackInfo& info) { return CloseDb(info); }
 
-    //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
-    void AddRef() { this->Ref(); }
+        Napi::Value SaveChanges(const Napi::CallbackInfo& info)
+            {
+            OPTIONAL_ARGUMENT_STRING(0, changeSetName);
+            RETURN_IF_HAD_EXCEPTION
+            const DbResult status = GetECDb().SaveChanges(changeSetName.empty() ? nullptr : changeSetName.c_str());
+            return Napi::Number::New(Env(), (int) status);
+            }
 
-    //  Remove a reference from this wrapper object and its peer JS object .
-    void Release() { this->Unref(); }
+        Napi::Value AbandonChanges(const Napi::CallbackInfo& info)
+            {
+            DbResult status = GetECDb().AbandonChanges();
+            return Napi::Number::New(Env(), (int) status);
+            }
 
-    static void Init(Napi::Env env, Napi::Object exports)
-        {           
-        // ***
-        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-        // ***
-        Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NodeAddonECDb", {
-            InstanceMethod("createDb", &NodeAddonECDb::CreateDb),
-            InstanceMethod("openDb", &NodeAddonECDb::OpenDb),
-            InstanceMethod("closeDb", &NodeAddonECDb::CloseDb),
-            InstanceMethod("dispose", &NodeAddonECDb::Dispose),
-            InstanceMethod("saveChanges", &NodeAddonECDb::SaveChanges),
-            InstanceMethod("abandonChanges", &NodeAddonECDb::AbandonChanges),
-            InstanceMethod("importSchema", &NodeAddonECDb::ImportSchema),
-            InstanceMethod("isOpen", &NodeAddonECDb::IsOpen)
-        });
+        Napi::Value ImportSchema(const Napi::CallbackInfo& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, schemaPathName);
+            RETURN_IF_HAD_EXCEPTION
+            const DbResult status = AddonUtils::ImportSchema(GetECDb(), BeFileName(schemaPathName.c_str(), true));
+            return Napi::Number::New(Env(), (int) status);
+            }
 
-        exports.Set("NodeAddonECDb", t);
+        Napi::Value IsOpen(const Napi::CallbackInfo& info) { return Napi::Boolean::New(Env(), GetECDb().IsDbOpen()); }
 
-        s_constructor = Napi::Persistent(t);
-        s_constructor.SuppressDestruct();             // ??? what is this?
-        }
-};
+        //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
+        void AddRef() { this->Ref(); }
+
+        //  Remove a reference from this wrapper object and its peer JS object .
+        void Release() { this->Unref(); }
+
+        static void Init(Napi::Env env, Napi::Object exports)
+            {
+            // ***
+            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+            // ***
+            Napi::HandleScope scope(env);
+            Napi::Function t = DefineClass(env, "NodeAddonECDb", {
+                InstanceMethod("createDb", &NodeAddonECDb::CreateDb),
+                InstanceMethod("openDb", &NodeAddonECDb::OpenDb),
+                InstanceMethod("closeDb", &NodeAddonECDb::CloseDb),
+                InstanceMethod("dispose", &NodeAddonECDb::Dispose),
+                InstanceMethod("saveChanges", &NodeAddonECDb::SaveChanges),
+                InstanceMethod("abandonChanges", &NodeAddonECDb::AbandonChanges),
+                InstanceMethod("importSchema", &NodeAddonECDb::ImportSchema),
+                InstanceMethod("isOpen", &NodeAddonECDb::IsOpen)
+            });
+
+            exports.Set("NodeAddonECDb", t);
+
+            s_constructor = Napi::Persistent(t);
+            // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+            // from running at program shutdown time, which would attempt to reset the reference when
+            // the environment is no longer valid.
+            s_constructor.SuppressDestruct();
+            }
+    };
 
 //=======================================================================================
 // SimpleRulesetLocater
@@ -291,13 +301,12 @@ struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBri
         {
         }
 
-    static bool HasInstance(Napi::Value val) {
-        Napi::Env env = val.Env();
-        Napi::HandleScope scope(env);
+    static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
             return false;
-        Napi::Object obj = val.As<Napi::Object>();
-        return obj.InstanceOf(s_constructor.Value());
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
         }
 
     //  Create projections
@@ -316,7 +325,10 @@ struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBri
         exports.Set("NodeAddonBriefcaseManagerResourcesRequest", t);
 
         s_constructor = Napi::Persistent(t);
-        s_constructor.SuppressDestruct();             // ??? what is this?
+        // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+        // from running at program shutdown time, which would attempt to reset the reference when
+        // the environment is no longer valid.
+        s_constructor.SuppressDestruct();
         }
 
     void Reset(const Napi::CallbackInfo& info)
@@ -343,31 +355,30 @@ struct NodeAddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NodeAddonBri
 //! @bsiclass
 //=======================================================================================
 struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
-{
+    {
+private:
     static Napi::FunctionReference s_constructor;
     
     Dgn::DgnDbPtr m_dgndb;
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
-    NodeAddonDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonDgnDb>(info)
-        {
-        }
+public:
+    NodeAddonDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonDgnDb>(info) {}
 
-    ~NodeAddonDgnDb() 
+    ~NodeAddonDgnDb() { TearDownPresentationManager();  }
+
+    //  Check if val is really a NodeAddonDgnDb peer object
+    static bool InstanceOf(Napi::Value val)
         {
-        TearDownPresentationManager();
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
         }
 
     DgnDbR GetDgnDb() {return *m_dgndb;}
-
-    //  Check if val is really a NodeAddonDgnDb peer object
-    static bool HasInstance(Napi::Value val) {
-        if (!val.IsObject())
-            return false;
-        Napi::Object obj = val.As<Napi::Object>();
-        return obj.InstanceOf(s_constructor.Value());
-        }
 
     void SetupPresentationManager()
         {
@@ -697,8 +708,7 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
     Napi::Value CreateChangeCache(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
-        REQUIRE_ARGUMENT_STRING(1, changeCachePathStr);
+        REQUIRE_ARGUMENT_STRING(0, changeCachePathStr);
         RETURN_IF_HAD_EXCEPTION
 
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
@@ -974,9 +984,284 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
         exports.Set("NodeAddonDgnDb", t);
 
         s_constructor = Napi::Persistent(t);
-        s_constructor.SuppressDestruct();             // ??? what is this?
+        // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+        // from running at program shutdown time, which would attempt to reset the reference when
+        // the environment is no longer valid.
+        s_constructor.SuppressDestruct();
         }
 };
+
+//=======================================================================================
+// Projects the IECSqlBinder interface into JS.
+//! @bsiclass
+//=======================================================================================
+struct NodeAddonECSqlBinder : Napi::ObjectWrap<NodeAddonECSqlBinder>
+    {
+private:
+    static Napi::FunctionReference s_constructor;
+    IECSqlBinder* m_binder = nullptr;
+    ECDb const* m_ecdb = nullptr;
+
+    static DbResult ToDbResult(ECSqlStatus status)
+        {
+        if (status.IsSuccess())
+            return BE_SQLITE_OK;
+
+        if (status.IsSQLiteError())
+            return status.GetSQLiteError();
+
+        return BE_SQLITE_ERROR;
+        }
+
+    IECSqlBinder& GetBinder()
+        {
+        if (m_binder == nullptr)
+            Napi::TypeError::New(Env(), "Invalid Binder").ThrowAsJavaScriptException();
+
+        return *m_binder;
+        }
+public:
+    NodeAddonECSqlBinder(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NodeAddonECSqlBinder>(info) 
+        {
+        if (info.Length() != 2)
+            Napi::TypeError::New(Env(), "NodeAddonECSqlBinder constructor expects two arguments.").ThrowAsJavaScriptException();
+
+        m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
+        if (m_binder == nullptr)
+            Napi::TypeError::New(Env(), "Invalid first arg for NodeAddonECSqlBinder constructor. IECSqlBinder must not be nullptr").ThrowAsJavaScriptException();
+
+        m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
+        if (m_ecdb == nullptr)
+            Napi::TypeError::New(Env(), "Invalid second arg for NodeAddonECSqlBinder constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+        }
+
+    static bool InstanceOf(Napi::Value val)
+        {
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+        }
+
+    //  Create projections
+    static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "NodeAddonECSqlBinder", {
+        InstanceMethod("dispose", &NodeAddonECSqlBinder::Dispose),
+        InstanceMethod("bindNull", &NodeAddonECSqlBinder::BindNull),
+        InstanceMethod("bindBlob", &NodeAddonECSqlBinder::BindBlob),
+        InstanceMethod("bindBoolean", &NodeAddonECSqlBinder::BindBoolean),
+        InstanceMethod("bindDateTime", &NodeAddonECSqlBinder::BindDateTime),
+        InstanceMethod("bindDouble", &NodeAddonECSqlBinder::BindDouble),
+        InstanceMethod("bindId", &NodeAddonECSqlBinder::BindId),
+        InstanceMethod("bindInt", &NodeAddonECSqlBinder::BindInt),
+        InstanceMethod("bindInt64", &NodeAddonECSqlBinder::BindInt64),
+        InstanceMethod("bindPoint2d", &NodeAddonECSqlBinder::BindPoint2d),
+        InstanceMethod("bindPoint3d", &NodeAddonECSqlBinder::BindPoint3d),
+        InstanceMethod("bindString", &NodeAddonECSqlBinder::BindString),
+        InstanceMethod("bindNavigation", &NodeAddonECSqlBinder::BindNavigation),
+        InstanceMethod("bindMember", &NodeAddonECSqlBinder::BindMember),
+        InstanceMethod("addArrayElement", &NodeAddonECSqlBinder::AddArrayElement)
+        });
+
+        exports.Set("NodeAddonECSqlBinder", t);
+
+        s_constructor = Napi::Persistent(t);
+        // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+        // from running at program shutdown time, which would attempt to reset the reference when
+        // the environment is no longer valid.
+        s_constructor.SuppressDestruct();
+        }
+
+    static Napi::Object Construct(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb)
+        { 
+        return s_constructor.New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
+        }
+
+    void Dispose(const Napi::CallbackInfo& info)
+        {
+        if (m_binder != nullptr)
+            m_binder = nullptr;
+
+        if (m_ecdb != nullptr)
+            m_ecdb = nullptr;
+        }
+
+    Napi::Value BindNull(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "BindNull must not have arguments").ThrowAsJavaScriptException();
+
+        const ECSqlStatus stat = GetBinder().BindNull();
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindBlob(const Napi::CallbackInfo& info)
+        {
+        Napi::Value blobVal;
+        if (info.Length() == 0 || !(blobVal = info[0]).IsString())
+            Napi::TypeError::New(info.Env(), "BindBlob expects a base64 string").ThrowAsJavaScriptException();
+
+        Utf8String base64Str(blobVal.ToString().Utf8Value().c_str());
+        ByteStream blob;
+        Base64Utilities::Decode(blob, base64Str);
+
+        const ECSqlStatus stat = GetBinder().BindBlob(blob.data(), (int) blob.size(), IECSqlBinder::MakeCopy::Yes);
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindBoolean(const Napi::CallbackInfo& info)
+        {
+        Napi::Value boolVal;
+        if (info.Length() == 0 || !(boolVal = info[0]).IsBoolean())
+            Napi::TypeError::New(info.Env(), "BindBoolean expects a boolean").ThrowAsJavaScriptException();
+
+        const ECSqlStatus stat = GetBinder().BindBoolean(boolVal.ToBoolean());
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindDateTime(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, isoString);
+
+        DateTime dt;
+        if (SUCCESS != DateTime::FromString(dt, isoString.c_str()))
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+        const ECSqlStatus stat = GetBinder().BindDateTime(dt);
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindDouble(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_NUMBER(0, val);
+        const ECSqlStatus stat = GetBinder().BindDouble(val.DoubleValue());
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindId(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, hexString);
+
+        BeInt64Id id;
+        if (SUCCESS != BeInt64Id::FromString(id, hexString.c_str()))
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+        const ECSqlStatus stat = GetBinder().BindId(id);
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindInt(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_INTEGER(0, val);
+
+        const ECSqlStatus stat = GetBinder().BindInt((int) val);
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindInt64(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() == 0)
+            Napi::TypeError::New(info.Env(), "BindInt64 expects a string or number").ThrowAsJavaScriptException();
+        
+        Napi::Value val = info[0];
+        if (!val.IsNumber() && !val.IsString())
+            Napi::TypeError::New(info.Env(), "BindInt64 expects a string or number").ThrowAsJavaScriptException();
+
+        int64_t int64Val;
+        if (val.IsNumber())
+            int64Val = val.ToNumber().Int64Value();
+        else
+            {
+            Utf8String strVal(val.ToString().Utf8Value().c_str());
+            if (BeStringUtilities::HasHexPrefix(strVal.c_str()))
+                {
+                BentleyStatus hexParseStat = SUCCESS;
+                int64Val = (int64_t) BeStringUtilities::ParseHex(strVal.c_str(), &hexParseStat);
+                if (SUCCESS != hexParseStat)
+                    return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+                }
+            else
+                sscanf(strVal.c_str(), "%" SCNi64, &int64Val);
+            }
+
+        const ECSqlStatus stat = GetBinder().BindInt64(int64Val);
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindPoint2d(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_NUMBER(0, x);
+        REQUIRE_ARGUMENT_NUMBER(1, y);
+
+        const ECSqlStatus stat = GetBinder().BindPoint2d(DPoint2d::From(x.DoubleValue(),y.DoubleValue()));
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindPoint3d(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_NUMBER(0, x);
+        REQUIRE_ARGUMENT_NUMBER(1, y);
+        REQUIRE_ARGUMENT_NUMBER(2, z);
+
+        const ECSqlStatus stat = GetBinder().BindPoint3d(DPoint3d::From(x.DoubleValue(), y.DoubleValue(), z.DoubleValue()));
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindString(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, val);
+
+        const ECSqlStatus stat = GetBinder().BindText(val.c_str(), IECSqlBinder::MakeCopy::Yes);
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindNavigation(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, navIdHexStr);
+        OPTIONAL_ARGUMENT_STRING(1, relClassName);
+        OPTIONAL_ARGUMENT_STRING(2, relClassTableSpaceName);
+
+        BeInt64Id navId;
+        if (SUCCESS != BeInt64Id::FromString(navId, navIdHexStr.c_str()))
+            return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+        ECClassId relClassId;
+        if (!relClassName.empty())
+            {
+            bvector<Utf8String> tokens;
+            BeStringUtilities::Split(relClassName.c_str(), ".:", tokens);
+            if (tokens.size() != 2)
+                return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+            relClassId = m_ecdb->Schemas().GetClassId(tokens[0], tokens[1], SchemaLookupMode::AutoDetect, relClassTableSpaceName.c_str());
+            }
+
+        const ECSqlStatus stat = GetBinder().BindNavigation(navId, relClassId);
+        return Napi::Number::New(Env(), (int) ToDbResult(stat));
+        }
+
+    Napi::Value BindMember(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, memberName);
+        IECSqlBinder& memberBinder = GetBinder()[memberName.c_str()];
+        return Construct(info.Env(), memberBinder, *m_ecdb);
+        }
+
+    Napi::Value AddArrayElement(const Napi::CallbackInfo& info)
+        {
+        if (info.Length() != 0)
+            Napi::TypeError::New(info.Env(), "AddArrayElement must not have arguments").ThrowAsJavaScriptException();
+
+        IECSqlBinder& elementBinder = GetBinder().AddArrayElement();
+        return Construct(info.Env(), elementBinder, *m_ecdb);
+        }
+    };
 
 //=======================================================================================
 // Projects the ECSqlStatement class into JS.
@@ -984,28 +1269,14 @@ struct NodeAddonDgnDb : Napi::ObjectWrap<NodeAddonDgnDb>
 //=======================================================================================
 struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
 {
+private:
     #define MUST_HAVE_M_STMT if (m_stmt.get() == nullptr) Napi::TypeError::New(Env(), "Statement is not prepared").ThrowAsJavaScriptException();
 
-    std::unique_ptr<ECSqlStatement> m_stmt;
     static Napi::FunctionReference s_constructor;
+    std::unique_ptr<ECSqlStatement> m_stmt;
 
-    int GetECSqlStatus(ECSqlStatus status)
-        {
-        return status.IsSQLiteError()? (int)status.GetSQLiteError(): (int)status.Get();
-        }
-
-    NodeAddonECSqlStatement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECSqlStatement>(info), m_stmt(new ECSqlStatement())
-        {
-        }
-
-    static bool HasInstance(Napi::Value val) {
-        Napi::Env env = val.Env();
-        Napi::HandleScope scope(env);
-        if (!val.IsObject())
-            return false;
-        Napi::Object obj = val.As<Napi::Object>();
-        return obj.InstanceOf(s_constructor.Value());
-        }
+public:
+    NodeAddonECSqlStatement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeAddonECSqlStatement>(info), m_stmt(new ECSqlStatement()) {}
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
@@ -1019,6 +1290,7 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
           InstanceMethod("reset", &NodeAddonECSqlStatement::Reset),
           InstanceMethod("dispose", &NodeAddonECSqlStatement::Dispose),
           InstanceMethod("clearBindings", &NodeAddonECSqlStatement::ClearBindings),
+          InstanceMethod("getBinder", &NodeAddonECSqlStatement::GetBinder),
           InstanceMethod("bindValues", &NodeAddonECSqlStatement::BindValues),
           InstanceMethod("step", &NodeAddonECSqlStatement::Step),
           InstanceMethod("getRow", &NodeAddonECSqlStatement::GetRow),
@@ -1027,53 +1299,61 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         exports.Set("NodeAddonECSqlStatement", t);
 
         s_constructor = Napi::Persistent(t);
-        s_constructor.SuppressDestruct();             // ??? what is this?
+        // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+        // from running at program shutdown time, which would attempt to reset the reference when
+        // the environment is no longer valid.
+        s_constructor.SuppressDestruct();
         }
 
     Napi::Value Prepare(const Napi::CallbackInfo& info)
         {
-        const int paramIdx =0;
-        if (info.Length() <= (paramIdx) ) 
+        if (info.Length() != 2) 
             {
-            Napi::TypeError::New(Env(), "Argument 0 must be an object of type NodeAddonDgnDb or NodeAddonECDb").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "NodeAddonECSqlStatement::Prepare requires two arguments").ThrowAsJavaScriptException();
             return Env().Undefined();
             }
 
-        ECDb* ecdb;
-        if (NodeAddonDgnDb::HasInstance(info[paramIdx])) {   
-            NodeAddonDgnDb* var = NodeAddonDgnDb::Unwrap(info[paramIdx].As<Napi::Object>());
-            if (!var->IsOpen())
-                return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());            
-            ecdb = &var->GetDgnDb();
-        }
-        else if (NodeAddonECDb::HasInstance(info[paramIdx])) {
-            NodeAddonECDb* var = NodeAddonECDb::Unwrap(info[paramIdx].As<Napi::Object>());
-            if (!var->GetECDb().IsDbOpen())
-                return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());            
-            ecdb = &var->GetECDb();        
-        }
-        else {
-            Napi::TypeError::New(Env(), "Argument 0 must be an object of type NodeAddonDgnDb or NodeAddonECDb").ThrowAsJavaScriptException();
-            return Env().Undefined();
-        }
+        Napi::Object dbObj = info[0].As<Napi::Object>();
 
-        REQUIRE_ARGUMENT_STRING(1, ecsqlStr);
+        ECDb* ecdb = nullptr;
+        if (NodeAddonDgnDb::InstanceOf(dbObj))
+            {
+            NodeAddonDgnDb* addonDgndb = NodeAddonDgnDb::Unwrap(dbObj);
+            if (!addonDgndb->IsOpen())
+                return NodeUtils::CreateBentleyReturnErrorObject(BE_SQLITE_NOTADB, nullptr, Env());
+
+            ecdb = &addonDgndb->GetDgnDb();
+            }
+        else if (NodeAddonECDb::InstanceOf(dbObj))
+            {
+            NodeAddonECDb* addonECDb = NodeAddonECDb::Unwrap(dbObj);
+            ecdb = &addonECDb->GetECDb();
+
+            if (!ecdb->IsDbOpen())
+                return NodeUtils::CreateBentleyReturnErrorObject(BE_SQLITE_NOTADB, nullptr, Env());
+            }
+        else 
+            {
+            Napi::TypeError::New(Env(), "Argument 0 must be a NodeAddonDgnDb or NodeAddonECDb object").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        REQUIRE_ARGUMENT_STRING(1, ecsql);
 
         BeSqliteDbMutexHolder serializeAccess(*ecdb); // hold mutex, so that we have a chance to get last ECDb error message
 
-        auto status = m_stmt->Prepare(*ecdb, ecsqlStr.c_str());
+        const ECSqlStatus status = m_stmt->Prepare(*ecdb, ecsql.c_str());
         if (!status.IsSuccess())
-            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, AddonUtils::GetLastECDbIssue().c_str(), Env());
+            return NodeUtils::CreateBentleyReturnErrorObject(ToDbResult(status), AddonUtils::GetLastECDbIssue().c_str(), Env());
 
-        MUST_HAVE_M_STMT;                           // success post-condition
-        return NodeUtils::CreateErrorObject0(BE_SQLITE_OK, nullptr, Env());
+        return NodeUtils::CreateErrorObject0(Napi::Number::New(Env(), (int) ToDbResult(status)), nullptr, Env());
         }
 
     Napi::Value Reset(const Napi::CallbackInfo& info)
         {
         MUST_HAVE_M_STMT;
-        auto status = m_stmt->Reset();
-        return Napi::Number::New(Env(), (int)GetECSqlStatus(status));
+        const ECSqlStatus status = m_stmt->Reset();
+        return Napi::Number::New(Env(), (int) ToDbResult(status));
         }
 
     void Dispose(const Napi::CallbackInfo& info)
@@ -1086,7 +1366,34 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         {
         MUST_HAVE_M_STMT;
         auto status = m_stmt->ClearBindings();
-        return Napi::Number::New(Env(), (int)GetECSqlStatus(status));
+        return Napi::Number::New(Env(), (int) ToDbResult(status));
+        }
+
+    Napi::Value GetBinder(const Napi::CallbackInfo& info)
+        {
+        MUST_HAVE_M_STMT;
+
+        if (info.Length() != 1)
+            {
+            Napi::TypeError::New(Env(), "GetBinder requires a parameter index or name as argument").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        Napi::Value paramArg = info[0];
+        if (!paramArg.IsNumber() && !paramArg.IsString())
+            {
+            Napi::TypeError::New(Env(), "GetBinder requires a parameter index or name as argument").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        int paramIndex = -1;
+        if (paramArg.IsNumber())
+            paramIndex = (int) paramArg.ToNumber().Int32Value();
+        else
+            paramIndex = m_stmt->GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
+
+        IECSqlBinder& binder = m_stmt->GetBinder(paramIndex);
+        return NodeAddonECSqlBinder::Construct(info.Env(), binder, *m_stmt->GetECDb());
         }
 
    Napi::Value BindValues(const Napi::CallbackInfo& info)
@@ -1120,6 +1427,15 @@ struct NodeAddonECSqlStatement : Napi::ObjectWrap<NodeAddonECSqlStatement>
         // *** NEEDS WORK: Get the adapter to set the js object's properties directly
         return Napi::String::New(Env(), rowJson.ToString().c_str());
         }
+
+    static DbResult ToDbResult(ECSqlStatus status) 
+        {
+        if (status.IsSuccess())
+            return BE_SQLITE_OK;
+
+        return status.IsSQLiteError() ? status.GetSQLiteError() : BE_SQLITE_ERROR; 
+        }
+
 };
 
 //=======================================================================================
@@ -1139,13 +1455,12 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
         }
 
-    static bool HasInstance(Napi::Value val) {
-        Napi::Env env = val.Env();
-        Napi::HandleScope scope(env);
+    static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
             return false;
-        Napi::Object obj = val.As<Napi::Object>();
-        return obj.InstanceOf(s_constructor.Value());
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
         }
 
     //  Create projections
@@ -1162,7 +1477,10 @@ struct NodeAddonECPresentationManager : Napi::ObjectWrap<NodeAddonECPresentation
         exports.Set("NodeAddonECPresentationManager", t);
 
         s_constructor = Napi::Persistent(t);
-        s_constructor.SuppressDestruct();             // ??? what is this?
+        // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+        // from running at program shutdown time, which would attempt to reset the reference when
+        // the environment is no longer valid.
+        s_constructor.SuppressDestruct();
         }
 
     Napi::Value HandleRequest(const Napi::CallbackInfo& info)
@@ -1284,6 +1602,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     NodeAddonDgnDb::Init(env, exports);
     NodeAddonECDb::Init(env, exports);
     NodeAddonECSqlStatement::Init(env, exports);
+    NodeAddonECSqlBinder::Init(env, exports);
     NodeAddonBriefcaseManagerResourcesRequest::Init(env, exports);
     NodeAddonECPresentationManager::Init(env, exports);
 
@@ -1297,6 +1616,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
 
 Napi::FunctionReference NodeAddonBriefcaseManagerResourcesRequest::s_constructor;
 Napi::FunctionReference NodeAddonECSqlStatement::s_constructor;
+Napi::FunctionReference NodeAddonECSqlBinder::s_constructor;
 Napi::FunctionReference NodeAddonDgnDb::s_constructor;
 Napi::FunctionReference NodeAddonECPresentationManager::s_constructor;
 Napi::FunctionReference NodeAddonECDb::s_constructor;
