@@ -15585,6 +15585,8 @@ static void yy_reduce(
   yyStackEntry *yymsp;            /* The top of the parser's stack */
   int yysize;                     /* Amount to pop the stack */
   sqlite3ParserARG_FETCH;
+  (void)yyLookahead;
+  (void)yyLookaheadToken;
   yymsp = yypParser->yytos;
 #ifndef NDEBUG
   if( yyTraceFILE && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
@@ -18475,7 +18477,7 @@ SQLITE_API const char *sqlite3_libversion(void){ return sqlite3_version; }
 ** an edited copy of the amalgamation, then the last four characters of
 ** the hash might be different from SQLITE_SOURCE_ID.
 */
- SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; } 
+SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 
 /* IMPLEMENTATION-OF: R-35210-63508 The sqlite3_libversion_number() function
 ** returns an integer equal to SQLITE_VERSION_NUMBER.

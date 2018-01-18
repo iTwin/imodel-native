@@ -2323,6 +2323,8 @@ static void fts5yy_reduce(
   fts5yyStackEntry *fts5yymsp;            /* The top of the parser's stack */
   int fts5yysize;                     /* Amount to pop the stack */
   sqlite3Fts5ParserARG_FETCH;
+  (void)fts5yyLookahead;
+  (void)fts5yyLookaheadToken;
   fts5yymsp = fts5yypParser->fts5yytos;
 #ifndef NDEBUG
   if( fts5yyTraceFILE && fts5yyruleno<(int)(sizeof(fts5yyRuleName)/sizeof(fts5yyRuleName[0])) ){
@@ -17376,7 +17378,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2018-01-16 13:37:43 feb2c2b6f66b0f45490beb1642d99cdb89fa220e299a8c118929df557c814189", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2018-01-18 17:09:26 41bfb6b8d61699d09a7e67d2289149abfbb9ce8e75e6ff8560546cad0d2e3f2b", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){

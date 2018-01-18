@@ -7453,6 +7453,9 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regTemp, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+    sqlite3VdbeChangeP4(v, -1, (char*)pStat1, P4_TABLE);
+#endif
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
 }
@@ -20870,6 +20873,7 @@ struct sqlite3_api_routines {
   void *(*value_pointer)(sqlite3_value*,const char*);
   int (*vtab_nochange)(sqlite3_context*);
   int (*value_nochange)(sqlite3_value*);
+  const char *(*vtab_collation)(sqlite3_index_info*,int);
 };
 
 /*
@@ -21139,6 +21143,7 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.22.0 and later */
 #define sqlite3_vtab_nochange          sqlite3_api->vtab_nochange
 #define sqlite3_value_nochange         sqltie3_api->value_nochange
+#define sqlite3_vtab_collation         sqltie3_api->vtab_collation
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
@@ -21576,7 +21581,8 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_value_pointer,
   /* Version 3.22.0 and later */
   sqlite3_vtab_nochange,
-  sqlite3_value_nochange
+  sqlite3_value_nochange,
+  sqlite3_vtab_collation
 };
 
 /*
