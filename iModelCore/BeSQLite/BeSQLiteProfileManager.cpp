@@ -135,17 +135,17 @@ DbResult ProfileUpgrader_3102::_Upgrade(DbR db) const
     //execute the command to system can create sqlite_stat1 table.
     if (BE_SQLITE_OK != db.ExecuteSql("analyze"))
         {
-        LOG.errorv("ECDb profile upgrade failed: 'analyze' command failed to execute. failed: %s.", ecdb.GetLastError().c_str());
+        LOG.errorv("BeSqlite profile upgrade failed: 'analyze' command failed to execute. failed: %s.", db.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
     if (BE_SQLITE_OK != db.ExecuteSql("delete from sqlite_stat1"))
         {
-        LOG.errorv("ECDb profile upgrade failed: deleting rows from sqlite_stat1 table failed. failed: %s.", ecdb.GetLastError().c_str());
+        LOG.errorv("BeSqlite profile upgrade failed: deleting rows from sqlite_stat1 table failed. failed: %s.", db.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debug("ECDb profile upgrade: Added sqlite_stat1 table using analyze command and truncated it so the table is empty.");
+    LOG.debug("BeSqlite profile upgrade: Added sqlite_stat1 table using analyze command and truncated it so the table is empty.");
     return BE_SQLITE_OK;
     }
 END_BENTLEY_SQLITE_NAMESPACE
