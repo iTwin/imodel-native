@@ -3108,6 +3108,29 @@ CodeLockSetResultInfoPtr finalValue
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+CodeLockSetTaskPtr iModelConnection::QueryAllCodesLocks
+(
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryAllCodesLocks";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+    bset<StatusTaskPtr> tasks;
+
+    WSQuery queryCodes(ServerSchema::Schema::iModel, ServerSchema::Class::MultiCode);
+    WSQuery queryLocks(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock);
+
+    tasks.insert(QueryCodesLocksInternal(queryCodes, finalValue, AddMultiCodes, cancellationToken));
+    tasks.insert(QueryCodesLocksInternal(queryLocks, finalValue, AddMultiLocks, cancellationToken));
+
+    return ExecuteCodesLocksQueryTasks(tasks, finalValue);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 CodeLockSetTaskPtr iModelConnection::QueryCodesLocksById

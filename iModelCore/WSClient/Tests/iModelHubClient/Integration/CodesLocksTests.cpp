@@ -108,6 +108,11 @@ TEST_F(CodesLocksTests, QueryLocksCodes)
     auto result7 = briefcase->GetiModelConnection().QueryAllLocks()->GetResult();
     EXPECT_SUCCESS(result7);
     EXPECT_EQ(4 + locksCountBeforeTest, result7.GetValue().size());
+
+    auto result8 = briefcase->GetiModelConnection().QueryAllCodesLocks()->GetResult();
+    EXPECT_SUCCESS(result8);
+    EXPECT_EQ(3 + codesCountBeforeTest, result8.GetValue().GetCodes().size());
+    EXPECT_EQ(4 + locksCountBeforeTest, result8.GetValue().GetLocks().size());
     }
 
 //---------------------------------------------------------------------------------------
