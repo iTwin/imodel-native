@@ -1315,23 +1315,49 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             bool clipsLoaded = false;
             if (flags->ShouldLoadClips())
                 {
-                m_meshNode->ComputeMergedClips();
-                uint64_t clipId = 0;
-                if (m_meshNode->HasClip(clipId))
+                if (flags->ShouldUseClipsToShow())
                     {
-                    for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
-                        {
-                        if (diffSet.clientID == clipId)
+                    bset<uint64_t> clipsToShow; 
+                    
+                    flags->GetClipsToShow(clipsToShow);
+
+                    if (clipsToShow.size() > 0)
+                        { 
+                        DifferenceSet clipDiffSet;
+                        
+                        bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
+
+                        if (anythingToApply)
                             {
-                            diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
-                                                           toLoadUv, toLoadUvIndex, toLoadUvCount, 
-                                                           dataPoints.data(), dataPoints.size(),
-                                                           dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                                           dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
+                            clipDiffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                                                                    toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                                                                    dataPoints.data(), dataPoints.size(),
+                                                                                    dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                                                    dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+
                             clipsLoaded = true;
+                            }                        
+                        }
+                    }
+                else
+                    {
+                    m_meshNode->ComputeMergedClips();
+                    uint64_t clipId = 0;
+                    if (m_meshNode->HasClip(clipId))
+                        {
+                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                            {
+                            if (diffSet.clientID == clipId)
+                                {
+                                diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
+                                                               toLoadUv, toLoadUvIndex, toLoadUvCount, 
+                                                               dataPoints.data(), dataPoints.size(),
+                                                               dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                               dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
+                                clipsLoaded = true;
+                                }
                             }
                         }
-
                     }
                 }
 
@@ -2319,6 +2345,8 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
         return true;
         }
     }
+
+
 
 template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool loadGraph, const bset<uint64_t>& clipsToShow, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr, bool loadTexture, bool shouldInvertClips)
     {

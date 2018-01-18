@@ -1289,19 +1289,27 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
         bool m_saveToCache;
         bool m_precomputeBoxes;
 
+        bool           m_useClipsToShow; 
+        bset<uint64_t> m_clipsToShow;
+        bool           m_shouldInvertClips;
+
         virtual bool _ShouldLoadClips() const override;
         virtual bool _ShouldLoadTexture() const override;
         virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
         virtual bool _ShouldSaveToCache() const override;
         virtual bool _ShouldPrecomputeBoxes() const override;
-
+        virtual bool _ShouldUseClipsToShow() const override;
+        virtual bool _ShouldInvertClips() const override;
+        virtual void _GetClipsToShow(bset<uint64_t>& clipsToShow) const override;         
+        
         virtual void _SetLoadClips(bool loadClips) override;
         virtual void _SetLoadTexture(bool loadTexture) override;
         virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
         virtual void _SetSaveToCache(bool saveToCache) override;
         virtual void _SetPrecomputeBoxes(bool precomputeBoxes) override;
+        virtual void _SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips) override;
 
     public:
         ScalableMeshMeshFlags()
@@ -1312,6 +1320,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             m_loadIndices = true;
             m_saveToCache = false;
             m_precomputeBoxes = false;
+            m_useClipsToShow = false;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
@@ -1332,7 +1341,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual bool    _ArePointsFullResolution() const override;
 
         virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
-
+        
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const override;

@@ -2521,6 +2521,21 @@ bool IScalableMeshMeshFlags::ShouldPrecomputeBoxes() const
     return _ShouldPrecomputeBoxes();
 }
 
+bool IScalableMeshMeshFlags::ShouldUseClipsToShow() const
+    {
+    return _ShouldUseClipsToShow();
+    }
+
+bool IScalableMeshMeshFlags::ShouldInvertClips() const
+    {
+    return _ShouldInvertClips();
+    }
+
+void IScalableMeshMeshFlags::GetClipsToShow(bset<uint64_t>& clipsToShow) const
+    {
+    _GetClipsToShow(clipsToShow);
+    }
+
 void IScalableMeshMeshFlags::SetLoadClips(bool loadClips)
     {
     _SetLoadClips(loadClips);
@@ -2547,10 +2562,14 @@ void IScalableMeshMeshFlags::SetSaveToCache(bool saveToCache)
 }
 
 void IScalableMeshMeshFlags::SetPrecomputeBoxes(bool precomputeBoxes)
-{
+    {
     _SetPrecomputeBoxes(precomputeBoxes);
-}
+    }
 
+void IScalableMeshMeshFlags::SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips)
+    {
+    _SetClipsToShow(clipsToShow, shouldInvertClips);
+    }
 
 IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create()
     {
@@ -2602,6 +2621,21 @@ bool ScalableMeshMeshFlags::_ShouldPrecomputeBoxes() const
     return m_precomputeBoxes;
 }
 
+bool ScalableMeshMeshFlags::_ShouldInvertClips() const
+    {
+    return m_shouldInvertClips;
+    }
+
+bool ScalableMeshMeshFlags::_ShouldUseClipsToShow() const
+    {
+    return m_useClipsToShow;
+    }
+
+void ScalableMeshMeshFlags::_GetClipsToShow(bset<uint64_t>& clipsToShow) const
+    {    
+    clipsToShow.insert(m_clipsToShow.begin(), m_clipsToShow.end());
+    }
+
 void ScalableMeshMeshFlags::_SetLoadClips(bool loadClips)
     {
     m_loadClips = loadClips;
@@ -2631,6 +2665,13 @@ void ScalableMeshMeshFlags::_SetPrecomputeBoxes(bool precomputeBoxes)
 {
     m_precomputeBoxes = precomputeBoxes;
 }
+
+void ScalableMeshMeshFlags::_SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips)
+    {    
+    m_useClipsToShow = true;
+    m_shouldInvertClips = shouldInvertClips;
+    m_clipsToShow.insert(clipsToShow.begin(), clipsToShow.end());
+    }
 
 bool IScalableMeshNode::ArePoints3d() const
     {

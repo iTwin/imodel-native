@@ -411,13 +411,17 @@ typedef size_t ScalableMeshTextureID;
 
 struct IScalableMeshMeshFlags abstract: public RefCountedBase
     {
-    protected:
+    protected:        
+
         virtual bool _ShouldLoadClips() const = 0;
         virtual bool _ShouldLoadTexture() const = 0;
         virtual bool _ShouldLoadIndices() const = 0;
         virtual bool _ShouldLoadGraph() const = 0;
         virtual bool _ShouldSaveToCache() const = 0;
         virtual bool _ShouldPrecomputeBoxes() const = 0;
+        virtual bool _ShouldUseClipsToShow() const = 0;
+        virtual bool _ShouldInvertClips() const = 0;
+        virtual void _GetClipsToShow(bset<uint64_t>& clipsToShow) const = 0;
 
         virtual void _SetLoadClips(bool loadClips) = 0;
         virtual void _SetLoadTexture(bool loadTexture) = 0;
@@ -425,6 +429,7 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         virtual void _SetLoadGraph(bool loadGraph) = 0;
         virtual void _SetSaveToCache(bool saveToCache) = 0;
         virtual void _SetPrecomputeBoxes(bool precomputeBoxes) = 0;
+        virtual void _SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips) = 0;
 
     public:
         
@@ -434,6 +439,9 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         BENTLEY_SM_EXPORT bool ShouldLoadGraph() const;
         BENTLEY_SM_EXPORT bool ShouldSaveToCache() const;
         BENTLEY_SM_EXPORT bool ShouldPrecomputeBoxes() const;
+        BENTLEY_SM_EXPORT bool ShouldUseClipsToShow() const;
+        BENTLEY_SM_EXPORT bool ShouldInvertClips() const;
+        BENTLEY_SM_EXPORT void GetClipsToShow(bset<uint64_t>& clipsToShow) const;
 
         BENTLEY_SM_EXPORT void SetLoadClips(bool loadClips);
         BENTLEY_SM_EXPORT void SetLoadTexture(bool loadTexture);
@@ -441,6 +449,7 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
         BENTLEY_SM_EXPORT void SetLoadGraph(bool loadGraph);
         BENTLEY_SM_EXPORT void SetSaveToCache(bool saveToCache);
         BENTLEY_SM_EXPORT void SetPrecomputeBoxes(bool precomputeBoxes);
+        BENTLEY_SM_EXPORT void SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips);
 
         BENTLEY_SM_EXPORT static IScalableMeshMeshFlagsPtr Create();
 
