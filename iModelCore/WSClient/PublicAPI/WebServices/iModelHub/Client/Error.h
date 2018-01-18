@@ -63,6 +63,7 @@ public:
         FileIsNotYetInitialized = 100,
         FileIsOutdated,
         FileHasDifferentId,
+        FileCodeTooLong,
         FileInitializationFailed,
 
         //iModel Hub Client API Errors
