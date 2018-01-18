@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/FakeRenderSystem.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,7 +34,6 @@ struct FakeTarget : Target
 {
 protected:
     FakeTarget(SystemR system, double tileSizeMod) : Target(system, tileSizeMod) { }
-    
 };
 
 #endif
@@ -145,6 +144,22 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct FakeMaterial : Material
+{
+    explicit FakeMaterial(CreateParams const& params) : Material(params) { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct FakeTexture : Texture
+{
+    explicit FakeTexture(CreateParams const& params) : Texture(params) { }
+};
+
+//=======================================================================================
 // A do-nothing Render::System. Override the methods you want to test.
 // @bsistruct                                                   Paul.Connelly   10/17
 //=======================================================================================
@@ -161,13 +176,13 @@ protected:
 
     TargetPtr _CreateOffscreenTarget(Device& dev, double tileSizeMod) { return _CreateTarget(dev, tileSizeMod); }
 
-    MaterialPtr _GetMaterial(RenderMaterialId id, DgnDbR db) const override { return new Material(); }
-    MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return new Material(); }
-    TexturePtr _GetTexture(DgnTextureId, DgnDbR) const override { return new Texture(); }
-    TexturePtr _GetTexture(GradientSymbCR, DgnDbR) const override { return new Texture(); }
-    TexturePtr _CreateTexture(ImageCR, Texture::CreateParams const&) const override { return new Texture(); }
-    TexturePtr _CreateTexture(ImageSourceCR, Image::BottomUp, Texture::CreateParams const&) const override { return new Texture(); }
-    TexturePtr _CreateGeometryTexture(GraphicCR, DRange2dCR, bool, bool) const override { return new Texture(); }
+    MaterialPtr _FindMaterial(MaterialKeyCR id, DgnDbR db) const override { return nullptr; }
+    MaterialPtr _CreateMaterial(Material::CreateParams const& params, DgnDbR) const override { return new FakeMaterial(params); }
+    TexturePtr _FindTexture(TextureKeyCR, DgnDbR) const override { return nullptr; }
+    TexturePtr _GetTexture(GradientSymbCR, DgnDbR) const override { return nullptr; }
+    TexturePtr _CreateTexture(ImageCR, DgnDbR, Texture::CreateParams const& params) const override { return new FakeTexture(params); }
+    TexturePtr _CreateTexture(ImageSourceCR, Image::BottomUp, DgnDbR, Texture::CreateParams const& params) const override { return new FakeTexture(params); }
+    TexturePtr _CreateGeometryTexture(GraphicCR, DRange2dCR, bool, bool) const override { return new FakeTexture(Texture::CreateParams()); }
     LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP, DPoint3dCP) const override { return new Light(); }
 
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParamsCR params) const override { return FakeGraphicBuilder::Create(params); }

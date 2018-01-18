@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Render.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -1043,5 +1043,99 @@ GraphicBuilder::CreateParams::CreateParams(DgnDbR db, TransformCR tf, DgnViewpor
     : m_dgndb(db), m_placement(tf), m_viewport(vp), m_type(type)
     {
     //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, DgnDbR db, SystemCR sys, TextureP pTexture) : m_key(key)
+    {
+#if defined(DEBUG_JSON_CONTENT)
+    Utf8String string = Json::FastWriter().write(asset);
+    UNUSED_VARIABLE(string);
+#endif
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
+        {
+        RgbFactor rgb = asset.GetColor(RENDER_MATERIAL_Color);
+        m_diffuseColor = MatColor(ColorUtil::FromRgbFactor(rgb));
+        }
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasSpecularColor, false))
+        {
+        RgbFactor rgb = asset.GetColor(RENDER_MATERIAL_SpecularColor);
+        m_specularColor = MatColor(ColorUtil::FromRgbFactor(rgb));
+        }
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasFinish, false))
+        m_specularExponent = asset.GetDouble(RENDER_MATERIAL_Finish, Defaults::SpecularExponent());
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
+        m_transparency = asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasDiffuse, false))
+        m_diffuse = asset.GetDouble(RENDER_MATERIAL_Diffuse, Defaults::Diffuse());
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasSpecular, false))
+        m_specular = asset.GetDouble(RENDER_MATERIAL_Specular, Defaults::Specular());
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasReflect, false))
+        {
+        // Reflectance stored as fraction of specular in V8 material settings.
+        m_reflect = m_specular * asset.GetDouble(RENDER_MATERIAL_Reflect, Defaults::Reflect());
+        }
+
+    if (asset.GetBool(RENDER_MATERIAL_FlagHasReflectColor, false))
+        {
+        RgbFactor rgb = asset.GetColor(RENDER_MATERIAL_ReflectColor);
+        m_reflectColor = MatColor(ColorUtil::FromRgbFactor(rgb));
+        }
+    else
+        {
+        m_reflectColor = m_specularColor;       // Linked...
+        }
+
+    auto const& texMap = asset.GetPatternMap();
+    TexturePtr texture(pTexture);
+    if (texture.IsNull() && texMap.IsValid() && texMap.GetTextureId().IsValid())
+        texture = sys._GetTexture(texMap.GetTextureId(), db);
+
+    if (texture.IsValid())
+        m_textureMapping = TextureMapping(*texture, texMap.GetTextureMapParams());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TexturePtr System::_GetTexture(DgnTextureId id, DgnDbR db) const
+    {
+    TextureKey name(id);
+    TexturePtr tx = _FindTexture(name, db);
+    if (tx.IsNull())
+        {
+        DgnTextureCPtr txElem = DgnTexture::Get(db, id);
+        if (txElem.IsValid())
+            tx = _CreateTexture(txElem->GetImageSource(), Image::BottomUp::No, db, Texture::CreateParams(name));
+        }
+
+    return tx;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+MaterialPtr System::_GetMaterial(RenderMaterialId id, DgnDbR db) const
+    {
+    MaterialKey name(id);
+    MaterialPtr mat = _FindMaterial(name, db);
+    if (mat.IsNull())
+        {
+        RenderMaterialCPtr matElem = RenderMaterial::Get(db, id);
+        RenderingAssetCP asset = matElem.IsValid() ? &matElem->GetRenderingAsset() : nullptr;
+        if (nullptr != asset)
+            mat = _CreateMaterial(Material::CreateParams(name, *asset, db, *this), db);
+        }
+
+    return mat;
     }
 

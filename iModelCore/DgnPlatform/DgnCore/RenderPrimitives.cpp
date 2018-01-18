@@ -364,90 +364,169 @@ double GlyphCache::s_tolerances[GlyphCache::kTolerance_COUNT] =
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
+* @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParamsCP geomParams, bool filled) : m_type(type)
+void DisplayParams::InitGeomParams(DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
-    m_lineColor = gfParams.GetLineColor();
-    m_fillColor = m_lineColor;
+    m_categoryId = catId;
+    m_subCategoryId = subCatId;
+    m_class = geomClass;
+    }
 
-    if (nullptr != geomParams)
-        {
-        m_categoryId = geomParams->GetCategoryId();
-        m_subCategoryId = geomParams->GetSubCategoryId();
-        m_class = geomParams->GetGeometryClass();
-        if (nullptr != geomParams->GetPatternParams())
-            {
-            m_fillFlags = m_fillFlags | FillFlags::Behind;
-            }
-
-        if (!geomParams->IsResolved())
-            {
-            // TFS#786614: BRep with multiple face attachments - params may no longer be resolved.
-            // Doesn't matter - we will create GeometryParams for each of the face attachments - only need the
-            // class, category, and sub-category here.
-            geomParams = nullptr;
-            }
-        }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys)
+    {
     switch (type)
         {
-        case Type::Mesh:
-            m_material = gfParams.GetMaterial();
-            m_gradient = gfParams.GetGradientSymb();
-            m_fillColor = gfParams.GetFillColor();
-
-            // We need these as well as line color for edges. Unfortunate side effect: may cause mesh params to compare inequal despite mesh itself not requiring these.
-            m_width = gfParams.GetWidth();
-            m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
-
-            if (filled)
-                {
-                m_fillFlags = m_fillFlags | FillFlags::ByView;
-                if (gfParams.IsBlankingRegion())
-                    m_fillFlags = m_fillFlags | FillFlags::Blanking;
-                }
-
-            if (nullptr != geomParams)
-                {
-                m_materialId = geomParams->GetMaterialId();
-                if (filled)
-                    {
-                    if (FillDisplay::Always == geomParams->GetFillDisplay())
-                        {
-                        m_fillFlags = m_fillFlags | FillFlags::Always;
-                        m_fillFlags = m_fillFlags & ~FillFlags::ByView;
-                        }
-
-                    if (geomParams->IsFillColorFromViewBackground())
-                        m_fillFlags = m_fillFlags | FillFlags::Background;
-                    }
-                }
-
-            if (m_material.IsValid() && m_material->HasTextureMapping())
-                {
-                // Texture already baked into material...e.g. skybox.
-                m_textureMapping = m_material->GetTextureMapping();
-                }
-            else
-                {
-                m_resolved = !m_materialId.IsValid() && m_gradient.IsNull();
-                if (m_resolved)
-                    m_hasRegionOutline = ComputeHasRegionOutline();
-                }
-
-            break;
-        case Type::Linear:
-            m_width = gfParams.GetWidth();
-            m_linePixels = static_cast<LinePixels>(gfParams.GetLinePixels());
-            m_fillColor = m_lineColor;
-            break;
-        case Type::Text:
-            m_ignoreLighting = true;
-            m_fillFlags = m_fillFlags | FillFlags::Always;
-            m_fillColor = m_lineColor;
-            break;
+        case Type::Mesh:    return ForMesh(gf, geom, filled, db, sys);
+        case Type::Text:    return ForText(gf, geom);
+        case Type::Linear:  return ForLinear(gf, geom);
+        default:            BeAssert(false); return ForText(gf, geom);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayParams::InitText(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
+    {
+    InitGeomParams(catId, subCatId, geomClass);
+    m_type = Type::Text;
+    m_lineColor = m_fillColor = lineColor;
+    m_ignoreLighting = true;
+    m_fillFlags = FillFlags::Always;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForText(GraphicParamsCR gf, GeometryParamsCP geom)
+    {
+    DgnCategoryId catId;
+    DgnSubCategoryId subCatId;
+    DgnGeometryClass geomClass = DgnGeometryClass::Primary;
+    if (nullptr != geom)
+        {
+        catId = geom->GetCategoryId();
+        subCatId = geom->GetSubCategoryId();
+        geomClass = geom->GetGeometryClass();
+        }
+
+    return DisplayParams(gf.GetLineColor(), catId, subCatId, geomClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayParams::InitLinear(ColorDef lineColor, uint32_t width, LinePixels pixels, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
+    {
+    InitGeomParams(catId, subCatId, geomClass);
+    m_type = Type::Linear;
+    m_lineColor = m_fillColor = lineColor;
+    m_width = width;
+    m_linePixels = pixels;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForLinear(GraphicParamsCR gf, GeometryParamsCP geom)
+    {
+    DgnCategoryId catId;
+    DgnSubCategoryId subCatId;
+    DgnGeometryClass geomClass = DgnGeometryClass::Primary;
+    if (nullptr != geom)
+        {
+        catId = geom->GetCategoryId();
+        subCatId = geom->GetSubCategoryId();
+        geomClass = geom->GetGeometryClass();
+        }
+
+    return DisplayParams(gf.GetLineColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), catId, subCatId, geomClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels pixels, MaterialP mat, GradientSymbCP grad, TextureMappingCP tex,
+    FillFlags fillFlags, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass, bool neverFilled)
+    {
+    InitGeomParams(catId, subCatId, geomClass);
+    m_type = Type::Mesh;
+    m_lineColor = lineColor;
+    m_fillColor = fillColor;
+    m_fillFlags = fillFlags;
+    m_material = mat;
+    m_gradient = grad;
+    m_width = width;
+    m_linePixels = pixels;
+    m_neverFilled = neverFilled;
+    m_hasRegionOutline = ComputeHasRegionOutline();
+    
+    if (nullptr == mat && nullptr != tex)
+        m_textureMapping = *tex;
+
+    BeAssert(m_gradient.IsNull() || m_textureMapping.IsValid());
+    BeAssert(m_gradient.IsNull() || m_gradient->GetRefCount() > 1); // assume caller allocated on heap...
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParams DisplayParams::ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys)
+    {
+    DgnCategoryId catId;
+    DgnSubCategoryId subCatId;
+    DgnGeometryClass geomClass = DgnGeometryClass::Primary;
+    FillFlags fillFlags = filled ? FillFlags::ByView : FillFlags::None;
+    bool neverFilled = false;
+    if (gf.IsBlankingRegion())
+        fillFlags |= FillFlags::Blanking;
+
+    // TFS#786614: BRep with multiple face attachments - params may no longer be resolved.
+    // Doesn't matter - we will create GeometryParams for each of the face attachments - only need the
+    // class, category, and sub-category here.
+    if (nullptr != geom && geom->IsResolved())
+        {
+        catId = geom->GetCategoryId();
+        subCatId = geom->GetSubCategoryId();
+        geomClass = geom->GetGeometryClass();
+
+        if (nullptr != geom->GetPatternParams())
+            fillFlags |= FillFlags::Behind;
+
+#if defined(WIP_TFS_807359)
+        // TFS#807359: FillDisplay::Never for planar regions...
+        if (!filled && FillDisplay::Never == geom->GetFillDisplay())
+            neverFilled = true;
+#endif
+
+        if (filled)
+            {
+            BeAssert(!neverFilled);
+            if (FillDisplay::Always == geom->GetFillDisplay())
+                {
+                fillFlags |= FillFlags::Always;
+                fillFlags&= ~FillFlags::ByView;
+                }
+
+            if (geom->IsFillColorFromViewBackground())
+                fillFlags |= FillFlags::Background;
+            }
+        }
+
+    auto grad = gf.GetGradientSymb();
+    TextureMapping tex;
+    TextureMappingP pTex = nullptr;
+    if (nullptr != grad)
+        {
+        tex = TextureMapping(*sys._GetTexture(*grad, db));
+        pTex = &tex;
+        }
+
+    return DisplayParams(gf.GetLineColor(), gf.GetFillColor(), gf.GetWidth(), static_cast<LinePixels>(gf.GetLinePixels()), gf.GetMaterial(), grad, pTex, fillFlags, catId, subCatId, geomClass, neverFilled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,7 +560,9 @@ DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part,
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::ComputeHasRegionOutline() const
     {
-    if (m_gradient.IsValid())
+    if (m_neverFilled)
+        return true;
+    else if (m_gradient.IsValid())
         return m_gradient->GetIsOutlined();
     else
         return !NeverRegionOutline() && m_fillColor != m_lineColor;
@@ -492,7 +573,7 @@ bool DisplayParams::ComputeHasRegionOutline() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayParams::HasRegionOutline() const
     {
-    return m_resolved ? m_hasRegionOutline : ComputeHasRegionOutline();
+    return m_hasRegionOutline;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -500,42 +581,7 @@ bool DisplayParams::HasRegionOutline() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayParamsCPtr DisplayParams::Clone() const
     {
-    BeAssert(m_resolved);
     return new DisplayParams(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayParams::Resolve(DgnDbR db, System& sys)
-    {
-    if (m_resolved)
-        return;
-
-    if (m_gradient.IsValid())
-        {
-        m_textureMapping = TextureMapping(*sys._GetTexture(*m_gradient, db));
-        }
-    else if (m_materialId.IsValid())
-        {
-        auto dgnMaterial = RenderMaterial::Get(db, m_materialId);
-        if (dgnMaterial.IsValid())
-            {
-            // This will also be used later by MeshBuilder...
-            auto const& renderingAsset = dgnMaterial->GetRenderingAsset();
-            DgnTextureId texId;
-            auto const& texMap = renderingAsset.GetPatternMap();
-            if (texMap.IsValid() && texMap.GetTextureId().IsValid())
-                {
-                auto texture = sys._GetTexture(texMap.GetTextureId(), db);
-                if (texture.IsValid())
-                    m_textureMapping = TextureMapping(*texture, texMap.GetTextureMapParams());
-                }
-            }
-        }
-
-    m_hasRegionOutline = ComputeHasRegionOutline();
-    m_resolved = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -579,20 +625,12 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
-    TEST_LESS_THAN(GetMaterialId());
+    TEST_LESS_THAN(GetMaterial());
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
     TEST_LESS_THAN(HasRegionOutline());
-
-    if (m_resolved && rhs.m_resolved)
-        {
-        TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
-        }
-    else if (m_gradient.get() != rhs.m_gradient.get())
-        {
-        if (m_gradient.IsNull() || rhs.m_gradient.IsNull() || !(*m_gradient == *rhs.m_gradient))
-            return m_gradient.get() < rhs.m_gradient.get();
-        }
+    TEST_LESS_THAN(IsNeverFilled());
+    TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -628,22 +666,12 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetType());
     TEST_EQUAL(IgnoresLighting());
     TEST_EQUAL(GetLineWidth());
-    TEST_EQUAL(GetMaterialId().GetValueUnchecked());
+    TEST_EQUAL(GetMaterial());
     TEST_EQUAL(GetLinePixels());
     TEST_EQUAL(GetFillFlags());
     TEST_EQUAL(HasRegionOutline());
-
-    if (m_resolved && rhs.m_resolved)
-        {
-        TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
-        }
-    else
-        {
-        if (m_gradient.IsNull() != rhs.m_gradient.IsNull())
-            return false;
-        else if (m_gradient.IsValid() && m_gradient.get() != rhs.m_gradient.get() && !(*m_gradient == *rhs.m_gradient))
-            return false;
-        }
+    TEST_EQUAL(IsNeverFilled());
+    TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -675,8 +703,6 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
     auto iter = m_set.find(pToFind);
     if (m_set.end() == iter)
         {
-        toFind.Resolve(m_db, m_system);
-        BeAssert(toFind.m_resolved);
         iter = m_set.insert(toFind.Clone()).first;
 #if defined(DEBUG_DISPLAY_PARAMS_CACHE)
         printf("\nLooking for: %s\nCreated: %s\n", toFind.ToDebugString().c_str(), (*iter)->ToDebugString().c_str());
@@ -692,7 +718,7 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
 Utf8String DisplayParams::ToDebugString() const
     {
     Utf8CP types[3] = { "Mesh", "Linear", "Text" };
-    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s%s%s",
+    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s%s",
         types[static_cast<uint8_t>(m_type)],
         m_lineColor.GetValue(),
         m_fillColor.GetValue(),
@@ -701,7 +727,6 @@ Utf8String DisplayParams::ToDebugString() const
         static_cast<uint32_t>(m_fillFlags),
         static_cast<uint32_t>(m_class),
         m_ignoreLighting ? "ignoreLights " : "",
-        m_resolved ? "resolved " : "",
         m_hasRegionOutline ? "outlined" : "");
 
     return str;
@@ -1512,7 +1537,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
 
-    if (curveVector.IsValid() && !curveVector->IsAnyRegionType())       // Non region curveVectors....
+    if (curveVector.IsValid() && (!curveVector->IsAnyRegionType() || GetDisplayParams().IsNeverFilled())) // Non region or unfilled planar regions....)
         return PolyfaceList();
 
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
@@ -2321,7 +2346,7 @@ bool PolylineArgs::Init(MeshCR mesh)
     m_is2d = mesh.Is2d();
     m_isPlanar = mesh.IsPlanar();
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
-    m_isEdge = mesh.GetDisplayParams().HasRegionOutline();
+    m_isEdge = mesh.GetDisplayParams().HasRegionOutline() && !mesh.GetDisplayParams().IsNeverFilled();
 
     m_polylines.reserve(mesh.Polylines().size());
 
@@ -3062,16 +3087,39 @@ Triangle  TriangleList::GetTriangle(size_t index) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
+* @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParams::DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys) :
-            m_type(type), m_categoryId(catId), m_subCategoryId(subCatId), m_gradient(gradient), m_materialId(matId), m_lineColor(lineColor), m_fillColor(fillColor), m_width(width), m_linePixels(linePixels), m_fillFlags(fillFlags), m_class(geomClass), m_ignoreLighting(ignoreLights), m_resolved(false) 
-    { 
-    // TFS#726824...
-    if (m_materialId.IsValid())
-        m_material = renderSys._GetMaterial(m_materialId, dgnDb);
+DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId materialId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys)
+    {
+    switch (type)
+        {
+        case Type::Mesh:
+            {
+            MaterialPtr mat;
+            TextureMapping tex;
+            TextureMappingP pTex = nullptr;
+            if (materialId.IsValid())
+                {
+                mat = renderSys._GetMaterial(materialId, dgnDb);
+                }
+            else if (nullptr != gradient)
+                {
+                tex = TextureMapping(*renderSys._GetTexture(*gradient, dgnDb));
+                pTex = &tex;
+                }
 
-    Resolve (dgnDb, renderSys); 
+            return new DisplayParams(lineColor, fillColor, width, linePixels, mat.get(), gradient, pTex, fillFlags, catId, subCatId, geomClass, false);
+            }
+        case Type::Linear:
+            {
+            return new DisplayParams(lineColor, width, linePixels, catId, subCatId, geomClass);
+            }
+        case Type::Text:
+            return new DisplayParams(lineColor, catId, subCatId, geomClass);
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

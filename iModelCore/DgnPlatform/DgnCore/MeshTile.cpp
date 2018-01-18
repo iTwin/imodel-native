@@ -1685,7 +1685,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureGenerateTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
-    auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
+    auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::None);
     ElementTileContext  context(*cache, model, collector, leafTolerance, model.Is3dModel() && surfacesOnly, maxPointsPerTile);
 
     return PopulateCache(context).then([=](TileGeneratorStatus status)
