@@ -634,6 +634,10 @@ public:
     IMODELHUBCLIENT_EXPORT BriefcasesInfoTaskPtr QueryBriefcasesInfo(bvector<BeSQLite::BeBriefcaseId>& briefcasesIds, 
                                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Returns all codes and locks.
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryAllCodesLocks(ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all codes and locks by ids.
     //! @param[in] codes
     //! @param[in] locks
