@@ -2271,12 +2271,19 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
             case InitializationState::Scheduled:
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Scheduled");
                 finalResult->SetError({Error::Id::FileIsNotYetInitialized});
+                break;
             case InitializationState::OutdatedFile:
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is outdated");
                 finalResult->SetError({Error::Id::FileIsOutdated});
+                break;
             case InitializationState::IncorrectFileId:
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File has different id");
                 finalResult->SetError({Error::Id::FileHasDifferentId});
+                break;
+            case InitializationState::CodeTooLong:
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code too long");
+                finalResult->SetError({Error::Id::FileCodeTooLong});
+                break;
             default:
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File initialization failed");
                 finalResult->SetError({Error::Id::FileInitializationFailed});
