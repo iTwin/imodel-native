@@ -329,7 +329,7 @@ public: //MST_TEMP
 
     void DrawBingLogo(BentleyB0200::Dgn::ViewContextR context, Byte const* pBitmapRGBA, DPoint2d const& bitmapSize);
     IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
-		void InitializeTerrainRegions(Dgn::ViewContextR);
+		void InitializeTerrainRegions(/*Dgn::ViewContextR*/);
 		
 		bool HasClipBoundary(const bvector<DPoint3d>& clipBoundary, uint64_t clipID);
 

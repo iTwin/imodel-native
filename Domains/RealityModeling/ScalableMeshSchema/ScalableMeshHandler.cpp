@@ -682,7 +682,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
 
     if (!m_3smModel->m_loadedAllModels)
         {
-        m_3smModel->InitializeTerrainRegions(args.m_context);
+        m_3smModel->InitializeTerrainRegions(/*args.m_context*/);
         }
 
 
@@ -1214,17 +1214,24 @@ bool SMNode::ReadHeader(Transform& locationTransform)
 SMNode::~SMNode()
     {
     int i = 0;
-    i = i;
+    ////i = i;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 static bool s_applyTexture = true;
-static bool s_applyClips = false;
+static bool s_applyClips = true;
 
 BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {
+
+    if (!m_3smModel->m_loadedAllModels)
+        {
+        m_3smModel->InitializeTerrainRegions(/*args.m_context*/);
+        }
+
+
     //BeAssert(IsQueued() || ((m_parent != nullptr) && (m_parent->GetLoadStatus() == LoadStatus::Loading)));
 
     m_loadStatus.store(LoadStatus::Loading);
@@ -1421,27 +1428,39 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
             m_children.push_back(nodeptr);
             }
         }
-
+    
     IScalableMeshMeshPtr smMeshPtr;
 
     if (!s_applyClips)
         {
         IScalableMeshMeshFlagsPtr loadFlagsPtr(IScalableMeshMeshFlags::Create(true, false));
-        loadFlagsPtr->SetLoadClips(true);
+        loadFlagsPtr->SetLoadClips(false);
         loadFlagsPtr->SetSaveToCache(true);
         smMeshPtr = m_scalableMeshNodePtr->GetMesh(loadFlagsPtr);
         }
     else
         {
+        IScalableMeshMeshFlagsPtr loadFlagsPtr(IScalableMeshMeshFlags::Create(true, false));
+        loadFlagsPtr->SetLoadClips(true);
+        loadFlagsPtr->SetSaveToCache(true); 
+        loadFlagsPtr->SetClipsToShow(m_3smModel->m_activeClips, m_3smModel->m_smPtr->ShouldInvertClips());
+        if (!m_scalableMeshNodePtr->IsDataUpToDate()) m_scalableMeshNodePtr->UpdateData();
+        m_scalableMeshNodePtr->ApplyAllExistingClips(scene.m_smPtr->GetReprojectionTransform());
+        smMeshPtr = m_scalableMeshNodePtr->GetMesh(loadFlagsPtr);
+
+
+
         //if (/*(m_scalableMeshNodePtr->IsLoaded(displayCacheManagerPtr.get(), loadTexture) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) == false) || */!m_scalableMeshNodePtr->IsClippingUpToDate() /*|| !m_scalableMeshNodePtr->HasCorrectClipping(m_activeClips)*/)
             {
+/*
             if (!m_scalableMeshNodePtr->IsDataUpToDate()) m_scalableMeshNodePtr->UpdateData();
             m_scalableMeshNodePtr->ApplyAllExistingClips(scene.m_smPtr->GetReprojectionTransform());            
             //meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture, scalableMeshPtr->ShouldInvertClips());
             //assert(m_scalableMeshNodePtr->HasCorrectClipping(m_3smModel->m_activeClips));
+*/
             }
 
-        smMeshPtr = m_scalableMeshNodePtr->GetMeshByParts(m_3smModel->m_activeClips);
+        //smMeshPtr = m_scalableMeshNodePtr->GetMeshByParts(m_3smModel->m_activeClips);
         }
         
     if (!smMeshPtr.IsValid())
@@ -1475,25 +1494,15 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     trimesh.m_numIndices = polyfaceQuery->GetPointIndexCount();
     int* vertIndex = new int[trimesh.m_numIndices];
 
-    _fPoint2d* textureUv;
-
-    textureUv = new _fPoint2d[trimesh.m_numIndices];
-
     for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
         vertIndex[faceVerticeInd] = faceVerticeInd; //polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
-        }  
-
-    for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
-        {
-        const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[paramInd] - 1];
-        textureUv[paramInd].x = uv->x;
-        textureUv[paramInd].y = uv->y;
         }
 
     trimesh.m_vertIndex = vertIndex;
 
-    if (s_applyTexture && renderSys != nullptr)
+   
+    if (s_applyTexture && renderSys != nullptr && m_scalableMeshNodePtr->IsTextured())
         {        
         //IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
 
@@ -1502,6 +1511,17 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
         if (smTexturePtr.IsValid())
             {
+            _fPoint2d* textureUv;
+
+            textureUv = new _fPoint2d[trimesh.m_numIndices];
+
+            for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
+                {
+                const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[paramInd] - 1];
+                textureUv[paramInd].x = uv->x;
+                textureUv[paramInd].y = uv->y;
+                }
+
             trimesh.m_textureUV = textureUv;
             ByteStream imageBytes(smTexturePtr->GetSize());
 
@@ -1538,7 +1558,9 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     delete [] trimesh.m_points;
     delete [] trimesh.m_vertIndex;
-    delete [] trimesh.m_textureUV;
+
+    if (trimesh.m_textureUV)
+        delete [] trimesh.m_textureUV;
 
 #if 0
     Render::IGraphicBuilder::TriMeshArgs trimesh;
@@ -2748,7 +2770,7 @@ bool ScalableMeshModel::HasClipBoundary(const bvector<DPoint3d>& clipBoundary, u
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
+void ScalableMeshModel::InitializeTerrainRegions(/*ViewContextR context*/)
     {
 	bvector<uint64_t> allClips;
 
@@ -2792,12 +2814,13 @@ void ScalableMeshModel::InitializeTerrainRegions(ViewContextR context)
                 break;
                 }
             }                      
-
+/*NEEDS_WORK_SM : Still needed on BIM02??
         if (nullptr != context.GetViewport())
             {
             bool isDisplayed = context.GetViewport()->GetViewController().IsModelViewed(pScalableMesh->GetModelId());
             SetRegionVisibility(pScalableMesh->GetAssociatedRegionId(), isDisplayed);
             }
+*/
         }
 
     m_loadedAllModels = true;
