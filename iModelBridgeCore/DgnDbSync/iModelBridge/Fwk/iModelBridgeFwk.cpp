@@ -968,7 +968,6 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         {
         GetRegistry()._QueryAllFilesAssignedToBridge(params.m_drawingAndSheetFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
         }
-    params.SetDoDetectDeletedModelsAndElements(false); // *** TFS#781198
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
