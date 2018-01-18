@@ -5,6 +5,8 @@
     <ECSchemaReference name="AecUnits" version="01.00.00" alias="aecu"/>
 
     <KindOfQuantity typeName="STATION" displayLabel="Station" persistenceUnit="M(DefaultReal)" presentationUnits="M(stop1000-2-3z);FT(stop100-2-2z)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="LENGTH" displayLabel="Length" persistenceUnit="M(DefaultReal)" presentationUnits="M(real2u);FT(real2u)" relativeError="0.0001"/>
+    <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real2u);SQ.FT(real2u)" relativeError="0.0001"/>
     
     <ECEntityClass typeName="AlignmentCategoryModel">
         <BaseClass>bis:DefinitionModel</BaseClass>

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/RoadRailAlignment.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,6 +43,13 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_SCHEMA_PATH                             BRRA_SCHEMA_LOCATION BRRA_SCHEMA_FILE
 #define BRRA_SCHEMA(name)                            BRRA_SCHEMA_NAME "." name
 #define BRRA_SCHEMA_CODE(name)                       BRRA_SCHEMA_NAME "_" name
+
+//-----------------------------------------------------------------------------------------
+// KOQs
+//-----------------------------------------------------------------------------------------
+#define BRRA_KOQ_STATION        "STATION"
+#define BRRA_KOQ_LENGTH         "LENGTH"
+#define BRRA_KOQ_AREA           "AREA"
 
 
 //-----------------------------------------------------------------------------------------
