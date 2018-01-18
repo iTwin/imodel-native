@@ -708,7 +708,8 @@ public:
     Napi::Value CreateChangeCache(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_STRING(0, changeCachePathStr);
+        REQUIRE_ARGUMENT_OBJ(0, NodeAddonECDb, changeCacheECDb);
+        REQUIRE_ARGUMENT_STRING(1, changeCachePathStr);
         RETURN_IF_HAD_EXCEPTION
 
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
