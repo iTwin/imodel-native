@@ -304,9 +304,9 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     bool ExpectCodesCount(Briefcase& briefcase, int expectedCount)
         {
-        auto result = briefcase.GetiModelConnection().QueryCodesLocks(briefcase.GetBriefcaseId())->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryCodesByBriefcaseId(briefcase.GetBriefcaseId())->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetCodes().size();
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -316,10 +316,9 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     bool ExpectCodesCount(Briefcase& briefcase, int expectedCount, DgnCodeSet& codes)
         {
-        LockableIdSet ids;
-        auto result = briefcase.GetiModelConnection().QueryCodesLocksById(codes, ids)->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryCodesByIds(codes)->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetCodes().size();
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -339,9 +338,9 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     bool ExpectLocksCount(Briefcase& briefcase, int expectedCount)
         {
-        auto result = briefcase.GetiModelConnection().QueryCodesLocks(briefcase.GetBriefcaseId())->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryLocksByBriefcaseId(briefcase.GetBriefcaseId())->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetLocks().size();
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -351,10 +350,9 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     bool ExpectLocksCount(Briefcase& briefcase, int expectedCount, LockableIdSet& locks)
         {
-        DgnCodeSet codes;
-        auto result = briefcase.GetiModelConnection().QueryCodesLocksById(codes, locks)->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryLocksByIds(locks)->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetLocks().size();
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -562,7 +560,7 @@ TEST_F(PerformanceTests, PushLocks)
     StopWatch timer(true);
     db.SaveChanges();
     auto result = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
-    ExpectLocksCount(*m_briefcase, postRequestSize + 5); // Was +6 before, changed to +5
+    //ExpectLocksCount(*m_briefcase, postRequestSize + 5); // Was +6 before, changed to +5
     EXPECT_SUCCESS(result);
     timer.Stop();
     LogTiming(timer, postRequestSize, result.IsSuccess());

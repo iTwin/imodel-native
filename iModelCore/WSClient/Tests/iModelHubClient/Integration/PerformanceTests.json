@@ -1,8 +1,8 @@
 {
-"CodePostSize": 100,
+"CodePostSize": 1000,
 "CodeGetSize": 1000,
-"CodeGetByIDSize": 1000,
-"LockPostSize": 100,
-"LockGetSize": 1000,
-"LockGetByIDSize": 1000
+"CodeGetByIDSize": 0,
+"LockPostSize": 1000,
+"LockGetSize": 100,
+"LockGetByIDSize": 0
 }
