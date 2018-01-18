@@ -1293,7 +1293,7 @@ static BeFileName getLibraryDir()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
+static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object exports)
     {
     Napi::HandleScope scope(env);
 
@@ -1320,4 +1320,4 @@ Napi::FunctionReference NodeAddonDgnDb::s_constructor;
 Napi::FunctionReference NodeAddonECPresentationManager::s_constructor;
 Napi::FunctionReference NodeAddonECDb::s_constructor;
 
-NODE_API_MODULE(AddonUtils, registerModule)
+NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsAddonRegisterModule)

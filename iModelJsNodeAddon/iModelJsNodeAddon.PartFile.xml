@@ -55,16 +55,19 @@
       
   -->
 
-  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_AS_IMODELJS_LIBRARY=1" >
-    <!-- Get the node-addon-api implementation from iModelJs, not from node! -->
-    <SubPart PartName="iModelJs" PartFile="iModelJs" Repository="iModelJs"/>
+  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
+    <!-- Get the node-addon-api (declaration) from iModelJs, not from node! -->
+    <SubPart PartName="node-addon-api" PartFile="iModelJs" Repository="iModelJs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
-        <Libs>Delivery/$(libprefix)imodeljs-addon-iModelJs$(libext)</Libs>
-        <Assemblies>Delivery/$(shlibprefix)imodeljs-addon-iModelJs$(shlibext)</Assemblies>
+        <Directory SourceName="Delivery/imodeljs-addon-iModelJs-objs" SubPartDirectory="imodeljs-addon-objs" />
+        <Files SubPartDirectory="imodeljs-addon-build-tools">
+            Delivery/addon_input_libs.mki
+        </Files>
         <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
+            Delivery/PresentationRules/*.xml
+        </Files>
     </Bindings>
   </Part>
   
