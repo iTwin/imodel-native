@@ -15,7 +15,7 @@
         <WixVariable Id="WixMbaPrereqLicenseUrl" Value="Nothing.rtf" />
         
         <Chain ParallelCache="yes">
-            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModelBridge for OpenDWG">
+            <MsiPackage Id="PowerProductPackage" SourceFile="$(var.PowerProductPath)$(var.bbVarProductShortName)$(var.bbVarProductTargetPlatform).msi"  Compressed="yes"  Visible="no" EnableFeatureSelection="yes" ForcePerMachine="yes" Description="iModelBridge For DWG">
                 <MsiProperty Name="INSTALLDIR" Value="[InstallDirectory]"/>
                 <MsiProperty Name="PACKAGE_HOMEROOT" Value="[ConfigurationDirectory]"/>
                 <MsiProperty Name="FROMLAUNCHSETUP" Value="1"/>

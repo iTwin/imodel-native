@@ -358,6 +358,45 @@ bool iModelBridgeRegistry::_IsFileAssignedToBridge(BeFileNameCR fn, wchar_t cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeRegistry::_AssignFileToBridge(BeFileNameCR sourceFilePath, wchar_t const* bridgeRegSubKey)
+    {
+    auto findBridgeForDoc = m_stateDb.GetCachedStatement("SELECT b.ROWID BridgeLibraryPath FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge) AND (a.SourceFile=?)");
+    findBridgeForDoc->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
+    if (BE_SQLITE_ROW == findBridgeForDoc->Step())
+        {
+        LOG.errorv(L"File %ls cannot be assigned to %ls . Since it already has an assignment", sourceFilePath.c_str(), bridgeRegSubKey);
+        return ERROR;
+        }
+
+    uint64_t bestBridgeRowid = 0;
+    QueryBridgeLibraryPathByName(&bestBridgeRowid, bridgeRegSubKey);
+    if (0 == bestBridgeRowid)
+        {
+        LOG.errorv(L"Bridge %ls cannot be found in the list of installed bridges.", bridgeRegSubKey);
+        return ERROR;
+        }
+
+    auto insertAssignment = m_stateDb.GetCachedStatement("INSERT INTO fwk_BridgeAssignments (SourceFile,Bridge) VALUES(?,?)");
+    insertAssignment->BindText(1, Utf8String(sourceFilePath), Statement::MakeCopy::Yes);
+    insertAssignment->BindInt64(2, bestBridgeRowid);
+    auto rc = insertAssignment->Step();
+    if (BE_SQLITE_DONE != rc)
+        {
+        LOG.errorv(L"File %ls cannot be assigned to %ls . Error inserting into the database", sourceFilePath.c_str(), bridgeRegSubKey);
+        return ERROR;
+        }
+
+    LOG.tracev(L"File %ls assigned to %ls .", sourceFilePath.c_str(), bridgeRegSubKey);
+
+    //!Lets insert default document properties for this 
+    EnsureDocumentPropertiesFor(sourceFilePath);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeRegistry::_QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
