@@ -350,3 +350,17 @@ TEST_F(ChangeSetsTests, CancelDownloadChangeSets)
     EXPECT_EQ(Error::Id::Canceled, result.GetError().GetId()) << "TFS#804287";
     callback.Verify(false);
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis           01/2018
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSetsTests, DownloadChangeSetFileExpectError)
+    {
+    m_briefcase = AcquireAndOpenBriefcase(false);
+    
+    //Try to download empty set of ChangeSets
+    bvector<Utf8String> changeSets;
+    auto result = m_briefcase->GetiModelConnection().DownloadChangeSets(changeSets)->GetResult();
+    auto errId = result.GetError().GetId();
+    EXPECT_EQ(Error::Id::QueryIdsNotSpecified, errId);
+    }
