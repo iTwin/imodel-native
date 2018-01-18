@@ -884,8 +884,7 @@ TEST_F(CodesTests, CodeIdsTest)
 
     //Query empty array of codes
     DgnCodeSet emptyCodes;
-    // WIP_MERGE
-    // ExpectCodesCountById(*briefcase1, 0, false, emptyCodes);
+    iModelHubHelpers::ExpectCodesCountByIds(*briefcase1, 0, false, emptyCodes);
     }
 
 //---------------------------------------------------------------------------------------

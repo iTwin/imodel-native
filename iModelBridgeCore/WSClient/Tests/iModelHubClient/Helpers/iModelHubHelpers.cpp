@@ -245,6 +245,28 @@ namespace iModelHubHelpers
         }
 
     //---------------------------------------------------------------------------------------
+    //@bsimethod                                     Benas.Kikutis             01/2018
+    //---------------------------------------------------------------------------------------
+    CodeInfoSetTaskPtr QueryCodesById(BriefcaseR briefcase, bool byBriefcaseId, DgnCodeSet& codes)
+        {
+        if (byBriefcaseId)
+            return briefcase.GetiModelConnection().QueryCodesByIds(codes, briefcase.GetBriefcaseId());
+
+        return briefcase.GetiModelConnection().QueryCodesByIds(codes);
+        }
+
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                     Benas.Kikutis             01/2018
+    //---------------------------------------------------------------------------------------
+    LockInfoSetTaskPtr QueryLocksById(BriefcaseR briefcase, bool byBriefcaseId, LockableIdSet& ids)
+        {
+        if (byBriefcaseId)
+            return briefcase.GetiModelConnection().QueryLocksByIds(ids, briefcase.GetBriefcaseId());
+
+        return briefcase.GetiModelConnection().QueryLocksByIds(ids);
+        }
+
+    //---------------------------------------------------------------------------------------
     //@bsimethod                                   Algirdas.Mikoliunas             06/2016
     //---------------------------------------------------------------------------------------
     void ExpectCodesCount(BriefcaseR briefcase, int expectedCount)
@@ -261,6 +283,18 @@ namespace iModelHubHelpers
     void ExpectCodesCount(BriefcasePtr briefcase, int expectedCount)
         {
         ExpectCodesCount(*briefcase, expectedCount);
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Benas.Kikutis              01/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void ExpectCodesCountByIds(BriefcaseR briefcase, int expectedCount, bool byBriefcaseId, DgnCodeSet& codes)
+        {
+        auto result = QueryCodesById(briefcase, byBriefcaseId, codes)->GetResult();
+
+        EXPECT_SUCCESS(result);
+        auto actualCount = result.GetValue().size();
+        EXPECT_EQ(expectedCount, actualCount);
         }
 
     //---------------------------------------------------------------------------------------
@@ -321,28 +355,16 @@ namespace iModelHubHelpers
         }
 
     //---------------------------------------------------------------------------------------
-    //@bsimethod                                     julius.cepukenas             08/2016
-    //---------------------------------------------------------------------------------------
-    CodeLockSetTaskPtr QueryCodesLocksById(BriefcaseR briefcase, bool byBriefcaseId, DgnCodeSet& codes, LockableIdSet& ids)
-        {
-        if (byBriefcaseId)
-            return briefcase.GetiModelConnection().QueryCodesLocksById(codes, ids, briefcase.GetBriefcaseId());
-
-        return briefcase.GetiModelConnection().QueryCodesLocksById(codes, ids);
-        }
-
-    //---------------------------------------------------------------------------------------
     //@bsimethod                                     Eligijus.Mauragas             01/2016
     //---------------------------------------------------------------------------------------
     void ExpectLocksCountById(BriefcaseR briefcase, int expectedCount, bool byBriefcaseId, LockableIdSet& ids)
         {
-        DgnCodeSet codes;
-        auto result = QueryCodesLocksById(briefcase, byBriefcaseId, codes, ids)->GetResult();
+        auto result = QueryLocksById(briefcase, byBriefcaseId, ids)->GetResult();
 
         EXPECT_SUCCESS(result);
 
         int locksCount = 0;
-        for (DgnLockInfo lockState : result.GetValue().GetLockStates())
+        for (DgnLockInfo lockState : result.GetValue())
             {
             if (LockLevel::Exclusive == lockState.GetOwnership().GetLockLevel())
                 locksCount++;

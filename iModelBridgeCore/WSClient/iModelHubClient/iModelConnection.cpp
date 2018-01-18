@@ -966,6 +966,44 @@ void AddCodes(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr c
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis                01/2018
+//---------------------------------------------------------------------------------------
+void AddMultiCodes(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
+    {
+    DgnCode        code;
+    DgnCodeState   codeState;
+    BeBriefcaseId  briefcaseId;
+
+    DgnCodeSet codeSet;
+    if (GetMultiCodeFromServerJson(value.GetProperties(), codeSet, codeState, briefcaseId))
+        {
+        for (auto const& code : codeSet)
+            {
+            codesLocksSetOut->AddCode(code, codeState, briefcaseId);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis                01/2018
+//---------------------------------------------------------------------------------------
+void AddMultiLocks(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
+    {
+    DgnLock        lock;
+    BeBriefcaseId  briefcaseId;
+    Utf8String     changeSetId;
+
+    DgnLockSet lockSet;
+    if (GetMultiLockFromServerJson(value.GetProperties(), lockSet, briefcaseId, changeSetId))
+        {
+        for (auto const& lock : lockSet)
+            {
+            codesLocksSetOut->AddLock(lock, briefcaseId, changeSetId);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                01/2017
 //---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::QueryCodesInternal
@@ -1007,23 +1045,7 @@ ICancellationTokenPtr cancellationToken
     filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
     query.SetFilter(filter);
 
-    auto addMultiCodesCallback = [&](const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
-        {
-        DgnCode        code;
-        DgnCodeState   codeState;
-        BeBriefcaseId  briefcaseId;
-
-        DgnCodeSet codeSet;
-        if (GetMultiCodeFromServerJson(value.GetProperties(), codeSet, codeState, briefcaseId))
-            {
-            for (auto const& code : codeSet)
-                {
-                codesLocksSetOut->AddCode(code, codeState, briefcaseId);
-                }
-            }
-        };
-
-    return QueryCodesLocksInternal(query, codesLocksOut, addMultiCodesCallback, cancellationToken);
+    return QueryCodesLocksInternal(query, codesLocksOut, AddMultiCodes, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1100,23 +1122,7 @@ ICancellationTokenPtr cancellationToken
     filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
     query.SetFilter(filter);
 
-    auto addMultiLocksCallback = [&](const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksSetOut)
-        {
-        DgnLock        lock;
-        BeBriefcaseId  briefcaseId;
-        Utf8String     changeSetId;
-
-        DgnLockSet lockSet;
-        if (GetMultiLockFromServerJson(value.GetProperties(), lockSet, briefcaseId, changeSetId))
-            {
-            for (auto const& lock : lockSet)
-                {
-                codesLocksSetOut->AddLock(lock, briefcaseId, changeSetId);
-                }
-            }
-        };
-
-    return QueryCodesLocksInternal(query, codesLocksOut, addMultiLocksCallback, cancellationToken);
+    return QueryCodesLocksInternal(query, codesLocksOut, AddMultiLocks, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3171,6 +3177,27 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Benas.Kikutis             01/2018
 //---------------------------------------------------------------------------------------
+CodeInfoSetTaskPtr iModelConnection::QueryAllCodes
+(
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryAllCodes";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiCode);
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+
+    auto result = ExecuteAsync(QueryCodesLocksInternal(query, finalValue, AddMultiCodes, cancellationToken));
+
+    if (result->IsSuccess())
+        return CreateCompletedAsyncTask(CodeInfoSetResult::Success(finalValue->GetCodeStates()));
+    return CreateCompletedAsyncTask(CodeInfoSetResult::Error(result->GetError()));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
 CodeInfoSetTaskPtr iModelConnection::QueryCodesByIds
 (
 DgnCodeSet const& codes,
@@ -3230,6 +3257,27 @@ ICancellationTokenPtr cancellationToken
     if (result->IsSuccess())
         return CreateCompletedAsyncTask(CodeInfoSetResult::Success(finalValue->GetCodeStates()));
     return CreateCompletedAsyncTask(CodeInfoSetResult::Error(result->GetError()));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Benas.Kikutis             01/2018
+//---------------------------------------------------------------------------------------
+LockInfoSetTaskPtr iModelConnection::QueryAllLocks
+(
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "iModelConnection::QueryAllLocks";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::MultiLock);
+    CodeLockSetResultInfoPtr finalValue = new CodeLockSetResultInfo();
+
+    auto result = ExecuteAsync(QueryCodesLocksInternal(query, finalValue, AddMultiLocks, cancellationToken));
+
+    if (result->IsSuccess())
+        return CreateCompletedAsyncTask(LockInfoSetResult::Success(finalValue->GetLockStates()));
+    return CreateCompletedAsyncTask(LockInfoSetResult::Error(result->GetError()));
     }
 
 //---------------------------------------------------------------------------------------
