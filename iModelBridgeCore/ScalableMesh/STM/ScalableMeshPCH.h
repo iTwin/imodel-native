@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,6 +60,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform\DgnFileIO\UnitDefinition.h>
 #include <DgnPlatform\ElementHandlerManager.h>
 #include <DgnPlatform\ScanCriteria.h>
+#endif
+
+#ifndef VANCOUVER_API
+//#include <DgnPlatform\ImageUtilities.h>
 #endif
 
 

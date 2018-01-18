@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ScalableMeshLib.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -27,17 +27,21 @@
 #include <ImagePP/all/h/HFCCallbacks.h>
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
-
 #include <DgnPlatform\DgnPlatformLib.h>
+
+
+#include <CCApi\CCPublic.h>
 #include <curl\curl.h>
 
 
-
-
-
+#ifndef VANCOUVER_API
+USING_NAMESPACE_IMAGEPP
+#endif
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+#define BING_AUTHENTICATION_KEY "AnLjDxNA_guaYuWWJifrpWnqvlxWPl8lLHzT1ixQH3vXLwb3CTEolWX34nbn4HfS"
 
 struct SMImagePPHost : public ImageppLib::Host
     {
@@ -79,20 +83,20 @@ void RegisterPODImportPlugin();
 //=======================================================================================
 struct WebServiceKey
     {
-private:
-    Utf8String m_key;
-    DateTime m_expiration;
+    private:
+        Utf8String m_key;
+        DateTime m_expiration;
 
-public:
-    WebServiceKey() :m_key(""), m_expiration(DateTime()) { }
-    WebServiceKey(Utf8StringCR key) : m_key(key), m_expiration(DateTime()) { }
-    WebServiceKey(Utf8StringCR key, DateTimeCR expiration) : m_key(key), m_expiration(expiration) { }
-    bool IsValid() const { return !m_key.empty(); }
-    Utf8String GetKey() const { return m_key; }
-    void SetKey(Utf8StringCR key) { m_key = key; }
-    DateTime GetExpiration() const { return m_expiration; }
-    void SetExpiration(DateTimeCR expiration) { m_expiration = expiration; }
-    bool IsExpired() const { return m_expiration.IsValid() && DateTime::Compare(m_expiration, DateTime::GetCurrentTimeUtc()) != DateTime::CompareResult::LaterThan; }
+    public:
+        WebServiceKey() :m_key(""), m_expiration(DateTime()) {}
+        WebServiceKey(Utf8StringCR key) : m_key(key), m_expiration(DateTime()) {}
+        WebServiceKey(Utf8StringCR key, DateTimeCR expiration) : m_key(key), m_expiration(expiration) {}
+        bool IsValid() const { return !m_key.empty(); }
+        Utf8String GetKey() const { return m_key; }
+        void SetKey(Utf8StringCR key) { m_key = key; }
+        DateTime GetExpiration() const { return m_expiration; }
+        void SetExpiration(DateTimeCR expiration) { m_expiration = expiration; }
+        bool IsExpired() const { return m_expiration.IsValid() && DateTime::Compare(m_expiration, DateTime::GetCurrentTimeUtc()) != DateTime::CompareResult::LaterThan; }
     };
 
 ///*---------------------------------------------------------------------------------**//**
@@ -112,17 +116,23 @@ void GetCertificateAutoritiesFileUrl(Utf8String& pemFileName)
     HMODULE hm = NULL;
 
     if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-        (LPCSTR)&WriteCallback,
-        &hm))
+                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                            (LPCSTR) &WriteCallback,
+                            &hm))
         {
         assert(!"Cannot get ScalableMesh DLL path");
         }
 
     WCHAR wccwd[FILENAME_MAX];
-    GetModuleFileNameW(hm, &wccwd[0], (DWORD)FILENAME_MAX);
+    GetModuleFileNameW(hm, &wccwd[0], (DWORD) FILENAME_MAX);
     BeFileName cwdfn(wccwd);
+
+#ifdef VANCOUVER_API    
+    pemFileName.append(Utf8String(BeFileName::GetDirectoryName(cwdfn.c_str()).c_str()).c_str());
+#else    
     pemFileName.append(Utf8String(cwdfn.GetDirectoryName().c_str()).c_str());
+#endif
+
     pemFileName.append("\\ScalableMeshCacert.pem");
     }
 
@@ -150,30 +160,22 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postFields.length());
         }
-    
     assert(!"CurlConstructor not available on BIM02 - Refactor might be required");
 /*
     CurlConstructor curlConstructor;
-    
     headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
 */
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
-   
-    
     Utf8String pemFileName;
 
     GetCertificateAutoritiesFileUrl(pemFileName);
-    
-    
     curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
-    
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);    
 
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
-    
     if (!proxyInfo.m_serverUrl.empty())
         {
         curl_easy_setopt(curl, CURLOPT_PROXY, proxyInfo.m_serverUrl);
@@ -223,23 +225,64 @@ WebServiceKey GetBingKey()
     assert(!"SM_BIM02_REFACTOR");
 #if 0
     Utf8String readBuffer;    
-            
+#ifdef VANCOUVER_API
+    WString buddiUrl;
+    UINT32 bufLen;
+    CallStatus status = APIERR_SUCCESS;
+
+    CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+    wchar_t* buffer;
+    status = CCApi_GetBuddiUrl(api, L"ContextServices", NULL, &bufLen);
+    bufLen++;
+    buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
+    status = CCApi_GetBuddiUrl(api, L"ContextServices", buffer, &bufLen);
+    buddiUrl.assign(buffer);
+    CCApi_FreeApi(api);
+#else
+    wstring buddiUrl;
     Bentley::Connect::Wrapper::Native::ConnectClientWrapper connectClient;
     std::wstring buddiUrl;
     connectClient.GetBuddiUrl(L"ContextServices", buddiUrl);    
+#endif
 
     Utf8String contextServiceURL;
-    contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());        
+    contextServiceURL.assign(Utf8String(buddiUrl.c_str()).c_str());
+
+#ifndef REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
+
+#ifdef VANCOUVER_API    
+    if (contextServiceURL.StartsWith("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
+        {
+        bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
+        return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
+        }
+#else
+    if (contextServiceURL.StartsWithI("https://connect-contextservices.bentley.com/")) //Production server do not know this API yet, return the local key if Connected for the moment.
+        {
+        bool isConnected = true;//DgnClientApp::AbstractUiState().GetValue("BentleyConnect_SignedIn", false);
+        return isConnected ? WebServiceKey(BING_AUTHENTICATION_KEY) : WebServiceKey();
+        }
+#endif
+
+#endif // !REMOVE_WHEN_KEYSERVICE_IN_PRODUCTION
 
     uint64_t productId(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductId());
+    Utf8String productIdStr;
 
-    Utf8Char productIdStr[200];
-    BeStringUtilities::FormatUInt64(productIdStr, productId);
-        
-    Utf8String bingKeyUrl(contextServiceURL);    
+#ifdef VANCOUVER_API    
+    wchar_t prodIdStr[200];
+    BeStringUtilities::FormatUInt64(prodIdStr, 200, productId, HexFormatOptions::None);
+    BeStringUtilities::WCharToUtf8(productIdStr, prodIdStr);
+#else
+    Utf8Char prodIdStr[200];
+    BeStringUtilities::FormatUInt64(prodIdStr, productId);
+    productIdStr.append(prodIdStr);
+#endif
+
+    Utf8String bingKeyUrl(contextServiceURL);
     bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+");
-    bingKeyUrl.append(productIdStr);
-            
+    bingKeyUrl.append(productIdStr.c_str());
+
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
 
@@ -273,19 +316,19 @@ WebServiceKey GetBingKey()
 //=======================================================================================
 // @bsiclass                                                    Raphael.Lemieux 09/2017
 //=======================================================================================
-class BingAuthenticationCallback : public ImagePP::HFCAuthenticationCallback, public RefCountedBase
+class BingAuthenticationCallback : public HFCAuthenticationCallback, public RefCountedBase
     {
-private:
-    mutable WebServiceKey m_bingKey;
-public:
-    BingAuthenticationCallback() : m_bingKey(WebServiceKey())     {    };
-    virtual             ~BingAuthenticationCallback()     {    };
+    private:
+        mutable WebServiceKey m_bingKey;
+    public:
+        BingAuthenticationCallback() : m_bingKey(WebServiceKey()) {};
+        virtual             ~BingAuthenticationCallback() {};
 
 
-    bool       GetAuthentication(ImagePP::HFCAuthentication* pio_Authentication) const override;
-    unsigned short RetryCount(ImagePP::HCLASS_ID pi_AuthenticationType) const override     { return 1;     }
-    bool       IsCancelled() const override     { return !m_bingKey.IsValid();     }
-    bool       CanAuthenticate(ImagePP::HCLASS_ID pi_AuthenticationType) const override     { return true;     }
+        bool       GetAuthentication(HFCAuthentication* pio_Authentication) const override;
+        unsigned short RetryCount(HCLASS_ID pi_AuthenticationType) const override { return 1; }
+        bool       IsCancelled() const override { return !m_bingKey.IsValid(); }
+        bool       CanAuthenticate(HCLASS_ID pi_AuthenticationType) const override { return true; }
     };
 
 typedef RefCountedPtr<BingAuthenticationCallback> BingAuthenticationCallbackPtr;
@@ -294,51 +337,56 @@ typedef RefCountedPtr<BingAuthenticationCallback> BingAuthenticationCallbackPtr;
 //=======================================================================================
 // @bsiclass                                                    Raphael.Lemieux 09/2017
 //=======================================================================================
-bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* pio_Authentication) const
+bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authentication) const
     {
-    ImagePP::HFCInternetAuthentication* pAuth = dynamic_cast<ImagePP::HFCInternetAuthentication*>(pio_Authentication);
+    HFCInternetAuthentication* pAuth = dynamic_cast<HFCInternetAuthentication*>(pio_Authentication);
 
     if (pAuth != nullptr)
         {
-
-        if (nullptr == pAuth || !pAuth->GetServer().ContainsI("bing"))
+		if (nullptr == pAuth || !pAuth->GetServer().ContainsI("bing"))
             return false;
 
-        Utf8String key = "";
+        WString key = L"";
         if (!m_bingKey.IsValid() || m_bingKey.IsExpired())
             {
             m_bingKey = GetBingKey();
             }
 
         if (m_bingKey.IsValid() && !m_bingKey.IsExpired())
-            { 
-            key = Utf8String(m_bingKey.GetKey().c_str());
-            }
-
+            key.AssignUtf8(m_bingKey.GetKey().c_str());
+#ifdef VANCOUVER_API
         pAuth->SetPassword(key);
+#else
+		pAuth->SetPassword(Utf8String(key));
+#endif
         return !key.empty();
         }
 
-    ImagePP::HFCProxyAuthentication* pProxyAuth = dynamic_cast<ImagePP::HFCProxyAuthentication*>(pio_Authentication);
+    HFCProxyAuthentication* pProxyAuth = dynamic_cast<HFCProxyAuthentication*>(pio_Authentication);
 
     if (pProxyAuth != nullptr)
         {
         //std::shared_ptr<ProxyHttpHandler> pProxyConfig(AppSettings::GetSharedPointer()->GetProxyConfig());
 
         ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
-        
         if (!proxyInfo.m_serverUrl.empty())
             {
-            pProxyAuth->SetUser(proxyInfo.m_user.c_str());
-            pProxyAuth->SetPassword(proxyInfo.m_password.c_str());
-            pProxyAuth->SetServer(proxyInfo.m_serverUrl.c_str());
+#ifdef VANCOUVER_API
+            pProxyAuth->SetUser(WString(proxyInfo.m_user.c_str(), true));
+            pProxyAuth->SetPassword(WString(proxyInfo.m_password.c_str(), true));
+            pProxyAuth->SetServer(WString(proxyInfo.m_serverUrl.c_str(), true));
+#else
+			pProxyAuth->SetUser(proxyInfo.m_user);
+            pProxyAuth->SetPassword(proxyInfo.m_password);
+            pProxyAuth->SetServer(proxyInfo.m_serverUrl);
+#endif
             return true;
             }
 
         return false;
         }
 
-    ImagePP::HFCCertificateAutoritiesAuthentication* pCertAutorityAuth = dynamic_cast<ImagePP::HFCCertificateAutoritiesAuthentication*>(pio_Authentication);
+	HFCCertificateAutoritiesAuthentication* pCertAutorityAuth = dynamic_cast<HFCCertificateAutoritiesAuthentication*>(pio_Authentication);
 
     if (pCertAutorityAuth != nullptr)
         {
@@ -350,13 +398,16 @@ bool BingAuthenticationCallback::GetAuthentication(ImagePP::HFCAuthentication* p
 
         if (!pemFileName.empty())
             {
-            pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
+#ifdef VANCOUVER_API
+			pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
+#else	
+			pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
+#endif
             return true;
             }
 
         return false;
         }
-        
     assert(!"Unknown/unsupported HFCAuthentication type");
 
     return false;
@@ -368,11 +419,11 @@ static BingAuthenticationCallbackPtr s_bingAuthCallback;
 
 void ScalableMeshLib::Host::Initialize()
     {
-    BeAssert (NULL == m_scalableTerrainModelAdmin);   
+    BeAssert(NULL == m_scalableTerrainModelAdmin);
     SMMemoryPool::GetInstance();
-    m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
+    m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();
 #ifdef VANCOUVER_API
-	m_stmAdmin = &_SupplySTMAdmin();
+    m_stmAdmin = &_SupplySTMAdmin();
 #endif
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
@@ -383,9 +434,13 @@ void ScalableMeshLib::Host::Initialize()
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
 
-    s_bingAuthCallback = new BingAuthenticationCallback();
+    //Ensure to avoid overwriting any specialized Imagepp authentication provided by an application.
+    if (m_scalableTerrainModelAdmin->_ProvideImageppAuthentication())
+        {
+        s_bingAuthCallback = new BingAuthenticationCallback();
 
-    HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());    
+        HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,18 +456,28 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
         t_ippLibHost->Terminate(onProgramExit);
         delete t_ippLibHost;
         }
-         
+
     //Terminate host objects
-    for(bvector<ObjEntry>::iterator itr=m_hostObj.begin(); itr!=m_hostObj.end(); ++itr)
+    for (bvector<ObjEntry>::iterator itr = m_hostObj.begin(); itr != m_hostObj.end(); ++itr)
         {
-        //IHostObject* pValue(itr->GetValue());
-        //TERMINATE_HOST_OBJECT(pValue, onProgramExit);
+        IHostObject* pValue(itr->GetValue());
+#ifdef VANCOUVER_API
+        TERMINATE_HOST_OBJECT(pValue, onProgramExit);
+#else
+		ON_HOST_TERMINATE(pValue, onProgramExit);
+#endif
         }
 
     m_hostObj.clear();
     m_hostVar.clear();
-                                
-   // TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);    
+
+
+#ifdef VANCOUVER_API
+    TERMINATE_HOST_OBJECT(m_scalableTerrainModelAdmin, onProgramExit);
+#else
+	ON_HOST_TERMINATE(m_scalableTerrainModelAdmin, onProgramExit);
+#endif
+
     delete m_smPaths;
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
@@ -450,15 +515,15 @@ void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableM
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
-    {   
+    {
     if (!ImageppLib::IsInitialized())
         {
         t_ippLibHost = new SMImagePPHost();
         ImageppLib::Initialize(*t_ippLibHost);
         }
-    BeAssert (NULL == t_scalableTerrainModelHost);  // cannot be called twice on the same thread
+    BeAssert(NULL == t_scalableTerrainModelHost);  // cannot be called twice on the same thread
     if (NULL != t_scalableTerrainModelHost)
-        return;    
+        return;
 
     // Register point converters:
     static const RegisterIDTMPointConverter<DPoint3d, DPoint3d>                        s_ptTypeConv0;
@@ -493,8 +558,11 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
 
     static const RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
 
-    
-    // Register Moniker        
+
+    // Register Moniker
+
+
+
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
     BeFileName tempDir;
@@ -503,11 +571,9 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
 #else
-
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     tempDir = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempDir.IsEmpty());
-
 #endif
 
     BeSQLiteLib::Initialize(tempDir);
@@ -525,7 +591,7 @@ void ScalableMeshLib::Terminate(ScalableMeshLib::Host& host)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                     11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScalableMeshLib::IsInitialized ()
+bool ScalableMeshLib::IsInitialized()
     {
     return NULL != t_scalableTerrainModelHost;
     }
@@ -533,7 +599,7 @@ bool ScalableMeshLib::IsInitialized ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                     11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScalableMeshLib::Host& ScalableMeshLib::GetHost() 
+ScalableMeshLib::Host& ScalableMeshLib::GetHost()
     {
     return *t_scalableTerrainModelHost;
     }

@@ -13,6 +13,7 @@
 
 #include "ScalableMesh.h"
 
+#include "ScalableMeshClippingOptions.h"
 #include <CloudDataSource/DataSourceManager.h>
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
@@ -117,6 +118,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         RefCountedPtr<ScalableMeshGroupDTM>  m_smGroupsDTM[DTMAnalysisType::Qty];
 
+		ScalableMeshClippingOptions m_options;
+
     protected:
 
         virtual void                               _TextureFromRaster(ITextureProviderPtr provider) override {}
@@ -196,10 +199,13 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
 		virtual void                               _CompactExtraFiles() override {}
 
+		virtual void                               _WriteExtraFiles() override {}
+
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
         virtual int                                _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId) const override { return ERROR; }
+        virtual int                                 _SaveAs(const WString& destination, ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr) override { return ERROR; }
         virtual void                               _ImportTerrainSM(WString terrainPath) override {  }
         virtual IScalableMeshPtr                    _GetTerrainSM() override { return nullptr; }
 
@@ -215,6 +221,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual void                               _GetCoverageIds(bvector<uint64_t>& ids) const override;
         virtual BentleyStatus                      _DeleteCoverage(uint64_t id) override;
         virtual void                               _GetCoverageName(Utf8String& name, uint64_t id) const override;
+
+		virtual IScalableMeshClippingOptions&                               _EditClippingOptions() override { return m_options; };
 
         virtual void                               _SetClipOnOrOff(uint64_t id, bool isActive) override;
         virtual void                               _GetIsClipActive(uint64_t id, bool& isActive) override;

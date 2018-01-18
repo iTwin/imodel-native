@@ -25,20 +25,24 @@ struct IScalableMeshTextureInfo abstract : virtual public RefCountedBase
 
     protected:
 
+        virtual WString       _GetBingMapsType() const = 0;
+
         virtual SMTextureType _GetTextureType() const = 0;
 
         virtual bool          _IsTextureAvailable() const = 0;
         
         virtual bool          _IsUsingBingMap() const = 0;        
-
+        
     public:
 
+        BENTLEY_SM_EXPORT WString       GetBingMapsType() const;
+      
         BENTLEY_SM_EXPORT SMTextureType GetTextureType() const;
 
         BENTLEY_SM_EXPORT bool          IsTextureAvailable() const;
 
         BENTLEY_SM_EXPORT bool          IsUsingBingMap() const;
-           
+                   
         BENTLEY_SM_EXPORT static const Byte* GetBingMapLogo(DPoint2d& bingMapLogoSize);
     };
 

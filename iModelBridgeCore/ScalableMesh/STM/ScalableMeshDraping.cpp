@@ -128,7 +128,14 @@ IScalableMeshNodePlaneQueryParamsPtr MeshTraversalQueue::GetPlaneQueryParam(size
 	m_reproTransform.Multiply(origin, m_polylineToDrape[segmentId]);
 
 	pointOnDirection.SumOf(origin, drapeDirection);
-	Transform t = m_reproTransform.ValidatedInverse();
+    bool    inverseOf(TransformCP pIn);
+
+#ifdef VANCOUVER_API
+    Transform t; 
+    t.inverseOf(&m_reproTransform);
+#else
+    Transform t = m_reproTransform.ValidatedInverse();
+#endif
 	t.Multiply(pointOnDirection, pointOnDirection);
 
 	DPlane3d targetCuttingPlane = DPlane3d::From3Points(m_polylineToDrape[segmentId], m_polylineToDrape[segmentId + 1], pointOnDirection);
@@ -777,9 +784,21 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
             }
         }
 
-    // transform and sort the hits
-    for (auto hit : AllHits)
+    // transform back to world and sort the hits
+    for (auto &hit : AllHits)
+    {
+        // transform the normals in world
+        if (hit.hasNormal)
+        {
+            DPoint3d startDir = hit.point;
+            DPoint3d endDir = DPoint3d::FromSumOf(startDir, hit.normal);
+            m_transform.Multiply(startDir);
+            m_transform.Multiply(endDir);
+            hit.normal = DVec3d::FromStartEndNormalize(startDir, endDir);
+        }
+        // transform the hit point
         m_transform.Multiply(hit.point);
+    }
 
     // Sort by fraction
     DTMIntersectionCompare Comparator;

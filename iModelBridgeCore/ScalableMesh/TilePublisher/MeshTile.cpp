@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/MeshTile.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -574,20 +574,18 @@ ImageSource::ImageSource(ImageCR image, Format format, int quality, Image::Botto
         {
         BeJpegCompressor writer;
 #ifndef VANCOUVER_API
-        bvector<Byte> stream;
+        typedef bvector<Byte> stream_type;
+#else
+        typedef ByteStream stream_type;
+#endif
+        stream_type stream;
+		
 #if 0 //NEEDS_WORK_SM_CESIUM_B0200
         if (SUCCESS == writer.Compress(stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(),
                                        image.GetFormat() == Image::Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA,
                                        quality/*,
                                        Image::BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No*/))
-#endif
-#else
-        ByteStream stream;
-        if (SUCCESS == writer.Compress(stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(),
-            image.GetFormat() == Image::Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA,
-            quality/*,
-                   Image::BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No*/))
-#endif
+#endif									   
             {
             m_stream.Resize((uint32_t)stream.size());
             memcpy(m_stream.data(), stream.data(), stream.size());
@@ -1190,13 +1188,13 @@ TileNodePList TileNode::GetTiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifndef VANCOUVER_API
-TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ bool isCurved, DgnDbR db)
-    : /*m_params(params),*/ m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved)/*, m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())*/
-#else
+//#ifndef VANCOUVER_API
+//TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ bool isCurved, DgnDbR db)
+//    : /*m_params(params),*/ m_transform(tf), m_tileRange(range), m_entityId(entityId), m_isCurved(isCurved)/*, m_hasTexture(params.IsValid() && params->QueryTexture(db).IsValid())*/
+//#else
 TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, bool isCurved)
     : m_transform(tf), m_tileRange(range), m_isCurved(isCurved)
-#endif
+//#endif
     {}
 
 /*---------------------------------------------------------------------------------**//**

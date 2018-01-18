@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh_Vancouver.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -204,6 +204,8 @@ $(o)ScalableMeshInitialization$(oext) : $(stmDir)ScalableMeshInitialization.cpp 
 
 $(o)ScalableMesh$(oext) : $(stmDir)ScalableMesh.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)ScalableMeshInfo$(oext) : $(stmDir)ScalableMeshInfo.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
 $(o)ScalableMeshClipContainer$(oext) : $(stmDir)ScalableMeshClipContainer.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshQuery$(oext) : $(stmDir)ScalableMeshQuery.cpp $(stmDir)ScalableMeshQuery.hpp $(stmDir)ScalableMeshQuery.h $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -312,6 +314,8 @@ $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMes
 
 $(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshAnalysis.h ${MultiCompileDepends}
 
+$(o)ScalableMeshAnalysis_Ecef$(oext) : $(stmDir)ScalableMeshAnalysis_Ecef.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
+
 $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
@@ -331,6 +335,8 @@ $(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)Reproject
 $(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
 
 $(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh\ScalableMeshFrom3MX.h ${MultiCompileDepends}
+
+$(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cpp $(stmDir)ScalableMeshClippingOptions.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
@@ -357,6 +363,8 @@ $(o)SMSQLiteSisterFile$(oext) : $(stmDir)Stores/SMSQLiteSisterFile.cpp $(stmDir)
 $(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMSQLiteStore.h $(stmDir)Stores/SMSQLiteStore.hpp ${MultiCompileDepends}
 
 $(o)SMStreamingDataStore$(oext) : $(stmDir)Stores/SMStreamingDataStore.cpp $(stmDir)Stores/SMStreamingDataStore.h $(stmDir)Stores/SMStreamingDataStore.hpp ${MultiCompileDepends}
+
+$(o)SMExternalProviderDataStore$(oext) : $(stmDir)Stores/SMExternalProviderDataStore.cpp $(stmDir)Stores/SMExternalProviderDataStore.h $(stmDir)Stores/SMExternalProviderDataStore.hpp ${MultiCompileDepends}
 
 $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMStoreUtils.h ${MultiCompileDepends}
 
@@ -492,6 +500,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeSQLite.lib \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
+    Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \

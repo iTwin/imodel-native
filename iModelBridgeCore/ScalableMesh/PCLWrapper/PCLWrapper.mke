@@ -2,7 +2,7 @@
 #
 #     $Source: PCLWrapper/PCLWrapper.mke $
 #
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # Lots of problems in a third-party library that we aren't going to fix. 
@@ -56,6 +56,12 @@ $(o)Status$(oext)                     : $(baseDir)Status.cpp  \
                                         $(baseDir)Status.h  \
                                         $(publicApiDir)IStatus.h \
                                         ${MultiCompileDepends}
+
+$(o)Icp$(oext)                        : $(baseDir)Icp.cpp  \
+                                        $(baseDir)Icp.h \
+                                        $(publicApiDir)IIcp.h \
+                                        ${MultiCompileDepends}
+
 
 %include MultiCppCompileGo.mki
 

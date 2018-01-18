@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:30:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,12 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
         BENTLEY_SM_EXPORT int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData);
         
         BENTLEY_SM_EXPORT void AddTexture(int width, int height, int nOfChannels, const byte* texData, int64_t texID);
+
+        BENTLEY_SM_EXPORT void SetTextured(SMTextureType textured);
+
+        BENTLEY_SM_EXPORT void SetIsSingleFile(bool isSingleFile);
+
+        BENTLEY_SM_EXPORT void SetIsTerrain(bool isTerrain);
 
         BENTLEY_SM_EXPORT void SetDataResolution(float resolution);
 

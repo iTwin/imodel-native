@@ -37,8 +37,7 @@ struct IDTMSource::Impl : public EditListener
 private:
     friend struct                       IDTMSource;
   
-    EditListener*                       m_editListenerP;
-    DTMSourceDataType                   m_sourceDataType;        
+    EditListener*                       m_editListenerP;    
     Time                                m_lastModified;   
 
 
@@ -55,7 +54,10 @@ private:
 
 
 protected:
-    WString m_path;
+
+    DTMSourceDataType m_sourceDataType;
+    WString           m_path;
+
     explicit                            Impl                           (DTMSourceDataType       sourceDataType, 
                                                                         const IMoniker*         monikerP);
 

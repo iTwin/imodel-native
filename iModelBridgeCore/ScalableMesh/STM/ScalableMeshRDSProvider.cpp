@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -44,6 +44,14 @@ Utf8String IScalableMeshRDSProvider::GetRDSURLAddress()
 Utf8String IScalableMeshRDSProvider::GetToken()
     {
     return _GetToken();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IScalableMeshRDSProvider::GetRootDocument()
+    {
+    return _GetRootDocument();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,6 +124,14 @@ Utf8String ScalableMeshRDSProvider::_GetToken()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                     09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ScalableMeshRDSProvider::_GetRootDocument()
+    {
+    return GetRootDocumentName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                     09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshRDSProvider::InitializeRealityDataService()
     {
     //if (RealityDataService::AreParametersSet()) return SUCCESS;
@@ -126,14 +142,19 @@ void ScalableMeshRDSProvider::InitializeRealityDataService()
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
 
     if (!proxyInfo.m_serverUrl.empty())
-        {        
+        {       
+#ifndef VANCOUVER_API
         Utf8String proxyCreds = proxyInfo.m_user;
         proxyCreds.append(":");
         proxyCreds.append(proxyInfo.m_password);
-
-        assert(!"RealityDataService::SetProxyInfo not supported");
+		
+        assert(!"RealityDataService::SetProxyInfo not supported on BIM02");
 #if 0 
         RealityDataService::SetProxyInfo(proxyInfo.m_serverUrl, proxyCreds);
+#endif		
+		
+#else 
+        assert(!"RealityDataService::SetProxyInfo not yet available");
 #endif
         }    
     }

@@ -2,11 +2,12 @@
 |
 |     $Source: Tests/GTests/SMUnitTestUtil.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestUtil.h"
+#include <Bentley/BeFile.h>
 #include <Bentley/BeDirectoryIterator.h>
 #ifndef VANCOUVER_API
 #include <Bentley/Desktop/FileSystem.h>
@@ -50,6 +51,31 @@ bvector<BeFileName> ScalableMeshGTestUtil::GetFiles(BeFileName dataPath)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ScalableMeshGTestUtil::GetFileCount(BeFileName dataPath)
+    {
+    size_t fileCount = 0;
+    if (BeFileName::DoesPathExist(dataPath))
+        {
+        BeFileName entryName;
+        bool        isDir;
+        for (BeDirectoryIterator dirIter(dataPath); dirIter.GetCurrentEntry(entryName, isDir) == SUCCESS; dirIter.ToNext())
+            {
+            if (!isDir && BeFileName::DoesPathExist(entryName))
+                {
+                auto const& fileType = GetFileType(entryName);
+                if (SMMeshType::TYPE_3DTILES_TILESET == fileType || SMMeshType::TYPE_3DTILES_B3DM == fileType)
+                    {
+                    ++fileCount;
+                    }
+                }
+            }
+        }
+    return fileCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMMeshType ScalableMeshGTestUtil::GetFileType(BeFileName file)
@@ -62,7 +88,11 @@ SMMeshType ScalableMeshGTestUtil::GetFileType(BeFileName file)
         }
     else if (extension == L"json")
         {
-        type = SMMeshType::TYPE_3DTILES;
+        type = SMMeshType::TYPE_3DTILES_TILESET;
+        }
+    else if (extension == L"b3dm")
+        {
+        type = SMMeshType::TYPE_3DTILES_B3DM;
         }
     else
         {
@@ -128,6 +158,152 @@ BeFileName ScalableMeshGTestUtil::GetUserSMTempDir()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Elenie.Godzaridis                     11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> ScalableMeshGTestUtil::GetListOfValues(BeFileName listingFile)
+{
+	std::ifstream f;
+	bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> resultList;
+	if(!ScalableMeshGTestUtil::GetDataPath(listingFile))
+		return resultList;
+	f.open(listingFile.c_str());
+	if (f.fail())
+		return resultList;
+	while (!f.eof())
+	{
+		std::string nameStr;
+		f >> nameStr;
+
+		DMatrix4d mat;
+		mat.InitIdentity();
+		for(size_t i =0; i <3 ;++i)
+			for(size_t j =0; j <4; ++j)
+		      f >> mat.coff[i][j];
+
+		int nOfSourcePts;
+		f >> nOfSourcePts;
+		bvector<DPoint3d> sourcePts;
+		for (size_t i = 0; i < nOfSourcePts; ++i)
+		{
+			DPoint3d pt;
+			f >> pt.x;
+			f >> pt.y;
+			f >> pt.z;
+			sourcePts.push_back(pt);
+		}
+
+		int nOfResultPts;
+		f >> nOfResultPts;
+		bvector<DPoint3d> resultPts;
+		for (size_t i = 0; i < nOfResultPts; ++i)
+		{
+			DPoint3d pt;
+			f >> pt.x;
+			f >> pt.y;
+			f >> pt.z;
+			resultPts.push_back(pt);
+		}
+
+		BeFileName name;
+		ScalableMeshGTestUtil::GetDataPath(name);
+		name.AppendToPath(SM_DATA_PATH);
+		name.AppendToPath(WString(nameStr.c_str()).c_str());
+		std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>> entries(name, mat,sourcePts, resultPts);
+		resultList.push_back(entries);
+	}
+	return resultList;
+}
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Richard.Bois                     12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value ScalableMeshGTestUtil::GetGroundTruthJsonFile(BeFileName jsonFile)
+    {
+    Json::Value result;
+
+    BeFile f;
+    if (BeFileStatus::Success != f.Open(jsonFile.c_str(), BeFileAccess::Read, BeFileSharing::None))
+        return Json::Value();
+
+    bvector<byte> fileBuffer;
+    if (BeFileStatus::Success != f.ReadEntireFile(fileBuffer))
+        return Json::Value();
+
+    if (!Json::Reader().parse(reinterpret_cast<char *>(fileBuffer.data()), reinterpret_cast<char *>(fileBuffer.data() + fileBuffer.size()), result))
+        return Json::Value();
+
+    return result;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Mathieu.St-Pierre                       11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName listingFile)
+    {
+    std::ifstream f;
+    bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> resultList;
+    if (!ScalableMeshGTestUtil::GetDataPath(listingFile))
+        return resultList;
+    f.open(listingFile.c_str());
+    if (f.fail())
+        return resultList;
+    while (!f.eof())
+        {
+        std::string nameStr;
+        f >> nameStr;
+
+        DMatrix4d mat;
+        mat.InitIdentity();
+        for (size_t i = 0; i <4; ++i)
+            for (size_t j = 0; j <4; ++j)
+                f >> mat.coff[i][j];
+
+        int nOfClipPlanes;
+        f >> nOfClipPlanes;
+
+        bvector<DPoint4d> clipPlanes;
+        for (size_t i = 0; i < nOfClipPlanes; ++i)
+            {
+            DPoint4d pt;
+            f >> pt.x;
+            f >> pt.y;
+            f >> pt.z;
+            f >> pt.w;
+            clipPlanes.push_back(pt);
+            }
+
+        
+        /*
+        int nOfResultPts;
+        f >> nOfResultPts;
+        */
+        bvector<double> results(1);
+        //bvector<DPoint3d> resultPts;
+        for (size_t i = 0; i < 1; ++i)
+            {
+            f >> results[i];
+            /*
+            DPoint3d pt;
+            f >> pt.x;  
+            f >> pt.y;
+            f >> pt.z;
+            resultPts.push_back(pt);*/
+            }
+
+        BeFileName name;
+        ScalableMeshGTestUtil::GetDataPath(name);
+        name.AppendToPath(SM_DATA_PATH);
+        name.AppendToPath(WString(nameStr.c_str()).c_str());
+        std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>> entries(name, mat, clipPlanes, results);
+        resultList.push_back(entries);
+        }
+    return resultList;
+    }
+
+
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScalableMeshGTestUtil::InitScalableMesh()
@@ -136,7 +312,9 @@ bool ScalableMeshGTestUtil::InitScalableMesh()
     static bool bInitialized = false;
     if (!bInitialized)
         {
-        ScalableMeshModule().Initialize();
+        static ScalableMeshModule smApp;
+        smApp.Initialize();
+
         bInitialized = true;
         }
 

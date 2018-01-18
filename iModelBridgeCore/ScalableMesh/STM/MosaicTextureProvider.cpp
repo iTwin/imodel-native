@@ -126,18 +126,18 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     for (size_t i = 0; i < width*height; ++i)
         {
         *pPixel++ = pixelBufferPRGBA[i * 4];
-        *pPixel++ = pixelBufferPRGBA[i * 4 + 1];
+        *pPixel++ = pixelBufferPRGBA[i * 4 + 1]; 
         *pPixel++ = pixelBufferPRGBA[i * 4 + 2];
         }
     delete[] pixelBufferPRGBA;
     pTextureBitmap = 0;
-    return SUCCESS;*/
+    return SUCCESS;*/   
     pTextureBitmap = 0;
 
     return RasterUtilities::CopyFromArea(texData, width, height, area, nullptr, *m_targetMosaic);
     }
 
-MosaicTextureProvider::MosaicTextureProvider(HIMMosaic* mosaic)
+MosaicTextureProvider::MosaicTextureProvider(HFCPtr<HIMMosaic>& mosaic)
     : m_targetMosaic(mosaic)
     {
     HGF2DExtent maxExt;

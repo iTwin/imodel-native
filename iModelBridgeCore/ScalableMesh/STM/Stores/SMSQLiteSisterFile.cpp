@@ -2,14 +2,35 @@
 //:>
 //:>     $Source: STM/Stores/SMSQLiteSisterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include <ScalableMeshPCH.h>
 #include "SMSQLiteSisterFile.h"
 
-bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType)
+BeFileName GetTempPathFromProjectPath(const BeFileName& path)
+{
+	BeFileName extraFileDir;
+
+#ifndef VANCOUVER_API
+	Desktop::FileSystem::BeGetTempPath(extraFileDir);
+#else
+	BeFileName::BeGetTempPath(extraFileDir);
+#endif
+
+	WString substrFile = path.c_str();
+	substrFile.ReplaceAll(L"/", L"_");
+	substrFile.ReplaceAll(L"\\", L"_");
+	substrFile.ReplaceAll(L":", L"_");
+	substrFile.ReplaceAll(L"\"", L"_");
+	substrFile.ReplaceAll(L"'", L"_");
+
+	extraFileDir.AppendToPath(substrFile.c_str());
+	return extraFileDir;
+}
+
+bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreDataType dataType, bool useTempPath) const
     {
     switch (dataType)
         {
@@ -29,7 +50,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
             break;
 
         case SMStoreDataType::DiffSet:
-            sqlFileName = m_projectFilesPath;
+            sqlFileName = useTempPath ? GetTempPathFromProjectPath(m_projectFilesPath) : m_projectFilesPath;
             sqlFileName.append(L"_clips");
             return true;
             break;
@@ -37,7 +58,7 @@ bool SMSQLiteSisterFile::GetSisterSQLiteFileName(WString & sqlFileName, SMStoreD
         case SMStoreDataType::Skirt:
         case SMStoreDataType::CoveragePolygon:
         case SMStoreDataType::CoverageName:
-            sqlFileName = m_projectFilesPath;
+            sqlFileName = useTempPath ? GetTempPathFromProjectPath(m_projectFilesPath) : m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions");
             return true;
             break;
@@ -74,7 +95,16 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         }
     }
 
-SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing)
+void SMSQLiteSisterFile::CopyClipSisterFile(SMStoreDataType dataType) const
+{
+	WString sqlFileNameSource, sqlFileName;
+	GetSisterSQLiteFileName(sqlFileNameSource, dataType, true);
+	GetSisterSQLiteFileName(sqlFileName, dataType, false);
+
+	BeFileName::BeCopyFile(sqlFileNameSource.c_str(), sqlFileName.c_str());
+}
+
+SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath)
     {
     SMSQLiteFilePtr sqlFilePtr;
 
@@ -106,7 +136,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
             if (!m_smClipSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);
+                GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
                     
                 StatusInt status;
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
@@ -147,7 +177,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
             if (!m_smClipDefinitionSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
-                GetSisterSQLiteFileName(sqlFileName, dataType);
+                GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
 
                 StatusInt status;
                 m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);
@@ -187,10 +217,23 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
     return sqlFilePtr;
     }
 
+bool SMSQLiteSisterFile::DoesSisterSQLiteFileExist(SMStoreDataType dataType) const
+	{
+	WString sqlFileName;
+	if (!GetSisterSQLiteFileName(sqlFileName, dataType))
+		return false;
+
+#ifdef VANCOUVER_API
+	return BeFileName::DoesPathExist(sqlFileName.c_str());
+#else
+	return BeFileName(sqlFileName).DoesPathExist();
+#endif
+	}
+
 bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
     {
-    if (m_projectFilesPath.length() > 0)
-        return false;
+    /*if (m_projectFilesPath.length() > 0)
+        return false;*/
 
     m_projectFilesPath = projectFilesPath;    
     return true;
@@ -233,7 +276,7 @@ void SMSQLiteSisterFile::Compact()
 	}
     }
 
-bool SMSQLiteSisterFile::IsProjectFilesPathSet()
+bool SMSQLiteSisterFile::IsProjectFilesPathSet() const
     {
     return !m_projectFilesPath.empty();
     }

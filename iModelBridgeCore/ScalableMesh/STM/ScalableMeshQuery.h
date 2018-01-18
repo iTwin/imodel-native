@@ -1508,10 +1508,9 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                     for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
                         {
                         cachedMesh.push_back((*m_cachedDisplayMeshData)[i].GetCachedDisplayMesh());
-                        uint64_t id;
-                        bool ret = (*m_cachedDisplayMeshData)[i].GetTextureInfo(id);
-                        textureIds.push_back(make_bpair(ret, id));
-                        
+                        uint64_t id = 0;
+                        bool ret = (*m_cachedDisplayMeshData)[i].GetTextureInfo(id);                        
+                        textureIds.push_back(make_bpair(ret, id));                        
                         }
                     return SUCCESS;
                     }
