@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaVersionConversionTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -26,30 +26,6 @@ struct ExpectedClassMetaData
     ECClassType Type;
     ECClassModifier Modifier;
     };
-
-void validateUnitsInConvertedSchema2(ECSchemaR convertedSchema, ECSchemaR originalSchema)
-{
-	for (const auto& ecClass : originalSchema.GetClasses())
-	{
-		ECClassP convertedClass = convertedSchema.GetClassP(ecClass->GetName().c_str());
-		for (const auto& ecProp : ecClass->GetProperties(true))
-		{
-			Unit originalUnit;
-			if (Unit::GetUnitForECProperty(originalUnit, *ecProp))
-			{
-				ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
-				KindOfQuantityCP koq = convertedProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-				ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
-				Units::UnitCP convertedUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
-				if (nullptr == convertedUnit) // If null it may be a dummy unit added during conversion ... 
-					convertedUnit = Units::UnitRegistry::Instance().LookupUnit(originalUnit.GetName());
-				ASSERT_NE(nullptr, convertedUnit) << "Could not find converted unit for old unit " << originalUnit.GetName();
-
-				EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().GetUnit()->GetName())) << "Converted unit not correct for " << convertedProp->GetName().c_str();
-			}
-		}
-	}
-}
 
 void VerifySchema(ECSchemaPtr schema, bvector<ExpectedClassMetaData> expectedClasses, bvector<Utf8CP> unexpectedClasses)
     {
@@ -213,78 +189,6 @@ TEST_F(SchemaVersionConversionTests, CanLoadMetaSchemaWithDeliveredConversionSch
     unexpectedClasses.push_back("CustomAttributeContainerHasLocalCustomAttribute");
 
     VerifySchema(schema, expectedClasses, unexpectedClasses);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                       07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaVersionConversionTests, OldUnitsWithKoqNameConflicts)
-    {
-    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
-        <ECClass typeName="TestClass" isDomainClass="True">
-            <ECProperty propertyName="Length" typeName="double">
-                <ECCustomAttributes>
-                    <UnitSpecification xmlns="Unit_Attributes.01.00">
-                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                        <DimensionName>L</DimensionName>
-                        <UnitName>FOOT</UnitName>
-                        <AllowableUnits />
-                    </UnitSpecification>
-                </ECCustomAttributes>
-            </ECProperty>
-        </ECClass>
-        <ECClass typeName="LENGTH" isDomainClass="True" />
-    </ECSchema>)xml";
-
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
-    ECSchemaPtr originalSchema;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
-
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
-    validateUnitsInConvertedSchema2(*schema, *originalSchema);
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Colin.Kerr                       05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-// Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
-TEST_F(SchemaVersionConversionTests, SchemaWithIsUnitSystemSchema_Attribute)
-    {
-    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
-        <IsUnitSystemSchema xmlns="Unit_Attributes.01.00" />
-        <Mixed_UnitSystem xmlns="Unit_Attributes.01.00" />
-        <SI_UnitSystem xmlns="Unit_Attributes.01.00" />
-        <US_UnitSystem xmlns="Unit_Attributes.01.00" />
-        <ECClass typeName="TestClass" isDomainClass="True">
-            <ECProperty propertyName="Length" typeName="double">
-                <ECCustomAttributes>
-                    <UnitSpecification xmlns="Unit_Attributes.01.00">
-                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
-                        <DimensionName>L</DimensionName>
-                        <UnitName>FOOT</UnitName>
-                        <AllowableUnits />
-                    </UnitSpecification>
-                </ECCustomAttributes>
-            </ECProperty>
-        </ECClass>
-    </ECSchema>)xml";
-
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
-    ECSchemaPtr originalSchema;
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
-
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
-    validateUnitsInConvertedSchema2(*schema, *originalSchema);
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
