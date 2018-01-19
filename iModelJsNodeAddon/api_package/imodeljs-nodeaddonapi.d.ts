@@ -443,19 +443,79 @@ declare class NodeAddonECSqlBinder implements IDisposable {
     /** Dispose of the NodeAddonECSqlBinder object */
     dispose(): void;
 
+    /** Binds null to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
     bindNull(): DbResult;
+
+    /** Binds a BLOB, formatted as Base64 string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
     bindBlob(base64String: string): DbResult;
+
+    /** Binds a Boolean to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
     bindBoolean(val: boolean): DbResult;
+
+    /** Binds a DateTime, formatted as ISO string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
     bindDateTime(isoString: string): DbResult;
+
+    /** Binds a double to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
     bindDouble(val: number): DbResult;
+
+    /** Binds an Id, formatted as hexadecimal string, to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
     bindId(hexStr: string): DbResult;
+
+    /** Binds an int to the parameter represented by this binder
+     * @return non-zero error status in case of failure.
+     */
     bindInt(val: number): DbResult;
+
+    /** Binds an Int64 to the parameter represented by this binder.
+     * @param val Int64 value, either as number or as decimal or hexadecimal string
+     * @return non-zero error status in case of failure.
+     */
     bindInt64(val: string | number): DbResult;
+
+    /** Binds a Point2d to the parameter represented by this binder.
+     * @return non-zero error status in case of failure.
+     */
     bindPoint2d(x: number, y: number): DbResult;
+
+    /** Binds a Point3d to the parameter represented by this binder.
+     * @return non-zero error status in case of failure.
+     */
     bindPoint3d(x: number, y: number, z: number): DbResult;
+
+    /** Binds a string to the parameter represented by this binder.
+     * @return non-zero error status in case of failure.
+     */
     bindString(val: string): DbResult;
+
+    /** Binds a Navigation property value to the parameter represented by this binder.
+     * @param navIdHexStr Id of the related instance represented by the navigation property (formatted as hexadecimal string)
+     * @param relClassName Name of the relationship class of the navigation property (can be undefined if it is not mandatory)
+     * @param relClassTableSpace In case the relationship of the navigation property is persisted in an attached ECDb file, specify the table space.
+                                 If undefined, ECDb will first look in the primary file and then in the attached ones.
+     * @return non-zero error status in case of failure.
+     */
     bindNavigation(navIdHexStr: string, relClassName?: string, relClassTableSpace?: string): DbResult;
+
+     /** Gets a binder for the specified member of a struct parameter
+     * @return Struct member binder.
+     */
     bindMember(memberName: string): NodeAddonECSqlBinder;
+
+     /** Adds a new array element to the array parameter and returns the binder for the new array element
+     * @return Binder for the new array element.
+     */
     addArrayElement(): NodeAddonECSqlBinder;
 }
 

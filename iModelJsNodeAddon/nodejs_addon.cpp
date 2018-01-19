@@ -1323,7 +1323,7 @@ public:
         if (info.Length() != 2) 
             {
             Napi::TypeError::New(Env(), "NodeAddonECSqlStatement::Prepare requires two arguments").ThrowAsJavaScriptException();
-            return Env().Undefined();
+            return NodeUtils::CreateErrorObject0(BE_SQLITE_ERROR, nullptr, Env());
             }
 
         Napi::Object dbObj = info[0].As<Napi::Object>();
@@ -1333,7 +1333,7 @@ public:
             {
             NodeAddonDgnDb* addonDgndb = NodeAddonDgnDb::Unwrap(dbObj);
             if (!addonDgndb->IsOpen())
-                return NodeUtils::CreateBentleyReturnErrorObject(BE_SQLITE_NOTADB, nullptr, Env());
+                return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
 
             ecdb = &addonDgndb->GetDgnDb();
             }
@@ -1343,7 +1343,7 @@ public:
             ecdb = &addonECDb->GetECDb();
 
             if (!ecdb->IsDbOpen())
-                return NodeUtils::CreateBentleyReturnErrorObject(BE_SQLITE_NOTADB, nullptr, Env());
+                return NodeUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
             }
         else 
             {
@@ -1356,10 +1356,7 @@ public:
         BeSqliteDbMutexHolder serializeAccess(*ecdb); // hold mutex, so that we have a chance to get last ECDb error message
 
         const ECSqlStatus status = m_stmt->Prepare(*ecdb, ecsql.c_str());
-        if (!status.IsSuccess())
-            return NodeUtils::CreateBentleyReturnErrorObject(ToDbResult(status), AddonUtils::GetLastECDbIssue().c_str(), Env());
-
-        return NodeUtils::CreateErrorObject0(Napi::Number::New(Env(), (int) ToDbResult(status)), nullptr, Env());
+        return NodeUtils::CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? AddonUtils::GetLastECDbIssue().c_str() : nullptr, Env());
         }
 
     Napi::Value Reset(const Napi::CallbackInfo& info)
