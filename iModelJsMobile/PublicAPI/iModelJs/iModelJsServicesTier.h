@@ -136,7 +136,6 @@ private:
     static void DispatchExtensionCallback (Extension::InstallCallback_T const& callback);
 
     static Utf8CP InitScript();
-    void DefineNodeWorkAlikes();
 
     void HandleReady();
     void HandleIdle();
@@ -274,6 +273,7 @@ private:
     void FindPrototypes (Napi::Object exports);
     
     Napi::Function uv_fs_open (Napi::Env& env);
+    Napi::Function uv_fs_realpath (Napi::Env& env);
     Napi::Function uv_fs_stat (Napi::Env& env);
     Napi::Function uv_fs_read (Napi::Env& env);
     Napi::Function uv_fs_close (Napi::Env& env);
@@ -284,23 +284,6 @@ protected:
 
 public:
     IMODELJS_EXPORT JsPrototypesCR GetPrototypes() const { return m_prototypes; }
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson   01/18
-//=======================================================================================
-struct NodeWorkAlike
-    {
-    struct Globals 
-        {
-        static void Install(Js::RuntimeR);
-        };
-
-    struct Extension_path : Extension 
-        {
-        Utf8CP SupplyName() const override {return "path";}
-        Napi::Value ExportJsModule (Js::RuntimeR) override;
-        };
     };
 
 END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE

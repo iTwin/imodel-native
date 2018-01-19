@@ -260,6 +260,7 @@ Utf8CP Utilities::InitScript()
         };
 
         let uv_fs_open  = params.uv_fs_open;
+        let uv_fs_realpath  = params.uv_fs_realpath;
         let uv_fs_stat  = params.uv_fs_stat;
         let uv_fs_read  = params.uv_fs_read;
         let uv_fs_close = params.uv_fs_close;
@@ -335,6 +336,7 @@ Utf8CP Utilities::InitScript()
                 S_IEXEC:  params.uv_fs_S_IEXEC,
 
                 open:    uv_fs_open,
+                realpath: uv_fs_realpath,
                 stat:    uv_fs_stat,
                 isValid: uv_fs_isValid,
                 read:    uv_fs_read,
@@ -386,6 +388,7 @@ Utf8CP Utilities::SimpleInitScript()
         };
 
         let uv_fs_open  = params.uv_fs_open;
+        let uv_fs_realpath  = params.uv_fs_realpath;
         let uv_fs_stat  = params.uv_fs_stat;
         let uv_fs_read  = params.uv_fs_read;
         let uv_fs_close = params.uv_fs_close;
@@ -426,6 +429,7 @@ Utf8CP Utilities::SimpleInitScript()
                 S_IEXEC:  params.uv_fs_S_IEXEC,
 
                 open:    uv_fs_open,
+                realpath: uv_fs_realpath,
                 stat:    uv_fs_stat,
                 isValid: uv_fs_isValid,
                 read:    uv_fs_read,
@@ -623,7 +627,8 @@ Utf8CP UvHost::RequireScript()
             }
 
             static normalize (path) {
-                return path.trim().replace (/["']/g, '').replace (/\\/g, '/').replace (/\/\//g, '/')
+                var path2 = path.trim().replace (/["']/g, '').replace (/\\/g, '/').replace (/\/\//g, '/');
+                return utilities.fs.realpath(path2);
             }
 
             toString() {
@@ -691,8 +696,11 @@ Utf8CP UvHost::RequireScript()
             }
 
             static normalizeId (id) {
-                while (id.indexOf ("/./") !== -1)
-                    id = id.replace ("/./", '/');
+                if (id.indexOf("/./") !== -1)
+                    throw new Error(id + " is not a normalized path. require should have normalized it");
+
+                //while (id.indexOf ("/./") !== -1)
+                //    id = id.replace ("/./", '/');
 
                 return id;
             }
@@ -704,6 +712,11 @@ Utf8CP UvHost::RequireScript()
                 let result = compiled.call (this.exports, this.exports, require, this, this.filename, dirname (this.filename));
                 //todo json
 
+                this.loaded = true;
+            }
+
+            loadJson() {
+                this.exports = JSON.parse(readFileUtf8(this.filename));
                 this.loaded = true;
             }
 
@@ -782,7 +795,6 @@ Utf8CP UvHost::RequireScript()
             for (var i = 0; i != paths.length; ++i) {
                 if (isFile (paths [i])) {
                     result = new Module (paths [i], parentModule);
-                    console_log('loaded Module = ' + JSON.stringify(result));
                     return;
                 }
             }
@@ -824,8 +836,8 @@ Utf8CP UvHost::RequireScript()
 
             let dirs = getNodeModulesPaths (start);
 
-            console_log('loadFromNodeModules(identifier=' + identifier + ', start=' + JSON.stringify(start) + ')');
-            console_log('dirs to try = ' + JSON.stringify(dirs));
+            //console_log('loadFromNodeModules(identifier=' + identifier + ', start=' + JSON.stringify(start) + ')');
+            //console_log('dirs to try = ' + JSON.stringify(dirs));
 
             for (var i = 0; i != dirs.length; ++i) {
                 let qualifiedIdentifier = dirs [i] + "/" + identifier;
@@ -838,21 +850,20 @@ Utf8CP UvHost::RequireScript()
             }
         };
 
+        var indent = 0;
+
         let load = function (identifier) {
             if (utilities === null)
                 utilities = params.replacementRequire ("@bentley/imodeljs-services-tier-utilities");
             
             result = null;
-
-            console_log('load(' + identifier + ')');
+            
+            console_log('load(' + indent + ' ' + identifier + ')');
 
             let info = bentley.imodeljs.servicesTier.getHostInfo();
 
             if (parentModule === null)
                 parentModule = new Module (info.cwd, null);
-
-            console_log('parentModule = ' + JSON.stringify(parentModule));
-
 
             let parentPrefix = parentModule.filename;
             if (isFile (parentPrefix))
@@ -872,6 +883,8 @@ Utf8CP UvHost::RequireScript()
                 resolvedIdentifier = parentPrefix + '/' + normalizedIdentifier;
             }
 
+            resolvedIdentifier = Path.normalize (resolvedIdentifier);
+
             if (tryFs) {
                 loadAsFile (resolvedIdentifier);
                 loadAsDirectory (resolvedIdentifier);
@@ -880,16 +893,27 @@ Utf8CP UvHost::RequireScript()
             loadFromNodeModules (identifier, parentPrefix);
 
             if (result !== null) {
-                if (moduleCache.hasOwnProperty (result.id))
+                if (moduleCache.hasOwnProperty (result.id)) {
+                    console_log('cached module: ' + result.id + '\n');
                     return moduleCache [result.id].exports;
+                }
 
-                moduleCache [result.id] = result;
+                let module = result;
+                moduleCache [module.id] = module;
 
-                result.load();
-                if (!result.loaded)
-                    delete moduleCache [result.id];
-                
-                return result.exports;
+                if (module.id.endsWith('.json')) {
+                    module.loadJson();
+                } else {
+                    indent = indent + 1;
+                    module.load(); // Note this may call require recursively (redefining 'result' each time)
+                    indent = indent - 1;
+                    if (!module.loaded) {
+                        console_log('load failed.\n');
+                        delete moduleCache [module.id];
+                    }                
+                }                
+                console_log('loaded module: ' + indent + ' ' + module.id + '\n');
+                return module.exports;
             } else {
                 throw new Error ("Cannot find module '" + identifier + "'");
             }

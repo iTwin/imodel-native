@@ -43,34 +43,7 @@
 #define NAPI_NO_RETURN
 #endif
 
-
-typedef napi_value (*napi_addon_register_func)(napi_env env,
-                                               napi_value exports);
-
-typedef struct {
-  int nm_version;
-  unsigned int nm_flags;
-  const char* nm_filename;
-  napi_addon_register_func nm_register_func;
-  const char* nm_modname;
-  void* nm_priv;
-  void* reserved[4];
-} napi_module;
-
 #define NAPI_MODULE_VERSION  1
-
-#if defined(_MSC_VER)
-#pragma section(".CRT$XCU", read)
-#define NAPI_C_CTOR(fn)                                                     \
-  static void __cdecl fn(void);                                             \
-  __declspec(dllexport, allocate(".CRT$XCU")) void(__cdecl * fn##_)(void) = \
-      fn;                                                                   \
-  static void __cdecl fn(void)
-#else
-#define NAPI_C_CTOR(fn)                              \
-  static void fn(void) __attribute__((constructor)); \
-  static void fn(void)
-#endif
 
 #ifdef __cplusplus
 #define EXTERN_C_START extern "C" {

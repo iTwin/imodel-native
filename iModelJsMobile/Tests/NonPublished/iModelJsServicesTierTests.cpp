@@ -96,9 +96,11 @@ private:
             (function() {
                 let require = bentley.imodeljs.servicesTier.require;
                 debugger;
-                let addon = require ("@bentley/imodeljs-nodeaddon");
-
-                BeAssert (addon !== undefined);
+                let registryModule = require ("../backend/NodeAddonRegistry");
+                BeAssert (registryModule !== undefined);
+                let registry = registryModule.NodeAddonRegistry;
+                BeAssert (registry !== undefined);
+                registry.loadAndRegisterStandardAddon();
             })();
         )", "iModelJsServicesTierTests:///Addon.Test1.js");
 

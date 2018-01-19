@@ -151,10 +151,7 @@ void UvHost::EventLoopThreadMain()
 
     m_jsRuntime = new Js::Runtime("iModel.js Services Tier", config.enableJsDebugger, config.jsDebuggerPort);
 
-    NodeWorkAlike::Globals::Install(*m_jsRuntime);
-    Extension::Install ([]() { return new NodeWorkAlike::Extension_path; });
-
-    imodeljs_addon_entry_point();
+    imodeljs_addon_entry_point(); // tell the addon (which is actually linked in) that now is a good time for it to install itself as a module.
 
     NotifyStarting();
     uv_run (GetEventLoop(), UV_RUN_DEFAULT);
@@ -173,13 +170,14 @@ END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 
 using namespace BentleyApi::iModelJs::ServicesTier;
 
-extern "C"
-{
-
-EXPORT_ATTRIBUTE void imodeljs_register_addon(char const* addonName, Napi::ModuleRegisterCallback regFunc)
+//---------------------------------------------------------------------------------------
+//
+// The addon (which is linked into this library) calls this to register itself as a module.
+//
+// @bsimethod                                Sam.Wilson                     01/2018
+//---------------------------------------------------------------------------------------
+extern "C" void imodeljs_register_addon(char const* addonName, Napi::ModuleRegisterCallback regFunc)
     {
     if (0==strcmp(addonName, "at_bentley_imodeljs_nodeaddon"))
-        Extension::Install ([=]() { return new NapiAddonExtension("@bentley/imodeljs-nodeaddon", regFunc); });
+        Extension::Install ([=]() { return new NapiAddonExtension("@bentley/imodeljs-mobile", regFunc); });
     }
-
-}

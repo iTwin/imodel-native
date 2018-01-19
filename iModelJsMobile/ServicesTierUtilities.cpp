@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ServicesTierUtilities.h"
+#include <Bentley/Desktop/FileSystem.h>
 
 BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 
@@ -1288,6 +1289,41 @@ Napi::Function Utilities::uv_fs_open (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
+Napi::Function Utilities::uv_fs_realpath (Napi::Env& env)
+    {
+    return Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+        {
+        JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
+
+        auto path  = JS_CALLBACK_GET_STRING (0);
+
+#ifdef USE_UV_REALPATH
+        uv_fs_t req;
+        ::uv_fs_realpath (Host::GetInstance().GetEventLoop(), &req, path.Utf8Value().c_str(), nullptr);
+        auto newPath = Napi::String::New(info.Env(), req.path);
+        uv_fs_req_cleanup (&req);
+#else
+        BeFileName wpath(path.Utf8Value().c_str(), true);
+        BeFileName wpathresolved;
+        if (wpath.IsSymbolicLink())
+            {
+            BeFileName::GetTargetOfSymbolicLink(wpathresolved, wpath.c_str(), true);
+            wpath = wpathresolved;
+            }
+        WString fixedWpath;
+        BeFileName::FixPathName(fixedWpath, wpath.c_str(), true);
+        fixedWpath.ReplaceAll(L"\\", L"/");
+        Utf8String fixedPath(fixedWpath);
+        auto newPath = Napi::String::New(info.Env(), fixedPath.c_str());
+#endif
+
+        return newPath;
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Steve.Wilson                    6/17
+//---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_stat (Napi::Env& env)
     {
     return Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
@@ -1386,6 +1422,7 @@ Napi::Object Utilities::CreateInitParams(Napi::Env& env)
     params.Set ("websocketpp_ServerEndpoint_createConnection", websocketpp_ServerEndpoint_createConnection (env));
 #endif
     params.Set ("uv_fs_open",                                  uv_fs_open (env));
+    params.Set ("uv_fs_realpath",                              uv_fs_realpath (env));
     params.Set ("uv_fs_stat",                                  uv_fs_stat (env));
     params.Set ("uv_fs_read",                                  uv_fs_read (env));
     params.Set ("uv_fs_close",                                 uv_fs_close (env));
@@ -1492,6 +1529,7 @@ Napi::Value Utilities::ExportJsModule(Js::RuntimeR runtime)
     return exports;
     }
 
+#ifdef COMMENT_OUT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                    01/2018
 //---------------------------------------------------------------------------------------
@@ -1609,5 +1647,6 @@ path.toNamespacedPath(path)
 
     return exports;
     }
+#endif
 
 END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
