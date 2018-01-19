@@ -21,7 +21,8 @@ struct IIssueReporter
     protected:
         IIssueReporter() {}
     public:
-        virtual void Report(Utf8CP message, ...) const = 0;
+        virtual void Report(Utf8CP message) const = 0;
+        virtual void ReportV(Utf8CP message, ...) const = 0;
         virtual ~IIssueReporter() {}
     };
 
@@ -39,6 +40,8 @@ private:
     IssueReporter(IssueReporter const&) = delete;
     IssueReporter& operator=(IssueReporter const&) = delete;
 
+    void DoReport(Utf8CP message, bool isLogSeverityEnabled) const;
+
 public:
     IssueReporter() : IIssueReporter() {}
     ~IssueReporter() {}
@@ -46,7 +49,8 @@ public:
     BentleyStatus AddListener(ECDb::IIssueListener const&);
     void RemoveListener();
 
-    void Report(Utf8CP message, ...) const override;
+    void Report(Utf8CP message) const override;
+    void ReportV(Utf8CP message, ...) const override;
 
     bool IsEnabled(bool* isLogEnabled = nullptr) const;
     };
@@ -66,7 +70,8 @@ struct ScopedIssueReporter final : IIssueReporter
     public:
         ScopedIssueReporter(ECDbCR, bool logErrors);
         ~ScopedIssueReporter() {}
-        void Report(Utf8CP message, ...) const override;
+        void Report(Utf8CP message) const override;
+        void ReportV(Utf8CP message, ...) const override;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

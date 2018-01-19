@@ -30,7 +30,7 @@ BentleyStatus OptionsExp::AddOptionExp(std::unique_ptr<OptionExp> optionExp, IIs
     Utf8CP name = optionExp->GetName();
     if (m_optionsByName.find(name) != m_optionsByName.end())
         {
-        issues.Report("Multiple options with same name ('%s') are not supported.", name);
+        issues.ReportV("Multiple options with same name ('%s') are not supported.", name);
         return ERROR;
         }
 

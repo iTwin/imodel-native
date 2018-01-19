@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DeleteStatementExp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -42,7 +42,7 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
 
         if (classNameExp->GetMemberFunctionCallExp() != nullptr)
             {
-            ctx.Issues().Report("May not call function on class in FROM clause in a DELETE statement: %s", ToECSql().c_str());
+            ctx.Issues().ReportV("May not call function on class in FROM clause in a DELETE statement: %s", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
 

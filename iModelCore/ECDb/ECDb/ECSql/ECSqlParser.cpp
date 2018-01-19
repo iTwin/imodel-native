@@ -26,7 +26,7 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, ScopedIssueRe
 
     if (parseTree == nullptr || !error.empty())
         {
-        Issues().Report("Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
+        Issues().ReportV("Failed to parse ECSQL '%s': %s", ecsql, error.c_str());
         return nullptr;
         }
 
@@ -742,7 +742,7 @@ BentleyStatus ECSqlParser::ParseFctSpec(std::unique_ptr<ValueExp>& exp, OSQLPars
     if (functionName.empty())
         {
         const uint32_t tokenId = functionNameNode->getTokenID();
-        Issues().Report("Function with token ID %" PRIu32 " not yet supported.", tokenId);
+        Issues().ReportV("Function with token ID %" PRIu32 " not yet supported.", tokenId);
         return ERROR;
         }
 
@@ -866,7 +866,7 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(std::unique_ptr<ValueExp>& exp, OS
 
             default:
             {
-            Issues().Report("Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
+            Issues().ReportV("Unsupported standard set function with token ID %" PRIu32, functionNameNode->getTokenID());
             return ERROR;
             }
         }
@@ -1070,7 +1070,7 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(std::unique_ptr<ValueExp>& exp,
         if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
             return LiteralValueExp::Create(exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo(ECN::PRIMITIVETYPE_DateTime));
 
-        Issues().Report("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
+        Issues().ReportV("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
         return ERROR;
         }
 
@@ -2528,7 +2528,7 @@ BentleyStatus ECSqlParser::ParseSelectStatement(std::unique_ptr<SelectStatementE
 
         if (!single_select->IsCoreSelect())
             {
-            Issues().Report("SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
+            Issues().ReportV("SELECT statement in UNION must not contain ORDER BY or LIMIT clause: %s", single_select->ToECSql().c_str());
             return ERROR;
             }
 
@@ -2606,7 +2606,7 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseValueExpPrimary(valueExp, parseNode);
 
                 default:
-                    Issues().Report("ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
+                    Issues().ReportV("ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
             };
@@ -2767,9 +2767,9 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
     if (classMap == nullptr)
         {
         if (Utf8String::IsNullOrEmpty(tableSpaceName))
-            Issues().Report("ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
+            Issues().ReportV("ECClass '%s.%s' does not exist or could not be loaded.", schemaNameOrAlias.c_str(), className.c_str());
         else
-            Issues().Report("ECClass '%s.%s.%s' does not exist or could not be loaded.", tableSpaceName, schemaNameOrAlias.c_str(), className.c_str());
+            Issues().ReportV("ECClass '%s.%s.%s' does not exist or could not be loaded.", tableSpaceName, schemaNameOrAlias.c_str(), className.c_str());
 
         return ERROR;
         }
@@ -2788,7 +2788,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*classMap, ecsqlType, isPolymorphicExp));
     if (!policy.IsSupported())
         {
-        Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        Issues().ReportV("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
 

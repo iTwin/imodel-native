@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SelectStatementExp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -136,7 +136,7 @@ Exp::FinalizeParseStatus FromExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
         if (classExp.GetExp().GetId().EqualsI(classExpComparand->GetId()))
             {
-            ctx.Issues().Report("Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp.GetExp().ToECSql().c_str());
+            ctx.Issues().ReportV("Multiple occurrences of ECClass expression '%s' in the ECSQL statement. Use different aliases to distinguish them.", classExp.GetExp().ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -204,7 +204,7 @@ BentleyStatus FromExp::TryAddClassRef(ECSqlParseContext& ctx, std::unique_ptr<Cl
             if (existingRangeCRef.GetExp().GetId().Equals(newRangeCRef.GetExp().GetId()))
                 {
                 //e.g. SELECT * FROM FOO a, GOO a
-                ctx.Issues().Report("Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef.GetExp().GetId().c_str());
+                ctx.Issues().ReportV("Duplicate class name / alias '%s' in FROM or JOIN clause", newRangeCRef.GetExp().GetId().c_str());
                 return ERROR;
                 }
             }
@@ -298,7 +298,7 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
         if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || typeInfo.IsNavigation())
             {
-            ctx.Issues().Report("Invalid expression '%s' in GROUP BY: Parameters, constants, and navigation properties are not supported.", ToECSql().c_str());
+            ctx.Issues().ReportV("Invalid expression '%s' in GROUP BY: Parameters, constants, and navigation properties are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -346,13 +346,13 @@ LimitOffsetExp::FinalizeParseStatus LimitOffsetExp::_FinalizeParsing(ECSqlParseC
             {
             if (!IsValidChildExp(*GetLimitExp()))
                 {
-                ctx.Issues().Report("Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                ctx.Issues().ReportV("Invalid expression '%s'. LIMIT expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
             if (HasOffset() && !IsValidChildExp(*GetOffsetExp()))
                 {
-                ctx.Issues().Report("Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
+                ctx.Issues().ReportV("Invalid expression '%s'. OFFSET expression must be constant numeric expression which may have parameters.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -461,7 +461,7 @@ Exp::FinalizeParseStatus OrderByExp::_FinalizeParsing(ECSqlParseContext& parseCo
             {
             if (ComputedExp const* exp = FindIncompatibleOrderBySpecExpForUnion())
                 {
-                parseContext.Issues().Report("'%s' ORDER BY term does not match any column in the result set.", exp->ToECSql().c_str());
+                parseContext.Issues().ReportV("'%s' ORDER BY term does not match any column in the result set.", exp->ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -493,7 +493,7 @@ OrderBySpecExp::FinalizeParseStatus OrderBySpecExp::_FinalizeParsing(ECSqlParseC
     ECSqlTypeInfo const& typeInfo = GetSortExpression()->GetTypeInfo();
     if (!typeInfo.IsPrimitive() || typeInfo.IsPoint() || typeInfo.IsGeometry())
         {
-        ctx.Issues().Report("Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());
+        ctx.Issues().ReportV("Invalid expression '%s' in ORDER BY: Points, Geometries, navigation properties, structs and arrays are not supported.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -954,7 +954,7 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
 
     if (selectClauseExp->GetChildren().size() != 1)
         {
-        ctx.Issues().Report("Subquery must return exactly one column %s.", ToECSql().c_str());
+        ctx.Issues().ReportV("Subquery must return exactly one column %s.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 

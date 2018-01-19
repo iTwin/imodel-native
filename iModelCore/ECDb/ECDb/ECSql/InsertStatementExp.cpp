@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/InsertStatementExp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -43,7 +43,7 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
 
             if (classNameExp->GetMemberFunctionCallExp() != nullptr)
                 {
-                ctx.Issues().Report("May not call function on class in a INSERT statement: %s", ToECSql().c_str());
+                ctx.Issues().ReportV("May not call function on class in a INSERT statement: %s", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
@@ -121,7 +121,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
     ValueExpListExp const* valuesExp = GetValuesExp();
     if (valuesExp->GetChildrenCount() != expectedValueCount)
         {
-        ctx.Issues().Report("Mismatching number of items in VALUES clause. For %d properties there are %d values.", expectedValueCount, valuesExp->GetChildrenCount());
+        ctx.Issues().ReportV("Mismatching number of items in VALUES clause. For %d properties there are %d values.", expectedValueCount, valuesExp->GetChildrenCount());
         return FinalizeParseStatus::Error;
         }
 
@@ -131,7 +131,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
         switch (valueExp->GetType())
             {
                 case Exp::Type::PropertyName:
-                    ctx.Issues().Report("Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
+                    ctx.Issues().ReportV("Expression '%s' is not allowed in the VALUES clause of the INSERT statement.", valueExp->ToECSql().c_str());
                     return FinalizeParseStatus::Error;
 
                 case Exp::Type::Parameter:
@@ -145,7 +145,7 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate(ECSqlParseContext& ctx) co
         Utf8String errorMessage;
         if (!propertyNameExp->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
             {
-            ctx.Issues().Report("Type mismatch in INSERT statement: %s", errorMessage.c_str());
+            ctx.Issues().ReportV("Type mismatch in INSERT statement: %s", errorMessage.c_str());
             return FinalizeParseStatus::Error;
             }
 

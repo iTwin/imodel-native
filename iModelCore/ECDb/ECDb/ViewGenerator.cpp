@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -26,7 +26,7 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
 
     if (!memberFunctionCallExp->GetFunctionName().EqualsIAscii(ECSQLFUNC_Changes))
         {
-        ctx.GetECDb().GetImpl().Issues().Report("Class exp has member function call %s which is not supported yet.", memberFunctionCallExp->GetFunctionName().c_str());
+        ctx.GetECDb().GetImpl().Issues().ReportV("Class exp has member function call %s which is not supported yet.", memberFunctionCallExp->GetFunctionName().c_str());
         return ERROR;
         }
 
@@ -42,7 +42,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     PERFLOG_START("ECDb", "Create ECClass views");
     if (ecdb.IsReadonly())
         {
-        ecdb.GetImpl().Issues().Report("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
+        ecdb.GetImpl().Issues().ReportV("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
@@ -101,7 +101,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
         if (mapStrategy == MapStrategy::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass())
             || mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable || mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable)
             {
-            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityClass or a link table ECRelationshipClass.",
+            ecdb.GetImpl().Issues().ReportV("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityClass or a link table ECRelationshipClass.",
                                            classMap->GetClass().GetFullName(), classId.ToString().c_str());
             return ERROR;
             }
@@ -209,13 +209,13 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     if (memberFuncCallExp.GetChildrenCount() != 2 )
         {
-        ctx.GetECDb().GetImpl().Issues().Report("Class exp's member function '%s' is called with invalid number of arguments.", memberFuncCallExp.GetFunctionName().c_str());
+        ctx.GetECDb().GetImpl().Issues().ReportV("Class exp's member function '%s' is called with invalid number of arguments.", memberFuncCallExp.GetFunctionName().c_str());
         return ERROR;
         }
 
     if (!ctx.GetECDb().IsChangeCacheAttached())
         {
-        ctx.GetECDb().GetImpl().Issues().Report("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the Change cache file must have been attached before.");
+        ctx.GetECDb().GetImpl().Issues().ReportV("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the Change cache file must have been attached before.");
         return ERROR;
         }
 

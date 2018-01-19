@@ -35,7 +35,21 @@ void IssueReporter::RemoveListener()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  09/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void IssueReporter::Report(Utf8CP message, ...) const
+void IssueReporter::Report(Utf8CP message) const
+    {
+    if (Utf8String::IsNullOrEmpty(message))
+        return;
+
+    BeMutexHolder lock(m_mutex);
+    bool isLogSeverityEnabled = false;
+    if (IsEnabled(&isLogSeverityEnabled))
+        DoReport(message, isLogSeverityEnabled);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void IssueReporter::ReportV(Utf8CP message, ...) const
     {
     if (Utf8String::IsNullOrEmpty(message))
         return;
@@ -50,14 +64,25 @@ void IssueReporter::Report(Utf8CP message, ...) const
         Utf8String formattedMessage;
         formattedMessage.VSprintf(message, args);
 
-        if (m_issueListener != nullptr)
-            m_issueListener->ReportIssue(formattedMessage.c_str());
-
-        if (isLogSeverityEnabled)
-            LOG.message(s_logSeverity, formattedMessage.c_str());
+        DoReport(formattedMessage.c_str(), isLogSeverityEnabled);
 
         va_end(args);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void IssueReporter::DoReport(Utf8CP message, bool isLogSeverityEnabled) const
+    {
+    if (Utf8String::IsNullOrEmpty(message))
+        return;
+
+    if (m_issueListener != nullptr)
+        m_issueListener->ReportIssue(message);
+
+    if (isLogSeverityEnabled)
+        LOG.message(s_logSeverity, message);
     }
 
 //---------------------------------------------------------------------------------------
@@ -81,7 +106,18 @@ ScopedIssueReporter::ScopedIssueReporter(ECDbCR ecdb, bool logErrors) : IIssueRe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-void ScopedIssueReporter::Report(Utf8CP message, ...) const
+void ScopedIssueReporter::Report(Utf8CP message) const
+    {
+    if (!m_logErrors)
+        return;
+
+    m_issues.Report(message);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ScopedIssueReporter::ReportV(Utf8CP message, ...) const
     {
     if (!m_logErrors)
         return;

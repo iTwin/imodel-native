@@ -623,7 +623,7 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
     ProfileVersion profileVersion(0, 0, 0, 0);
     if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(profileVersion, m_ecdb) || ProfileManager::GetExpectedVersion() != profileVersion)
         {
-        m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. The ECDb file is too new (version: %s). Schema imports with this version of the software can "
+        m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. The ECDb file is too new (version: %s). Schema imports with this version of the software can "
                                          "only be done on files with profile version %s.",
                                          profileVersion.ToString().c_str(), ProfileManager::GetExpectedVersion().ToString().c_str());
         return ERROR;
@@ -665,7 +665,7 @@ BentleyStatus MainSchemaManager::PersistSchemas(SchemaImportContext& context, bv
         //Deserializing into older versions is not needed in ECDb and therefore not supported.
         if (schema->GetECVersion() != ECVersion::Latest)
             {
-            m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
+            m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
             return ERROR;
             }
 
@@ -674,7 +674,7 @@ BentleyStatus MainSchemaManager::PersistSchemas(SchemaImportContext& context, bv
             ECSchemaId id = SchemaPersistenceHelper::GetSchemaId(m_ecdb, GetTableSpace(), schema->GetName().c_str(), SchemaLookupMode::ByName);
             if (!id.IsValid() || id != schema->GetId())
                 {
-                m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -712,7 +712,7 @@ BentleyStatus MainSchemaManager::PersistSchemas(SchemaImportContext& context, bv
             SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
             if (SupplementedSchemaStatus::Success != status)
                 {
-                m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
+                m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
 
@@ -1057,7 +1057,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             StorageDescription const& storageDesc = classMap->GetStorageDescription();
             if (storageDesc.HasMultipleNonVirtualHorizontalPartitions())
                 {
-                Issues().Report("Failed to map ECClass '%s'. The index '%s' defined on it spans multiple tables which is not supported. Consider applying the 'TablePerHierarchy' strategy to the ECClass.",
+                Issues().ReportV("Failed to map ECClass '%s'. The index '%s' defined on it spans multiple tables which is not supported. Consider applying the 'TablePerHierarchy' strategy to the ECClass.",
                                 ecClass->GetFullName(), index.GetName().c_str());
                 return ERROR;
                 }
@@ -1065,7 +1065,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
 
         if (usedIndexNames.find(index.GetName().c_str()) != usedIndexNames.end())
             {
-            Issues().Report("Failed to create index %s on table %s. An index with the same name already exists.", index.GetName().c_str(), index.GetTable().GetName().c_str());
+            Issues().ReportV("Failed to create index %s on table %s. An index with the same name already exists.", index.GetName().c_str(), index.GetTable().GetName().c_str());
             return ERROR;
             }
         else
@@ -1200,8 +1200,7 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables() const
             isFirstTable = false;
             }
 
-        m_ecdb.GetImpl().Issues().Report(
-            "Failed to import schemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to import schemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
         return ERROR;
         }
 
@@ -1381,7 +1380,7 @@ BentleyStatus MainSchemaManager::SaveDbSchema(SchemaImportContext& ctx) const
 
         if (SUCCESS != classMap.Save(ctx, saveCtx))
             {
-            Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
+            Issues().ReportV("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
         }
