@@ -2454,7 +2454,7 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     Render::Primitives::GeometryCollection collection;
     if (nullptr != m_generator.get())
         {
-        THREADLOG.errorv("Refining partial tile (processed %u times)", m_generator->GetAndIncrementUseCount());
+        //THREADLOG.errorv("Refining partial tile (processed %u times)", m_generator->GetAndIncrementUseCount());
         auto status = m_generator->GenerateGeometry(collection, context);
         switch (status)
             {
